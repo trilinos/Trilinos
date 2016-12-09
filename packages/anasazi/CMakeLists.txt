@@ -35,11 +35,38 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RBGen
 # Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
 # tests depend heavily on Teuchos' complex arithmetic support.
 
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  ON)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT OFF)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_ANASAZI_COMPLEX
   "Enable Anasazi features for complex data types."
-  "${Teuchos_ENABLE_COMPLEX}" )
+  ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT} )
+
+# ToDo: Above, split ${PACKAGE_NAME}_ENABLE_COMPLEX into
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
+# ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
+
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX AND NOT Teuchos_ENABLE_COMPLEX)
+  MESSAGE(FATAL_ERROR
+    "Error: ${PACKAGE_NAME}_ENABLE_COMPLEX='${${PACKAGE_NAME}_ENABLE_COMPLEX}' "
+    " and Teuchos_ENABLE_COMPLEX='${Teuchos_ENABLE_COMPLEX}'.  This would result in"
+    " a build or link-time failure so we have to abort.")
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX AND
+  ${PACKAGE_NAME}_ENABLE_Tpetra AND NOT Tpetra_INST_COMPLEX_DOUBLE
+  )
+  MESSAGE(FATAL_ERROR
+    "Error: ${PACKAGE_NAME}_ENABLE_COMPLEX='${${PACKAGE_NAME}_ENABLE_COMPLEX}',"
+    " ${PACKAGE_NAME}_ENABLE_Tpetra='${${PACKAGE_NAME}_ENABLE_Tpetra}',"
+    " and Tpetra_INST_COMPLEX_DOUBLE='${Tpetra_INST_COMPLEX_DOUBLE}' ."
+    "  This would result in a build or link-time failure so we have to abort.")
+ENDIF()
 
 # Kokkos includes an implementation of the Tall Skinny QR (TSQR)
 # factorization.  TSQR is used to implement an OrthoManager

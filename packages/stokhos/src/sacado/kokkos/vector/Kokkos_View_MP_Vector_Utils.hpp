@@ -47,8 +47,6 @@
 
 namespace Kokkos {
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 // Type name for a local, unmanaged view with possibly a different static size
 template <typename ViewType,
           unsigned LocalSize,
@@ -64,113 +62,6 @@ template <typename D, typename ... P, unsigned LocalSize>
 struct LocalMPVectorView< View<D,P...>, LocalSize, true > {
   typedef typename Kokkos::Experimental::Impl::ViewMapping< void, typename Kokkos::Experimental::ViewTraits<D,P...>, Sacado::MP::VectorPartition<LocalSize> >::type type;
 };
-
-#else
-
-// Type name for a local, unmanaged view with possibly a different static size
-template <typename ViewType,
-          unsigned LocalSize,
-          unsigned Rank = ViewType::Rank,
-          bool isStatic = ViewType::is_static>
-struct LocalMPVectorView {};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView< ViewType, LocalSize, 1, true > {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-  typedef typename vector_type::storage_type storage_type;
-  typedef typename storage_type::template apply_N<LocalSize> StorageApply;
-  typedef typename StorageApply::type local_storage_type;
-  typedef Sacado::MP::Vector< local_storage_type > local_value_type;
-
-  typedef Kokkos::View< local_value_type*,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView<ViewType, LocalSize, 1, false> {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-
-  typedef Kokkos::View< vector_type*,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView< ViewType, LocalSize, 2, true > {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-  typedef typename vector_type::storage_type storage_type;
-  typedef typename storage_type::template apply_N<LocalSize> StorageApply;
-  typedef typename StorageApply::type local_storage_type;
-  typedef Sacado::MP::Vector< local_storage_type > local_value_type;
-
-  typedef Kokkos::View< local_value_type**,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView<ViewType, LocalSize, 2, false> {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-
-  typedef Kokkos::View< vector_type**,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView< ViewType, LocalSize, 3, true > {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-  typedef typename vector_type::storage_type storage_type;
-  typedef typename storage_type::template apply_N<LocalSize> StorageApply;
-  typedef typename StorageApply::type local_storage_type;
-  typedef Sacado::MP::Vector< local_storage_type > local_value_type;
-
-  typedef Kokkos::View< local_value_type***,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-template <typename ViewType,
-          unsigned LocalSize>
-struct LocalMPVectorView<ViewType, LocalSize, 3, false> {
-  typedef typename ViewType::value_type vector_type;
-  typedef typename ViewType::array_layout array_layout;
-  typedef typename ViewType::execution_space execution_space;
-  typedef typename ViewType::device_type device_type;
-
-  typedef Kokkos::View< vector_type***,
-                        array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > type;
-};
-
-#endif
 
 namespace Impl {
 

@@ -39,7 +39,7 @@
 namespace
 {
 
-void printGoldResults(const GtkBoxVector &domainBoxes, const std::vector< std::pair<Sphere, Ident> > &spheres)
+void printGoldResults(const FlaotBoxVector &domainBoxes, const std::vector< std::pair<Sphere, Ident> > &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -55,7 +55,7 @@ void printGoldResults(const GtkBoxVector &domainBoxes, const std::vector< std::p
     std::cerr << "Gold: Found " << boxIdPairResults.size() << " interactions.\n";
 }
 
-void printGoldResults(const GtkBoxVector &domainBoxes, const GtkBoxVector &spheres)
+void printGoldResults(const FlaotBoxVector &domainBoxes, const FlaotBoxVector &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -88,14 +88,14 @@ struct Options
      void setSphereFile()
      {
          std::string optionString = "-sphere";
-         mSphereFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
+         mSphereFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mSphereFile);
      }
 
      void setVolumeFile()
      {
          std::string optionString = "-volume";
-         mVolumeFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
+         mVolumeFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mVolumeFile);
      }
 
@@ -103,7 +103,7 @@ struct Options
      {
          std::string optionString = "-method";
          mSearchMethod = BOOST_RTREE;
-         std::string searchString = unitTestUtils::getOption(optionString, "boost");
+         std::string searchString = stk::unit_test_util::get_option(optionString, "boost");
          if ( searchString == "octree")
          {
              mSearchMethod = OCTREE;
@@ -118,7 +118,7 @@ struct Options
      {
          std::string optionString = "-rangeBoxComm";
          mCommunicateRangeBoxes = true;
-         if ( unitTestUtils::getOption(optionString, "yes") == "no" )
+         if ( stk::unit_test_util::get_option(optionString, "yes") == "no" )
          {
              mCommunicateRangeBoxes = false;
          }
@@ -128,7 +128,7 @@ struct Options
      {
          std::string optionString = "-sb";
          mSpheresFirstThenBoxes = false;
-         if ( unitTestUtils::getOption(optionString, "no" ) == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no" ) == "yes" )
          {
              mSpheresFirstThenBoxes = true;
          }
@@ -138,7 +138,7 @@ struct Options
      {
          mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
-         if ( unitTestUtils::getOption(optionString, "no") == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no") == "yes" )
          {
              mTestToGetGoldResults = true;
          }
@@ -191,7 +191,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
     std::vector< std::pair<Sphere, Ident> > spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    GtkBoxVector domainBoxes;
+    FlaotBoxVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
@@ -254,10 +254,10 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    GtkBoxVector spheres;
+    FlaotBoxVector spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    GtkBoxVector domainBoxes;
+    FlaotBoxVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
@@ -315,7 +315,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
 TEST(stkSearch, boxSphereIntersection)
 {
-    GtkBox box(0,0,0,1,1,1);
+    FloatBox box(0,0,0,1,1,1);
     Sphere sphere(Point(2,2,2), 0.5);
     EXPECT_FALSE(stk::search::intersects(box, sphere));
     EXPECT_FALSE(stk::search::intersects(sphere, box));
@@ -334,7 +334,7 @@ TEST(stkSearch, boxSphereIntersection)
     Sphere sphere5(Point(1.5, 1.5, 1.5), 0.5);
     EXPECT_FALSE(stk::search::intersects(box, sphere5));
     EXPECT_FALSE(stk::search::intersects(sphere5, box));
-    GtkBox box1(1,1,1,2,2,2);
+    FloatBox box1(1,1,1,2,2,2);
     EXPECT_TRUE(stk::search::intersects(box1,box));
 }
 

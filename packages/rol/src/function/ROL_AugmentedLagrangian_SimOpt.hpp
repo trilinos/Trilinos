@@ -190,7 +190,7 @@ public:
   virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     // Compute objective function gradient
     if ( !isGradient2Computed_ ) {
-      obj_->gradient_2(*gradient1_,u,z,tol); ngval_++;
+      obj_->gradient_2(*gradient2_,u,z,tol); ngval_++;
       isGradient2Computed_ = true;
     }
     g.set(*gradient2_);
@@ -291,7 +291,6 @@ public:
     nfval_ = 0; ngval_ = 0;
     pen_->reset(multiplier,penaltyParameter);
   }
-
 }; // class AugmentedLagrangian
 
 } // namespace ROL

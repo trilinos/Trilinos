@@ -95,10 +95,10 @@ namespace Intrepid2 {
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
     typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordiantes_view_type;
 
-    // ** tag interface 
+    // ** tag interface
     //  - tag interface is not decorated with Kokkos inline so it should be allocated on hostspace
 
-    // host array 
+    // host array
     typedef Kokkos::View<ordinal_type*  ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_1d_host;
     typedef Kokkos::View<ordinal_type** ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_2d_host;
     typedef Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_3d_host;
@@ -111,6 +111,9 @@ namespace Intrepid2 {
     typedef Kokkos::View<ordinal_type***,ExecSpaceType> ordinal_type_array_3d;
 
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
+
+    // coord value_type
+    typedef typename ScalarTraits<pointValueType>::scalar_type scalarType;
 
   protected:
 
@@ -176,7 +179,7 @@ namespace Intrepid2 {
       \param  posScOrd         [in]   - position in the tag, counting from 0, of the subcell ordinal
       \param  posDfOrd         [in]   - position in the tag, counting from 0, of DoF ordinal relative to the subcell
     */
-    template<typename OrdinalTypeView3D, 
+    template<typename OrdinalTypeView3D,
              typename OrdinalTypeView2D,
              typename OrdinalTypeView1D>
     void setOrdinalTagData( /**/  OrdinalTypeView3D &tagToOrdinal,
@@ -194,25 +197,25 @@ namespace Intrepid2 {
       Kokkos::deep_copy( ordinalToTag, -1 );
 
       // Copy tags
-      for (auto i=0;i<basisCard;++i)
-        for (auto j=0;j<tagSize;++j)
+      for (ordinal_type i=0;i<basisCard;++i)
+        for (ordinal_type j=0;j<tagSize;++j)
           ordinalToTag(i, j) = tags(i*tagSize + j);
 
       // Find out dimension of tagToOrdinal
       auto maxScDim = 0;  // first dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxScDim < tags(i*tagSize + posScDim))
           maxScDim = tags(i*tagSize + posScDim);
       ++maxScDim;
 
       auto maxScOrd = 0; // second dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxScOrd < tags(i*tagSize + posScOrd))
           maxScOrd = tags(i*tagSize + posScOrd);
       ++maxScOrd;
 
       auto maxDfOrd = 0;  // third dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxDfOrd < tags(i*tagSize + posDfOrd))
           maxDfOrd = tags[i*tagSize + posDfOrd];
       ++maxDfOrd;
@@ -224,12 +227,12 @@ namespace Intrepid2 {
       Kokkos::deep_copy( tagToOrdinal, -1 );
 
       // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
     }
 
     // dof coords
-    Kokkos::DynRankView<pointValueType,ExecSpaceType> dofCoords_;
+    Kokkos::DynRankView<scalarType,ExecSpaceType> dofCoords_;
 
   public:
 
@@ -242,6 +245,7 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
     typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
+    typedef Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>      scalarViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -306,11 +310,30 @@ namespace Intrepid2 {
         \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
         dimensioned (F,D)
     */
+    // virtual
+    // void
+    // getDofCoords( scalarViewType dofCoords ) const {
+    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+    //                                 ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
+    // }
+
     virtual
     void
-    getDofCoords( pointViewType dofCoords ) const {
+    getDofCoords( scalarViewType dofCoords ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
+    }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_Basis";
+    }
+
+    virtual
+    bool
+    requireOrientation() const {
+      return false;
     }
 
     /** \brief  Returns cardinality of the basis
@@ -385,7 +408,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(2)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
-      const auto r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
+      ordinal_type r_val = -1;
+      if ( subcDim    < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
+           subcOrd    < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) &&
+           subcDofOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(2)) )
+        r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( r_val == -1, std::runtime_error,
                                     ">>> ERROR (Basis::getDofOrdinal): Invalid DoF tag is found.");

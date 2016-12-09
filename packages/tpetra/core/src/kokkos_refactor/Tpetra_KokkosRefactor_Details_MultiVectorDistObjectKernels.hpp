@@ -58,6 +58,60 @@ namespace Tpetra {
 namespace KokkosRefactor {
 namespace Details {
 
+/// \brief Implementation details <i>of</i> implementation details
+///
+/// \warning DO NOT USE ANYTHING HERE.  WE MAKE NO PROMISES OF
+///   BACKWARDS COMPATIBILITY FOR ANYTHING IN THIS NAMESPACE.  IT MAY
+///   DISAPPEAR OR CHANGE AT ANY TIME.  THIS IS <i>NOT</i> FOR USERS.
+namespace Impl {
+
+/// \brief Is x out of bounds?  That is, is x less than zero, or
+///   greater than or equal to the given exclusive upper bound?
+///
+/// We go through all this trouble to avoid the compiler warnings that
+/// may result from asking whether x is less than zero, when x is an
+/// unsigned integer.
+template<class IntegerType,
+         const bool isSigned = std::numeric_limits<IntegerType>::is_signed>
+struct OutOfBounds {
+  static KOKKOS_INLINE_FUNCTION bool
+  test (const IntegerType x,
+        const IntegerType exclusiveUpperBound);
+};
+
+// Partial specialization for the case where IntegerType IS signed.
+template<class IntegerType>
+struct OutOfBounds<IntegerType, true> {
+  static KOKKOS_INLINE_FUNCTION bool
+  test (const IntegerType x,
+        const IntegerType exclusiveUpperBound)
+  {
+    return x < static_cast<IntegerType> (0) || x >= exclusiveUpperBound;
+  }
+};
+
+// Partial specialization for the case where IntegerType is NOT signed.
+template<class IntegerType>
+struct OutOfBounds<IntegerType, false> {
+  static KOKKOS_INLINE_FUNCTION bool
+  test (const IntegerType x,
+        const IntegerType exclusiveUpperBound)
+  {
+    return x >= exclusiveUpperBound;
+  }
+};
+
+/// \brief Is x out of bounds?  That is, is x less than zero, or
+///   greater than or equal to the given exclusive upper bound?
+template<class IntegerType>
+KOKKOS_INLINE_FUNCTION bool
+outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
+{
+  return OutOfBounds<IntegerType>::test (x, exclusiveUpperBound);
+}
+
+} // namespace Impl
+
   // Functors for implementing packAndPrepare and unpackAndCombine
   // through parallel_for
 
@@ -479,8 +533,7 @@ namespace Details {
         const size_type offset = k*numCols;
         for (size_type j = 0; j < numCols; ++j) {
           const col_index_type lclCol = col(j);
-          if (lclCol < static_cast<col_index_type> (0) ||
-              lclCol >= static_cast<col_index_type> (src.dimension_1 ())) {
+          if (Impl::outOfBounds<col_index_type> (lclCol, src.dimension_1 ())) {
             result.second = 0; // failed!
           }
           else { // all indices are valid; do the assignment
@@ -539,8 +592,7 @@ namespace Details {
           std::vector<row_index_type> badRows;
           const size_type numInds = idx_h.dimension_0 ();
           for (size_type k = 0; k < numInds; ++k) {
-            if (idx_h(k) < static_cast<row_index_type> (0) ||
-                idx_h(k) >= static_cast<row_index_type> (src.dimension_0 ())) {
+            if (Impl::outOfBounds<row_index_type> (idx_h(k), src.dimension_0 ())) {
               badRows.push_back (idx_h(k));
             }
           }
@@ -566,8 +618,7 @@ namespace Details {
           std::vector<col_index_type> badCols;
           const size_type numInds = col_h.dimension_0 ();
           for (size_type k = 0; k < numInds; ++k) {
-            if (col_h(k) < static_cast<col_index_type> (0) ||
-                col_h(k) >= static_cast<col_index_type> (src.dimension_1 ())) {
+            if (Impl::outOfBounds<col_index_type> (col_h(k), src.dimension_1 ())) {
               badCols.push_back (col_h(k));
             }
           }
@@ -933,8 +984,8 @@ namespace Details {
         const size_type offset = k*numCols;
         for (size_type j = 0; j < numCols; ++j) {
           const col_index_type lclCol = col(j);
-          if (lclCol < static_cast<col_index_type> (0) ||
-              lclCol >= static_cast<col_index_type> (dst.dimension_1 ())) {
+
+          if (Impl::outOfBounds<col_index_type> (lclCol, dst.dimension_1 ())) {
             result.second = 0; // failed!
           }
           else { // all indices are valid; apply the op
@@ -1021,8 +1072,7 @@ namespace Details {
           std::vector<col_index_type> badCols;
           const size_type numInds = col_h.dimension_0 ();
           for (size_type k = 0; k < numInds; ++k) {
-            if (col_h(k) < static_cast<col_index_type> (0) ||
-                col_h(k) >= static_cast<col_index_type> (dst.dimension_1 ())) {
+            if (Impl::outOfBounds<col_index_type> (col_h(k), dst.dimension_1 ())) {
               badCols.push_back (col_h(k));
             }
           }

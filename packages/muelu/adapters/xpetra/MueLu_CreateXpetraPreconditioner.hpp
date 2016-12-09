@@ -42,11 +42,13 @@ namespace MueLu {
     RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
     tm->start();
 
-    ParameterList paramList = inParamList;
-
-    bool hasParamList = paramList.numParams();
+    bool hasParamList = inParamList.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
+
+    // Rip off non-serializable data before validation
+    Teuchos::ParameterList nonSerialList,paramList;
+    MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -56,9 +58,12 @@ namespace MueLu {
       mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
     }
 
+    // Create Hierarchy
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
     H->setlib(op->getDomainMap()->lib());
 
+    // Stick the non-serializible data on the hierarchy.
+    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
@@ -100,10 +105,6 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-
-    Teuchos::ParameterList nonSerialList,dummyList;
-    MueLu::ExtractNonSerializableData(paramList, dummyList, nonSerialList);
-    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     mueLuFactory->SetupHierarchy(*H);
 

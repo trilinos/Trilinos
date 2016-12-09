@@ -11,6 +11,8 @@
 #include <Ioss_Node.h>
 #include <Ioss_Pyramid13.h>
 #include <Ioss_Pyramid14.h>
+#include <Ioss_Pyramid18.h>
+#include <Ioss_Pyramid19.h>
 #include <Ioss_Pyramid5.h>
 #include <Ioss_Quad4.h>
 #include <Ioss_Quad8.h>

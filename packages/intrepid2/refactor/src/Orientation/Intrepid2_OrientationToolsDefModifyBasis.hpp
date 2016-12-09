@@ -124,78 +124,152 @@ namespace Intrepid2 {
   }
 
   template<typename SpT>
-  template<typename outValueValueType, class ...outValueProperties,
-           typename refValueValueType, class ...refValueProperties,
-           typename elemOrtValueType,  class ...elemOrtProperties,
-           typename quadBasisType>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties,
+           typename ortValueType,    class ...ortProperties,
+           typename BasisPtrType>
   void
-  OrientationTools<SpT>::  
-  getModifiedHgradBasisQuadrilateral(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
-                                     const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
-                                     const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
-                                     const quadBasisType quadBasis) {
-    const ordinal_type order = quadBasis.getDegree();
+  OrientationTools<SpT>::
+  modifyBasisByOrientation(/**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                           const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                           const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
+                           const BasisPtrType basis ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( input.rank() != output.rank(), std::invalid_argument,
+                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output rank are not 3.");
+      for (size_type i=0;i<input.rank();++i)
+        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(i), std::invalid_argument,
+                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
 
-    auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), quadBasis.getAllDofTags());
-    auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), quadBasis.getAllDofOrdinal());
-
-    Kokkos::deep_copy(ordinalToTag, quadBasis.getAllDofTags());
-    Kokkos::deep_copy(tagToOrdinal, quadBasis.getAllDofOrdinal());
-
-    const ordinal_type numCells = outValues.dimension(0);
-    const ordinal_type ndofBasis = outValues.dimension(1);
-    const ordinal_type dofDim = outValues.dimension(2);
-
-    auto matData = Kokkos::subview(quadEdgeData,
-                                   static_cast<ordinal_type>(FUNCTION_SPACE_HGRAD), order - 1,
-                                   Kokkos::ALL(), Kokkos::ALL(),
-                                   Kokkos::ALL(), Kokkos::ALL());
-
-    const ordinal_type numVerts = 4, numEdges = 4;
-    for (auto cell=0;cell<numCells;++cell) {
-      ordinal_type orts[numEdges];
-      elemOrts(cell).getEdgeOrientation(orts, numEdges);
-
-      auto out = Kokkos::subview(outValues, cell, Kokkos::ALL(), Kokkos::ALL());
-      auto ref = Kokkos::subview(refValues, cell, Kokkos::ALL(), Kokkos::ALL());
-
-      // vertex copy
-      for (auto vertId=0;vertId<numVerts;++vertId) {
-        const auto ii = tagToOrdinal(0, vertId, 0);
-        for (auto j=0;j<dofDim;++j)
-          out(ii, j) = ref(ii, j);
-      }
-
-      // interior copy
-      {
-        const auto ndofIntr = ordinalToTag(tagToOrdinal(2, 0, 0), 3);
-        for (auto i=0;i<ndofIntr;++i) {
-          const auto ii = tagToOrdinal(2, 0, i);
-          for (auto j=0;j<dofDim;++j)
-            out(ii, j) = ref(ii, j);
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
+      if (input.rank() == 4)
+        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");
+    }
+#endif
+    if (basis->requireOrientation()) {
+      auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());
+      auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
+      
+      Kokkos::deep_copy(ordinalToTag, basis->getAllDofTags());
+      Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
+      
+      const ordinal_type 
+        numCells  = output.dimension(0),
+        //numBasis  = output.dimension(1),
+        numPoints = output.dimension(2),
+        dimBasis  = output.dimension(3); //returns 1 when output.rank() < 4;
+      
+      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
+      const shards::CellTopology cellTopo = basis->getBaseCellTopology();
+      
+      const ordinal_type 
+        numVerts = cellTopo.getVertexCount(), 
+        numEdges = cellTopo.getEdgeCount(),
+        numFaces = cellTopo.getFaceCount();
+      
+      const ordinal_type intrDim = ( numEdges == 0 ? 1 : 
+                                     numFaces == 0 ? 2 : 
+                                     /**/            3 );
+      
+      for (auto cell=0;cell<numCells;++cell) {
+        auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto in  = Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        
+        // vertex copy (no orientation)
+        for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
+          const ordinal_type i = tagToOrdinal(0, vertId, 0);
+          if (i != -1) // if dof does not exist i returns with -1
+            for (ordinal_type j=0;j<numPoints;++j)
+              for (ordinal_type k=0;k<dimBasis;++k)
+                out(i, j, k) = in(i, j, k);
         }
-      }
-
-      // apply coeff matrix
-      for (auto edgeId=0;edgeId<numEdges;++edgeId) {
-        const auto ndofEdge = ordinalToTag(tagToOrdinal(1, edgeId, 0), 3);
-        const auto mat = Kokkos::subview(matData, edgeId, orts[edgeId], Kokkos::ALL(), Kokkos::ALL());
-
-        for (auto j=0;j<dofDim;++j) 
-          for (auto i=0;i<ndofEdge;++i) {
-            const auto ii = tagToOrdinal(1, edgeId, i);
-
-            auto temp = 0.0;
-            for (auto k=0;k<ndofEdge;++k) {
-              const auto kk = tagToOrdinal(1, edgeId, k);
-              temp += mat(i,k)*ref(kk, j);
+        
+        // interior copy
+        {
+          const ordinal_type ordIntr = (static_cast<size_type>(intrDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(intrDim, 0, 0) : -1);
+          if (ordIntr != -1) {
+            const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
+            for (ordinal_type i=0;i<ndofIntr;++i) {
+              const ordinal_type ii = tagToOrdinal(intrDim, 0, i);
+              for (ordinal_type j=0;j<numPoints;++j)
+                for (ordinal_type k=0;k<dimBasis;++k)
+                  out(ii, j, k) = in(ii, j, k);
             }
-            out(ii, j) = temp;
           }
+        }
+        
+        // edge transformation
+        if (numEdges > 0) {
+          ordinal_type ortEdges[12];
+          orts(cell).getEdgeOrientation(ortEdges, numEdges);
+          
+          // apply coeff matrix
+          for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
+            const ordinal_type ordEdge = (1 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.dimension(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
+            
+            if (ordEdge != -1) {
+              const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
+              const auto mat = Kokkos::subview(matData, 
+                                               edgeId, ortEdges[edgeId], 
+                                               Kokkos::ALL(), Kokkos::ALL());
+              
+              for (ordinal_type j=0;j<numPoints;++j) 
+                for (ordinal_type i=0;i<ndofEdge;++i) {
+                  const ordinal_type ii = tagToOrdinal(1, edgeId, i);
+                  
+                  for (ordinal_type k=0;k<dimBasis;++k) {
+                    double temp = 0.0;
+                    for (ordinal_type l=0;l<ndofEdge;++l) {
+                      const ordinal_type ll = tagToOrdinal(1, edgeId, l);
+                      temp += mat(i,l)*in(ll, j, k);
+                    }
+                    out(ii, j, k) = temp;
+                  }
+                }
+            }
+          }
+        }
+        
+        // face transformation
+        if (numFaces > 0) {
+          ordinal_type ortFaces[12];
+          orts(cell).getFaceOrientation(ortFaces, numFaces);
+          
+          // apply coeff matrix
+          for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
+            const ordinal_type ordFace = (2 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.dimension(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
+            
+            if (ordFace != -1) {
+              const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
+              const auto mat = Kokkos::subview(matData, 
+                                               numEdges+faceId, ortFaces[faceId], 
+                                               Kokkos::ALL(), Kokkos::ALL());
+              
+              for (ordinal_type j=0;j<numPoints;++j) 
+                for (ordinal_type i=0;i<ndofFace;++i) {
+                  const ordinal_type ii = tagToOrdinal(2, faceId, i);
+                  
+                  for (ordinal_type k=0;k<dimBasis;++k) {
+                    double temp = 0.0;
+                    for (ordinal_type l=0;l<ndofFace;++l) {
+                      const ordinal_type ll = tagToOrdinal(2, faceId, l);
+                      temp += mat(i,l)*in(ll, j, k);
+                    }
+                    out(ii, j, k) = temp;
+                  }
+                }
+            }
+          }
+        }
+        
       }
+    } else {
+      Kokkos::deep_copy(output, input);      
     }
   }
-
 }
 
 #endif

@@ -179,6 +179,22 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+
+      //! Returns derivative component \c i with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      U dx(int i) const { return sz_ ? dx_[i*blockDim.x] : U(0.); }
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      U& fastAccessDx(int i) { return dx_[i*blockDim.x];}
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const U& fastAccessDx(int i) const { return dx_[i*blockDim.x];}
+
+#else
+
       //! Returns derivative component \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
       U dx(int i) const { return sz_ ? dx_[i] : U(0.); }
@@ -190,6 +206,8 @@ namespace Sacado {
       //! Returns derivative component \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i];}
+
+#endif
 
     protected:
 

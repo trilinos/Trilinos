@@ -720,9 +720,20 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
 
     {
+      // Create closure model list for use in defining initial conditions
+      // For now just remove Global MMS Parameters, if it exists
+      const Teuchos::ParameterList& models = p.sublist("Closure Models");
+      Teuchos::ParameterList cl_models(models.name());
+      for (Teuchos::ParameterList::ConstIterator model_it=models.begin(); 
+           model_it!=models.end(); ++model_it) {
+           std::string key = model_it->first;
+           if (model_it->first != "Global MMS Parameters")
+              cl_models.setEntry(key,model_it->second);
+       }
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       setupInitialConditions(*thyra_me,*wkstContainer,physicsBlocks,user_cm_factory,*linObjFactory,
+                             cl_models,
                              p.sublist("Initial Conditions"),
                              p.sublist("User Data"),
                              p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files),
@@ -829,6 +840,7 @@ namespace panzer_stk {
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                          const panzer::LinearObjFactory<panzer::Traits> & lof,
+                         const Teuchos::ParameterList & closure_pl,
                          const Teuchos::ParameterList & initial_cond_pl,
                          const Teuchos::ParameterList & user_data_pl,
                          bool write_dot_files,const std::string & dot_file_prefix) const
@@ -846,6 +858,18 @@ namespace panzer_stk {
       // read from exodus, or compute using field managers
 
       std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
+
+      panzer::setupInitialConditionFieldManagers(wkstContainer,
+                                                 physicsBlocks,
+                                                 cm_factory,
+                                                 closure_pl,
+                                                 initial_cond_pl,
+                                                 lof,
+                                                 user_data_pl,
+                                                 write_dot_files,
+                                                 dot_file_prefix,
+                                                 phx_ic_field_managers);
+/*
       panzer::setupInitialConditionFieldManagers(wkstContainer,
                                                  physicsBlocks,
                                                  cm_factory,
@@ -855,6 +879,7 @@ namespace panzer_stk {
                                                  write_dot_files,
                                                  dot_file_prefix,
                                                  phx_ic_field_managers);
+*/
 
       // set the vector to be filled
       Teuchos::RCP<panzer::LinearObjContainer> loc = lof.buildLinearObjContainer();

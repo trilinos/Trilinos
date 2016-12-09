@@ -31,8 +31,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   nos1.rsa
   test_2_ILUT_nos1_hb.xml 
   test_2_RILUK_nos1_hb.xml
+  test_2_RILUK_HTS_nos1_hb.xml
   test_4_ILUT_nos1_hb.xml 
   test_4_RILUK_nos1_hb.xml
+  test_4_RILUK_HTS_nos1_hb.xml
   test_SGS_calore1_mm.xml 
   calore1.mtx 
   test_pseudoblockcg_small_sym_mm.xml
@@ -169,6 +171,26 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
+
+IF(Ifpack2_ENABLE_ShyLUHTS)
+  TRIBITS_ADD_TEST(
+    tif_belos Ifpack2BelosCopyFiles
+    NAME RILUK_HTS_hb_belos
+    ARGS "--xml_file=test_2_RILUK_HTS_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_TEST(
+    tif_belos Ifpack2BelosCopyFiles
+    NAME RILUK_HTS_hb_belos
+    ARGS "--xml_file=test_4_RILUK_HTS_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
 
 IF(Ifpack2_ENABLE_QD)
   TRIBITS_ADD_TEST(

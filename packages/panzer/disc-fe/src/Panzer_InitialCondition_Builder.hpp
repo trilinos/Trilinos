@@ -79,6 +79,29 @@ namespace panzer {
                                           const std::string& graphviz_file_prefix,
                                           std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers);
 
+  /** \brief Builds PHX::FieldManager objects for inital conditions and closure models and registers evaluators. 
+
+  \param[in] wkstContainer Worksets for the corresponding evaluations.
+  \param[in] physicsBlock PhysicsBlocks created by FieldManagerBuilder.
+  \param[in] cm_factory Factory that provides all closure models required by the initial condition evaluation.
+  \param[in] ic_closure_models List of initial condition closure models for each element block required for initial conditions.
+  \param[in] closure_models List of closure models for each element block required to compute initial conditions.
+  \param[in] lo_factory LinearObjFactory corresponding to the problem.
+  \param[in] user_data ParameterList with optional user data.
+  \param[out] phx_ic_field_managers Allocated PHX::FieldManagers for each element block.
+
+  */
+  void setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
+                                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                                          const Teuchos::ParameterList& ic_closure_models,
+                                          const Teuchos::ParameterList& closure_models,
+                                          const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
+                                          const Teuchos::ParameterList& user_data,
+                                          const bool write_graphviz_file,
+                                          const std::string& graphviz_file_prefix,
+                                          std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers);
+
   /** Structure that defines a field, including name, basis type and order.
     */
   typedef struct {

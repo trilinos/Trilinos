@@ -263,6 +263,8 @@ namespace Ioss {
     size_t m_nodeOffset;
     size_t m_importPreLocalNodeIndex;
 
+    bool m_retainFreeNodes;
+
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes

@@ -67,6 +67,12 @@ namespace Sacado {
         typedef DFad<T> type;
       };
 
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef DFad<ValueT> type;
+      };
+
       /*!
        * @name Initialization methods
        */
@@ -296,108 +302,3 @@ namespace Sacado {
   };
 
 } // namespace Sacado
-
-//
-// Classes needed for Kokkos::View< DFad<...> ... > specializations
-//
-// Users can disable these view specializations either at configure time or
-// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
-//
-
-
-#if defined(HAVE_SACADO_KOKKOSCORE) && \
-    defined(HAVE_SACADO_VIEW_SPEC) && \
-    !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && \
-    !defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
-#include "impl/Kokkos_AnalyzeShape.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
-
-// Forward declarations
-namespace Sacado {
-  namespace FAD_NS {
-    template <typename,unsigned,unsigned,typename> class ViewFad;
-  }
-}
-
-namespace Kokkos {
-namespace Impl {
-
-// Forward declarations
-struct ViewSpecializeSacadoFad;
-
-/** \brief  Analyze the array shape of a Sacado::FAD_NS::DFad<T>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::FAD_NS::DFad<T>, ... >
- *  can be determined at compile-time.
- *
- *  For View purposes, DFad is treated as a dynamic dimension.
- */
-template< class ValueType >
-struct AnalyzeShape< Sacado::FAD_NS::DFad< ValueType > >
-  : Shape< sizeof(Sacado::FAD_NS::DFad< ValueType >) , 0 > // Treat as a scalar
-{
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef Shape< sizeof(Sacado::FAD_NS::DFad< ValueType >) , 0 > shape ;
-
-  typedef       Sacado::FAD_NS::DFad< ValueType >  array_intrinsic_type ;
-  typedef const Sacado::FAD_NS::DFad< ValueType >  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::FAD_NS::DFad< ValueType >  type ;
-  typedef const Sacado::FAD_NS::DFad< ValueType >  const_type ;
-  typedef       Sacado::FAD_NS::DFad< ValueType >  non_const_type ;
-
-  typedef       Sacado::FAD_NS::DFad< ValueType >  value_type ;
-  typedef const Sacado::FAD_NS::DFad< ValueType >  const_value_type ;
-  typedef       Sacado::FAD_NS::DFad< ValueType >  non_const_value_type ;
-};
-
-/** \brief  Analyze the array shape of a Sacado::FAD_NS::DFad<T>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::FAD_NS::DFad<T>, ... >
- *  can be determined at compile-time.
- *
- *  For View purposes, DFad is treated as a dynamic dimension.
- */
-template< class ValueType, class Layout >
-struct AnalyzeSacadoShape< Sacado::FAD_NS::DFad< ValueType >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , 0 >::type
-{
-private:
-
-  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
-
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
-
-  typedef typename nested::array_intrinsic_type *        array_intrinsic_type ;
-  typedef typename nested::const_array_intrinsic_type *  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::FAD_NS::DFad< ValueType >  type ;
-  typedef const Sacado::FAD_NS::DFad< ValueType >  const_type ;
-  typedef       Sacado::FAD_NS::DFad< ValueType >  non_const_type ;
-
-  typedef       Sacado::FAD_NS::DFad< ValueType >  value_type ;
-  typedef const Sacado::FAD_NS::DFad< ValueType >  const_value_type ;
-  typedef       Sacado::FAD_NS::DFad< ValueType >  non_const_value_type ;
-
-  typedef typename nested::type           flat_array_type ;
-  typedef typename nested::const_type     const_flat_array_type ;
-  typedef typename nested::non_const_type non_const_flat_array_type ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif
-

@@ -341,6 +341,8 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
     nomInArgs.setSupports(MEB::IN_ARG_t,true);
     nomInArgs.setSupports(MEB::IN_ARG_alpha,true);
     nomInArgs.setSupports(MEB::IN_ARG_beta,true);
+    nomInArgs.setSupports(MEB::IN_ARG_step_size,true);
+    nomInArgs.setSupports(MEB::IN_ARG_stage_number,true);
 
     Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_nom = Thyra::createMember(x_space_);
     Thyra::assign(x_dot_nom.ptr(),0.0);
@@ -348,6 +350,9 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
     nomInArgs.set_t(t_init_);
     nomInArgs.set_alpha(0.0); // these have no meaning initially!
     nomInArgs.set_beta(0.0);
+    //TODO: is this needed?
+    nomInArgs.set_step_size(0.0);
+    nomInArgs.set_stage_number(1.0);
   }
 
   // setup parameter support -- for each scalar parameter we support the parameter itself and tangent vectors for x, xdot
@@ -472,6 +477,9 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     ae_inargs.alpha = inArgs.get_alpha();
     ae_inargs.beta = inArgs.get_beta();
     ae_inargs.time = inArgs.get_t();
+
+    ae_inargs.step_size= inArgs.get_step_size();
+    ae_inargs.stage_number = inArgs.get_stage_number();
     ae_inargs.evaluate_transient_terms = true;
   }
 
@@ -512,7 +520,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
       }
       else {
         TEUCHOS_ASSERT(ro_ged!=Teuchos::null);
-        ro_ged->setUniqueVector(paramVec);
+        ro_ged->setOwnedVector(paramVec);
       }
     }
   }
@@ -539,12 +547,12 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
   thGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
-  xContainer_->setUniqueVector(x);
+  xContainer_->setOwnedVector(x);
   ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer_);
 
   if (is_transient) {
     thGlobalContainer->set_dxdt_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
-    xdotContainer_->setUniqueVector(x_dot);
+    xdotContainer_->setOwnedVector(x_dot);
     ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer_);
   }
 
@@ -845,6 +853,9 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
   ae_inargs.alpha = 0.0;
   ae_inargs.beta = 1.0;
+  //TODO: is this really needed?
+  ae_inargs.step_size = 0.0;
+  ae_inargs.stage_number = 1.0;
   ae_inargs.evaluate_transient_terms = false;
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
@@ -922,7 +933,7 @@ evalModel_D2gDx2(int respIndex,
   ae_inargs.beta = 1.0;
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // evaluate responses
@@ -968,7 +979,7 @@ evalModel_D2gDxDp(int respIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // evaluate responses
@@ -1018,7 +1029,7 @@ evalModel_D2gDp2(int respIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // evaluate responses
@@ -1068,7 +1079,7 @@ evalModel_D2gDpDx(int respIndex,
   ae_inargs.second_sensitivities_name  = "";
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // evaluate responses
@@ -1121,7 +1132,7 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // set model parameters from supplied inArgs
@@ -1221,7 +1232,7 @@ evalModel_D2fDxDp(int pIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // set model parameters from supplied inArgs
@@ -1313,7 +1324,7 @@ evalModel_D2fDpDx(int pIndex,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
@@ -1362,7 +1373,7 @@ evalModel_D2fDp2(int pIndex,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of

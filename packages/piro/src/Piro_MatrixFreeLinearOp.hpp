@@ -76,7 +76,8 @@ public:
    *         for the specified model evaluator.
    *
    * @pre <tt>model != null</tt>*/
-  explicit MatrixFreeLinearOp(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  explicit MatrixFreeLinearOp(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model, 
+                              const double lambda);
   //@}
 
   /** \name Overridden from Thyra::LinearOpBase< Scalar >*/
@@ -139,6 +140,9 @@ private:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > f_base_;
+  
+  // Constant used in formulas to pick perturbation, typically 1.0e-6
+  double lambda_; 
 };
 
 }

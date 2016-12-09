@@ -45,7 +45,7 @@
 
 namespace {
 
-//BEGIN
+//BEGINUseMultistateField
 TEST(stkMeshHowTo, useMultistateField)
 {
     const unsigned spatialDimension = 3;
@@ -80,6 +80,6 @@ TEST(stkMeshHowTo, useMultistateField)
     temperatureStateN = stk::mesh::field_data(temperatureFieldStateN, node);
     EXPECT_EQ(newTemperatureValue, *temperatureStateN);
 }
-//END
+//ENDUseMultistateField
 
 }

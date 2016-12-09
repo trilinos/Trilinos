@@ -71,7 +71,7 @@ namespace Intrepid2 {
 
   private:
     // static data initialize upto 62 but we only support upto Parameters::MaxCubatureDegreeEdge
-    static constexpr int cubatureDataStaticSize=62;
+    static constexpr ordinal_type cubatureDataStaticSize=62;
 
     /** \brief Complete set of data defining line Gauss(-Legendre) rules.
      */

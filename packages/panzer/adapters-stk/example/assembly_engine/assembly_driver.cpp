@@ -326,7 +326,7 @@ int main(int argc,char * argv[])
    panzer_stk::write_solution_data(*dofManager,*mesh,*ghostCont->get_x());
    mesh->writeToExodus("output.exo");
 
-   PHX::FinalizeKokkosDevice();
+   //PHX::FinalizeKokkosDevice();
 
    return 0;
 }

@@ -117,8 +117,8 @@ namespace Iocgns {
   ParallelDatabaseIO::ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
                                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                                          const Ioss::PropertyManager &props)
-    : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), cgnsFilePtr(-1),
-      nodeCount(0), elementCount(0), m_zoneType(CG_ZoneTypeNull)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), cgnsFilePtr(-1),
+        nodeCount(0), elementCount(0), m_zoneType(CG_ZoneTypeNull)
   {
     dbState = Ioss::STATE_UNKNOWN;
 
@@ -133,7 +133,7 @@ namespace Iocgns {
 #if CG_BUILD_PARALLEL
                 << "                        using the parallel CGNS library and API.\n";
 #else
-      << "                        using the serial CGNS library and API.\n";
+                << "                        using the serial CGNS library and API.\n";
 #endif
     }
     if (CG_SIZEOF_SIZE == 64) {
@@ -218,13 +218,17 @@ namespace Iocgns {
 
     m_zoneType = check_zone_type(cgnsFilePtr);
 
+    // In CGNS, there are duplicated nodes at block boundaries.
+    // We typically only want to retain one copy of these and ignore the other.
+    properties.add(Ioss::Property("RETAIN_FREE_NODES", "NO"));
+
     if (int_byte_size_api() == 8) {
       decomp = std::unique_ptr<DecompositionDataBase>(
-						      new DecompositionData<int64_t>(properties, util().communicator()));
+          new DecompositionData<int64_t>(properties, util().communicator()));
     }
     else {
       decomp = std::unique_ptr<DecompositionDataBase>(
-						      new DecompositionData<int>(properties, util().communicator()));
+          new DecompositionData<int>(properties, util().communicator()));
     }
     assert(decomp != nullptr);
     decomp->decompose_model(cgnsFilePtr, m_zoneType);
@@ -240,9 +244,9 @@ namespace Iocgns {
   void ParallelDatabaseIO::handle_unstructured_blocks()
   {
     get_region()->property_add(
-			       Ioss::Property("global_node_count", (int64_t)decomp->global_node_count()));
+        Ioss::Property("global_node_count", (int64_t)decomp->global_node_count()));
     get_region()->property_add(
-			       Ioss::Property("global_element_count", (int64_t)decomp->global_elem_count()));
+        Ioss::Property("global_element_count", (int64_t)decomp->global_elem_count()));
 
     nodeCount    = decomp->ioss_node_count();
     elementCount = decomp->ioss_elem_count();
@@ -290,7 +294,7 @@ namespace Iocgns {
 
         std::string      parent_topo = block.topologyType;
         Ioss::SideBlock *sblk =
-	  new Ioss::SideBlock(this, block_name, face_topo, parent_topo, sset.ioss_count());
+            new Ioss::SideBlock(this, block_name, face_topo, parent_topo, sset.ioss_count());
         sblk->property_add(Ioss::Property("id", id));
         sblk->property_add(Ioss::Property("base", 1));
         sblk->property_add(Ioss::Property("zone", sset.zone()));
@@ -305,13 +309,13 @@ namespace Iocgns {
     }
 
     Ioss::NodeBlock *nblock =
-      new Ioss::NodeBlock(this, "nodeblock_1", decomp->ioss_node_count(), 3);
+        new Ioss::NodeBlock(this, "nodeblock_1", decomp->ioss_node_count(), 3);
     nblock->property_add(Ioss::Property("base", base));
     get_region()->add(nblock);
 
     // Create a single node commset
     Ioss::CommSet *commset =
-      new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
+        new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
     commset->property_add(Ioss::Property("id", 1));
     get_region()->add(commset);
   }
@@ -458,8 +462,8 @@ namespace Iocgns {
     }
     std::ostringstream errmsg;
     errmsg << "INTERNAL ERROR: Invalid map type. "
-	   << "Something is wrong in the Iocgns::ParallelDatabaseIO::get_map() function. "
-	   << "Please report.\n";
+           << "Something is wrong in the Iocgns::ParallelDatabaseIO::get_map() function. "
+           << "Please report.\n";
     IOSS_ERROR(errmsg);
   }
 
@@ -663,15 +667,15 @@ namespace Iocgns {
 
       assert(num_to_get == 0 ||
              num_to_get ==
-	     (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+                 (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
       double *rdata = static_cast<double *>(data);
 
       if (field.get_name() == "mesh_model_coordinates_x") {
         int ierr =
 #if CG_BUILD_PARALLEL
-	  cgp_coord_read_data(cgnsFilePtr, base, zone, 1, rmin, rmax, rdata);
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 1, rmin, rmax, rdata);
 #else
-	cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax, rdata);
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax, rdata);
 #endif
         if (ierr < 0) {
           Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
@@ -681,9 +685,9 @@ namespace Iocgns {
       else if (field.get_name() == "mesh_model_coordinates_y") {
         int ierr =
 #if CG_BUILD_PARALLEL
-	  cgp_coord_read_data(cgnsFilePtr, base, zone, 2, rmin, rmax, rdata);
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 2, rmin, rmax, rdata);
 #else
-	cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax, rdata);
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax, rdata);
 #endif
         if (ierr < 0) {
           Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
@@ -693,9 +697,9 @@ namespace Iocgns {
       else if (field.get_name() == "mesh_model_coordinates_z") {
         int ierr =
 #if CG_BUILD_PARALLEL
-	  cgp_coord_read_data(cgnsFilePtr, base, zone, 3, rmin, rmax, rdata);
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 3, rmin, rmax, rdata);
 #else
-	cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax, rdata);
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax, rdata);
 #endif
         if (ierr < 0) {
           Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);

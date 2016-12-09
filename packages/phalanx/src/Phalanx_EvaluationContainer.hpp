@@ -78,9 +78,8 @@ namespace PHX {
 
     PHX::any getFieldData(const PHX::FieldTag& f);
 
-    //! Set the memory pointer for an unmanaged field
-    void setUnmanagedField(const PHX::FieldTag& f, 
-                           const PHX::any& a);
+    //! Bind the memory pointer for a field in all evaluators
+    void bindField(const PHX::FieldTag& f, const PHX::any& a);
 
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm);

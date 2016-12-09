@@ -41,13 +41,15 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefNodeInfo.hpp
+    \brief  Definition file for node data and subcell functions of the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
 #ifndef __INTREPID2_CELLTOOLS_DEF_NODE_INFO_HPP__
 #define __INTREPID2_CELLTOOLS_DEF_NODE_INFO_HPP__
+
+#include "Kokkos_ViewFactory.hpp"
 
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
@@ -156,12 +158,12 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
 #endif
-    const auto vertexCount = cell.getVertexCount();
-    const auto dim = cell.getDimension();
+    const ordinal_type vertexCount = cell.getVertexCount();
+    const ordinal_type dim = cell.getDimension();
 
-    for (size_type i=0;i<dim;++i) {
+    for (ordinal_type i=0;i<dim;++i) {
       cellCenter(i) = 0;
-      for (size_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
+      for (ordinal_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
         getReferenceVertex(cellVertex, cell, vertOrd); 
         cellCenter(i) += cellVertex(i);
       }
@@ -174,14 +176,14 @@ namespace Intrepid2 {
   template<typename cellVertexValueType, class ...cellVertexProperties>
   void
   CellTools<SpT>::
-  getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
+  getReferenceVertex(       Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                       const shards::CellTopology cell,
                       const ordinal_type         vertexOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): the specified cell topology does not have a reference cell." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > cell.getVertexCount(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > static_cast<ordinal_type>(cell.getVertexCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
@@ -200,7 +202,7 @@ namespace Intrepid2 {
   template<typename subcellVertexValueType, class ...subcellVertexProperties>
   void
   CellTools<SpT>::
-  getReferenceSubcellVertices( /**/  Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
+  getReferenceSubcellVertices(       Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
                                const ordinal_type         subcellDim,
                                const ordinal_type         subcellOrd,
                                const shards::CellTopology parentCell ) {
@@ -208,10 +210,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(parentCell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): the specified cell topology does not have a reference cell." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > static_cast<ordinal_type>(parentCell.getDimension()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcell dimension cannot exceed cell dimension." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcell ordinal cannot exceed subcell count." );
     
     // Verify subcellVertices rank and dimensions
@@ -236,14 +238,14 @@ namespace Intrepid2 {
   template<typename cellNodeValueType, class ...cellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
+  getReferenceNode(       Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                     const shards::CellTopology  cell,
                     const ordinal_type          nodeOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): the specified cell topology does not have a reference cell." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= cell.getNodeCount(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= static_cast<ordinal_type>(cell.getNodeCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellNode.rank() != 1, std::invalid_argument,
@@ -306,8 +308,8 @@ namespace Intrepid2 {
     // cellNode = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
 
     // let's copy;
-    const auto dim = cell.getDimension();
-    for (size_type i=0;i<dim;++i) 
+    const ordinal_type dim = cell.getDimension();
+    for (ordinal_type i=0;i<dim;++i) 
       cellNode(i) = ref(nodeOrd, i);
   }
 
@@ -315,7 +317,7 @@ namespace Intrepid2 {
   template<typename subcellNodeValueType, class ...subcellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceSubcellNodes( /**/  Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
+  getReferenceSubcellNodes(       Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                             const ordinal_type         subcellDim,
                             const ordinal_type         subcellOrd,
                             const shards::CellTopology parentCell ) {
@@ -323,10 +325,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(parentCell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): the specified cell topology does not have a reference cell.");
 
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > static_cast<ordinal_type>(parentCell.getDimension()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcell dimension out of range.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcell ordinal out of range.");
     
     // Verify subcellNodes rank and dimensions
@@ -357,7 +359,7 @@ namespace Intrepid2 {
   template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
   void
   CellTools<SpT>::
-  getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
+  getReferenceEdgeTangent(       Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
                            const ordinal_type         edgeOrd,
                            const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -372,7 +374,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
 
     INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
-                                  edgeOrd >= parentCell.getSubcellCount(1), std::invalid_argument,
+                                  edgeOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
 
 #endif
@@ -383,8 +385,8 @@ namespace Intrepid2 {
   
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
-    const auto dim = parentCell.getDimension();
-    for (size_type i=0;i<dim;++i)
+    const ordinal_type dim = parentCell.getDimension();
+    for (ordinal_type i=0;i<dim;++i)
       refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
   }
 
@@ -394,15 +396,15 @@ namespace Intrepid2 {
            typename refFaceTanVValueType, class ...refFaceTanVProperties>
   void
   CellTools<SpT>::
-  getReferenceFaceTangents( /**/  Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
-                            /**/  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+  getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
+                                  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
                             const ordinal_type         faceOrd,
                             const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
   
-    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(2)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
     
     INTREPID2_TEST_FOR_EXCEPTION( refFaceTanU.rank() != 1 || refFaceTanV.rank() != 1, std::invalid_argument,  
@@ -426,8 +428,8 @@ namespace Intrepid2 {
 
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
-    const auto dim = parentCell.getDimension();
-    for (size_type i=0;i<dim;++i) {
+    const ordinal_type dim = parentCell.getDimension();
+    for (ordinal_type i=0;i<dim;++i) {
       refFaceTanU(i) = faceMap(faceOrd, i, 1);
       refFaceTanV(i) = faceMap(faceOrd, i, 2);
     }
@@ -437,7 +439,7 @@ namespace Intrepid2 {
   template<typename refSideNormalValueType, class ...refSideNormalProperties>
   void
   CellTools<SpT>::
-  getReferenceSideNormal( /**/  Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
+  getReferenceSideNormal(       Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
                           const ordinal_type         sideOrd,
                           const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -446,7 +448,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
   
     // Check side ordinal: by definition side is subcell whose dimension = parentCell.getDimension()-1
-    INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= parentCell.getSubcellCount(parentCell.getDimension() - 1), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif 
 
@@ -470,14 +472,14 @@ namespace Intrepid2 {
   template<typename refFaceNormalValueType, class ...refFaceNormalProperties>
   void 
   CellTools<SpT>::
-  getReferenceFaceNormal( /**/  Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
+  getReferenceFaceNormal(       Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
                           const ordinal_type         faceOrd,
                           const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
     
-    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(2)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
     
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.rank() != 1, std::invalid_argument,  
@@ -489,9 +491,10 @@ namespace Intrepid2 {
     
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<refFaceNormalValueType,SpT> 
-      refFaceTanU("CellTools::getReferenceFaceNormal::refFaceTanU", dim), 
-      refFaceTanV("CellTools::getReferenceFaceNormal::refFaceTanV", dim);
+    Kokkos::DynRankView<refFaceNormalValueType,SpT> refFaceTanU = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<refFaceNormalValueType,SpT>>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanU", dim);
+    Kokkos::DynRankView<refFaceNormalValueType,SpT> refFaceTanV = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<refFaceNormalValueType,SpT>>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
     RealSpaceTools<SpT>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
@@ -502,7 +505,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalEdgeTangents( /**/  Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
+  getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetEdgeOrd,
                            const shards::CellTopology parentCell ) {
@@ -536,7 +539,8 @@ namespace Intrepid2 {
   
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan("CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
+    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<edgeTangentValueType,SpT>>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
     RealSpaceTools<SpT>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
@@ -549,8 +553,8 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalFaceTangents( /**/  Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
-                           /**/  Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
+  getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
+                                 Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetFaceOrd,
                            const shards::CellTopology parentCell ) {
@@ -591,8 +595,10 @@ namespace Intrepid2 {
     
     // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU("CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
-    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV("CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
+    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceTanUValueType,SpT>>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
+    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceTanVValueType,SpT>>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
     RealSpaceTools<SpT>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
@@ -605,7 +611,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void 
   CellTools<SpT>::
-  getPhysicalSideNormals( /**/  Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
+  getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetSideOrd,
                           const shards::CellTopology parentCell ) {
@@ -616,20 +622,23 @@ namespace Intrepid2 {
   
     // Check side ordinal: by definition side is subcell whose dimension = parentCell.getDimension()-1
     INTREPID2_TEST_FOR_EXCEPTION( worksetSideOrd <  0 ||
-                                  worksetSideOrd >= parentCell.getSubcellCount(parentCell.getDimension() - 1), std::invalid_argument,
+                                  worksetSideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
     const auto dim = parentCell.getDimension();
   
     if (dim == 2) {
       // compute edge tangents and rotate it
-      Kokkos::DynRankView<sideNormalValueType,SpT> edgeTangents("CellTools::getPhysicalSideNormals::edgeTan", 
-                                                                sideNormals.dimension(0),
-                                                                sideNormals.dimension(1),
-                                                                sideNormals.dimension(2));
+      Kokkos::DynRankView<sideNormalValueType,SpT> edgeTangents = 
+        Kokkos::createDynRankViewWithType<Kokkos::DynRankView<sideNormalValueType,SpT>>(sideNormals,
+                                                                                        "CellTools::getPhysicalSideNormals::edgeTan", 
+                                                                                        sideNormals.dimension(0),
+                                                                                        sideNormals.dimension(1),
+                                                                                        sideNormals.dimension(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
-      Kokkos::DynRankView<sideNormalValueType,SpT> rotation("CellTools::getPhysicalSideNormals::rotation", dim, dim);
+      Kokkos::DynRankView<sideNormalValueType,SpT> rotation = 
+        Kokkos::createDynRankViewWithType<Kokkos::DynRankView<sideNormalValueType,SpT>>(sideNormals,"CellTools::getPhysicalSideNormals::rotation", dim, dim);
       rotation(0,0) =  0; rotation(0,1) =  1;
       rotation(1,0) = -1; rotation(1,1) =  0;
 
@@ -645,7 +654,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalFaceNormals( /**/  Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
+  getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetFaceOrd,
                           const shards::CellTopology parentCell ) {
@@ -679,9 +688,10 @@ namespace Intrepid2 {
     const auto worksetSize = worksetJacobians.dimension(0);
     const auto facePtCount = worksetJacobians.dimension(1);
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<faceNormalValueType,SpT> 
-      faceTanU("CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim), 
-      faceTanV("CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
+    Kokkos::DynRankView<faceNormalValueType,SpT> faceTanU = 
+    Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceNormalValueType,SpT>>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
+    Kokkos::DynRankView<faceNormalValueType,SpT> faceTanV = 
+    Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceNormalValueType,SpT>>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 

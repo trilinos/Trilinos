@@ -132,7 +132,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml Poisson_RTC.xml GradDiv.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml  muelu_ho_lin.xml Poisson_RTC.xml GradDiv.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 

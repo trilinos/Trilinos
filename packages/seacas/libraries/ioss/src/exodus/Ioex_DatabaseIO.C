@@ -142,15 +142,6 @@ namespace Ioex {
     }
 
     if (!is_input()) {
-      // Check whether appending to existing file...
-      if (open_create_behavior() == Ioss::DB_APPEND ||
-          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
-        // Append to file if it already exists -- See if the file exists.
-        std::string    decoded_filename = util().decode_filename(get_filename(), isParallel);
-        Ioss::FileInfo file             = Ioss::FileInfo(decoded_filename);
-        fileExists                      = file.exists();
-      }
-
       if (util().get_environment("EX_MINIMIZE_OPEN_FILES", isParallel)) {
         std::cerr << "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment "
                      "variable is set.\n";
@@ -1334,6 +1325,13 @@ namespace Ioex {
   }
 
   // common
+  void DatabaseIO::flush_database() const
+  {
+    if (!is_input()) {
+      ex_update(get_file_pointer());
+    }
+  }
+
   void DatabaseIO::finalize_write(double sim_time)
   {
     // Attempt to ensure that all data written up to this point has
@@ -1379,7 +1377,7 @@ namespace Ioex {
       }
     }
     if (do_flush) {
-      ex_update(get_file_pointer());
+      flush_database();
     }
   }
 

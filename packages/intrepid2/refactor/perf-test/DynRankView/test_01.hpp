@@ -132,10 +132,10 @@ namespace Intrepid2 {
     };
 
     template<typename ValueType, typename DeviceSpaceType>
-    int DynRankView_PerfTest01(const size_type nworkset,
-                               const size_type C,
-                               const size_type P, 
-                               const size_type D, 
+    int DynRankView_PerfTest01(const ordinal_type nworkset,
+                               const ordinal_type C,
+                               const ordinal_type P,
+                               const ordinal_type D,
                                const bool verbose) {
 
       Teuchos::RCP<std::ostream> verboseStream;

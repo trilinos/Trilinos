@@ -1386,7 +1386,7 @@ namespace Teuchos
   {
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<int, float>& lapack) {}
+    inline LAPACK(const LAPACK<int, float>& /*lapack*/) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
@@ -1528,7 +1528,7 @@ namespace Teuchos
   {
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<int, double>& lapack) {}
+    inline LAPACK(const LAPACK<int, double>& /*lapack*/) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines

@@ -1094,6 +1094,10 @@ std::string EpetraExt::toString( ModelEvaluator::EInArgsMembers inArg )
       return "IN_ARG_omega";
     case ModelEvaluator::IN_ARG_beta:
       return "IN_ARG_beta";
+    case ModelEvaluator::IN_ARG_step_size:
+      return "IN_ARG_step_size";
+    case ModelEvaluator::IN_ARG_stage_number:
+      return "IN_ARG_stage_number";
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid inArg!");
   }

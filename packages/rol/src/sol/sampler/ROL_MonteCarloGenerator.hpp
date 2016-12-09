@@ -211,6 +211,9 @@ public:
       sum_ng2_(0.0), 
       useDist_(true),
       dist_(dist) {
+    int nProc = SampleGenerator<Real>::numBatches();
+    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+      ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     sample();
   }
 
@@ -231,6 +234,9 @@ public:
       sum_ng_(0.0),
       sum_ng2_(0.0),
       useDist_(false) {
+    int nProc = SampleGenerator<Real>::numBatches();
+    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+      ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = bounds.size();
     data_.clear();
     Real tmp = 0.0;
@@ -264,6 +270,9 @@ public:
       sum_ng_(0.0),
       sum_ng2_(0.0), 
       useDist_(false) {
+    int nProc = SampleGenerator<Real>::numBatches();
+    TEUCHOS_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
+      ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
     unsigned dim = mean.size();
     data_.clear();
     std::vector<Real> tmp(2,0.0);

@@ -53,6 +53,7 @@ Level 1
     [empty list]
 
    transpose: use implicit = 0   [default]
+   rap: fix zero diagonals = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0
 

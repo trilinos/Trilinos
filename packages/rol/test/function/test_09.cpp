@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_06.cpp
+/*! \file  test_09.cpp
     \brief Shows how to use the EqualityConstraint_Partitioned interface
            to solve Hock & Schittkowski's problem 39
 */

@@ -51,7 +51,7 @@ T
 Function_Base<FunctionDerived, S, M>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
-  assert(x.get_dimension() == DIMENSION);
+  assert(x.get_dimension() <= DIMENSION);
 
   Vector<T, N> const
   r = residual(f, x);
@@ -73,7 +73,7 @@ gradient(FunctionDerived & f, Vector<T, N> const & x)
   Index const
   dimension = x.get_dimension();
 
-  assert(dimension == DIMENSION);
+  assert(dimension <= DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);
@@ -121,7 +121,7 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
   Index const
   dimension = x.get_dimension();
 
-  assert(dimension == DIMENSION);
+  assert(dimension <= DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);
@@ -148,49 +148,80 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Vector<T, N>
-Constraint_Base<ConstraintDerived, S, M>::
+Vector<T, NC>
+Equality_Constraint<ConstraintDerived, S, NC, NV>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {
+  assert(x.get_dimension() <= NUM_VAR);
   return c.value(x);
 }
 
-template<typename ConstraintDerived, typename S, Index M>
+//
+//
+//
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Matrix<T, M, N>
-Constraint_Base<ConstraintDerived, S, M>::
+Matrix<T, NC, NV>
+Equality_Constraint<ConstraintDerived, S, NC, NV>::
 gradient(ConstraintDerived & c, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;
 
   Index const
-  num_cols = x.get_dimension();
+  num_var = x.get_dimension();
+
+  assert(num_var <= NUM_VAR);
 
   Vector<AD, N>
-  x_ad(num_cols);
+  x_ad(num_var);
 
-  for (Index i{0}; i < num_cols; ++i) {
-    x_ad(i) = AD(num_cols, i, x(i));
+  for (Index i{0}; i < num_var; ++i) {
+    x_ad(i) = AD(num_var, i, x(i));
   }
 
-  Vector<AD, M> const
+  Vector<AD, NC> const
   r_ad = c.value(x_ad);
 
   Index const
-  num_rows = r_ad.get_dimension();
+  num_constr = r_ad.get_dimension();
 
-  Matrix<T, M, N>
-  Jacobian(num_rows, num_cols);
+  Matrix<T, NC, NV>
+  Jacobian(num_constr, num_var);
 
-  for (Index i{0}; i < num_rows; ++i) {
-    for (Index j{0}; j < num_cols; ++j) {
+  for (Index i{0}; i < num_constr; ++i) {
+    for (Index j{0}; j < num_var; ++j) {
       Jacobian(i, j) = r_ad(i).dx(j);
     }
   }
 
   return Jacobian;
+}
+
+//
+//
+//
+template<typename T, Index N>
+Bounds<T, N>::
+Bounds(Vector<T, N> const & l, Vector<T, N> const & u) : lower(l), upper(u)
+{
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
+Minimizer<T, N>::
+Minimizer()
+{
+  constexpr bool
+  is_fad = Sacado::IsADType<T>::value == true;
+
+  static_assert(is_fad == false, "AD types not allowed for type T");
+
+  return;
 }
 
 //
@@ -245,6 +276,46 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
   }
 
   recordFinals(fn, soln);
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
+void
+Minimizer<T, N>::
+printReport(std::ostream & os)
+{
+  char const * const
+  converged_string = converged == true ? "YES" : "NO";
+
+  // Happy / frowny face
+  //char const * const
+  //converged_string = converged == true ? "\U0001F60A" : "\U0001F623";
+
+  os << "\n\n";
+  os << "Method       : " << step_method_name << '\n';
+  os << "Function     : " << function_name << '\n';
+  os << "Converged    : " << converged_string << '\n';
+  os << "Max Iters    : " << max_num_iter << '\n';
+  os << "Iters Taken  : " << num_iter << '\n';
+
+  os << std::scientific << std::setprecision(16);
+
+  os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
+  os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
+  os << "Abs Error    : " << std::setw(24) << abs_error << '\n';
+  os << "Rel Tol      : " << std::setw(24) << rel_tol << '\n';
+  os << "Rel Error    : " << std::setw(24) << rel_error << '\n';
+  os << "Initial X    : " << initial_guess << '\n';
+  os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
+  os << "Final X      : " << final_soln << '\n';
+  os << "Final f(X)   : " << std::setw(24) << final_value << '\n';
+  os << "Final Df(X)  : " << final_gradient << '\n';
+  os << "Final DDf(X) : " << final_hessian << '\n';
+  os << '\n';
+
   return;
 }
 
@@ -326,7 +397,7 @@ continueSolve() const
 
   if (exceeds_max_iter == true) return false;
 
-  // Last check for convergence.
+  // Lastly check for convergence.
   bool const
   continue_solve = (converged == false);
 
@@ -337,40 +408,37 @@ continueSolve() const
 //
 //
 template<typename T, Index N>
+template<typename FN>
 void
 Minimizer<T, N>::
-printReport(std::ostream & os)
+recordFinals(FN & fn, Vector<T, N> const & x)
 {
-  char const * const
-  converged_string = converged == true ? "YES" : "NO";
+  final_soln = x;
+  final_value = fn.value(x);
+  final_gradient = fn.gradient(x);
+  final_hessian = fn.hessian(x);
+}
 
-  // Happy / frowny face
-  //char const * const
-  //converged_string = converged == true ? "\U0001F60A" : "\U0001F623";
+//
+// Linear solver for step methods
+//
+template<typename FN, typename T, Index N>
+Vector<T, N>
+StepBase<FN, T, N>::
+lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+{
+  return solve(A, b, preconditioner_type);
+}
 
-  os << "\n\n";
-  os << "Method       : " << step_method_name << '\n';
-  os << "Function     : " << function_name << '\n';
-  os << "Converged    : " << converged_string << '\n';
-  os << "Max Iters    : " << max_num_iter << '\n';
-  os << "Iters Taken  : " << num_iter << '\n';
-
-  os << std::scientific << std::setprecision(16);
-
-  os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
-  os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
-  os << "Abs Error    : " << std::setw(24) << abs_error << '\n';
-  os << "Rel Tol      : " << std::setw(24) << rel_tol << '\n';
-  os << "Rel Error    : " << std::setw(24) << rel_error << '\n';
-  os << "Initial X    : " << initial_guess << '\n';
-  os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
-  os << "Final X      : " << final_soln << '\n';
-  os << "FInal f(X)   : " << std::setw(24) << final_value << '\n';
-  os << "Final Df(X)  : " << final_gradient << '\n';
-  os << "FInal DDf(X) : " << final_hessian << '\n';
-  os << '\n';
-
-  return;
+//
+// Linear solve for trust region subproblems
+//
+template<typename T, Index N>
+Vector<T, N>
+TrustRegionSubproblemBase<T, N>::
+lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+{
+  return solve(A, b, preconditioner_type);
 }
 
 //
@@ -412,10 +480,10 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
     }
 
-    step = - Intrepid2::solve(K, gradient);
+    step = - this->lin_solve(K, gradient);
 
     Vector<T, N> const
-    q = Intrepid2::solve(L, step);
+    q = this->lin_solve(L, step);
 
     T const
     np = norm(step);
@@ -483,10 +551,10 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
     }
 
-    step = - Intrepid2::solve(K, HTr);
+    step = - this->lin_solve(K, HTr);
 
     Vector<T, N> const
-    q = Intrepid2::solve(L, step);
+    q = this->lin_solve(L, step);
 
     T const
     np = norm(step);
@@ -533,7 +601,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
   step_minimizer = - normg_squared / normg_H * gradient;
 
   Vector<T, N> const
-  step_unconstrained = - Intrepid2::solve(Hessian, gradient);
+  step_unconstrained = - this->lin_solve(Hessian, gradient);
 
   T const
   normg_cubed = norm(gradient) * normg_squared;
@@ -589,7 +657,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
   step_minimizer = - normHTr_squared / normHTr_HTH * HTr;
 
   Vector<T, N> const
-  step_unconstrained = - Intrepid2::solve(HTH, HTr);
+  step_unconstrained = - this->lin_solve(HTH, HTr);
 
   Vector<T, N>
   step{tau * step_minimizer};
@@ -764,7 +832,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Hessian = fn.hessian(soln);
 
   Vector<T, N> const
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   return step;
 }
@@ -793,7 +861,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Hessian = fn.hessian(soln);
 
   Vector<T, N> const
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   // Newton back-tracking line search.
   BacktrackingLineSearch<T, N>
@@ -831,7 +899,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
 
   // Compute full Newton step first.
   Vector<T, N>
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   T const
   norm_step = Intrepid2::norm(step);
@@ -904,7 +972,7 @@ initialize(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   Tensor<T, N> const
   Hessian = fn.hessian(soln);
 
-  precon_resi = - Intrepid2::solve(Hessian, gradient);
+  precon_resi = - this->lin_solve(Hessian, gradient);
 
   search_direction = precon_resi;
 
@@ -949,7 +1017,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const &)
   Tensor<T, N> const
   Hessian = fn.hessian(soln_next);
 
-  precon_resi = - Intrepid2::solve(Hessian, gradient_next);
+  precon_resi = - this->lin_solve(Hessian, gradient_next);
 
   projection_new = - dot(gradient_next, precon_resi);
 
@@ -1025,17 +1093,15 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   } else {
 
     // Standard Newton step
-    step = - Intrepid2::solve(Hessian, gradient);
+    step = - this->lin_solve(Hessian, gradient);
 
   }
-
 
   NewtonLineSearch<T, N>
   newton_ls;
 
   Vector<T, N> const
   ls_step = newton_ls.step(fn, step, soln);
-
 
   return ls_step;
 }

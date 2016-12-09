@@ -145,7 +145,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(2) &&
                                   inputData.dimension(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree, or first data dimension must be 1!");
-        for (size_t i=0;i<inputFields.rank();++i) {
+        for (size_type i=0;i<inputFields.rank();++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataField): inputFields dimension (i) does not match to the dimension (i) of outputFields");
         }

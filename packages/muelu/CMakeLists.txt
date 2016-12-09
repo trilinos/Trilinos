@@ -17,6 +17,19 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
+ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
+ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG)
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_FLOAT)
+  ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+ENDIF()
+
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
 # This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
 # "I left a special case for CUDA because I'm not sure whether TriBITS
@@ -81,6 +94,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Additive Variant."
   NO)
 
+# cmake option to enable building of MueLu Tutorial
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Tutorial
+  ""
+  "Enable MueLu tutorial."
+  YES)
+
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
@@ -135,6 +155,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
   NO)
+
+# Intrepid2 Refactor support
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
+  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
+  "Enable Intrepid2 Refactor."
+  "${Intrepid2_ENABLE_KokkosDynRankView}")
+
+
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")

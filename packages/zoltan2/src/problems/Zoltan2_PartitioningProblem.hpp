@@ -58,6 +58,7 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
+#include <Zoltan2_AlgSerialGreedy.hpp>
 #ifdef ZOLTAN2_TASKMAPPING_MOVE
 #include <Zoltan2_TaskMapping.hpp>
 #endif
@@ -268,20 +269,116 @@ public:
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
 */
-  /*! \brief Reset the list of parameters
-   */
-  void resetParameters(ParameterList *params)
-  {
-    Problem<Adapter>::resetParameters(params);  // creates new environment
-  }
 
-  /*! \brief Get the current Environment.
-   *   Useful for testing.
-   */
-
-  const RCP<const Environment> & getEnvironment() const
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
   {
-    return this->envConst_;
+    Zoltan2_AlgMJ<Adapter>::getValidParameters(pl);
+    AlgPuLP<Adapter>::getValidParameters(pl);
+    AlgPTScotch<Adapter>::getValidParameters(pl);
+    AlgSerialGreedy<Adapter>::getValidParameters(pl);
+    AlgForTestingOnly<Adapter>::getValidParameters(pl);
+
+    // This set up does not use tuple because we didn't have constructors
+    // that took that many elements - Tuple will need to be modified and I
+    // didn't want to have low level changes with this particular refactor
+    // TO DO: Add more Tuple constructors and then redo this code to be
+    //  Teuchos::tuple<std::string> algorithm_names( "rcb", "multijagged" ... );
+    Array<std::string> algorithm_names(17);
+    algorithm_names[0] = "rcb";
+    algorithm_names[1] = "multijagged";
+    algorithm_names[2] = "rib";
+    algorithm_names[3] = "hsfc";
+    algorithm_names[4] = "patoh";
+    algorithm_names[5] = "phg";
+    algorithm_names[6] = "metis";
+    algorithm_names[7] = "parmetis";
+    algorithm_names[8] = "pulp";
+    algorithm_names[9] = "parma";
+    algorithm_names[10] = "scotch";
+    algorithm_names[11] = "ptscotch";
+    algorithm_names[12] = "block";
+    algorithm_names[13] = "cyclic";
+    algorithm_names[14] = "random";
+    algorithm_names[15] = "zoltan";
+    algorithm_names[16] = "forTestingOnly";
+    RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator( algorithm_names ));
+    pl.set("algorithm", "random", "partitioning algorithm",
+      algorithm_Validator);
+
+    // bool parameter
+    pl.set("rectilinear", false, "If true, then when a cut is made, all of the "
+      "dots located on the cut are moved to the same side of the cut. The "
+      "resulting regions are then rectilinear. The resulting load balance may "
+      "not be as good as when the group of dots is split by the cut. ",
+      Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> partitioning_objective_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+       Teuchos::tuple<std::string>( "balance_object_count",
+         "balance_object_weight", "multicriteria_minimize_total_weight",
+         "multicriteria_minimize_maximum_weight",
+         "multicriteria_balance_total_maximum", "minimize_cut_edge_count",
+         "minimize_cut_edge_weight", "minimize_neighboring_parts",
+         "minimize_boundary_vertices" )));
+    pl.set("partitioning_objective", "balance_object_weight",
+      "objective of partitioning", partitioning_objective_Validator);
+
+    pl.set("imbalance_tolerance", 1.1, "imbalance tolerance, ratio of "
+      "maximum load over average load", Environment::getAnyDoubleValidator());
+
+    // num_global_parts >= 1
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_global_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        1, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
+    pl.set("num_global_parts", 1, "global number of parts to compute "
+      "(0 means use the number of processes)", num_global_parts_Validator);
+
+    // num_local_parts >= 0
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_local_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        0, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
+    pl.set("num_local_parts", 0, "number of parts to compute for this "
+      "process (0 means one)", num_local_parts_Validator);
+
+    RCP<Teuchos::StringValidator> partitioning_approach_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "partition", "repartition",
+          "maximize_overlap" )));
+    pl.set("partitioning_approach", "partition", "Partition from scratch, "
+      "partition incrementally from current partition, of partition from "
+      "scratch but maximize overlap  with the current partition",
+      partitioning_approach_Validator);
+
+    RCP<Teuchos::StringValidator> objects_to_partition_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "matrix_rows", "matrix_columns",
+          "matrix_nonzeros", "mesh_elements", "mesh_nodes", "graph_edges",
+        "graph_vertices", "coordinates", "identifiers" )));
+    pl.set("objects_to_partition", "graph_vertices", "Objects to be partitioned",
+      objects_to_partition_Validator);
+
+    RCP<Teuchos::StringValidator> model_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "hypergraph", "graph",
+          "geometry", "ids" )));
+    pl.set("model", "graph", "This is a low level parameter. Normally the "
+      "library will choose a computational model based on the algorithm or "
+      "objective specified by the user.", model_Validator);
+
+    // bool parameter
+    pl.set("remap_parts", false, "remap part numbers to minimize migration "
+      "between old and new partitions", Environment::getBoolValidator() );
+
+    pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
+      " Mapping, 0 coordinate mapping.", Environment::getAnyIntValidator());
+
+    RCP<Teuchos::EnhancedNumberValidator<int>> ghost_layers_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 10, 1, 0) );
+    pl.set("ghost_layers", 2, "number of layers for ghosting used in "
+      "hypergraph ghost method", ghost_layers_Validator);
   }
 
 private:
@@ -940,10 +1037,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
     }
 
-    int sgParameter = 0;
+    bool sgParameter = false;
     pe = pl.getEntryPtr("subset_graph");
     if (pe)
-      sgParameter = pe->getValue<int>(&sgParameter);
+      sgParameter = pe->getValue(&sgParameter);
 
     if (sgParameter == 1)
         graphFlags_.set(BUILD_SUBSET_GRAPH);

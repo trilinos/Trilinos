@@ -56,7 +56,7 @@ namespace Experimental {
  *         Subviews are not allowed.
  */
 template< typename DataType , typename ... P >
-class DynamicView : public Kokkos::Experimental::ViewTraits< DataType , P ... >
+class DynamicView : public Kokkos::ViewTraits< DataType , P ... >
 { 
 public:
 
@@ -231,7 +231,7 @@ public:
 
       if ( m_chunk_max < NC ) {
 #if defined( KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK )
-        printf("DynamicView::resize_parallel(%lu) m_chunk_max(%lu) NC(%lu)\n"
+        printf("DynamicView::resize_parallel(%lu) m_chunk_max(%u) NC(%lu)\n"
               , n , m_chunk_max , NC );
 #endif
         Kokkos::abort("DynamicView::resize_parallel exceeded maximum size");

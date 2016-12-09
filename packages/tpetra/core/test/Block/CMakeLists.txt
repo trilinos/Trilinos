@@ -1,16 +1,16 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockMultiVector
+  BlockMultiVector
   SOURCES
-    ExpBlockMultiVector
+    BlockMultiVector
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockMultiVector2
+  BlockMultiVector2
   SOURCES
-    ExpBlockMultiVector2
+    BlockMultiVector2
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -18,23 +18,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockCrsMatrix
+  BlockCrsMatrix
   SOURCES
-    ExpBlockCrsMatrix
+    BlockCrsMatrix
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_ExpBlockCrsMatrix_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_BlockCrsMatrix_cp
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   SOURCE_FILES blockA.mm blockA-complex.mm
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockMap
+  BlockMap
   SOURCES
-    ExpBlockMap
+    BlockMap
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -46,18 +46,28 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # does not and should not link against ${TEUCHOS_STD_UNIT_TEST_MAIN}.
 #
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockView
+  BlockView
   SOURCES
-    ExpBlockView
+    BlockView
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExpBlockOps
+  BlockOps
   SOURCES
-    ExpBlockOps
+    BlockOps
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BlockExpNamespace
+  SOURCES
+    BlockExpNamespace
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1

@@ -101,6 +101,14 @@ public:
 
   }
 
+// Definitions for parametrized (stochastic) equality constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    EqualityConstraint<Real>::setParameter(param);
+    for( uint k=0; k<dim_; ++k ) {
+      con_[k]->setParameter(param);
+    }
+  }
 }; // class EqualityConstraint_Partitioned
 
 // Helper methods

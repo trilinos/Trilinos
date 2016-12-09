@@ -205,20 +205,23 @@ TEUCHOS_UNIT_TEST( MDMap, pListDimensionsConstructor )
     Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
-  // Get the actual communicator dimensions
-  Teuchos::Array< int > actualCommDims =
-    Domi::regularizeCommDims(comm->getSize(), num_dims, commDims);
-
-  // Construct dimensions
-  dim_type localDim = 10;
-  Array< dim_type > dims(num_dims);
-  for (int axis = 0; axis < num_dims; ++axis)
-    dims[axis] = localDim * actualCommDims[axis];
+  // Construct dummy dimensions
+  Array< dim_type > dims(num_dims, comm->getSize());
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
   plist.set("comm dimensions", commDims);
   plist.set("dimensions"     , dims    );
+
+  // Get the actual communicator dimensions
+  Teuchos::Array< int > actualCommDims =
+    Domi::regularizeCommDims(comm->getSize(), plist);
+
+  // Compute actual dimensions
+  dim_type localDim = 10;
+  for (int axis = 0; axis < num_dims; ++axis)
+      dims[axis] = localDim * actualCommDims[axis];
+  plist.set("dimensions", dims);
 
   // Construct an MDMap
   MDMap<> mdMap(comm, plist);

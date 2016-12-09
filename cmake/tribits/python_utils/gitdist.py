@@ -93,7 +93,7 @@ Running:
 will distribute git commands specified by '<raw-git-command> [git arguments]'
 across the current base git repo and the set of git repos listed in the file
 ./.gitdist (or the file ./.gitdist.default, or the argument
---dist-extra-repos=<repo0>,<repo1>,..., see
+--dist-repos=<repo0>,<repo1>,..., see
 --dist-help=repo-selection-and-setup).
 
 For example, consider the following base git repo 'BaseRepo' with three other
@@ -110,8 +110,9 @@ For example, consider the following base git repo 'BaseRepo' with three other
       .git/
 
 The file .gitdist shown above is created by the user and in this example
-should have the contents:
+should have the contents (note the base repo entry '.'):
 
+  .
   ExtraRepo1
   ExtraRepo1/ExtraRepo2
   ExtraRepo3
@@ -199,16 +200,17 @@ useful shell aliases like 'gitdist-status', 'gitdist-mod', and
 
 The set of git repos processed by gitdist is determined by the argument:
 
-  --dist-extra-repos=<repo0>,<repo1>,...
+  --dist-repos=<repo0>,<repo1>,...
 
-or the files .gitdist or .gitdist.default.  If --dist-extra-repos="", then the
-list of extra repos to process will be read from the file '.gitdist' in the
-current directory.  If the file '.gitdist' does not exist, then the list of
-extra repos to process will be read from the file '.gitdist.default' in the
-current directory.  The format of this files '.gitdist' and '.gitdist.default'
-is to have one repo relative directory per line, for example:
+or the files .gitdist or .gitdist.default.  If --dist-repos="", then the list
+of repos to process will be read from the file '.gitdist' in the current
+directory.  If the file '.gitdist' does not exist, then the list of repos to
+process will be read from the file '.gitdist.default' in the current
+directory.  The format of this files '.gitdist' and '.gitdist.default' is to
+have one repo relative directory per line, for example:
 
   $ cat .gitdist
+  .
   ExtraRepo1
   ExtraRepo1/ExtraRepo2
   ExtraRepo3
@@ -219,14 +221,14 @@ git repo (i.e. 'BaseRepo') so that gitdist is ready to use right away after
 the base repo and the extra repos are cloned.
 
 If an extra repository directory (i.e. listed in
---dist-extra-repos=<repo0>,<repo1>,..., .gitdist, or .gitdist.default) does
+--dist-repos=<repo0>,<repo1>,..., .gitdist, or .gitdist.default) does
 not exist, then it will be ignored by the script.  Therefore, be careful to
 manually verify that the script recognizes the repositories that you list.
 The best way to do that is to run 'gitdist-status' and see which repos are
 listed.
 
-Certain git repos can also be selectively excluded using the options
-'--dist-not-base-repo' and '--dist-not-extra-repos=<repox>,<repoy>,...'.
+Certain git repos can also be selectively excluded using the option
+'--dist-not-repos=<repox>,<repoy>,...'.
 
 Setting up to use gitdist on a specific set of local git repos first requires
 cloning and organizing the local git repo. For the example listed here, one
@@ -243,9 +245,10 @@ would clone the base repo 'BaseRepo' and the three extra git repos, set up a
   $ git clone git@some.url:ExtraRepo3.git
 
   # B) Create .gitdist
-  $ echo ExtraRepo1 > .gitdist
-  $ echo ExtraRepo1/ExtraRepo2 >> .gitdist
-  $ echo ExtraRepo3 >> .gitdist
+  $ echo .                      > .gitdist
+  $ echo ExtraRepo1             >> .gitdist
+  $ echo ExtraRepo1/ExtraRepo2  >> .gitdist
+  $ echo ExtraRepo3             >> .gitdist
 
   # C) Add ignores in base repo
   $ echo /ExtraRepo1/ >> .git/info/exclude
@@ -422,7 +425,7 @@ script will abort (before running any git commands).  If there are additional
 repos RepoX, RepoY, etc. not listed in the 'RepVersion'.txt file, then one can
 exclude them with:
 
-  $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
+  $ gitdist --dist-not-repos=RepoX,RepoY,... \
     --dist-version-file=RepoVersion.txt \
     <raw-git-comand> [git arguments]
 """
@@ -829,9 +832,8 @@ def getCommandlineOps():
   distHelpArgName = "--dist-help" # Must match --dist-help before --help!
   helpArgName = "--help"
   withGitArgName = "--dist-use-git"
-  extraRepoArgName = "--dist-extra-repos"
-  notExtraRepoArgName = "--dist-not-extra-repos"
-  notBaseRepoArgName = "--dist-not-base-repo"
+  reposArgName = "--dist-repos"
+  notReposArgName = "--dist-not-repos"
   versionFileName = "--dist-version-file"
   versionFile2Name = "--dist-version-file2"
   noColorArgName = "--dist-no-color"
@@ -841,7 +843,7 @@ def getCommandlineOps():
   legendName = "--dist-legend"
 
   nativeArgNames = [ distHelpArgName, helpArgName, withGitArgName, \
-    extraRepoArgName, notExtraRepoArgName, notBaseRepoArgName, \
+    reposArgName, notReposArgName, \
     versionFileName, versionFile2Name, noColorArgName, debugArgName, noOptName, \
     modifiedOnlyName, legendName ]
 
@@ -929,31 +931,26 @@ def getCommandlineOps():
     )
 
   clp.add_option(
-    extraRepoArgName, dest="extraRepos", type="string",
-    default="",
-    help="Comma-separated list of extra repo relative paths '<repo0>,<repo1>,...'."
-    +" If left empty '', then the list of extra repos to process is taken from"
-    +" the file ./.gitdist (which lists the relative path of each extra git repo"
+    reposArgName, dest="repos", type="string", default="",
+    help="Comma-separated list of repo relative paths '<repo0>,<repo1>,...'."
+    +" The base repo is specified with '.' and should usually be listed first."
+    +" If left empty '', then the list of repos to process is taken from"
+    +" the file ./.gitdist (which lists the relative path of each git repo"
     +" separated by newlines).  If the file"
-    +" ./.gitdist does not exist, then the extra repos listed in the file"
+    +" ./.gitdist does not exist, then the repos listed in the file"
     +" ./.gitdist.default are processed.  If the file"
     +" the file ./.gitdist.default is missing, then no extra repos are"
-    +" processed.  Also, any git repos listed that don't exist are ignored."
+    +" processed and it is assumed that the base repo will be processed."
+    +" Also, any git repos listed that don't exist are ignored."
     +" See --dist-help=repo-selection-and-setup."
     +" (default='')"
     )
 
   clp.add_option(
-    notExtraRepoArgName, dest="notExtraRepos", type="string",
-    default="",
+    notReposArgName, dest="notRepos", type="string", default="",
     help="Comma-separated list of extra repo relative paths" \
     +" '<repoX>,<repoY>,...' to *not* process. (default='')"
     )
-
-  clp.add_option(
-    notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't process the base git repo.",
-    default=True )
 
   clp.add_option(
     modifiedOnlyName, dest="modifiedOnly", action="store_true",
@@ -1036,8 +1033,8 @@ def getCommandlineOps():
   # E) Get the list of extra repos
   #
 
-  if options.extraRepos:
-    extraReposFullList = options.extraRepos.split(",")
+  if options.repos:
+    reposFullList = options.repos.split(",")
   else:
     if os.path.exists(".gitdist"):
       gitdistfile = ".gitdist"
@@ -1046,23 +1043,23 @@ def getCommandlineOps():
     else:
       gitdistfile = None
     if gitdistfile:
-      extraReposFullList = open(gitdistfile, 'r').read().split()
+      reposFullList = open(gitdistfile, 'r').read().split()
     else:
-      extraReposFullList = []
+      reposFullList = ["."] # The default is the base repo
 
   # Get list of not extra repos
 
-  if options.notExtraRepos:
-    notExtraReposFullList = options.notExtraRepos.split(",")
+  if options.notRepos:
+    notReposFullList = options.notRepos.split(",")
   else:
-    notExtraReposFullList = []
+    notReposFullList = []
 
   #
   # F) Return
   #
 
-  return (options, nativeCmnd, otherArgs, extraReposFullList,
-    notExtraReposFullList)
+  return (options, nativeCmnd, otherArgs, reposFullList,
+    notReposFullList)
 
 
 # Requote commandline arguments into an array
@@ -1097,7 +1094,10 @@ def getRepoVersionDictFromRepoVersionFileString(repoVersionFileStr):
       #print("repoVersionLine = '" + repoVersionLine + "'")
       repoSha1 = repoVersionLine.split(" ")[0].strip()
       #print("repoSha1 = '" + repoSha1 + "'")
-      repoVersionDict.update({repoDir : repoSha1})
+      #print("baseRepoName = '"+baseRepoName+"'")
+      repoDirToEnter = ("." if repoDir == baseRepoName else repoDir)
+      #print("repoDirToEnter = '" + repoDirToEnter + "'")
+      repoVersionDict.update({repoDirToEnter : repoSha1})
     else:
       break
     nextRepoNoSummary_i = i+2
@@ -1123,13 +1123,14 @@ def getRepoVersionDictFromRepoVersionFile(repoVersionFileName):
 
 def assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict):
   if repoVersionDict:
+    
     repoSha1 = repoVersionDict.get(repoDirName, "")
     if not repoSha1:
       print(addColorToErrorMsg(options.useColor,
-                               "Extra repo '" + repoDirName + "' is not in the "
-                               + "list of extra repos " +
-                               str(repoVersionDict.keys()[1:]) + " read in from"
-                               + " version file."))
+                               "Repo '" + repoDirName + "' is not in the "
+                               + "list of repos " +
+                               str(sorted(repoVersionDict.keys())) + " read in from"
+                               + " the version file."))
       sys.exit(3)
     return repoSha1
   else:
@@ -1186,9 +1187,9 @@ def getBaseRepoTblName(baseRepoName):
 
 
 # Determine if the extra repo should be processed or not
-def repoExistsAndNotExcluded(options, extraRepo, notExtraReposList):
+def repoExistsAndNotExcluded(options, extraRepo, notReposList):
   if not os.path.isdir(extraRepo): return False
-  if extraRepo in notExtraReposList: return False
+  if extraRepo in notReposList: return False
   return True
 
 
@@ -1367,14 +1368,22 @@ class RepoStatTable:
   def getTableData(self):
     return self.tableData
 
-
+  
+def getRepoName(repoDir, baseRepoName):
+  if repoDir == ".":
+    return baseRepoName
+  return repoDir
+  
 #
 # Run the script
 #
 
+global baseRepoName
+baseRepoName = None
+
 if __name__ == '__main__':
 
-  (options, nativeCmnd, otherArgs, extraReposFullList, notExtraReposList) = \
+  (options, nativeCmnd, otherArgs, reposFullList, notReposList) = \
     getCommandlineOps()
 
   if nativeCmnd == "dist-repo-status":
@@ -1386,6 +1395,12 @@ if __name__ == '__main__':
   else:
     distRepoStatus = False
 
+  # Get the reference base directory
+  baseDir = os.getcwd()
+
+  # Get the name of the base repo
+  baseRepoName = getBaseDirNameFromPath(baseDir)
+
   # Get the repo version files
   repoVersionDict = getRepoVersionDictFromRepoVersionFile(options.versionFile)
   repoVersionDict2 = getRepoVersionDictFromRepoVersionFile(options.versionFile2)
@@ -1394,86 +1409,53 @@ if __name__ == '__main__':
   #print("otherArgs = ", str(otherArgs))
   cmndLineArgsArray = requoteCmndLineArgsIntoArray(otherArgs)
 
-  # Get the reference base directory
-  baseDir = os.getcwd()
-
   if options.debug:
     print("*** Using git: " + str(options.useGit))
 
-  # Get the name of the base repo
-  baseRepoName = getBaseDirNameFromPath(baseDir)
-
   repoStatTable = RepoStatTable()
-
-  # Compute base repo stats
-  if options.modifiedOnly or distRepoStatus:
-    baseRepoStats = getRepoStats(options)
-  else:
-    baseRepoStats = None
-
-  # See if we should process the base repo or not
-  processBaseRepo = True
-  if not options.processBaseRepo:
-    processBaseRepo = False
-  elif options.modifiedOnly and not baseRepoStats.hasLocalChanges():
-    processBaseRepo = False
 
   repoID = 0
 
-  # Process the base git repo
-  if processBaseRepo:
-    if distRepoStatus:
-      repoStatTable.insertRepoStat(getBaseRepoTblName(baseRepoName),
-                                   baseRepoStats, repoID)
-    else:
-      print("")
-      print("*** Base Git Repo: " +
-            addColorToRepoDir(options.useColor, baseRepoName))
-      if options.debug:
-        print("*** Tracking branch for git repo '" + baseRepoName + "' = '" +
-              baseRepoStats.trackingBranch + "'")
-      sys.stdout.flush()
-      runRepoCmnd(options, cmndLineArgsArray, baseRepoName, baseDir,
-        repoVersionDict, repoVersionDict2)
+  for repo in reposFullList:
 
-  repoID += 1
-
-  for extraRepo in extraReposFullList:
-
-    # Determine if we should process this extra repo
+    # Determine if we should process this repo
     processThisExtraRepo = True
-    if not repoExistsAndNotExcluded(options, extraRepo, notExtraReposList):
+    if not repoExistsAndNotExcluded(options, repo, notReposList):
       processThisExtraRepo = False
     if processThisExtraRepo:
       repoDoesExistsAndNotExcluded = True
       # cd into extrarepo dir
       if options.debug:
-        print("\n*** Changing to directory " + extraRepo)
-      os.chdir(extraRepo)
+        print("\n*** Changing to directory " + repo)
+      os.chdir(repo)
       # Get repo stats
       if options.modifiedOnly or distRepoStatus:
-        extraRepoStats = getRepoStats(options)
+        repoStats = getRepoStats(options)
       else:
-        extraRepoStats = None
+        repoStats = None
       # See if we should process based on --dist-mod-only
-      if options.modifiedOnly and not extraRepoStats.hasLocalChanges():
+      if options.modifiedOnly and not repoStats.hasLocalChanges():
          processThisExtraRepo = False
     else:
       repoDoesExistsAndNotExcluded = False
 
-    # Process the extra repo
+    # Process this repo
     if processThisExtraRepo:
+      repoName = getRepoName(repo, baseRepoName)
+      repoNameInTpl = repoName + (" (Base)" if repo=="." else "") 
       if distRepoStatus:
-        repoStatTable.insertRepoStat(extraRepo, extraRepoStats, repoID)
+        repoStatTable.insertRepoStat(repoNameInTpl, repoStats, repoID)
         processThisExtraRepo = False
       else:
         print("")
-        print("*** Git Repo: " + addColorToRepoDir(options.useColor, extraRepo))
+        print(
+          "*** " + ("Base " if repo=="." else "") + "Git Repo: "
+          + addColorToRepoDir(options.useColor,repoName) )
         sys.stdout.flush()
         if options.debug:
-          print("*** Tracking branch for git repo '" + extraRepo + "' = '" +
-                extraRepoStats.trackingBranch + "'")
-        runRepoCmnd(options, cmndLineArgsArray, extraRepo, baseDir, \
+          print("*** Tracking branch for git repo '" + repoName + "' = '" +
+                repoStats.trackingBranch + "'")
+        runRepoCmnd(options, cmndLineArgsArray, repo, baseDir, \
           repoVersionDict, repoVersionDict2)
         if options.debug:
           print("*** Changing to directory " + baseDir)

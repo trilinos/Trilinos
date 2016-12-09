@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefParametrization.hpp
+    \brief  Definition file for the parameterization functions of the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -131,7 +131,7 @@ namespace Intrepid2 {
   template<typename SpT>
   void
   CellTools<SpT>::
-  getSubcellParametrization( /**/ subcellParamViewType &subcellParam,  
+  getSubcellParametrization(       subcellParamViewType &subcellParam,  
                              const ordinal_type         subcellDim,
                              const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG

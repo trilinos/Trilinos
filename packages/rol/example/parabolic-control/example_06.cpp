@@ -75,7 +75,6 @@
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_StdBoundConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -1035,7 +1034,7 @@ int main(int argc, char *argv[]) {
     // Initialize reduced objective function
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check derivatives.
     obj.checkGradient(x,y,true,*outStream);
@@ -1071,7 +1070,7 @@ int main(int argc, char *argv[]) {
     xz.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(xz, robj, true, *outStream);
-    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
 
     // Composite step.

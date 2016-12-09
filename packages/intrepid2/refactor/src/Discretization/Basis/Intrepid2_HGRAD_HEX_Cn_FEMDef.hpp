@@ -69,13 +69,13 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
 
-      const auto card = vinv.dimension(0);
-      const auto npts = input.dimension(0);
+      const ordinal_type card = vinv.dimension(0);
+      const ordinal_type npts = input.dimension(0);
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      const auto input_x = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(0,1));
-      const auto input_y = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(1,2));
-      const auto input_z = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(2,3));
+      const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
+      const auto input_z = Kokkos::subview(input, Kokkos::ALL(), range_type(2,3));
 
       switch (opType) {
       case OPERATOR_VALUE: {
@@ -108,10 +108,10 @@ namespace Intrepid2 {
 
         // tensor product
         ordinal_type idx = 0;
-        for (auto k=0;k<card;++k) // z
-          for (auto j=0;j<card;++j) // y
-            for (auto i=0;i<card;++i,++idx)  // x
-              for (auto l=0;l<npts;++l)
+        for (ordinal_type k=0;k<card;++k) // z
+          for (ordinal_type j=0;j<card;++j) // y
+            for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type l=0;l<npts;++l)
                 output(idx,l) = output_x(i,l)*output_y(j,l)*output_z(k,l);
         break;
       }        
@@ -128,14 +128,14 @@ namespace Intrepid2 {
       case OPERATOR_D10:
         opDn = getOperatorOrder(opType);
       case OPERATOR_Dn: {
-        const auto dkcard = opDn + 1;
+        const ordinal_type dkcard = opDn + 1;
 
-        auto d = 0;
-        for (auto l1=0;l1<dkcard;++l1) 
-          for (auto l0=0;l0<(l1+1);++l0) {
-            const auto mult_x = (opDn - l1);
-            const auto mult_y = l1 - l0;
-            const auto mult_z = l0;
+        ordinal_type d = 0;
+        for (ordinal_type l1=0;l1<dkcard;++l1)
+          for (ordinal_type l0=0;l0<(l1+1);++l0) {
+            const ordinal_type mult_x = (opDn - l1);
+            const ordinal_type mult_y = l1 - l0;
+            const ordinal_type mult_z = l0;
 
             //std::cout << " l0, l1 = " << l0 << " " << l1 << std::endl;
             //std::cout << " x , y , z = " << mult_x << " " << mult_y << " " << mult_z << std::endl;
@@ -196,10 +196,10 @@ namespace Intrepid2 {
 
               // tensor product (extra dimension of ouput x,y and z are ignored)              
               ordinal_type idx = 0;
-              for (auto k=0;k<card;++k) // z
-                for (auto j=0;j<card;++j) // y
-                  for (auto i=0;i<card;++i,++idx)  // x
-                    for (auto l=0;l<npts;++l)
+              for (ordinal_type k=0;k<card;++k) // z
+                for (ordinal_type j=0;j<card;++j) // y
+                  for (ordinal_type i=0;i<card;++i,++idx)  // x
+                    for (ordinal_type l=0;l<npts;++l)
                       output(idx,l,d) = output_x(i,l,0)*output_y(j,l,0)*output_z(k,l,0);
               ++d;
             }
@@ -306,7 +306,7 @@ namespace Intrepid2 {
       ordinal_type tags[maxCardLine*maxCardLine*maxCardLine][4];
   
       const ordinal_type vert[2][2][2] = { { {0,1}, {3,2} }, 
-                                        { {4,5}, {7,6} } }; //[z][y][x]
+                                           { {4,5}, {7,6} } }; //[z][y][x]
 
       const ordinal_type edge_x[2][2] = { {0, 4}, {2, 6} };
       const ordinal_type edge_y[2][2] = { {3, 7}, {1, 5} };
@@ -320,9 +320,9 @@ namespace Intrepid2 {
         ordinal_type idx = 0;
         for (auto k=0;k<cardLine;++k) { // z
           const auto tag_z = lineBasis.getDofTag(k);
-          for (auto j=0;j<cardLine;++j) { // y
+          for (ordinal_type j=0;j<cardLine;++j) { // y
             const auto tag_y = lineBasis.getDofTag(j);
-            for (auto i=0;i<cardLine;++i,++idx) { // x
+            for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
               const auto tag_x = lineBasis.getDofTag(i);
               
               if (tag_x(0) == 0 && tag_y(0) == 0 && tag_z(0) == 0) {
@@ -394,7 +394,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
     Kokkos::DynRankView<PT,SpT>
@@ -406,8 +406,8 @@ namespace Intrepid2 {
     {
       ordinal_type idx = 0;
       for (auto k=0;k<cardLine;++k) { // z
-        for (auto j=0;j<cardLine;++j) { // y
-          for (auto i=0;i<cardLine;++i,++idx) { // x
+        for (ordinal_type j=0;j<cardLine;++j) { // y
+          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
             dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
             dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
             dofCoordsHost(idx,2) = dofCoordsLineHost(k,0);

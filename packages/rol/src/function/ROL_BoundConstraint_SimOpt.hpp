@@ -276,16 +276,18 @@ public:
     }
   }
  
-  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
-
-    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getLowerVectorRCP(),
-                                                  bnd2_->getLowerVectorRCP() ) );
+  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
+    const Teuchos::RCP<const Vector<Real> > l1 = bnd1_->getLowerVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > l2 = bnd2_->getLowerVectorRCP();
+    return Teuchos::rcp( new Vector_SimOpt<Real>( Teuchos::rcp_const_cast<Vector<Real> >(l1),
+                                                  Teuchos::rcp_const_cast<Vector<Real> >(l2) ) );
   }
 
-  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
-
-    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getUpperVectorRCP(),
-                                                  bnd2_->getUpperVectorRCP() ) );
+  const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
+    const Teuchos::RCP<const Vector<Real> > u1 = bnd1_->getUpperVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > u2 = bnd2_->getUpperVectorRCP();
+    return Teuchos::rcp( new Vector_SimOpt<Real>( Teuchos::rcp_const_cast<Vector<Real> >(u1),
+                                                  Teuchos::rcp_const_cast<Vector<Real> >(u2) ) );
   }
 
 

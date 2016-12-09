@@ -53,7 +53,7 @@ TEST(LoadImbalanceTimer, unevenWork_imbalanceIsMeasured)
     int procId = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
 
-    size_t numDoubles = unitTestUtils::get_command_line_option<size_t>("-n", "1000");
+    size_t numDoubles = stk::unit_test_util::get_command_line_option<size_t>("-n", 1000u);
 
     stk::util::ImbalanceTimings imbalanceTimings = stk::util::measure_imbalance(MPI_COMM_WORLD, [=](){
         do_sleep(procId, numDoubles);

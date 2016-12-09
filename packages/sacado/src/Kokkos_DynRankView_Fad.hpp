@@ -172,9 +172,22 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 
 };
 
+template <unsigned> struct AssignDim7 {
+  template <typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const size_t& src_dim) {}
+};
+template <> struct AssignDim7<0u> {
+  template <typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const size_t& src_dim) {
+    dst.N7 = src_dim;
+  }
+};
+
 // Utility class that handles calculation of the stride in Fad subview
-template <unsigned> struct AssignFadStride {};
-template <> struct AssignFadStride<0u> {
+template <unsigned,unsigned> struct AssignFadDimStride {};
+template <unsigned StaticDim> struct AssignFadDimStride<0u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -186,9 +199,18 @@ template <> struct AssignFadStride<0u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S0 ;
+
+    dst.m_dim.N0 = 1 ;
+    dst.m_dim.N1 = 1 ;
+    dst.m_dim.N2 = 1 ;
+    dst.m_dim.N3 = 1 ;
+    dst.m_dim.N4 = 1 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N0 );
   }
 };
-template <> struct AssignFadStride<1u> {
+template <unsigned StaticDim> struct AssignFadDimStride<1u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -200,9 +222,18 @@ template <> struct AssignFadStride<1u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S1 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = 1 ;
+    dst.m_dim.N2 = 1 ;
+    dst.m_dim.N3 = 1 ;
+    dst.m_dim.N4 = 1 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N1 );
   }
 };
-template <> struct AssignFadStride<2u> {
+template <unsigned StaticDim> struct AssignFadDimStride<2u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -214,9 +245,18 @@ template <> struct AssignFadStride<2u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S2 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = 1 ;
+    dst.m_dim.N3 = 1 ;
+    dst.m_dim.N4 = 1 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N2 );
   }
 };
-template <> struct AssignFadStride<3u> {
+template <unsigned StaticDim> struct AssignFadDimStride<3u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -228,9 +268,18 @@ template <> struct AssignFadStride<3u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S3 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = src.m_dim.N2 ;
+    dst.m_dim.N3 = 1 ;
+    dst.m_dim.N4 = 1 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N3 );
   }
 };
-template <> struct AssignFadStride<4u> {
+template <unsigned StaticDim> struct AssignFadDimStride<4u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -242,9 +291,18 @@ template <> struct AssignFadStride<4u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S4 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = src.m_dim.N2 ;
+    dst.m_dim.N3 = src.m_dim.N3 ;
+    dst.m_dim.N4 = 1 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N4 );
   }
 };
-template <> struct AssignFadStride<5u> {
+template <unsigned StaticDim> struct AssignFadDimStride<5u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -256,9 +314,18 @@ template <> struct AssignFadStride<5u> {
     dst.m_stride.S5 = 0 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S5 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = src.m_dim.N2 ;
+    dst.m_dim.N3 = src.m_dim.N3 ;
+    dst.m_dim.N4 = src.m_dim.N4 ;
+    dst.m_dim.N5 = 1 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N5 );
   }
 };
-template <> struct AssignFadStride<6u> {
+template <unsigned StaticDim> struct AssignFadDimStride<6u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -270,9 +337,18 @@ template <> struct AssignFadStride<6u> {
     dst.m_stride.S5 = src.m_stride.S5 ;
     dst.m_stride.S6 = 0 ;
     dst.m_stride.S7 = src.m_stride.S6 ;
+
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = src.m_dim.N2 ;
+    dst.m_dim.N3 = src.m_dim.N3 ;
+    dst.m_dim.N4 = src.m_dim.N4 ;
+    dst.m_dim.N5 = src.m_dim.N5 ;
+    dst.m_dim.N6 = 1 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N6 );
   }
 };
-template <> struct AssignFadStride<7u> {
+template <unsigned StaticDim> struct AssignFadDimStride<7u,StaticDim> {
   template <typename Src, typename Dst>
   KOKKOS_INLINE_FUNCTION
   static void eval(Dst& dst, const Src& src) {
@@ -284,19 +360,15 @@ template <> struct AssignFadStride<7u> {
     dst.m_stride.S5 = src.m_stride.S5 ;
     dst.m_stride.S6 = src.m_stride.S6 ;
     dst.m_stride.S7 = src.m_stride.S7 ;
-  }
-};
 
-template <unsigned> struct AssignDim7 {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {}
-};
-template <> struct AssignDim7<0u> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N7 = src.m_dim.N7;
+    dst.m_dim.N0 = src.m_dim.N0 ;
+    dst.m_dim.N1 = src.m_dim.N1 ;
+    dst.m_dim.N2 = src.m_dim.N2 ;
+    dst.m_dim.N3 = src.m_dim.N3 ;
+    dst.m_dim.N4 = src.m_dim.N4 ;
+    dst.m_dim.N5 = src.m_dim.N5 ;
+    dst.m_dim.N6 = src.m_dim.N6 ;
+    AssignDim7<StaticDim>::eval( dst.m_dim, src.m_dim.N7 );
   }
 };
 
@@ -417,22 +489,14 @@ public:
 
       dst.m_track = src.m_track ;
 
-      dst.m_map.m_offset.m_dim.N0 = tempdst.m_dim.N0 ;
-      dst.m_map.m_offset.m_dim.N1 = tempdst.m_dim.N1 ;
-      dst.m_map.m_offset.m_dim.N2 = tempdst.m_dim.N2 ;
-      dst.m_map.m_offset.m_dim.N3 = tempdst.m_dim.N3 ;
-      dst.m_map.m_offset.m_dim.N4 = tempdst.m_dim.N4 ;
-      dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N5 ;
-      dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N6 ;
-
-      // Do this except for when Fad dim is static
-      // dst.m_map.m_offset.m_dim.N7 = tempdst.m_dim.N7 ;
-      AssignDim7<FadStaticDim>::eval( dst.m_map.m_offset, tempdst );
-
-      // Move last non-unit stride to S7
-      // dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*;
-      // dst.m_map.m_offset.m_stride.S7 = tempdst.m_stride.S{rank}
-      AssignFadStride<rank>::eval( dst.m_map.m_offset, tempdst );
+      // Move last non-unit dim and stride to N7/S7 since subview collapses
+      // out all singleton dimensions between the last rank and the fad
+      // dimension.  Equivalent to:
+      //   dst.m_map.m_offset.m_dim.N* = tempdst.m_dim.N*
+      //   dst.m_map.m_offset.m_dim.N7 = tempdst.m_dim.N{rank}
+      //   dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*
+      //   dst.m_map.m_offset.m_stride.S7 = tempdst.m_stride.S{rank}
+      AssignFadDimStride<rank,FadStaticDim>::eval( dst.m_map.m_offset, tempdst );
 
       dst.m_track = src.m_track ;
 
@@ -703,12 +767,25 @@ public:
 template <typename view_type>
 struct is_dynrankview_fad { static const bool value = false; };
 
+template <typename view_type>
+struct is_dynrankview_fad_contiguous { static const bool value = false; };
+
 template <typename T, typename ... P>
 struct is_dynrankview_fad< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+};
+
+template <typename T, typename ... P>
+struct is_dynrankview_fad_contiguous< DynRankView<T,P...> > {
+  typedef DynRankView<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -728,7 +805,9 @@ void deep_copy(
   const typename Sacado::ScalarType< typename DynRankView<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -746,7 +825,9 @@ void deep_copy(
   const typename DynRankView<DT,DP...>::value_type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -763,11 +844,15 @@ void deep_copy
   ( const DstType & dst
   , const SrcType & src
   , typename std::enable_if<(
-  std::is_same< typename DstType::traits::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename DstType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename DstType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
-  std::is_same< typename SrcType::traits::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename SrcType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename SrcType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
   ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
 >::value )
@@ -906,5 +991,7 @@ using Kokkos::Experimental::deep_copy;
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
+
+#include "Kokkos_DynRankView_Fad_Contiguous.hpp"
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

@@ -78,7 +78,7 @@
 
 /*** Uncomment if you would like output data for plotting ***/
 //#define DUMP_DATA
-
+//#define DUMP_DATA_COORD
 /**************************************************************/
 /*                          Includes                          */
 /**************************************************************/
@@ -143,6 +143,11 @@
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
+#include <sstream>
+
+
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+
 using namespace std;
 using namespace Intrepid;
 
@@ -159,12 +164,102 @@ typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 
 
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
+    return false;
+  }
+};
+
+
+int global_MyPID;//DEBUG
+
+#if 0
+ long long  *nodes_per_element   = new long long [numElemBlk];
+  long long  *element_attributes  = new long long [numElemBlk];
+  long long  *elements            = new long long [numElemBlk];
+  char      **element_types       = new char * [numElemBlk];
+  long long **elmt_node_linkage   = new long long * [numElemBlk];
+#endif
+
+
+//elements,nodes_per_element,elmt_node_linkage,numElemBlk,
+struct PamgenMesh{ 
+  int dim;
+
+  /* Mesh connectivity info */
+  long long numElemBlk;
+  std::vector<long long> nodes_per_element; 
+  std::vector<long long> element_attributes;
+  std::vector<long long> elements;            
+  std::vector<std::vector<char> > element_types;       
+  std::vector<std::vector<long long> >elmt_node_linkage;   
+
+  /* Communicator info */
+  std::vector<long long> node_comm_proc_ids;
+  std::vector<long long> node_cmap_node_cnts;
+  std::vector<long long> node_cmap_ids;
+  std::vector<long long*>  comm_node_ids;
+  std::vector<std::vector<long long> > comm_node_proc_ids;
+  long long num_node_comm_maps;
+
+  PamgenMesh(int mydim):dim(mydim){}
+  ~PamgenMesh() {
+    for(int i=0;i<(int)comm_node_ids.size(); i++)
+      delete [] comm_node_ids[i];
+  }   
+
+
+  void allocateConnectivity(long long my_numElemBlk) {
+    numElemBlk = my_numElemBlk;
+    nodes_per_element.resize(numElemBlk);
+    element_attributes.resize(numElemBlk);
+    elements.resize(numElemBlk);
+    element_types.resize(numElemBlk);
+    elmt_node_linkage.resize(numElemBlk);
+  }
+
+
+
+};
+
+
+
 // forward declarations
-void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-                          FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
+void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes,long long P1_globalNumEdges,long long P1_globalNumElem,
+                 const FieldContainer<int>    & P1_elemToNode,
+                 const FieldContainer<double> & P1_nodeCoord,
+                 const FieldContainer<double> & P1_edgeCoord,
+                 const FieldContainer<int>    & P1_elemToEdge,
+                 const FieldContainer<int>    & P1_elemToEdgeOrient,
+                 const FieldContainer<int>    & P1_nodeOnBoundary,
+		 const bool*                    P1_nodeIsOwned,
+		 const std::vector<bool>      & P1_edgeIsOwned,
+		 const std::vector<long long> & P1_globalNodeIds,
+		 const std::vector<long long> & P1_globalEdgeIds,
+		 const std::vector<long long> & P1_globalElementIds,
+		 long long                    & Pn_globalNumNodes,
+                 FieldContainer<int>          & Pn_elemToNode,
+                 FieldContainer<double>       & Pn_nodeCoord,
+		 FieldContainer<int>          & Pn_nodeOnBoundary,
+		 std::vector<bool>            & Pn_nodeIsOwned,
+		 std::vector<long long>       & Pn_globalNodeIds);
 
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
+void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
+			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
+			  std::vector<long long> globalNodeIds,
+			  PamgenMesh & mesh,
+			  Epetra_Comm & Comm,
+			  /*Output args */
+			  std::vector<long long> & globalEdgeIds,
+			  std::vector<bool> & edgeIsOwned,
+			  std::vector<int> & ownedEdgeIds,
+			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
+			  long long & numEdgesGlobal);
+
+void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long long> & globalElementIds);
 
 void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
@@ -177,7 +272,7 @@ void CreateLinearSystem(int numWorkSets,
                         Teuchos::RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<long long> const &globalNodeIds,
                         Epetra_FECrsMatrix &StiffMatrix,
                         Epetra_FEVector &rhsVector,
                         std::string &msg,
@@ -185,7 +280,7 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, const std::vector<bool> & Pn_nodeIsOwned, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp,Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
 
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
                       Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
@@ -219,7 +314,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol);
 
-
+void CalculateError(const Epetra_FEVector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree);
 
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
@@ -325,14 +420,13 @@ int main(int argc, char *argv[]) {
   numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-  if(numProcs!=1) {printf("Error: This test only currently works in serial\n");return 1;}
+  //  if(numProcs!=1) {printf("Error: This test only currently works in serial\n");return 1;}
 #else
   Epetra_SerialComm Comm;
 #endif
 
-
-
   int MyPID = Comm.MyPID();
+  global_MyPID = MyPID;//DEBUG
   Epetra_Time Time(Comm);
 
   //Check number of arguments
@@ -404,6 +498,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
       return 0;
     }
+  std::cout<<std::endl;
 
   if(xmlSolverInFileName.length()) {
     if (MyPID == 0)
@@ -428,15 +523,24 @@ int main(int argc, char *argv[]) {
   /***************************** GET CELL TOPOLOGY **********************************/
   /**********************************************************************************/
 
-  // Get cell topology for base hexahedron
+  // Get cell topology for base quad
   shards::CellTopology P1_cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
   shards::CellTopology Pn_cellType(shards::getCellTopologyData<shards::Quadrilateral<> >() );
   assert(P1_cellType.getDimension() == Pn_cellType.getDimension());
 
   // Get dimensions
   int P1_numNodesPerElem = P1_cellType.getNodeCount();
+  int P1_numEdgesPerElem = P1_cellType.getEdgeCount();
   int spaceDim = P1_cellType.getDimension();
   int dim = 2;
+  int P1_numNodesPerEdge=2;
+
+  // Build reference element edge to node map
+  FieldContainer<int> P1_refEdgeToNode(P1_numEdgesPerElem,P1_numNodesPerEdge);
+  for (int i=0; i<P1_numEdgesPerElem; i++){
+    P1_refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
+    P1_refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
+  }
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -446,16 +550,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Generating mesh ... \n\n";
   }
 
-  long long *  node_comm_proc_ids   = NULL;
-  long long *  node_cmap_node_cnts  = NULL;
-  long long *  node_cmap_ids        = NULL;
-  long long ** comm_node_ids        = NULL;
-  long long ** comm_node_proc_ids   = NULL;
-
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
   TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
+  PamgenMesh P1_mesh(dim);
+
 
   string msg("Poisson: ");
   if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -465,65 +565,61 @@ int main(int argc, char *argv[]) {
   long long numDim;
   long long numNodes;
   long long numElems;
-  long long numElemBlk;
   long long numNodeSets;
   long long numSideSets;
   int id = 0;
-
+  long long my_numElemBlk;
+  
   im_ex_get_init_l(id, title, &numDim, &numNodes,
-                   &numElems, &numElemBlk, &numNodeSets,
+                   &numElems, &my_numElemBlk, &numNodeSets,
                    &numSideSets);
+  P1_mesh.allocateConnectivity(my_numElemBlk);
 
-  long long numNodesGlobal;
-  long long numElemsGlobal;
+
+  long long P1_globalNumNodes;
+  long long P1_globalNumElems;
   long long numElemBlkGlobal;
   long long numNodeSetsGlobal;
   long long numSideSetsGlobal;
 
-  im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
+  im_ne_get_init_global_l(id, &P1_globalNumNodes, &P1_globalNumElems,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
 
   // Print mesh information
   if (MyPID == 0){
-    std::cout << " Number of Global Elements: " << numElemsGlobal << " \n";
-    std::cout << " Number of Global Nodes: " << numNodesGlobal << " \n\n";
+    std::cout << " Number of Global Elements: " << P1_globalNumElems << " \n";
+    std::cout << " Number of Global Nodes: "    << P1_globalNumNodes << " \n\n";
   }
 
-  long long * block_ids = new long long [numElemBlk];
+  long long * block_ids = new long long [P1_mesh.numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
+ 
 
-  long long  *nodes_per_element   = new long long [numElemBlk];
-  long long  *element_attributes  = new long long [numElemBlk];
-  long long  *elements            = new long long [numElemBlk];
-  char      **element_types       = new char * [numElemBlk];
-  long long **elmt_node_linkage   = new long long * [numElemBlk];
-
-
-  for(long long i = 0; i < numElemBlk; i ++){
-    element_types[i] = new char [MAX_STR_LENGTH + 1];
+  for(long long i = 0; i < P1_mesh.numElemBlk; i ++){
+    P1_mesh.element_types[i].resize(MAX_STR_LENGTH + 1);
     error += im_ex_get_elem_block_l(id,
                                     block_ids[i],
-                                    element_types[i],
-                                    (long long*)&(elements[i]),
-                                    (long long*)&(nodes_per_element[i]),
-                                    (long long*)&(element_attributes[i]));
+                                    P1_mesh.element_types[i].data(),
+                                    &(P1_mesh.elements[i]),
+                                    &(P1_mesh.nodes_per_element[i]),
+                                    &(P1_mesh.element_attributes[i]));
   }
 
   /*connectivity*/
-  for(long long b = 0; b < numElemBlk; b++){
-    elmt_node_linkage[b] =  new long long [nodes_per_element[b]*elements[b]];
-    error += im_ex_get_elem_conn_l(id,block_ids[b],elmt_node_linkage[b]);
+  for(long long b = 0; b < P1_mesh.numElemBlk; b++){
+    P1_mesh.elmt_node_linkage[b].resize(P1_mesh.nodes_per_element[b]* P1_mesh.elements[b]);
+    error += im_ex_get_elem_conn_l(id,block_ids[b],P1_mesh.elmt_node_linkage[b].data());
   }
 
   // Get node-element connectivity
   int telct = 0;
   FieldContainer<int> P1_elemToNode(numElems,P1_numNodesPerElem);
-  for(long long b = 0; b < numElemBlk; b++){
-    for(long long el = 0; el < elements[b]; el++){
+  for(long long b = 0; b <P1_mesh.numElemBlk; b++){
+    for(long long el = 0; el < P1_mesh.elements[b]; el++){
       for (int j=0; j<P1_numNodesPerElem; j++) {
-        P1_elemToNode(telct,j) = elmt_node_linkage[b][el*P1_numNodesPerElem + j]-1;
+        P1_elemToNode(telct,j) = P1_mesh.elmt_node_linkage[b][el*P1_numNodesPerElem + j]-1;
       }
       telct ++;
     }
@@ -544,7 +640,6 @@ int main(int argc, char *argv[]) {
   long long num_external_nodes;
   long long num_internal_elems;
   long long num_border_elems;
-  long long num_node_comm_maps;
   long long num_elem_comm_maps;
   im_ne_get_loadbal_param_l( id,
                              &num_internal_nodes,
@@ -552,37 +647,37 @@ int main(int argc, char *argv[]) {
                              &num_external_nodes,
                              &num_internal_elems,
                              &num_border_elems,
-                             &num_node_comm_maps,
+                             &P1_mesh.num_node_comm_maps,
                              &num_elem_comm_maps,
                              0/*unused*/ );
 
-  if(num_node_comm_maps > 0){
-    node_comm_proc_ids   = new long long  [num_node_comm_maps];
-    node_cmap_node_cnts  = new long long  [num_node_comm_maps];
-    node_cmap_ids        = new long long  [num_node_comm_maps];
-    comm_node_ids        = new long long* [num_node_comm_maps];
-    comm_node_proc_ids   = new long long* [num_node_comm_maps];
+  if(P1_mesh.num_node_comm_maps > 0){
+    P1_mesh.node_comm_proc_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.node_cmap_node_cnts.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.node_cmap_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.comm_node_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.comm_node_proc_ids.resize(P1_mesh.num_node_comm_maps);
 
     long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
     long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
     if ( im_ne_get_cmap_params_l( id,
-                                  node_cmap_ids,
-                                  (long long*)node_cmap_node_cnts,
+                                  P1_mesh.node_cmap_ids.data(),
+                                  (long long*)P1_mesh.node_cmap_node_cnts.data(),
                                   elem_cmap_ids,
                                   (long long*)elem_cmap_elem_cnts,
                                   0/*not used proc_id*/ ) < 0 )++error;
 
-    for(long long j = 0; j < num_node_comm_maps; j++) {
-      comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-      comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+    for(long long j = 0; j < P1_mesh.num_node_comm_maps; j++) {
+      P1_mesh.comm_node_ids[j] = new long long [P1_mesh.node_cmap_node_cnts[j]];
+      P1_mesh.comm_node_proc_ids[j].resize(P1_mesh.node_cmap_node_cnts[j]);
       if ( im_ne_get_node_cmap_l( id,
-                                  node_cmap_ids[j],
-                                  comm_node_ids[j],
-                                  comm_node_proc_ids[j],
+				  P1_mesh.node_cmap_ids[j],
+                                  P1_mesh.comm_node_ids[j],
+                                  P1_mesh.comm_node_proc_ids[j].data(),
                                   0/*not used proc_id*/ ) < 0 )++error;
-      node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+      P1_mesh.node_comm_proc_ids[j] = P1_mesh.comm_node_proc_ids[j][0];
     }
 
     delete [] elem_cmap_ids;
@@ -592,16 +687,16 @@ int main(int argc, char *argv[]) {
   if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
   //Calculate global node ids
-  long long * P1_globalNodeIds = new long long[numNodes];
-  bool * P1_nodeIsOwned = new bool[numNodes];
+  std::vector<long long> P1_globalNodeIds(numNodes);
+  bool*      P1_nodeIsOwned = new bool[numNodes];
 
-  calc_global_node_ids(P1_globalNodeIds,
+  calc_global_node_ids(P1_globalNodeIds.data(),
                        P1_nodeIsOwned,
                        numNodes,
-                       num_node_comm_maps,
-                       node_cmap_node_cnts,
-                       node_comm_proc_ids,
-                       comm_node_ids,
+                       P1_mesh.num_node_comm_maps,
+                       P1_mesh.node_cmap_node_cnts.data(),
+                       P1_mesh.node_comm_proc_ids.data(),
+                       P1_mesh.comm_node_ids.data(),
                        rank);
 
 
@@ -638,40 +733,100 @@ int main(int argc, char *argv[]) {
   if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 
+  /******************************************/
+  // Enumerate Edges
+  if(MyPID==0) printf("Using new edge enumeration\n");
+  std::vector<long long> P1_globalEdgeIds;
+  std::vector<bool> P1_edgeIsOwned;
+  std::vector<int> P1_ownedEdgeIds;
+  FieldContainer<int> P1_elemToEdge(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> P1_elemToEdgeOrient(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> P1_edgeToNode;
+  FieldContainer<double> P1_edgeCoord;
+  long long P1_globalNumEdges;
 
-  // Enumerate edges 
-  // NOTE: Only correct in serial
-  FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
-  FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
-  GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord);
+  PamgenEnumerateEdges(P1_numNodesPerElem,P1_numEdgesPerElem,P1_numNodesPerEdge,P1_refEdgeToNode,P1_nodeCoord,
+		       P1_globalNodeIds,P1_mesh,
+		       Comm, P1_globalEdgeIds,P1_edgeIsOwned,P1_ownedEdgeIds,P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord,P1_globalNumEdges);
+
+#if 0
+  {
+    ostringstream ss;
+    ss<<"***** Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0;i<numElems; i++) {
+      for (int j=0; j<P1_numEdgesPerElem; j++)
+	ss<<P1_elemToEdge(i,j)<<"("<<PG_globalEdgeIds[P1_elemToEdge(i,j)]<<")["<<P1_elemToEdgeOrient(i,j)<<"] ";
+      ss<<endl;
+    }
+    ss<<"***** Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0; i<PG_edgeToNode.dimension(0); i++) {
+      for (int j=0; j<PG_edgeToNode.dimension(1); j++)
+	ss<<PG_edgeToNode(i,j)<<" ";
+      ss<<endl;
+    }
+    printf("%s",ss.str().c_str());
+    fflush(stdout);
+  }
+#endif
+
+  /******************************************/
+  // Enumerate Elements
+  std::vector<long long> P1_globalElementIds;
+  EnumerateElements(Comm,numElems,P1_globalElementIds);
 
 
+  /******************************************/
   // Generate higher order mesh
-  // NOTE: Only correct in serial
-  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;
+  // The number of *my* Pn nodes will be related to the number of *my* nodes, edges (owned and ghosted) and elements (owned)
+  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;  // local
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
   FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem); 
   FieldContainer<double> nodeCoord(Pn_numNodes,dim);
   FieldContainer<int>   nodeOnBoundary(Pn_numNodes);
 
-  printf("Pn_numNodes = %d Pn_numNodesperElem = %d\n",Pn_numNodes,Pn_numNodesperElem);
+  //  printf("[%d] P1_numNodes = %d Pn_numNodes = %d Pn_numNodesperElem = %d degree = %d\n",Comm.MyPID(),(int)numNodes,Pn_numNodes,Pn_numNodesperElem,degree);
 
-  printf("Running p=%d Kirby\n",degree);
-  PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
-                       elemToNode, nodeCoord, nodeOnBoundary);
-  // ---------------------------
+  std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,false);
+  std::vector<long long>Pn_globalNodeIds(Pn_numNodes);
+  long long Pn_globalNumNodes=0;
+  long long Pn_globalNumElems=P1_globalNumElems;
 
-  long long numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
+  PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_globalNumNodes,P1_globalNumEdges,P1_globalNumElems,
+		       P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,P1_nodeIsOwned,P1_edgeIsOwned,P1_globalNodeIds,P1_globalEdgeIds,P1_globalElementIds,
+                       Pn_globalNumNodes,elemToNode, nodeCoord, nodeOnBoundary,Pn_nodeIsOwned,Pn_globalNodeIds);
+
+
+  if(!MyPID) printf("P1 global (nodes,edges) = (%lld,%lld) Pn global nodes = %lld\n",P1_globalNumNodes,P1_globalNumEdges,Pn_globalNumNodes);
+
+#if 0
+  {
+    ostringstream ss;
+    ss<<"***** Node ids & ownership ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0; i<Pn_numNodes; i++)
+      ss<<i<<"["<<Pn_globalNodeIds[i]<<","<<Pn_nodeIsOwned[i]<<"] ";
+    ss<<endl;
+
+    printf("%s",ss.str().c_str());
+    fflush(stdout);
+  }
+#endif
+
+
+  /******************************************/
+  // Generate Auxillary Mesh
+  int numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
+  long long globalNumElems_aux = P1_globalNumElems*4;
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
   CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
-  // Only works in serial
-  std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,true);
-  std::vector<int>Pn_globalNodeIds(Pn_numNodes);
-  for(int i=0; i<Pn_numNodes; i++)
-    Pn_globalNodeIds[i]=i;
+  // Print mesh information
+  if (MyPID == 0){
+    std::cout << " Number of Pn Global Elements: " << Pn_globalNumElems << " \n";
+    std::cout << " Number of Pn Global Nodes: " << Pn_globalNumNodes << " \n";
+    std::cout << " Number of faux P1 Global Elements: " << globalNumElems_aux << " \n\n";
+  }
 
+  // Coordinates in single vector form
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
   for (int i=0; i<Pn_numNodes; i++) {
@@ -682,15 +837,6 @@ int main(int argc, char *argv[]) {
   // Reset constants
   int P1_numNodes =numNodes;
   numNodes = Pn_numNodes;
-  numNodesGlobal = numNodes;
-
-  // Print mesh information
-  if (MyPID == 0){
-    std::cout << " Number of Pn Global Elements: " << numElemsGlobal << " \n";
-    std::cout << " Number of Pn Global Nodes: " << numNodesGlobal << " \n";
-    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.dimension(0) << " \n\n";
-  }
-
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -712,8 +858,6 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Getting cubature                            "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-
-
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
   /**********************************************************************************/
@@ -726,7 +870,6 @@ int main(int argc, char *argv[]) {
   // Auxillary p=1 basis
   Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
   Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_aux_rcp(&myHGradBasis_aux, false);
-
 
   int numFieldsG = myHGradBasis.getCardinality();
 
@@ -799,7 +942,6 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Getting basis                               "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
@@ -809,7 +951,7 @@ int main(int argc, char *argv[]) {
     if(Pn_nodeIsOwned[i]) Pn_ownedNodes++;
 
   // Build a list of the OWNED global ids...
-  // NTS: will need to switch back to long long
+  // NOTE: We cast all of this down to ints for ease of use w/ epetra
   std::vector<int> Pn_ownedGIDs(Pn_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
@@ -842,7 +984,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Epetra_CrsMatrix> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
     printf("Generating Linear Pn-to-P1 coarsening...\n");
-    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode, myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
+    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode,Pn_nodeIsOwned,myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
@@ -856,7 +998,8 @@ int main(int argc, char *argv[]) {
                           << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
 
-#ifdef DUMP_DATA_OLD
+
+#ifdef DUMP_DATA_COORD
   /**********************************************************************************/
   /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
   /**********************************************************************************/
@@ -867,25 +1010,13 @@ int main(int argc, char *argv[]) {
 
   int indOwned = 0;
   for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
+    if (Pn_nodeIsOwned[inode]) {
       nCoord[0][indOwned]=nodeCoord(inode,0);
       nCoord[1][indOwned]=nodeCoord(inode,1);
-      nBound[0][indOwned]=nodeOnBoundary(inode);
       indOwned++;
     }
   }
   EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-  EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
-
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2nodeMV(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2nodeMV[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2nodeMV,0,0,false);
 
   if(MyPID==0) {Time.ResetStartTime();}
 
@@ -976,9 +1107,7 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////////////////////////////
   // Create P1 matrix and RHS to be used in preconditioner
   /////////////////////////////////////////////////////////////////////
-
   //Cubature
-
   // Get numerical integration points and weights
   int cubDegree_aux = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
   Teuchos::RCP<Cubature<double> > myCub_aux = cubFactory.create(P1_cellType, cubDegree_aux);
@@ -994,7 +1123,6 @@ int main(int argc, char *argv[]) {
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
   //Basis
-
   // Define basis
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
@@ -1028,7 +1156,6 @@ int main(int argc, char *argv[]) {
                      msg,
                      Time
                      );
-
   /**********************************************************************************/
   /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
   /**********************************************************************************/
@@ -1040,6 +1167,8 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << msg << "Global assembly (auxiliary system)          "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+
+
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
   Teuchos::RCP<Epetra_CrsMatrix> P_identity;
   if (inputSolverList.isParameter("aux P1")) {
@@ -1047,6 +1176,7 @@ int main(int argc, char *argv[]) {
     GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
+
   
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
@@ -1061,8 +1191,6 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////////
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  std::cout << "numBCNodes = " << numBCNodes << std::endl;
-  std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,rhsVector_aux,rhsVector_aux,v);
 
   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
@@ -1081,7 +1209,6 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
-
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
@@ -1117,7 +1244,6 @@ int main(int argc, char *argv[]) {
     interpolationMatrix = P_linear;
   }
 
-
   TestMultiLevelPreconditionerLaplace(probType, MLList,
                                       Teuchos::rcpFromRef(StiffMatrix), interpolationMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,
@@ -1130,220 +1256,21 @@ int main(int argc, char *argv[]) {
   EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector_exact.dat",exactNodalVals,0,0,false);
 #endif
 
-  /**********************************************************************************/
-  /**************************** CALCULATE ERROR *************************************/
-  /**********************************************************************************/
+  // Build an overlap map for error calculation.  This is kind of like StiffMatrix's ColMap, but in a different order
+  std::vector<int>Pn_globalNodeIds_int(Pn_numNodes);
+  for(int i=0;i<Pn_numNodes; i++)
+    Pn_globalNodeIds_int[i] = (int)Pn_globalNodeIds[i];
+  Epetra_Map OverlapMap(-1,Pn_numNodes,Pn_globalNodeIds_int.data(),0,Comm);
 
-  if (MyPID == 0) {Time.ResetStartTime();}
-
-  double L2err = 0.0;
-  double L2errTot = 0.0;
-  double H1err = 0.0;
-  double H1errTot = 0.0;
-  double Linferr = 0.0;
-  double LinferrTot = 0.0;
-
-#ifdef HAVE_MPI
-  // Import solution onto current processor
-  //int numNodesGlobal = globalMapG.NumGlobalElements();
-  Epetra_Map     solnMap(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm);
-  Epetra_Import  solnImporter(solnMap, globalMapG);
-  Epetra_Vector  uCoeff(solnMap);
-  uCoeff.Import(femCoefficients, solnImporter, Insert);
-#endif
-
-  // Define desired workset size
-  desiredWorksetSize = numElems;
-  int numWorksetsErr    = numElems/desiredWorksetSize;
-
-  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
-  if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
-
-  // Get cubature points and weights for error calc (may be different from previous)
-  Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
-  int cubDegErr = 3*degree;
-  Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(Pn_cellType, cubDegErr);
-  int cubDimErr       = cellCubatureErr->getDimension();
-  int numCubPointsErr = cellCubatureErr->getNumPoints();
-  Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
-  Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
-  cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
-
-  // Evaluate basis values and gradients at cubature points
-  Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
-  Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
-  myHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
-  myHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
-
-  // Loop over worksets
-  for(int workset = 0; workset < numWorksetsErr; workset++){
-
-    // compute cell numbers where the workset starts and ends
-    int worksetSize  = 0;
-    int worksetBegin = (workset + 0)*desiredWorksetSize;
-    int worksetEnd   = (workset + 1)*desiredWorksetSize;
-
-    // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
-    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-
-    // now we know the actual workset size and can allocate the array for the cell nodes
-    worksetSize  = worksetEnd - worksetBegin;
-    Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numFieldsG, spaceDim);
-    Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numFieldsG);
-
-    // loop over cells to fill arrays with coordinates and discrete solution coefficient
-    int cellCounter = 0;
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-
-      for (int node = 0; node < numFieldsG; node++) {
-        cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
-        cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-
-        int rowIndex  = Pn_globalNodeIds[elemToNode(cell, node)];
-#ifdef HAVE_MPI
-        worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
-#else
-        worksetApproxSolnCoef(cellCounter, node) = femCoefficients.Values()[rowIndex];
-#endif
-      }
-
-      cellCounter++;
-
-    } // end cell loop
-
-      // Containers for Jacobian
-    Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
-
-    // Containers for basis values and gradients in physical space
-    Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
-    Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
-
-    // compute cell Jacobians, their inverses and their determinants
-    IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
-    IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
-    IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
-
-    // map cubature points to physical frame
-    Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
-    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
-
-    // evaluate exact solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    evaluateExactSolution(worksetExactSoln, worksetCubPoints);
-    evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
-
-    // transform basis values to physical coordinates
-    IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
-    IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
-
-    // compute weighted measure
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
-
-    // evaluate the approximate solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
-    IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
-
-    // get difference between approximate and exact solutions
-    Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
-    IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
-
-    // take absolute values
-    IntrepidRSTools::absval(worksetDeltaSoln);
-    IntrepidRSTools::absval(worksetDeltaSolnGrad);
-    // apply cubature weights to differences in values and grads for use in integration
-    Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
-                                                    worksetCubWeightsE, worksetDeltaSoln);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
-                                                    worksetCubWeightsE, worksetDeltaSolnGrad);
-
-    // integrate to get errors on each element
-    Intrepid::FieldContainer<double> worksetL2err(worksetSize);
-    Intrepid::FieldContainer<double> worksetH1err(worksetSize);
-    IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
-                                       worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
-    IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
-                                       worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
-
-    // loop over cells to get errors for total workset
-    cellCounter = 0;
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-
-      // loop over cubature points
-      for(int nPt = 0; nPt < numCubPointsErr; nPt++){
-
-        Linferr = std::max(Linferr, worksetDeltaSoln(cellCounter,nPt));
-
-      }
-
-      L2err += worksetL2err(cellCounter);
-      H1err += worksetH1err(cellCounter);
-
-      cellCounter++;
-
-    } // end cell loop
-
-  } // end loop over worksets
-
-#ifdef HAVE_MPI
-  // sum over all processors
-  Comm.SumAll(&L2err,&L2errTot,1);
-  Comm.SumAll(&H1err,&H1errTot,1);
-  Comm.MaxAll(&Linferr,&LinferrTot,1);
-#else
-  L2errTot = L2err;
-  H1errTot = H1err;
-  LinferrTot = Linferr;
-#endif
-
-
-  if (MyPID == 0) {
-    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
-    std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
-    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
-  }
-
-  if(MyPID==0) {std::cout << msg << "Calculate error                             "
-                          << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
-
+  // Calculate Error
+  CalculateError(femCoefficients,OverlapMap,Time,Pn_cellType,myHGradBasis_rcp,elemToNode,nodeCoord,degree);
 
   // Cleanup
-  for(long long b = 0; b < numElemBlk; b++){
-    delete [] elmt_node_linkage[b];
-    delete [] element_types[b];
-  }
   delete [] block_ids;
-  delete [] nodes_per_element;
-  delete [] element_attributes;
-  delete [] element_types;
-  delete [] elmt_node_linkage;
-  delete [] elements;
-  delete [] P1_globalNodeIds;
-  delete [] P1_nodeIsOwned;
-  if(num_node_comm_maps > 0){
-    delete [] node_comm_proc_ids;
-    delete [] node_cmap_node_cnts;
-    delete [] node_cmap_ids;
-    for(long long i=0;i<num_node_comm_maps;i++){
-      delete [] comm_node_ids[i];
-      delete [] comm_node_proc_ids[i];
-    }
-
-    delete [] comm_node_ids;
-    delete [] comm_node_proc_ids;
-  }
 
   delete [] nodeCoordx;
   delete [] nodeCoordy;
+  delete [] P1_nodeIsOwned;
 
   // delete mesh
   Delete_Pamgen_Mesh();
@@ -1614,7 +1541,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   string msg = ProblemType;
 
   if (A0->Comm().MyPID() == 0) {
-    cout << msg << endl << "......Using " << A0->Comm().NumProc() << " processes" << endl;
+    cout << msg << "......Using " << A0->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2/||x_exact||_2 = " << sqrt(d_tot/s_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
@@ -1629,87 +1556,28 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 /*********************************************************************************************************/
 /*********************************************************************************************************/
-/*********************************************************************************************************/
-
-
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord) {
-  // Not especially efficient, but effective... at least in serial!
-  
-  int numElems        = elemToNode.dimension(0);
-  int numNodesperElem = elemToNode.dimension(1);
-  int dim             = nodeCoord.dimension(1);
-
-  // Sanity checks
-  if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
-    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
-
-  int edge_node0_id[4]={0,1,2,3};
-  int edge_node1_id[4]={1,2,3,0};
-  
-  // Run over all the elements and start enumerating edges
-  typedef std::map<std::pair<int,int>,int> en_map_type;
-  en_map_type e2n;
-
-  int num_edges=0;
-  en_map_type edge_map;
-  for(int i=0; i<numElems; i++) {
-
-    // Generate edge pairs, based on the global orientation of "edges go from low ID to high ID"
-    for(int j=0; j<4; j++) {
-      int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
-      int hi = std::max(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
-
-      std::pair<int,int> ep(lo,hi);
-
-      int edge_id;
-      en_map_type::iterator iter = edge_map.find(ep);      
-      if(iter==edge_map.end()) {
-        edge_map[ep] = num_edges;
-        edge_id = num_edges;
-        num_edges++;
-      }
-      else
-        edge_id = (*iter).second;
-      
-      elemToEdge(i,j) = edge_id;
-      elemToEdgeOrient(i,j) = (lo==elemToNode(i,edge_node0_id[j]))?1:-1;
-    }
-  }      
-
-  // Fill out the edge centers (clobbering data if needed)
-  edgeCoord.resize(num_edges,dim);
-  for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
-      int n0 = elemToNode(i,edge_node0_id[j]);
-      int n1 = elemToNode(i,edge_node1_id[j]);
-      for(int k=0; k<dim; k++)
-        edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
-    }
-  }
-  
-  //#define DEBUG_EDGE_ENUMERATION
-#ifdef DEBUG_EDGE_ENUMERATION
-  printf("**** Edge coordinates ***\n");
-  for(int i=0; i<num_edges; i++)
-    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
-#endif
-
-}
-
 
 
 /*********************************************************************************************************/
-void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
+void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes, long long P1_globalNumEdges,long long P1_globalNumElem,
                  const FieldContainer<int>    & P1_elemToNode,
                  const FieldContainer<double> & P1_nodeCoord,
                  const FieldContainer<double> & P1_edgeCoord,
                  const FieldContainer<int>    & P1_elemToEdge,
                  const FieldContainer<int>    & P1_elemToEdgeOrient,
                  const FieldContainer<int>    & P1_nodeOnBoundary,
+		 const bool * P1_nodeIsOwned,
+		 const std::vector<bool>      & P1_edgeIsOwned,
+		 const std::vector<long long> & P1_globalNodeIds,
+		 const std::vector<long long> & P1_globalEdgeIds,
+		 const std::vector<long long> & P1_globalElementIds,
+		 long long                    & Pn_globalNumNodes,
                  FieldContainer<int>          & Pn_elemToNode,
                  FieldContainer<double>       & Pn_nodeCoord,
-                 FieldContainer<int>          & Pn_nodeOnBoundary) {
+		 FieldContainer<int>          & Pn_nodeOnBoundary,
+		 std::vector<bool>            & Pn_nodeIsOwned,
+		 std::vector<long long>       & Pn_globalNodeIds
+) {
 //#define DEBUG_PROMOTE_MESH
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
@@ -1767,27 +1635,49 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int edge_skip[4] = {1,degree+1,-1,-(degree+1)};
   int center_root = degree+2;
 
+  //  printf("[%d] Global Edge Offset = %d Global Element Offset = %d\n",global_MyPID, P1_globalNumNodes, P1_globalNumNodes+P1_globalNumEdges*(degree-1));
+
   // Make the new el2node array
   for(int i=0; i<numElems; i++)  {    
     // P1 nodes
-    for(int j=0; j<P1_numNodesperElem; j++) 
-      Pn_elemToNode(i,p1_node_in_pn[j]) = P1_elemToNode(i,j);
-  
+    for(int j=0; j<P1_numNodesperElem; j++) {
+      int lid = P1_elemToNode(i,j);
+      Pn_elemToNode(i,p1_node_in_pn[j]) = lid;
+      Pn_nodeIsOwned[lid]   = P1_nodeIsOwned[lid];
+      Pn_globalNodeIds[lid] = P1_globalNodeIds[lid];
+    }  
+
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++){
       int orient   = P1_elemToEdgeOrient(i,j);
-      int base_id = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
-      int skip     =  orient*edge_skip[j];
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,base_id+(k+1)*skip) = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+      int base_id  = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
+      int skip     = orient*edge_skip[j];
+      bool is_owned= P1_edgeIsOwned[P1_elemToEdge(i,j)];// new node is owned if the edge was
+      for(int k=0; k<degree-1; k++) {
+	int lid       = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+	long long gid = P1_globalNumNodes + P1_globalEdgeIds[P1_elemToEdge(i,j)]*(degree-1)+k;
+        Pn_elemToNode(i,base_id+(k+1)*skip) = lid;
+	Pn_nodeIsOwned[lid]   = is_owned;
+	Pn_globalNodeIds[lid] = gid;
+      }
     }
-
+ 
+    //    printf("GID Base = %d degree = %d\n", P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalElementIds[i]*(degree-1)*(degree-1),degree);
     // P1 cells
     for(int j=0; j<degree-1; j++) 
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,center_root+j*(degree+1)+k) = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+      for(int k=0; k<degree-1; k++) {
+	int offset    = j*(degree-1)+k;
+	int lid       = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1)+offset;
+	long long gid = P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalElementIds[i]*(degree-1)*(degree-1) + offset;
+	//	printf("offset = %d lid = %d gid = %d P1_globalElementIds = %d\n",offset,lid,gid, P1_globalElementIds[i]);
+	Pn_elemToNode(i,center_root+j*(degree+1)+k) = lid;
+	Pn_nodeIsOwned[lid] = true; //elements are always owned
+	Pn_globalNodeIds[lid] = gid;
+      }
 
-  }
+  }  
+
+  Pn_globalNumNodes = P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalNumElem*(degree-1)*(degree-1);
 
   // Get the p=n node locations
   FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);  
@@ -1819,14 +1709,12 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    // Map the reference node location to physical   
    Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
 
-
 #ifdef DEBUG_PROMOTE_MESH
    printf("[%2d] PhysNodes  : ",i);
    for(int j=0; j<Pn_numNodesperElem; j++)
      printf("(%10.2f %10.2f) ",PhysNodeCoords(0,j,0),PhysNodeCoords(0,j,1));
    printf("\n");
 #endif
-
 
    // Copy the physical node locations to the Pn_nodeCoord array
    for(int j=0; j<Pn_numNodesperElem; j++) {
@@ -1885,16 +1773,14 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   for(int i=0; i<P1_numNodes; i++) {
     printf("[%2d] %10.2e %10.2e (%d)\n",i,P1_nodeCoord(i,0),P1_nodeCoord(i,1),(int)P1_nodeOnBoundary(i));   
   }
-  #endif
-
+#endif
 
 }
 
 
 /*********************************************************************************************************/
 
-void CreateP1MeshFromP2Mesh(
-                            FieldContainer<int> const    & P2_elemToNode,
+void CreateP1MeshFromP2Mesh(FieldContainer<int> const    & P2_elemToNode,                           
                             FieldContainer<int>          & P1_elemToNode)
 {
 
@@ -1959,10 +1845,10 @@ void CreateLinearSystem(int numWorksets,
                         Teuchos::RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<long long> const &globalNodeIds,
                         Epetra_FECrsMatrix &StiffMatrix,
                         Epetra_FEVector &rhsVector,
-                        std::string &msg,
+                        std::string &msg0,
                         Epetra_Time &Time
                         )
 {
@@ -1976,16 +1862,18 @@ void CreateLinearSystem(int numWorksets,
 
 
   
+  if(!global_MyPID) {
     std::cout << "CreateLinearSystem:" << std::endl;
     std::cout << "     numCubPoints = " << numCubPoints << std::endl;
     std::cout << "     cubDim = " << cubDim << std::endl;
     std::cout << "     spaceDim = " << spaceDim << std::endl;
     std::cout << "     numFieldsG = " << numFieldsG << std::endl;
-    std::cout << "     numElems = " << numElems << std::endl;
+    //    std::cout << "     numElems = " << numElems << std::endl;
     std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
-    std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
-    std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
-  
+    //    std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
+    //    std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
+  }
+  std::string msg = "     " + msg0;
 
   if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
@@ -2224,16 +2112,16 @@ void CreateLinearSystem(int numWorksets,
       for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
         int localRow  = elemToNode(cell, cellRow);
-        int globalRow = globalNodeIds[localRow];
+        int globalRow = (int) globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
 
-        rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
+        rhsVector.SumIntoGlobalValues(1,&globalRow,&sourceTermContribution);
 
         // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
           int localCol  = elemToNode(cell, cellCol);
-          int globalCol = globalNodeIds[localCol];
+          int globalCol = (int) globalNodeIds[localCol];
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
           StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
 
@@ -2246,7 +2134,7 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, const std::vector<bool> & Pn_nodeIsOwned,Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
 
   // Sanity checks
   assert(Pn_elemToNode.dimension(1) == PnBasis_rcp->getCardinality());
@@ -2255,8 +2143,6 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   // Generate a P matrix that uses the linear coarsening from pn to p1 on the base mesh.
   // This presumes that the Pn element is number according to the Kirby convention (aka straight across, bottom to top)
   // Resulting matrix is #Pnnodes x #P1nodes
-  //  int edge_node0_id[4]={0,1,2,3};
-  //  int edge_node1_id[4]={1,2,3,0};
   int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
 
   // Get the reference coordinates for the Pn element  
@@ -2270,25 +2156,29 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   FieldContainer<double> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
   P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, OPERATOR_VALUE);
 
-
-
   // Generate P
   int Nelem=Pn_elemToNode.dimension(0);  
   P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
 
   // Assemble
+  std::vector<int> touched(P1_map.NumMyElements(),0);
+
   for(int i=0; i<Nelem; i++) {
     for(int j=0; j<numFieldsPn; j++) {
-      int row = Pn_elemToNode(i,j);
+      int row_lid = Pn_elemToNode(i,j);
+      int row_gid = Pn_map.GID(row_lid);
       for(int k=0; k<numFieldsP1; k++) {
-        int col = Pn_elemToNode(i,p1_node_in_pn[k]);
+        int col_lid = Pn_elemToNode(i,p1_node_in_pn[k]);
+	int col_gid = P1_map.GID(col_lid);
         double val = P1Values_at_PnDofs(k,j);
-        P->InsertGlobalValues(row,1,&val,&col);
+	if(Pn_nodeIsOwned[row_lid] && !touched[row_lid]) {
+	  P->InsertGlobalValues(row_gid,1,&val,&col_gid);
+	  touched[row_lid]=1;
+	}
       }
     }
   }
   P->FillComplete(P1_map,Pn_map);
-
 }
 
 /*********************************************************************************************************/
@@ -2303,24 +2193,15 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   
   double one = 1.0;
   P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
-
-  //We must keep track of the nodes already encountered.  Inserting more than once will cause
-  //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
-  std::map<int,int> hashTable;
-  int Nelem=Pn_elemToNode.dimension(0);
-  for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<Pn_elemToNode.dimension(1); j++) {
-      int row = Pn_elemToNode(i,j);
-      if (hashTable.find(row) == hashTable.end()) {
-        //not found
-        P->InsertGlobalValues(row,1,&one,&row);
-        hashTable[row] = 1;
-      }
-    }
+ 
+  // Identity matrices are easy - exploit the fact that the maps are identical
+  for(int i=0; i<Pn_map.NumMyElements(); i++) {
+    int row_gid = Pn_map.GID(i);
+    P->InsertGlobalValues(row_gid,1,&one,&row_gid);
   }
-
   P->FillComplete(P1_map_aux,Pn_map);
 }
+
 
 
 
@@ -2341,4 +2222,358 @@ void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetr
     for(int j=0; j<NumEntries; j++)
       Values[j] = (Indices[j] == lrid) ? 1.0 : 0.0;      
   }
+}
+
+
+/*********************************************************************************************************/
+void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
+			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
+			  std::vector<long long> globalNodeIds,
+			  PamgenMesh & mesh,
+			  Epetra_Comm & Comm,
+			  /*Output args */
+			  std::vector<long long> & globalEdgeIds,
+			  std::vector<bool> & edgeIsOwned,
+			  std::vector<int> & ownedEdgeIds,
+			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
+			  long long & numEdgesGlobal) {
+  std::vector < topo_entity * > edge_vector;
+  std::set < topo_entity * , fecomp > edge_set;
+  std::vector < int > edge_comm_procs;
+  int rank = Comm.MyPID();
+
+  /***** Hensinger Stuff *****/
+  // Calculate edge and ids
+  int elct = 0;
+  for(long long b = 0; b < mesh.numElemBlk; b++){
+    //loop over all elements and push their edges onto a set if they are not there already
+    for(long long el = 0; el < mesh.elements[b]; el++){
+      std::set< topo_entity *, fecomp > ::iterator fit;
+      for (int i=0; i < numEdgesPerElem; i++){
+	topo_entity * teof = new topo_entity;
+	for(int j = 0; j < numNodesPerEdge;j++)
+	  teof->add_node(mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds.data());
+	teof->sort();
+	fit = edge_set.find(teof);
+	if(fit == edge_set.end()){
+	  teof->local_id = edge_vector.size();
+	  edge_set.insert(teof);
+	  //	    printf("[%d] Adding edge %d to element %d/%d\n",Comm.MyPID(),edge_vector.size(),elct,elemToEdge.dimension(0));fflush(stdout);
+	  elemToEdge(elct,i)= edge_vector.size();
+	  edge_vector.push_back(teof);
+	}
+	else{
+	  elemToEdge(elct,i) = (*fit)->local_id;
+	  delete teof;
+	}
+      }        
+      elct ++;
+    }
+  }
+
+  // Edge to Node connectivity 
+  assert(numNodesPerEdge==2);
+  edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
+  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+    int n[2];
+    std::list<long long>::iterator elit=edge_vector[ect]->local_node_ids.begin();
+    n[0] = *elit-1;
+    elit++;
+    n[1] = *elit-1;
+    long long nid0 = globalNodeIds[n[0]];
+    long long nid1 = globalNodeIds[n[1]];
+    long long lo = std::min(nid0,nid1);
+    edgeToNode(ect,0)= (lo==nid0)? n[0] : n[1];
+    edgeToNode(ect,1)= (lo==nid0)? n[1] : n[0];
+  }
+
+
+  int numEdges = edge_vector.size();
+   
+  // Calculate global edge and face numbering
+  std::string doing_type;
+  doing_type = "EDGES";
+  calc_global_ids(edge_vector,
+		  mesh.comm_node_ids.data(),
+		  mesh.node_comm_proc_ids.data(),
+		  mesh.node_cmap_node_cnts.data(),
+		  mesh.num_node_comm_maps,
+		  rank,
+		  doing_type);
+   
+  // Build list of owned global edge ids
+  globalEdgeIds.resize(numEdges);
+  edgeIsOwned.resize(numEdges);
+  int numOwnedEdges=0;
+  for (int i=0; i<numEdges; i++) {
+    edgeIsOwned[i] = edge_vector[i]->owned;
+    globalEdgeIds[i] = edge_vector[i]->global_id;
+    if (edgeIsOwned[i]){
+      numOwnedEdges++;
+    }
+  }
+  ownedEdgeIds.resize(numOwnedEdges);
+  int nedge=0;
+  for (int i=0; i<numEdges; i++) {
+    if (edgeIsOwned[i]){
+      ownedEdgeIds[nedge]=(int)globalEdgeIds[i];
+      nedge++;
+    }
+  }
+
+  // Calculate number of global edges
+#ifdef HAVE_MPI
+  long long numOwnedEdges_ll = numOwnedEdges;
+  Comm.SumAll(&numOwnedEdges_ll,&numEdgesGlobal,1);
+#else
+  numEdgesGlobal = numEdges;
+#endif
+
+  assert(numNodesPerEdge==2);
+
+  /***** Non-Hensinger Stuff ****/
+  // Fill out the edge centers (clobbering data if needed)
+  edgeCoord.resize(numEdges,mesh.dim);
+  for (int i=0; i<numEdges; i++) {
+    for(int j=0; j<mesh.dim; j++) {
+      edgeCoord(i,j)=0;
+      for(int k=0; k<numNodesPerEdge; k++)
+	edgeCoord(i,j)+=nodeCoord(edgeToNode(i,k),j)/numNodesPerEdge;
+    }   
+  }
+  
+  //#define DEBUG_EDGE_ENUMERATION
+#ifdef DEBUG_EDGE_ENUMERATION
+  printf("**** New Edge coordinates ***\n");
+  for(int i=0; i<edgeCoord.dimension(0); i++)
+    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
+#endif
+
+  // Build the element edge orientation list
+  int elid=0;
+  for(long long b = 0; b < mesh.numElemBlk; b++){
+    for(long long el = 0; el < mesh.elements[b]; el++){
+      for (int i=0; i < numEdgesPerElem; i++){	
+	int edge = elemToEdge(elid,i);
+	int n0 = mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,0)]-1;
+	elemToEdgeOrient(elid,i) = (n0==edgeToNode(edge,0))?  1 : -1;
+      }
+      elid++;
+    }
+  }
+ 
+}
+
+
+
+/*********************************************************************************************************/
+void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long long> & globalElementIds) { 
+  long long numMyElements_ll = numMyElements;
+  long long myGlobalElementBase = 0;
+
+  Comm.ScanSum(&numMyElements_ll,&myGlobalElementBase,1);
+  myGlobalElementBase -=numMyElements;
+  //  printf("[%d] MyGlobalElementBase = %lld\n",Comm.MyPID(),myGlobalElementBase);
+
+  globalElementIds.resize(numMyElements);
+  for(int i=0; i<numMyElements; i++)
+    globalElementIds[i] = myGlobalElementBase + i;
+}
+
+
+
+
+/**********************************************************************************/
+/**************************** CALCULATE ERROR *************************************/
+/**********************************************************************************/
+void CalculateError(const Epetra_FEVector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree) {
+
+  const Epetra_BlockMap & globalMapG = femCoefficients.Map();
+  const Epetra_Comm & Comm = globalMapG.Comm();
+  int MyPID = Comm.MyPID();
+  int numFieldsG = myHGradBasis_rcp->getCardinality();
+  int spaceDim = Pn_cellType.getDimension();
+  int numElems = elemToNode.dimension(0);
+  string msg("Poisson: ");
+
+  if (MyPID == 0) {Time.ResetStartTime();}
+
+  double L2err = 0.0;
+  double L2errTot = 0.0;
+  double H1err = 0.0;
+  double H1errTot = 0.0;
+  double Linferr = 0.0;
+  double LinferrTot = 0.0;
+
+#ifdef HAVE_MPI
+  // Get ghost information from solution to compute error
+  Epetra_Import  solnImporter(overlapMap, globalMapG);
+  Epetra_Vector  uCoeff(overlapMap);
+  uCoeff.Import(femCoefficients, solnImporter, Insert);
+#endif
+
+  // Define desired workset size
+  int desiredWorksetSize = numElems;
+  int numWorksetsErr    = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
+
+  // Get cubature points and weights for error calc (may be different from previous)
+  Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
+  int cubDegErr = 3*degree;
+  Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(Pn_cellType, cubDegErr);
+  int cubDimErr       = cellCubatureErr->getDimension();
+  int numCubPointsErr = cellCubatureErr->getNumPoints();
+  Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+  Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
+  cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
+
+  // Evaluate basis values and gradients at cubature points
+  Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
+  Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
+  myHGradBasis_rcp->getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
+  myHGradBasis_rcp->getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
+
+  // Loop over worksets
+  for(int workset = 0; workset < numWorksetsErr; workset++){
+
+    // compute cell numbers where the workset starts and ends
+    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+
+    // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+
+    // now we know the actual workset size and can allocate the array for the cell nodes
+    worksetSize  = worksetEnd - worksetBegin;
+    Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numFieldsG, spaceDim);
+    Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numFieldsG);
+
+    // loop over cells to fill arrays with coordinates and discrete solution coefficient
+    int cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      for (int node = 0; node < numFieldsG; node++) {
+        cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
+        cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
+
+        int rowIndex  = elemToNode(cell, node);
+#ifdef HAVE_MPI
+        worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
+#else
+        worksetApproxSolnCoef(cellCounter, node) = femCoefficients.Values()[rowIndex];
+#endif
+      }
+
+      cellCounter++;
+
+    } // end cell loop
+
+      // Containers for Jacobian
+    Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
+
+    // Containers for basis values and gradients in physical space
+    Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
+    Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
+
+    // compute cell Jacobians, their inverses and their determinants
+    IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
+    IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
+    IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
+
+    // map cubature points to physical frame
+    Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
+    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
+
+    // evaluate exact solution and gradient at cubature points
+    Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    evaluateExactSolution(worksetExactSoln, worksetCubPoints);
+    evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
+
+    // transform basis values to physical coordinates
+    IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
+    IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
+
+    // compute weighted measure
+    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
+
+    // evaluate the approximate solution and gradient at cubature points
+    Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
+    IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
+
+    // get difference between approximate and exact solutions
+    Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
+    IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
+
+    // take absolute values
+    IntrepidRSTools::absval(worksetDeltaSoln);
+    IntrepidRSTools::absval(worksetDeltaSolnGrad);
+    // apply cubature weights to differences in values and grads for use in integration
+    Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
+                                                    worksetCubWeightsE, worksetDeltaSoln);
+    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
+                                                    worksetCubWeightsE, worksetDeltaSolnGrad);
+
+    // integrate to get errors on each element
+    Intrepid::FieldContainer<double> worksetL2err(worksetSize);
+    Intrepid::FieldContainer<double> worksetH1err(worksetSize);
+    IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
+                                       worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
+    IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
+                                       worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
+
+    // loop over cells to get errors for total workset
+    cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // loop over cubature points
+      for(int nPt = 0; nPt < numCubPointsErr; nPt++){
+
+        Linferr = std::max(Linferr, worksetDeltaSoln(cellCounter,nPt));
+
+      }
+
+      L2err += worksetL2err(cellCounter);
+      H1err += worksetH1err(cellCounter);
+
+      cellCounter++;
+
+    } // end cell loop
+
+  } // end loop over worksets
+
+#ifdef HAVE_MPI
+  // sum over all processors
+  Comm.SumAll(&L2err,&L2errTot,1);
+  Comm.SumAll(&H1err,&H1errTot,1);
+  Comm.MaxAll(&Linferr,&LinferrTot,1);
+#else
+  L2errTot = L2err;
+  H1errTot = H1err;
+  LinferrTot = Linferr;
+#endif
+
+
+  if (MyPID == 0) {
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
+    std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
+    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
+  }
+
+  if(MyPID==0) {std::cout << msg << "Calculate error                             "
+                          << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
+
+
 }

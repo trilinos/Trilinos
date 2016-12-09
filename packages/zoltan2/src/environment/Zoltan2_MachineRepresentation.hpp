@@ -5,9 +5,12 @@
 #include <Zoltan2_MachineForTesting.hpp>
 #include <Zoltan2_MachineTopoMgr.hpp>
 #include <Zoltan2_MachineTopoMgrForTest.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+
+#include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_MachineRCA.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
-
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
@@ -17,10 +20,11 @@ template <typename pcoord_t, typename part_t>
 class MachineRepresentation{
 
 public:
-
+    typedef pcoord_t machine_pcoord_t;
+    typedef part_t machine_part_t;
 #if defined(HAVE_ZOLTAN2_LDMS)
     typedef MachineLDMS<pcoord_t,part_t> machine_t;
-#elif defined(HAVE_ZOLTAN2_RCA)
+#elif defined(HAVE_ZOLTAN2_RCALIB)
     typedef MachineRCA<pcoord_t,part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
     typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
@@ -35,7 +39,8 @@ public:
      */
 
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
-      machine(new machine_t(comm)) { }
+      machine(new machine_t(comm)) {
+   }
 
     MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
           machine(new machine_t(comm, pl)) { }
@@ -115,6 +120,16 @@ public:
       return machine->getHopCount(rank1, rank2, hops);
     }
 
+    /*! \brief Set up validators specific to this Problem
+    */
+    static void getValidParameters(Teuchos::ParameterList & pl)
+    {
+      Teuchos::RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
+        Teuchos::rcp( new Teuchos::StringValidator(
+          Teuchos::tuple<std::string>( "EIGNORE", "Node")));
+      pl.set("machine_coord_transformation", "Node", "BGQ Optimization Type",
+        mapping_algorithm_Validator);
+    }
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 

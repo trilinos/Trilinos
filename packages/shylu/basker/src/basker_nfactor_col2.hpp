@@ -539,7 +539,7 @@ namespace BaskerNS
 
 	    //const Int blk = l+1;  
 	ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
-	INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws;
+	//INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws; //NDE - warning: unused 
 	Int      p_sizeL  = LL(leader_idx)(blk).p_size;
 	ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
 	INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
@@ -592,7 +592,7 @@ namespace BaskerNS
 	      }
 	    #endif
 	
-	    if(X(jj) !=0)
+	    if(X(jj) != (Entry)(0) )
 	      {
 		#ifdef BASKER_DEBUG_NFACTOR_COL2
 		if(lower == BASKER_TRUE)
@@ -660,7 +660,7 @@ namespace BaskerNS
     Int nnz = 0;
 
     //Over each blk    
-    Int last_blk = l+2;   
+//    Int last_blk = l+2;//NDE - warning: unused 
     /*
     if(lvl ==(l+1))
       {
@@ -744,7 +744,7 @@ namespace BaskerNS
     //-------------move into C------------------- 
     //(Right now have to do dense but like to do sparse)
 
-    last_blk = LL_size(leader_idx);
+//    last_blk = LL_size(leader_idx); //NDE - warning: unused 
     //printf("------maybe l:%d lastblk: %d kid: %d\n",
     //   l, last_blk, kid);
     
@@ -804,7 +804,7 @@ namespace BaskerNS
         #endif
 	
 	
-	if(X(j) != 0)
+	if(X(j) != (Entry)(0) )
 	  {
 	    if(bl == l+1)
 	      {
@@ -870,7 +870,7 @@ namespace BaskerNS
     Int X_row             = l+1;
     Int col_idx_offset    = 0;  //can get rid of?
    
-    BASKER_MATRIX        &L = LL(L_col)(L_row);
+    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
     
     INT_1DARRAY     ws = LL(X_col)(X_row).iws;

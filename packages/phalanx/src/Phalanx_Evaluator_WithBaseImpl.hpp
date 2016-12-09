@@ -138,10 +138,10 @@ namespace PHX {
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    virtual Kokkos::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
+    virtual Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d);
 
     virtual unsigned taskSize() const;
@@ -153,8 +153,7 @@ namespace PHX {
 
     virtual const std::string& getName() const override;
 
-    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
-                                    const PHX::any& f) override;
+    virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) override;
 
   private:
 
@@ -166,8 +165,8 @@ namespace PHX {
 
     std::string name_;
 
-    //! binds memory for an unmanaged field
-    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> unmanaged_field_binders_;
+    //! functors that bind memory for evaluator fields
+    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> field_binders_;
   };
 
 }

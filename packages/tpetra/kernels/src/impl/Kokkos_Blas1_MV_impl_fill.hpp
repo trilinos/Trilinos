@@ -221,29 +221,29 @@ struct Fill<Kokkos::View<SCALAR**, \
 // Their definitions go in .cpp file(s) in this source directory.
 //
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_SERIAL
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_OPENMP
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // KOKKOS_HAVE_CUDA
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 //
 // Macro for definition of full specialization of

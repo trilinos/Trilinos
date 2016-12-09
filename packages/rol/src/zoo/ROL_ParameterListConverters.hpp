@@ -149,14 +149,13 @@ inline void tierParameterList( Teuchos::ParameterList &outList,
   dict["Use Inexact Hessian-Times-A-Vector"]                = join("General","Inexact Hessian-Times-A-Vector");
   dict["Use Projected Gradient Criticality Measure"]        = join("General","Projected Gradient Criticality Measure");
   dict["Scale for Epsilon Active Sets"]                     = join("General","Scale for Epsilon Active Sets");
-  dict["Variable Objective Function"]                       = join("General","Variable Objective Function");
 
   dict["Absolute Krylov Tolerance"]                         = join("General","Krylov","Absolute Tolerance");
   dict["Relative Krylov Tolerance"]                         = join("General","Krylov","Relative Tolerance");
   dict["Maximum Number of Krylov Iterations"]               = join("General","Krylov","Iteration Limit");
   dict["Krylov Type"]                                       = join("General","Krylov","Type");
 
-  dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
+  dict["Barzilai-Borwein"]                                  = join("General","Secant","Barzilai-Borwein");
   dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
   dict["Secant Type"]                                       = join("General","Secant","Type");
   dict["Use Secant Hessian-Times-A-Vector"]                 = join("General","Secant","Use as Hessian");

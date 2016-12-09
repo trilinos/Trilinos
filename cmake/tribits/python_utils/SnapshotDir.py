@@ -83,14 +83,21 @@ class DefaultOptions:
 # Main help string
 #
 
-usageHelp = r"""snapshot-dir.py [OPTIONS]
+usageHelp = r"""snapshot-dir.py [other options] [--orig-dir=<orig-dir>/] [--dest-dir=<dest-dir>/]
 
 This tool snapshots the contents of an origin directory ('orig-dir') to
 destination directory ('dest-dir') and creates linkages between the two git
 repos in the commit message in the 'dest-dir' git branch.  The command 'git'
 must be in the path for this script to be used.
 
-To demonstrate how this script is used, consider the desire to snapshot the
+To sync between any two arbitrary directories invoking this script from any
+directory location, one can do:
+
+  $ <some-base-dir>/snapshot-dir.py \
+    --orig-dir=<some-orig-dir>/ \
+    --dest-dir=<some-dest-dir>/
+
+To describe how this script is used, consider the desire to snapshot the
 directory tree:
 
   <some-orig-base-dir>/orig-dir/
@@ -120,13 +127,6 @@ By default, this assumes that git repos are used for both the 'orig-dir' and
 'dest-dir' locations.  The info about the origin of the snapshot from
 'orig-dir' is recorded in the commit message of the 'dest-dir' git repo to
 provide tractability for the versions (see below).
-
-To sync between any two arbitrary directories invoking this script from any
-directory location, one can do:
-
-  $ <some-base-dir>/snapshot-dir.py \
-    --orig-dir=<some-orig-dir>/ \
-    --dest-dir=<some-dest-dir>/
 
 Note the trailing '/' is critical for the correct functioning of rsync.
 

@@ -1,0 +1,24 @@
+<ParameterList name = "Inputs">
+
+  <ParameterList name = "Step">
+
+    <ParameterList name = "Trust Region">
+      <Parameter name = "Subproblem Solver"     type = "string"   value = "Truncated CG" />
+      <Parameter name = "Subproblem Model"      type = "string"   value = "Kelley-Sachs" />
+    </ParameterList>
+
+    <ParameterList name = "Composite Step">
+    </ParameterList>
+
+    <ParameterList name = "Augmented Lagrangian">
+    </ParameterList>
+
+  </ParameterList> 
+
+    <ParameterList name = "Status Test"> 
+      <Parameter name = "Constraint Tolerance"   type = "double"   value = "1e-9" />
+      <Parameter name = "Gradient Tolerance"     type = "double"   value = "1e-7" />
+    </ParameterList>
+
+
+</ParameterList>

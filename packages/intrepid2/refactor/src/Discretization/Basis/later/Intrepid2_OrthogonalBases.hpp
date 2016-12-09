@@ -95,7 +95,7 @@ namespace Intrepid2 {
 
     template<class Scalar, class ScalarArray1, class ScalarArray2>
     static void tabulateTriangle( const ScalarArray1& z ,
-                                  const int n ,
+                                  const ordinal_type n ,
                                   ScalarArray2 & poly_val );
 
     /** \brief Calculates triangular orthogonal expansions
@@ -112,7 +112,7 @@ namespace Intrepid2 {
 
     template<class Scalar, class ScalarArray1, class ScalarArray2>
     static void tabulateTetrahedron( const ScalarArray1& z ,
-                                    const int n ,
+                                    const ordinal_type n ,
                                     ScalarArray2 & poly_val );
     
   private:
@@ -123,19 +123,19 @@ namespace Intrepid2 {
     */
 
     template<class Scalar>
-    static void jrc( const Scalar &alpha , const Scalar &beta , const int &n ,
+    static void jrc( const Scalar &alpha , const Scalar &beta , const ordinal_type &n ,
                     Scalar &an , Scalar &bn, Scalar &cn );
 
     /** \brief Given indices p,q, computes the linear index of
         the Dubiner polynomial D^{p,q} */
-    static inline int idxtri(int p, int q)
+    static inline ordinal_type idxtri(ordinal_type p, ordinal_type q)
     {
       return (p+q)*(p+q+1)/2+q;
     }
 
     /** \brief Given indices p,q,r, computes the linear index of the
         tetrahedral polynomial D^{p,q,r} */
-    static inline int idxtet(int p, int q, int r)
+    static inline ordinal_type idxtet(ordinal_type p, ordinal_type q, ordinal_type r)
     {
       return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
     }

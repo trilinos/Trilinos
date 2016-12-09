@@ -174,10 +174,9 @@ Ioss::ElementTopology *Ioss::Pyramid5::face_type(int face_number) const
     //    return Ioss::ElementTopology::factory("triface3");
     return Ioss::ElementTopology::factory("tri3");
   }
-  else {
-    //    return Ioss::ElementTopology::factory("quadface4");
-    return Ioss::ElementTopology::factory("quad4");
-  }
+
+  //    return Ioss::ElementTopology::factory("quadface4");
+  return Ioss::ElementTopology::factory("quad4");
 }
 
 Ioss::ElementTopology *Ioss::Pyramid5::edge_type(int edge_number) const

@@ -75,21 +75,19 @@ Possible causes of errors include:
 
 \param[in] exoid   exodus file ID returned from a previous call to ex_create()
 or ex_open().
-\param[in] x_coor  The X-coordinates of the nodes. If this is \c NULL, the
+\param[in] x_coor  The X-coordinates of the nodes. If this is NULL, the
                    X-coordinates will not be written.
-\param[in] y_coor  The Y-coordinates of the nodes. These are stored only if \c
-num_dim
-                   > 1; otherwise, pass in \c NULL. If this is \c NULL, the
+\param[in] y_coor  The Y-coordinates of the nodes. These are stored only if num_dim
+                   > 1; otherwise, pass in NULL. If this is NULL, the
                    Y-coordinates will not be written.
-\param[in] z_coor  The Z-coordinates of the nodes. These are stored only if \c
-num_dim
-                   > 2; otherwise, pass in \c NULL. If this is \c NULL, the
+\param[in] z_coor  The Z-coordinates of the nodes. These are stored only if num_dim
+                   > 2; otherwise, pass in NULL. If this is NULL, the
                    Z-coordinates will not be written.
 
 The following will write the nodal coordinates to an open
 exodus file :
 
-\code
+~~~{.c}
 int error, exoid;
 
 // \comment{if file opened with compute word size of sizeof(float)}
@@ -107,11 +105,12 @@ x[7] = 1.0; y[7] = 1.0; z[7] = 0.0;
 
 error = ex_put_coord(exoid, x, y, z);
 
-// \comment{Do the same as the previous call in three separate calls}
+\comment{Do the same as the previous call in three separate calls}
 error = ex_put_coord(exoid, x,    NULL, NULL);
 error = ex_put_coord(exoid, NULL, y,    NULL);
 error = ex_put_coord(exoid, NULL, NULL, z);
-\endcode
+
+~~~
 
  */
 

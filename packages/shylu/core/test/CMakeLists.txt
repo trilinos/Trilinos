@@ -1,9 +1,13 @@
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../src/interfaces)
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    aztec_driver
 #    SOURCES shylu_driver.cpp
 #    COMM mpi
 #    )
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
+IF(${PACKAGE_NAME}_ENABLE_ML)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     belos_driver
@@ -99,3 +103,4 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     EXEDEPS belos_driver iqr_driver epetra_interface
     )
 
+ENDIF()

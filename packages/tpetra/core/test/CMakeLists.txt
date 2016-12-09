@@ -6,10 +6,12 @@ ADD_SUBDIRECTORIES(
   BasicPerfTest
   Block
   BugTests
+  Comm
   CrsGraph
   CrsMatrix
   Directory
   Distributor
+  Environment
   HashTable
   ImportExport
   ImportExport2

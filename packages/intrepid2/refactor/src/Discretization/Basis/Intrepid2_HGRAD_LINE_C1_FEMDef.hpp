@@ -53,53 +53,108 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  template<EOperator opType>
-  template<typename outputValueViewType,
-           typename inputPointViewType>
-  KOKKOS_INLINE_FUNCTION
-  void
-  Basis_HGRAD_LINE_C1_FEM<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  outputValueViewType output,
-             const inputPointViewType  input ) {
-    switch (opType) {
-    case OPERATOR_VALUE : {
-      const auto x = input(0);
+  namespace Impl {
 
-      output(0) = (1.0 - x)/2.0;
-      output(1) = (1.0 + x)/2.0;
-      break;
-    }
-    case OPERATOR_GRAD : {
-      output(0, 0) = -0.5;
-      output(1, 0) =  0.5;
-      break;
-    }
-    case OPERATOR_MAX : {
-      const auto jend = output.dimension(1);
-      const auto iend = output.dimension(0);
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HGRAD_LINE_C1_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType input ) {
+      switch (opType) {
+      case OPERATOR_VALUE : {
+        const auto x = input(0);
 
-      for (size_type j=0;j<jend;++j)
-        for (size_type i=0;i<iend;++i)
-          output(i, j) = 0.0;
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                opType != OPERATOR_GRAD &&
-                                opType != OPERATOR_MAX,
-                                ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::Serial::getValues) operator is not supported");
+        output(0) = (1.0 - x)/2.0;
+        output(1) = (1.0 + x)/2.0;
+        break;
+      }
+      case OPERATOR_GRAD : {
+        output(0, 0) = -0.5;
+        output(1, 0) =  0.5;
+        break;
+      }
+      case OPERATOR_MAX : {
+        const ordinal_type jend = output.dimension(1);
+        const ordinal_type iend = output.dimension(0);
 
+        for (ordinal_type j=0;j<jend;++j)
+          for (ordinal_type i=0;i<iend;++i)
+            output(i, j) = 0.0;
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                  opType != OPERATOR_GRAD &&
+                                  opType != OPERATOR_MAX,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::Serial::getValues) operator is not supported");
+
+      }
+      }
     }
+
+    template<typename SpT,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    void
+    Basis_HGRAD_LINE_C1_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const EOperator operatorType ) {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+      // Number of evaluation points = dim 0 of inputPoints
+      const auto loopSize = inputPoints.dimension(0);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+      switch (operatorType) {
+
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_DIV:
+      case OPERATOR_CURL:
+      case OPERATOR_D1: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_LINE_C1_FEM): Invalid operator type");
+      }
+      }
     }
+
+
+
   }
 
   // -------------------------------------------------------------------------------------
 
   template<typename SpT, typename OT, typename PT>
   Basis_HGRAD_LINE_C1_FEM<SpT,OT,PT>::
-  Basis_HGRAD_LINE_C1_FEM()
-    : impl_(this) {
+  Basis_HGRAD_LINE_C1_FEM() {
     this->basisCardinality_  = 2;
     this->basisDegree_       = 1;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
@@ -133,7 +188,7 @@ namespace Intrepid2 {
                               posScDim,
                               posScOrd,
                               posDfOrd);
-      
+
       //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
       //Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
 
@@ -142,95 +197,14 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace> 
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension()); 
-    
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
     dofCoords(0,0) = -1.0;
     dofCoords(1,0) =  1.0;
-    
+
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
-  }
-
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  void
-  Basis_HGRAD_LINE_C1_FEM<SpT,OT,PT>::Internal::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HGRAD_Args(outputValues,
-                                    inputPoints,
-                                    operatorType,
-                                    obj_->getBaseCellTopology(),
-                                    obj_->getCardinality() );
-#endif
-
-    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
-    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
-
-    // Number of evaluation points = dim 0 of inputPoints
-    const auto loopSize = inputPoints.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
-    switch (operatorType) {
-
-    case OPERATOR_VALUE: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_GRAD:
-    case OPERATOR_DIV:
-    case OPERATOR_CURL:
-    case OPERATOR_D1: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_LINE_C1_FEM): Invalid operator type");
-    }
-    }
-  }
-
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename dofCoordValueType, class ...dofCoordProperties>
-  void
-  Basis_HGRAD_LINE_C1_FEM<SpT,OT,PT>::Internal::
-  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
-
-#ifdef HAVE_INTREPID2_DEBUG
-    // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::getDofCoords) rank = 2 required for dofCoords array");
-    // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
-    // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
-#endif
-    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
   }
 
 }

@@ -152,7 +152,10 @@ namespace panzer {
     TEST_EQUALITY(point_rule->num_points,num_points);
   
     panzer::PointValues2<ScalarType,PHX::MDField > point_values2;
-    panzer::MDFieldArrayFactory af("prefix_");
+
+    const size_type derivative_dim = 4;
+    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
+    panzer::MDFieldArrayFactory af("prefix_",ddims);
 
     point_values2.setupArrays(point_rule,af);
 
@@ -164,9 +167,6 @@ namespace panzer {
     //   |    0  |
     //   |       |
     // 0(0,0)---1(1,0)
-
-    const size_type derivative_dim = 4;
-    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
 
     const int num_vertices = point_rule->topology->getNodeCount();
     ArrayType node_coordinates = af.buildArray<ScalarType,Cell,NODE,Dim>("node_coordinates",num_cells, num_vertices, base_cell_dimension);

@@ -73,21 +73,24 @@ namespace Tpetra {
   ///   data redistribution.
   ///
   /// DistObject is a base class for all Tpetra distributed global
-  /// objects, including CrsMatrix and MultiVector.  It provides the
-  /// basic mechanisms and interface specifications for importing and
-  /// exporting operations using Import and Export objects.
+  /// objects, including CrsGraph, CrsMatrix, MultiVector, and Vector.
+  /// Classes that inherit from DistObject work as either the source
+  /// or the target of an Export or Import (parallel redistribution)
+  /// operation.  If you want to write a class that can work as the
+  /// source or target of an Export or Import operation, that class
+  /// must inherit from DistObject.
   ///
-  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's
-  ///   \c LocalOrdinal template parameter.  This should be an integer
-  ///   type, preferably signed.
+  /// \tparam LocalOrdinal The type of local indices.  Same as Map's
+  ///   \c LocalOrdinal template parameter.  See Map's documentation
+  ///   for a discussion of the types that are valid to use here.
   ///
-  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's
-  ///   \c GlobalOrdinal template parameter.  Defaults to the same type
-  ///   as \c LocalOrdinal.  This should also be an integer type,
-  ///   preferably signed.
+  /// \tparam GlobalOrdinal The type of global indices.  Same as Map's
+  ///   \c GlobalOrdinal template parameter.  See Map's documentation
+  ///   for a discussion of the types that are valid to use here.
   ///
-  /// \tparam Node Same as Map's \c Node template parameter.  Defaults
-  ///   to the default Kokkos Node type.
+  /// \tparam Node Same as Map's \c Node template parameter.  See
+  ///   Map's documentation for a discussion of the types that are
+  ///   valid to use here.
   ///
   /// \tparam classic DO NOT SET THIS EXPLICITLY.  This template
   ///   parameter only exists for backwards compatibility.  It must
@@ -96,7 +99,7 @@ namespace Tpetra {
   /// \section Tpetra_DistObject_Summary Summary
   ///
   /// Most Tpetra users will only use this class' methods to perform
-  /// data redistribution for subclasses such as CrsMatrix,
+  /// data redistribution for subclasses such as CrsGraph, CrsMatrix,
   /// MultiVector, and Vector.  DistObject provides four methods for
   /// redistributing data: two versions of <tt>doImport()</tt>, and
   /// two versions of <tt>doExport()</tt>.  Import operations
@@ -162,20 +165,41 @@ namespace Tpetra {
   ///
   /// \section Tpetra_DistObject_ImplSubclass How to implement a subclass
   ///
-  /// If you want to implement your own DistObject subclass, you
-  /// should start by implementing the four pure virtual methods:
-  /// checkSizes(), copyAndPermute(), packAndPrepare(), and
-  /// unpackAndCombine().  The implementation of doTransfer() includes
-  /// documentation that explains how DistObject uses those methods to
-  /// do data redistribution.
+  /// If you want to implement your own DistObject subclass, you have
+  /// two choices of interface to implement: "old" (using Teuchos
+  /// memory management classes, like Teuchos::ArrayRCP and
+  /// Teuchos::ArrayView) or "new" (using Kokkos memory management
+  /// classes, like Kokkos::View and Kokkos::DualView).  Prefer new to
+  /// old.  The new interface gives you more options for thread
+  /// parallelism and use of the GPU.
   ///
-  /// If you are writing a DistObject class that uses Kokkos compute
-  /// buffers and aims to work for any Kokkos Node type, you should
-  /// also implement the three hooks that create and release views:
-  /// createViews(), createViewsNonConst(), and releaseViews().  The
-  /// default implementation of these hooks does nothing.  The
-  /// documentation of these methods explains different ways you might
-  /// choose to implement them.
+  /// If you intend to implement the new interface, you must override
+  /// useNewInterface() to return \c true.  In that case, your class
+  /// must override the following methods:
+  /// <ul>
+  /// <li> constantNumberOfPackets() </li>
+  /// <li> checkSizes() </li>
+  /// <li> copyAndPermuteNew() </li>
+  /// <li> packAndPrepareNew() </li>
+  /// <li> unpackAndCombineNew() </li>
+  /// </ul>
+  /// Comments in the implementation of doTransferNew() explain how
+  /// DistObject uses these methods to pack and unpack data for
+  /// redistribution.
+  ///
+  /// If you choose to implement the old interface (not recommended),
+  /// you should override the following methods instead:
+  /// <ul>
+  /// <li> constantNumberOfPackets() </li>
+  /// <li> checkSizes() </li>
+  /// <li> copyAndPermute() </li>
+  /// <li> packAndPrepare() </li>
+  /// <li> unpackAndCombine() </li>
+  /// </ul>
+  /// In this case, you may also wish to implement createViews(),
+  /// createViewsNonConst(), and releaseViews().  Comments in the
+  /// implementation of doTransfer() explain how DistObject uses all
+  /// these methods to pack and unpack data for redistribution.
   ///
   /// DistObject implements SrcDistObject, because we presume that if
   /// an object can be the target of an Import or Export, it can also
@@ -235,7 +259,8 @@ namespace Tpetra {
     //! @name Public methods for redistributing data
     //@{
 
-    /// \brief Import data into this object using an Import object ("forward mode").
+    /// \brief Import data into this object using an Import object
+    ///   ("forward mode").
     ///
     /// The input DistObject is always the source of the data
     /// redistribution operation, and the <tt>*this</tt> object is
@@ -257,7 +282,8 @@ namespace Tpetra {
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               CombineMode CM);
 
-    /// \brief Export data into this object using an Export object ("forward mode").
+    /// \brief Export data into this object using an Export object
+    ///   ("forward mode").
     ///
     /// The input DistObject is always the source of the data
     /// redistribution operation, and the <tt>*this</tt> object is
@@ -279,7 +305,8 @@ namespace Tpetra {
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
               CombineMode CM);
 
-    /// \brief Import data into this object using an Export object ("reverse mode").
+    /// \brief Import data into this object using an Export object
+    ///   ("reverse mode").
     ///
     /// The input DistObject is always the source of the data
     /// redistribution operation, and the <tt>*this</tt> object is
@@ -302,7 +329,8 @@ namespace Tpetra {
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
               CombineMode CM);
 
-    /// \brief Export data into this object using an Import object ("reverse mode").
+    /// \brief Export data into this object using an Import object
+    ///   ("reverse mode").
     ///
     /// The input DistObject is always the source of the data
     /// redistribution operation, and the <tt>*this</tt> object is
@@ -377,7 +405,8 @@ namespace Tpetra {
     //! @name Methods for use only by experts
     //@{
 
-    /// \brief Remove processes which contain no elements in this object's Map.
+    /// \brief Remove processes which contain no entries in this
+    ///   object's Map.
     ///
     /// \warning This method is ONLY for use by experts.  We highly
     ///   recommend using the nonmember function of the same name
@@ -391,7 +420,7 @@ namespace Tpetra {
     /// "original communicator").  The input \c newMap of this method
     /// <i>must</i> be the same as the result of calling
     /// <tt>getMap()->removeEmptyProcesses()</tt>.  On processes in
-    /// the original communicator which contain zero elements
+    /// the original communicator which contain zero entries
     /// ("excluded processes," as opposed to "included processes"),
     /// the input \c newMap must be \c Teuchos::null (which is what
     /// <tt>getMap()->removeEmptyProcesses()</tt> returns anyway).
@@ -438,7 +467,8 @@ namespace Tpetra {
 
   protected:
     /// \enum ReverseOption
-    /// \brief Whether the data transfer should be performed in forward or reverse mode.
+    /// \brief Whether the data transfer should be performed in
+    ///   forward or reverse mode.
     ///
     /// "Reverse mode" means calling doExport() with an Import object,
     /// or calling doImport() with an Export object.  "Forward mode"
@@ -450,14 +480,15 @@ namespace Tpetra {
     };
 
     /// \brief Whether the implementation's instance promises always
-    ///   to have a constant number of packets per LID, and if so, how
-    ///   many packets per LID there are.
+    ///   to have a constant number of packets per LID (local index),
+    ///   and if so, how many packets per LID there are.
     ///
     /// If this method returns zero, the instance says that it might
-    /// possibly have a different number of packets for each LID to
-    /// send or receive.  If it returns nonzero, the instance promises
-    /// that the number of packets is the same for all LIDs, and that
-    /// the return value is this number of packets per LID.
+    /// possibly have a different number of packets for each LID
+    /// (local index) to send or receive.  If it returns nonzero, the
+    /// instance promises that the number of packets is the same for
+    /// all LIDs, and that the return value is this number of packets
+    /// per LID.
     ///
     /// The default implementation of this method returns zero.  This
     /// does not affect the behavior of doTransfer() in any way.  If a

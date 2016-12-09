@@ -72,7 +72,7 @@ private:
 
 protected:
   Teuchos::RCP<StepState<Real> > getState(void) {
-    return this->state_;
+    return state_;
   }
 
 public:
@@ -290,8 +290,8 @@ public:
 
   /** \brief Get state for step object.
   */
-  virtual Teuchos::RCP<const StepState<Real> > getStepState(void) const {
-    return this->state_;
+  const Teuchos::RCP<const StepState<Real> > getStepState(void) const {
+    return state_;
   }
 
   // struct StepState (scalars, vectors) map?

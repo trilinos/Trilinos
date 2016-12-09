@@ -101,6 +101,9 @@ private:
   Teuchos::RCP<Reduced_Objective_SimOpt<Real> > rAugLagSimOpt_;
   Teuchos::RCP<Vector<Real> > state_;
 
+  // Evaluation counters
+  int ngval_;
+
 public:
   Reduced_AugmentedLagrangian_SimOpt(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
                                      const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &redCon,
@@ -111,7 +114,8 @@ public:
                                      const Teuchos::RCP<Vector<Real> > &augConVec,
                                      const Teuchos::RCP<Vector<Real> > &multiplier,
                                      const Real penaltyParameter,
-                                     Teuchos::ParameterList &parlist) : state_(state) {
+                                     Teuchos::ParameterList &parlist) : state_(state),
+                                     ngval_(0) {
 
     augLagSimOpt_ = Teuchos::rcp(new AugmentedLagrangian_SimOpt<Real>(obj,
                                                                       augCon,
@@ -121,7 +125,10 @@ public:
                                                                       *control,
                                                                       *augConVec,
                                                                       parlist));
-    rAugLagSimOpt_ = Teuchos::rcp(new Reduced_Objective_SimOpt<Real>(augLagSimOpt_,redCon,state,adjoint));
+    rAugLagSimOpt_ = Teuchos::rcp(new Reduced_Objective_SimOpt<Real>(augLagSimOpt_,redCon,state,control,adjoint));
+    rAugLagSimOpt_->update(*control);
+    Real tol = 1e-8;
+    rAugLagSimOpt_->value(*control,tol);
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
@@ -133,6 +140,7 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    ngval_++;
     rAugLagSimOpt_->gradient(g,x,tol);
   }
 
@@ -162,14 +170,22 @@ public:
 
   // Return total number of gradient evaluations
   int getNumberGradientEvaluations(void) const {
-    return augLagSimOpt_->getNumberGradientEvaluations();
+    return ngval_;
+    //return augLagSimOpt_->getNumberGradientEvaluations();
   }
 
   // Reset with upated penalty parameter
   void reset(const Vector<Real> &multiplier, const Real penaltyParameter) {
+    ngval_ = 0;
     augLagSimOpt_->reset(multiplier,penaltyParameter);
   }
 
+// For parametrized (stochastic) objective functions and constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    AugmentedLagrangian<Real>::setParameter(param);
+    rAugLagSimOpt_->setParameter(param);
+  }
 }; // class AugmentedLagrangian
 
 } // namespace ROL

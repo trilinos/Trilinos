@@ -108,17 +108,28 @@ void Multiply(
 
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("My Matrix Mult", mmm_multiply);
 
-  // A and B should already be Filled.
-  // Should we go ahead and call FillComplete() on them if necessary or error
-  // out? For now, we choose to error out.
+  // The input matrices A and B must both be fillComplete.
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, prefix << "Matrix A is not fill complete.");
   TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, prefix << "Matrix B is not fill complete.");
 
+  // If transposeA is true, then Aprime will be the transpose of A
+  // (computed explicitly via RowMatrixTransposer).  Otherwise, Aprime
+  // will just be a pointer to A.
   RCP<const crs_matrix_type> Aprime = null;
+  // If transposeB is true, then Bprime will be the transpose of B
+  // (computed explicitly via RowMatrixTransposer).  Otherwise, Bprime
+  // will just be a pointer to B.
   RCP<const crs_matrix_type> Bprime = null;
 
   // Is this a "clean" matrix?
-  bool newFlag = !C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
+  //
+  // mfh 27 Sep 2016: Historically, if Epetra_CrsMatrix was neither
+  // locally nor globally indexed, then it was empty.  I don't like
+  // this, because the most straightforward implementation presumes
+  // lazy allocation of indices.  However, historical precedent
+  // demands that we keep around this predicate as a way to test
+  // whether the matrix is empty.
+  const bool newFlag = !C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
 
   bool use_optimized_ATB = false;
   if (transposeA && !transposeB && call_FillComplete_on_result && newFlag)
@@ -221,6 +232,9 @@ void Multiply(
     MMdetails::mult_A_B_reuse(Aview, Bview, C, label);
 
   } else {
+    // mfh 27 Sep 2016: Is this the "slow" case?  This
+    // "CrsWrapper_CrsMatrix" thing could perhaps be made to support
+    // thread-parallel inserts, but that may take some effort.
     CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
     MMdetails::mult_A_B(Aview, Bview, crsmat, label);
@@ -1247,6 +1261,10 @@ size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
 
 
 // Kernel method for computing the local portion of C = A*B
+//
+// mfh 27 Sep 2016: Currently, mult_AT_B_newmatrix() also calls this
+// function, so this is probably the function we want to
+// thread-parallelize.
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -1286,9 +1304,16 @@ void mult_A_B_newmatrix(
   RCP<const import_type> Bimport = Bview.origMatrix->getGraph()->getImporter();
   RCP<const import_type> Iimport = Bview.importMatrix.is_null() ?
       Teuchos::null : Bview.importMatrix->getGraph()->getImporter();
+
+  // mfh 27 Sep 2016: Bcol2Ccol is a table that maps from local column
+  // indices of B, to local column indices of C.  (B and C have the
+  // same number of columns.)  The kernel uses this, instead of
+  // copying the entire input matrix B and converting its column
+  // indices to those of C.
   Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
 
   if (Bview.importMatrix.is_null()) {
+    // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
@@ -1296,6 +1321,13 @@ void mult_A_B_newmatrix(
       Bcol2Ccol[i] = Teuchos::as<LO>(i);
 
   } else {
+    // mfh 27 Sep 2016: B has "remotes," so we need to build the
+    // column Map of C, as well as C's Import object (from its domain
+    // Map to its column Map).  C's column Map is the union of the
+    // column Maps of (the local part of) B, and the "remote" part of
+    // B.  Ditto for the Import.  We have optimized this "setUnion"
+    // operation on Import objects and Maps.
+
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null())
       Cimport = Bimport->setUnion(*Iimport);
@@ -1311,10 +1343,17 @@ void mult_A_B_newmatrix(
 
     Ccolmap = Cimport->getTargetMap();
 
+    // FIXME (mfh 27 Sep 2016) This error check requires an all-reduce
+    // in general.  We should get rid of it in order to reduce
+    // communication costs of sparse matrix-matrix multiply.
     TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
       std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
 
     // NOTE: This is not efficient and should be folded into setUnion
+    //
+    // mfh 27 Sep 2016: What the above comment means, is that the
+    // setUnion operation on Import objects could also compute these
+    // local index - to - local index look-up tables.
     Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
     ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
     ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
@@ -1341,10 +1380,19 @@ void mult_A_B_newmatrix(
   ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
   ArrayRCP<SC> Cvals_RCP;
 
+  // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
+  // out of the CrsMatrix.  This code computes A * (B_local +
+  // B_remote), where B_local contains the locally owned rows of B,
+  // and B_remote the (previously Import'ed) remote rows of B.
+
   Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
   Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
   if (!Bview.importMatrix.is_null())
     Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+
+  // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
+  // where Teuchos::ArrayRCP::operator[] may be slower than
+  // Teuchos::ArrayView::operator[].
 
   // For efficiency
   ArrayView<const size_t>   Arowptr, Browptr, Irowptr;
@@ -1360,10 +1408,31 @@ void mult_A_B_newmatrix(
   }
 
   // Classic csr assembly (low memory edition)
+  //
+  // mfh 27 Sep 2016: C_estimate_nnz does not promise an upper bound.
+  // The method loops over rows of A, and may resize after processing
+  // each row.  Chris Siefert says that this reflects experience in
+  // ML; for the non-threaded case, ML found it faster to spend less
+  // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
+
+  // mfh 27 Sep 2016: Construct tables that map from local column
+  // indices of A, to local row indices of either B_local (the locally
+  // owned part of B), or B_remote (the "imported" remote part of B).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the local part of B ("orig") (which I'll call B_local),
+  // then targetMapToOrigRow[Aik] is the local index of that row of B.
+  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the remote part of B ("Import") (which I'll call
+  // B_remote), then targetMapToImportRow[Aik] is the local index of
+  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
+  // (a flag value).
 
   // Run through all the hash table lookups once and for all
   Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
@@ -1381,6 +1450,9 @@ void mult_A_B_newmatrix(
 
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
+  // mfh 27 Sep 2016: The c_status array is an implementation detail
+  // of the local sparse matrix-matrix multiply routine.
+
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
   //   c_status[i] >= CSR_ip - this is the entry where you can find the data
@@ -1389,21 +1461,37 @@ void mult_A_B_newmatrix(
   size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
   Array<size_t> c_status(n, ST_INVALID);
 
+  // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
+  // routine.  The routine computes C := A * (B_local + B_remote).
+  //
+  // For column index Aik in row i of A, targetMapToOrigRow[Aik] tells
+  // you whether the corresponding row of B belongs to B_local
+  // ("orig") or B_remote ("Import").
+
   // For each row of A/C
   size_t CSR_ip = 0, OLD_ip = 0;
   for (size_t i = 0; i < m; i++) {
+    // mfh 27 Sep 2016: m is the number of rows in the input matrix A
+    // on the calling process.
     Crowptr[i] = CSR_ip;
 
+    // mfh 27 Sep 2016: For each entry of A in the current row of A
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
-      LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      LO Aik  = Acolind[k]; // local column index of current entry of A
+      SC Aval = Avals[k];   // value of current entry of A
       if (Aval == SC_ZERO)
-        continue;
+        continue; // skip explicitly stored zero values in A
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // mfh 27 Sep 2016: If the entry of targetMapToOrigRow
+        // corresponding to the current entry of A is populated, then
+        // the corresponding row of B is in B_local (i.e., it lives on
+        // the calling process).
+
         // Local matrix
         size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
 
+        // mfh 27 Sep 2016: Go through all entries in that row of B_local.
         for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
@@ -1421,6 +1509,11 @@ void mult_A_B_newmatrix(
         }
 
       } else {
+        // mfh 27 Sep 2016: If the entry of targetMapToOrigRow
+        // corresponding to the current entry of A NOT populated (has
+        // a flag "invalid" value), then the corresponding row of B is
+        // in B_local (i.e., it lives on the calling process).
+
         // Remote matrix
         size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
         for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
@@ -1461,10 +1554,17 @@ void mult_A_B_newmatrix(
 #endif
 
   // Replace the column map
+  //
+  // mfh 27 Sep 2016: We do this because C was originally created
+  // without a column Map.  Now we have its column Map.
   C.replaceColMap(Ccolmap);
 
   // Final sort & set of CRS arrays
+  //
+  // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
+  // matrix-matrix multiply routine sort the entries for us?
   Import_Util::sortCrsEntries(Crowptr_RCP(), Ccolind_RCP(), Cvals_RCP());
+  // mfh 27 Sep 2016: This just sets pointers.
   C.setAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1472,6 +1572,13 @@ void mult_A_B_newmatrix(
 #endif
 
   // Final FillComplete
+  //
+  // mfh 27 Sep 2016: So-called "expert static fill complete" bypasses
+  // Import (from domain Map to column Map) construction (which costs
+  // lots of communication) by taking the previously constructed
+  // Import object.  We should be able to do this without interfering
+  // with the implementation of the local part of sparse matrix-matrix
+  // multply above.
   C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport);
 }
 
@@ -1686,9 +1793,16 @@ void jacobi_A_B_newmatrix(
   RCP<const map_type>    Ccolmap;
   RCP<const import_type> Bimport = Bview.origMatrix->getGraph()->getImporter();
   RCP<const import_type> Iimport = Bview.importMatrix.is_null() ? Teuchos::null :  Bview.importMatrix->getGraph()->getImporter();
+
+  // mfh 27 Sep 2016: Bcol2Ccol is a table that maps from local column
+  // indices of B, to local column indices of C.  (B and C have the
+  // same number of columns.)  The kernel uses this, instead of
+  // copying the entire input matrix B and converting its column
+  // indices to those of C.
   Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
 
   if (Bview.importMatrix.is_null()) {
+    // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
@@ -1696,6 +1810,13 @@ void jacobi_A_B_newmatrix(
       Bcol2Ccol[i] = Teuchos::as<LO>(i);
 
   } else {
+    // mfh 27 Sep 2016: B has "remotes," so we need to build the
+    // column Map of C, as well as C's Import object (from its domain
+    // Map to its column Map).  C's column Map is the union of the
+    // column Maps of (the local part of) B, and the "remote" part of
+    // B.  Ditto for the Import.  We have optimized this "setUnion"
+    // operation on Import objects and Maps.
+
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()){
       Cimport = Bimport->setUnion(*Iimport);
@@ -1716,6 +1837,10 @@ void jacobi_A_B_newmatrix(
       std::runtime_error, "Tpetra:Jacobi Import setUnion messed with the DomainMap in an unfortunate way");
 
     // NOTE: This is not efficient and should be folded into setUnion
+    //
+    // mfh 27 Sep 2016: What the above comment means, is that the
+    // setUnion operation on Import objects could also compute these
+    // local index - to - local index look-up tables.
     Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
     ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
     ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
@@ -1743,11 +1868,23 @@ void jacobi_A_B_newmatrix(
   ArrayRCP<SC>           Cvals_RCP;
   ArrayRCP<const SC>     Dvals_RCP;
 
+  // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
+  // out of the CrsMatrix.  This code computes A * (B_local +
+  // B_remote), where B_local contains the locally owned rows of B,
+  // and B_remote the (previously Import'ed) remote rows of B.
+
   Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
   Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
   if (!Bview.importMatrix.is_null())
     Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+
+  // mfh 27 Sep 2016: The "Jacobi" case scales by the inverse of a
+  // diagonal matrix.
   Dvals_RCP = Dinv.getData();
+
+  // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
+  // where Teuchos::ArrayRCP::operator[] may be slower than
+  // Teuchos::ArrayView::operator[].
 
   // For efficiency
   ArrayView<const size_t>   Arowptr, Browptr, Irowptr;
@@ -1773,11 +1910,32 @@ void jacobi_A_B_newmatrix(
   Array<size_t> c_status(n, ST_INVALID);
 
   // Classic csr assembly (low memory edition)
+  //
+  // mfh 27 Sep 2016: C_estimate_nnz does not promise an upper bound.
+  // The method loops over rows of A, and may resize after processing
+  // each row.  Chris Siefert says that this reflects experience in
+  // ML; for the non-threaded case, ML found it faster to spend less
+  // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
   size_t CSR_ip = 0, OLD_ip = 0;
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
+
+  // mfh 27 Sep 2016: Construct tables that map from local column
+  // indices of A, to local row indices of either B_local (the locally
+  // owned part of B), or B_remote (the "imported" remote part of B).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the local part of B ("orig") (which I'll call B_local),
+  // then targetMapToOrigRow[Aik] is the local index of that row of B.
+  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the remote part of B ("Import") (which I'll call
+  // B_remote), then targetMapToImportRow[Aik] is the local index of
+  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
+  // (a flag value).
 
   // Run through all the hash table lookups once and for all
   Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
@@ -1795,8 +1953,21 @@ void jacobi_A_B_newmatrix(
 
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
+  // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
+  // routine.  The routine computes
+  //
+  // C := (I - omega * D^{-1} * A) * (B_local + B_remote)).
+  //
+  // This corresponds to one sweep of (weighted) Jacobi.
+  //
+  // For column index Aik in row i of A, targetMapToOrigRow[Aik] tells
+  // you whether the corresponding row of B belongs to B_local
+  // ("orig") or B_remote ("Import").
+
   // For each row of A/C
   for (size_t i = 0; i < m; i++) {
+    // mfh 27 Sep 2016: m is the number of rows in the input matrix A
+    // on the calling process.
     Crowptr[i] = CSR_ip;
     SC Dval = Dvals[i];
 
@@ -1883,10 +2054,17 @@ void jacobi_A_B_newmatrix(
 #endif
 
   // Replace the column map
+  //
+  // mfh 27 Sep 2016: We do this because C was originally created
+  // without a column Map.  Now we have its column Map.
   C.replaceColMap(Ccolmap);
 
   // Final sort & set of CRS arrays
+  //
+  // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
+  // matrix-matrix multiply routine sort the entries for us?
   Import_Util::sortCrsEntries(Crowptr_RCP(), Ccolind_RCP(), Cvals_RCP());
+  // mfh 27 Sep 2016: This just sets pointers.
   C.setAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1894,6 +2072,13 @@ void jacobi_A_B_newmatrix(
 #endif
 
   // Final FillComplete
+  //
+  // mfh 27 Sep 2016: So-called "expert static fill complete" bypasses
+  // Import (from domain Map to column Map) construction (which costs
+  // lots of communication) by taking the previously constructed
+  // Import object.  We should be able to do this without interfering
+  // with the implementation of the local part of sparse matrix-matrix
+  // multply above.
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport);
 }
 

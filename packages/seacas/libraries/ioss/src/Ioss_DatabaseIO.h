@@ -155,6 +155,7 @@ namespace Ioss {
 
     virtual void openDatabase() const {}
     virtual void closeDatabase() const {}
+    virtual void flush_database() const {}
 
     /** \brief If a database type supports groups and if the database
      *         contains groups, open the specified group.
@@ -452,10 +453,8 @@ namespace Ioss {
 
     mutable Ioss::State dbState;
 
-    bool         isParallel;       //!< true if running in parallel
-    mutable bool isSerialParallel; //!< true if a serial code that needs to read/write the parallel
-                                   //! information.
-    int myProcessor;               //!< number of processor this database is for
+    bool isParallel;  //!< true if running in parallel
+    int  myProcessor; //!< number of processor this database is for
 
     /*!
      * Check the topology of all face/element pairs in the model and

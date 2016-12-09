@@ -48,8 +48,8 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 #include "ROL_TeuchosBatchManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"

@@ -38,6 +38,10 @@ int main() {
 
   TEST_FIND_SUBSTR_IN_STR("Sqr(3) = 9", oss.str());
 
+#ifdef HAVE_SIMPLECXX_SIMPLETPL
+  TEST_FIND_SUBSTR_IN_STR("Cube(3) = 27", oss.str());
+#endif
+
   if (success) {
     std::cout << "End Result: TEST PASSED\n";
   }

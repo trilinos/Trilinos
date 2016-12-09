@@ -41,7 +41,6 @@
 #include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
-#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/PartField.hpp>    // for PartField
 #include <stk_mesh/base/Part.hpp>       // for Part
@@ -90,13 +89,13 @@ print_entity_key( const MetaData & meta_data, const EntityKey & key );
 bool is_topology_root_part(const Part & part);
 
 /** set a cell_topology on a part */
-void set_cell_topology( Part &part, const CellTopology cell_topology);
+void set_cell_topology( Part &part, const shards::CellTopology cell_topology);
 
 /** set a cell_topology on a part */
 template<class Topology>
 inline void set_cell_topology(Part & part)
 {
-  stk::mesh::set_cell_topology(part, CellTopology(shards::getCellTopologyData<Topology>()));
+  stk::mesh::set_cell_topology(part, shards::CellTopology(shards::getCellTopologyData<Topology>()));
 }
 
 stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
@@ -106,10 +105,10 @@ stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, co
 void set_topology(Part &part, stk::topology topology);
 
 /** get the stk::topology given a Shards Cell Topology */
-stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);
+stk::topology get_topology(shards::CellTopology shards_topology, int spatial_dimension = 3);
 
 /** Get the Shards Cell Topology given a stk::topology  */
-CellTopology get_cell_topology(stk::topology topo);
+shards::CellTopology get_cell_topology(stk::topology topo);
 
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
@@ -147,9 +146,9 @@ public:
    */
 
   /// CellTopologyPartEntityRankMap maps each Cell Topology to its root cell topology part and its associated rank
-  typedef std::map<CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
+  typedef std::map<shards::CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
   /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
-  typedef std::vector<CellTopology> PartCellTopologyVector;
+  typedef std::vector<shards::CellTopology> PartCellTopologyVector;
 
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
@@ -549,7 +548,7 @@ public:
    *
    * Note:  This function also creates the root cell topology part which is accessible from get_cell_topology_root_part
    */
-  void register_cell_topology(const CellTopology cell_topology, EntityRank in_entity_rank);
+  void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
 
   shards::CellTopology register_super_cell_topology(stk::topology t);
 
@@ -557,7 +556,7 @@ public:
    * This Part is created in register_cell_topology
    */
 
-  Part &get_cell_topology_root_part(const CellTopology cell_topology) const;
+  Part &get_cell_topology_root_part(const shards::CellTopology cell_topology) const;
 
   /** \brief Return the topology part given a stk::topology.
    */
@@ -568,10 +567,10 @@ public:
    * The cell topology is set on a part through part subsetting with the root
    * cell topology part.
    */
-  CellTopology get_cell_topology( const Part & part) const;
+  shards::CellTopology get_cell_topology( const Part & part) const;
   stk::topology get_topology(const Part & part) const;
 
-  CellTopology get_cell_topology( const std::string & topology_name) const;
+  shards::CellTopology get_cell_topology( const std::string & topology_name) const;
 
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 
@@ -597,7 +596,7 @@ private:
 
   void internal_declare_part_subset( Part & superset , Part & subset );
 
-  void assign_cell_topology( Part & part, CellTopology topo);
+  void assign_cell_topology( Part & part, shards::CellTopology topo);
 
   // Members
 
@@ -638,7 +637,6 @@ private:
 
   void require_valid_entity_rank( EntityRank rank) const ;
 
-  void require_not_relation_target( const Part * const part ) const ;
   /** \} */
   //------------------------------------
 

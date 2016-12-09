@@ -64,7 +64,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 
 namespace {

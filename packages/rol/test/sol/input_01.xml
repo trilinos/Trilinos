@@ -227,7 +227,7 @@
       </ParameterList>
 
       <!-- ===========  SINGLETON KUSUOKA  =========== -->
-      <ParameterList name="Singleton Kusuoka">
+      <ParameterList name="Spectral Risk">
         <Parameter name="Number of Quadrature Points" type="int"    value="10"    />
 
         <ParameterList name="Distribution">

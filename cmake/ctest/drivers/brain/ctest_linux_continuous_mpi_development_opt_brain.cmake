@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE Continuous)
 
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
 #SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)

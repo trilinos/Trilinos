@@ -47,9 +47,8 @@ public:
   typedef T value_type;
 
   Point(value_type x = value_type(), value_type y = value_type(), value_type z = value_type())
-    : m_value()
+    : m_value{x, y, z}
   {
-    m_value[0] = x; m_value[1] = y; m_value[2] = z;
   }
 
   value_type const& operator[](size_t index) const
@@ -80,7 +79,6 @@ public:
   value_type get_x_max() const { return m_value[0]; }
   value_type get_y_max() const { return m_value[1]; }
   value_type get_z_max() const { return m_value[2]; }
-
 
   friend std::ostream& operator<<(std::ostream & out, Point<value_type> const& p)
   {

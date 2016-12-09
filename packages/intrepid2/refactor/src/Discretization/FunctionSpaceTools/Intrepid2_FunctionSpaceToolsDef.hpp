@@ -53,22 +53,22 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
   template<typename SpT>
-  template<typename outputValValueType, class ...outputValProperties,
-           typename inputValValueType,  class ...inputValProperties>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
   void
   FunctionSpaceTools<SpT>::
-  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputVals,
-                       const Kokkos::DynRankView<inputValValueType, inputValProperties...>  inputVals ) {
-    ArrayTools<SpT>::cloneFields(outputVals, inputVals);
+  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
+    ArrayTools<SpT>::cloneFields(output, input);
   }
-  
+
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {
     template <typename outputViewType,
               typename jacInverseViewType,
               typename inputViewType,
-              int spaceDim>
+              ordinal_type spaceDim>
     struct F_HGRADtransformGRAD {
       /**/  outputViewType     _output;
       const jacInverseViewType  _jacInverse;
@@ -131,47 +131,50 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( outputVals.dimension(2)      != inputVals.dimension(1) || 
                                     jacobianInverse.dimension(1) != inputVals.dimension(1), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Point dimension does not match.");
-      const ordinal_type spaceDim = outputVals.dimension(3);
+      const auto spaceDim = outputVals.dimension(3);
       INTREPID2_TEST_FOR_EXCEPTION( jacobianInverse.dimension(2) != spaceDim || 
                                     jacobianInverse.dimension(3) != spaceDim || 
                                     inputVals.dimension(2)       != spaceDim , std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): matvec dimensions are not compatible.");
     }
 #endif
-    // ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
-    
-    typedef /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputViewType;
-    typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
-    typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
 
-    const ordinal_type 
-      C = outputVals.dimension(0),
-      F = outputVals.dimension(1),
-      P = outputVals.dimension(2);
+    // this modification is for 2d and 3d (not 1d)
+    // this is an attempt to measure the overhead of subview of dynrankview. 
 
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < SpT, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    range_policy_type policy( { 0, 0, 0 },
-                              { C, F, P } );
+    // typedef /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputViewType;
+    // typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
+    // typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
 
-    const ordinal_type spaceDim = inputVals.dimension(2);
-    switch (spaceDim) {
-    case 2: {
-      typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-      break;
-    }
-    case 3: {
-      typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): spaceDim is not 2 or 3.");
-      break;
-    }
-    }
+    // const ordinal_type 
+    //   C = outputVals.dimension(0),
+    //   F = outputVals.dimension(1),
+    //   P = outputVals.dimension(2);
+
+    // using range_policy_type = Kokkos::Experimental::MDRangePolicy
+    //   < SpT, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    // range_policy_type policy( { 0, 0, 0 },
+    //                           { C, F, P } );
+
+    // const ordinal_type spaceDim = inputVals.dimension(2);
+    // switch (spaceDim) {
+    // case 2: {
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
+    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   break;
+    // }
+    // case 3: {
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
+    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   break;
+    // }
+    // default: {
+    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    //                                 ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): spaceDim is not 2 or 3.");
+    //   break;
+    // }
+    // }
   }
   
   // ------------------------------------------------------------------------------------
@@ -355,28 +358,28 @@ namespace Intrepid2 {
     struct F_computeCellMeasure {
       /**/  outputValViewType   _outputVals;
       const inputDetViewType    _inputDet;
-      const inputDetViewType    _inputWeight;
+      const inputWeightViewType    _inputWeight;
       
       KOKKOS_INLINE_FUNCTION
       F_computeCellMeasure( outputValViewType outputVals_,
                             inputDetViewType inputDet_,
-                            inputDetViewType inputWeight_)
+                            inputWeightViewType inputWeight_)
         : _outputVals(outputVals_), 
           _inputDet(inputDet_),
           _inputWeight(inputWeight_) {}
 
-      typedef int value_type;
+      typedef ordinal_type value_type;
       
-      KOKKOS_INLINE_FUNCTION
-      void init( value_type &dst ) const {
-        dst = false;
-      }
+//      KOKKOS_INLINE_FUNCTION
+//      void init( value_type &dst ) const {
+//        dst = false;
+//      }
       
-      KOKKOS_INLINE_FUNCTION
-      void join( volatile value_type &dst,
-                 const volatile value_type &src ) const {
-        dst |= src;
-      }
+//      KOKKOS_INLINE_FUNCTION
+//      void join( volatile value_type &dst,
+//                 const volatile value_type &src ) const {
+//       dst |= src;
+//      }
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type cl, value_type &dst) const {
@@ -410,9 +413,8 @@ namespace Intrepid2 {
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Ranks are not compatible.");
       INTREPID2_TEST_FOR_EXCEPTION( outputVals.dimension(0) != inputDet.dimension(0), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Cell dimension does not match.");
-      const ordinal_type P = outputVals.dimension(1);
-      INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      != P ||
-                                    inputWeights.dimension(1) != P, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      !=  outputVals.dimension(1) ||
+                                    inputWeights.dimension(0) !=  outputVals.dimension(1), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Point dimension does not match.");
     }
 #endif
@@ -443,24 +445,30 @@ namespace Intrepid2 {
   computeFaceMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>     inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
-                      const int                   whichFace,
+                      const ordinal_type                   whichFace,
                       const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( inputJac.rank() != 4, std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space always has a unit rank.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inputJac.span(), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space must be greater than inputJac.");
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch view imust have rank 1.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch storage must be greater than or equal to inputJac's one.");
 #endif
 
     // face normals (reshape scratch)
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
-                                                                           inputJac.dimension(0), 
-                                                                           inputJac.dimension(1), 
-                                                                           inputJac.dimension(2));
-    
+    // Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
+    //                                                                        inputJac.dimension(0), 
+    //                                                                        inputJac.dimension(1), 
+    //                                                                        inputJac.dimension(2));
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals = 
+      Kokkos::createDynRankView(scratch,
+                                scratch.data(), 
+                                inputJac.dimension(0), 
+                                inputJac.dimension(1), 
+                                inputJac.dimension(2));
+
     // compute normals
     CellTools<SpT>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
 
@@ -483,23 +491,29 @@ namespace Intrepid2 {
   computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>   inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
-                      const int                   whichEdge,
+                      const ordinal_type                   whichEdge,
                       const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( (inputJac.rank() != 4), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space always has a unit rank.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inputJac.span(), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space must be greater than inputJac.");
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch view must have a rank 1.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch storage must be greater than or equal to inputJac'one.");
 #endif
 
     // edge tangents (reshape scratch)
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
-                                                                            inputJac.dimension(0), 
-                                                                            inputJac.dimension(1), 
-                                                                            inputJac.dimension(2));
+    // Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
+    //                                                                         inputJac.dimension(0), 
+    //                                                                         inputJac.dimension(1), 
+    //                                                                         inputJac.dimension(2));
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents = 
+      Kokkos::createDynRankView(scratch,
+                                scratch.data(), 
+                                inputJac.dimension(0), 
+                                inputJac.dimension(1), 
+                                inputJac.dimension(2));
     
     // compute normals
     CellTools<SpT>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);
@@ -956,7 +970,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
     INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(0) != inputFields.dimension(0), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
-    for (size_type i=1;i<outputPointVals.rank();++i) 
+    for (size_type i=1;i<outputPointVals.rank();++i)
       INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(i) != inputFields.dimension(i+1), std::invalid_argument, 
                                     ">>> ERROR (FunctionSpaceTools::evaluate): outputPointVals dimension(i) does not match to inputFields dimension(i+1).");
 #endif

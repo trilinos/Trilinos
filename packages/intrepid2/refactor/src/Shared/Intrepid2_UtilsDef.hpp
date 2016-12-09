@@ -264,8 +264,8 @@ namespace Intrepid2 {
                                    ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
         ordinal_type enumeration = zMult;
-        const auto iend = order-xMult+1;
-        for(auto i=0;i<iend;++i) {
+        const ordinal_type iend = order-xMult+1;
+        for(ordinal_type i=0;i<iend;++i) {
           enumeration += i;
         }
         return enumeration;

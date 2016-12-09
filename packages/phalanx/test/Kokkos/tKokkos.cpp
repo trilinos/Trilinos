@@ -59,7 +59,7 @@
 #include "Kokkos_DynRankView_Fad.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-#include "Kokkos_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #include <type_traits>
 #include <limits>
 #endif
@@ -297,7 +297,7 @@ namespace phalanx_test {
   template< class Space >
   struct TaskDep {    
     typedef int value_type ;
-    typedef Kokkos::TaskPolicy< Space > policy_type;
+    typedef Kokkos::TaskScheduler< Space > policy_type;
     typedef Kokkos::Future<int,Space> future_type;
     const policy_type policy;
     const value_type value;
@@ -322,9 +322,9 @@ namespace phalanx_test {
   // Tests the basic DAG dependency model
   TEUCHOS_UNIT_TEST(kokkos, AMT)
   { 
-    using execution_space = PHX::Device::execution_space;
+    using execution_space = PHX::exec_space;
     using memory_space = PHX::Device::memory_space;
-    using policy_type = Kokkos::TaskPolicy<execution_space>;
+    using policy_type = Kokkos::TaskScheduler<execution_space>;
     const unsigned memory_capacity = 3 * sizeof(TaskDep<execution_space>);    
     policy_type policy(memory_space(),memory_capacity);    
     auto f1 = policy.host_spawn(TaskDep<execution_space>(policy,3),Kokkos::TaskSingle);
@@ -363,7 +363,7 @@ namespace phalanx_test {
 
     // Test we can reuse same functor for data parallel team (non-task
     // based) kokkos
-    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::Device::execution_space>::member_type & team) const
+    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::exec_space>::member_type & team) const
     {
       const int cell = team.league_rank();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,view_.extent_int(1)), [&] (const int& ip) {
@@ -380,7 +380,7 @@ namespace phalanx_test {
     struct DataParallelTag {};
     
     typedef void value_type;
-    typedef Kokkos::TaskPolicy<Space> policy_type;
+    typedef Kokkos::TaskScheduler<Space> policy_type;
     
     const int work_size;
     const Functor functor;
@@ -402,9 +402,9 @@ namespace phalanx_test {
   // Tests hybrid parallelism in that a task is threaded.
   TEUCHOS_UNIT_TEST(kokkos, AMT_TeamHybrid)
   { 
-    using execution_space = PHX::Device::execution_space;
+    using execution_space = PHX::exec_space;
     using memory_space = PHX::Device::memory_space;
-    using policy_type = Kokkos::TaskPolicy<execution_space>;
+    using policy_type = Kokkos::TaskScheduler<execution_space>;
 
     double k=2.0;
     const int num_cells = 10;
@@ -485,8 +485,8 @@ namespace phalanx_test {
   // // Tests pthreads functions
   // TEUCHOS_UNIT_TEST(kokkos, AMT_policy_query)
   // { 
-  //   //using execution_space = PHX::Device::execution_space;
-  //   //using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+  //   //using execution_space = PHX::exec_space;
+  //   //using policy_type = Kokkos::Experimental::TaskScheduler<execution_space>;
 
   //   out << "num threads total = " 
   //       << Kokkos::Threads::thread_pool_size(0) << std::endl;
@@ -536,9 +536,9 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   { 
     using array_type = 
-      Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>;
+      Kokkos::Experimental::DynRankView<int, PHX::exec_space>;
 
-    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>::value_type;
+    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::exec_space>::value_type;
 
     array_type a("a",10,4);    
     Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));

@@ -44,6 +44,7 @@
 
 #include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
+#include "Piro_MatrixFreeDecorator.hpp" 
 
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
@@ -117,7 +118,18 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
-  initialize(appParams,in_model,observer);
+  std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+    if (appParams->isParameter("Matrix-Free Perturbation")) {
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model,
+                           appParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
+    initialize(appParams, model, observer);
+  }
+  else 
+    initialize(appParams, in_model, observer);
 }
 
 #ifdef ALBANY_BUILD
@@ -371,10 +383,12 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      *out << "\nC) Create and initalize the forward model ...\n";
      //
-     // C.1) Create the underlying EpetraExt::ModelEvaluator
+     // C.1) Create the underlying Thyra::ModelEvaluator
      // already constructed as "model". Decorate if needed.
-     // TODO: Generelize to any explicit method, option to invert mass matrix
-     if (stepperType == "Explicit RK") {
+     if (
+      stepperType == "Explicit RK" || 
+      stepperType == "Forward Euler" || 
+      stepperType == "Explicit Taylor Polynomial") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything

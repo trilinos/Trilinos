@@ -127,9 +127,9 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   if (workset.num_cells == 0)
     return;
 
-  Intrepid2::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
-                                                       (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                       Intrepid2::COMP_CPP);
+  Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
+                                                                         ones.get_view(), 
+                                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell)
     total_volume += volumes(cell);
@@ -138,9 +138,9 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field,++field_index) {
     
-    Intrepid2::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
-                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                         Intrepid2::COMP_CPP);
+    Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
+                                                                           field->get_view(), 
+                                                                           (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
     
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);

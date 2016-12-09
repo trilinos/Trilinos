@@ -98,6 +98,10 @@
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
 
+#ifdef HAVE_MUELU_INTREPID2
+#include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>

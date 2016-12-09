@@ -474,6 +474,7 @@ void RBILUK<MatrixType>::compute ()
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
 
     // MinMachNum should be officially defined, for now pick something a little
@@ -599,7 +600,7 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
               little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
@@ -612,12 +613,12 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }

@@ -36,11 +36,11 @@ my_double get_average(const std::vector<my_double>& data, int num_repeat)
 
 TEST_F(MTK_Kokkos, calculate_average)
 {
-    size_t size_data = unitTestUtils::get_command_line_option<size_t>("-s", "2");
+    size_t size_data = stk::unit_test_util::get_command_line_option<size_t>("-s", 2);
     std::vector<my_double> data(size_data);
     for(size_t i=0;i<data.size();++i)
         data[i]=i;
-    int num_repeat = unitTestUtils::get_command_line_option<size_t>("-n", "1");
+    int num_repeat = stk::unit_test_util::get_command_line_option<size_t>("-n", 1);
 
     struct timeval begin,end;
     gettimeofday(&begin,NULL);

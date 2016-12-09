@@ -61,7 +61,7 @@ namespace Intrepid2{
     primaryCellTopo_ = cellTopology;
 
     // subcell is defined either hex or quad according to dimension
-    const auto spaceDim = primaryCellTopo_.getDimension();
+    const ordinal_type spaceDim = primaryCellTopo_.getDimension();
     switch (spaceDim) {
     case 2:
       subcvCellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >());
@@ -77,12 +77,12 @@ namespace Intrepid2{
     sideIndex_ = sideIndex;
 
     // precompute subcontrol volume side index corresponding to primary cell side
-    const auto sideDim = spaceDim - 1;
+    const ordinal_type sideDim = spaceDim - 1;
 
-    const auto numPrimarySides   = primaryCellTopo_.getSubcellCount(sideDim);
-    const auto numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
+    const ordinal_type numPrimarySides   = primaryCellTopo_.getSubcellCount(sideDim);
+    const ordinal_type numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
 
-    const auto numSubcvSideNodes = subcvCellTopo_.getNodeCount(sideDim, 0);  
+    const ordinal_type numSubcvSideNodes = subcvCellTopo_.getNodeCount(sideDim, 0);
 
     boundarySidesHost_ = Kokkos::View<ordinal_type**,Kokkos::HostSpace>("CubatureControlVolumeBoundary::boundarySidesHost",
                                                                         numPrimarySides, numSubcvSideNodes);
@@ -91,7 +91,7 @@ namespace Intrepid2{
     switch (primaryCellTopo_.getKey()) {
     case shards::Triangle<3>::key:
     case shards::Quadrilateral<4>::key: {
-      for (auto i=0;i<numPrimarySides;++i) {
+      for (ordinal_type i=0;i<numPrimarySides;++i) {
         boundarySidesHost_(i,0) = 0; 
         boundarySidesHost_(i,1) = 3;
       }
@@ -99,7 +99,7 @@ namespace Intrepid2{
     }
     case shards::Hexahedron<8>::key: {
       // sides 0-3
-      for (auto i=0;i<4;++i) {
+      for (ordinal_type i=0;i<4;++i) {
         boundarySidesHost_(i,0) = 0; 
         boundarySidesHost_(i,1) = 3;
         boundarySidesHost_(i,2) = 3; 
@@ -149,10 +149,10 @@ namespace Intrepid2{
     sidePoints_ = Kokkos::DynRankView<PT,SpT>("CubatureControlVolumeBoundary::sidePoints", 
                                               numPrimarySideNodes, spaceDim);
 
-    for (auto i=0;i<numPrimarySideNodes;++i) {
-      const auto sideOrd = boundarySidesHost_(sideIndex_,i);
+    for (ordinal_type i=0;i<numPrimarySideNodes;++i) {
+      const ordinal_type sideOrd = boundarySidesHost_(sideIndex_,i);
       const auto sideRange = Kokkos::pair<ordinal_type,ordinal_type>(i, i+1);
-      auto sidePoint = Kokkos::subdynrankview(sidePoints_, sideRange, Kokkos::ALL());
+      const auto sidePoint = Kokkos::subdynrankview(sidePoints_, sideRange, Kokkos::ALL());
       CellTools<SpT>::mapToReferenceSubcell(sidePoint,
                                             sideCenterLocal,
                                             sideDim,
@@ -160,13 +160,13 @@ namespace Intrepid2{
                                             subcvCellTopo_);
     }
 
-    const auto maxNumNodesPerSide = 10;
+    const ordinal_type maxNumNodesPerSide = 10;
     Kokkos::View<ordinal_type**,Kokkos::HostSpace> sideNodeMapHost("CubatureControlVolumeSide::sideNodeMapHost",
                                                                    numPrimarySideNodes, maxNumNodesPerSide);
-    for (auto i=0;i<numPrimarySideNodes;++i) {
-      const auto sideOrd = boundarySidesHost_(sideIndex_,i);
+    for (ordinal_type i=0;i<numPrimarySideNodes;++i) {
+      const ordinal_type sideOrd = boundarySidesHost_(sideIndex_,i);
       sideNodeMapHost(i,0) = subcvCellTopo_.getNodeCount(sideDim, sideOrd);
-      for (auto j=0;j<sideNodeMapHost(i,0);++j)
+      for (ordinal_type j=0;j<sideNodeMapHost(i,0);++j)
         sideNodeMapHost(i,j+1) = subcvCellTopo_.getNodeMap(sideDim, sideOrd, j);
     }
     sideNodeMap_ = Kokkos::create_mirror_view(typename SpT::memory_space(), sideNodeMapHost);
@@ -191,16 +191,16 @@ namespace Intrepid2{
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
 
     {
-      const auto spaceDim = cellCoords.dimension(2);
-      const auto sideDim = spaceDim - 1;
-      const auto numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
+      const ordinal_type spaceDim = cellCoords.dimension(2);
+      const ordinal_type sideDim = spaceDim - 1;
+      const size_type numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
       
       INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(1) != numPrimarySideNodes || 
                                     cubWeights.dimension(1) != numPrimarySideNodes, std::invalid_argument,
                                     ">>> ERROR (CubatureControlVolume): cubPoints and cubWeights dimension(1) are not consistent, numPrimarySideNodes");
     }
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
-                                  cubPoints.dimension(2) != getDimension(), std::invalid_argument,
+                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     
@@ -208,12 +208,12 @@ namespace Intrepid2{
     typedef Kokkos::DynRankView<PT,Kokkos::LayoutStride,SpT> tempPointStrideViewType;
 
     // get array dimensions
-    const auto numCells = cellCoords.dimension(0);
-    const auto numNodesPerCell = cellCoords.dimension(1);
-    const auto spaceDim = cellCoords.dimension(2);
-    const auto sideDim = spaceDim - 1;
+    const ordinal_type numCells = cellCoords.dimension(0);
+    const ordinal_type numNodesPerCell = cellCoords.dimension(1);
+    const ordinal_type spaceDim = cellCoords.dimension(2);
+    const ordinal_type sideDim = spaceDim - 1;
 
-    const auto numNodesPerSubcv = subcvCellTopo_.getNodeCount();
+    const ordinal_type numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolumeBoundary::subcvCoords",
                                   numCells, numNodesPerCell, numNodesPerSubcv, spaceDim);
     CellTools<SpT>::getSubcvCoords(subcvCoords,
@@ -221,7 +221,7 @@ namespace Intrepid2{
                                    primaryCellTopo_);
 
     //const auto numPrimarySides = primaryCellTopo_.getSubcellCount(sideDim);
-    const auto numSubcvPoints = 1;
+    const ordinal_type numSubcvPoints = 1;
 
     tempPointViewType subcvJacobian("CubatureControlVolumeBoundary::subcvJacobian",
                                     numCells, numSubcvPoints, spaceDim, spaceDim);
@@ -234,10 +234,10 @@ namespace Intrepid2{
     Kokkos::deep_copy(weights, spaceDim == 2 ? 2.0 : 4.0);
 
     tempPointViewType scratch("CubatureControlVolumeBoundary::scratch",
-                              numCells*numSubcvPoints*spaceDim);
+                              numCells*numSubcvPoints*spaceDim*spaceDim);
 
-    const auto numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
-    for (auto node=0;node<numPrimarySideNodes;++node) {      
+    const ordinal_type numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
+    for (ordinal_type node=0;node<numPrimarySideNodes;++node) {
       const auto sideRange = Kokkos::pair<ordinal_type,ordinal_type>(node, node+1);
       const auto sidePoint = Kokkos::subdynrankview(sidePoints_, sideRange, Kokkos::ALL());
       

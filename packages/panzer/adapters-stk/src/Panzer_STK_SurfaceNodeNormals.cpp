@@ -114,7 +114,7 @@ namespace panzer_stk {
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
-    Intrepid2::DefaultCubatureFactory<double> cubFactory;
+    //Intrepid2::DefaultCubatureFactory cubFactory;
     int cubDegree = 1;
 
     std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
@@ -136,7 +136,7 @@ namespace panzer_stk {
       iv.evaluateValues(vertices);
       
       Kokkos::DynRankView<double,PHX::Device> normal("normal",1,ir->num_points,parentTopology->getDimension());
-      Intrepid2::CellTools<double>::getPhysicalSideNormals(normal, iv.jac, *sideID, *(ir->topology));
+      Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normal, iv.jac.get_view(), *sideID, *(ir->topology));
 
       if (pout != NULL) {
       *pout << "element normals: "

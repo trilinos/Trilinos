@@ -89,7 +89,8 @@ namespace ZOO {
 
       using Teuchos::RCP;
       RCP<const vector> ex = getVector(x); 
-      return 100.0 * std::pow((*ex)[1] - std::pow((*ex)[0],2.0),2.0) + std::pow(1.0-(*ex)[0],2.0);
+      return static_cast<Real>(100) * std::pow((*ex)[1] - std::pow((*ex)[0],2),2)
+           + std::pow(static_cast<Real>(1)-(*ex)[0],2);
     }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
@@ -97,8 +98,9 @@ namespace ZOO {
       using Teuchos::RCP;
       RCP<const vector> ex = getVector(x);
       RCP<vector> eg = getVector(g);
-      (*eg)[0] = -400.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)) * (*ex)[0] - 2.0 * (1.0-(*ex)[0]);
-      (*eg)[1] =  200.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)); 
+      (*eg)[0] = static_cast<Real>(-400) * ((*ex)[1] - std::pow((*ex)[0],2))
+               * (*ex)[0] - static_cast<Real>(2) * (static_cast<Real>(1)-(*ex)[0]);
+      (*eg)[1] = static_cast<Real>(200) * ((*ex)[1] - std::pow((*ex)[0],2)); 
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -108,12 +110,14 @@ namespace ZOO {
       RCP<const vector> ev = getVector(v);
       RCP<vector> ehv = getVector(hv);
  
-      Real h11 = -400.0 * (*ex)[1] + 1200.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 =  200.0;
-      Real h12 = -400.0 * (*ex)[0];
-      Real h21 = -400.0 * (*ex)[0];
+      Real h11 = static_cast<Real>(-400) * (*ex)[1]
+               + static_cast<Real>(1200) * std::pow((*ex)[0],2)
+               + static_cast<Real>(2); 
+      Real h22 = static_cast<Real>(200);
+      Real h12 = static_cast<Real>(-400) * (*ex)[0];
+      Real h21 = static_cast<Real>(-400) * (*ex)[0];
 
-      Real alpha = 1.0;
+      Real alpha(0);
 
       (*ehv)[0] = (h11+alpha) * (*ev)[0] + h12 * (*ev)[1];
       (*ehv)[1] = h21 * (*ev)[0] + (h22+alpha) * (*ev)[1];
@@ -126,13 +130,17 @@ namespace ZOO {
       RCP<const vector> ev = getVector(v);
       RCP< vector> ehv = getVector(hv);
      
-      Real h11 = -400.0 * (*ex)[1] + 1200.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 =  200.0;
-      Real h12 = -400.0 * (*ex)[0];
-      Real h21 = -400.0 * (*ex)[0];
+      Real h11 = static_cast<Real>(-400) * (*ex)[1]
+               + static_cast<Real>(1200) * std::pow((*ex)[0],2)
+               + static_cast<Real>(2); 
+      Real h22 = static_cast<Real>(200);
+      Real h12 = static_cast<Real>(-400) * (*ex)[0];
+      Real h21 = static_cast<Real>(-400) * (*ex)[0];
   
-      (*ehv)[0] = 1.0/(h11*h22 - h12*h21) * (h22 * (*ev)[0] - h12 * (*ev)[1]);
-      (*ehv)[1] = 1.0/(h11*h22 - h12*h21) * (-h21 * (*ev)[0] + h11 * (*ev)[1]);
+      (*ehv)[0] = static_cast<Real>(1)/(h11*h22 - h12*h21)
+                * (h22 * (*ev)[0] - h12 * (*ev)[1]);
+      (*ehv)[1] = static_cast<Real>(1)/(h11*h22 - h12*h21)
+                * (-h21 * (*ev)[0] + h11 * (*ev)[1]);
     }
   };
 

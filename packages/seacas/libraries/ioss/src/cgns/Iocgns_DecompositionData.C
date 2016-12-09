@@ -932,7 +932,7 @@ namespace Iocgns {
 #if !CG_BUILD_PARALLEL
     const std::string coord_name[] = {"CoordinateX", "CoordinateY", "CoordinateZ"};
 #endif
-    
+
     int      base        = 1; // Only single base supported so far.
     cgsize_t beg         = 0;
     cgsize_t end         = 0;

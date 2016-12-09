@@ -73,24 +73,24 @@ public:
       : isInitialized_(false) { }
 
    TpetraVector_ReadOnly_GlobalEvaluationData(const TpetraVector_ReadOnly_GlobalEvaluationData & src)
-      : isInitialized_(false) { initialize(src.importer_,src.ghostedMap_,src.uniqueMap_); }
+      : isInitialized_(false) { initialize(src.importer_, src.ghostedMap_, src.ownedMap_); }
 
    /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
-     * \param[in] importer Importer for doing communication from the unique 
+     * \param[in] importer Importer for doing communication from the owned 
      *                     to the ghosted vector.
      * \param[in] ghostedMap Map describing the ghosted vector.
-     * \param[in] uniqueMap Map describing the ghosted vector.
+     * \param[in] ownedMap Map describing the ghosted vector.
      */
-   TpetraVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const ImportType> & importer,
-                                              const Teuchos::RCP<const MapType> & ghostedMap,
-                                              const Teuchos::RCP<const MapType> & uniqueMap)
-      : isInitialized_(false) { initialize(importer,ghostedMap,uniqueMap); }
+   TpetraVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const ImportType>& importer,
+                                              const Teuchos::RCP<const MapType>&    ghostedMap,
+                                              const Teuchos::RCP<const MapType>&    ownedMap)
+      : isInitialized_(false) { initialize(importer, ghostedMap, ownedMap); }
 
    /** Choose a few GIDs and instead of zeroing them out in the ghosted vector set
      * them to a specified value. Note that this is only useful for GIDs in the
-     * ghosted map that are not in the unique map.
+     * ghosted map that are not in the owned map.
      *
      * This must be called before initialize. Also note that no attempt to synchronize
      * these values a crossed processor is made. So its up to the user to be consistent.
@@ -100,14 +100,14 @@ public:
    /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
-     * \param[in] importer Importer for doing communication from the unique 
+     * \param[in] importer Importer for doing communication from the owned 
      *                     to the ghosted vector.
      * \param[in] ghostedMap Map describing the ghosted vector.
-     * \param[in] uniqueMap Map describing the ghosted vector.
+     * \param[in] ownedMap Map describing the ghosted vector.
      */
-   void initialize(const Teuchos::RCP<const ImportType> & importer,
-                   const Teuchos::RCP<const MapType> & ghostedMap,
-                   const Teuchos::RCP<const MapType> & uniqueMap);
+   void initialize(const Teuchos::RCP<const ImportType>& importer,
+                   const Teuchos::RCP<const MapType>&    ghostedMap,
+                   const Teuchos::RCP<const MapType>&    ownedMap);
 
    /** For this class, this method does the halo exchange for the 
      * vector.
@@ -123,20 +123,20 @@ public:
    //! Nothing to do (its read only)
    virtual bool requiresDirichletAdjustment() const { return false; }
 
-   //! Set the unique vector (Tpetra version)
-   void setUniqueVector_Tpetra(const Teuchos::RCP<const VectorType> & uniqueVector);
+   //! Set the owned vector (Tpetra version)
+   void setOwnedVector_Tpetra(const Teuchos::RCP<const VectorType>& ownedVector);
 
-   //! Get the unique vector (Tpetra version)
-   Teuchos::RCP<const VectorType> getUniqueVector_Tpetra() const;
+   //! Get the owned vector (Tpetra version)
+   Teuchos::RCP<const VectorType> getOwnedVector_Tpetra() const;
 
    //! Get the ghosted vector (Tpetra version)
    Teuchos::RCP<VectorType> getGhostedVector_Tpetra() const;
 
-   //! Set the unique vector (Thyra version)
-   void setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector);
+   //! Set the owned vector (Thyra version)
+   void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >& ownedVector);
 
-   //! Get the unique vector (Thyra version)
-   Teuchos::RCP<const Thyra::VectorBase<double> > getUniqueVector() const;
+   //! Get the owned vector (Thyra version)
+   Teuchos::RCP<const Thyra::VectorBase<double> > getOwnedVector() const;
 
    //! Get the ghosted vector (Thyra version)
    Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const;
@@ -151,14 +151,14 @@ private:
    bool isInitialized_;
 
    Teuchos::RCP<const MapType> ghostedMap_;
-   Teuchos::RCP<const MapType> uniqueMap_;
+   Teuchos::RCP<const MapType> ownedMap_;
 
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_;
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ownedSpace_;
 
    Teuchos::RCP<const ImportType> importer_;
-   Teuchos::RCP<VectorType> ghostedVector_;
-   Teuchos::RCP<const VectorType> uniqueVector_;
+   Teuchos::RCP<VectorType>       ghostedVector_;
+   Teuchos::RCP<const VectorType> ownedVector_;
 
    typedef std::pair<std::vector<GlobalOrdinalT>,double> FilteredGlobalPair;
    typedef std::pair<std::vector<LocalOrdinalT>,double> FilteredLocalPair;

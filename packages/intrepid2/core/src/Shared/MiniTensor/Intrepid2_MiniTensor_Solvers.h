@@ -55,6 +55,9 @@ using FAD = Sacado::Fad::SLFad<T, N>;
 
 ///
 /// Function base class that defines the interface to Mini Solvers.
+/// The dimensions M and N are different in case vectors are passed
+/// to the methods that have different capacity. They must have
+/// dimension N.
 ///
 template<typename FunctionDerived, typename S, Index M>
 struct Function_Base
@@ -105,30 +108,32 @@ public:
 };
 
 ///
-/// Constraint base class that defines the interface to Mini Solvers.
+/// Equality constraint base class that defines the interface to Mini Solvers.
 ///
-template<typename ConstraintDerived, typename S, Index M>
-struct Constraint_Base
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
+struct Equality_Constraint
 {
 public:
-  Constraint_Base()
+  Equality_Constraint()
   {
   }
 
   ///
-  /// By default use merit function 0.5 dot(residual,residual)
-  /// as the target to optimize if only the residual is provided.
   ///
   template<typename T, Index N>
-  Vector<T, N>
+  Vector<T, NC>
   value(ConstraintDerived & c, Vector<T, N> const & x);
 
   ///
   /// By default compute gradient with AD from value().
   ///
   template<typename T, Index N>
-  Matrix<T, M, N>
+  Matrix<T, NC, NV>
   gradient(ConstraintDerived & c, Vector<T, N> const & x);
+
+  static constexpr
+  bool
+  IS_EQUALITY{true};
 
   ///
   /// Signal that something has gone horribly wrong.
@@ -138,7 +143,38 @@ public:
 
   static constexpr
   Index
-  DIMENSION{M};
+  NUM_CONSTR{NC};
+
+  static constexpr
+  Index
+  NUM_VAR{NV};
+};
+
+///
+/// Inequality constraint base class that defines the interface to Mini Solvers.
+///
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
+struct Inequality_Constraint :
+    public Equality_Constraint<ConstraintDerived, S, NC, NV>
+{
+  static constexpr
+  bool
+  IS_EQUALITY{false};
+};
+
+///
+/// Bounds constraint
+///
+template<typename T, Index N>
+struct Bounds
+{
+  Bounds(Vector<T, N> const & l, Vector<T, N> const & u);
+
+  Vector<T, N>
+  lower;
+
+  Vector<T, N>
+  upper;
 };
 
 ///
@@ -148,13 +184,7 @@ template<typename T, Index N>
 struct Minimizer
 {
 public:
-  Minimizer()
-  {
-    constexpr bool
-    is_fad = Sacado::IsADType<T>::value == true;
-
-    static_assert(is_fad == false, "AD types not allowed for type T");
-  }
+  Minimizer();
 
   template<typename STEP, typename FN>
   void
@@ -175,13 +205,7 @@ private:
 
   template<typename FN>
   void
-  recordFinals(FN & fn, Vector<T, N> const & x)
-  {
-    final_soln = x;
-    final_value = fn.value(x);
-    final_gradient = fn.gradient(x);
-    final_hessian = fn.hessian(x);
-  }
+  recordFinals(FN & fn, Vector<T, N> const & x);
 
 public:
   Index
@@ -304,11 +328,24 @@ struct BacktrackingLineSearch
 };
 
 ///
+/// Trust region subproblem base
+///
+template<typename T, Index N>
+struct TrustRegionSubproblemBase
+{
+  PreconditionerType
+  preconditioner_type{PreconditionerType::IDENTITY};
+
+  Vector<T, N>
+  lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
+};
+
+///
 /// Trust region subproblem with a given objective function.
 /// Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
-struct TrustRegionExactValue
+struct TrustRegionExactValue : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -325,7 +362,7 @@ struct TrustRegionExactValue
 /// Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
-struct TrustRegionExactGradient
+struct TrustRegionExactGradient : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -342,7 +379,7 @@ struct TrustRegionExactGradient
 /// Dog leg algorithm.
 ///
 template<typename T, Index N>
-struct TrustRegionDogLegValue
+struct TrustRegionDogLegValue : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -356,7 +393,7 @@ struct TrustRegionDogLegValue
 /// Dog leg algorithm.
 ///
 template<typename T, Index N>
-struct TrustRegionDogLegGradient
+struct TrustRegionDogLegGradient : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -393,6 +430,12 @@ struct StepBase
 
   virtual
   ~StepBase() {}
+
+  PreconditionerType
+  preconditioner_type{PreconditionerType::IDENTITY};
+
+  Vector<T, N>
+  lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 };
 
 ///

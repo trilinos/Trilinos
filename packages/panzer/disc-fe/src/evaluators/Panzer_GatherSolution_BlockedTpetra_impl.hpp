@@ -74,7 +74,7 @@ GatherSolution_BlockedTpetra(
 
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     PHX::MDField<ScalarT,Cell,NODE> field = PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
-    this->addEvaluatedField(field);
+    this->addEvaluatedField(field.fieldTag());
   }
 
   this->setName("Gather Solution");

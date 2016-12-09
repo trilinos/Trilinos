@@ -57,9 +57,39 @@
 //! \brief interface to the Scotch third-party library
 
 ////////////////////////////////////////////////////////////////////////
+
+namespace Zoltan2 {
+
+// this function called by the two scotch types below
+static inline void getScotchParameters(Teuchos::ParameterList & pl)
+{
+  // bool parameter
+  pl.set("scotch_verbose", false, "verbose output",
+    Environment::getBoolValidator());
+
+  RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator =
+    Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+  pl.set("scotch_level", 0, "scotch ordering - Level of the subgraph in the "
+    "separators tree for the initial graph at the root of the tree",
+    scotch_level_Validator);
+
+  pl.set("scotch_imbalance_ratio", 0.2, "scotch ordering - Dissection "
+    "imbalance ratio", Environment::getAnyDoubleValidator());
+
+  // bool parameter
+  pl.set("scotch_ordering_default", true, "use default scotch ordering "
+    "strategy", Environment::getBoolValidator());
+
+  pl.set("scotch_ordering_strategy", "", "scotch ordering - Dissection "
+    "imbalance ratio");
+}
+
+} // Zoltan2 namespace
+
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
 namespace Zoltan2 {
+
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
@@ -80,6 +110,13 @@ public:
     throw std::runtime_error(
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
   }
 };
 }
@@ -263,6 +300,13 @@ public:
       this->model_flags.set(VERTICES_ARE_MESH_ELEMENTS);
   }
 
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
+  }
+
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
   /* BDD: Beginning work on ordering method.
@@ -306,11 +350,11 @@ void AlgPTScotch<Adapter>::buildModel(bool isLocal) {
     else if (symParameter == std::string("bipartite"))
       this->model_flags.set(SYMMETRIZE_INPUT_BIPARTITE);  } 
 
-  int sgParameter = 0;
+  bool sgParameter = false;
   pe = pl.getEntryPtr("subset_graph");
   if (pe)
-    sgParameter = pe->getValue<int>(&sgParameter);
-  if (sgParameter == 1)
+    sgParameter = pe->getValue(&sgParameter);
+  if (sgParameter)
       this->model_flags.set(BUILD_SUBSET_GRAPH);
 
   this->model_flags.set(REMOVE_SELF_EDGES);
@@ -592,17 +636,17 @@ int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const Paramete
 // get ordering parameters from parameter list
   
   const Teuchos::ParameterEntry *pe;
-  int isVerbose = 0;
+  bool isVerbose = false;
   pe = pList.getEntryPtr("scotch_verbose");
   if (pe)
-    isVerbose = pe->getValue<int>(&isVerbose);
+    isVerbose = pe->getValue(&isVerbose);
 
-  int use_default = 1;
+  bool use_default = true;
   std::string strat_string("");
 
   pe = pList.getEntryPtr("scotch_ordering_default");
   if (pe)
-    use_default = pe->getValue<int>(&use_default);
+    use_default = pe->getValue(&use_default);
   
   pe = pList.getEntryPtr("scotch_ordering_strategy");
   if (pe)
@@ -657,10 +701,10 @@ int AlgPTScotch<Adapter>::order(
   const ParameterList &pl = env->getParameters();
   const Teuchos::ParameterEntry *pe;
 
-  int isVerbose = 0;
+  bool isVerbose = false;
   pe = pl.getEntryPtr("scotch_verbose");
   if (pe)
-    isVerbose = pe->getValue<int>(&isVerbose);
+    isVerbose = pe->getValue(&isVerbose);
   
   // build a local graph model
   this->buildModel(true);

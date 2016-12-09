@@ -296,7 +296,7 @@ namespace Tpetra {
   /// <li> modify(): Mark data in a memory space as modified (or about
   ///      to be modified) </li>
   /// <li> sync(): If data in the target memory space are least
-  ///      recently modified compared witht he other space, copy data
+  ///      recently modified compared with the other space, copy data
   ///      to the target memory space </li>
   /// <li> getLocalView(): Return a Kokkos::View of the data in a
   ///      given memory space </li>
@@ -2286,14 +2286,7 @@ namespace Tpetra {
                          const size_t constantNumPackets,
                          Distributor& /* distor */,
                          const CombineMode CM);
-
-    void createViews () const;
-    void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
-    void releaseViews () const;
     //@}
-
-    typename dual_view_type::t_dev getKokkosView() const { return view_.d_view; }
-
   }; // class MultiVector
 
   namespace Details {

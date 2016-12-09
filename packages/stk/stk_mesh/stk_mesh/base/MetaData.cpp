@@ -38,7 +38,6 @@
 #include <sstream>
 #include <set>                          // for set
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
@@ -73,10 +72,10 @@ bool root_part_in_subset(stk::mesh::Part & part)
   return false;
 }
 
-void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, EntityRank rank, std::set<CellTopology> & topologies_found)
+void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, EntityRank rank, std::set<shards::CellTopology> & topologies_found)
 {
   MetaData & meta = MetaData::get(part);
-  CellTopology top = meta.get_cell_topology(part);
+  shards::CellTopology top = meta.get_cell_topology(part);
   if ((top.isValid() && (part.primary_entity_rank() == rank))) {
     topologies_found.insert(top);
   }
@@ -119,7 +118,7 @@ stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
 
 void MetaData::assign_cell_topology(
   Part &                   part,
-  const CellTopology       cell_topology)
+  const shards::CellTopology       cell_topology)
 {
   const size_t part_ordinal = part.mesh_meta_data_ordinal();
 
@@ -206,11 +205,6 @@ void MetaData::require_valid_entity_rank( EntityRank rank ) const
       "entity_rank " << rank << " >= " << m_entity_rank_names.size() );
   ThrowRequireMsg( !(rank == stk::topology::FACE_RANK && spatial_dimension() == 2),
                    "Should not use FACE_RANK in 2d");
-}
-
-void MetaData::require_not_relation_target( const Part * const part ) const
-{
-
 }
 
 //----------------------------------------------------------------------
@@ -393,7 +387,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
     return internal_declare_part_subset(superset, subset);
   }
 
-  CellTopology superset_top = get_cell_topology(superset);
+  shards::CellTopology superset_top = get_cell_topology(superset);
 
   const bool no_superset_topology = !superset_top.isValid();
   if ( no_superset_topology ) {
@@ -404,7 +398,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   const bool subset_has_root_part = root_part_in_subset(subset);
   ThrowErrorMsgIf( subset_has_root_part, "MetaData::declare_part_subset:  Error, root cell topology part found in subset or below." );
 
-  std::set<CellTopology> cell_topologies;
+  std::set<shards::CellTopology> cell_topologies;
   find_cell_topologies_in_part_and_subsets_of_same_rank(subset,superset.primary_entity_rank(),cell_topologies);
 
   ThrowErrorMsgIf( cell_topologies.size() > 1,
@@ -439,8 +433,6 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
   require_same_mesh_meta_data( MetaData::get(subset) );
-  require_not_relation_target( &superset );
-  require_not_relation_target( &subset );
 
   m_part_repo.declare_subset( superset, subset );
 
@@ -544,84 +536,84 @@ MetaData::~MetaData()
 void MetaData::internal_declare_known_cell_topology_parts()
 {
   // Load up appropriate standard cell topologies.
-  register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Node >()), stk::topology::NODE_RANK);
+  register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Node >()), stk::topology::NODE_RANK);
 
   if (m_spatial_dimension == 1) {
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::ELEMENT_RANK); // ???
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::ELEMENT_RANK); // ???
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::ELEMENT_RANK); // ???
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::ELEMENT_RANK); // ???
 
   }
 
   else if (m_spatial_dimension == 2) {
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), side_rank());
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<3> >()), side_rank());
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()), stk::topology::ELEMENT_RANK);
   }
 
   else if (m_spatial_dimension == 3) {
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::EDGE_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::EDGE_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::EDGE_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::EDGE_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), side_rank());
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), side_rank());
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), side_rank());
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), side_rank());
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), side_rank());
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), side_rank());
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), side_rank());
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()), stk::topology::ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()), stk::topology::ELEMENT_RANK);
   }
 }
 
-void MetaData::register_cell_topology(const CellTopology cell_topology, EntityRank entity_rank)
+void MetaData::register_cell_topology(const shards::CellTopology cell_topology, EntityRank entity_rank)
 {
   ThrowRequireMsg(is_initialized(),"MetaData::register_cell_topology: initialize() must be called before this function");
 
@@ -677,7 +669,7 @@ shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
   return cell_topology;
 }
 
-CellTopology
+shards::CellTopology
 MetaData::get_cell_topology(
   const std::string &   topology_name) const
 {
@@ -687,10 +679,10 @@ MetaData::get_cell_topology(
   if (part)
     return get_cell_topology(*part);
   else
-    return CellTopology();
+    return shards::CellTopology();
 }
 
-Part &MetaData::get_cell_topology_root_part(const CellTopology cell_topology) const
+Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
 {
   ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology_root_part: initialize() must be called before this function");
   CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
@@ -706,10 +698,10 @@ Part &MetaData::get_cell_topology_root_part(const CellTopology cell_topology) co
 /// This depends on declare_part_subset to update this vector correctly.  If a
 /// cell topology is not defined for the given part, then an invalid Cell
 /// Topology object will be returned.
-CellTopology MetaData::get_cell_topology( const Part & part) const
+shards::CellTopology MetaData::get_cell_topology( const Part & part) const
 {
   ThrowRequireMsg(is_initialized(),"MetaData::get_cell_topology: initialize() must be called before this function");
-  CellTopology cell_topology;
+  shards::CellTopology cell_topology;
 
   PartOrdinal part_ordinal = part.mesh_meta_data_ordinal();
   if (part_ordinal < m_partCellTopologyVector.size())
@@ -853,7 +845,7 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 
 bool is_topology_root_part(const Part & part) {
   MetaData & meta = MetaData::get(part);
-  CellTopology top = meta.get_cell_topology(part);
+  shards::CellTopology top = meta.get_cell_topology(part);
   if (top.isValid()) {
     const Part & root_part = meta.get_cell_topology_root_part(top);
     return (root_part == part);
@@ -885,7 +877,7 @@ void set_topology(Part & part, stk::topology topo)
 
 void set_cell_topology(
   Part &                        part,
-  CellTopology             cell_topology)
+  shards::CellTopology             cell_topology)
 {
   MetaData& meta = MetaData::get(part);
 
@@ -898,7 +890,6 @@ void set_cell_topology(
 const std::vector<std::string>&
 entity_rank_names()
 {
-  // TODO - Not thread safe; Use c++11 to initialize vector once c++11 is available
   static std::vector< std::string > names = { std::string("NODE"), std::string("EDGE"), std::string("FACE"), std::string("ELEMENT") } ;
   return names;
 }
@@ -940,88 +931,88 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
 }
 
 
-stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
+stk::topology get_topology( shards::CellTopology shards_topology, int spatial_dimension)
 {
   stk::topology t;
 
-  if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Node >()) )
+  if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Node >()) )
     t = stk::topology::NODE;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Line<2> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()) )
     t = spatial_dimension < 2 ? stk::topology::LINE_2_1D : stk::topology::LINE_2;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Line<3> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Line<3> >()) )
     t = spatial_dimension < 2 ? stk::topology::LINE_3_1D : stk::topology::LINE_3;
 
   else if ( shards_topology == shards::getCellTopologyData< shards::Triangle<3> >() )
     t = spatial_dimension == 3 ? stk::topology::TRI_3 : stk::topology::TRI_3_2D;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()) )
     t = spatial_dimension == 3 ? stk::topology::TRI_4 : stk::topology::TRI_4_2D;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()) )
     t = spatial_dimension == 3 ? stk::topology::TRI_6 : stk::topology::TRI_6_2D;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()) )
     t = spatial_dimension == 3 ? stk::topology::QUAD_4 : stk::topology::QUAD_4_2D;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()) )
     t = spatial_dimension == 3 ? stk::topology::QUAD_8 : stk::topology::QUAD_8_2D;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()) )
     t = spatial_dimension == 3 ? stk::topology::QUAD_9 : stk::topology::QUAD_9_2D;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Particle >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Particle >()) )
     t = stk::topology::PARTICLE;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Beam<2> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Beam<2> >()) )
     t = stk::topology::BEAM_2;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Beam<3> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Beam<3> >()) )
     t = stk::topology::BEAM_3;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()) )
     t = stk::topology::SHELL_LINE_2;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()) )
     t = stk::topology::SHELL_LINE_3;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) )
     t = stk::topology::SHELL_TRI_3;
   //NOTE: shards does not define a shell triangle 4
-  //else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellTriangle<4> >()) )
+  //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<4> >()) )
   //  t = stk::topology::SHELL_TRI_4;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) )
     t = stk::topology::SHELL_TRI_6;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()) )
     t = stk::topology::SHELL_QUAD_4;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()) )
     t = stk::topology::SHELL_QUAD_8;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()) )
     t = stk::topology::SHELL_QUAD_9;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()) )
     t = stk::topology::TET_4;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()) )
     t = stk::topology::TET_8;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()) )
     t = stk::topology::TET_10;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()) )
     t = stk::topology::TET_11;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()) )
     t = stk::topology::PYRAMID_5;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()) )
     t = stk::topology::PYRAMID_13;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()) )
     t = stk::topology::PYRAMID_14;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()) )
     t = stk::topology::WEDGE_6;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()) )
     t = stk::topology::WEDGE_15;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()) )
     t = stk::topology::WEDGE_18;
 
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()) )
     t = stk::topology::HEX_8;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()) )
     t = stk::topology::HEX_20;
-  else if ( shards_topology == CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()) )
+  else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()) )
     t = stk::topology::HEX_27;
   else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPERELEMENT", 12) == 0)
     return create_superelement_topology(shards_topology.getNodeCount());
@@ -1036,96 +1027,96 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
   return stk::topology::INVALID_TOPOLOGY;
 }
 //begin-get_cell_topology
-CellTopology get_cell_topology(stk::topology t)
+shards::CellTopology get_cell_topology(stk::topology t)
 {
   switch(t())
   {
   case stk::topology::NODE:         
-      return CellTopology( shards::getCellTopologyData< shards::Node                  >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Node                  >() );
   case stk::topology::LINE_2:
-      return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
   case stk::topology::LINE_3:
-      return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
   case stk::topology::TRI_3:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
   case stk::topology::TRI_4:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
   case stk::topology::TRI_6:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
   case stk::topology::QUAD_4:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
   case stk::topology::QUAD_8:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
   case stk::topology::QUAD_9:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
   case stk::topology::PARTICLE:
-      return CellTopology( shards::getCellTopologyData< shards::Particle              >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Particle              >() );
   case stk::topology::LINE_2_1D:
-      return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
   case stk::topology::LINE_3_1D:
-      return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
   case stk::topology::BEAM_2:
-      return CellTopology( shards::getCellTopologyData< shards::Beam<2>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Beam<2>               >() );
   case stk::topology::BEAM_3:
-      return CellTopology( shards::getCellTopologyData< shards::Beam<3>               >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Beam<3>               >() );
   case stk::topology::SHELL_LINE_2:
-      return CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
   case stk::topology::SHELL_LINE_3:
-      return CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
   case stk::topology::TRI_3_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
   case stk::topology::TRI_4_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
   case stk::topology::TRI_6_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
   case stk::topology::QUAD_4_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
   case stk::topology::QUAD_8_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
   case stk::topology::QUAD_9_2D:
-      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
   case stk::topology::SHELL_TRI_3:
-      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
   case stk::topology::SHELL_TRI_4:break;
     //NOTE: shards does not define a topology for a 4-noded triangular shell
-    //return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
+    //return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
   case stk::topology::SHELL_TRI_6:
-      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
   case stk::topology::SHELL_QUAD_4:
-      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<4> >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<4> >() );
   case stk::topology::SHELL_QUAD_8:
-      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<8> >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<8> >() );
   case stk::topology::SHELL_QUAD_9:
-      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<9> >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<9> >() );
   case stk::topology::TET_4:
-      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<4>        >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Tetrahedron<4>        >() );
   case stk::topology::TET_8:
-      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<8>        >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Tetrahedron<8>        >() );
   case stk::topology::TET_10:
-      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<10>       >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Tetrahedron<10>       >() );
   case stk::topology::TET_11:
-      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<11>       >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Tetrahedron<11>       >() );
   case stk::topology::PYRAMID_5:
-      return CellTopology( shards::getCellTopologyData< shards::Pyramid<5>            >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Pyramid<5>            >() );
   case stk::topology::PYRAMID_13:
-      return CellTopology( shards::getCellTopologyData< shards::Pyramid<13>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Pyramid<13>           >() );
   case stk::topology::PYRAMID_14:
-      return CellTopology( shards::getCellTopologyData< shards::Pyramid<14>           >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Pyramid<14>           >() );
   case stk::topology::WEDGE_6:
-      return CellTopology( shards::getCellTopologyData< shards::Wedge<6>              >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<6>              >() );
   case stk::topology::WEDGE_15:
-      return CellTopology( shards::getCellTopologyData< shards::Wedge<15>             >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<15>             >() );
   case stk::topology::WEDGE_18:
-      return CellTopology( shards::getCellTopologyData< shards::Wedge<18>             >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Wedge<18>             >() );
   case stk::topology::HEX_8:
-      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<8>         >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Hexahedron<8>         >() );
   case stk::topology::HEX_20:
-      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
   case stk::topology::HEX_27:
-      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
+      return shards::CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
   default: break;
   }
-  return CellTopology(NULL);
+  return shards::CellTopology(NULL);
 }
 //end-get_cell_topology
 

@@ -90,8 +90,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
   const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   stk::mesh::Part & range_block         = range_meta_data.declare_part("nodes", node_rank);
-  stk::mesh::CellTopology node_top (shards::getCellTopologyData<shards::Node>());
-  stk::mesh::set_cell_topology( range_block,  node_top );
+  stk::mesh::set_topology( range_block,  stk::topology::NODE );
 
 
   const std::string data_field_name = "Sum_Of_Coordinates";
@@ -109,13 +108,11 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   stk::mesh::Part & domain_block        = domain_meta_data.declare_part("nodes", node_rank);
-  stk::mesh::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<> >());
-  stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<> >());
-  stk::mesh::set_cell_topology( domain_block,      hex_top );
-  stk::mesh::set_cell_topology( domain_block,      quad_top );
+  stk::mesh::set_topology( domain_block,      stk::topology::HEX_8 );
+  stk::mesh::set_topology( domain_block, stk::topology::QUAD_4 );
   const stk::mesh::EntityRank side_rank    = domain_meta_data.side_rank();
   stk::mesh::Part & block_skin       = domain_meta_data.declare_part("skin", side_rank);
-  stk::mesh::set_cell_topology( block_skin, quad_top );
+  stk::mesh::set_topology( block_skin, stk::topology::QUAD_4 );
 
   ScalarField &domain_coord_sum_field = stk::mesh::put_field(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),

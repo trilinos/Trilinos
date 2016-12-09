@@ -57,7 +57,7 @@ namespace Intrepid2{
   template<class Scalar, class ArrayPoint, class ArrayWeight>
   CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::CubaturePolygon(const shards::CellTopology& cellTopology,
 								  const ArrayPoint& cellVertices,
-								  int degree)
+								  ordinal_type degree)
     : degree_(degree), cubDimension_(2), cellTopology_(cellTopology), cellVertices_(cellVertices){
     
     TEUCHOS_TEST_FOR_EXCEPTION( (degree < 0) || degree > INTREPID2_CUBATURE_TRI_DEFAULT_MAX, std::out_of_range,
@@ -65,11 +65,11 @@ namespace Intrepid2{
     // compute area and centroid of polygon
     Scalar area;
     std::vector<Scalar> centroid(2,0);
-    int numNodes = cellTopology_.getNodeCount();
+    ordinal_type numNodes = cellTopology_.getNodeCount();
     
-    for (int i=0;i<numNodes;i++){
-      int first = cellTopology_.getNodeMap(1,i,0);
-      int second = cellTopology_.getNodeMap(1,i,1);
+    for (ordinal_type i=0;i<numNodes;i++){
+      ordinal_type first = cellTopology_.getNodeMap(1,i,0);
+      ordinal_type second = cellTopology_.getNodeMap(1,i,1);
       area += cellVertices_(first,0)*cellVertices_(second,1) - cellVertices_(second,0)*cellVertices_(first,1);
       centroid[0] += (cellVertices_(first,0) + cellVertices_(second,0))*(cellVertices_(first,0)*cellVertices_(second,1) - cellVertices_(second,0)*cellVertices_(first,1));
       centroid[1] += (cellVertices_(first,1) + cellVertices_(second,1))*(cellVertices_(first,0)*cellVertices_(second,1) - cellVertices_(second,0)*cellVertices_(first,1));
@@ -80,8 +80,8 @@ namespace Intrepid2{
         
     // get cubature for reference triangle
     CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight> cubatureTri(degree_);
-    int numCubPointsPerTri = cubatureTri.getNumPoints();
-    int cubDim = cubatureTri.getDimension();
+    ordinal_type numCubPointsPerTri = cubatureTri.getNumPoints();
+    ordinal_type cubDim = cubatureTri.getDimension();
     cubDimension_ = cubDim;
     FieldContainer<Scalar> cubatureTriPoints(numCubPointsPerTri,cubDim);
     
@@ -89,11 +89,11 @@ namespace Intrepid2{
     cubatureTri.getCubature(cubatureTriPoints,cubatureTriWeights);
     
     // copy into (C,P,D) sized field container where C is the number of triangles in polygon
-    int numCells = cellTopology_.getEdgeCount();
+    ordinal_type numCells = cellTopology_.getEdgeCount();
     FieldContainer<Scalar> cubatureCellPoints(numCells,numCubPointsPerTri,cubDim);
-    for (int k=0;k<numCells;k++){
-      for (int i=0;i<numCubPointsPerTri;i++){
-	for (int j=0;j<cubDim;j++){
+    for (ordinal_type k=0;k<numCells;k++){
+      for (ordinal_type i=0;i<numCubPointsPerTri;i++){
+	for (ordinal_type j=0;j<cubDim;j++){
 	  cubatureCellPoints(k,i,j) = cubatureTriPoints(i,j);
 	}
       }
@@ -102,16 +102,16 @@ namespace Intrepid2{
     
     // now map cubature to each triangle cell
     shards::CellTopology triangleTopology(shards::getCellTopologyData<shards::Triangle<3> >());
-    int totalCubPoints = numCubPointsPerTri*cellTopology_.getEdgeCount();
+    ordinal_type totalCubPoints = numCubPointsPerTri*cellTopology_.getEdgeCount();
     numPoints_ = totalCubPoints;
     cubaturePoints_.resize(totalCubPoints,cubDim);
     cubatureWeights_.resize(totalCubPoints);
     
     FieldContainer<Scalar> physicalPoints(numCells,numCubPointsPerTri,cubDim);
     FieldContainer<Scalar> trianglePoints(numCells,3,cubDim);
-    int currPoint = 0;
-    for (int i=0;i<numCells;i++){
-      for (int j=0;j<cubDim;j++){
+    ordinal_type currPoint = 0;
+    for (ordinal_type i=0;i<numCells;i++){
+      for (ordinal_type j=0;j<cubDim;j++){
 	trianglePoints(i,0,j) = cellVertices_(cellTopology_.getNodeMap(1,i,0),j);
 	trianglePoints(i,1,j) = cellVertices_(cellTopology_.getNodeMap(1,i,1),j);
 	trianglePoints(i,2,j) = centroid[j];
@@ -127,9 +127,9 @@ namespace Intrepid2{
     CellTools<Scalar>::setJacobian(jacobians,physicalPoints,trianglePoints,triangleTopology);
     CellTools<Scalar>::setJacobianDet(detJacobians,jacobians);
     
-    for (int i=0;i<numCells;i++){
-      for (int j=0;j<numCubPointsPerTri;j++){
-	for (int k=0;k<cubDim;k++){
+    for (ordinal_type i=0;i<numCells;i++){
+      for (ordinal_type j=0;j<numCubPointsPerTri;j++){
+	for (ordinal_type k=0;k<cubDim;k++){
 	  cubaturePoints_(currPoint,k) = physicalPoints(i,j,k);
 	}
 	cubatureWeights_(currPoint++) = cubatureTriWeights(j)*detJacobians(i,j);
@@ -141,15 +141,15 @@ namespace Intrepid2{
 template<class Scalar, class ArrayPoint, class ArrayWeight>
 void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
 								 ArrayWeight& cubWeights)const{
-  int numCubPoints = numPoints_;
-  int cellDim = cubDimension_;
+  ordinal_type numCubPoints = numPoints_;
+  ordinal_type cellDim = cubDimension_;
     
   TEUCHOS_TEST_FOR_EXCEPTION ( ( cubPoints.size() < numCubPoints*cellDim || cubWeights.size() < numCubPoints ),
 		       std::out_of_range,
 		       ">>> ERROR (CubaturePolygon): Insufficient space allocated for cubature points or weights.");
 
-  for (int pointId = 0; pointId < numCubPoints; pointId++){
-    for (int dim = 0; dim < cellDim; dim++){
+  for (ordinal_type pointId = 0; pointId < numCubPoints; pointId++){
+    for (ordinal_type dim = 0; dim < cellDim; dim++){
       cubPoints(pointId,dim) = cubaturePoints_(pointId,dim);
     }
     cubWeights(pointId) = cubatureWeights_(pointId);
@@ -168,17 +168,17 @@ void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cub
   
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-int CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getNumPoints()const{
+ordinal_type CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getNumPoints()const{
   return numPoints_;
 } // end getNumPoints
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-int CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getDimension()const{
+ordinal_type CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getDimension()const{
   return cubDimension_;
 } // end getDimension
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int>& accuracy)const{
+void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<ordinal_type>& accuracy)const{
   accuracy.assign(1,degree_);
 } // end getAccuracy
   

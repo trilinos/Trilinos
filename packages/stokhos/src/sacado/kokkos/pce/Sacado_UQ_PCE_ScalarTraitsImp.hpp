@@ -63,68 +63,46 @@ namespace Sacado {
       typedef typename PCEType::storage_type storage_type;
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
+      typedef Teuchos::ScalarTraits<value_type> TVT;
 
-      typedef typename Teuchos::ScalarTraits<value_type>::magnitudeType value_mag_type;
-      typedef typename Teuchos::ScalarTraits<value_type>::halfPrecision value_half_type;
-      typedef typename Teuchos::ScalarTraits<value_type>::doublePrecision value_double_type;
+      typedef typename TVT::magnitudeType value_mag_type;
+      typedef typename TVT::halfPrecision value_half_type;
+      typedef typename TVT::doublePrecision value_double_type;
 
       typedef typename Sacado::mpl::apply<storage_type,ordinal_type,value_mag_type>::type storage_mag_type;
       typedef typename Sacado::mpl::apply<storage_type,ordinal_type,value_half_type>::type storage_half_type;
       typedef typename Sacado::mpl::apply<storage_type,ordinal_type,value_double_type>::type storage_double_type;
 
-      typedef typename Sacado::mpl::apply<PCEType, storage_mag_type>::type magnitudeType;
-      //typedef value_mag_type magnitudeType;
+      typedef value_mag_type magnitudeType;
       typedef typename Sacado::mpl::apply<PCEType, storage_half_type>::type halfPrecision;
       typedef typename Sacado::mpl::apply<PCEType, storage_double_type>::type doublePrecision;
 
       typedef value_type innerProductType;
 
-      static const bool isComplex = Teuchos::ScalarTraits<value_type>::isComplex;
-      static const bool isOrdinal = Teuchos::ScalarTraits<value_type>::isOrdinal;
-      static const bool isComparable =
-        Teuchos::ScalarTraits<value_type>::isComparable;
-      static const bool hasMachineParameters =
-        Teuchos::ScalarTraits<value_type>::hasMachineParameters;
+      static const bool isComplex = TVT::isComplex;
+      static const bool isOrdinal = TVT::isOrdinal;
+      static const bool isComparable = TVT::isComparable;
+      static const bool hasMachineParameters = TVT::hasMachineParameters;
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType eps() {
-        return Teuchos::ScalarTraits<value_type>::eps();
-      }
+      static value_mag_type eps() { return TVT::eps(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType sfmin() {
-        return Teuchos::ScalarTraits<value_type>::sfmin();
-      }
+      static value_mag_type sfmin() { return TVT::sfmin(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType base()  {
-        return Teuchos::ScalarTraits<value_type>::base();
-      }
+      static value_mag_type base()  { return TVT::base(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType prec()  {
-        return Teuchos::ScalarTraits<value_type>::prec();
-      }
+      static value_mag_type prec()  { return TVT::prec(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType t()     {
-        return Teuchos::ScalarTraits<value_type>::t();
-      }
+      static value_mag_type t()     { return TVT::t(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType rnd()   {
-        return Teuchos::ScalarTraits<value_type>::rnd();
-      }
+      static value_mag_type rnd()   { return TVT::rnd(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType emin()  {
-        return Teuchos::ScalarTraits<value_type>::emin();
-      }
+      static value_mag_type emin()  { return TVT::emin(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmin()  {
-        return Teuchos::ScalarTraits<value_type>::rmin();
-      }
+      static value_mag_type rmin()  { return TVT::rmin(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType emax()  {
-        return Teuchos::ScalarTraits<value_type>::emax();
-      }
+      static value_mag_type emax()  { return TVT::emax(); }
 
-      static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmax()  {
-        return Teuchos::ScalarTraits<value_type>::rmax();
-      }
+      static value_mag_type rmax()  { return TVT::rmax(); }
 
       static magnitudeType magnitude(const PCEType& a) {
         return a.two_norm();
@@ -134,97 +112,62 @@ namespace Sacado {
         return a.inner_product(b);
       }
 
-      static PCEType zero()  {
-        return PCEType(0.0);
-      }
+      static PCEType zero()  { return PCEType(0.0); }
 
-      static PCEType one()   {
-        return PCEType(1.0);
-      }
-
-      // Conjugate is only defined for real derivative components
+      static PCEType one()   { return PCEType(1.0); }
 
       static PCEType conjugate(const PCEType& x) {
         PCEType y = x;
         y.copyForWrite();
-        y.val() = Teuchos::ScalarTraits<value_type>::conjugate(x.val());
+        y.val() = TVT::conjugate(x.val());
         return y;
       }
 
-      // Real part is only defined for real derivative components
-
-      static PCEType real(const PCEType& x) {
-        PCEType y = x;
-        y.copyForWrite();
-        y.val() = Teuchos::ScalarTraits<value_type>::real(x.val());
-        return y;
+      static magnitudeType real(const PCEType& x) {
+        magnitudeType m = magnitudeType(0.0);
+        const ordinal_type sz = x.size();
+        for (ordinal_type i=0; i<sz; ++i) {
+          value_mag_type t = TVT::real(x.fastAccessCoeff(i));
+          m +=t*t;
+        }
+        return std::sqrt(m);
       }
 
-      // Imaginary part is only defined for real derivative components
-
-      static PCEType imag(const PCEType& x) {
-        return PCEType(Teuchos::ScalarTraits<value_type>::imag(x.val()));
+      static magnitudeType imag(const PCEType& x) {
+        magnitudeType m = magnitudeType(0.0);
+        const ordinal_type sz = x.size();
+        for (ordinal_type i=0; i<sz; ++i) {
+          value_mag_type t = TVT::imag(x.fastAccessCoeff(i));
+          m +=t*t;
+        }
+        return std::sqrt(m);
       }
 
 
-      static value_type nan() {
-        return Teuchos::ScalarTraits<value_type>::nan();
-      }
+      static value_type nan() { return TVT::nan(); }
 
       static bool isnaninf(const PCEType& x) {
         for (int i=0; i<x.size(); i++)
-          if (Teuchos::ScalarTraits<value_type>::isnaninf(x.fastAccessCoeff(i)))
+          if (TVT::isnaninf(x.fastAccessCoeff(i)))
             return true;
         return false;
       }
 
-      static void seedrandom(unsigned int s) {
-        Teuchos::ScalarTraits<value_type>::seedrandom(s);
-      }
+      static void seedrandom(unsigned int s) { TVT::seedrandom(s); }
 
-      static value_type random() {
-        return Teuchos::ScalarTraits<value_type>::random();
-      }
+      static PCEType random() { return PCEType(TVT::random()); }
 
-      static const char * name() {
-        return "Sacado::UQ::PCE<>";
-      }
+      static const char * name() { return "Sacado::UQ::PCE<>"; }
 
-      static PCEType squareroot(const PCEType& x) {
-        return std::sqrt(x);
-      }
+      static PCEType squareroot(const PCEType& x) { return std::sqrt(x); }
 
       static PCEType pow(const PCEType& x, const PCEType& y) {
         return std::pow(x,y);
       }
 
-      static PCEType log(const PCEType& x) {
-        return std::log(x);
-      }
+      static PCEType log(const PCEType& x) { return std::log(x); }
 
-      static PCEType log10(const PCEType& x) {
-        return std::log10(x);
-      }
-
-      // Helper function to determine whether a complex value is real
-
-      static bool is_complex_real(const value_type& x) {
-        return
-          Teuchos::ScalarTraits<value_type>::magnitude(x-Teuchos::ScalarTraits<value_type>::real(x)) == 0;
-      }
-
-      // Helper function to determine whether a Fad type is real
-
-      static bool is_pce_real(const PCEType& x) {
-        if (x.size() == 0)
-          return true;
-        if (Teuchos::ScalarTraits<value_type>::isComplex) {
-          for (int i=0; i<x.size(); i++)
-            if (!is_complex_real(x.fastAccessCoeff(i)))
-              return false;
-        }
-        return true;
-      }
+      static PCEType log10(const PCEType& x) { return std::log10(x); }
 
     }; // class PCEScalarTraitsImp
 

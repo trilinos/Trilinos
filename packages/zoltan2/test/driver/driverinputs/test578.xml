@@ -25,8 +25,8 @@ Thus, partitioner creates empty partitions.
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="forTestingOnly"/>
       <Parameter name="forTestingOnlyFlag" type="int" value="0"/>
-      <Parameter name="num_global_parts" type="string" value="4"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="num_global_parts" type="int" value="4"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <ParameterList name="Metrics">

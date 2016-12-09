@@ -144,15 +144,15 @@ namespace Intrepid2 {
         void operator()(const ordinal_type pt) const {
           switch (opType) {
           case OPERATOR_VALUE : {
-            auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt );
-            const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+            auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
+            const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
             break;
           }
           case OPERATOR_GRAD :
           case OPERATOR_MAX : {
-            auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
-            const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+            auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
             break;
           }
@@ -183,6 +183,9 @@ namespace Intrepid2 {
     
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+
+    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     /** \brief  FEM basis evaluation on a <strong>reference Tetrahedron</strong> cell. 
     
@@ -222,19 +225,25 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getDofCoords( pointViewType dofCoords ) const {
+    getDofCoords( scalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_TET_COMP12_FEM";
     }
 
   };

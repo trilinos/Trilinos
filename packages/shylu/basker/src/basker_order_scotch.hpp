@@ -527,7 +527,7 @@ namespace BaskerNS
     for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
       {
 
-	printf("%d,", otree(t_blk));
+	printf("%ld,", (long)otree(t_blk));
 	/*
 	if(otree(t_blk) == -1)
 	  {
@@ -540,7 +540,7 @@ namespace BaskerNS
 	 */
       }
     printf("\n");
-    printf("nblks %d \n", nblks);
+    printf("nblks %ld \n", (long)nblks);
       }
 
 
@@ -577,20 +577,22 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
       {
-        printf("Domains Found: %d \n", ndomains);
-        printf("Domains Ideal: %d \n", indomains);
+        printf("Domains Found: %ld \n", (long)ndomains);
+        printf("Domains Ideal: %ld \n", (long)indomains);
       }  
 
     if(ndomains != indomains)
       {
         if(Options.verbose == BASKER_TRUE)
           {
-            printf("Domains Found: %d \n", ndomains);
-            printf("Domains Ideal: %d \n", indomains);
+            printf("Domains Found: %ld \n", (long)ndomains);
+            printf("Domains Ideal: %ld \n", (long)indomains);
             printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
             printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
           }
-	exit(EXIT_FAILURE);
+      printf(" ShyLU Basker Error: num domains != ideal num domains\n");
+      // Make this throw exception instead
+    	exit(EXIT_FAILURE);
       }
 
 

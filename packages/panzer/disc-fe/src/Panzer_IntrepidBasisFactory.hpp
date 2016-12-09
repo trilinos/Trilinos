@@ -51,6 +51,8 @@
 
 #include "Shards_CellTopology.hpp"
 
+#include "Intrepid2_Basis_Const_FEM.hpp"
+
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
@@ -75,8 +77,6 @@
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 
-#include "Panzer_Intrepid_ConstBasis.hpp"
-
 namespace panzer {
 
 
@@ -93,10 +93,10 @@ namespace panzer {
 
       \returns A newly allocated panzer::Basis object.
   */
-  template <typename ScalarT, typename ArrayT>
-  Teuchos::RCP<Intrepid2::Basis<ScalarT,ArrayT> >
+  template <typename ExecutionSpace, typename OutputValueType, typename PointValueType>
+  Teuchos::RCP<Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> >
   createIntrepid2Basis(const std::string basis_type, int basis_order,
-                      const shards::CellTopology & cell_topology) 
+                       const shards::CellTopology & cell_topology)
   {
     // Shards supports extended topologies so the names have a "size"
     // associated with the number of nodes.  We prune the size to
@@ -106,61 +106,61 @@ namespace panzer {
     end_position = cell_topology_type.find("_");
     std::string cell_type = cell_topology_type.substr(0,end_position);
     
-    Teuchos::RCP<Intrepid2::Basis<ScalarT,ArrayT> > basis;
+    Teuchos::RCP<Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> > basis;
 
     if ( (basis_type == "Const") && (basis_order == 0) )
-      basis = Teuchos::rcp( new panzer::Basis_Constant<ScalarT,ArrayT>(cell_topology) );
+      basis = Teuchos::rcp( new Intrepid2::Basis_Constant_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 2) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
     
     else if ( (basis_type == "HCurl") && (cell_type == "Hexahedron") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_HEX_I1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_HEX_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HDiv") && (cell_type == "Hexahedron") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_HEX_I1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_HEX_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
     
     else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Tetrahedron") && (basis_order == 2) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HCurl") && (cell_type == "Tetrahedron") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TET_I1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TET_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HDiv") && (cell_type == "Tetrahedron") && (basis_order == 1) )
-    { basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TET_I1_FEM<ScalarT,ArrayT> ); }
+    { basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TET_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> ); }
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ScalarT,ArrayT> );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 2) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HCurl") && (cell_type == "Quadrilateral") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_QUAD_I1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_QUAD_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HDiv") && (cell_type == "Quadrilateral") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_QUAD_I1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_QUAD_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<ScalarT,ArrayT> );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
  
     else if ( (basis_type == "HGrad") && (cell_type == "Triangle") && (basis_order == 2) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<ScalarT,ArrayT> );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HCurl") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TRI_I1_FEM<ScalarT,ArrayT> );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HDiv") && (cell_type == "Triangle") && (basis_order == 1) )
-        basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TRI_I1_FEM<ScalarT,ArrayT> );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HDIV_TRI_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order == 1) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<ScalarT,ArrayT> );
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
                                "Failed to create the requestedbasis with basis_type=\"" << basis_type << 
@@ -186,12 +186,12 @@ namespace panzer {
 
       \returns A newly allocated panzer::Basis object.
   */
-  template <typename ScalarT, typename ArrayT>
-  Teuchos::RCP<Intrepid2::Basis<ScalarT,ArrayT> >
+  template <typename ExecutionSpace, typename OutputValueType, typename PointValueType>
+  Teuchos::RCP<Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> >
   createIntrepid2Basis(const std::string basis_type, int basis_order,
                       const Teuchos::RCP<const shards::CellTopology> & cell_topology) 
   {
-    return createIntrepid2Basis<ScalarT,ArrayT>(basis_type,basis_order,*cell_topology);
+    return createIntrepid2Basis<ExecutionSpace,OutputValueType,PointValueType>(basis_type,basis_order,*cell_topology);
   }
 
 }

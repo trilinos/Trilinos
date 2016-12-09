@@ -57,7 +57,7 @@
 
 namespace Intrepid2 {
 
-  template<int N, typename ViewType>
+  template<ordinal_type N, typename ViewType>
   class ViewAdapter {
   public:
     typedef typename ViewType::value_type value_type;

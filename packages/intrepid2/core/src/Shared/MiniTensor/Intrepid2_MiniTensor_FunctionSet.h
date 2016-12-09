@@ -936,10 +936,14 @@ public:
 };
 
 //
-// Function to test constraint interface.
+// Functions to test constraint interface.
 //
-template<typename S, Index M>
-class Identity : public Constraint_Base<Identity<S, M>, S, M>
+
+//
+// Identity
+//
+template<typename S, Index NC, Index NV>
+class Identity : public Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>
 {
 public:
 
@@ -949,23 +953,170 @@ public:
   char const * const
   NAME{"Identity Map"};
 
-  using Base = Constraint_Base<Identity<S, M>, S, M>;
+  using Base = Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
   template<typename T, Index N>
-  Vector<T, N>
+  Vector<T, NC>
   value(Vector<T, N> const & x)
   {
+    assert(x.get_dimension() == NV);
     return x;
   }
 
   // Default AD gradient.
   template<typename T, Index N>
-  Matrix<T, M, N>
+  Matrix<T, NC, NV>
   gradient(Vector<T, N> const & x)
   {
     return Base::gradient(*this, x);
   }
+};
+
+//
+// A nonlinear function
+//
+template<typename S, Index NC = 3, Index NV = 5>
+class Nonlinear01 : public Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>
+{
+public:
+
+  Nonlinear01() {}
+
+  static constexpr
+  char const * const
+  NAME{"Nonlinear 01"};
+
+  using Base = Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>;
+
+  // Explicit value.
+  template<typename T, Index N = 5>
+  Vector<T, NC>
+  value(Vector<T, N> const & x)
+  {
+    assert(x.get_dimension() == NV);
+
+    Vector<T, NC>
+    c(ZEROS);
+
+    c(0) = dot(x, x) - 10.0;
+
+    c(1) = x(1) * x(2) - 5.0 * x(3) * x(4);
+
+    c(2) = x(0) * x(0) * x(0) + x(1) * x(1) * x(1) + 1.0;
+
+    return c;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N = 5>
+  Matrix<T, NC, NV>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+};
+
+//
+// Circumference feasible region
+//
+template<typename S, Index NC = 1, Index NV = 2>
+class Circumference : public Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>
+{
+public:
+
+  Circumference(S const r, S const xc = S(0.0), S const yc = S(0.0)) : r_(r)
+  {
+    c_(0) = xc;
+    c_(1) = yc;
+  }
+
+  static constexpr
+  char const * const
+  NAME{"Circumference"};
+
+  using Base = Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>;
+
+  // Explicit value.
+  template<typename T, Index N = 2>
+  Vector<T, NC>
+  value(Vector<T, N> const & x)
+  {
+    assert(x.get_dimension() == NV);
+
+    Vector<T, NC>
+    f(ZEROS);
+
+    f(0) = r_ * r_ - norm_square(x - c_);
+
+    return f;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N = 2>
+  Matrix<T, NC, NV>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+private:
+  S
+  r_{0.0};
+
+  Vector<S, NV>
+  c_;
+};
+
+//
+// Circle feasible region
+//
+template<typename S, Index NC = 1, Index NV = 2>
+class Circle : public Inequality_Constraint<Circle<S, NC, NV>, S, NC, NV>
+{
+public:
+
+  Circle(S const r, S const xc = S(0.0), S const yc = S(0.0)) : r_(r)
+  {
+    c_(0) = xc;
+    c_(1) = yc;
+  }
+
+  static constexpr
+  char const * const
+  NAME{"Circle constraint"};
+
+  using Base = Inequality_Constraint<Circle<S, NC, NV>, S, NC, NV>;
+
+  // Explicit value.
+  template<typename T, Index N = 2>
+  Vector<T, NC>
+  value(Vector<T, N> const & x)
+  {
+    assert(x.get_dimension() == NV);
+
+    Vector<T, NC>
+    f(ZEROS);
+
+    f(0) = r_ * r_ - norm_square(x - c_);
+
+    return f;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N = 2>
+  Matrix<T, NC, NV>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+private:
+  S
+  r_{0.0};
+
+  Vector<S, NV>
+  c_;
 };
 
 } // namespace Intrepid2

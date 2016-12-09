@@ -131,7 +131,7 @@ evaluateFields(typename Traits::EvalData workset)
   for(int i=0;i<numFaces;i++) {
     Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",cellDim);
     Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",cellDim);
-    Intrepid2::CellTools<double>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
+    Intrepid2::CellTools<PHX::exec_space>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
     for(int d=0;d<cellDim;d++) {
       refFaceTanU(i,d) = refTanU(d);
       refFaceTanV(i,d) = refTanV(d);

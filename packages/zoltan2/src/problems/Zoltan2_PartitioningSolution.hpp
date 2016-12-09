@@ -695,24 +695,21 @@ template <typename Adapter>
   const ParameterList &pl = env_->getParameters();
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
   int numLocal=0, numGlobal=0;
-  double val;
 
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("num_global_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);  // TODO: KDD Skip this double get
-    haveGlobalNumParts = 1;            // TODO: KDD Should be unnecessary once
-    numGlobal = static_cast<int>(val); // TODO: KDD paramlist handles long long.
-    nGlobalParts_ = part_t(numGlobal); // TODO: KDD  also do below.
+    haveGlobalNumParts = 1;
+    nGlobalParts_ = part_t(pe->getValue(&nGlobalParts_));
+    numGlobal = nGlobalParts_;
   }
 
   pe = pl.getEntryPtr("num_local_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);
     haveLocalNumParts = 1;
-    numLocal = static_cast<int>(val);
-    nLocalParts_ = part_t(numLocal);
+    nLocalParts_ = part_t(pe->getValue(&nLocalParts_));
+    numLocal = nLocalParts_;
   }
 
   try{
@@ -1346,7 +1343,7 @@ template <typename Adapter>
   // TODO:  remapping.  This problem will go away after we separate process
   // TODO:  mapping from setParts.  But for MueLu's use case, the part
   // TODO:  remapping is all that matters; they do not use the process mapping.
-  int doRemap = 0;
+  bool doRemap = false;
   const Teuchos::ParameterEntry *pe =
                  env_->getParameters().getEntryPtr("remap_parts");
   if (pe) doRemap = pe->getValue(&doRemap);

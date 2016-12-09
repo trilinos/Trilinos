@@ -2,7 +2,7 @@
 #define _ZOLTAN2_MACHINE_HPP_
 
 #include <Teuchos_Comm.hpp>
-
+#include <Zoltan2_config.h>
 namespace Zoltan2{
 
 /*! \brief MachineClass

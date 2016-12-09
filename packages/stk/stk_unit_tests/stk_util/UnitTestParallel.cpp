@@ -34,7 +34,6 @@
 #include <stddef.h>                     // for size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <gtest/gtest.h>
@@ -59,30 +58,5 @@ TEST(UnitTestParallel, testUnit)
   }
   
   ASSERT_LT(mpi_rank, mpi_size);
-}
-
-TEST(UnitTestParallel, testCommAll)
-{
-  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
-  ASSERT_LT(mpi_rank, mpi_size);
-
-  bool propagate_local_error_flags = true;
-  stk::CommAll comm_all(MPI_COMM_WORLD, propagate_local_error_flags);
-
-  ASSERT_EQ(comm_all.parallel_size(), mpi_size);
-  ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);
-
-  for (int p = 0; p<mpi_size; ++p) {
-    if (p - mpi_rank <= 10 || mpi_rank - p <= 10) {
-      stk::CommBuffer& buf = comm_all.send_buffer(p);
-      buf.skip<unsigned long>(1);
-    }
-  }
-
-  bool symmetric = false;
-  bool local_error = false;
-  bool global_bad_input = comm_all.allocate_buffers(mpi_size / 4, symmetric, local_error);
-  ASSERT_EQ(global_bad_input, false);
 }
 

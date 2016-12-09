@@ -86,6 +86,15 @@ ENDIF ()
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+# Kokkos versions of Scalar types.  For now, this just means replacing
+# std::complex<T> with Kokkos::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
+# Kokkos versions of Scalar types, excluding ordinal types.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
+# Kokkos versions of Scalar types, including ONLY ordinal types.
+# This relates to Github Issue #700.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
+
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
 SET(${PACKAGE_NAME}_ETI_DEVICES "")
@@ -454,22 +463,32 @@ ENDIF()
 #
 IF(Tpetra_INST_INT_INT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "int")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "int")
 ENDIF()
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long")
 ENDIF()
 IF(Tpetra_INST_INT_LONG_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "long long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long long")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned")
 ENDIF()
 IF(Tpetra_INST_INT_UNSIGNED_LONG) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "unsigned long")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "unsigned long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
@@ -537,8 +556,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_DOUBLE ${Tpetra_INST_DOUBLE})
 
-# Scalar = float is NOT enabled by default.
-GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT OFF)
+IF (Trilinos_ENABLE_FLOAT)
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  OFF)
+ENDIF()
 
 # Set up the Tpetra_INST_FLOAT option: whether to instantiate / test
 # Scalar = float.
@@ -571,38 +593,31 @@ IF (Tpetra_INST_FLOAT)
   ENDIF ()
 ENDIF ()
 
-# Decide whether to instantiate / test Scalar = std::complex<float> or
-# std::complex<double> by default.  Both require a complex-arithmetic
-# BLAS.  Furthermore, std::complex<T> requires the corresponding
+# Decide whether to instantiate / test Scalar = std::complex<float> and/or
+# std::complex<double> by default.  Both require a complex-arithmetic BLAS
+# provided by Teuchos.  Furthermore, std::complex<T> requires the corresponding
 # Scalar=T instantiation to be ON.
 #
-# In a debug build, we enable Scalar = complex, in order that this
-# capability be tested.  In a release build, we disable this case, in
-# order to reduce build time.  Users may always enable it explicitly.
-ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
+# The decision to enable or disable std::complex<T> instantiations is also
+# controlled by Trilinos-level configure options.
 # mfh 18 Aug 2015: Teuchos currently doesn't even define
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
-IF (DEFINED HAVE_COMPLEX_BLAS)
-  IF (HAVE_COMPLEX_BLAS)
-    IF (Tpetra_INST_DOUBLE)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-    ENDIF()
-    IF (Tpetra_INST_FLOAT)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-    ENDIF()
+IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
+  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE) 
+    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  ENDIF()
+  IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF() # HAVE_COMPLEX_BLAS
-ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
+  ENDIF()
+ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF () # DEFINED HAVE_COMPLEX_BLAS
+ENDIF()
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
@@ -782,37 +797,58 @@ ENDIF ()
 #
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_FLOAT128) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "__float128")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "__float128")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "__float128")
+  # NOTE (mfh 11 Oct 2016) __float128 does not currently work with CUDA.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "qd_real")
+  # NOTE (mfh 11 Oct 2016) qd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "qd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "qd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "dd_real")
+  # NOTE (mfh 11 Oct 2016) dd_real does not currently work with
+  # Kokkos, or even with Tpetra!  We just put this here for future
+  # reference.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "dd_real")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "dd_real")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "dd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 
@@ -826,6 +862,10 @@ ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS})
+
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})

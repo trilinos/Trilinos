@@ -52,14 +52,14 @@
 #include "ROL_Algorithm.hpp"
 
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_ParametrizedObjective.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 
 typedef double RealT;
 
 template<class Real> 
-class ParametrizedObjectiveEx8 : public ROL::ParametrizedObjective<Real> {
+class ParametrizedObjectiveEx8 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex = 
@@ -102,7 +102,7 @@ public:
 };
 
 RealT setUpAndSolve(Teuchos::ParameterList &list,
-                    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > &pObj,
+                    Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                     Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                     Teuchos::RCP<ROL::Vector<RealT> > &x,
                     Teuchos::RCP<ROL::Vector<RealT> > &d,
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
       Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj =
+    Teuchos::RCP<ROL::Objective<RealT> > pObj =
       Teuchos::rcp(new ParametrizedObjectiveEx8<RealT>);
     // Build bound constraints
     std::vector<RealT> l(dim,0.0);
@@ -200,14 +200,14 @@ int main(int argc, char* argv[]) {
     RealT one(1), err(0);
     int nQuadLo = 0, nQuadUp = 21, order = 0;
     std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
-    *outStream << "\nSINGLETON KUSUOKA RISK MEASURE\n";
+    *outStream << "\nSPECTRAL RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     std::vector<Teuchos::RCP<std::vector<RealT> > > hist(nQuadUp-nQuadLo,Teuchos::null);
     std::vector<Teuchos::RCP<ROL::StdVector<RealT> > > hvec(nQuadUp-nQuadLo,Teuchos::null);
     for (int i = nQuadLo; i < nQuadUp; ++i) {
       order = i+1;
-      list.sublist("SOL").sublist("Risk Measure").sublist("Singleton Kusuoka").set("Number of Quadrature Points",order);
+      list.sublist("SOL").sublist("Risk Measure").sublist("Spectral Risk").set("Number of Quadrature Points",order);
       setRandomVector(*x_rcp);
       obj[i-nQuadLo] = setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
       norm[i]  = x->norm();

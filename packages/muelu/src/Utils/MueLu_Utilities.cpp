@@ -78,16 +78,22 @@ namespace MueLu {
         const ParameterList& levelList = inList.sublist(levelName);
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
-          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
+          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates"
+#ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
+	      || name == "ipc: element to node map"
+#endif
+	      ) {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
-          #ifdef HAVE_MUELU_MATLAB
+	  }
+#ifdef HAVE_MUELU_MATLAB
           else if(IsParamMuemexVariable(name))
           {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
           }
           #endif
-          else
+          else {
             serialList.sublist(levelName).setEntry(name, it2->second);
+	  }
         }
 
       } else {

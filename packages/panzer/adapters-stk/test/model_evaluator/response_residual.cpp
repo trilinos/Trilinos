@@ -223,7 +223,7 @@ namespace panzer {
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
     Teuchos::RCP<panzer::ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildDomainContainer();
-    resp_param_ged->setUniqueVector(param_density);
+    resp_param_ged->setOwnedVector(param_density);
 
     // evaluate residual responses
     {
@@ -234,8 +234,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_residual->setResidual(response_residual->allocateResidualVector());
@@ -271,8 +271,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -379,7 +379,7 @@ namespace panzer {
 
     RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
     Thyra::assign(param_density.ptr(),3.7);
-    resp_param_ged->setUniqueVector(param_density);
+    resp_param_ged->setOwnedVector(param_density);
 
     // evaluate residual responses
     {
@@ -390,8 +390,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -1013,7 +1013,7 @@ namespace panzer {
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
-          = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
+        = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY",fp);
       dofManager->addField("eblock-1_0","DENSITY",fp);
 

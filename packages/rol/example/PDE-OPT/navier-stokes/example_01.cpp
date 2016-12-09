@@ -58,7 +58,7 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -102,13 +102,13 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_NavierStokes<RealT> > pde
       = Teuchos::rcp(new PDE_NavierStokes<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    // Get the assembler.
-    Teuchos::RCP<Assembler<RealT> > assembler
-      = (Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con))->getAssembler();
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
-    assembler->printMeshData(*outStream);
 
     // Create state vector and set to zeroes
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
@@ -145,9 +145,10 @@ int main(int argc, char *argv[]) {
 
     // Initialize quadratic objective function.
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_NavierStokes<RealT>(pde->getVelocityFE(),
-                                                                     pde->getPressureFE(),
-                                                                     pde->getFieldHelper()));
+    qoi_vec[0] = Teuchos::rcp(new QoI_State_NavierStokes<RealT>(*parlist,
+                                                                pde->getVelocityFE(),
+                                                                pde->getPressureFE(),
+                                                                pde->getFieldHelper()));
     qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_NavierStokes<RealT>(pde->getVelocityFE(),
                                                                     pde->getPressureFE(),
                                                                     pde->getVelocityBdryFE(),
@@ -155,14 +156,15 @@ int main(int argc, char *argv[]) {
                                                                     pde->getFieldHelper()));
     Teuchos::RCP<StdObjective_NavierStokes<RealT> > std_obj
       = Teuchos::rcp(new StdObjective_NavierStokes<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
 
     up->zero();
     zp->zero();
-    //z_rcp->putScalar(0.1);
+    //z_rcp->putScalar(1.e0);
+    //dz_rcp->putScalar(0);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -188,33 +190,18 @@ int main(int argc, char *argv[]) {
       algo->run(*zp,*robj,true,*outStream);
     }
 
-//z_rcp->putScalar(0.1);
+    // Output.
+    assembler->printMeshData(*outStream);
     RealT tol(1.e-8);
     Teuchos::Array<RealT> res(1,0);
     con->solve(*rp,*up,*zp,tol);
-    assembler->outputTpetraVector(u_rcp,"state.txt");
-    assembler->outputTpetraVector(z_rcp,"control.txt");
+    pdecon->outputTpetraVector(u_rcp,"state.txt");
+    pdecon->outputTpetraVector(z_rcp,"control.txt");
     con->value(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    assembler->outputTpetraData();
-
-return 0;
-/*
-    RealT tol(1.e-8);
-    con->solve(*rp,*up,*zp,tol);
-    assembler->outputTpetraVector(u_rcp,"state.txt");
-    assembler->outputTpetraVector(z_rcp,"control.txt");
-    assembler->outputTpetraVector(u_rcp,"stateFS.txt");
-    assembler->outputTpetraVector(z_rcp,"controlFS.txt");
-
-    Teuchos::Array<RealT> res(1,0);
-    con->value(*rp,*up,*zp,tol);
-    r_rcp->norm2(res.view(0,1));
-    *outStream << "Residual Norm: " << res[0] << std::endl;
-    errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-*/
+    //pdecon->outputTpetraData();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

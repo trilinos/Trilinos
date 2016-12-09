@@ -57,16 +57,19 @@ private:
   Teuchos::RCP<StdBoundConstraint<Real> > stat_bc_;
   std::vector<Real> lower_, upper_;
 
-  bool augmented_;
-  bool activated_;
+  bool augmented_, activated_;
   int nStat_;
+
+  mutable bool isLOinitialized_, isHIinitialized_; 
+  mutable Teuchos::RCP<RiskVector<Real> > lo_, hi_;
 
 public:
 
   RiskBoundConstraint(Teuchos::ParameterList &parlist,
                 const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
    : BoundConstraint<Real>(), bc_(bc), stat_bc_(Teuchos::null),
-     augmented_(false), activated_(false), nStat_(0) {
+     augmented_(false), activated_(false), nStat_(0),
+     isLOinitialized_(false), isHIinitialized_(false) {
     lower_.clear(); upper_.clear();
     // Get stochastic optimization information
     std::string optType = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Averse");
@@ -195,6 +198,26 @@ public:
       Teuchos::RCP<Vector<Real> > uv = Teuchos::dyn_cast<RiskVector<Real> >(u).getVector();
       bc_->setVectorToUpperBound(*uv);
     }
+  }
+
+  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP(void) const {
+    if (!isLOinitialized_) {
+      const Teuchos::RCP<const Vector<Real> > vlo = bc_->getLowerVectorRCP();
+      lo_ = Teuchos::rcp(new RiskVector<Real>(Teuchos::rcp_const_cast<Vector<Real> >(vlo),
+                                              lower_, augmented_));
+      isLOinitialized_ = true;
+    }
+    return lo_;
+  }
+
+  const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP(void) const {
+    if (!isHIinitialized_) {
+      const Teuchos::RCP<const Vector<Real> > vhi = bc_->getUpperVectorRCP();
+      hi_ = Teuchos::rcp(new RiskVector<Real>(Teuchos::rcp_const_cast<Vector<Real> >(vhi),
+                                              upper_, augmented_));
+      isHIinitialized_ = true;
+    }
+    return hi_;
   }
 
   void setVectorToLowerBound( Vector<Real> &l ) {

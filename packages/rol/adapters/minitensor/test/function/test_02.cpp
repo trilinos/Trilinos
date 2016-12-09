@@ -40,11 +40,13 @@
 // @HEADER
 
 #include <gtest/gtest.h>
+#include <Intrepid2_MiniTensor_FunctionSet.h>
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
-#include "ROL_StatusTest.hpp"
-#include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
+#include "ROL_NonlinearLeastSquaresObjective.hpp"
+#include "ROL_StatusTest.hpp"
 
 using Real = double;
 
@@ -93,18 +95,18 @@ TEST(MiniTensor_ROL, Paraboloid)
 
   // Set parameters.
   Teuchos::ParameterList
-  parlist;
+  params;
 
-  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method")
       .set("Type", "Newton-Krylov");
 
-  parlist.sublist("Status Test").set("Gradient Tolerance", 10.e-12);
-  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-14);
-  parlist.sublist("Status Test").set("Iteration Limit", 128);
+  params.sublist("Status Test").set("Gradient Tolerance", 10.e-12);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-14);
+  params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
   ROL::Algorithm<Real>
-  algo("Line Search", parlist);
+  algo("Line Search", params);
 
   // Set Initial Guess
   Intrepid2::Vector<Real, DIM>
@@ -160,24 +162,25 @@ TEST(MiniTensor_ROL, Rosenbrock)
 
   // Set parameters.
   Teuchos::ParameterList
-  parlist;
+  params;
 
-  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method")
       .set("Type", "Newton-Krylov");
 
-  parlist.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
-  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-16);
-  parlist.sublist("Status Test").set("Iteration Limit", 128);
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
   ROL::Algorithm<Real>
-  algo("Line Search", parlist);
+  algo("Line Search", params);
 
   // Set Initial Guess
   Intrepid2::Vector<Real, DIM>
   xval(Intrepid2::RANDOM);
 
-  ROL::MiniTensorVector<Real, DIM> x(xval);
+  ROL::MiniTensorVector<Real, DIM>
+  x(xval);
 
   // Run Algorithm
   algo.run(x, obj, true, os);
@@ -198,3 +201,132 @@ TEST(MiniTensor_ROL, Rosenbrock)
 
   ASSERT_LE(error, epsilon);
 }
+
+// Disabled for now
+#if 0
+TEST(MiniTensor_ROL, NLLS01)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  NUM_CONSTR{3};
+
+  constexpr Intrepid2::Index
+  NUM_VAR{5};
+
+  using MSEC = Intrepid2::Nonlinear01<Real, NUM_CONSTR>;
+
+  MSEC
+  msec;
+
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
+  constr(msec);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  xval(Intrepid2::ZEROS);
+
+  Intrepid2::Vector<Real, NUM_CONSTR>
+  cval(Intrepid2::ZEROS);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  solval(Intrepid2::ZEROS);
+
+  // Set initial guess.
+  xval(0) = -1.8;
+  xval(1) =  1.7;
+  xval(2) =  1.9;
+  xval(3) = -0.8;
+  xval(4) = -0.8;
+
+  // Set solution.
+  solval(0) = -1.717143570394391e+00;
+  solval(1) =  1.595709690183565e+00;
+  solval(2) =  1.827245752927178e+00;
+  solval(3) = -7.636430781841294e-01;
+  solval(4) = -7.636430781841294e-01;
+
+  Real const
+  error_full_hess{2.3621708067012991e-02};
+
+  Real const
+  error_gn_hess{2.3669791103726853e-02};
+
+  Real const
+  tol{1.0e-08};
+
+  ROL::MiniTensorVector<Real, NUM_VAR>
+  x(xval);
+
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
+  c(cval);
+
+  ROL::MiniTensorVector<Real, NUM_VAR>
+  sol(solval);
+
+  Teuchos::RCP<ROL::EqualityConstraint<Real>>
+  pconstr = Teuchos::rcp(&constr, false);
+
+  // Define algorithm.
+  Teuchos::ParameterList
+  params;
+
+  std::string
+  step{"Trust Region"};
+
+  params.sublist("Step").sublist(step).set("Subproblem Solver", "Truncated CG");
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-10);
+  params.sublist("Status Test").set("Constraint Tolerance", 1.0e-10);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-18);
+  params.sublist("Status Test").set("Iteration Limit", 128);
+
+  ROL::Algorithm<Real>
+  algo(step, params);
+
+  ROL::NonlinearLeastSquaresObjective<Real>
+  nlls(pconstr, x, c, false);
+
+  os << "\nSOLVE USING FULL HESSIAN\n";
+
+  algo.run(x, nlls, true, os);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  xfinal = ROL::MTfromROL<Real, NUM_VAR>(x);
+
+  os << "\nfinal x : " << xfinal << "\n";
+
+  Real
+  error = std::abs(Intrepid2::norm(xfinal - solval) - error_full_hess);
+
+  os << "\nerror : " << error << "\n";
+
+  ASSERT_LE(error, tol);
+
+  algo.reset();
+  x.set(xval);
+
+  ROL::NonlinearLeastSquaresObjective<Real>
+  gnnlls(pconstr, x, c, true);
+
+  os << "\nSOLVE USING GAUSS-NEWTON HESSIAN\n";
+
+  algo.run(x, gnnlls, true, os);
+
+  xfinal = ROL::MTfromROL<Real, NUM_VAR>(x);
+
+  os << "\nfinal x : " << xfinal << "\n";
+
+  error = std::abs(Intrepid2::norm(xfinal - solval) - error_gn_hess);
+
+  os << "\nerror : " << error << "\n";
+
+  ASSERT_LE(error, tol);
+}
+#endif

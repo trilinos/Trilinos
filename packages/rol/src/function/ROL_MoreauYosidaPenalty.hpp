@@ -284,6 +284,12 @@ public:
     }
   }
 
+// Definitions for parametrized (stochastic) objective functions
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    obj_->setParameter(param);
+  }
 }; // class MoreauYosidaPenalty
 
 } // namespace ROL

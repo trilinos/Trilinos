@@ -61,7 +61,7 @@
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-#include "Kokkos_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #endif
 
 //=======================================================================
@@ -412,7 +412,7 @@ void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
-  // Call each providers' post registration setup
+  // Call each evaluators' post registration setup
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
     nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
 }
@@ -444,9 +444,9 @@ void PHX::DagManager<Traits>::
 evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  using execution_space = PHX::Device::execution_space;
+  using execution_space = PHX::exec_space;
   using memory_space = PHX::Device::memory_space;
-  using policy_type = Kokkos::TaskPolicy<execution_space>;
+  using policy_type = Kokkos::TaskScheduler<execution_space>;
 
   // Requested the ability to query policy for required sizes of calls
   // to spawn and wait_all. For now hard code to something
@@ -461,7 +461,7 @@ evaluateFieldsTaskParallel(const int& work_size,
 
   // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
-  std::vector<Kokkos::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
+  std::vector<Kokkos::Future<void,PHX::exec_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     

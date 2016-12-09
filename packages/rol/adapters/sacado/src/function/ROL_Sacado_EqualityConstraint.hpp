@@ -48,12 +48,13 @@
 #include "Sacado.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_EqualityConstraint.hpp"
+#include "ROL_InequalityConstraint.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 //! \brief ROL interface wrapper for Sacado Constraint
 template<class Real, template<class> class Constr>
-class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
+class Sacado_EqualityConstraint : public virtual EqualityConstraint<Real> {
 
     protected:
 
@@ -79,16 +80,16 @@ class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
     Sacado_EqualityConstraint(int dim) : dim_(dim) {}
     Sacado_EqualityConstraint(const Constr<Real> & constr) : constr_(constr) {}
 
-    void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+    virtual void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
         constr_.value(c,x,tol);
     }
     
-    void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
+    virtual void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
                        const Vector<Real> &x, Real &tol) {
         this->applyJacobianAD(jv,v,x,tol);
     }
 
-    void applyAdjointJacobian(Vector<Real> &aju, const Vector<Real> &u,
+    virtual void applyAdjointJacobian(Vector<Real> &aju, const Vector<Real> &u,
                               const Vector<Real> &x, Real &tol) {
         this->applyAdjointJacobianAD(aju,u,x,tol);
     } 
@@ -285,5 +286,42 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
     }
 }
 
+/* Here we use multiple inheritance because a distinct InequalityConstraint signature
+ * is needed to satisfy the OptimizationProblem interface, but all of InequalityConstraint's
+ * methods do the exact same thing as EqualityConstraint's. Multiple inheritance saves
+ * on the amount of code needed, however, we do need to specify unique final overriders
+ * for this class
+ */
+template<class Real, template<class> class Constr>
+class Sacado_InequalityConstraint : public InequalityConstraint<Real>,
+                                    public Sacado_EqualityConstraint<Real,Constr> {
 
+  typedef Sacado_EqualityConstraint<Real,Constr> SEC;
+
+public:
+    Sacado_InequalityConstraint(int dim) : SEC(dim) {}
+    Sacado_InequalityConstraint(const Constr<Real> & constr) : SEC(constr) {}
+
+    void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+      SEC::value(c,x,tol);    
+    }
+    
+    void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
+                       const Vector<Real> &x, Real &tol) {
+        SEC::applyJacobianAD(jv,v,x,tol);
+    }
+
+    void applyAdjointJacobian(Vector<Real> &aju, const Vector<Real> &u,
+                              const Vector<Real> &x, Real &tol) {
+        SEC::applyAdjointJacobianAD(aju,u,x,tol);
+    } 
+
+    void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u,
+                             const Vector<Real> &v, const Vector<Real> &x, Real &tol){
+        SEC::applyAdjointHessianAD(ahuv,u,v,x,tol);
+    }
+};
+
+
+}
 #endif

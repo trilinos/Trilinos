@@ -76,7 +76,7 @@ void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
 
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh::FieldDataManager *fieldDataManager)
 {
-    std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
     ASSERT_NE(exodusFileName, "NO_FILE_SPECIFIED");
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -189,8 +189,7 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     double beta = 0.3333333;
     double gamma = 3.14159;
 
-    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
-    const int numIterations = std::atoi(numIterationsString.c_str());
+    const int numIterations = stk::unit_test_util::get_command_line_option("-numIter", 1);
 
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");

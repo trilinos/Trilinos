@@ -173,8 +173,8 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	    printf("kid: %d factoring current_chunk: %d size: %d start: %d\n",
-		   kid, c, c_size, btf_tabs(c));
+	    printf("kid: %ld factoring current_chunk: %ld size: %ld start: %ld\n",
+		   (long)kid, (long)c, (long)c_size, (long)btf_tabs(c));
 	  }
 
 	Int err = BASKER_SUCCESS;
@@ -224,7 +224,7 @@ namespace BaskerNS
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
 
-    if(M.val(j) == 0)
+    if(M.val(j) == (Entry)(0) )
       {
 	printf("Error, zero diag in single factor\n");
       }
@@ -270,12 +270,12 @@ namespace BaskerNS
 
     
     #ifdef BASKER_DEBUG_NFACTOR_DIAG
-    printf("CURRENT BLK: %d \n", c);
-    printf("btab: %d %d\n", btab, c-btab);
-    printf("brow2: %d \n", brow2);
-    printf("col_start: %d \n", btf_tabs(c));
-    printf("BLK size %d \n",
-	   btf_tabs(c+1)-btf_tabs(c));
+    printf("CURRENT BLK: %ld \n", (long)c);
+    printf("btab: %ld %ld\n", (long)btab, (long)c-btab);
+    printf("brow2: %ld \n", (long)brow2);
+    printf("col_start: %ld \n", (long)btf_tabs(c));
+    printf("BLK size %ld \n",
+	   (long)btf_tabs(c+1)-(long)btf_tabs(c));
     #endif
     
 
@@ -292,11 +292,14 @@ namespace BaskerNS
     Int xnnz, lnnz, unnz, lcnt, ucnt;
     
     Entry pivot, value;
-    Entry absv, maxc;
+//    Entry absv, maxc; //NDE - warning: unsed maxc
+    //Entry absv;
+    double absv;
 
     Int llnnz  = L.nnz;
     Int uunnz  = U.nnz;
-    Entry maxv = (Entry) 0;
+    //Entry maxv = (Entry) 0;
+    double maxv = (double) 0;
 
     Int maxindex = 0;
 
@@ -467,7 +470,7 @@ namespace BaskerNS
 
           ucnt = ws_size - top - lcnt +1;
          
-	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+    if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
             {
 
 	      if (Options.verbose == BASKER_TRUE)
@@ -522,12 +525,10 @@ namespace BaskerNS
 	      
 	      if (Options.verbose == BASKER_TRUE)
 		{
-              printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     c,
-		     llnnz, lnnz, lcnt, newsize);
-	      printf("Columns in blks: %d %d %d \n",
-		     btf_tabs(c), btf_tabs(c+1), 
-		     (btf_tabs(c+1)-btf_tabs(c)));
+              printf("Diag blk: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)c, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
+	      printf("Columns in blks: %ld %ld %ld \n",
+		     (long)btf_tabs(c), (long)btf_tabs(c+1), (long)(btf_tabs(c+1)-btf_tabs(c)));
 		}
 	      
 	      if(Options.realloc == BASKER_FALSE)
@@ -556,10 +557,9 @@ namespace BaskerNS
 
 	      if(Options.verbose == BASKER_TRUE)
 		{
-              printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
-                     c, uunnz, unnz+ucnt, newsize);
-	      printf("blk: %d column: %d \n",
-		     c, k);
+              printf("Diag blk: %ld Reallocing U oldsize: %ld %ld newsize: %ld \n",
+                     (long)c, (long)uunnz, (long)unnz+ucnt, (long)newsize);
+	      printf("blk: %ld column: %ld \n", (long)c, (long)k);
 		}
 
 	      if(Options.realloc == BASKER_FALSE)
@@ -673,10 +673,10 @@ namespace BaskerNS
           //Fill in last element of U
 	  U.row_idx(unnz) = k - L.scol;
 	  U.val(unnz)       = lastU;
-	  if(lastU == 0)
+	  if(lastU == (Entry)(0) )
 	    {
-	      printf("diag btf zero, error, c: %d k: %d \n",
-		     c, k);
+	      printf("diag btf zero, error, c: %ld k: %ld \n",
+		     (long)c, (long)k);
 	    }
           ++unnz;
 
@@ -762,7 +762,8 @@ namespace BaskerNS
     Int *store       = &(stack[ws_size]);
 
     Int i, t, head, i1;
-    Int start, end, done;
+    //Int start, end, done; //NDE - warning: unused
+    Int start, end;
     
     start    = -1;
     head     = 0;
@@ -819,7 +820,7 @@ namespace BaskerNS
 	  {
 	    start = store[j];
 	  }
-	done = 1;
+	//done = 1; //NDE - warning: unused
 	
 
 	end = L.col_ptr(t-L.scol);

@@ -75,7 +75,8 @@ const char *elem_name_from_enum(const E_Type elem_type)
       "SHELL8",  "SHELL9",  "TRI3",    "TRI4",     "TRI6",      "TRI7",   "TSHELL3",
       "TSHELL4", "TSHELL6", "TSHELL7", "HEX8",     "HEX20",     "HEX27",  "HEXSHELL",
       "TET4",    "TET10",   "TET8",    "TET14",    "TET15",     "WEDGE6", "WEDGE15",
-      "WEDGE16", "WEDGE20", "WEDGE21", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
+      "WEDGE16", "WEDGE20", "WEDGE21", "PYRAMID5", "PYRAMID13", "PYRAMID14", "PYRAMID18", "PYRAMID19",
+      "SHELL2", "SHELL3"};
   return elem_names[elem_type];
 }
 
@@ -258,6 +259,9 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes, const int num_d
       switch (num_nodes) {
       case 5: answer  = PYRAMID5; break;
       case 13: answer = PYRAMID13; break;
+      case 14: answer = PYRAMID14; break;
+      case 18: answer = PYRAMID18; break;
+      case 19: answer = PYRAMID19; break;
       default:
         Gen_Error(0, "fatal: unsupported PYRAMID element");
         error_report();
@@ -755,6 +759,42 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
+  case PYRAMID14:
+    switch (req) {
+    case NNODES: answer                                   = 14; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case PYRAMID18:
+    switch (req) {
+    case NNODES: answer                                   = 18; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case PYRAMID19:
+    switch (req) {
+    case NNODES: answer                                   = 19; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
   default:
     Gen_Error(0, "fatal: unknown or unimplemented element type");
     error_report();
@@ -1227,8 +1267,11 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
 
   case PYRAMID5:
   case PYRAMID13:
+  case PYRAMID14:
+  case PYRAMID18:
+  case PYRAMID19:
     /* triangular sides */
-    if (nsnodes == 3 || nsnodes == 6) {
+    if (nsnodes == 3 || nsnodes == 6 || nsnodes == 7) {
       /* SIDE 1 */
       if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
         if (side_nodes[(1 + num) % 3] == connect[1] && side_nodes[(2 + num) % 3] == connect[4])
@@ -1254,7 +1297,7 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
       }
     }
 
-    else if (nsnodes == 4 || nsnodes == 8) {
+    else if (nsnodes == 4 || nsnodes == 8 || nsnodes == 9) {
       /* SIDE 5 */
       if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
         if (side_nodes[(1 + num) % 4] == connect[3] && side_nodes[(2 + num) % 4] == connect[2] &&
@@ -1565,12 +1608,12 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
   };
 
   /* pyramid */
-  static int pyramid_table[5][8] = {
-      {1, 2, 5, 6, 11, 10, 0, 0}, // side 1 (tri)
-      {2, 3, 5, 7, 12, 11, 0, 0}, // side 2 (tri)
-      {3, 4, 5, 8, 13, 12, 0, 0}, // side 3 (tri)
-      {1, 5, 4, 10, 13, 9, 0, 0}, // side 4 (tri)
-      {1, 4, 3, 2, 9, 8, 7, 6}    // side 5 (quad)
+  static int pyramid_table[5][9] = {
+    {1, 2, 5, 6, 11, 10, 15, 0, 0}, // side 1 (tri)
+    {2, 3, 5, 7, 12, 11, 16, 0, 0}, // side 2 (tri)
+    {3, 4, 5, 8, 13, 12, 17, 0, 0}, // side 3 (tri)
+    {1, 5, 4, 10, 13, 9, 18, 0, 0}, // side 4 (tri)
+    {1, 4, 3, 2, 9, 8, 7, 6, 15}    // side 5 (quad)
   };
 
   static int bar_table[1][3] = {{1, 2, 3}};
@@ -1849,6 +1892,35 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
     default:
       for (i            = 0; i < 6; i++)
+        ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
+  case PYRAMID14:
+    switch (side_num) {
+    case 4:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 6; i++)
+        ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
+  case PYRAMID18:
+  case PYRAMID19: /* Pyramid18 with mid-volume node */
+    switch (side_num) {
+    case 4:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 7; i++)
         ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
       break;
     }
@@ -2167,6 +2239,35 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
 
     default:
       for (i                = 0; i < 6; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+    }
+    break;
+
+  case PYRAMID14:
+    switch (side_num) {
+    case 5:
+      for (i                = 0; i < 9; i++)
+        mirror_node_list[i] = ss_node_list[sqr_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 6; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+    }
+    break;
+
+  case PYRAMID18:
+  case PYRAMID19:
+    switch (side_num) {
+    case 5:
+      for (i                = 0; i < 9; i++)
+        mirror_node_list[i] = ss_node_list[sqr_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 7; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
     }

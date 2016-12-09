@@ -435,6 +435,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, Scalar, LocalOrdinal, GlobalOrdinal)
 {
+#if 0
   // Test BlockRelaxation with user-provided blocks with overlap 1.
   // Convergence of block Gauss-Seidel is compared against that of point Gauss-Seidel,
   // and the test passes if the block residual norm is smaller at each iteration.
@@ -575,6 +576,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
     TEST_EQUALITY( dbNorms[0] - sbNorms[0] < 1e-12, true);
 #endif
   }
+#endif
 
 } //OverlappingPartition test
 

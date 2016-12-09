@@ -267,7 +267,7 @@ int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
                   &Ptrcrd, &Indcrd, &Valcrd, &Rhscrd, Rhstype);
     std::fclose(in_file);
     *Type = mat_type;
-    *(*Type+3) = (char) NULL;
+    *(*Type+3) = '\0';
     *M    = Nrow;
     *N    = Ncol;
     *nz   = Nnzero;
@@ -312,8 +312,8 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
     if ( std::sscanf(line,"%*s") < 0 )
         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) first line of HB file.\n");
     (void) std::sscanf(line, "%72c%8[^\n]", Title, Key);
-    *(Key+8) = (char) NULL;
-    *(Title+72) = (char) NULL;
+    *(Key+8) = '\0';
+    *(Title+72) = '\0';
 
 /*  Second line:  */
     if (std::fgets(line, BUFSIZ, in_file) == NULL) {
@@ -357,10 +357,10 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
     if ( std::sscanf(line, "%*16c%*16c%20c",Valfmt) != 1)
         IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
     std::sscanf(line, "%*16c%*16c%*20c%20c",Rhsfmt);
-    *(Ptrfmt+16) = (char) NULL;
-    *(Indfmt+16) = (char) NULL;
-    *(Valfmt+20) = (char) NULL;
-    *(Rhsfmt+20) = (char) NULL;
+    *(Ptrfmt+16) = '\0';
+    *(Indfmt+16) = '\0';
+    *(Valfmt+20) = '\0';
+    *(Rhsfmt+20) = '\0';
 
 /*  (Optional) Fifth line: */
     if (*Rhscrd != 0 )
@@ -436,7 +436,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Ptrwidth+1);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Ptrwidth) = (char) NULL;
+    *(ThisElement+Ptrwidth) = '\0';
     count=0;
     for (i=0;i<Ptrcrd;i++)
     {
@@ -462,7 +462,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Indwidth+1);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Indwidth) = (char) NULL;
+    *(ThisElement+Indwidth) = '\0';
     count = 0;
     for (i=0;i<Indcrd;i++)
     {
@@ -493,8 +493,8 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Valwidth+2);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Valwidth) = (char) NULL;
-    *(ThisElement+Valwidth+1) = (char) NULL;
+    *(ThisElement+Valwidth) = '\0';
+    *(ThisElement+Valwidth+1) = '\0';
     count = 0;
     for (i=0;i<Valcrd;i++)
     {
@@ -527,8 +527,8 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
           }
           val[count] = std::atof(ThisElement);
           count++; col += Valwidth;
-          *(ThisElement+Valwidth) = (char) NULL;
-          *(ThisElement+Valwidth+1) = (char) NULL;
+          *(ThisElement+Valwidth) = '\0';
+          *(ThisElement+Valwidth+1) = '\0';
        }
     }
     free(ThisElement);
@@ -698,7 +698,7 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 
   ThisElement = (char *) malloc(Rhswidth+1);
   if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-  *(ThisElement+Rhswidth) = (char) NULL;
+  *(ThisElement+Rhswidth) = '\0';
   for (rhsi=0;rhsi<Nrhs;rhsi++) {
 
     for (i=0;i<Nentries;i++) {
@@ -1020,7 +1020,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Ptrwidth+1);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Ptrwidth) = (char) NULL;
+    *(ThisElement+Ptrwidth) = '\0';
     count=0;
     for (i=0;i<Ptrcrd;i++)
     {
@@ -1046,7 +1046,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Indwidth+1);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Indwidth) = (char) NULL;
+    *(ThisElement+Indwidth) = '\0';
     count = 0;
     for (i=0;i<Indcrd;i++)
     {
@@ -1077,7 +1077,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
 
     ThisElement = (char *) malloc(Valwidth+1);
     if ( ThisElement == NULL ) IOHBTerminate("Insufficient memory for ThisElement.");
-    *(ThisElement+Valwidth) = (char) NULL;
+    *(ThisElement+Valwidth) = '\0';
     count = 0;
     for (i=0;i<Valcrd;i++)
     {
@@ -1612,7 +1612,7 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
        while ( std::strchr(tmp2+1,')') != NULL ) {
           tmp2 = std::strchr(tmp2+1,')');
        }
-       *(tmp2+1) = (char) NULL;
+       *(tmp2+1) = '\0';
     }
     if (std::strchr(fmt,'P') != NULL)  /* Remove any scaling factor, which */
     {                             /* affects output only, not input */
@@ -1622,11 +1622,11 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
         tmp3 = std::strchr(fmt,'(')+1;
         len = tmp-tmp3;
         tmp2 = tmp3;
-        while ( *(tmp2+len) != (char) NULL ) {
+        while ( *(tmp2+len) != '\0' ) {
            *tmp2=*(tmp2+len);
            tmp2++;
         }
-        *(std::strchr(fmt,')')+1) = (char) NULL;
+        *(std::strchr(fmt,')')+1) = '\0';
       }
     }
     if (std::strchr(fmt,'E') != NULL) {
@@ -1666,7 +1666,7 @@ char* substr(const char* S, const int pos, const int len)
     SubS = (char *)malloc(len+1);
     if ( SubS == NULL ) IOHBTerminate("Insufficient memory for SubS.");
     for (i=0;i<len;i++) SubS[i] = S[pos+i];
-    SubS[len] = (char) NULL;
+    SubS[len] = '\0';
     } else {
       SubS = NULL;
     }

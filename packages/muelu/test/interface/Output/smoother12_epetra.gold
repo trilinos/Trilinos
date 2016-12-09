@@ -56,6 +56,7 @@ Level 1
 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
@@ -116,6 +117,7 @@ Level 2
 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
@@ -176,6 +178,7 @@ Level 3
 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
@@ -236,6 +239,7 @@ Level 4
 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
@@ -296,10 +300,11 @@ Level 5
 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -332,6 +337,6 @@ Smoother (level 3) both : MueLu::IfpackSmoother{type = Chebyshev}
 
 Smoother (level 4) both : MueLu::IfpackSmoother{type = Chebyshev}
 
-Smoother (level 5) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 5) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 5) post : no smoother
 

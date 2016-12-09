@@ -116,63 +116,74 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(omega == Teuchos::ScalarTraits<Scalar>::zero(), Exceptions::RuntimeError,
                                "MueLu::SchurComplementFactory::Build: Scaling parameter omega must not be zero to avoid division by zero.");
 
-    // Copy the value of A01 so we can do the left scale.
-    RCP<Matrix> T = MatrixFactory::BuildCopy(A01);
-
-    bool lumping = pL.get<bool>("lumping");
-    bool fixing  = pL.get<bool>("fixing");
-
-    RCP<Vector> diag = Teuchos::null;
-    if (!lumping) {
-      diag = VectorFactory::Build(A00->getRangeMap(), true);
-      A00->getLocalDiagCopy(*diag);
-
-    } else {
-      diag = Utilities::GetLumpedMatrixDiagonal(A00);
-    }
-
-    // invert diagonal vector. Replace all entries smaller than 1e-4 by one!
-    RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, STS::one()));
-
-    // scale with -1/omega
-    D->scale(Teuchos::as<Scalar>(-STS::one()/omega));
-
-    // left scale matrix T with (scaled) diagonal D
-    T->leftScale(*D);
-
-    // build Schur complement operator
     RCP<Matrix> S = Teuchos::null;
-    if (!bIsBlocked) {
-      TEUCHOS_TEST_FOR_EXCEPTION(T->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of A10 are not the same.");
+    // only if the off-diagonal blocks A10 and A01 are non-zero we have to do the MM multiplication
+    if(A01.is_null() == false && A10.is_null() == false) {
+      bool lumping = pL.get<bool>("lumping");
+      bool fixing  = pL.get<bool>("fixing");
 
-      S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
-    } else {
-      // nested blocking
-      RCP<BlockedCrsMatrix> bA10 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10);
-      RCP<BlockedCrsMatrix> bT   = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(T);
+      RCP<Vector> diag = Teuchos::null;
+      if (!lumping) {
+        diag = VectorFactory::Build(A00->getRangeMap(), true);
+        A00->getLocalDiagCopy(*diag);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bA10->Cols(), Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
-      TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bT->Rows() || bA01->Cols() != bT->Cols(), Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: The scaled A01 operator has " << bT->Rows() << "x" << bT->Cols() << " blocks, "
-                                 "but should have " << bA01->Rows() << "x" << bA01->Cols() << " blocks.");
-      TEUCHOS_TEST_FOR_EXCEPTION(bA01->Cols() != bA10->Rows(), Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
+      } else {
+        diag = Utilities::GetLumpedMatrixDiagonal(A00);
+      }
 
-      S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixMultiplyBlock(*bA10, false, *bT, false, GetOStream(Statistics2));
+      // invert diagonal vector. Replace all entries smaller than 1e-4 by one!
+      RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, STS::one()));
+
+      // scale with -1/omega
+      D->scale(Teuchos::as<Scalar>(-STS::one()/omega));
+
+      // left scale matrix T with (scaled) diagonal D
+      // Copy the value of A01 so we can do the left scale.
+      RCP<Matrix> T = MatrixFactory::BuildCopy(A01);
+      T->leftScale(*D);
+
+      // build Schur complement operator
+      if (!bIsBlocked) {
+        TEUCHOS_TEST_FOR_EXCEPTION(T->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of A10 are not the same.");
+
+        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
+      } else {
+        // nested blocking
+        RCP<BlockedCrsMatrix> bA10 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10);
+        RCP<BlockedCrsMatrix> bT   = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(T);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bA10->Cols(), Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
+        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bT->Rows() || bA01->Cols() != bT->Cols(), Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: The scaled A01 operator has " << bT->Rows() << "x" << bT->Cols() << " blocks, "
+                                   "but should have " << bA01->Rows() << "x" << bA01->Cols() << " blocks.");
+        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Cols() != bA10->Rows(), Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
+
+        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixMultiplyBlock(*bA10, false, *bT, false, GetOStream(Statistics2));
+      }
+
+      if (!A11.is_null()) {
+        T = Teuchos::null;
+        Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
+        T->fillComplete();
+        S.swap(T);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(A11->getRangeMap()->isSameAs(*(S->getRangeMap())) == false, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: RangeMap of A11 and S are not the same.");
+        TEUCHOS_TEST_FOR_EXCEPTION(A11->getDomainMap()->isSameAs(*(S->getDomainMap())) == false, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: DomainMap of A11 and S are not the same.");
+      }
+
     }
-
-    if (!A11.is_null()) {
-      T = Teuchos::null;
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
-      T->fillComplete();
-      S.swap(T);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(A11->getRangeMap()->isSameAs(*(S->getRangeMap())) == false, Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: RangeMap of A11 and S are not the same.");
-      TEUCHOS_TEST_FOR_EXCEPTION(A11->getDomainMap()->isSameAs(*(S->getDomainMap())) == false, Exceptions::RuntimeError,
-                                 "MueLu::SchurComplementFactory::Build: DomainMap of A11 and S are not the same.");
+    else {
+      if (!A11.is_null()) {
+        S = MatrixFactory::BuildCopy(A11);
+      } else {
+        S = MatrixFactory::Build(A11->getRowMap(), 10 /*A11->getNodeMaxNumRowEntries()*/);
+        S->fillComplete(A11->getDomainMap(),A11->getRangeMap());
+      }
     }
 
     // Check whether Schur complement operator is a 1x1 block matrix.
@@ -189,7 +200,6 @@ namespace MueLu {
         S.swap(temp);
       }
     }
-
     // NOTE: "A" generated by this factory is actually the Schur complement
     // matrix, but it is required as all smoothers expect "A"
     Set(currentLevel, "A", S);

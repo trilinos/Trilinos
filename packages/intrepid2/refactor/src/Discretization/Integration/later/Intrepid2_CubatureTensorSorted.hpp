@@ -77,11 +77,11 @@ namespace Intrepid2 {
     The quadRule structure contains information about a multidimensional 
     tensor product quadrature rule.  
   */
-  //  int dim;          // Number of Spatial Dimensions
-  //  int maxlevel;     // Maximum Order of 1D rules
-  //  int * rule;       // 1D rules defined in each dimension
-  //  int * growth;     // 1D growth rules defined in each dimension
-  //  int * np;         // Number of parameters for each 1D rule
+  //  ordinal_type dim;          // Number of Spatial Dimensions
+  //  ordinal_type maxlevel;     // Maximum Order of 1D rules
+  //  ordinal_type * rule;       // 1D rules defined in each dimension
+  //  ordinal_type * growth;     // 1D growth rules defined in each dimension
+  //  ordinal_type * np;         // Number of parameters for each 1D rule
   //  double * param;   // Parameters for each 1D rule
   //};
 
@@ -91,7 +91,7 @@ class CubatureTensorSorted : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayW
 private:  
   /** \brief Contains nodes of this cubature rule.
   */
-  typename std::map<std::vector<Scalar>,int> points_; // keys = nodes, values = location of weights
+  typename std::map<std::vector<Scalar>,ordinal_type> points_; // keys = nodes, values = location of weights
   
   /** \brief Contains weights of this cubature rule.
   */
@@ -99,16 +99,16 @@ private:
 
   /** \brief Contains the number of nodes for this cubature rule.
   */
-  int numPoints_;
+  ordinal_type numPoints_;
   
   /** \brief The degree of polynomials that are integrated
              exactly by this cubature rule.
   */
-  std::vector<int> degree_;
+  std::vector<ordinal_type> degree_;
 
   /** \brief Dimension of integration domain.
   */
-  int dimension_;
+  ordinal_type dimension_;
   
 public:
 
@@ -116,7 +116,7 @@ public:
 
   //  CubatureTensorSorted() {}
 
-  CubatureTensorSorted(int numPoints = 0, int dimension = 1);
+  CubatureTensorSorted(ordinal_type numPoints = 0, ordinal_type dimension = 1);
 
   /** \brief Constructor.
 
@@ -131,7 +131,7 @@ public:
       \param rule1D        [in]   - The cubature rule for each direction.
       \param isNormalized  [in]   - Flag whether or not to normalize the cubature weights.
   */
-  CubatureTensorSorted(int dimension, std::vector<int> numPoints1D, std::vector<EIntrepidBurkardt> rule1D, bool isNormalized);
+  CubatureTensorSorted(ordinal_type dimension, std::vector<ordinal_type> numPoints1D, std::vector<EIntrepidBurkardt> rule1D, bool isNormalized);
 
   /** \brief Constructor.
 
@@ -140,7 +140,7 @@ public:
       \param rule1D        [in]   - The cubature rule for each direction.
       \param isNormalized  [in]   - Flag whether or not to normalize the cubature weights.
   */
-  CubatureTensorSorted(int dimension, std::vector<int> numPoints1D, std::vector<EIntrepidBurkardt> rule1D, std::vector<EIntrepidGrowth> growth1D, bool isNormalized);
+  CubatureTensorSorted(ordinal_type dimension, std::vector<ordinal_type> numPoints1D, std::vector<EIntrepidBurkardt> rule1D, std::vector<EIntrepidGrowth> growth1D, bool isNormalized);
 
   /** \brief Constructor.
 
@@ -150,7 +150,7 @@ public:
       \param growth1D      [in]   - Growth rule for each direction.
       \param isNormalized  [in]   - Flag whether or not to normalize the cubature weights.
   */
-  CubatureTensorSorted(int dimension, int maxNumPoints, std::vector<EIntrepidBurkardt> rule1D, std::vector<EIntrepidGrowth> growth1D, bool isNormalized);
+  CubatureTensorSorted(ordinal_type dimension, ordinal_type maxNumPoints, std::vector<EIntrepidBurkardt> rule1D, std::vector<EIntrepidGrowth> growth1D, bool isNormalized);
 
   // Access Operator		
   /** \brief Returns cubature points and weights
@@ -175,37 +175,37 @@ public:
 
   /** \brief Returns the number of cubature points.
   */
-  int getNumPoints() const;
+  ordinal_type getNumPoints() const;
 
   /** \brief Returns max. degree of polynomials that are integrated exactly.
              The return vector has size 1.
   */
-  void getAccuracy(std::vector<int> & accuracy) const;
+  void getAccuracy(std::vector<ordinal_type> & accuracy) const;
 
   /** \brief Returns dimension of domain of integration.
   */  
-  int getDimension() const;
+  ordinal_type getDimension() const;
 
   /** \brief Initiate iterator at the beginning of data.
   */
-  typename std::map<std::vector<Scalar>,int>::iterator begin();
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator begin();
 
   /** \brief Initiate iterator at the end of data.
   */
-  typename std::map<std::vector<Scalar>,int>::iterator end();
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator end();
 
   /** \brief Insert a node and weight into data near the iterator position.
   */
-  void insert(typename std::map<std::vector<Scalar>,int>::iterator it, 	      
+  void insert(typename std::map<std::vector<Scalar>,ordinal_type>::iterator it, 	      
 	      std::vector<Scalar> point, Scalar weight);
 
   /** \brief Get a specific node described by the iterator location.
   */
-  std::vector<Scalar> getNode(typename std::map<std::vector<Scalar>,int>::iterator it);
+  std::vector<Scalar> getNode(typename std::map<std::vector<Scalar>,ordinal_type>::iterator it);
 
   /** \brief Get a specific weight described by the integer location.
   */
-  Scalar getWeight(int node);
+  Scalar getWeight(ordinal_type node);
 
   /** \brief Get a specific weight described by the iterator location.
   */

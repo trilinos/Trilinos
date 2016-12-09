@@ -16,11 +16,10 @@ int main(int argc, char* argv[])
   typedef Kokkos::OpenMP Exe_Space;
 
   if(argc < 2)
-    {
-      std::cout <<"Inputs nthreads matrix.mtx (optional rhs.mtx)"
-		<< std::endl;
-      return -1;
-    }
+  {
+    std::cout << "Inputs nthreads matrix.mtx (optional rhs.mtx)" << std::endl;
+    return -1;
+  }
   
   Int nthreads = atoi(argv[1]);
   std::string mname = std::string(argv[2]);
@@ -48,30 +47,31 @@ int main(int argc, char* argv[])
   Entry *x, *xhat, *y;
   x = xhat = y = NULL;
   vn = n;
-  x = new Entry[n]();
-  xhat = new Entry[n]();
+  x = new Entry[vn]();
+  xhat = new Entry[vn]();
+
   if(argc == 4)
-    {
-      
-      vname = std::string(argv[3]);
-      //std::cout << "reading vector " << vname << std::endl;
-      readVector<Int,Entry>(vname, vm, &y);
-    }
+  {
+
+    vname = std::string(argv[3]);
+    //std::cout << "reading vector " << vname << std::endl;
+    readVector<Int,Entry>(vname, vm, &y);
+  }
   else
+  {
+    vm = m;
+    y = new Entry[m]();
+    for(Int i = 0; i < vm; i++)
     {
-      vm = m;
-      y = new Entry[m]();
-      for(Int i = 0; i < vm; i++)
-	{
-	  xhat[i] = (Entry) i;
-	}
-      multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
-      for(Int i = 0; i < vm; i++)
-	{
-	  //std::cout  << "y " << y[i] << std::endl;
-	  xhat[i] = (Entry) 0.0;
-	}
+      xhat[i] = (Entry) i;
     }
+    multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
+    for(Int i = 0; i < vm; i++)
+    {
+      //std::cout  << "y " << y[i] << std::endl;
+      xhat[i] = (Entry) 0.0;
+    }
+  }
   
   //Starting up Kokkos
   Exe_Space::initialize(nthreads);
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
  
   //Start Basker
   {
-    int result = 0;
+//    int result = 0; // NDE warning unused
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
@@ -132,9 +132,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+      xhat[i] = y[i] - xhat[i];
+    }
     
     /*
     for(Int i = 0; i < n; i++)

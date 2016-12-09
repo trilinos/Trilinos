@@ -80,7 +80,8 @@ buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
                  );
 
 /** Build LOWS factory.
@@ -97,7 +98,8 @@ buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler,
                  #endif 
                  bool writeCoordinates=false,
-                 bool writeTopo=false
+                 bool writeTopo=false,
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
                  );
 
 template <typename GO>

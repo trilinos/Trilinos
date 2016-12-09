@@ -124,7 +124,7 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
    stk::mesh::Part * sideset = metaData_->get_part(name);
    if(sideset==NULL)
       sideset = &metaData_->declare_part_with_topology(name,
-         stk::mesh::get_topology(stk::mesh::CellTopology(ctData), dimension_));
+         stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    sidesets_.insert(std::make_pair(name,sideset));
 }
 
@@ -137,7 +137,7 @@ void STK_Interface::addNodeset(const std::string & name)
    if(nodeset==NULL) {
       const CellTopologyData * ctData = shards::getCellTopologyData<shards::Node>();
       nodeset = &metaData_->declare_part_with_topology(name,
-         stk::mesh::get_topology(stk::mesh::CellTopology(ctData), dimension_));
+         stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    }
    nodesets_.insert(std::make_pair(name,nodeset));
 }
@@ -1020,7 +1020,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(stk::mesh::CellTopology(ctData)));
+     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData)));
    }
 
    // construct cell topology object for this block

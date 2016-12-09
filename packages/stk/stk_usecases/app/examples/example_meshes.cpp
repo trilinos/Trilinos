@@ -90,12 +90,12 @@ void use_case_5_generate_mesh_meta_data(
   stk::io::put_io_part_attribute(block_quad_shell);
   stk::io::put_io_part_attribute(block_tri_shell);
 
-  stk::mesh::set_cell_topology(block_hex            , stk::mesh::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8>         >()));
-  stk::mesh::set_cell_topology(block_wedge          , stk::mesh::CellTopology(shards::getCellTopologyData<shards::Wedge<6>              >()));
-  stk::mesh::set_cell_topology(block_tet            , stk::mesh::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>        >()));
-  stk::mesh::set_cell_topology(block_pyramid        , stk::mesh::CellTopology(shards::getCellTopologyData<shards::Pyramid<5>            >()));
-  stk::mesh::set_cell_topology(block_quad_shell     , stk::mesh::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()));
-  stk::mesh::set_cell_topology(block_tri_shell      , stk::mesh::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
+  stk::mesh::set_topology(block_hex            , stk::topology::HEX_8);
+  stk::mesh::set_topology(block_wedge          , stk::topology::WEDGE_6);
+  stk::mesh::set_topology(block_tet            , stk::topology::TET_4);
+  stk::mesh::set_topology(block_pyramid        , stk::topology::PYRAMID_5);
+  stk::mesh::set_topology(block_quad_shell     , stk::topology::SHELL_QUAD_4);
+  stk::mesh::set_topology(block_tri_shell      , stk::topology::SHELL_TRI_3);
 
   const mesh::FieldBase::Restriction & res =
     stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );

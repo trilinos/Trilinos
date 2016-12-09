@@ -135,8 +135,6 @@ int main(int argc, char *argv[])
   params.set("imbalance_tolerance", tolerance );
   params.set("num_global_parts", nprocs);
 
-  params.set("bisection_num_test_cuts", 1);
-   
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // A simple problem with no weights.

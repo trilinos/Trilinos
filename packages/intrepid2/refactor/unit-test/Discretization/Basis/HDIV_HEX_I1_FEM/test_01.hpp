@@ -50,6 +50,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -156,7 +157,7 @@ namespace Intrepid2 {
           // exception #5
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(12) );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(numFields) );
           // exception #7
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
         }

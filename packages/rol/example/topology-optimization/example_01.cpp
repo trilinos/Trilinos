@@ -1129,7 +1129,7 @@ int main(int argc, char *argv[]) {
       pobj->checkGradient(x,y,true,*outStream);
       pobj->checkHessVec(x,y,true,*outStream);
       // Test reduced objective function.
-      robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
+      robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,zp,pp));
       robj->checkGradient(z,yz,true,*outStream);
       robj->checkHessVec(z,yz,true,*outStream);
     }
@@ -1141,7 +1141,7 @@ int main(int argc, char *argv[]) {
         // Initialize full objective function.
         pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
         // Initialize reduced objective function.
-        robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
+        robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,zp,pp));
         if ( !useTR ) {
           // Run line-search secant step.
           parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");

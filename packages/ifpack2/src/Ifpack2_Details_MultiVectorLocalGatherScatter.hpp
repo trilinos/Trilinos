@@ -84,19 +84,26 @@ namespace Details {
 template<class MV_in, class MV_out>
 class MultiVectorLocalGatherScatter {
 public:
+  typedef typename MV_in::scalar_type InScalar;
+  typedef typename MV_out::scalar_type OutScalar;
+  typedef typename MV_in::local_ordinal_type LO;
+  typedef typename MV_in::global_ordinal_type GO;
+  typedef typename MV_in::node_type NO;
+
+  /**************/
+  /* MV <==> MV */
+  /**************/
   void
   gather (MV_out& X_out,
           const MV_in& X_in,
-          const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
+          const Teuchos::ArrayView<const LO>& perm) const
   {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
     const size_t numVecs = X_in.getNumVectors ();
-
     for (size_t j = 0; j < numVecs; ++j) {
-      ArrayRCP<const typename MV_in::scalar_type> X_in_j = X_in.getData (j);
-      ArrayRCP<typename MV_out::scalar_type> X_out_j = X_out.getDataNonConst (j);
-
+      ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
+      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
       for (size_t i = 0; i < numRows; ++i) {
         const size_t i_perm = perm[i];
         X_out_j[i] = X_in_j[i_perm];
@@ -107,19 +114,80 @@ public:
   void
   scatter (MV_in& X_in,
            const MV_out& X_out,
-           const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
+           const Teuchos::ArrayView<const LO>& perm) const
   {
     using Teuchos::ArrayRCP;
-    const size_t numRows = X_out.getLocalLength ();
-    const size_t numVecs = X_in.getNumVectors ();
-
+    const size_t numRows = X_out.getLocalLength();
+    const size_t numVecs = X_in.getNumVectors();
     for (size_t j = 0; j < numVecs; ++j) {
-      ArrayRCP<typename MV_in::scalar_type> X_in_j = X_in.getDataNonConst (j);
-      ArrayRCP<const typename MV_out::scalar_type> X_out_j = X_out.getData (j);
-
+      ArrayRCP<InScalar> X_in_j = X_in.getDataNonConst(j);
+      ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
       for (size_t i = 0; i < numRows; ++i) {
         const size_t i_perm = perm[i];
         X_in_j[i_perm] = X_out_j[i];
+      }
+    }
+  }
+
+  /******************/
+  /* View <==> View */
+  /******************/
+  template<typename InView, typename OutView>
+  void gatherViewToView(OutView& X_out,
+                        InView& X_in,
+                        const Teuchos::ArrayView<const LO>& perm) const
+  {
+    //note: j is col, i is row
+    for(size_t j = 0; j < X_out.dimension_1(); ++j) {
+      for(size_t i = 0; i < X_out.dimension_0(); ++i) {
+        const LO i_perm = perm[i];
+        X_out(i, j) = X_in(i_perm, j);
+      }
+    }
+  }
+
+  template<typename InView, typename OutView>
+  void scatterViewToView(InView& X_in,
+                         OutView& X_out,
+                         const Teuchos::ArrayView<const LO>& perm) const
+  {
+    for(size_t j = 0; j < X_out.dimension_1(); ++j) {
+      for(size_t i = 0; i < X_out.dimension_0(); ++i) {
+        const LO i_perm = perm[i];
+        X_in(i_perm, j) = X_out(i, j);
+      }
+    }
+  }
+
+  /*******************************/
+  /* MV <==> View specialization */
+  /*******************************/
+  template<typename InView>
+  void gatherMVtoView(MV_out& X_out,
+                      InView& X_in,
+                      const Teuchos::ArrayView<const LO>& perm) const
+  {
+    for(LO i = 0; i < perm.size(); ++i)
+    //note: j is col, i is row
+    for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
+      Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      for(size_t i = 0; i < X_out.getLocalLength(); ++i) {
+        const LO i_perm = perm[i];
+        X_out_j[i] = X_in(i_perm, j);
+      }
+    }
+  }
+
+  template<typename InView>
+  void scatterMVtoView(InView& X_in,
+                       MV_out& X_out,
+                       const Teuchos::ArrayView<const LO>& perm) const
+  {
+    for(size_t j = 0; j < X_in.dimension_1(); ++j) {
+      Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
+      for(size_t i = 0; i < X_out.getLocalLength(); ++i) {
+        const LO i_perm = perm[i];
+        X_in(i_perm, j) = X_out_j[i];
       }
     }
   }

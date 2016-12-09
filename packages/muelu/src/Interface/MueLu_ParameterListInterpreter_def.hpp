@@ -113,6 +113,10 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_INTREPID2
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -427,12 +431,17 @@ namespace MueLu {
        Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab",
-        Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab" && multigridAlgo != "pcoarsen",
+			       Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
 #endif
+#ifndef HAVE_MUELU_INTREPID2
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
+#endif
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
 
@@ -605,12 +614,12 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || 
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED_RELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED RELAXATION")
+	  coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+	  coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else {
 #ifdef HAVE_MUELU_MATLAB
@@ -772,11 +781,15 @@ namespace MueLu {
     }
 
     // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab",
-                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
+			       && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
+#endif
+#ifndef HAVE_MUELU_INTREPID2
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
     if (have_userP) {
       // User prolongator
@@ -864,6 +877,17 @@ namespace MueLu {
       manager.SetFactory("P", P);
     }
 #endif
+#ifdef HAVE_MUELU_INTREPID2
+    else if(multigridAlgo == "pcoarsen") {
+      // Intrepid P-Coarsening
+      RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+      ParameterList Pparams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: hi basis", std::string, Pparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: lo basis", std::string, Pparams);
+      P->SetParameterList(Pparams);
+      manager.SetFactory("P", P);
+    }
+#endif
 
     // === Semi-coarsening ===
     RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
@@ -939,6 +963,7 @@ namespace MueLu {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
       try {
         if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
           RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
@@ -1270,7 +1295,7 @@ namespace MueLu {
     //     <ParameterList name="Matrix">
     //   </ParameterList>
     if (paramList.isSublist("Matrix")) {
-      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
+      blockSize_ = paramList.sublist("Matrix").get<int>("PDE equations", MasterList::getDefault<int>("number of equations"));
       dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
     }
 

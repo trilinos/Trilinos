@@ -104,10 +104,10 @@ extern "C" {
 
 /*
  * This file contains defined constants that are used internally in the
- * EXODUS II API.
+ * EXODUS API.
  *
  * The first group of constants refer to netCDF variables, attributes, or
- * dimensions in which the EXODUS II data are stored.  Using the defined
+ * dimensions in which the EXODUS data are stored.  Using the defined
  * constants will allow the names of the netCDF entities to be changed easily
  * in the future if needed.  The first three letters of the constant identify
  * the netCDF entity as a variable (VAR), dimension (DIM), or attribute (ATT).
@@ -120,11 +120,11 @@ extern "C" {
  */
 #define ATT_FILE_TYPE "type"                /* obsolete                  */
 #define ATT_TITLE "title"                   /* the database title        */
-#define ATT_API_VERSION "api_version"       /* the EXODUS II api vers #   */
-#define ATT_API_VERSION_BLANK "api version" /* the EXODUS II api vers #   */
+#define ATT_API_VERSION "api_version"       /* the EXODUS api vers #   */
+#define ATT_API_VERSION_BLANK "api version" /* the EXODUS api vers #   */
                                             /*  used for db version 2.01 */
                                             /*  and earlier              */
-#define ATT_VERSION "version"               /* the EXODUS II file vers # */
+#define ATT_VERSION "version"               /* the EXODUS file vers # */
 #define ATT_FILESIZE "file_size"            /* 1=large, 0=normal */
 #define ATT_FLT_WORDSIZE "floating_point_word_size"
 /* word size of floating     */
@@ -699,6 +699,25 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count, int *dimid,
                      const char *routine);
+
+int ex_get_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
+                         void *nodal_var_vals);
+
+int ex_put_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
+                         const void *nodal_var_vals);
+
+int ex_get_nodal_var_time_int(int exoid, int nodal_var_index, int64_t node_number,
+                              int beg_time_step, int end_time_step, void *nodal_var_vals);
+
+int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t start_node,
+                                 int64_t num_nodes, void *var_vals);
+
+int ex_put_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t start_node,
+                                 int64_t num_nodes, const void *nodal_var_vals);
+int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob_var_vals);
+
+int ex_get_glob_var_time_int(int exoid, int glob_var_index, int beg_time_step, int end_time_step,
+                             void *glob_var_vals);
 
 int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
                          ex_entity_type obj_type, const char *routine);

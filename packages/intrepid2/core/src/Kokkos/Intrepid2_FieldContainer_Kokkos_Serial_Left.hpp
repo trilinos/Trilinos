@@ -241,10 +241,10 @@ this->initialize();
 void resize(const Teuchos::Array<int>& newDimensions);
 
 template<class Vector>
-    void dimensions(Vector& dimensions) const{
- dimensions.resize(rankValue);
+    void dimensions(Vector& newDimensions) const{
+ newDimensions.resize(rankValue);
  for (index_type i=0; i<rankValue;i++)
-   dimensions[i]=dim[i];
+   newDimensions[i]=dim[i];
 }
 
 

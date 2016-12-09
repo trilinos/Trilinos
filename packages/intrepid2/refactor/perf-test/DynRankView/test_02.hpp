@@ -66,11 +66,11 @@ namespace Intrepid2 {
       void
       clone( /**/  outputViewType output,
              const inputViewType  input ) {
-        const size_type iend = output.dimension(0);
-        const size_type jend = output.dimension(1);
+        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.dimension(1);
 
-        for (size_type i=0;i<iend;++i)
-          for (size_type j=0;j<jend;++j)
+        for (ordinal_type i=0;i<iend;++i)
+          for (ordinal_type j=0;j<jend;++j)
             output(i, j) = input(i, j);
       }
       
@@ -109,16 +109,16 @@ namespace Intrepid2 {
             break;
           }
           case 1: {
-            const size_type kend = _outputFields.dimension(2);
-            for (size_type k=0;k<kend;++k) 
+            const ordinal_type kend = _outputFields.dimension(2);
+            for (ordinal_type k=0;k<kend;++k)
               _outputFields(i, j, k) = _inputFields(j, k);
             break;
           }
           case 2: {
-            const size_type kend = _outputFields.dimension(2);
-            const size_type lend = _outputFields.dimension(3);
-            for (size_type k=0;k<kend;++k) 
-              for (size_type l=0;l<lend;++l) 
+            const ordinal_type kend = _outputFields.dimension(2);
+            const ordinal_type lend = _outputFields.dimension(3);
+            for (ordinal_type k=0;k<kend;++k)
+              for (ordinal_type l=0;l<lend;++l)
                 _outputFields(i, j, k, l) = _inputFields(j, k, l);
             break;
           }
@@ -128,10 +128,10 @@ namespace Intrepid2 {
     };
     
     template<typename ValueType, typename DeviceSpaceType>
-    int DynRankView_PerfTest02(const size_type nworkset,
-                               const size_type C,
-                               const size_type P, 
-                               const size_type D, 
+    int DynRankView_PerfTest02(const ordinal_type nworkset,
+                               const ordinal_type C,
+                               const ordinal_type P,
+                               const ordinal_type D,
                                const bool verbose) {
 
       Teuchos::RCP<std::ostream> verboseStream;

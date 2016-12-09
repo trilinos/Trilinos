@@ -41,6 +41,7 @@
 #include "klu2_analyze.hpp"
 #include "klu2_factor.hpp"
 #include "klu2_solve.hpp"
+#include "klu2_tsolve.hpp"
 #include "klu2_free_symbolic.hpp"
 #include "klu2_free_numeric.hpp"
 
@@ -68,9 +69,11 @@ int main (void)
     Symbolic = klu_analyze<double, int> (n, Ap, Ai, &Common) ;
     Numeric = klu_factor<double, int> (Ap, Ai, Ax, Symbolic, &Common) ;
     klu_solve<double, int> (Symbolic, Numeric, 5, 1, b, &Common) ;
+    for (i = 0 ; i < n ; i++) printf ("Non-transpose: x [%d] = %g\n", i, b [i]) ;
+    klu_tsolve<double, int> (Symbolic, Numeric, 5, 1, b, &Common) ;
+    for (i = 0 ; i < n ; i++) printf ("Transpose: x [%d] = %g\n", i, b [i]) ;
     klu_free_symbolic<double, int> (&Symbolic, &Common) ;
     klu_free_numeric<double, int> (&Numeric, &Common) ;
-    for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b [i]) ;
 
     std::cout << "Float case " << std::endl ;
     klu_symbolic<float, int> *Symbolic_ff ;
@@ -80,9 +83,11 @@ int main (void)
     Symbolic_ff = klu_analyze<float, int> (n, Ap, Ai, &Common_ff) ;
     Numeric_ff = klu_factor<float, int> (Ap, Ai, Ax_f, Symbolic_ff, &Common_ff) ;
     klu_solve<float, int> (Symbolic_ff, Numeric_ff, 5, 1, b_f, &Common_ff) ;
+    for (i = 0 ; i < n ; i++) printf ("Non-transpose: x [%d] = %g\n", i, b_f [i]) ;
+    klu_tsolve<float, int> (Symbolic_ff, Numeric_ff, 5, 1, b_f, &Common_ff) ;
+    for (i = 0 ; i < n ; i++) printf ("Transpose: x [%d] = %g\n", i, b_f [i]) ;
     klu_free_symbolic<float, int> (&Symbolic_ff, &Common_ff) ;
     klu_free_numeric<float, int> (&Numeric_ff, &Common_ff) ;
-    for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b_f [i]) ;
 
 #ifdef HAVE_TEUCHOS_COMPLEX
     std::cout << "Complex double case " << std::endl ;
@@ -94,10 +99,13 @@ int main (void)
     Symbolic_C = klu_analyze<ComplexD, int> (n, Ap, Ai, &Common_C) ;
     Numeric_C = klu_factor<ComplexD, int> (Ap, Ai, Ax_cd, Symbolic_C, &Common_C) ;
     klu_solve<ComplexD, int> (Symbolic_C, Numeric_C, 5, 1, b_cd, &Common_C) ;
+    for (i = 0 ; i < n ; i++) 
+        std::cout << "Non-transpose: x [" << i << "] = "<< b_cd[i] << std::endl ;
+    klu_tsolve<ComplexD, int> (Symbolic_C, Numeric_C, 5, 1, b_cd, &Common_C) ;
+    for (i = 0 ; i < n ; i++) 
+        std::cout << "Transpose: x [" << i << "] = "<< b_cd[i] << std::endl ;
     klu_free_symbolic<ComplexD, int> (&Symbolic_C, &Common_C) ;
     klu_free_numeric<ComplexD, int> (&Numeric_C, &Common_C) ;
-    for (i = 0 ; i < n ; i++) 
-        std::cout << "x [" << i << "] = "<< b_cd[i] << std::endl ;
 #endif
 
 /*    std::cout << "Complex float case " << std::endl ;

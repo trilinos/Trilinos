@@ -109,7 +109,7 @@ public:
 
   virtual
   T
-  reduce(Elementwise::ReductionOp<T> & r) const final;
+  reduce(Elementwise::ReductionOp<T> const & r) const final;
 
   //
   // Utilities

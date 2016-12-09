@@ -94,26 +94,26 @@ namespace Intrepid2{
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
-        const auto numNodesPerCell  = _subcvCoords.dimension(1);
-        const auto numNodesPerSubcv = _subcvCoords.dimension(2);
-        const auto spaceDim         = _subcvCoords.dimension(3);
-        const auto numSubcvPoints   = _subcvWeights.dimension(0);
+        const ordinal_type numNodesPerCell  = _subcvCoords.dimension(1);
+        const ordinal_type numNodesPerSubcv = _subcvCoords.dimension(2);
+        const ordinal_type spaceDim         = _subcvCoords.dimension(3);
+        const ordinal_type numSubcvPoints   = _subcvWeights.dimension(0);
 
         // compute subcv centers
-        for (auto node=0;node<numNodesPerCell;++node) {
+        for (ordinal_type node=0;node<numNodesPerCell;++node) {
           typename cubPointViewType::value_type val[3] = {};
-          for (auto subcv=0;subcv<numNodesPerSubcv;++subcv) {
-            for (auto i=0;i<spaceDim;++i) 
+          for (ordinal_type subcv=0;subcv<numNodesPerSubcv;++subcv) {
+            for (ordinal_type i=0;i<spaceDim;++i) 
               val[i] += _subcvCoords(cell, node, subcv, i);
           }
-          for (auto i=0;i<spaceDim;++i) 
+          for (ordinal_type i=0;i<spaceDim;++i) 
             _cubPoints(cell, node, i) = (val[i]/numNodesPerSubcv);
         }
         
         // compute weights (area or volume)
-        for (auto node=0;node<numNodesPerCell;++node) {
+        for (ordinal_type node=0;node<numNodesPerCell;++node) {
           typename cubWeightViewType::value_type val = 0;
-          for (auto pt=0;pt<numSubcvPoints;++pt)
+          for (ordinal_type pt=0;pt<numSubcvPoints;++pt)
             val += _subcvWeights(pt)*_jacDets(cell, node, pt);
           _cubWeights(cell, node) = val;
         }
@@ -141,6 +141,8 @@ namespace Intrepid2{
   public:
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
 
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).

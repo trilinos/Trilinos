@@ -125,7 +125,7 @@ find_type(Index const dimension, Index const number_nodes)
 //
 // Constructor for SphericalParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 SphericalParametrization<T, N, ES>::SphericalParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
@@ -143,7 +143,7 @@ SphericalParametrization<T, N, ES>::SphericalParametrization(
 //
 // Normal vector for SphericalParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 SphericalParametrization<T, N, ES>::get_normal(
@@ -165,7 +165,7 @@ SphericalParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for SphericalParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 SphericalParametrization<T, N, ES>::operator()(
@@ -200,7 +200,7 @@ SphericalParametrization<T, N, ES>::operator()(
 //
 // Constructor for StereographicParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 StereographicParametrization<T, N, ES>::StereographicParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
@@ -218,7 +218,7 @@ StereographicParametrization<T, N, ES>::StereographicParametrization(
 //
 // Normal vector for StereographicParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 StereographicParametrization<T, N, ES>::get_normal(
@@ -245,7 +245,7 @@ StereographicParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for StereographicParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 StereographicParametrization<T, N, ES>::operator()(
@@ -280,7 +280,7 @@ StereographicParametrization<T, N, ES>::operator()(
 //
 // Constructor for ProjectiveParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 ProjectiveParametrization<T, N, ES>::ProjectiveParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
@@ -298,7 +298,7 @@ ProjectiveParametrization<T, N, ES>::ProjectiveParametrization(
 //
 // Normal vector for ProjectiveParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 ProjectiveParametrization<T, N, ES>::get_normal(
@@ -332,7 +332,7 @@ ProjectiveParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for ProjectiveParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 ProjectiveParametrization<T, N, ES>::operator()(
@@ -367,7 +367,7 @@ ProjectiveParametrization<T, N, ES>::operator()(
 //
 // Constructor for TangentParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 TangentParametrization<T, N, ES>::TangentParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
@@ -385,7 +385,7 @@ TangentParametrization<T, N, ES>::TangentParametrization(
 //
 // Normal vector for TangentParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 TangentParametrization<T, N, ES>::get_normal(
@@ -418,7 +418,7 @@ TangentParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for TangentParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 TangentParametrization<T, N, ES>::operator()(
@@ -453,7 +453,7 @@ TangentParametrization<T, N, ES>::operator()(
 //
 // Constructor for CartesianParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 CartesianParametrization<T, N, ES>::CartesianParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
@@ -471,11 +471,11 @@ CartesianParametrization<T, N, ES>::CartesianParametrization(
 //
 // Normal vector for CartesianParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 CartesianParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 3>::value,ES> const & parameters
+    Vector<T, dimension_const<N, 3>::value, ES> const & parameters
 ) const
 {
   T const &
@@ -496,7 +496,7 @@ CartesianParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for CartesianParametrization
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 CartesianParametrization<T, N, ES>::operator()(
@@ -529,7 +529,7 @@ CartesianParametrization<T, N, ES>::operator()(
 //
 // Constructor for ParametricGrid
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 ParametricGrid<T, N, ES>::ParametricGrid(
     Vector<T, N, ES> const & lower,
@@ -549,7 +549,7 @@ ParametricGrid<T, N, ES>::ParametricGrid(
 //
 // Traverse the grid and apply the visitor to each point.
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 template<typename Visitor>
 KOKKOS_INLINE_FUNCTION
 void

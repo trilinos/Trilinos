@@ -48,7 +48,7 @@
 
 #include "ROL_Algorithm.hpp"
 
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_HMCRObjective.hpp"
 #include "ROL_RiskVector.hpp"
 
@@ -121,13 +121,13 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     Teuchos::RCP<ROL::Vector<RealT> > ud
       = Teuchos::rcp(new L2VectorPrimal<RealT>(ud_rcp,fem));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > pobj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(fem,ud,alpha));
     /*************************************************************************/
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
@@ -188,9 +188,9 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE RISK-AVERSE OBJECTIVE FUNCTION *****************/
     /*************************************************************************/
     bool storage = true, fdhess = false;
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(
-          pobj,pcon,up,lp,gup,cp,storage,fdhess));
+    Teuchos::RCP<ROL::Objective<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(
+          pobj,pcon,up,zp,lp,gup,gzp,cp,storage,fdhess));
     RealT order = 2.0, prob = 0.95;
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ROL::HMCRObjective<RealT>(

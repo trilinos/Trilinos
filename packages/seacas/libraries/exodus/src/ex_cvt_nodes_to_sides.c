@@ -122,7 +122,7 @@ side sets.
 The following code segment will convert side sets described
 by nodes to side sets described by local side numbers:
 
-\code
+~~~{.c}
 int error, exoid, ids[2], num_side_per_set[2],
     num_nodes_per_set[2], elem_ind[2], node_ind[2],
     elem_list[4], node_list[8], el_lst_len, *side_list;
@@ -152,7 +152,7 @@ side_list = (int *) calloc (el_lst_len, sizeof(int));
 ex_cvt_nodes_to_sides(exoid, num_side_per_set, num_nodes_per_set,
                       elem_ind, node_ind, elem_list,
                       node_list, side_list);
-\endcode
+~~~
 
  <b>Algorithm:</b>
 
@@ -375,7 +375,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
     goto cleanup;
   }
 
-  if (ex_get_elem_blk_ids(exoid, elem_blk_ids)) {
+  if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element block ids in file id %d", exoid);
     ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MSG);
     err_stat = EX_FATAL;
@@ -653,7 +653,8 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
       }
 
       /* get connectivity array */
-      if (ex_get_elem_conn(exoid, elem_blk_parms[p_ndx].elem_blk_id, connect) == -1) {
+      if (ex_get_conn(exoid, EX_ELEM_BLOCK, elem_blk_parms[p_ndx].elem_blk_id, connect, NULL,
+                      NULL) == -1) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get connectivity array for elem blk %" PRId64 " for file id %d",
                  elem_blk_parms[p_ndx].elem_blk_id, exoid);

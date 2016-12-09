@@ -514,15 +514,17 @@ namespace mwm_order
    Int *col_ptr, Int *row_idx,
    Entry  *val,
    Int *pr, Int *L,
-   Entry *d, 
+   //Entry *d, 
+   double *d, 
    Int *iperm, Int *jperm, 
-   Int &num, Entry &bv
+   Int &num, double &bv
    )
   {
     Int i,ii,i0,j,jj, k;
     Int kk, kk1, kk2;
-    Entry a0, ai;
-    bv = (Entry) INF;
+//    Entry a0, ai;
+    double a0, ai;
+    bv = (double) INF;
 
     //Init used values
     i0 = -1;
@@ -532,14 +534,16 @@ namespace mwm_order
 	iperm[k] = -1;
 	jperm[k] = -1;
 	pr[k]    = col_ptr[k];
-	d[k]     = (Entry) 0;
+	//d[k]     = (Entry) 0;
+	d[k]     = (double) 0;
       }
     
 
     //Scan over column nodes
     for(j=0; j<n; j++)
       {
-	a0 = (Entry) -1.0;
+	//a0 = (Entry) -1.0;
+	a0 = (double) -1.0;
         //For each column node, 
 	for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
 	  {
@@ -576,7 +580,7 @@ namespace mwm_order
 		i0 = i;
 	      }
 	  }//for-k, row nodes
-	if((a0 != ((Entry)(-1.0))) && 
+	if((a0 != ((double)(-1.0))) && 
 	   (a0 < bv))
 	  {
 	    bv = a0;
@@ -679,9 +683,11 @@ namespace mwm_order
    Int *col_ptr, Int *row_idx,
    Entry  *val,
    Int *pr, Int *L,
-   Entry *d, 
+   //Entry *d, 
+   double *d, 
    Int *iperm, Int *jperm, 
-   Int &num, Entry &bv
+   //Int &num, Entry &bv
+   Int &num, double &bv
    )
   {
 
@@ -691,15 +697,19 @@ namespace mwm_order
     Int jord, jdum, idum;
     Int qlen, low, up;
     Int q0;
-    Entry dq0;
+    double dq0;
+    //Entry dq0;
 
-    Entry dnew, di;
-    Entry csp;
+    double dnew, di;
+    double csp;
+    //Entry dnew, di;
+    //Entry csp;
     Int isp, jsp;
     
     Int lpos;
 
-    Entry MINONE = (Entry) -1.0;
+    //Entry MINONE = (Entry) -1.0;
+    double MINONE = (double) -1.0;
 
     Int *Q = new Int[n+1];
    
@@ -999,14 +1009,16 @@ namespace mwm_order
    )
   {
 
-    Entry *d          = new Entry[n];
+    //Entry *d          = new Entry[n];
+    double *d          = new double[n];
     Int   *jperm      = new Int[n];
     Int   *iperm      = new Int[n];
     Int   *L          = new Int[n];
     Int   *pr         = new Int[n];
 
 
-    Entry bv = 0;
+    //Entry bv = 0;
+    double bv = 0;
 
     mwm_bn_init(n,nnz, 
 		col_ptr, row_idx, val,
@@ -1032,20 +1044,20 @@ namespace mwm_order
     fp = fopen("bn_init.txt", "w");
     printf("BN init perm: \n");
     for(Int i = 0; i < n; i++)
-      {
-	fprintf(fp, "%ld \n", iperm[i]);
-	//printf("%ld, ", iperm[i]);
-      }
+    {
+      fprintf(fp, "%ld \n", iperm[i]);
+      //printf("%ld, ", iperm[i]);
+    }
     fclose(fp);
     printf("\n");
-    #endif
+#endif
 
 
     if(num == n)
-      {
+    {
 
-	return 0;
-      }
+      return 0;
+    }
 
 
     mwm_bn(n,nnz,

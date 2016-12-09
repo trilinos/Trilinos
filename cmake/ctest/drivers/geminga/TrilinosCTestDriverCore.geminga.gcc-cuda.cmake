@@ -69,18 +69,20 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
   SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+
+      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
 
       "-DBUILD_SHARED_LIBS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
       "-DTrilinos_ENABLE_CXX11:BOOL=ON"
         "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-g -G -Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
+      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###

@@ -1684,57 +1684,96 @@ namespace Tpetra {
     /// \post <tt>isFillActive() && ! isFillComplete()</tt>
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
-
-      Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-
-      Parameters:
-
-      - "No Nonlocal Changes" (\c bool): Default is false.  If true,
-        the caller promises that no modifications to nonowned rows
-        have happened on any process since the last call to
-        fillComplete.  This saves a global all-reduce to check whether
-        any process did a nonlocal insert.  Nonlocal changes include
-        any sumIntoGlobalValues or insertGlobalValues call with a row
-        index that is not in the row Map of the calling process.
-
-      - "Sort column Map ghost GIDs" (\c bool): Default is true.
-        makeColMap() (which fillComplete may call) always groups
-        remote GIDs by process rank, so that all remote GIDs with the
-        same owning rank occur contiguously.  By default, it always
-        sorts remote GIDs in increasing order within those groups.
-        This behavior differs from Epetra, which does not sort remote
-        GIDs with the same owning process.  If you don't want to sort
-        (for compatibility with Epetra), set this parameter to \c
-        false.  This parameter only takes effect if the matrix owns
-        the graph.  This is an expert mode parameter ONLY.  We make no
-        promises about backwards compatibility of this parameter.  It
-        may change or disappear at any time.
-    */
+    /// \brief Tell the matrix that you are done changing its
+    ///   structure or values, and that you are ready to do
+    ///   computational kernels (e.g., sparse matrix-vector multiply)
+    ///   with it.
+    ///
+    /// This tells the graph to optimize its data structures for
+    /// computational kernels, and to prepare (MPI) communication
+    /// patterns.
+    ///
+    /// Off-process indices are distributed (via globalAssemble()),
+    /// indices are sorted, redundant indices are fused, and global
+    /// indices are transformed to local indices.
+    ///
+    /// \warning The domain Map and row Map arguments to this method
+    ///   MUST be one to one!  If you have Maps that are not one to
+    ///   one, and you do not know how to make a Map that covers the
+    ///   same global indices but <i>is</i> one to one, then you may
+    ///   call Tpetra::createOneToOne() (see Map's header file) to
+    ///   make a one-to-one version of your Map.
+    ///
+    /// \pre  <tt>   isFillActive() && ! isFillComplete() </tt>
+    /// \post <tt> ! isFillActive() &&   isFillComplete() </tt>
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See below for valid parameters.
+    ///
+    /// List of valid parameters in <tt>params</tt>:
+    /// <ul>
+    /// <li> "No Nonlocal Changes" (\c bool): Default is false.  If
+    ///      true, the caller promises that no modifications to
+    ///      nonowned rows have happened on any process since the last
+    ///      call to fillComplete.  This saves a global all-reduce to
+    ///      check whether any process did a nonlocal insert.
+    ///      Nonlocal changes include any sumIntoGlobalValues or
+    ///      insertGlobalValues call with a row index that is not in
+    ///      the row Map of the calling process.
+    /// </li>
+    ///
+    /// <li> "Sort column Map ghost GIDs" (\c bool): Default is true.
+    ///      makeColMap() (which fillComplete may call) always groups
+    ///      remote GIDs by process rank, so that all remote GIDs with
+    ///      the same owning rank occur contiguously.  By default, it
+    ///      always sorts remote GIDs in increasing order within those
+    ///      groups.  This behavior differs from Epetra, which does
+    ///      not sort remote GIDs with the same owning process.  If
+    ///      you don't want to sort (for compatibility with Epetra),
+    ///      set this parameter to \c false.  This parameter only
+    ///      takes effect if the matrix owns the graph.  This is an
+    ///      expert mode parameter ONLY.  We make no promises about
+    ///      backwards compatibility of this parameter.  It may change
+    ///      or disappear at any time.
+    /// </li>
+    /// </ul>
     void
     fillComplete (const Teuchos::RCP<const map_type>& domainMap,
                   const Teuchos::RCP<const map_type>& rangeMap,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete.
-
-      Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
-
-      \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-    */
-    void fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    /// \brief Tell the matrix that you are done changing its
+    ///   structure or values, and that you are ready to do
+    ///   computational kernels (e.g., sparse matrix-vector multiply)
+    ///   with it.  Set default domain and range Maps.
+    ///
+    /// See above three-argument version of fillComplete for full
+    /// documentation.  If the matrix does not yet have domain and
+    /// range Maps (i.e., if fillComplete has not yet been called on
+    /// this matrix at least once), then this method uses the matrix's
+    /// row Map (result of this->getRowMap()) as both the domain Map
+    /// and the range Map.  Otherwise, this method uses the matrix's
+    /// existing domain and range Maps.
+    ///
+    /// \warning It is only valid to call this overload of
+    ///   fillComplete if the row Map is one to one!  If the row Map
+    ///   is NOT one to one, you must call the above three-argument
+    ///   version of fillComplete, and supply one-to-one domain and
+    ///   range Maps.  If you have Maps that are not one to one, and
+    ///   you do not know how to make a Map that covers the same
+    ///   global indices but <i>is</i> one to one, then you may call
+    ///   Tpetra::createOneToOne() (see Map's header file) to make a
+    ///   one-to-one version of your Map.
+    ///
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See documentation of the three-argument
+    ///   version of fillComplete (above) for valid parameters.
+    void
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
@@ -1747,6 +1786,21 @@ namespace Tpetra {
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param importer [in] Import from the matrix's domain Map to
+    ///   its column Map.  If no Import is necessary (i.e., if the
+    ///   domain and column Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param exporter [in] Export from the matrix's row Map to its
+    ///   range Map.  If no Export is necessary (i.e., if the row and
+    ///   range Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.
     void
     expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
                               const Teuchos::RCP<const map_type>& rangeMap,
@@ -4361,11 +4415,11 @@ namespace Tpetra {
                                                typename CrsMatrixType::node_type>& domainExporter,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
     sourceMatrix->exportAndFillComplete (destMatrix,rowExporter,domainExporter,domainMap, rangeMap, params);

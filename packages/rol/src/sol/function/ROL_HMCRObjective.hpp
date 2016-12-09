@@ -47,7 +47,6 @@
 #include "Teuchos_RCP.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
@@ -55,7 +54,7 @@ namespace ROL {
 template<class Real>
 class HMCRObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_;
+  Teuchos::RCP<Objective<Real> > ParametrizedObjective_;
 
   Real order_;
   Real prob_;
@@ -145,11 +144,11 @@ private:
 public:
   virtual ~HMCRObjective() {}
 
-  HMCRObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  HMCRObjective( Teuchos::RCP<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                 Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                 Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+                 Teuchos::RCP<SampleGenerator<Real> > &vsampler, 
+                 Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                 Teuchos::RCP<SampleGenerator<Real> > &hsampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
@@ -160,10 +159,10 @@ public:
     gradient_storage_.clear();
   }
 
-  HMCRObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  HMCRObjective( Teuchos::RCP<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                 Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                 Teuchos::RCP<SampleGenerator<Real> > &vsampler, 
+                 Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
@@ -174,9 +173,9 @@ public:
     gradient_storage_.clear();
   }
 
-  HMCRObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  HMCRObjective( Teuchos::RCP<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+                 Teuchos::RCP<SampleGenerator<Real> > &sampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj), order_(order), prob_(prob),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),

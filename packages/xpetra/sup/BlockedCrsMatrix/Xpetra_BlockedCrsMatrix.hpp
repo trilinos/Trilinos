@@ -886,7 +886,7 @@ namespace Xpetra {
 
       // create (temporary) vectors for output
       // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
-      tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors());
+      tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
       if (bBlockedY == true) tmpbY = Teuchos::rcp(new BlockedMultiVector(rangemaps_,tmpY));
 
       SC one = ScalarTraits<SC>::one();
@@ -894,7 +894,7 @@ namespace Xpetra {
       if (mode == Teuchos::NO_TRANS) {
 
         for (size_t row = 0; row < Rows(); row++) {
-          RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
+          RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
           for (size_t col = 0; col < Cols(); col++) {
 
             // extract matrix block
@@ -915,7 +915,7 @@ namespace Xpetra {
             // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
             if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
             else          Xblock = domainmaps_->ExtractVector(refX,  col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
-            RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bRangeThyraMode_);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
+            RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bRangeThyraMode_, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
             Ablock->apply(*Xblock, *tmpYblock);
 
             // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
@@ -932,7 +932,7 @@ namespace Xpetra {
       } else if (mode == Teuchos::TRANS) {
         // TODO: test me!
         for (size_t col = 0; col < Cols(); col++) {
-          RCP<MultiVector>    Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
+          RCP<MultiVector>    Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, true);
 
           for (size_t row = 0; row<Rows(); row++) {
             RCP<Matrix>            Ablock = getMatrix(row, col);
@@ -949,7 +949,7 @@ namespace Xpetra {
             // extract sub part of X using Xpetra or Thyra GIDs
             if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
             else          Xblock = rangemaps_->ExtractVector(refX,  row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
-            RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bDomainThyraMode_);
+            RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bDomainThyraMode_, false);
             Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
 
             // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids

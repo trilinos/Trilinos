@@ -328,9 +328,9 @@ namespace Intrepid2 {
         Kokkos::deep_copy(tetPoints, tetPointsHost);
 
         // Dimensions for the output arrays:
-        const auto numFields = tetBasis.getCardinality();
-        const auto numNodes  = tetNodes.dimension(0);
-        const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = tetBasis.getCardinality();
+        const ordinal_type numNodes  = tetNodes.dimension(0);
+        const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
         // Check VALUE of basis functions at nodes: resize vals to rank-2 container:\n";
         {
@@ -340,9 +340,9 @@ namespace Intrepid2 {
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
 
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numNodes;++j) {
-              const auto l =  i + j * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numNodes;++j) {
+              const ordinal_type l =  i + j * numFields;
               if (std::abs(vals_host(i,j) - nodalBasisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -357,7 +357,7 @@ namespace Intrepid2 {
           }
         }
 
-        const auto numPoints = tetPoints.dimension(0);
+        const ordinal_type numPoints = tetPoints.dimension(0);
 
         // Check VALUE of basis functions at points: resize vals to rank-2 container:\n";
         {
@@ -367,9 +367,9 @@ namespace Intrepid2 {
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
 
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              const auto l =  i + j * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              const ordinal_type l =  i + j * numFields;
               if (std::abs(vals_host(i,j) - pointBasisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -387,7 +387,7 @@ namespace Intrepid2 {
         // Check VALUE of basis functions at random points: resize vals to rank-2 container:\n";
         {
           *outStream << " check VALUE of basis functions at random points\n";
-          const auto numRandomPoints = 16384;
+          const ordinal_type numRandomPoints = 16384;
 
           DynRankViewHost tetRandomPointsHost = DynRankViewHost("tetRandomPointsHost", numRandomPoints, 3);
           {
@@ -418,9 +418,9 @@ namespace Intrepid2 {
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
         
-          for (auto j=0;j<numRandomPoints;++j) {
+          for (ordinal_type j=0;j<numRandomPoints;++j) {
             ValueType sum = 0.0;
-            for (auto i=0;i<numFields;++i) 
+            for (ordinal_type i=0;i<numFields;++i)
               sum += vals_host(i,j);
 
             if (std::abs(sum - 1.0) > tol) {
@@ -442,10 +442,10 @@ namespace Intrepid2 {
           tetBasis.getValues(vals, tetPoints, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              for (auto k=0;k<spaceDim;++k) {
-                const auto l = k + i * spaceDim + j * spaceDim * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              for (ordinal_type k=0;k<spaceDim;++k) {
+                const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
                 if (std::abs(vals_host(i,j,k) - pointBasisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

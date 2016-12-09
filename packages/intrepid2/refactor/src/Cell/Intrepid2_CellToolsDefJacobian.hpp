@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefJacobian.hpp
+    \brief  Definition file for the Jacobian functions in the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -67,8 +67,13 @@ namespace Intrepid2 {
     template<typename jacobianViewType, 
              typename worksetCellType, 
              typename basisGradType>
+    /**
+     \brief Functor for calculation of Jacobian on cell workset  
+
+       See Intrepid2::CellTools::setJacobian for more documentation on calculation of Jacobians.
+    */
     struct F_setJacobian {
-      /**/  jacobianViewType _jacobian;
+            jacobianViewType _jacobian;
       const worksetCellType  _worksetCells;
       const basisGradType    _basisGrads;
 
@@ -81,12 +86,12 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl, 
                       const ordinal_type pt) const {
-        /**/  auto jac  = Kokkos::subview( _jacobian,     cl, pt, Kokkos::ALL(), Kokkos::ALL());
+              auto jac  = Kokkos::subview( _jacobian,     cl, pt, Kokkos::ALL(), Kokkos::ALL());
         const auto dofs = Kokkos::subview( _worksetCells, cl,     Kokkos::ALL(), Kokkos::ALL());
         
         const ordinal_type gradRank = _basisGrads.rank(); 
         const auto grad = ( gradRank == 3 ? Kokkos::subdynrankview( _basisGrads,     Kokkos::ALL(), pt, Kokkos::ALL()) :
-                            /**/            Kokkos::subdynrankview( _basisGrads, cl, Kokkos::ALL(), pt, Kokkos::ALL()));
+                                            Kokkos::subdynrankview( _basisGrads, cl, Kokkos::ALL(), pt, Kokkos::ALL()));
         
         const ordinal_type dim = jac.dimension(0); // dim0 and dim1 should match
         const ordinal_type cardinality = grad.dimension(0);
@@ -108,12 +113,13 @@ namespace Intrepid2 {
            typename HGradBasisPtrType>
   void
   CellTools<SpT>::
-  setJacobian( /**/  Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian,
+  setJacobian(       Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian,
                const Kokkos::DynRankView<pointValueType,pointProperties...>             points,
                const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG    
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology());
+    //static_assert(std::is_same( pointValueType, decltype(basis->getDummyOutputValue()) ));
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const ordinal_type spaceDim = cellTopo.getDimension();
@@ -128,14 +134,18 @@ namespace Intrepid2 {
     
     // the following does not work for RCP; its * operator returns reference not the object
     //typedef typename decltype(*basis)::output_value_type gradValueType;
-    typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    typedef Kokkos::DynRankView<pointValueType,SpT> gradViewType;
     
     gradViewType grads;
+
+    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
+    typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = gradViewType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -143,7 +153,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = gradViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
       for (ordinal_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
@@ -168,7 +178,7 @@ namespace Intrepid2 {
            typename jacobianValueType,    class ...jacobianProperties>                                      
   void                                                                                               
   CellTools<SpT>::
-  setJacobianInv( /**/  Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,     
+  setJacobianInv(       Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,     
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_setJacobianInvArgs(jacobianInv, jacobian);
@@ -181,7 +191,7 @@ namespace Intrepid2 {
            typename jacobianValueType,    class ...jacobianProperties>                                      
   void                                                                                               
   CellTools<SpT>::
-  setJacobianDet( /**/  Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,    
+  setJacobianDet(       Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,    
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_setJacobianDetArgs(jacobianDet, jacobian);

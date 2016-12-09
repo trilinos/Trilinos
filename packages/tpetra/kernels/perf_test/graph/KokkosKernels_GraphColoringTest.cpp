@@ -1,3 +1,45 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 #include <KokkosKernels_GraphColor.hpp>
 #include <KokkosKernels_Handle.hpp>
 
@@ -8,7 +50,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include <KokkosKernels_GraphHelpers.hpp>
+#include "KokkosKernels_IOUtils.hpp"
 
 int main (int argc, char ** argv){
   if (argc < 2){
@@ -32,7 +74,7 @@ int main (int argc, char ** argv){
   idx *xadj, *adj;
   wt *ew;
 
-  KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (
+  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (
       &nr, &ne, &xadj, &adj, &ew, argv[1]);
   delete [] ew;
 
@@ -101,32 +143,6 @@ int main (int argc, char ** argv){
           "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
       std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
     }
-
-    /*
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < row_index_view_type, nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-     */
   }
 #endif
 #if defined( KOKKOS_HAVE_OPENMP )
@@ -188,31 +204,6 @@ int main (int argc, char ** argv){
         std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
 
-      /*
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < row_index_view_type, nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      */
     }
 
     //OPENMP TEST2
@@ -270,32 +261,6 @@ int main (int argc, char ** argv){
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
         std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
-
-      /*
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < row_index_view_type, nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      */
     }
 
   }
@@ -367,26 +332,6 @@ int main (int argc, char ** argv){
       row_view_type sym_row_map;
       edge_view_type sym_entries;
 
-      /*
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < row_index_view_type, nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      */
     }
     //CUDA TEST2
     {
@@ -457,31 +402,6 @@ int main (int argc, char ** argv){
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
         std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
-      /*
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < const_row_index_view_type, const_nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      */
     }
 
 
@@ -555,31 +475,6 @@ int main (int argc, char ** argv){
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
         std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
-      /*
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-      KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < row_index_view_type, nonzero_index_view_type,row_view_type, edge_view_type,ExecSpace>
-        (nr, kok_xadj, kok_adj, sym_row_map,sym_entries );
-      kok_xadj = row_index_view_type("s");
-      kok_adj = nonzero_index_view_type("s");
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "On Temp Memory Space Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
-            <KernelHandle,row_view_type,edge_view_type> (&kkh,nr, nc, sym_row_map, sym_entries);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      */
     }
 
 #endif

@@ -283,7 +283,7 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicIdentiferAda
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
-  const zgno_t * globalIds;
+  const zgno_t *globalIds = NULL;
   size_t localCount = 0;
   
   // get weights if any

@@ -126,7 +126,7 @@ private:
   typedef ArrayRCP<RCP<base_metric_type> > base_metric_array_type;
 
   base_metric_array_type metricsBase_;
-
+protected:
   void sharedConstructor(const Adapter *ia,
                          ParameterList *p,
                          const RCP<const Comm<int> > &problemComm,
@@ -134,7 +134,48 @@ private:
                          const RCP<const GraphModel
                          <typename Adapter::base_adapter_t> > &graphModel);
 
+
+
+  /*! \brief Constructor where communicator is Teuchos default, and takes
+   *  another parameter whether to evaluate metrics within the constructor or not.
+      \param ia the problem input adapter
+      \param p the parameter list
+      \param problemComm  the problem communicator
+      \param soln  the solution
+      \param force_evaluate whether to evaluate within to constructor or not.
+      \param graphModel the graph model
+      The constructor does global communication to compute the metrics .
+      The rest of the  methods are local.
+   */
+  EvaluatePartition(
+    const Adapter *ia,
+    ParameterList *p,
+    const RCP<const Comm<int> > &problemComm,
+    const PartitioningSolution<Adapter> *soln,
+    bool force_evaluate,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+          Teuchos::null):
+            numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_() {
+    if (force_evaluate){
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+
+  }
+  virtual void calculate_graph_metrics(
+      const RCP<const Environment> &_env,
+      const RCP<const Comm<int> > &_problemComm,
+      const RCP<const GraphModel<typename Adapter::base_adapter_t> > &_graph,
+      const ArrayView<const typename Adapter::part_t> &_partArray,
+      typename Adapter::part_t &_numGlobalParts,
+      ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &_metricsBase,
+      ArrayRCP<typename Adapter::scalar_t> &_globalSums){
+    globalWeightedCutsMessagesByPart <Adapter>(_env,
+            _problemComm, _graph, _partArray,
+            _numGlobalParts, _metricsBase,
+            _globalSums);
+  }
 public:
+  virtual ~EvaluatePartition(){}
 
   /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
@@ -456,6 +497,7 @@ void EvaluatePartition<Adapter>::sharedConstructor(
   } else {
     problemComm = comm;
   }
+
   RCP<Environment> env;
 
   try{
@@ -550,6 +592,10 @@ void EvaluatePartition<Adapter>::sharedConstructor(
                                         problemComm, graph, partArray,
                                         numGlobalParts_, metricsBase_,
                                         globalSums);
+      this->calculate_graph_metrics(env,
+              problemComm, graph, partArray,
+              numGlobalParts_, metricsBase_,
+              globalSums);
     }
     Z2_FORWARD_EXCEPTIONS;
 

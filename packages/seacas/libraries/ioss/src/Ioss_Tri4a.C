@@ -139,7 +139,6 @@ Ioss::ElementTopology *Ioss::Tri4a::edge_type(int edge_number) const
   if (edge_number == 1) {
     return Ioss::ElementTopology::factory("edge3");
   }
-  else {
-    return Ioss::ElementTopology::factory("edge2");
-  }
+
+  return Ioss::ElementTopology::factory("edge2");
 }

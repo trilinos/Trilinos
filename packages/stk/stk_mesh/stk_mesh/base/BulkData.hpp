@@ -65,6 +65,7 @@
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
+#include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
@@ -89,6 +90,7 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
+
 
 namespace stk {
 namespace mesh {
@@ -782,6 +784,28 @@ public:
 
   void destroy_elements_of_topology(stk::topology topologyToDelete);
 
+  bool has_sideset_data() const { return m_hasSideSetData; }
+
+  const SideSet& get_sideset_data(int sideset_id) const
+  {
+      static SideSet empty;
+      auto iter = m_sideSetData.find(sideset_id);
+      if (iter == m_sideSetData.end())
+      {
+          return empty;
+      }
+      return iter->second;
+  }
+
+  void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
+
+protected:
+  void save_sideset_data(int sideset_id, const SideSet& data)
+  {
+      m_hasSideSetData = true;
+      m_sideSetData.insert(std::make_pair(sideset_id, data));
+  }
+
 protected: //functions
 
   bool resolve_node_sharing()
@@ -1470,6 +1494,8 @@ private: // data
   stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
+  std::map<int,const SideSet> m_sideSetData;
+  bool m_hasSideSetData = false;;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
@@ -1478,5 +1504,6 @@ void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVec
 } // namespace stk
 
 #include "BulkDataInlinedMethods.hpp"
+
 
 #endif //  stk_mesh_BulkData_hpp

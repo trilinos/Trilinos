@@ -138,13 +138,13 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   if (int_size == sizeof(int64_t)) {
     int64_t ss_elem = 0;
     int64_t ss_df   = 0;
-    err             = ex_get_side_set_param(exoid, side_set_id, &ss_elem, &ss_df);
+    err             = ex_get_set_param(exoid, EX_SIDE_SET, side_set_id, &ss_elem, &ss_df);
     tot_num_ss_elem = ss_elem;
   }
   else {
     int ss_elem     = 0;
     int ss_df       = 0;
-    err             = ex_get_side_set_param(exoid, side_set_id, &ss_elem, &ss_df);
+    err             = ex_get_set_param(exoid, EX_SIDE_SET, side_set_id, &ss_elem, &ss_df);
     tot_num_ss_elem = ss_elem;
   }
 
@@ -179,7 +179,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       goto cleanup;
     }
 
-    if (ex_get_side_set(exoid, side_set_id, side_set_elem_list, side_set_side_list) == -1) {
+    if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list) == -1) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get side set %" PRId64 " in file id %d",
                side_set_id, exoid);
       ex_err("ex_get_side_set_node_count", errmsg, exerrval);
@@ -233,7 +233,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       goto cleanup;
     }
 
-    if (ex_get_elem_blk_ids(exoid, elem_blk_ids) == -1) {
+    if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids) == -1) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element block ids in file id %d",
                exoid);
       ex_err("ex_get_side_set_node_count", errmsg, EX_MSG);

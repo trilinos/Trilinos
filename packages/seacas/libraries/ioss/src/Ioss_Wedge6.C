@@ -171,10 +171,9 @@ Ioss::ElementTopology *Ioss::Wedge6::face_type(int face_number) const
     //    return Ioss::ElementTopology::factory("quadface4");
     return Ioss::ElementTopology::factory("quad4");
   }
-  else {
-    //    return Ioss::ElementTopology::factory("triface3");
-    return Ioss::ElementTopology::factory("tri3");
-  }
+
+  //    return Ioss::ElementTopology::factory("triface3");
+  return Ioss::ElementTopology::factory("tri3");
 }
 
 Ioss::ElementTopology *Ioss::Wedge6::edge_type(int edge_number) const

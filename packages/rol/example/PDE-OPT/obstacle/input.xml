@@ -1,0 +1,208 @@
+<ParameterList name="Inputs">
+  <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Problem">
+    <Parameter name="Order of FE discretization"  type="int"       value="1"     />
+    <Parameter name="Cubature Degree"             type="int"       value="2"     />
+    <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
+    <Parameter name="Load Magnitude"              type="double"    value="10.0"  />
+  </ParameterList>
+
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+    <Parameter name="Width"             type="double"  value="1.0"  />
+    <Parameter name="Height"            type="double"  value="1.0"  />
+    <Parameter name="X0"                type="double"  value="0.0"  />
+    <Parameter name="Y0"                type="double"  value="0.0"  />
+    <Parameter name="NX"                type="int"     value="40"   />
+    <Parameter name="NY"                type="int"     value="40"   />
+    <Parameter name="Partition type"    type="int"     value="1"    />
+  </ParameterList>
+
+  <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="General">
+    <Parameter name="Variable Objective Function"            type="bool"   value="false" />
+    <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
+    <Parameter name="Inexact Objective Function"             type="bool" value="false" />
+    <Parameter name="Inexact Gradient"                       type="bool" value="false" />
+    <Parameter name="Inexact Hessian-Times-A-Vector"         type="bool" value="false" />
+    <!-- ===========  BOUND CONSTRAINED CRITICALITY MEASURE  =========== -->
+    <Parameter name="Projected Gradient Criticality Measure" type="bool" value="false" />
+
+    <!-- ===========  SECANT INPUTS  =========== -->
+    <ParameterList name="Secant">
+      <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
+      <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
+      <Parameter name="Use as Hessian"         type="bool"   value="false"               />
+      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
+      <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
+    </ParameterList>
+
+    <!-- ===========  KRYLOV INPUTS  =========== -->
+    <ParameterList name="Krylov">
+      <Parameter name="Type"               type="string" value="Conjugate Gradients" />
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
+      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  STEP SUBLIST  =========== -->
+  <ParameterList name="Step">
+    <!-- ===========  LINE SEARCH  =========== -->
+    <ParameterList name="Line Search">
+      <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
+      <Parameter name="Sufficient Decrease Tolerance"  type="double" value="1.e-4" />
+      <Parameter name="Initial Step Size"              type="double" value="1.0"   />
+      <Parameter name="User Defined Initial Step Size" type="bool"   value="false" />
+      <Parameter name="Accept Linesearch Minimizer"    type="bool"   value="false" />
+      <Parameter name="Accept Last Alpha"              type="bool"   value="false" />
+
+      <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
+      <ParameterList name="Descent Method">
+        <Parameter name="Type"              type="string" value="Newton-Krylov"    /> 
+        <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
+      </ParameterList>
+
+      <!-- ===========  CURVATURE CONDITION SPECIFICATION  =========== -->
+      <ParameterList name="Curvature Condition">
+        <Parameter name="Type"                        type="string" value="Strong Wolfe Conditions" />
+        <Parameter name="General Parameter"           type="double" value="0.9"                     />
+        <Parameter name="Generalized Wolfe Parameter" type="double" value="0.6"                     />
+      </ParameterList>
+
+      <!-- ===========  LINE-SEARCH ALGORITHM SPECIFICATION  =========== -->
+      <ParameterList name="Line-Search Method">
+        <Parameter name="Type"                         type="string" value="Cubic Interpolation" />
+        <Parameter name="Backtracking Rate"            type="double" value="0.5"                 />
+        <Parameter name="Bracketing Tolerance"         type="double" value="1.e-8"               />
+
+        <!-- ===========  PATH-BASED TARGET LEVEL  =========== -->
+        <ParameterList name="Path-Based Target Level">
+          <Parameter name="Target Relaxation Parameter" type="double" value="1.0" />
+          <Parameter name="Upper Bound on Path Length"  type="double" value="1.0" />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  TRUST REGION  =========== -->
+    <ParameterList name="Trust Region">
+      <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+      <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
+      <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
+      <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />
+      <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
+      <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
+      <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+
+      <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
+      <ParameterList name="Inexact">
+
+        <!-- ===========  INEXACT OBJECTIVE VALUE UPDATE  =========== -->
+        <ParameterList name="Value">
+          <Parameter name="Tolerance Scaling"                 type="double" value="1.e-1" />
+          <Parameter name="Exponent"                          type="double" value="0.9"   />
+          <Parameter name="Forcing Sequence Initial Value"    type="double" value="1.0"   />
+          <Parameter name="Forcing Sequence Update Frequency" type="int"    value="10"    />
+          <Parameter name="Forcing Sequence Reduction Factor" type="double" value="0.1"   />
+        </ParameterList>
+
+        <!-- ===========  INEXACT GRADIENT UPDATE  =========== -->
+        <ParameterList name="Gradient">
+          <Parameter name="Tolerance Scaling"  type="double" value="1.e-1" />
+          <Parameter name="Relative Tolerance" type="double" value="2.0"   />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  PRIMAL DUAL ACTIVE SET  =========== -->
+    <ParameterList name="Primal Dual Active Set">
+      <Parameter name="Dual Scaling"                type="double" value="1.0"   />
+      <Parameter name="Iteration Limit"             type="int"    value="1"     />
+      <Parameter name="Relative Step Tolerance"     type="double" value="1.e-8" />
+      <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
+    </ParameterList>
+
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
+      <Parameter name="Output Level" type="int" value="0" />
+      <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+      <ParameterList name="Optimality System Solver">
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
+      </ParameterList>
+      <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Tangential Subproblem Solver">
+        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
+    <ParameterList name="Augmented Lagrangian">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
+      <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
+      <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
+      <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Initial Optimality Tolerance"            type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Update Exponent"    type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Decrease Exponent"  type="double" value="1.0"          />
+      <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Initial Feasibility Tolerance"           type="double" value="1.0"          />
+      <Parameter name="Feasibility Tolerance Update Exponent"   type="double" value="0.1"          />
+      <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.9"          />
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
+      <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+    </ParameterList>
+
+    <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
+    <ParameterList name="Moreau-Yosida Penalty">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e-9"    />
+      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.5"     />
+
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Subproblem">
+        <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+        <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+        <Parameter name="Print History"                 type="bool"   value="true"  />
+        <Parameter name="Iteration Limit"               type="int"    value="200"   />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  BUNDLE METHOD  =========== -->
+    <ParameterList name="Bundle">
+      <!-- ===========  TRUST-REGION RADIUS UPDATE  =========== -->
+      <Parameter name="Initial Trust-Region Parameter"       type="double" value="1.e1"  />
+      <Parameter name="Maximum Trust-Region Parameter"       type="double" value="1.e8"  />
+      <Parameter name="Tolerance for Trust-Region Parameter" type="double" value="1.e-4" />
+      <!-- ===========  EPSILON SOLUTION STOPPING CONDITION  =========== -->
+      <Parameter name="Epsilon Solution Tolerance"           type="double" value="1.e-8" />
+      <!-- ===========  SERIOUS STEP PARAMETERS  =========== -->
+      <Parameter name="Upper Threshold for Serious Step"     type="double" value="1.e-1" />
+      <Parameter name="Lower Threshold for Serious Step"     type="double" value="2.e-1" />
+      <Parameter name="Upper Threshold for Null Step"        type="double" value="9.e-1" />
+      <!-- ===========  BUNDLE INFORMATION  =========== -->
+      <Parameter name="Distance Measure Coefficient"         type="double" value="1.e-6" />
+      <Parameter name="Maximum Bundle Size"                  type="int"    value="50"    />
+      <Parameter name="Removal Size for Bundle Update"       type="int"    value="2"     />
+      <!-- ===========  CUTTING PLANE SUBPROBLEM SOLVER  =========== -->
+      <Parameter name="Cutting Plane Tolerance"              type="double" value="1.e-8" />
+      <Parameter name="Cutting Plane Iteration Limit"        type="int"    value="1000"  />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  STATUS TEST SUBLIST  =========== -->
+  <ParameterList name="Status Test">
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"   />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
+    <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
+    <Parameter name="Iteration Limit"      type="int"    value="40"      />
+  </ParameterList>
+</ParameterList>

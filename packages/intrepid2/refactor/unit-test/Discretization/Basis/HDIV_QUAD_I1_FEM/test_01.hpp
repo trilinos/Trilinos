@@ -132,9 +132,9 @@ namespace Intrepid2 {
         // Array with the 4 vertices of the reference Quadrilateral, its center and 4 more points
         DynRankView ConstructWithLabel(quadNodes, 9, 2);
 
-        const auto numFields = quadBasis.getCardinality();
-        const auto numPoints = quadNodes.dimension(0);
-        const auto spaceDim = quadBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = quadBasis.getCardinality();
+        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type spaceDim = quadBasis.getBaseCellTopology().getDimension();
         DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim );
 
         {
@@ -154,7 +154,7 @@ namespace Intrepid2 {
           // exception #5
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,1) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(12) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(numFields) );
           // exception #7
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1) );
         }
@@ -227,12 +227,12 @@ namespace Intrepid2 {
   
       try {
     
-        const auto numFields = quadBasis.getCardinality();
+        const ordinal_type numFields = quadBasis.getCardinality();
         const auto allTags = quadBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
-        for (size_type i=0;i<dofTagSize;++i) {
+        const ordinal_type dofTagSize = allTags.dimension(0);
+        for (ordinal_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
     
           const auto myTag = quadBasis.getDofTag(bfOrd);
@@ -256,7 +256,7 @@ namespace Intrepid2 {
         }
 
         // Now do the same but loop over basis functions
-        for(auto bfOrd=0;bfOrd<numFields;++bfOrd) {
+        for(ordinal_type bfOrd=0;bfOrd<numFields;++bfOrd) {
           const auto myTag  = quadBasis.getDofTag(bfOrd);
           const auto myBfOrd = quadBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
           if( bfOrd != myBfOrd) {
@@ -330,18 +330,18 @@ namespace Intrepid2 {
         Kokkos::deep_copy(quadNodes, quadNodesHost);
 
         // Dimensions for the output arrays:
-        const auto numPoints = quadNodes.dimension(0);
-        const auto numFields = quadBasis.getCardinality();
-        const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type numFields = quadBasis.getCardinality();
+        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
         { 
         DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
         quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
         const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
         Kokkos::deep_copy(vals_host, vals);
-        for (auto i=0;i<numFields;++i) 
-          for (auto j=0;j<numPoints;++j) 
-            for (auto k=0;k<spaceDim;++k) {
+        for (ordinal_type i=0;i<numFields;++i)
+          for (ordinal_type j=0;j<numPoints;++j)
+            for (ordinal_type k=0;k<spaceDim;++k) {
               
               // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
               int l = k + i * spaceDim + j * spaceDim * numFields;
@@ -394,8 +394,8 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        const auto numFields = quadBasis.getCardinality();
-        const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = quadBasis.getCardinality();
+        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -438,11 +438,11 @@ namespace Intrepid2 {
         Kokkos::deep_copy(cvals, cvals_dev);
 
         ValueType expected_normal;
-        for (size_type i=0;i<numFields;++i) {
-          for (size_type j=0;j<numFields;++j) {
+        for (ordinal_type i=0;i<numFields;++i) {
+          for (ordinal_type j=0;j<numFields;++j) {
 
             ValueType normal = 0.0;
-            for (size_type d=0;d<spaceDim;++d)
+            for (ordinal_type d=0;d<spaceDim;++d)
                normal += bvals(i,j,d)*normals(j,d);
 
             expected_normal = (i == j);

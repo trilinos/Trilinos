@@ -207,6 +207,7 @@ namespace panzer_stk {
                                 const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                 const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                const Teuchos::ParameterList & closure_pl,
                                 const Teuchos::ParameterList & initial_cond_pl,
                                 const Teuchos::ParameterList & user_data_pl,
                                 bool write_dot_files,const std::string & dot_file_prefix) const;

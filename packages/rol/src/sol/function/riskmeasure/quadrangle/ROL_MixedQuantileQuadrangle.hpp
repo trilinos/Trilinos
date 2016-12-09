@@ -181,7 +181,7 @@ public:
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val  = RiskMeasure<Real>::val_, cvar(0);
+    Real val = RiskMeasure<Real>::val_, cvar(0);
     sampler.sumAll(&val,&cvar,1);
     for (int i = 0; i < size_; i++) {
       cvar += coeff_[i]*xvar_[i];

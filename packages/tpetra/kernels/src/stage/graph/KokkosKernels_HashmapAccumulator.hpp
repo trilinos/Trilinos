@@ -1,3 +1,45 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 #include <Kokkos_Atomic.hpp>
 namespace KokkosKernels{
 
@@ -59,8 +101,8 @@ struct HashmapAccumulator{
       size_type hash,
       key_type key,
 
-      size_type *used_size,
-      const size_type max_value_size){
+      size_type *used_size_,
+      const size_type max_value_size_){
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]){
@@ -69,8 +111,8 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size >= max_value_size) return INSERT_FULL;
-    size_type my_index = (*used_size)++;
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
 
     hash_nexts[my_index] = hash_begins[hash];
     hash_begins[hash] = my_index;
@@ -87,8 +129,8 @@ struct HashmapAccumulator{
       key_type key,
       value_type value,
 
-      size_type *used_size,
-      const size_type max_value_size){
+      size_type *used_size_,
+      const size_type max_value_size_){
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]){
@@ -98,8 +140,8 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size >= max_value_size) return INSERT_FULL;
-    size_type my_index = (*used_size)++;
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
 
     hash_nexts[my_index] = hash_begins[hash];
     hash_begins[hash] = my_index;
@@ -117,8 +159,8 @@ struct HashmapAccumulator{
       key_type key,
       value_type value,
 
-      size_type *used_size,
-      const size_type max_value_size,
+      size_type *used_size_,
+      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes){
 
@@ -130,8 +172,8 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size >= max_value_size) return INSERT_FULL;
-    size_type my_index = (*used_size)++;
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1){
       used_hashes[used_hash_size[0]++] = hash;
@@ -153,8 +195,8 @@ struct HashmapAccumulator{
       key_type key,
       value_type value,
 
-      size_type *used_size,
-      const size_type max_value_size,
+      size_type *used_size_,
+      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes){
 
@@ -166,8 +208,8 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size >= max_value_size) return INSERT_FULL;
-    size_type my_index = (*used_size)++;
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1){
       used_hashes[used_hash_size[0]++] = hash;
@@ -191,8 +233,8 @@ struct HashmapAccumulator{
       const key_type key,
       const value_type value,
 
-      size_type *used_size,
-      const size_type max_value_size){
+      size_type *used_size_,
+      const size_type max_value_size_){
 
 
     size_type i = hash_begins[hash];
@@ -203,8 +245,8 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size >= max_value_size) return INSERT_FULL;
-    size_type my_index = (*used_size)++;
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
 
     hash_nexts[my_index] = hash_begins[hash];
     hash_begins[hash] = my_index;
@@ -230,8 +272,8 @@ struct HashmapAccumulator{
       size_type &hash,
       const key_type key,
       const value_type value,
-      size_type *used_size,
-      const size_type max_value_size){
+      size_type *used_size_,
+      const size_type max_value_size_){
 
     char key_not_found = 1;
     if (hash != -1){
@@ -259,22 +301,22 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
-          num_writes += key_not_found;
+            [&] (const int threadid, int &num_writes_) {
+          num_writes_ += key_not_found;
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -309,8 +351,8 @@ struct HashmapAccumulator{
       size_type &hash,
       const key_type key,
       const value_type value,
-      size_type *used_size,
-      const size_type max_value_size){
+      size_type *used_size_,
+      const size_type max_value_size_){
 
     char key_not_found = 1;
     if (hash != -1){
@@ -338,24 +380,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -391,8 +433,8 @@ struct HashmapAccumulator{
       size_type &hash,
       const key_type key,
       const value_type value,
-      volatile size_type *used_size,
-      const size_type max_value_size,
+      volatile size_type *used_size_,
+      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes
       //,bool print = false
@@ -431,7 +473,7 @@ struct HashmapAccumulator{
     }
 
 
-    if ((*used_size) >= max_value_size){
+    if ((*used_size_) >= max_value_size_){
       if (key_not_found == 0) {
         return INSERT_SUCCESS;
       }
@@ -450,24 +492,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -499,8 +541,8 @@ struct HashmapAccumulator{
       size_type &hash,
       const key_type key,
       const value_type value,
-      volatile size_type *used_size,
-      const size_type max_value_size
+      volatile size_type *used_size_,
+      const size_type max_value_size_
       //,bool print = false
       ){
 
@@ -537,7 +579,7 @@ struct HashmapAccumulator{
     }
 
 
-    if ((*used_size) >= max_value_size){
+    if ((*used_size_) >= max_value_size_){
       if (key_not_found == 0) {
         return INSERT_SUCCESS;
       }
@@ -556,24 +598,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -719,9 +761,9 @@ struct HashmapAccumulator{
         value_type merged_value = 0;
         Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, value_type &merged_value) {
+            [&] (const int threadid, value_type &merged_value_) {
           if (key == *shared_key){
-            merged_value = merged_value + value;
+            merged_value_ = merged_value_ + value;
             if (!am_i_owner){
               hash = -1;
             }
@@ -864,8 +906,8 @@ struct HashmapAccumulator{
       const size_type &hash,
       const key_type &key,
       const value_type &value,
-      volatile size_type *used_size,
-      const size_type &max_value_size
+      volatile size_type *used_size_,
+      const size_type &max_value_size_
       ){
 
     char key_not_found = 1;
@@ -885,7 +927,7 @@ struct HashmapAccumulator{
     }
 
 
-    if ((*used_size) >= max_value_size){
+    if ((*used_size_) >= max_value_size_){
       if (key_not_found == 0) {
         return INSERT_SUCCESS;
       }
@@ -904,24 +946,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -949,8 +991,8 @@ struct HashmapAccumulator{
       const size_type &hash,
       const key_type &key,
       const value_type &value,
-      volatile size_type *used_size,
-      const size_type &max_value_size,
+      volatile size_type *used_size_,
+      const size_type &max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes
       ){
@@ -972,7 +1014,7 @@ struct HashmapAccumulator{
     }
 
 
-    if ((*used_size) >= max_value_size){
+    if ((*used_size_) >= max_value_size_){
       if (key_not_found == 0) {
         return INSERT_SUCCESS;
       }
@@ -991,24 +1033,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {
@@ -1039,8 +1081,8 @@ struct HashmapAccumulator{
 
       size_type &hash,
       const key_type key,
-      size_type *used_size,
-      const size_type max_value_size
+      size_type *used_size_,
+      const size_type max_value_size_
       ){
 
     char key_not_found = 1;
@@ -1079,24 +1121,24 @@ struct HashmapAccumulator{
       update += key_not_found;
     });
 
-    size_type my_write_index = (*used_size) + write_pos;
+    size_type my_write_index = (*used_size_) + write_pos;
     int num_writes = 0;
     Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes) {
+            [&] (const int threadid, int &num_writes_) {
           if (key_not_found){
-            num_writes += 1;
+            num_writes_ += 1;
           }
         }, num_writes);
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size) += num_writes;
+      (*used_size_) += num_writes;
     });
 
     if (key_not_found == 0) return INSERT_SUCCESS;
 
 
-    if (my_write_index >= max_value_size) {
+    if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
     }
     else {

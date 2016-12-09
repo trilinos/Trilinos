@@ -265,7 +265,7 @@ namespace Intrepid2 {
                                    ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
         ordinal_type enumeration = zMult;
-        const auto iend = order-xMult+1;
+        const ordinal_type iend = order-xMult+1;
         for(ordinal_type i=0;i<iend;++i) {
           enumeration += i;
         }
@@ -537,7 +537,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
         
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == getDkCardinality(operatorType, spaceDim)),
+        INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.dimension(2)) == getDkCardinality(operatorType, spaceDim)),
                                       std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
         break;
@@ -552,7 +552,7 @@ namespace Intrepid2 {
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.dimension(0)) == basisCard ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
@@ -635,7 +635,7 @@ namespace Intrepid2 {
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.dimension(0)) == basisCard ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
     

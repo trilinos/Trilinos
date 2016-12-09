@@ -207,6 +207,36 @@ IF (Sacado_ENABLE_Teuchos)
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_Cuda_Hierarchical
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_Cuda_Hierarchical.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_Cuda_Hierarchical_SFad
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_Cuda_Hierarchical_SFad.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_Cuda_Hierarchical_DFad
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_Cuda_Hierarchical_DFad.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_NoViewSpec_Cuda
         SOURCES Fad_KokkosTests.hpp
                 Fad_KokkosTests_NoViewSpec_Cuda.cpp

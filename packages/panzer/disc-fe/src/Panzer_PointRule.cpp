@@ -107,6 +107,11 @@ setup(const std::string & ptName,
 				       spatial_dimension,
 				       spatial_dimension));
 
+  dl_vector3 =
+      rcp(new MDALayout<Cell,IP,Dim>(workset_size, num_points,3));
+  dl_tensor3x3 =
+      rcp(new MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points,3,3));
+
 }
 
 const std::string & panzer::PointRule::getName() const

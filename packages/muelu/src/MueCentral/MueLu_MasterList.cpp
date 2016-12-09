@@ -127,6 +127,8 @@ namespace MueLu {
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "ipc: hi basis") { ss << "<Parameter name=\"ipc: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "ipc: lo basis") { ss << "<Parameter name=\"ipc: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -206,6 +208,8 @@ namespace MueLu {
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
   "<ParameterList name=\"transfer: params\"/>"
+  "<Parameter name=\"ipc: hi basis\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"ipc: lo basis\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -225,6 +229,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
@@ -471,6 +476,10 @@ namespace MueLu {
       
          ("transfer: params","transfer: params")
       
+         ("ipc: hi basis","ipc: hi basis")
+      
+         ("ipc: lo basis","ipc: lo basis")
+      
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
@@ -508,6 +517,8 @@ namespace MueLu {
          ("repartition: rebalance P and R","repartition: rebalance P and R")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
+      
+         ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("reuse: type","reuse: type")
       

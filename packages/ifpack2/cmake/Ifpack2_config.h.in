@@ -63,6 +63,9 @@
 /* Define if we have KokkosClassic */
 #cmakedefine HAVE_IFPACK2_KOKKOSCLASSIC
 
+/* Define if we have ML */
+#cmakedefine HAVE_IFPACK2_ML
+
 /* Define if we have ThyraTpetraAdapters */
 #cmakedefine HAVE_IFPACK2_THYRATPETRAADAPTERS
 
@@ -72,6 +75,8 @@
 /* Define if we have Zoltan2 */
 #cmakedefine HAVE_IFPACK2_ZOLTAN2
 
+/* Define if we have ShyLU/HTS */
+#cmakedefine HAVE_IFPACK2_SHYLUHTS
 
 /*
  * TPL (third-party library) dependencies

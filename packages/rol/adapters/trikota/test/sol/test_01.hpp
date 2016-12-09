@@ -57,9 +57,9 @@
 // ROL vectors
 #include "ROL_StdVector.hpp"
 // ROL objective functions and constraints
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_StochasticProblem.hpp"
 // ROL sample generators
 #include "ROL_MonteCarloGenerator.hpp"
@@ -67,7 +67,7 @@
 #include "ROL_StdTeuchosBatchManager.hpp"
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
   int nx_;
   Real dx_;
@@ -93,7 +93,7 @@ private:
     return ip;
   }
 
-  using ROL::ParametrizedEqualityConstraint_SimOpt<Real>::update;
+  using ROL::EqualityConstraint_SimOpt<Real>::update;
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (unsigned i=0; i<u.size(); i++) {
@@ -111,7 +111,7 @@ private:
                   const std::vector<Real> &z) {
     r.clear(); r.resize(nx_,0.0);
     const std::vector<Real> param =
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      ROL::EqualityConstraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
     Real f  = param[1]/100.0;
     Real u0 = 1.0+param[2]/1000.0;
@@ -147,7 +147,7 @@ private:
   void compute_pde_jacobian(std::vector<Real> &dl, std::vector<Real> &d, std::vector<Real> &du, 
                       const std::vector<Real> &u) {
     const std::vector<Real> param =
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      ROL::EqualityConstraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
     Real u0 = 1.0+param[2]/1000.0;
     Real u1 = param[3]/1000.0;
@@ -210,7 +210,7 @@ public:
     //up->assign(up->size(),z.norm()/(Real)up->size());
     up->assign(up->size(),z.norm()/up->size());
     //up->assign(up->size(),1.0);
-    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::solve(c,u,z,tol);
+    ROL::EqualityConstraint_SimOpt<Real>::solve(c,u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
@@ -224,7 +224,7 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     const std::vector<Real> param =
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      ROL::EqualityConstraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
     Real u0 = 1.0+param[2]/1000.0;
     Real u1 = param[3]/1000.0;
@@ -292,7 +292,7 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     const std::vector<Real> param =
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      ROL::EqualityConstraint_SimOpt<Real>::getParameter();
     Real nu = std::pow(10.0,param[0]-2.0);
     Real u0 = 1.0+param[2]/1000.0;
     Real u1 = param[3]/1000.0;
@@ -399,7 +399,7 @@ public:
 };
 
 template<class Real>
-class Objective_BurgersControl : public ROL::ParametrizedObjective_SimOpt<Real> {
+class Objective_BurgersControl : public ROL::Objective_SimOpt<Real> {
 private:
   Real alpha_; // Penalty Parameter
 
@@ -463,7 +463,7 @@ public:
     dx_ = 1.0/((Real)nx+1.0);
   }
 
-  using ROL::ParametrizedObjective_SimOpt<Real>::value;
+  using ROL::Objective_SimOpt<Real>::value;
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =

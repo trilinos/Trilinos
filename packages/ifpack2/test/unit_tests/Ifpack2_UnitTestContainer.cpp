@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   // Apply the SparseContainer
   out << "Applying the SparseContainer" << endl;
-  MyContainer.apply(x,y);
+  MyContainer.applyMV(x,y);
 
   // Apply raw ILUT
   out << "Applying reference ILUT" << endl;
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   // Weighted Apply the SparseContainer
   out << "Testing SparseContainer::weightedApply" << endl;
   d.putScalar(1.0);
-  MyContainer.weightedApply(x,y,d);
+  MyContainer.weightedApplyMV(x,y,d);
 
   // Diff
   out << "Computing results" << endl;
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   x.putScalar (0.0);
   out << "DenseContainer::apply" << endl;
   try {
-    MyContainer->apply (b, x);
+    MyContainer->applyMV(b, x);
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
 
   out << "DenseContainer::weightedApply" << endl;
   d.putScalar (1.0);
-  MyContainer->weightedApply (b, y, d);
+  MyContainer->weightedApplyMV(b, y, d);
 
   out << "Computing results of apply() and weightedApply() "
       << "(they should be the same in this case)" << endl;
@@ -450,7 +450,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   x.putScalar (0.0);
   out << "DenseContainer::apply" << endl;
   try {
-    MyContainer->apply (b, x);
+    MyContainer->applyMV(b, x);
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;

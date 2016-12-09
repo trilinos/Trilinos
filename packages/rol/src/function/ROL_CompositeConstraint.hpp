@@ -234,6 +234,24 @@ public:
 
   }
 
+  Teuchos::RCP<EqualityConstraint<Real> > getEqualityConstraint( void ) {
+    return eqcon_;
+  }
+
+  Teuchos::RCP<InequalityConstraint<Real> > getInequalityConstraint( void ) {
+    return incon_;
+  }
+
+
+// Definitions for parametrized (stochastic) equality constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    EqualityConstraint<Real>::setParameter(param);
+    incon_->setParameter(param);
+    if( hasEquality_ ) {
+      eqcon_->setParameter(param);
+    }
+  }
 }; // class CompositeConstraint
 
 } // namespace ROL

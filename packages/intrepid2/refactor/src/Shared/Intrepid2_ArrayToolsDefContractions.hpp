@@ -71,7 +71,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, lbf, rbf;
-        Util::unrollIndex( cl, lbf, rbf, 
+        unrollIndex( cl, lbf, rbf, 
                            _outputFields.dimension(0),
                            _outputFields.dimension(1),
                            _outputFields.dimension(2),
@@ -83,16 +83,18 @@ namespace Intrepid2 {
         const auto right = Kokkos::subview( _rightFields, cl, rbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         const size_type npts = left.dimension(0);
-        const size_type iend = left.dimension(1);
-        const size_type jend = left.dimension(2);
+        const ordinal_type iend = left.dimension(1);
+        const ordinal_type jend = left.dimension(2);
 
         value_type tmp(0);        
         for (size_type qp = 0; qp < npts; ++qp) 
-          for (size_type i = 0; i < iend; ++i) 
-            for (size_type j = 0; j < jend; ++j) 
+          for (ordinal_type i = 0; i < iend; ++i) 
+            for (ordinal_type j = 0; j < jend; ++j) 
               tmp += left(qp, i, j)*right(qp, i, j);
-
-        result() = value_type(_sumInto)*result() + tmp;
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //end namespace
@@ -143,7 +145,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf;
-        Util::unrollIndex( cl, bf, 
+        unrollIndex( cl, bf, 
                            _inputFields.dimension(0),
                            _inputFields.dimension(1),
                            iter );
@@ -154,24 +156,26 @@ namespace Intrepid2 {
         const auto data  = Kokkos::subview( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         const size_type npts = field.dimension(0);
-        const size_type iend = field.dimension(1);
-        const size_type jend = field.dimension(2);
+        const ordinal_type iend = field.dimension(1);
+        const ordinal_type jend = field.dimension(2);
 
         value_type tmp(0);        
 
         if(_inputData.dimension(1) != 1)
           for (size_type qp = 0; qp < npts; ++qp)
-            for (size_type i = 0; i < iend; ++i)
-              for (size_type j = 0; j < jend; ++j)
+            for (ordinal_type i = 0; i < iend; ++i)
+              for (ordinal_type j = 0; j < jend; ++j)
                 tmp += field(qp, i, j) * data(qp, i, j);
         else
           for (size_type qp = 0; qp < npts; ++qp)
-            for (size_type i = 0; i < iend; ++i)
-              for (size_type j = 0; j < jend; ++j)
+            for (ordinal_type i = 0; i < iend; ++i)
+              for (ordinal_type j = 0; j < jend; ++j)
                 tmp += field(qp, i, j) * data(0, i, j);
 
-
-        result() = value_type(_sumInto)*result() + tmp;
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //namespace
@@ -227,15 +231,19 @@ namespace Intrepid2 {
         const auto right = Kokkos::subview( _inputDataRight, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         size_type npts = left.dimension(0);
-        size_type iend = left.dimension(1);
-        size_type jend = left.dimension(2);
+        ordinal_type iend = left.dimension(1);
+        ordinal_type jend = left.dimension(2);
 
         value_type tmp(0);        
         for (size_type qp = 0; qp < npts; ++qp) 
-          for (size_type i = 0; i < iend; ++i) 
-            for (size_type j = 0; j < jend; ++j) 
+          for (ordinal_type i = 0; i < iend; ++i) 
+            for (ordinal_type j = 0; j < jend; ++j) 
               tmp += left(qp, i, j)*right(qp, i, j);
-        result() = value_type(_sumInto)*result() + tmp;
+
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //namespace

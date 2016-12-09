@@ -66,7 +66,7 @@
 #include "ROL_MixedQuantileQuadrangle.hpp"
 #include "ROL_SuperQuantileQuadrangle.hpp"
 #include "ROL_ChebyshevKusuoka.hpp"
-#include "ROL_SingletonKusuoka.hpp"
+#include "ROL_SpectralRisk.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_QuantileRadiusQuadrangle.hpp"
 #include "ROL_SmoothedWorstCaseQuadrangle.hpp"
@@ -97,7 +97,7 @@ namespace ROL {
     RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
     RISKMEASURE_SUPERQUANTILEQUADRANGLE,
     RISKMEASURE_CHEBYSHEVKUSUOKA,
-    RISKMEASURE_SINGLETONKUSUOKA,
+    RISKMEASURE_SPECTRALRISK,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_CHI2DIVERGENCE,
     RISKMEASURE_KLDIVERGENCE,
@@ -137,8 +137,8 @@ namespace ROL {
              retString = "Super Quantile Quadrangle";               break;
       case RISKMEASURE_CHEBYSHEVKUSUOKA:
              retString = "Chebyshev-Kusuoka";                       break;
-      case RISKMEASURE_SINGLETONKUSUOKA:
-             retString = "Singleton Kusuoka";                       break;
+      case RISKMEASURE_SPECTRALRISK:
+             retString = "Spectral Risk";                           break;
       case RISKMEASURE_QUANTILEQUADRANGLE:
              retString = "Quantile-Based Quadrangle";               break;
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
@@ -175,7 +175,7 @@ namespace ROL {
             (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_SUPERQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_CHEBYSHEVKUSUOKA) ||
-            (ed == RISKMEASURE_SINGLETONKUSUOKA) ||
+            (ed == RISKMEASURE_SPECTRALRISK) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
             (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
@@ -249,8 +249,8 @@ namespace ROL {
              return Teuchos::rcp(new SuperQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_CHEBYSHEVKUSUOKA:
              return Teuchos::rcp(new ChebyshevKusuoka<Real>(parlist));
-      case RISKMEASURE_SINGLETONKUSUOKA:
-             return Teuchos::rcp(new SingletonKusuoka<Real>(parlist));
+      case RISKMEASURE_SPECTRALRISK:
+             return Teuchos::rcp(new SpectralRisk<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:
              return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:

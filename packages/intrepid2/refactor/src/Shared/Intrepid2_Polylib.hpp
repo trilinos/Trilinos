@@ -204,9 +204,9 @@ namespace Intrepid2 {
   class Polylib {
   public:
 
-    static constexpr int  MaxPolylibIteration = 50;
-    static constexpr int  MaxPolylibOrder = Parameters::MaxOrder;
-    static constexpr int  MaxPolylibPoint = Parameters::MaxOrder*2;
+    static constexpr ordinal_type  MaxPolylibIteration = 50;
+    static constexpr ordinal_type  MaxPolylibOrder = Parameters::MaxOrder;
+    static constexpr ordinal_type  MaxPolylibPoint = Parameters::MaxOrder*2;
 
     struct Serial {
 

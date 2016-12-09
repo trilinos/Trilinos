@@ -101,7 +101,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   }
   else if ( name == "Super Quantile Quadrangle" ||
             name == "Chebyshev-Kusuoka"         ||
-            name == "Singleton Kusuoka" ) {
+            name == "Spectral Risk" ) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist(name);
     nStatistic = list.get("Number of Quadrature Points",5);
@@ -175,7 +175,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       }
       else if ( riskString[i] == "Super Quantile Quadrangle" ||
                 riskString[i] == "Chebyshev-Kusuoka"         ||
-                riskString[i] == "Singleton Kusuoka" ) {
+                riskString[i] == "Spectral Risk" ) {
         Teuchos::ParameterList &SQlist = list.sublist(riskString[i]);
         int nSQQstat = SQlist.get("Number of Quadrature Points",5);
         nStatistic += nSQQstat;

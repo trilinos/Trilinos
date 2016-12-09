@@ -36,7 +36,7 @@ namespace
 class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
-    SkinWithModification() : elemGraph(nullptr), elemGraphUpdater(nullptr), boundaryPart(nullptr)
+    SkinWithModification() : boundaryPart(nullptr)
     {
     }
     void setup_for_skinning()
@@ -45,14 +45,10 @@ protected:
 
         thingsToSkin = get_meta().universal_part();
 
-        elemGraph = new stk::mesh::ElemElemGraph(get_bulk());
-        elemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemGraph);
-        get_bulk().register_observer(elemGraphUpdater);
+        get_bulk().initialize_face_adjacent_element_graph();
     }
     ~SkinWithModification()
     {
-        delete elemGraph;
-        delete elemGraphUpdater;
     }
     void test_skinning(const SideTestUtil::TestCase& exteriorTestCase,
                        const SideTestUtil::TestCase& interiorTestCase)
@@ -113,9 +109,7 @@ private:
     }
     void make_exterior_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
-        std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-        stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_things_to_skin(), {boundaryPart});
     }
 
     void destroy_sides_in_boundary_part()
@@ -146,9 +140,7 @@ private:
     }
     void make_interior_block_boundary_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
-        std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
-        stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
+        stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), {boundaryPart});
     }
 
     const stk::mesh::Selector &get_things_to_skin()
@@ -164,9 +156,6 @@ private:
     }
 
 protected:
-    stk::mesh::ElemElemGraph *elemGraph;
-    stk::mesh::ElemElemGraphUpdater *elemGraphUpdater;
-
     const stk::mesh::EntityId shellId1 = 13;
     const stk::mesh::EntityId shellId2 = 14;
 

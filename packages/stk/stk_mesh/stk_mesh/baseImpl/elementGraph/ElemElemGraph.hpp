@@ -259,7 +259,7 @@ protected:
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
 private:
-    stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
+    void add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,

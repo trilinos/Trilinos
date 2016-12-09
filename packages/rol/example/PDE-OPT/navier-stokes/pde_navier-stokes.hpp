@@ -156,18 +156,77 @@ private:
   
   // Problem parameters.
   Real viscosity_;
+  bool horizontalControl_;
 
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
-    Real val = 0;
+    const std::vector<Real> param = PDE<Real>::getParameter();
+    Real val(0);
     if ((sideset==4) && (dir==0)) {
-      val = 8*(coords[1]-0.5)*(1-coords[1]);
+      if ( param.size() ) {
+        Real zero(0), half(0.5), one(1), two(2), pi(M_PI), four(4), c1(1), c2(-0.5);
+        if ( param[0] == zero ) {
+          val = half*std::sin(two*pi * (c1*coords[1] + c2));
+        }
+        else {
+          Real num = (std::exp(four*param[0]*(c1*coords[1] + c2)) - one);
+          Real den = (std::exp(two*param[0])-one);
+          val = half*std::sin(pi * num/den);
+        }
+      }
+      else {
+        val = static_cast<Real>(8)
+             *(coords[1]-static_cast<Real>(0.5))
+             *(static_cast<Real>(1)-coords[1]);
+      }
     }
     return val;
   }
 
+  void computeDirichlet(void) {
+    // Compute Dirichlet values at DOFs.
+    int d = basisPtrVel_->getBaseCellTopology().getDimension();
+    int numSidesets = bdryCellLocIds_.size();
+    bdryCellDofValues_.resize(numSidesets);
+    for (int i=0; i<numSidesets; ++i) {
+      int numLocSides = bdryCellLocIds_[i].size();
+      bdryCellDofValues_[i].resize(numLocSides);
+      for (int j=0; j<numLocSides; ++j) {
+        int c = bdryCellLocIds_[i][j].size();
+        int f = basisPtrVel_->getCardinality();
+        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
+          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+        if (c > 0) {
+          feVel_->computeDofCoords(coords, bdryCellNodes_[i][j]);
+        }
+        for (int k=0; k<c; ++k) {
+          for (int l=0; l<f; ++l) {
+            std::vector<Real> dofpoint(d);
+            //std::cout << "Sideset " << i << " LocalSide " << j << "  Cell " << k << "  Field " << l << "  Coord ";
+            for (int m=0; m<d; ++m) {
+              dofpoint[m] = (*coords)(k, l, m);
+              //std::cout << dofpoint[m] << "  ";
+            }
+
+            for (int m=0; m<d; ++m) {
+              (*bdryCellDofValues_[i][j])(k, l, m) = DirichletFunc(dofpoint, i, j, m);
+              //std::cout << "  " << m << "-Value " << DirichletFunc(dofpoint, i, j, m);
+            }
+            //std::cout << std::endl;
+          }
+        }
+      }
+    }
+  }
+
   Real viscosityFunc(const std::vector<Real> & coords) const {
+    const std::vector<Real> param = PDE<Real>::getParameter();
+    if ( param.size() ) {
+      Real c1(0.5), c2(2.5), five(5), ten(10);
+      return five*std::pow(ten, c1*param[1]-c2);
+    }
     return viscosity_;
   }
 
@@ -209,6 +268,7 @@ public:
 
     // Other problem parameters.
     viscosity_ = parlist.sublist("Problem").get("Viscosity", 5e-3);
+    horizontalControl_ = parlist.sublist("Problem").get("Horizontal control",false);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -364,11 +424,15 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                //for (int m=0; m < d; ++m) {
-                //  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
-                //}
-                (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
-                (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+                if ( !horizontalControl_ ) {
+                  for (int m=0; m < d; ++m) {
+                    (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
+                  }
+                }
+                else {
+                  (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
+                  (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+                }
               }
             }
           }
@@ -378,6 +442,7 @@ public:
 
     // APPLY DIRICHLET CONDITIONS
     if (numSideSets > 0) {
+      computeDirichlet();
       for (int i = 0; i < numSideSets; ++i) {
         // Changed by DR.
         //if ((i==0) || (i==3) || (i==4) || (i==5)) {
@@ -674,10 +739,14 @@ public:
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
                 for (int m=0; m < fv; ++m) {
-                  //for (int n=0; n < d; ++n) {
-                  //  (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
-                  //}
-                  (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  if ( !horizontalControl_ ) {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                    }
+                  }
+                  else {
+                    (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  }
                 }
               }
             }
@@ -763,7 +832,7 @@ public:
       for (int i = 0; i < numSideSets; ++i) {
         // Changed by DR.
         //if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6)) {
-        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7)) {
+        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7) || (i==8)) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -900,11 +969,11 @@ public:
     J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
     J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
 
-    J[0][0] = feVel_->stiffMat();
+    *(J[0][0]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
-    J[1][1] = feVel_->stiffMat();
+    *(J[1][1]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
-    J[2][2] = fePrs_->massMat();
+    *(J[2][2]) = *(fePrs_->massMat());
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(riesz, J);
@@ -935,11 +1004,11 @@ public:
     J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
     J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
 
-    J[0][0] = feVel_->stiffMat();
+    *(J[0][0]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
-    J[1][1] = feVel_->stiffMat();
+    *(J[1][1]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
-    J[2][2] = fePrs_->massMat();
+    *(J[2][2]) = *(fePrs_->massMat());
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(riesz, J);
@@ -959,40 +1028,6 @@ public:
     feVel_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrVel_,cellCub_));
     fePrs_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrPrs_,cellCub_));
     fidx_ = feVel_->getBoundaryDofs();
-    // Compute Dirichlet values at DOFs.
-    int d = basisPtrVel_->getBaseCellTopology().getDimension();
-    int numSidesets = bdryCellLocIds_.size();
-    bdryCellDofValues_.resize(numSidesets);
-    for (int i=0; i<numSidesets; ++i) {
-      int numLocSides = bdryCellLocIds_[i].size();
-      bdryCellDofValues_[i].resize(numLocSides);
-      for (int j=0; j<numLocSides; ++j) {
-        int c = bdryCellLocIds_[i][j].size();
-        int f = basisPtrVel_->getCardinality();
-        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
-          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-        if (c > 0) {
-          feVel_->computeDofCoords(coords, bdryCellNodes_[i][j]);
-        }
-        for (int k=0; k<c; ++k) {
-          for (int l=0; l<f; ++l) {
-            std::vector<Real> dofpoint(d);
-            //std::cout << "Sideset " << i << " LocalSide " << j << "  Cell " << k << "  Field " << l << "  Coord ";
-            for (int m=0; m<d; ++m) {
-              dofpoint[m] = (*coords)(k, l, m);
-              //std::cout << dofpoint[m] << "  ";
-            }
-
-            for (int m=0; m<d; ++m) {
-              (*bdryCellDofValues_[i][j])(k, l, m) = DirichletFunc(dofpoint, i, j, m);
-              //std::cout << "  " << m << "-Value " << DirichletFunc(dofpoint, i, j, m);
-            }
-            //std::cout << std::endl;
-          }
-        }
-      }
-    }
     // Construct control boundary FE
     int sideset = 6;
     int numLocSides = bdryCellNodes[sideset].size();

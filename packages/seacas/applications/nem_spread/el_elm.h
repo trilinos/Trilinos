@@ -80,6 +80,9 @@
 #define TSHELL7 707
 #define PYRAMID5 805
 #define PYRAMID13 813
+#define PYRAMID14 814
+#define PYRAMID18 818
+#define PYRAMID19 819
 
 /* define element data "request for information" types */
 

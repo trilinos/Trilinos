@@ -230,7 +230,8 @@ namespace Ioss {
     // id at the specified i,j,k location (1 <= i,j,k <= ni,nj,nk).  1-based.
     size_t get_global_cell_id(int i, int j, int k) const
     {
-      return m_cellGlobalOffset + (size_t)(k - 1) * m_niGlobal * m_njGlobal + (size_t)(j - 1) * m_niGlobal + i;
+      return m_cellGlobalOffset + (size_t)(k - 1) * m_niGlobal * m_njGlobal +
+             (size_t)(j - 1) * m_niGlobal + i;
     }
 
     // Get the global (over all processors) node
@@ -239,7 +240,7 @@ namespace Ioss {
     size_t get_global_node_offset(int i, int j, int k) const
     {
       return m_nodeGlobalOffset + (size_t)(k - 1) * (m_niGlobal + 1) * (m_njGlobal + 1) +
-	(size_t)(j - 1) * (m_niGlobal + 1) + i - 1;
+             (size_t)(j - 1) * (m_niGlobal + 1) + i - 1;
     }
 
     // Get the local (relative to this block on this processor) node id at the specified

@@ -18,10 +18,16 @@ configuration = {
     # this dictionary should be Python lists of -D arguments to cmake.
     'cmake': {
         
-        # Options that are common to all builds.
+        # Default options that are common to all builds.
         'common': [
-            '-DTPL_ENABLE_Pthread:BOOL=OFF',
-            '-DTPL_ENABLE_BinUtils:BOOL=OFF',
+            # Shared libs safes a ton of disk space and catches more errors
+            # than static builds.
+            '-DBUILD_SHARED_LIBS=ON',
+            # For graceful disables, we want to turn this on.
+            '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
+            # We want to see tracing of added tests to help in debugging
+            # problems.
+            '-DTrilinos_TRACE_ADD_TEST=ON',
             ],
 
         # Setup for the builds that should be run by default for a
@@ -30,29 +36,29 @@ configuration = {
         # developers prefer one case to fail earlier than another).
         'default-builds': [
 
-            # Options for the MPI_DEBUG build.
-            ('MPI_DEBUG', [
-                '-DTPL_ENABLE_MPI:BOOL=ON',
-                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-                '-DTrilinos_ENABLE_DEBUG:BOOL=ON',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON',
-                '-DTrilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON',
-                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON',
-                '-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF',
+            ('MPI_RELEASE_DEBUG_SHARED_PT', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
                 ]),
 
-            # Options for the SERIAL_RELEASE build.
-            ('SERIAL_RELEASE', [
-                '-DTPL_ENABLE_MPI:BOOL=OFF',
-                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-                '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF',
-                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
+            ('MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
+                '-DTrilinos_ENABLE_COMPLEX=ON',
+                '-DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON',
                 ]),
+
+            ## Options for the SERIAL_RELEASE build.
+            #('SERIAL_RELEASE_SHARED', [
+            #    '-DTPL_ENABLE_MPI:BOOL=OFF',
+            #    '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
+            #    '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
+            #    '-DBUILD_SHARED_LIBS=ON',
+            #    '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
+            #    ]),
+            # ToDo: Should we define serial builds to allow developers to run
+            # them if they want?
 
             ], # default-builds
 
         }, # cmake
 
     } # configuration
-

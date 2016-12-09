@@ -143,7 +143,7 @@ enum EBelosSolverType {
 /// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
 /// parameter to true in the input parameter list.
 ///
-///      Solver name | Aliases | Solver Manager Class
+///  Solver name | Aliases | Solver Manager Class
 ///  ----------- | ------- | ----------
 ///  Pseudoblock GMRES |  GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres | \c PseudoBlockGmresSolMgr
 ///  Block GMRES | Flexible GMRES | \c BlockGmresSolMgr

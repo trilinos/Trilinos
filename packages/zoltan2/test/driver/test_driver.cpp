@@ -98,7 +98,8 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
-void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
+void xmlToModelPList(const Teuchos::XMLObject &xml,
+  Teuchos::ParameterList & plist)
 {
   // This method composes a plist for the problem
   Teuchos::XMLParameterListReader reader;
@@ -244,7 +245,6 @@ bool run(const UserInputForTests &uinput,
   // get Zoltan2 partition parameters
   ParameterList zoltan2_parameters = 
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-  
   if(rank == 0) {
     cout << endl;
   }
@@ -446,7 +446,6 @@ bool run(const UserInputForTests &uinput,
                                        problem_parameters.get<string>("kind") :
                                        "?");
     comparison_source->adapter_kind = adapter_name;
-
   
     // write mesh solution
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
@@ -549,7 +548,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   }
   else {
     if(rank == 0) {
-      cout << "\nFAILED to load input data source. Skipping all tests." << endl;
+      cout << "\nFAILED to load input data source. Skipping "
+        "all tests." << endl;
       return false;
     }
   }

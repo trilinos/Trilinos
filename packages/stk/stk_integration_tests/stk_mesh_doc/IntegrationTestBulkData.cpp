@@ -86,7 +86,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -113,7 +113,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -141,7 +141,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -167,7 +167,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);

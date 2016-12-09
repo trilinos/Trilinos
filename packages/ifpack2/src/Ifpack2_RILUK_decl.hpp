@@ -548,7 +548,9 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-  void allocate_L_and_U();
+  void allocateSolvers ();
+  void allocate_L_and_U ();
+  static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
@@ -569,15 +571,10 @@ protected:
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
                                                    global_ordinal_type,
                                                    node_type> > > Graph_;
-  /// \brief The matrix used to to compute ILU(k).
-  ///
-  /// If A_local (the local filter of the original input matrix) is a
-  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
-  /// class reserves the right for A_local_crs_ to be a copy of
-  /// A_local.  This is because the current implementation of ILU(k)
-  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
-  /// in the future.
-  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
+  /// may be computed using a crs_matrix_type that initialize() constructs
+  /// temporarily.
+  Teuchos::RCP<const row_matrix_type> A_local_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
@@ -598,6 +595,12 @@ protected:
   static_assert( std::is_same< kokkos_exe,
                  Kokkos::OpenMP>::value,
                  "Kokkos node type not supported by exepertimentalthread basker RILUK decl");
+
+  // Basker needs the CRS matrix.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  // If the nonzero pattern is being reused, Basker needs A_local_ to be
+  // (possibly) copied or otherwise cast to a crs_matrix_type.
+  void initLocalCrs ();
 
   Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
   myBasker;

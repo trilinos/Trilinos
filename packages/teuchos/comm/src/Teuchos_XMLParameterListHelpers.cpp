@@ -45,7 +45,6 @@
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-
 void Teuchos::updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   const Ptr<ParameterList> &paramList,

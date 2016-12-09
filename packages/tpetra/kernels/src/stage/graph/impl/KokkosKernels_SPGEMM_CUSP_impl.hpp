@@ -1,8 +1,50 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 
 #ifndef _KOKKOSSPGEMMCUSP_HPP
 #define _KOKKOSSPGEMMCUSP_HPP
 
-#ifdef KERNELS_HAVE_CUSP
+#ifdef KERNELS_HAVE_CUSP1
 #include <cusp/multiply.h>
 #include <cusp/csr_matrix.h>
 #endif
@@ -32,45 +74,51 @@ struct CopyArrayToCuspArray{
 
 
 template <typename KernelHandle,
-  typename in_row_index_view_type,
-  typename in_nonzero_index_view_type,
-  typename in_nonzero_value_view_type>
+  typename ain_row_index_view_type,
+  typename ain_nonzero_index_view_type,
+  typename ain_nonzero_value_view_type,
+  typename bin_row_index_view_type,
+  typename bin_nonzero_index_view_type,
+  typename bin_nonzero_value_view_type,
+  typename cin_row_index_view_type,
+  typename cin_nonzero_index_view_type,
+  typename cin_nonzero_value_view_type>
 void CUSP_apply(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t m,
     typename KernelHandle::nnz_lno_t n,
     typename KernelHandle::nnz_lno_t k,
-    in_row_index_view_type row_mapA,
-    in_nonzero_index_view_type entriesA,
-    in_nonzero_value_view_type valuesA,
+    ain_row_index_view_type row_mapA,
+    ain_nonzero_index_view_type entriesA,
+    ain_nonzero_value_view_type valuesA,
 
     bool transposeA,
-    in_row_index_view_type row_mapB,
-    in_nonzero_index_view_type entriesB,
-    in_nonzero_value_view_type valuesB,
+    bin_row_index_view_type row_mapB,
+    bin_nonzero_index_view_type entriesB,
+    bin_nonzero_value_view_type valuesB,
     bool transposeB,
-    typename in_row_index_view_type::non_const_type &row_mapC,
-    typename in_nonzero_index_view_type::non_const_type &entriesC,
-    typename in_nonzero_value_view_type::non_const_type &valuesC){
-#ifdef KERNELS_HAVE_CUSP
+    cin_row_index_view_type row_mapC,
+    cin_nonzero_index_view_type &entriesC,
+    cin_nonzero_value_view_type &valuesC){
+#ifdef KERNELS_HAVE_CUSP1
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;
 
-  typedef typename in_row_index_view_type::device_type device1;
-  typedef typename in_nonzero_index_view_type::device_type device2;
-  typedef typename in_nonzero_value_view_type::device_type device3;
+  typedef typename ain_row_index_view_type::device_type device1;
+  typedef typename ain_nonzero_index_view_type::device_type device2;
+  typedef typename ain_nonzero_value_view_type::device_type device3;
 
-  std::cout << "RUNNING CUSP" << std::endl;
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
+
     return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     return;
   }
 
@@ -140,21 +188,26 @@ void CUSP_apply(
 
   cusp::multiply(A,B,C);
 
-  std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
-  std::cout << " C.values.size():" <<  C.values.size() << std::endl;
-  row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", m + 1);
-  entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
-  valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
 
-  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename in_row_index_view_type::non_const_type,
+  //std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
+  //std::cout << " C.values.size():" <<  C.values.size() << std::endl;
+  //row_mapC = typename cin_row_index_view_type::non_const_type("rowmapC", m + 1);
+
+
+  this->handle->get_spgemm_handle()->set_c_nnz( C.values.size());
+
+  entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") ,  C.column_indices.size());
+  valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC"),  C.values.size());
+
+  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename cin_row_index_view_type::non_const_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename in_nonzero_index_view_type::non_const_type,
+  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename cin_nonzero_index_view_type::non_const_type,
       idx >(entriesC, (idx *) thrust::raw_pointer_cast(C.column_indices.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename in_nonzero_value_view_type::non_const_type,
+  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename cin_nonzero_value_view_type::non_const_type,
       value_type>(valuesC, (value_type *) thrust::raw_pointer_cast(C.values.data())));
 
 #else
-  std::cerr << "CUSP IS NOT DEFINED" << std::endl;
+  throw std::runtime_error ("CUSP IS NOT DEFINED\n");
   return;
 #endif
 }

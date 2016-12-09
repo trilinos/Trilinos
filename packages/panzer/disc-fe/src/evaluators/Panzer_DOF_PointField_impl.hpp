@@ -114,13 +114,12 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 
     // transfer reference basis values to physical frame values
-    Intrepid2::FunctionSpaceTools::
-      HGRADtransformVALUE<double>(basis,
-				  basisRef);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      HGRADtransformVALUE(basis,basisRef);
 
     // evaluate function at specified points
-    Intrepid2::FunctionSpaceTools::
-      evaluate<ScalarT>(dof_field,dof_coeff,basis);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      evaluate(dof_field.get_view(),dof_coeff.get_view(),basis);
   }
 }
 

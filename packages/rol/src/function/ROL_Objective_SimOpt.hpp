@@ -259,6 +259,830 @@ public:
     hvs.set_2(*h22);
   }
 
+  std::vector<std::vector<Real> > checkGradient_1( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &d,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+    return checkGradient_1(u, z, u.dual(), d, printToStream, outStream, numSteps, order);
+  }
+
+  std::vector<std::vector<Real> > checkGradient_1( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &g,
+                                                   const Vector<Real> &d,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkGradient_1(u,z,g,d,steps,printToStream,outStream,order);
+  } // checkGradient_1
+
+  std::vector<std::vector<Real> > checkGradient_1( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &g,
+                                                   const Vector<Real> &d,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > gCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Evaluate objective value at x.
+    this->update(u,z);
+    Real val = this->value(u,z,tol);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+    this->gradient_1(*gtmp, u, z, tol);
+    Real dtg = d.dot(gtmp->dual());
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      unew->set(u);
+  
+      // Compute gradient, finite-difference gradient, and absolute error.
+      gCheck[i][0] = eta;
+      gCheck[i][1] = dtg;
+  
+      gCheck[i][2] = weights[order-1][0] * val;
+  
+      for(int j=0; j<order; ++j) {
+        // Evaluate at x <- x+eta*c_i*d.
+        unew->axpy(eta*shifts[order-1][j], d);
+  
+        // Only evaluate at shifts where the weight is nonzero  
+        if( weights[order-1][j+1] != 0 ) {
+          this->update(*unew,z);
+          gCheck[i][2] += weights[order-1][j+1] * this->value(*unew,z,tol);
+        }
+      }
+      gCheck[i][2] /= eta;
+  
+      gCheck[i][3] = std::abs(gCheck[i][2] - gCheck[i][1]);
+  
+      if (printToStream) {
+        if (i==0) {
+          outStream << std::right
+                    << std::setw(20) << "Step size"
+                    << std::setw(20) << "grad'*dir"
+                    << std::setw(20) << "FD approx"
+                    << std::setw(20) << "abs error"
+                    << "\n"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << gCheck[i][0]
+                  << std::setw(20) << gCheck[i][1]
+                  << std::setw(20) << gCheck[i][2]
+                  << std::setw(20) << gCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return gCheck;
+  } // checkGradient_1
+
+
+  std::vector<std::vector<Real> > checkGradient_2( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &d,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+    return checkGradient_2(u, z, z.dual(), d, printToStream, outStream, numSteps, order);
+  }
+
+  std::vector<std::vector<Real> > checkGradient_2( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &g,
+                                                   const Vector<Real> &d,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkGradient_2(u,z,g,d,steps,printToStream,outStream,order);
+  } // checkGradient_2
+
+  std::vector<std::vector<Real> > checkGradient_2( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &g,
+                                                   const Vector<Real> &d,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > gCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Evaluate objective value at x.
+    this->update(u,z);
+    Real val = this->value(u,z,tol);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+    this->gradient_2(*gtmp, u, z, tol);
+    Real dtg = d.dot(gtmp->dual());
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      znew->set(z);
+  
+      // Compute gradient, finite-difference gradient, and absolute error.
+      gCheck[i][0] = eta;
+      gCheck[i][1] = dtg;
+  
+      gCheck[i][2] = weights[order-1][0] * val;
+  
+      for(int j=0; j<order; ++j) {
+        // Evaluate at x <- x+eta*c_i*d.
+        znew->axpy(eta*shifts[order-1][j], d);
+  
+        // Only evaluate at shifts where the weight is nonzero  
+        if( weights[order-1][j+1] != 0 ) {
+          this->update(u,*znew);
+          gCheck[i][2] += weights[order-1][j+1] * this->value(u,*znew,tol);
+        }
+      }
+      gCheck[i][2] /= eta;
+  
+      gCheck[i][3] = std::abs(gCheck[i][2] - gCheck[i][1]);
+  
+      if (printToStream) {
+        if (i==0) {
+          outStream << std::right
+                    << std::setw(20) << "Step size"
+                    << std::setw(20) << "grad'*dir"
+                    << std::setw(20) << "FD approx"
+                    << std::setw(20) << "abs error"
+                    << "\n"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << std::setw(20) << "---------"
+                    << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << gCheck[i][0]
+                  << std::setw(20) << gCheck[i][1]
+                  << std::setw(20) << gCheck[i][2]
+                  << std::setw(20) << gCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return gCheck;
+  } // checkGradient_2
+
+
+  std::vector<std::vector<Real> > checkHessVec_11( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_11(u, z, u.dual(), v, printToStream, outStream, numSteps, order);
+
+  }
+
+  std::vector<std::vector<Real> > checkHessVec_11( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_11(u, z, u.dual(), v, steps, printToStream, outStream, order);
+  }
+
+
+  std::vector<std::vector<Real> > checkHessVec_11( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkHessVec_11(u,z,hv,v,steps,printToStream,outStream,order);
+  } // checkHessVec_11
+
+
+  std::vector<std::vector<Real> > checkHessVec_11( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+  
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g, u, z, tol);
+  
+    // Compute (Hessian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    this->hessVec_11(*Hv, v, u, z, tol);
+    Real normHv = Hv->norm();
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Evaluate objective value at x+eta*d.
+      unew->set(u);
+  
+      gdif->set(*g);
+      gdif->scale(weights[order-1][0]);
+  
+      for(int j=0; j<order; ++j) {
+  
+          // Evaluate at x <- x+eta*c_i*d.
+          unew->axpy(eta*shifts[order-1][j], v);
+  
+          // Only evaluate at shifts where the weight is nonzero  
+          if( weights[order-1][j+1] != 0 ) {
+              this->update(*unew,z);
+              this->gradient_1(*gnew, *unew, z, tol);
+              gdif->axpy(weights[order-1][j+1],*gnew);
+          }
+  
+      }
+  
+      gdif->scale(1.0/eta);
+  
+      // Compute norms of hessvec, finite-difference hessvec, and error.
+      hvCheck[i][0] = eta;
+      hvCheck[i][1] = normHv;
+      hvCheck[i][2] = gdif->norm();
+      gdif->axpy(-1.0, *Hv);
+      hvCheck[i][3] = gdif->norm();
+  
+      if (printToStream) {
+        if (i==0) {
+        outStream << std::right
+                  << std::setw(20) << "Step size"
+                  << std::setw(20) << "norm(Hess*vec)"
+                  << std::setw(20) << "norm(FD approx)"
+                  << std::setw(20) << "norm(abs error)"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "--------------"
+                  << std::setw(20) << "---------------"
+                  << std::setw(20) << "---------------"
+                  << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << hvCheck[i][0]
+                  << std::setw(20) << hvCheck[i][1]
+                  << std::setw(20) << hvCheck[i][2]
+                  << std::setw(20) << hvCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return hvCheck;
+  } // checkHessVec_11
+
+
+  std::vector<std::vector<Real> > checkHessVec_12( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+    return checkHessVec_12(u, z, u.dual(), v, printToStream, outStream, numSteps, order);
+  }
+
+  std::vector<std::vector<Real> > checkHessVec_12( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int order = 1 ) {
+    return checkHessVec_12(u, z, u.dual(), v, steps, printToStream, outStream, order);
+  }
+
+
+  std::vector<std::vector<Real> > checkHessVec_12( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkHessVec_11(u,z,hv,v,steps,printToStream,outStream,order);
+  } // checkHessVec_11
+
+
+  std::vector<std::vector<Real> > checkHessVec_12( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+  
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g, u, z, tol);
+  
+    // Compute (Hessian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    this->hessVec_12(*Hv, v, u, z, tol);
+    Real normHv = Hv->norm();
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Evaluate objective value at x+eta*d.
+      znew->set(z);
+  
+      gdif->set(*g);
+      gdif->scale(weights[order-1][0]);
+  
+      for(int j=0; j<order; ++j) {
+  
+          // Evaluate at x <- x+eta*c_i*d.
+          znew->axpy(eta*shifts[order-1][j], v);
+  
+          // Only evaluate at shifts where the weight is nonzero  
+          if( weights[order-1][j+1] != 0 ) {
+              this->update(u,*znew);
+              this->gradient_1(*gnew, u, *znew, tol);
+              gdif->axpy(weights[order-1][j+1],*gnew);
+          }
+  
+      }
+  
+      gdif->scale(1.0/eta);
+  
+      // Compute norms of hessvec, finite-difference hessvec, and error.
+      hvCheck[i][0] = eta;
+      hvCheck[i][1] = normHv;
+      hvCheck[i][2] = gdif->norm();
+      gdif->axpy(-1.0, *Hv);
+      hvCheck[i][3] = gdif->norm();
+  
+      if (printToStream) {
+        if (i==0) {
+        outStream << std::right
+                  << std::setw(20) << "Step size"
+                  << std::setw(20) << "norm(Hess*vec)"
+                  << std::setw(20) << "norm(FD approx)"
+                  << std::setw(20) << "norm(abs error)"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "--------------"
+                  << std::setw(20) << "---------------"
+                  << std::setw(20) << "---------------"
+                  << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << hvCheck[i][0]
+                  << std::setw(20) << hvCheck[i][1]
+                  << std::setw(20) << hvCheck[i][2]
+                  << std::setw(20) << hvCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return hvCheck;
+  } // checkHessVec_12
+
+
+  std::vector<std::vector<Real> > checkHessVec_21( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_21(u, z, z.dual(), v, printToStream, outStream, numSteps, order);
+
+  }
+
+  std::vector<std::vector<Real> > checkHessVec_21( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_21(u, z, z.dual(), v, steps, printToStream, outStream, order);
+  }
+
+
+  std::vector<std::vector<Real> > checkHessVec_21( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkHessVec_21(u,z,hv,v,steps,printToStream,outStream,order);
+  } // checkHessVec_21
+
+
+  std::vector<std::vector<Real> > checkHessVec_21( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+  
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g, u, z, tol);
+  
+    // Compute (Hessian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    this->hessVec_21(*Hv, v, u, z, tol);
+    Real normHv = Hv->norm();
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Evaluate objective value at x+eta*d.
+      unew->set(u);
+  
+      gdif->set(*g);
+      gdif->scale(weights[order-1][0]);
+  
+      for(int j=0; j<order; ++j) {
+  
+          // Evaluate at x <- x+eta*c_i*d.
+          unew->axpy(eta*shifts[order-1][j], v);
+  
+          // Only evaluate at shifts where the weight is nonzero  
+          if( weights[order-1][j+1] != 0 ) {
+              this->update(*unew,z);
+              this->gradient_2(*gnew, *unew, z, tol);
+              gdif->axpy(weights[order-1][j+1],*gnew);
+          }
+  
+      }
+  
+      gdif->scale(1.0/eta);
+  
+      // Compute norms of hessvec, finite-difference hessvec, and error.
+      hvCheck[i][0] = eta;
+      hvCheck[i][1] = normHv;
+      hvCheck[i][2] = gdif->norm();
+      gdif->axpy(-1.0, *Hv);
+      hvCheck[i][3] = gdif->norm();
+  
+      if (printToStream) {
+        if (i==0) {
+        outStream << std::right
+                  << std::setw(20) << "Step size"
+                  << std::setw(20) << "norm(Hess*vec)"
+                  << std::setw(20) << "norm(FD approx)"
+                  << std::setw(20) << "norm(abs error)"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "--------------"
+                  << std::setw(20) << "---------------"
+                  << std::setw(20) << "---------------"
+                  << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << hvCheck[i][0]
+                  << std::setw(20) << hvCheck[i][1]
+                  << std::setw(20) << hvCheck[i][2]
+                  << std::setw(20) << hvCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return hvCheck;
+  } // checkHessVec_21
+
+
+  std::vector<std::vector<Real> > checkHessVec_22( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_22(u, z, z.dual(), v, printToStream, outStream, numSteps, order);
+
+  }
+
+  std::vector<std::vector<Real> > checkHessVec_22( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream = true,
+                                                   std::ostream & outStream = std::cout,
+                                                   const int order = 1 ) {
+
+    return checkHessVec_22(u, z, z.dual(), v, steps, printToStream, outStream, order);
+  }
+
+
+  std::vector<std::vector<Real> > checkHessVec_22( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int numSteps,
+                                                   const int order ) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+  
+    return checkHessVec_22(u,z,hv,v,steps,printToStream,outStream,order);
+  } // checkHessVec_22
+
+
+  std::vector<std::vector<Real> > checkHessVec_22( const Vector<Real> &u,
+                                                   const Vector<Real> &z,
+                                                   const Vector<Real> &hv,
+                                                   const Vector<Real> &v,
+                                                   const std::vector<Real> &steps,
+                                                   const bool printToStream,
+                                                   std::ostream & outStream,
+                                                   const int order ) {
+  
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+                                "Error: finite difference order must be 1,2,3, or 4" );
+  
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+  
+  
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+  
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+  
+    // Compute gradient at x.
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g, u, z, tol);
+  
+    // Compute (Hessian at x) times (vector v).
+    Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+    this->hessVec_22(*Hv, v, u, z, tol);
+    Real normHv = Hv->norm();
+  
+    // Temporary vectors.
+    Teuchos::RCP<Vector<Real> > gdif = hv.clone();
+    Teuchos::RCP<Vector<Real> > gnew = hv.clone();
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+  
+    for (int i=0; i<numSteps; i++) {
+  
+      Real eta = steps[i];
+  
+      // Evaluate objective value at x+eta*d.
+      znew->set(z);
+  
+      gdif->set(*g);
+      gdif->scale(weights[order-1][0]);
+  
+      for(int j=0; j<order; ++j) {
+  
+          // Evaluate at x <- x+eta*c_i*d.
+          znew->axpy(eta*shifts[order-1][j], v);
+  
+          // Only evaluate at shifts where the weight is nonzero  
+          if( weights[order-1][j+1] != 0 ) {
+              this->update(u,*znew);
+              this->gradient_2(*gnew, u, *znew, tol);
+              gdif->axpy(weights[order-1][j+1],*gnew);
+          }
+  
+      }
+  
+      gdif->scale(1.0/eta);
+  
+      // Compute norms of hessvec, finite-difference hessvec, and error.
+      hvCheck[i][0] = eta;
+      hvCheck[i][1] = normHv;
+      hvCheck[i][2] = gdif->norm();
+      gdif->axpy(-1.0, *Hv);
+      hvCheck[i][3] = gdif->norm();
+  
+      if (printToStream) {
+        if (i==0) {
+        outStream << std::right
+                  << std::setw(20) << "Step size"
+                  << std::setw(20) << "norm(Hess*vec)"
+                  << std::setw(20) << "norm(FD approx)"
+                  << std::setw(20) << "norm(abs error)"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "--------------"
+                  << std::setw(20) << "---------------"
+                  << std::setw(20) << "---------------"
+                  << "\n";
+        }
+        outStream << std::scientific << std::setprecision(11) << std::right
+                  << std::setw(20) << hvCheck[i][0]
+                  << std::setw(20) << hvCheck[i][1]
+                  << std::setw(20) << hvCheck[i][2]
+                  << std::setw(20) << hvCheck[i][3]
+                  << "\n";
+      }
+  
+    }
+  
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+  
+    return hvCheck;
+  } // checkHessVec_22
+
 }; // class Objective_SimOpt
 
 } // namespace ROL

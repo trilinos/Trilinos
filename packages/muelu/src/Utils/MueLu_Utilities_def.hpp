@@ -574,7 +574,6 @@ namespace MueLu {
     return coordinates;
   } // ExtractCoordinatesFromParameterList
 
-
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT

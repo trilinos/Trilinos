@@ -42,8 +42,6 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Sacado_Traits.hpp"
 #include "Sacado_UQ_PCE.hpp"
 #include "Sacado_UQ_PCE_Traits.hpp"
@@ -417,7 +415,7 @@ make_view(typename ViewType::pointer_type ptr,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
+//namespace Experimental {
 namespace Impl {
 
 // Allow passing of Cijk tensor through ViewCtorProp
@@ -465,11 +463,11 @@ struct ctor_prop_has_cijk< ViewCtorProp<T,P...> >
 };
 
 } /* namespace Impl */
-} /* namespace Experimental */
+//} /* namespace Experimental */
 
 template <typename CijkType, typename AllocProp>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if< !Experimental::Impl::ctor_prop_has_cijk<AllocProp>::value,
+typename std::enable_if< !Impl::ctor_prop_has_cijk<AllocProp>::value,
                          CijkType >::type
 extract_cijk(const AllocProp& prop)
 {
@@ -478,11 +476,11 @@ extract_cijk(const AllocProp& prop)
 
 template <typename CijkType, typename AllocProp>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if< Experimental::Impl::ctor_prop_has_cijk<AllocProp>::value,
+typename std::enable_if< Impl::ctor_prop_has_cijk<AllocProp>::value,
                          CijkType >::type
 extract_cijk(const AllocProp& prop)
 {
-  return ( (const Experimental::Impl::ViewCtorProp<void,CijkType>&) prop ).value;
+  return ( (const Impl::ViewCtorProp<void,CijkType>&) prop ).value;
 }
 
 } /* namespace Kokkos */
@@ -1555,7 +1553,6 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
@@ -1563,7 +1560,7 @@ namespace Impl {
 template< class OutputView >
 struct ViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
-                                                        ViewPCEContiguous >::value &&
+                                                        Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
                                                    Cuda >::value >::type >
 {
@@ -1694,13 +1691,10 @@ struct ViewFill< OutputView ,
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-#endif
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_UQ_PCE_CONTIGUOUS_HPP */

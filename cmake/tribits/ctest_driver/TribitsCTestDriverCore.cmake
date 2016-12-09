@@ -113,6 +113,22 @@ ENDIF()
 MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
 #
+# Set default for CTEST_SOURCE_DIRECTORY
+#
+IF ("${CTEST_SOURCE_DIRECTORY}" STREQUAL "")
+  MESSAGE("Set default for CTEST_SOURCE_DIRECTORY to TRIBITS_PROJECT_ROOT='TRIBITS_PROJECT_ROOT='${TRIBITS_PROJECT_ROOT}'")
+  SET(CTEST_SOURCE_DIRECTORY ${TRIBITS_PROJECT_ROOT})
+ENDIF()
+
+#
+# Set default for CTEST_BINARY_DIRECTORY
+#
+IF ("${CTEST_BINARY_DIRECTORY}" STREQUAL "")
+  MESSAGE("Set defualt for CTEST_BINARY_DIRECTORY to $PWD/BUILD='$ENV{PWD}/BUILD'")
+  SET(CTEST_BINARY_DIRECTORY $ENV{PWD}/BUILD)
+ENDIF()
+
+#
 # Set CMAKE_MODULE_PATH
 #
 SET( CMAKE_MODULE_PATH
@@ -128,6 +144,7 @@ TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION()
 INCLUDE(TribitsCMakePolicies)
 
 INCLUDE(PrintVar)
+INCLUDE(MultilineSet)
 INCLUDE(SetDefaultAndFromEnv)
 INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
@@ -363,7 +380,7 @@ ENDFUNCTION()
 
 MACRO(TRIBITS_SETUP_EXTRAREPOS)
 
-  IF( EXISTS "${${PROJECT_NAME}_EXTRAREPOS_FILE}" )
+  IF (EXISTS "${${PROJECT_NAME}_EXTRAREPOS_FILE}" )
     # Repos many not already exist because we have not cloned them yet!
     SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST FALSE)
     TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
@@ -1050,9 +1067,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF )
 
-  # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
-  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF )
-
   # List of additional packges that will be enabled over the current set
   # of all packagess (that would be set by ${PROJECT_NAME}_ENABLE_ALL_PACKAGES).
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ADDITIONAL_PACKAGES "" )
@@ -1100,8 +1114,14 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # even been checked out yet!  Unless, of course, we are unit testing
   # in which case we will use whatever has been passed in.
 
+  IF (${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE)
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT)
+  ELSE()
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
+      "${TRIBITS_PROJECT_ROOT}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  ENDIF()
   SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE
-    "${TRIBITS_PROJECT_ROOT}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+    "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}")
 
   # Select the set of extra external repos to add in packages.
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
@@ -1251,6 +1271,19 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     ENDIF()
   ENDIF()
 
+  #
+  # Write a few variables to the global level to make cmake happy.
+  #
+  # If these don't get set in the base CTest script scope, CTest returns an
+  # error!
+  #
+
+  SET(CTEST_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY} CACHE INTERNAL "")
+  SET(CTEST_BINARY_DIRECTORY ${CTEST_BINARY_DIRECTORY} CACHE INTERNAL "")
+  IF ("${CTEST_COMMAND}" STREQUAL "")
+    SET(CTEST_COMMAND ctest)
+  ENDIF()
+  SET(CTEST_COMMAND ${CTEST_COMMAND} CACHE INTERNAL "")
 
   #
   # Empty out the binary directory
@@ -1564,14 +1597,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       LIST(APPEND CONFIGURE_OPTIONS
       "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
     ENDIF()
-    IF (${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE)
+    IF (NOT "${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}" STREQUAL "")
       LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON")
-    ENDIF()
-    # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
-    IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
+        "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}")
     ENDIF()
     IF (NOT MPI_EXEC_MAX_NUMPROCS STREQUAL 0)
       LIST(APPEND CONFIGURE_OPTIONS
@@ -1828,5 +1856,33 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
 
   REPORT_QUEUED_ERRORS()
+
+  STRING(REPLACE "submit.php"
+       "index.php" CDASH_PROJECT_LOCATION
+       "${CTEST_DROP_LOCATION}")
+  MULTILINE_SET( SEE_CDASH_LINK_STR
+    "\nSee results for:\n"
+    "  Site: ${CTEST_SITE}\n"
+    "  Build Name: ${CTEST_BUILD_NAME}\n"
+    "at:\n"
+    "  http://${CTEST_DROP_SITE}${CDASH_PROJECT_LOCATION}&display=project\n"
+    )
+  # ToDo: Above: We would love to provide the buildID to point to the exact
+  # URL but CTest does not currently give that to you.
+
+  IF ("${${PROJECT_NAME}_FAILED_PACKAGES}" STREQUAL "")
+    MESSAGE(
+      "${SEE_CDASH_LINK_STR}\n"
+      "TRIBITS_CTEST_DRIVER: OVERALL: ALL PASSSED\n")
+  ELSE()
+    MESSAGE(FATAL_ERROR
+      "${SEE_CDASH_LINK_STR}\n"
+      "TRIBITS_CTEST_DRIVER: OVERALL: ALL FAILED\n")
+    # NOTE: FATAL_ERROR is needed so that the ctest -S script returns != 0
+    # Also, it is critical to dislplay the "See results" in this
+    # MESSAGE(FATAL_ERROR ...) command in order for it to be printed last.
+    # Otherwise, if you run with ctest -V -S, then the ouptut from
+    # CTEST_TEST() will be printed last.
+  ENDIF()
 
 ENDFUNCTION()

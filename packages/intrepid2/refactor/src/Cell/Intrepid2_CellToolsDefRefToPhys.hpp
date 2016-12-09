@@ -41,13 +41,15 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefRefToPhys.hpp
+    \brief  Definition file for the reference to physical mappings in the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
 #ifndef __INTREPID2_CELLTOOLS_DEF_REF_TO_PHYS_HPP__
 #define __INTREPID2_CELLTOOLS_DEF_REF_TO_PHYS_HPP__
+
+#include "Kokkos_ViewFactory.hpp"
 
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
@@ -66,8 +68,13 @@ namespace Intrepid2 {
     template<typename physPointViewType,
              typename worksetCellType,
              typename basisValType>
+    /**
+     \brief Functor for mapping reference points to physical frame
+
+       See Intrepid2::CellTools::mapToPhysicalFrame for more documentation.
+    */
     struct F_mapToPhysicalFrame {
-      /**/  physPointViewType _physPoints;
+            physPointViewType _physPoints;
       const worksetCellType   _worksetCells;
       const basisValType      _basisVals;
 
@@ -80,28 +87,48 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, pt;
-        Util::unrollIndex( cell, pt,
+        unrollIndex( cell, pt,
                            _physPoints.dimension(0),
                            _physPoints.dimension(1),
                            iter );
-        /**/  auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
+              auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
 
         const auto valRank = _basisVals.rank();
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
-                           /**/           Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
+                                          Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
 
-        const auto dim = phys.dimension(0);
-        const auto cardinality = val.dimension(0);
+        const ordinal_type dim = phys.dimension(0);
+        const ordinal_type cardinality = val.dimension(0);
 
-        for (size_type i=0;i<dim;++i) {
+        for (ordinal_type i=0;i<dim;++i) {
           phys(i) = 0;
-          for (size_type bf=0;bf<cardinality;++bf)
+          for (ordinal_type bf=0;bf<cardinality;++bf)
             phys(i) += dofs(bf, i)*val(bf);
         }
       }
     };
   }
+
+/*
+  template<typename SpT>
+  template<typename physPointValueType,   class ...physPointProperties,
+           typename refPointValueType,    class ...refPointProperties,
+           typename worksetCellValueType, class ...worksetCellProperties>
+  void
+  CellTools<SpT>::
+  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                      const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                      const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                      const shards::CellTopology cellTopo ) {
+
+   auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
+   mapToPhysicalFrame(physPoints,
+                      refPoints,
+                      worksetCell,
+                      basis);
+  }
+*/
 
   template<typename SpT>
   template<typename physPointValueType,   class ...physPointProperties,
@@ -110,7 +137,7 @@ namespace Intrepid2 {
            typename HGradBasisPtrType>
   void
   CellTools<SpT>::
-  mapToPhysicalFrame( /**/  Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                       const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                       const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                       const HGradBasisPtrType basis ) {
@@ -133,7 +160,7 @@ namespace Intrepid2 {
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = valViewType("CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
+      vals = Kokkos::createDynRankViewWithType<valViewType>(physPoints,"CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -141,7 +168,8 @@ namespace Intrepid2 {
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
-      vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      //vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      vals = Kokkos::createDynRankViewWithType<valViewType>(physPoints,"CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
@@ -164,7 +192,7 @@ namespace Intrepid2 {
            typename paramPointValueType, class ...paramPointProperties>
   void
   CellTools<SpT>::
-  mapToReferenceSubcell( /**/  Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+  mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
                          const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
                          const ordinal_type subcellDim,
                          const ordinal_type subcellOrd,
@@ -178,7 +206,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-dimensional subcells.");
 
     INTREPID2_TEST_FOR_EXCEPTION( subcellOrd <  0 ||
-                                  subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+                                  subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): subcell ordinal out of range.");
 
     // refSubcellPoints is rank-2 (P,D1), D1 = cell dimension
@@ -190,7 +218,7 @@ namespace Intrepid2 {
     // paramPoints is rank-2 (P,D2) with D2 = subcell dimension
     INTREPID2_TEST_FOR_EXCEPTION( paramPoints.rank() != 2, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints must have rank 2.");
-    INTREPID2_TEST_FOR_EXCEPTION( paramPoints.dimension(1) != subcellDim, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(paramPoints.dimension(1)) != subcellDim, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints dimension (1) does not match to subcell dimension.");
 
     // cross check: refSubcellPoints and paramPoints: dimension 0 must match
@@ -199,8 +227,8 @@ namespace Intrepid2 {
 #endif
 
 
-    const auto cellDim = parentCell.getDimension();
-    const auto numPts  = paramPoints.dimension(0);
+    const ordinal_type cellDim = parentCell.getDimension();
+    const ordinal_type numPts  = paramPoints.dimension(0);
 
     // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
 
@@ -216,21 +244,21 @@ namespace Intrepid2 {
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
     case 2: {
-      for (size_type pt=0;pt<numPts;++pt) {
+      for (ordinal_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
         const auto v = paramPoints(pt, 1);
 
         // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
-        for (size_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u +
                                                                      subcellMap(subcellOrd, i, 2)*v );
       }
       break;
     }
     case 1: {
-      for (size_type pt=0;pt<numPts;++pt) {
+      for (ordinal_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
-        for (size_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u );
       }
       break;

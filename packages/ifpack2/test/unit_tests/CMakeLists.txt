@@ -11,6 +11,24 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../kokkos/src)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../tpetra/src)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../tpetra/src)
 
+IF(Trilinos_ENABLE_ML)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Include)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Coarsen)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Comm)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/FEGrid)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Krylov)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/LevelWrap)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Main)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/MatrixFree)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/MLAPI)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Operator)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/RefMaxwell)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Smoother)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Utils)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../ml/src)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../epetra/src)
+ENDIF()
+
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
@@ -19,7 +37,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 Ifpack2_UnitTestMain.cpp
-Ifpack2_UnitTestAdditiveSchwarz.cpp
 Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
@@ -50,6 +67,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}
+    ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+    COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AdditiveSchwarz
+    SOURCES Ifpack2_UnitTestAdditiveSchwarz.cpp Ifpack2_UnitTestMain.cpp
     ARGS ""
     COMM serial mpi
   )
@@ -108,6 +132,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+IF (Trilinos_ENABLE_ML)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlockRelaxationPerformance
+    SOURCES
+      Ifpack2_UnitTestBlockRelaxationPerf.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
 ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
 IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
   # SolverFactory test (doesn't make sense to run unless Trilinos is
@@ -164,6 +200,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue762
+  SOURCES 
+    762.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
 IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)

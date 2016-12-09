@@ -41,7 +41,6 @@
 #include <vector>                       // for vector
 #include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
 #include "Shards_CellTopology.hpp"      // for operator==, CellTopology
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_topology/topology.hpp"    // for topology, etc
 
@@ -59,12 +58,12 @@ TEST ( UnitTestMetaData, create )
   EXPECT_EQ( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::INVALID_RANK) );
 
   // Verify throws/etc for FEM calls prior to initialization:
-  stk::mesh::CellTopology invalid_cell_topology( NULL );
+  shards::CellTopology invalid_cell_topology( NULL );
   stk::mesh::Part & universal_part = fem_meta.universal_part();
   ASSERT_THROW( fem_meta.register_cell_topology( invalid_cell_topology, stk::topology::INVALID_RANK ), std::logic_error );
   ASSERT_THROW( fem_meta.get_cell_topology_root_part( invalid_cell_topology), std::logic_error );
   ASSERT_THROW( fem_meta.get_cell_topology( universal_part), std::logic_error );
-  ASSERT_THROW( stk::mesh::set_cell_topology( universal_part, invalid_cell_topology), std::logic_error );
+  ASSERT_THROW( stk::mesh::set_topology( universal_part, stk::topology::INVALID_TOPOLOGY), std::logic_error );
 }
 
 TEST( UnitTestMetaData, initialize )
@@ -108,18 +107,17 @@ TEST( UnitTestMetaData, entity_ranks_3 )
   EXPECT_EQ( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::FACE_RANK) );
 }
 
-TEST( UnitTestMetaData, get_cell_topology_trivial )
+TEST( UnitTestMetaData, get_topology_trivial )
 {
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
+  stk::mesh::Part & hex_part = fem_meta.get_topology_root_part(stk::topology::HEX_8);
 
   EXPECT_TRUE( stk::mesh::is_auto_declared_part(hex_part) );
   EXPECT_EQ( hex_part.primary_entity_rank(), spatial_dimension );
-  stk::mesh::CellTopology topology = fem_meta.get_cell_topology(hex_part);
-  EXPECT_EQ( (topology == hex_top), true );
+  stk::topology topology = fem_meta.get_topology(hex_part);
+  EXPECT_EQ( (topology == stk::topology::HEX_8), true );
 }
 
 TEST( UnitTestMetaData, get_cell_topology_simple )
@@ -127,13 +125,13 @@ TEST( UnitTestMetaData, get_cell_topology_simple )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   EXPECT_TRUE( stk::mesh::is_auto_declared_part(hex_part) );
   EXPECT_TRUE( !stk::mesh::is_auto_declared_part(A) );
   fem_meta.declare_part_subset( hex_part, A );
-  stk::mesh::CellTopology topology = fem_meta.get_cell_topology(A);
+  shards::CellTopology topology = fem_meta.get_cell_topology(A);
   ASSERT_EQ( (topology == hex_top), true );
 }
 
@@ -142,7 +140,7 @@ TEST( UnitTestMetaData, get_cell_topology_invalid )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   ASSERT_THROW( fem_meta.get_cell_topology_root_part(hex_top), std::runtime_error );
 }
 
@@ -153,10 +151,9 @@ TEST( UnitTestMetaData, cell_topology_subsetting )
   const stk::mesh::EntityRank element_rank = static_cast<stk::mesh::EntityRank>(spatial_dimension);
   fem_meta.initialize(spatial_dimension);
   stk::mesh::Part & element_part = fem_meta.declare_part("element part", element_rank );
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::set_cell_topology( element_part, hex_top );
+  stk::mesh::set_topology( element_part, stk::topology::HEX_8 );
 
-  stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
+  stk::mesh::Part & hex_part = fem_meta.get_topology_root_part(stk::topology::HEX_8);
 
   const stk::mesh::PartVector & element_part_supersets = element_part.supersets();
   EXPECT_EQ(
@@ -228,7 +225,7 @@ TEST( UnitTestMetaData, cell_topology_test_1 )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
@@ -246,8 +243,8 @@ TEST( UnitTestMetaData, cell_topology_test_2a )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
   stk::mesh::Part & QR = fem_meta.get_cell_topology_root_part(QR_top);
@@ -265,10 +262,10 @@ TEST( UnitTestMetaData, cell_topology_test_2b )
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  shards::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
   stk::mesh::Part & QR = fem_meta.get_cell_topology_root_part(QR_top);
 
   fem_meta.declare_part_subset( HR, A );
@@ -286,7 +283,7 @@ TEST( UnitTestMetaData, cell_topology_test_3a )
 
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
   fem_meta.declare_part_subset( HR, A );
@@ -308,10 +305,10 @@ TEST( UnitTestMetaData, cell_topology_test_3b )
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & D = fem_meta.declare_part("Part D", fem_meta.side_rank() );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  shards::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
   stk::mesh::Part & QR = fem_meta.get_cell_topology_root_part(QR_top);
 
   fem_meta.declare_part_subset( QR, D );
@@ -336,10 +333,10 @@ TEST( UnitTestMetaData, cell_topology_test_3c )
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & C = fem_meta.declare_part("Part C", fem_meta.side_rank() );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  shards::CellTopology QR_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
   stk::mesh::Part & QR = fem_meta.get_cell_topology_root_part(QR_top);
 
   fem_meta.declare_part_subset( QR, C );
@@ -364,7 +361,7 @@ TEST( UnitTestMetaData, cell_topology_test_4a )
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
   fem_meta.declare_part_subset( HR, A );
@@ -389,7 +386,7 @@ TEST( UnitTestMetaData, cell_topology_test_4b )
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & C = fem_meta.declare_part("Part C", fem_meta.side_rank() );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
   fem_meta.declare_part_subset( HR, C );
@@ -414,10 +411,10 @@ TEST( UnitTestMetaData, cell_topology_test_5a )
   stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
+  shards::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
   stk::mesh::Part & WR = fem_meta.get_cell_topology_root_part(WR_top);
 
   fem_meta.declare_part_subset( WR, A );
@@ -437,14 +434,14 @@ TEST( UnitTestMetaData, cell_topology_test_5b )
   stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & E = fem_meta.declare_part("Part E", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
+  shards::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
   stk::mesh::Part & WR = fem_meta.get_cell_topology_root_part(WR_top);
 
   fem_meta.declare_part_subset( WR, E );
-  stk::mesh::CellTopology top = fem_meta.get_cell_topology(E);
+  shards::CellTopology top = fem_meta.get_cell_topology(E);
   ASSERT_TRUE( top.isValid() );
   fem_meta.declare_part_subset( B, E );
   fem_meta.declare_part_subset( HR, A );
@@ -464,10 +461,10 @@ TEST( UnitTestMetaData, cell_topology_test_5c )
   stk::mesh::Part & F = fem_meta.declare_part("Part F", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & E = fem_meta.declare_part("Part E", stk::topology::ELEMENT_RANK );
 
-  stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
+  shards::CellTopology WR_top(shards::getCellTopologyData<shards::Wedge<6> >());
   stk::mesh::Part & WR = fem_meta.get_cell_topology_root_part(WR_top);
 
   fem_meta.declare_part_subset( HR, F );
@@ -517,7 +514,7 @@ TEST( MetaData, get_cell_topology_root_part_invalid )
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  shards::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
 
   ASSERT_THROW( fem_meta.get_cell_topology_root_part( hex_top ), std::runtime_error );
 }

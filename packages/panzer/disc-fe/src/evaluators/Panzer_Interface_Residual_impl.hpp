@@ -126,10 +126,10 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(residual, normal_dot_flux, 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_CPP);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      integrate(residual.get_view(),
+                normal_dot_flux.get_view(), 
+                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
 }
 
 //**********************************************************************

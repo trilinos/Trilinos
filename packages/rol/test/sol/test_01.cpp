@@ -52,14 +52,14 @@
 #include "ROL_Algorithm.hpp"
 
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_ParametrizedObjective.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 
 typedef double RealT;
 
 template<class Real> 
-class ParametrizedObjectiveEx1 : public ROL::ParametrizedObjective<Real> {
+class ParametrizedObjectiveEx1 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex = 
@@ -102,7 +102,7 @@ public:
 };
 
 void setUpAndSolve(Teuchos::ParameterList &list,
-                   Teuchos::RCP<ROL::ParametrizedObjective<RealT> > &pObj,
+                   Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                    Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                    Teuchos::RCP<ROL::Vector<RealT> > &x,
                    Teuchos::RCP<ROL::Vector<RealT> > &d,
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
       Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj =
+    Teuchos::RCP<ROL::Objective<RealT> > pObj =
       Teuchos::rcp(new ParametrizedObjectiveEx1<RealT>);
     // Build bound constraints
     std::vector<RealT> l(dim,0.0);
@@ -365,9 +365,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* CHEBYSHEV 3 KUSUOKA ************************************************/
     /**********************************************************************************************/
-    *outStream << "\nSINGLETON KUSUOKA RISK MEASURE\n";
+    *outStream << "\nSPECTRAL RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

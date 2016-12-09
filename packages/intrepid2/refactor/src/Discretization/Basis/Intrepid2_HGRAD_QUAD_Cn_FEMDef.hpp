@@ -69,12 +69,12 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
       
-      const auto card = vinv.dimension(0);
-      const auto npts = input.dimension(0);
+      const ordinal_type card = vinv.dimension(0);
+      const ordinal_type npts = input.dimension(0);
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      const auto input_x = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(0,1));
-      const auto input_y = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(1,2));
+      const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       
       switch (opType) {
       case OPERATOR_VALUE: {
@@ -100,9 +100,9 @@ namespace Intrepid2 {
 
         // tensor product
         ordinal_type idx = 0;
-        for (auto j=0;j<card;++j) // y
-          for (auto i=0;i<card;++i,++idx)  // x
-            for (auto k=0;k<npts;++k) 
+        for (ordinal_type j=0;j<card;++j) // y
+          for (ordinal_type i=0;i<card;++i,++idx)  // x
+            for (ordinal_type k=0;k<npts;++k)
               output(idx,k) = output_x(i,k)*output_y(j,k);
         break;
       }
@@ -152,9 +152,9 @@ namespace Intrepid2 {
 
           // tensor product (extra dimension of ouput x and y are ignored)
           ordinal_type idx = 0;
-          for (auto j=0;j<card;++j) // y
-            for (auto i=0;i<card;++i,++idx)  // x
-              for (auto k=0;k<npts;++k) 
+          for (ordinal_type j=0;j<card;++j) // y
+            for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type k=0;k<npts;++k)
                 output(idx,k,l) = s*output_x(i,k,0)*output_y(j,k,0);
         }
         break;
@@ -216,9 +216,9 @@ namespace Intrepid2 {
 
           // tensor product (extra dimension of ouput x and y are ignored)
           ordinal_type idx = 0;
-          for (auto j=0;j<card;++j) // y
-            for (auto i=0;i<card;++i,++idx)  // x
-              for (auto k=0;k<npts;++k) 
+          for (ordinal_type j=0;j<card;++j) // y
+            for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type k=0;k<npts;++k)
                 output(idx,k,l) = output_x(i,k,0)*output_y(j,k,0);
         }
         break;
@@ -295,6 +295,10 @@ namespace Intrepid2 {
   Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
+    // INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+    //                                 pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+    //                               ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
+
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
@@ -326,9 +330,9 @@ namespace Intrepid2 {
       const ordinal_type edge_y[2] = {3,1}; 
       {
         ordinal_type idx = 0;
-        for (auto j=0;j<cardLine;++j) { // y      
+        for (ordinal_type j=0;j<cardLine;++j) { // y      
           const auto tag_y = lineBasis.getDofTag(j);
-          for (auto i=0;i<cardLine;++i,++idx) { // x
+          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
             const auto tag_x = lineBasis.getDofTag(i);          
             
             if (tag_x(0) == 0 && tag_y(0) == 0) {
@@ -375,10 +379,10 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<PT,SpT>
+    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);
@@ -386,8 +390,8 @@ namespace Intrepid2 {
     Kokkos::deep_copy(dofCoordsLineHost, dofCoordsLine);
     {
       ordinal_type idx = 0;
-      for (auto j=0;j<cardLine;++j) { // y      
-        for (auto i=0;i<cardLine;++i,++idx) { // x
+      for (ordinal_type j=0;j<cardLine;++j) { // y      
+        for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
           dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
           dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
         }

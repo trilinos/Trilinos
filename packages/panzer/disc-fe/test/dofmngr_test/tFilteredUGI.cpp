@@ -85,7 +85,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -209,7 +209,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -483,27 +483,28 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
      TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 
-     // next chunk of code tests to ensure parallel communication works as expected.
-     // In particular that a filtered unique vector can be used with an unfiltered 
-     // ghosted vector and that the entries in the ghosted vector will be preserved
+     // This next chunk of code tests to ensure parallel communication works as
+     // expected, in particular that a filtered owned vector can be used with
+     // an unfiltered ghosted vector and that the entries in the ghosted vector
+     // will be preserved.
      ////////////////////////////////////////////////////////////////////////////////////
 
      // check that parallel communication works as expected
-     RCP<Epetra_Import> importer = lof.getGhostedImport(0);
-     RCP<Epetra_Map> ghostedMap = lof.getGhostedMap(0);
-     RCP<Epetra_Map> uniqueMap  = lof.getMap(0);
+     RCP<Epetra_Import> importer   = lof.getGhostedImport(0);
+     RCP<Epetra_Map>    ghostedMap = lof.getGhostedMap(0);
+     RCP<Epetra_Map>    ownedMap   = lof.getMap(0);
 
-     TEST_ASSERT(importer!=Teuchos::null);
-     TEST_ASSERT(ghostedMap!=Teuchos::null);
-     TEST_ASSERT(uniqueMap!=Teuchos::null);
+     TEST_ASSERT(importer   != Teuchos::null);
+     TEST_ASSERT(ghostedMap != Teuchos::null);
+     TEST_ASSERT(ownedMap   != Teuchos::null);
 
      Epetra_Vector ghosted_x(*ghostedMap);
-     Epetra_Vector unique_x(*uniqueMap);
+     Epetra_Vector owned_x(*ownedMap);
 
      ghosted_x.PutScalar(0.0);
-     unique_x.PutScalar(1.0);
+     owned_x.PutScalar(1.0);
 
-     ghosted_x.Import(unique_x,*importer,Insert);
+     ghosted_x.Import(owned_x, *importer, Insert);
 
      // check all the filtered indices remain 0
      int count=0;
@@ -524,9 +525,9 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      TEST_EQUALITY(sum,ghosted_x.MyLength()-count);
 
      
-     // do a lazy test to ensure you can construct a unique matrix
-     RCP<Thyra::LinearOpBase<double> > uniqueMatrix  = lof.getThyraMatrix();
-     TEST_ASSERT(uniqueMatrix!=Teuchos::null);
+     // do a lazy test to ensure you can construct an owned matrix
+     RCP<Thyra::LinearOpBase<double> > ownedMatrix  = lof.getThyraMatrix();
+     TEST_ASSERT(ownedMatrix != Teuchos::null);
    }
 
 

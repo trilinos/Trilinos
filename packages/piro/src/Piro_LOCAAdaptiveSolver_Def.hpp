@@ -47,6 +47,8 @@
 
 #include "Piro_ObserverToLOCASaveDataStrategyAdapter.hpp"
 
+#include "Piro_MatrixFreeDecorator.hpp"
+
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
@@ -90,6 +92,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   globalData_(LOCA::createGlobalData(piroParams)),
   paramVector_(),
   solMgr_(solMgr),
+  model_(model), 
   locaStatusTests_(),
   noxStatusTests_(),
   stepper_()
@@ -100,8 +103,17 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   for (Teuchos_Ordinal k = 0; k < p_entry_count; ++k) {
     (void) paramVector_.addParameter(paramName(k));
   }
+  
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    if (piroParams->isParameter("Matrix-Free Perturbation")) {
+      model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model,
+                           piroParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model));
+  }
 
-  solMgr_->initialize(Teuchos::rcp(new Thyra::LOCAAdaptiveState(model, saveDataStrategy_, globalData_, 
+  solMgr_->initialize(Teuchos::rcp(new Thyra::LOCAAdaptiveState(model_, saveDataStrategy_, globalData_, 
             Teuchos::rcpFromRef(paramVector_), l)));
 
   // TODO: Create non-trivial stopping criterion for the stepper

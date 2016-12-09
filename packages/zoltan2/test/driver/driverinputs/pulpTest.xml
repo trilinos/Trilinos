@@ -53,10 +53,10 @@
     </ParameterList>    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="pulp"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
       <Parameter name="num_global_parts" type="string" value="2"/>
       <Parameter name="pulp_vert_imbalance" type="double" value="1.05"/>
-      <Parameter name="pulp_verbose" type="string" value="true"/>
+      <Parameter name="pulp_verbose" type="bool" value="true"/>
     </ParameterList>  
     <ParameterList name="Metrics"> 
       <ParameterList name="metriccheck1">
@@ -74,11 +74,11 @@
     </ParameterList>    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="pulp"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
       <Parameter name="num_global_parts" type="string" value="2"/>
       <Parameter name="pulp_vert_imbalance" type="double" value="1.05"/>
       <Parameter name="pulp_edge_imbalance" type="double" value="1.05"/>
-      <Parameter name="pulp_verbose" type="string" value="true"/>
+      <Parameter name="pulp_verbose" type="bool" value="true"/>
     </ParameterList>    
     <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
@@ -96,12 +96,12 @@
     </ParameterList>    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="pulp"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
       <Parameter name="num_global_parts" type="string" value="2"/>
       <Parameter name="pulp_vert_imbalance" type="double" value="1.05"/>
       <Parameter name="pulp_edge_imbalance" type="double" value="1.05"/>
-      <Parameter name="pulp_minimize_maxcut" type="string" value="true"/>
-      <Parameter name="pulp_verbose" type="string" value="true"/>
+      <Parameter name="pulp_minimize_maxcut" type="bool" value="true"/>
+      <Parameter name="pulp_verbose" type="bool" value="true"/>
     </ParameterList>    
     <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
@@ -119,12 +119,12 @@
     </ParameterList>    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="pulp"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
       <Parameter name="num_global_parts" type="string" value="2"/>
-      <Parameter name="pulp_lp_init" type="string" value="true"/>
+      <Parameter name="pulp_lp_init" type="bool" value="true"/>
       <Parameter name="pulp_vert_imbalance" type="double" value="1.05"/>
       <Parameter name="pulp_edge_imbalance" type="double" value="1.05"/>
-      <Parameter name="pulp_minimize_maxcut" type="string" value="true"/>
+      <Parameter name="pulp_minimize_maxcut" type="bool" value="true"/>
       <Parameter name="pulp_verbose" type="string" value="true"/>
     </ParameterList>    
     <ParameterList name="Metrics">

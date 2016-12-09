@@ -38,16 +38,16 @@
 #include <Ioss_EntityType.h>      // for EntityType, etc
 #include <Ioss_GroupingEntity.h>  // for GroupingEntity
 #include <Ioss_MeshType.h>
-#include <Ioss_Property.h>        // for Property
-#include <Ioss_State.h>           // for State
-#include <functional>             // for less
-#include <iosfwd>                 // for ostream
-#include <map>                    // for map, map<>::value_compare
-#include <stddef.h>               // for size_t, nullptr
-#include <stdint.h>               // for int64_t
-#include <string>                 // for string, operator<
-#include <utility>                // for pair
-#include <vector>                 // for vector
+#include <Ioss_Property.h> // for Property
+#include <Ioss_State.h>    // for State
+#include <functional>      // for less
+#include <iosfwd>          // for ostream
+#include <map>             // for map, map<>::value_compare
+#include <stddef.h>        // for size_t, nullptr
+#include <stdint.h>        // for int64_t
+#include <string>          // for string, operator<
+#include <utility>         // for pair
+#include <vector>          // for vector
 namespace Ioss {
   class CommSet;
   class EdgeBlock;
@@ -106,7 +106,7 @@ namespace Ioss {
     std::string short_type_string() const override { return "region"; }
     EntityType  type() const override { return REGION; }
 
-    MeshType mesh_type() const;
+    MeshType          mesh_type() const;
     const std::string mesh_type_string() const;
 
     void output_summary(std::ostream &strm, bool do_transient = true);
@@ -166,7 +166,7 @@ namespace Ioss {
     bool add(FaceSet *faceset);
     bool add(ElementSet *elementset);
     bool add(CommSet *commset);
-    bool add(StructuredBlock *sblock);
+    bool add(StructuredBlock *structured_block);
     bool add(const CoordinateFrame &frame);
 
     const NodeBlockContainer &      get_node_blocks() const;

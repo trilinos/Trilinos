@@ -92,9 +92,9 @@ PHX_EVALUATE_FIELDS(Normals,workset)
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
-    Intrepid2::CellTools<ScalarT>::getPhysicalSideNormals(normals,
-                                                         this->wda(workset).int_rules[quad_index]->jac,
-                                                         side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
+    Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normals.get_view(),
+                                                                  this->wda(workset).int_rules[quad_index]->jac.get_view(),
+                                                                  side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 

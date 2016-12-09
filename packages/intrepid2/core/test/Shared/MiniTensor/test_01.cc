@@ -50,6 +50,8 @@ main(int ac, char* av[])
 {
   Kokkos::initialize();
 
+  ::testing::GTEST_FLAG(print_time) = (ac > 1) ? true : false;
+
   ::testing::InitGoogleTest(&ac, av);
 
   auto const
@@ -78,27 +80,6 @@ generate_sequence(
 
   return v;
 }
-
-
-template <class Scalar, class Tensor>
-struct InitializationFunctor
-{
-
-  int dimension, num;
-
-  InitializationFunctor(const int &dimension_,
-                        const int &num_):
-                        dimension(dimension_),
-                        num(num_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  operator()(const unsigned int i) const {
-    Intrepid2::Tensor<Scalar, DYNAMIC, Kokkos::DefaultExecutionSpace>
-    Z(dimension);
-  }
-};
- 
 
 template<typename Tensor, typename Scalar>
 bool
@@ -237,13 +218,9 @@ test_fundamentals(Index const dimension)
 
   error = norm_f(V);
 
-  Kokkos::parallel_for(
-      number_components,
-      InitializationFunctor<Scalar, Tensor>(dimension,number_components));
-
   bool const
-  tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
-  passed = passed && tensor_create_from_1d_kokkos;
+  passed_copy = error <= machine_epsilon<Scalar>();
+  passed = passed && passed_copy;
 
   return passed;
 }

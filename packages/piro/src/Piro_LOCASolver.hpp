@@ -93,6 +93,8 @@ private:
 
   Teuchos::RCP<LOCA::Stepper> stepper_;
   mutable bool first_;
+  
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_; 
 };
 
 

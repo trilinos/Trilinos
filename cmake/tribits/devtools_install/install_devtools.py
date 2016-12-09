@@ -532,7 +532,7 @@ def installToolFromSource(toolName, toolVer, installBaseDir,
   else:
     print("\nRunning: " + cmnd)
     print("\n  Running in working directory: " + workingDir)
-    print("\n  Appending environment: " + extraEnv)
+    print("\n  Appending environment: " + str(extraEnv))
     print("\n  Writing console output to file " + outFile)
 
 
@@ -555,12 +555,12 @@ def main(cmndLineArgs):
 
   commonToolsSelected = \
     getToolsSelectedArray(inOptions.commonTools, commonToolsArray)
-  print("\nSelected common tools = " + commonToolsSelected)
+  print("\nSelected common tools = " + str(commonToolsSelected))
   commonToolsSelectedSet = set(commonToolsSelected)
 
   compilerToolsetSelected = \
     getToolsSelectedArray(inOptions.compilerToolset, compilerToolsetArray)
-  print("\nSelected compiler toolset = " + compilerToolsetSelected)
+  print("\nSelected compiler toolset = " + str(compilerToolsetSelected))
   compilerToolsetSelectedSet = set(compilerToolsetSelected)
 
   gccVersion=gcc_version_default #ToDo: Make variable!

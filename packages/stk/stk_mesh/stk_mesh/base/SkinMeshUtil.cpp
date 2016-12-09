@@ -5,6 +5,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SideSetEntryCompare.hpp>
 #include <stk_mesh/base/FaceCreator.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>

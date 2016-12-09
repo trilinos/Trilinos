@@ -65,7 +65,8 @@ void create_two_tet_element_mesh(stk::mesh::BulkData &bulk)
     stk::mesh::declare_element(bulk, tetPart, elem2Id, elem2Nodes);
     bulk.modification_end();
 }
-//BEGIN
+
+//BEGINUseSimpleFields
 TEST(stkMeshHowTo, useSimpleFields)
 {
     stk::mesh::MetaData metaData(SpatialDimension::three, stk::mesh::entity_rank_names());
@@ -109,7 +110,7 @@ TEST(stkMeshHowTo, useSimpleFields)
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
 }
-//END
+//ENDUseSimpleFields
 
 void create_single_tet_element(stk::mesh::BulkData &bulk)
 {

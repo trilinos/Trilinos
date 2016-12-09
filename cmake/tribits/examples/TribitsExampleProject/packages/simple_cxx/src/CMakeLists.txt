@@ -33,3 +33,12 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+#
+# D) Define an executable that gets installed
+#
+
+TRIBITS_ADD_EXECUTABLE(simplecxx-helloworld  NOEXEPREFIX  NOEXESUFFIX
+  SOURCES  SimpleCxx_HelloWorld_Prog.cpp
+  INSTALLABLE
+  )

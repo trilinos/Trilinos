@@ -90,30 +90,30 @@ namespace Intrepid2{
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
-        const auto numNodesPerCell  = _cubPoints.dimension(1);
-        const auto spaceDim         = _cubPoints.dimension(2);
+        const ordinal_type numNodesPerCell  = _cubPoints.dimension(1);
+        const ordinal_type spaceDim         = _cubPoints.dimension(2);
 
-        const auto numNodesPerSide  = _sideMap(0);
-        const auto numSubcvPoints   = _subcvSideNormals.dimension(2);
+        const ordinal_type numNodesPerSide  = _sideMap(0);
+        const ordinal_type numSubcvPoints   = _subcvSideNormals.dimension(2);
 
-        const auto sideDim = spaceDim - 1;
+        const ordinal_type sideDim = spaceDim - 1;
 
         // compute side centers
-        for (auto node=0;node<numNodesPerCell;++node) {
+        for (ordinal_type node=0;node<numNodesPerCell;++node) {
           typename cubPointViewType::value_type val[3] = {};
-          for (auto j=0;j<numNodesPerSide;++j) {
-            for (auto i=0;i<spaceDim;++i) 
+          for (ordinal_type j=0;j<numNodesPerSide;++j) {
+            for (ordinal_type i=0;i<spaceDim;++i) 
               val[i] += _subcvCoords(cell, node, _sideMap(j+1), i);
           }
-          for (auto i=0;i<spaceDim;++i) 
+          for (ordinal_type i=0;i<spaceDim;++i) 
             _cubPoints(cell, node, i) = (val[i]/numNodesPerSide);
         }
         
         // compute weights (area or volume)
-        for (auto node=0;node<numNodesPerCell;++node) {
-          for (auto i=0;i<spaceDim;++i) {
+        for (ordinal_type node=0;node<numNodesPerCell;++node) {
+          for (ordinal_type i=0;i<spaceDim;++i) {
             typename cubWeightViewType::value_type val = 0;
-            for (auto pt=0;pt<numSubcvPoints;++pt)
+            for (ordinal_type pt=0;pt<numSubcvPoints;++pt)
               val += _subcvSideNormals(cell, node, pt, i)*pow(2,sideDim);
             _cubWeights(cell, node, i) = val;
           }
@@ -142,6 +142,8 @@ namespace Intrepid2{
   public:
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
 
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).

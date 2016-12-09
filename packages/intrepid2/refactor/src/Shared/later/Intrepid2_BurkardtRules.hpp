@@ -96,7 +96,7 @@ namespace Intrepid2 {
     return type = static_cast<EIntrepidBurkardt>(type+1);
   }
 
-  inline EIntrepidBurkardt operator++(EIntrepidBurkardt &type, int) {
+  inline EIntrepidBurkardt operator++(EIntrepidBurkardt &type, ordinal_type) {
     EIntrepidBurkardt oldval = type;
     ++type;
     return oldval;
@@ -117,7 +117,7 @@ namespace Intrepid2 {
 
     /* HELPER FUNCTIONS */
     template<class Scalar> 
-    static void imtqlx ( int n, Scalar d[], Scalar e[], Scalar z[] );
+    static void imtqlx ( ordinal_type n, Scalar d[], Scalar e[], Scalar z[] );
     template<class Scalar> static Scalar r8_epsilon( Scalar one );
     template<class Scalar> static Scalar r8_sign( Scalar x );
 
@@ -126,189 +126,189 @@ namespace Intrepid2 {
     /** \brief  Gauss-Chebyshev of Type 1; returns points and weights.
     */
     template<class Scalar> 
-    static void chebyshev1_compute ( int order, Scalar x[], Scalar w[] );
+    static void chebyshev1_compute ( ordinal_type order, Scalar x[], Scalar w[] );
     /** \brief  Gauss-Chebyshev of Type 1; returns points.
     */
     template<class Scalar> 
-    static void chebyshev1_compute_points ( int order, Scalar x[] );
+    static void chebyshev1_compute_points ( ordinal_type order, Scalar x[] );
     /** \brief  Gauss-Chebyshev of Type 1; returns weights.
     */
     template<class Scalar> 
-    static void chebyshev1_compute_weights ( int order, Scalar w[] );
+    static void chebyshev1_compute_weights ( ordinal_type order, Scalar w[] );
 
     /* COMPUTE CHEBYSHEV TYPE 2 NODES AND WEIGHTS                      */
     /* Integrates functions on [-1,1] weighted by w(x) = sqrt(1-x^2)   */
     /** \brief  Gauss-Chebyshev of Type 2; returns points and weights.
     */
     template<class Scalar> 
-    static void chebyshev2_compute ( int order, Scalar x[], Scalar w[] );
+    static void chebyshev2_compute ( ordinal_type order, Scalar x[], Scalar w[] );
     /** \brief  Gauss-Chebyshev of Type 2; returns points.
     */
     template<class Scalar> 
-    static void chebyshev2_compute_points ( int order, Scalar x[] );
+    static void chebyshev2_compute_points ( ordinal_type order, Scalar x[] );
     /** \brief  Gauss-Chebyshev of Type 2; returns weights.
     */
     template<class Scalar> 
-    static void chebyshev2_compute_weights ( int order, Scalar w[] );
+    static void chebyshev2_compute_weights ( ordinal_type order, Scalar w[] );
     
     /* COMPUTE CLENSHAW CURTIS NODES AND WEIGHTS                       */
     /* Integrates functions on [-1,1] weighted by w(x) = 1             */    
     /** \brief  Clenshaw-Curtis; returns points and weights.
     */
     template<class Scalar> 
-    static void clenshaw_curtis_compute ( int order, Scalar x[], Scalar w[] );
+    static void clenshaw_curtis_compute ( ordinal_type order, Scalar x[], Scalar w[] );
     /** \brief  Clenshaw-Curtis; returns points.
     */    
     template<class Scalar> 
-    static void clenshaw_curtis_compute_points ( int order, Scalar x[] );
+    static void clenshaw_curtis_compute_points ( ordinal_type order, Scalar x[] );
     /** \brief  Clenshaw-Curtis; returns weights.
     */    
     template<class Scalar> 
-    static void clenshaw_curtis_compute_weights ( int order, Scalar w[] );
+    static void clenshaw_curtis_compute_weights ( ordinal_type order, Scalar w[] );
     
     /* COMPUTE FEJER TYPE 2 NODES AND WEIGHTS                          */
     /* Integrates functions on [-1,1] weighted by w(x) = 1             */    
     /** \brief  Fejer type 2; returns points and weights.
     */
     template<class Scalar> 
-    static void fejer2_compute ( int order, Scalar x[], Scalar w[] );       
+    static void fejer2_compute ( ordinal_type order, Scalar x[], Scalar w[] );       
     /** \brief  Fejer type 2; returns points.
     */ 
     template<class Scalar> 
-    static void fejer2_compute_points ( int order, Scalar x[] );       
+    static void fejer2_compute_points ( ordinal_type order, Scalar x[] );       
     /** \brief  Fejer type 2; returns weights.
     */ 
     template<class Scalar> 
-    static void fejer2_compute_weights ( int order, Scalar w[] );
+    static void fejer2_compute_weights ( ordinal_type order, Scalar w[] );
     
     /* COMPUTE GAUSS HERMITE NODES AND WEIGHTS                         */
     /* Integrates functions on (-oo,oo) weighted by w(x) = exp(-x^2)   */    
     /** \brief  Gauss-Hermite; returns points and weights.
     */
     template<class Scalar> 
-    static void hermite_compute ( int order, Scalar x[], Scalar w[] );    
+    static void hermite_compute ( ordinal_type order, Scalar x[], Scalar w[] );    
     /** \brief  Gauss-Hermite; returns points.
     */
     template<class Scalar> 
-    static void hermite_compute_points ( int order, Scalar x[] );   
+    static void hermite_compute_points ( ordinal_type order, Scalar x[] );   
     /** \brief  Gauss-Hermite; returns weights.
     */
     template<class Scalar> 
-    static void hermite_compute_weights ( int order, Scalar w[] );
+    static void hermite_compute_weights ( ordinal_type order, Scalar w[] );
     
     /** \brief  Gauss-Hermite; returns points and weights.
     */
     template<class Scalar> 
-    static void hermite_lookup ( int n, Scalar x[], Scalar w[] );    
+    static void hermite_lookup ( ordinal_type n, Scalar x[], Scalar w[] );    
     /** \brief  Gauss-Hermite; returns points.
     */
     template<class Scalar> 
-    static void hermite_lookup_points ( int n, Scalar x[] );    
+    static void hermite_lookup_points ( ordinal_type n, Scalar x[] );    
     /** \brief  Gauss-Hermite; returns weights.
     */
     template<class Scalar> 
-    static void hermite_lookup_weights ( int n, Scalar w[] );
+    static void hermite_lookup_weights ( ordinal_type n, Scalar w[] );
 
     /* COMPUTE GENZ KEISTER NODES AND WEIGHTS                          */
     /* Integrates functions on (-oo,oo) weighted by w(x) = exp(-x^2)   */    
     /** \brief  Hermite-Genz-Keister; returns points and weights.
     */
     template<class Scalar> 
-    static void hermite_genz_keister_lookup ( int n, Scalar x[], Scalar w[] );
+    static void hermite_genz_keister_lookup ( ordinal_type n, Scalar x[], Scalar w[] );
     /** \brief  Hermite-Genz-Keister; returns points.
     */
     template<class Scalar> 
-    static void hermite_genz_keister_lookup_points ( int n, Scalar x[] ); 
+    static void hermite_genz_keister_lookup_points ( ordinal_type n, Scalar x[] ); 
     /** \brief  Hermite-Genz-Keister; returns weights.
     */
     template<class Scalar> 
-    static void hermite_genz_keister_lookup_weights ( int n, Scalar w[] );
+    static void hermite_genz_keister_lookup_weights ( ordinal_type n, Scalar w[] );
 
     /* COMPUTE GAUSS LAGUERRE NODES AND WEIGHTS                        */
     /* Integrates functons on [0,oo) weighted by w(x) = exp(-x)        */   
     /** \brief  Gauss-Laguerre; returns points and weights.
     */
     template<class Scalar> 
-    static void laguerre_compute ( int n, Scalar x[], Scalar w[] );   
+    static void laguerre_compute ( ordinal_type n, Scalar x[], Scalar w[] );   
     /** \brief  Gauss-Laguerre; returns points.
     */
     template<class Scalar> 
-    static void laguerre_compute_points ( int order, Scalar x[] ); 
+    static void laguerre_compute_points ( ordinal_type order, Scalar x[] ); 
     /** \brief  Gauss-Laguerre; returns weights.
     */
     template<class Scalar> 
-    static void laguerre_compute_weights ( int order, Scalar w[] );
+    static void laguerre_compute_weights ( ordinal_type order, Scalar w[] );
     
     /** \brief  Gauss-Laguerre; returns points and weights.
     */
     template<class Scalar> 
-    static void laguerre_lookup ( int n, Scalar x[], Scalar w[] );    
+    static void laguerre_lookup ( ordinal_type n, Scalar x[], Scalar w[] );    
     /** \brief  Gauss-Laguerre; returns points.
     */
     template<class Scalar> 
-    static void laguerre_lookup_points ( int n, Scalar x[] );   
+    static void laguerre_lookup_points ( ordinal_type n, Scalar x[] );   
     /** \brief  Gauss-Laguerre; returns weights.
     */
     template<class Scalar> 
-    static void laguerre_lookup_weights ( int n, Scalar w[] );
+    static void laguerre_lookup_weights ( ordinal_type n, Scalar w[] );
 
     /* COMPUTE GAUSS LEGENDRE NODES AND WEIGHTS                        */
     /* Integrates functions on [-1,1] weighted by w(x) = 1             */    
     /** \brief  Gauss-Legendre; returns points and weights.
     */
     template<class Scalar> 
-    static void legendre_compute ( int n, Scalar x[], Scalar w[] );   
+    static void legendre_compute ( ordinal_type n, Scalar x[], Scalar w[] );   
     /** \brief  Gauss-Legendre; returns points.
     */
     template<class Scalar> 
-    static void legendre_compute_points ( int order, Scalar x[] );  
+    static void legendre_compute_points ( ordinal_type order, Scalar x[] );  
     /** \brief  Gauss-Legendre; returns weights.
     */
     template<class Scalar> 
-    static void legendre_compute_weights ( int order, Scalar w[] );
+    static void legendre_compute_weights ( ordinal_type order, Scalar w[] );
     
     /** \brief  Gauss-Legendre; returns points and weights.
     */
     template<class Scalar> 
-    static void legendre_lookup ( int n, Scalar x[], Scalar w[] );    
+    static void legendre_lookup ( ordinal_type n, Scalar x[], Scalar w[] );    
     /** \brief  Gauss-Legendre; returns points.
     */
     template<class Scalar> 
-    static void legendre_lookup_points ( int n, Scalar x[] ); 
+    static void legendre_lookup_points ( ordinal_type n, Scalar x[] ); 
     /** \brief  Gauss-Legendre; returns weights.
     */
     template<class Scalar> 
-    static void legendre_lookup_weights ( int n, Scalar w[] );
+    static void legendre_lookup_weights ( ordinal_type n, Scalar w[] );
 
     /* COMPUTE GAUSS PATTERSON NODES AND WEIGHTS                       */
     /* Integrates functions on [-1,1] weighted by w(x) = 1             */  
     /** \brief  Gauss-Patterson; returns points and weights.
     */
     template<class Scalar> 
-    static void patterson_lookup ( int n, Scalar x[], Scalar w[] );  
+    static void patterson_lookup ( ordinal_type n, Scalar x[], Scalar w[] );  
     /** \brief  Gauss-Patterson; returns points.
     */
     template<class Scalar> 
-    static void patterson_lookup_points ( int n, Scalar x[] );   
+    static void patterson_lookup_points ( ordinal_type n, Scalar x[] );   
     /** \brief  Gauss-Patterson; returns weights.
     */
     template<class Scalar> 
-    static void patterson_lookup_weights ( int n, Scalar w[] );
+    static void patterson_lookup_weights ( ordinal_type n, Scalar w[] );
 
     /* COMPUTE TRAPEZOIDAL RULE NODES AND WEIGHTS                      */
     /* Integrates functions on [-1,1] weighted by w(x) = 1             */  
     /** \brief  Trapezoidal rule; returns points and weights.
     */
     template<class Scalar> 
-    static void trapezoidal_compute ( int n, Scalar x[], Scalar w[] ); 
+    static void trapezoidal_compute ( ordinal_type n, Scalar x[], Scalar w[] ); 
     /** \brief  Trapezoidal rule; returns points.
     */
     template<class Scalar> 
-    static void trapezoidal_compute_points ( int order, Scalar x[] );  
+    static void trapezoidal_compute_points ( ordinal_type order, Scalar x[] );  
     /** \brief  Trapezoidal rule; returns weights.
     */
     template<class Scalar> 
-    static void trapezoidal_compute_weights ( int order, Scalar w[] );
+    static void trapezoidal_compute_weights ( ordinal_type order, Scalar w[] );
        
   }; // class IntrepidBurkardtRules
 

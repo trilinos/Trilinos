@@ -85,8 +85,6 @@
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #endif
 
-// Only run if we have long long
-#ifdef HAVE_XPETRA_INT_LONG_LONG
 typedef double                               Scalar;
 typedef int                                  LocalOrdinal;
 typedef long long                            GlobalOrdinal;
@@ -327,24 +325,3 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-
-#else
-// if we don't have long longs...
-int main(int argc, char *argv[]) {
-
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
-
-  bool success = false;
-  bool verbose = true;
-  try {
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int MyPID = comm->getRank();
-    if(MyPID == 0)
-      printf("TwoBillion: Long long aren't compiled in.\n");
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-}
-#endif

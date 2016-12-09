@@ -569,6 +569,73 @@ namespace MueLu {
     }
 
 
+
+    // Finds the OAZ Dirichlet rows for this matrix
+    static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
+				  std::vector<LocalOrdinal>& dirichletRows) {
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      dirichletRows.resize(0);
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+	Teuchos::ArrayView<const LocalOrdinal> indices;
+	Teuchos::ArrayView<const Scalar> values;
+	A->getLocalRowView(i,indices,values);
+	int nnz=0;
+	for (size_t j=0; j<(size_t)indices.size(); j++) {
+	  if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > Teuchos::ScalarTraits<MT>::eps()) {
+	    //MT absv = Teuchos::ScalarTraits<Scalar>::magnitude(values[j]);
+	    //	  if (absv > Teuchos::ScalarTraits<MT>::eps()) {
+            nnz++;
+          }
+        }
+        if (nnz == 1 || nnz == 2) {
+          dirichletRows.push_back(i);
+        }
+      }
+    }
+    
+    // Applies Ones-and-Zeros to matrix rows
+    static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+			       const std::vector<LocalOrdinal>& dirichletRows) {
+      RCP<const Map> Rmap = A->getColMap();
+      RCP<const Map> Cmap = A->getColMap();
+      Scalar one  =Teuchos::ScalarTraits<Scalar>::one();
+      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
+
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+	GlobalOrdinal row_gid = Rmap->getGlobalElement(dirichletRows[i]);
+
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;	
+        A->getLocalRowView(dirichletRows[i],indices,values);
+	// NOTE: This won't work with fancy node types.
+	Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<(size_t)indices.size(); j++) {
+	  if(Cmap->getGlobalElement(indices[j])==row_gid)
+	    valuesNC[j]=one;
+	  else 
+	    valuesNC[j]=zero;
+	}
+      }
+    }
+
+    // Zeros out rows
+    static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+			       const std::vector<LocalOrdinal>& dirichletRows) {
+      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
+
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;	
+        A->getLocalRowView(dirichletRows[i],indices,values);
+	// NOTE: This won't work with fancy node types.
+	Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<(size_t)indices.size(); j++)
+	    valuesNC[j]=zero;	
+      }
+    }
+
+
+
   }; // class Utils
 
 

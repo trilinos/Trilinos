@@ -123,9 +123,8 @@ Ioss::Property Ioss::SideSet::get_implicit_property(const std::string &my_name) 
   if (my_name == "block_count") {
     return Ioss::Property(my_name, static_cast<int>(sideBlocks.size()));
   }
-  else {
-    return Ioss::GroupingEntity::get_implicit_property(my_name);
-  }
+
+  return Ioss::GroupingEntity::get_implicit_property(my_name);
 }
 
 int Ioss::SideSet::max_parametric_dimension() const

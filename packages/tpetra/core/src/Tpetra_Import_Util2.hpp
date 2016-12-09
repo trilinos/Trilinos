@@ -64,7 +64,6 @@
 // here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
-
 namespace { // (anonymous)
 
   template<class T, class D>
@@ -1148,12 +1147,13 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
 
   for(size_t i = 0; i < NumRows; i++){
-    size_t start=CRS_rowptr[i];
-    if(start >= nnz) continue;
+    size_t old_rowptr_i=CRS_rowptr[i];
+    CRS_rowptr[i] = old_curr;
+    if(old_rowptr_i >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[start];
-    size_t NumEntries   = CRS_rowptr[i+1] - start;
-    Ordinal* locIndices = &CRS_colind[start];
+    Scalar* locValues   = &CRS_vals[old_rowptr_i];
+    size_t NumEntries   = CRS_rowptr[i+1] - old_rowptr_i;
+    Ordinal* locIndices = &CRS_colind[old_rowptr_i];
 
     // Sort phase
     Ordinal n = NumEntries;
@@ -1177,8 +1177,8 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     }
 
     // Merge & shrink
-    for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
-      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+    for(size_t j=old_rowptr_i; j < CRS_rowptr[i+1]; j++) {
+      if(j > old_rowptr_i && CRS_colind[j]==CRS_colind[new_curr-1]) {
         CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
@@ -1190,8 +1190,6 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         new_curr++;
       }
     }
-
-    CRS_rowptr[i] = old_curr;
     old_curr=new_curr;
   }
 

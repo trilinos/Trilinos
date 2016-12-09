@@ -49,7 +49,7 @@ namespace Intrepid2 {
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
-                                               int numPoints, int dimension) {
+                                               ordinal_type numPoints, ordinal_type dimension) {
   /*
     This constructor initializes the nodes and weights for an Ndim quadrature 
     rule and sets the nodes and weights lists to zero.
@@ -70,13 +70,13 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   degree_.resize(1);
   cubLine.getAccuracy(degree_);
 
-  int loc = 0;
+  ordinal_type loc = 0;
   std::vector<Scalar> node(1,0.0);
-  typename std::map<Scalar,int>::iterator it;
+  typename std::map<Scalar,ordinal_type>::iterator it;
   points_.clear(); weights_.clear(); 
   for (it = cubLine.begin(); it != cubLine.end(); it++) {
     node[0] = cubLine.getNode(it);
-    points_.insert(std::pair<std::vector<Scalar>,int>(node,loc));
+    points_.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));
     weights_.push_back(cubLine.getWeight(it->second));
     loc++;
   }
@@ -84,20 +84,20 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
-                 int dimension, std::vector<int> numPoints1D, 
+                 ordinal_type dimension, std::vector<ordinal_type> numPoints1D, 
 		 std::vector<EIntrepidBurkardt> rule1D, bool isNormalized) {
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
-		      dimension!=(int)rule1D.size()),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(ordinal_type)numPoints1D.size()||
+		      dimension!=(ordinal_type)rule1D.size()),std::out_of_range,
            ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
 
   dimension_ = dimension;  
   degree_.resize(dimension);
-  std::vector<int> degree(1,0);
+  std::vector<ordinal_type> degree(1,0);
   CubatureTensorSorted<Scalar> newRule(0,1);
-  for (int i=0; i<dimension; i++) {
+  for (ordinal_type i=0; i<dimension; i++) {
     // Compute 1D rules
     CubatureLineSorted<Scalar> rule1(rule1D[i],numPoints1D[i],isNormalized);
     rule1.getAccuracy(degree);
@@ -106,13 +106,13 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
     newRule = kron_prod<Scalar>(newRule,rule1);
   }
   numPoints_ = newRule.getNumPoints();
-  typename std::map<std::vector<Scalar>,int>::iterator it;
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator it;
   points_.clear(); weights_.clear();
-  int loc = 0;
+  ordinal_type loc = 0;
   std::vector<Scalar> node(dimension_,0.0);
   for (it=newRule.begin(); it!=newRule.end(); it++) {
     node = it->first;
-    points_.insert(std::pair<std::vector<Scalar>,int>(node,loc));
+    points_.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));
     weights_.push_back(newRule.getWeight(node));
     loc++;
   }
@@ -120,24 +120,24 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
-                        int dimension, std::vector<int> numPoints1D, 
+                        ordinal_type dimension, std::vector<ordinal_type> numPoints1D, 
 			std::vector<EIntrepidBurkardt> rule1D, 
 			std::vector<EIntrepidGrowth> growth1D, 
 			bool isNormalized) {
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
-		      dimension!=(int)rule1D.size()||
-		      dimension!=(int)growth1D.size()),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(ordinal_type)numPoints1D.size()||
+		      dimension!=(ordinal_type)rule1D.size()||
+		      dimension!=(ordinal_type)growth1D.size()),std::out_of_range,
            ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
   dimension_ = dimension;  
   degree_.resize(dimension);
-  std::vector<int> degree(1);
+  std::vector<ordinal_type> degree(1);
   CubatureTensorSorted<Scalar> newRule(0,1);
-  for (int i=0; i<dimension; i++) {
+  for (ordinal_type i=0; i<dimension; i++) {
     // Compute 1D rules
-    int numPoints = growthRule1D(numPoints1D[i],growth1D[i],rule1D[i]);
+    ordinal_type numPoints = growthRule1D(numPoints1D[i],growth1D[i],rule1D[i]);
     CubatureLineSorted<Scalar> rule1(rule1D[i],numPoints,isNormalized);
     rule1.getAccuracy(degree);
     degree_[i] = degree[0];
@@ -146,13 +146,13 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   }
   numPoints_ = newRule.getNumPoints();
 
-  typename std::map<std::vector<Scalar>,int>::iterator it;
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator it;
   points_.clear(); weights_.clear();
-  int loc = 0;
+  ordinal_type loc = 0;
   std::vector<Scalar> node;
   for (it=newRule.begin(); it!=newRule.end(); it++) {
     node = it->first;
-    points_.insert(std::pair<std::vector<Scalar>,int>(node,loc));
+    points_.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));
     weights_.push_back(newRule.getWeight(node));
     loc++;
   }
@@ -160,23 +160,23 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
-			 int dimension, int maxNumPoints, 
+			 ordinal_type dimension, ordinal_type maxNumPoints, 
 			 std::vector<EIntrepidBurkardt> rule1D, 
 			 std::vector<EIntrepidGrowth> growth1D, 
 			 bool isNormalized) {
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
-		      dimension!=(int)growth1D.size()),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(ordinal_type)rule1D.size()||
+		      dimension!=(ordinal_type)growth1D.size()),std::out_of_range,
             ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
   dimension_ = dimension;
   degree_.resize(dimension);
-  std::vector<int> degree(1);
+  std::vector<ordinal_type> degree(1);
   CubatureTensorSorted<Scalar> newRule(0,1);
-  for (int i=0; i<dimension; i++) {
+  for (ordinal_type i=0; i<dimension; i++) {
     // Compute 1D rules   
-    int numPoints = growthRule1D(maxNumPoints,growth1D[i],rule1D[i]);
+    ordinal_type numPoints = growthRule1D(maxNumPoints,growth1D[i],rule1D[i]);
     CubatureLineSorted<Scalar> rule1(rule1D[i],numPoints,isNormalized);
     rule1.getAccuracy(degree);
     degree_[i] = degree[0];
@@ -185,13 +185,13 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   }
   numPoints_ = newRule.getNumPoints();
  
-  typename std::map<std::vector<Scalar>,int>::iterator it;
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator it;
   points_.clear(); weights_.clear();
-  int loc = 0;
+  ordinal_type loc = 0;
   std::vector<Scalar> node;
   for (it=newRule.begin(); it!=newRule.end(); it++) {
     node = it->first;
-    points_.insert(std::pair<std::vector<Scalar>,int>(node,loc));
+    points_.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));
     weights_.push_back(newRule.getWeight(node));
     loc++;
   }
@@ -201,13 +201,13 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
                      Access Operator - ruleTP
    ========================================================================= */
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
+ordinal_type CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
   return numPoints_;
 } // end getNumPoints
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(
-				  	   std::vector<int> & accuracy) const {
+				  	   std::vector<ordinal_type> & accuracy) const {
   accuracy = degree_;
 } // end getAccuracy
 
@@ -215,19 +215,19 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getCubature(
 		      ArrayPoint & cubPoints, ArrayWeight & cubWeights) const {
 
-  typename std::map<std::vector<Scalar>,int>::const_iterator it;
+  typename std::map<std::vector<Scalar>,ordinal_type>::const_iterator it;
   for (it=points_.begin(); it!=points_.end();it++) {
-    for (int j=0; j<dimension_; j++) {
+    for (ordinal_type j=0; j<dimension_; j++) {
       cubPoints(it->second,j)  = it->first[j];
     }
     cubWeights(it->second) = weights_[it->second];
   }
 
   /*
-  typename std::map<std::vector<Scalar>,int>::const_iterator it = 
+  typename std::map<std::vector<Scalar>,ordinal_type>::const_iterator it = 
     points_.begin();
-  for (int i=0; i<numPoints_; i++) {
-    for (int j=0; j<dimension_; j++) {
+  for (ordinal_type i=0; i<numPoints_; i++) {
+    for (ordinal_type j=0; j<dimension_; j++) {
       cubPoints(i,j)  = it->first[j];
     }
     cubWeights(i) = weights_[it->second];
@@ -246,34 +246,34 @@ void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint
 }
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
+ordinal_type CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end getDimension
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
-typename std::map<std::vector<Scalar>,int>::iterator CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::begin() {
+typename std::map<std::vector<Scalar>,ordinal_type>::iterator CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::begin() {
   return points_.begin();
 }
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
-typename std::map<std::vector<Scalar>,int>::iterator CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::end() {
+typename std::map<std::vector<Scalar>,ordinal_type>::iterator CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::end() {
   return points_.end();
 }
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::insert(
-                    typename std::map<std::vector<Scalar>,int>::iterator it, 
+                    typename std::map<std::vector<Scalar>,ordinal_type>::iterator it, 
 		    std::vector<Scalar> point, 
 		    Scalar weight) {
-  points_.insert(it,std::pair<std::vector<Scalar>,int>(point,
-						       (int)points_.size()));
+  points_.insert(it,std::pair<std::vector<Scalar>,ordinal_type>(point,
+						       (ordinal_type)points_.size()));
   weights_.push_back(weight);
   numPoints_++;
   return;
 }
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
-std::vector<Scalar> CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getNode(typename std::map<std::vector<Scalar>,int>::iterator it) {
+std::vector<Scalar> CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getNode(typename std::map<std::vector<Scalar>,ordinal_type>::iterator it) {
   /*
     Access node for ruleTP
   */ 
@@ -282,7 +282,7 @@ std::vector<Scalar> CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getNode
 
 template <class Scalar, class ArrayPoint, class ArrayWeight> 
 Scalar CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getWeight(
-								   int node) { 
+								   ordinal_type node) { 
   /*
     Access weight for ruleTP
   */   
@@ -305,16 +305,16 @@ void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::update(
 			     Scalar alpha1) {
   
   // Initialize an iterator on std::map<std::vector<Scalar>,Scalar>
-  typename std::map<std::vector<Scalar>,int>::iterator it;
+  typename std::map<std::vector<Scalar>,ordinal_type>::iterator it;
   
   // Temporary Container for updated rule
-  typename std::map<std::vector<Scalar>,int> newPoints;
+  typename std::map<std::vector<Scalar>,ordinal_type> newPoints;
   std::vector<Scalar> newWeights(0,0.0);
   std::vector<Scalar> node(dimension_,0.0);
-   int loc = 0;
+   ordinal_type loc = 0;
 
   // Intersection of rule1 and rule2
-  typename std::map<std::vector<Scalar>,int> inter; 
+  typename std::map<std::vector<Scalar>,ordinal_type> inter; 
   std::set_intersection(points_.begin(),points_.end(),
 			cubRule2.begin(),cubRule2.end(),
 			inserter(inter,inter.begin()),inter.value_comp());
@@ -322,23 +322,23 @@ void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::update(
     node = it->first;
     newWeights.push_back( alpha1*weights_[it->second]
 			 +alpha2*cubRule2.getWeight(node));
-    newPoints.insert(std::pair<std::vector<Scalar>,int>(node,loc));
+    newPoints.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));
     //points_.erase(node); cubRule2.erase(node);
     loc++;    
   }
-  int isize = inter.size(); 
+  ordinal_type isize = inter.size(); 
 
   // Set Difference rule1 \ rule2
-  int size = points_.size();
+  ordinal_type size = points_.size();
   if (isize!=size) {
-    typename std::map<std::vector<Scalar>,int> diff1; 
+    typename std::map<std::vector<Scalar>,ordinal_type> diff1; 
     std::set_difference(points_.begin(),points_.end(),
 			cubRule2.begin(),cubRule2.end(),
 			inserter(diff1,diff1.begin()),diff1.value_comp());
     for (it=diff1.begin(); it!=diff1.end(); it++) {      
       node = it->first;
       newWeights.push_back(alpha1*weights_[it->second]);
-      newPoints.insert(std::pair<std::vector<Scalar>,int>(node,loc));    
+      newPoints.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));    
       loc++;
     }  
   }
@@ -346,21 +346,21 @@ void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::update(
   // Set Difference rule2 \ rule1
   size = cubRule2.getNumPoints();
   if (isize!=size) {
-    typename std::map<std::vector<Scalar>,int> diff2; 
+    typename std::map<std::vector<Scalar>,ordinal_type> diff2; 
     std::set_difference(cubRule2.begin(),cubRule2.end(),
 			points_.begin(),points_.end(),
 			inserter(diff2,diff2.begin()),diff2.value_comp());
     for (it=diff2.begin(); it!=diff2.end(); it++) {      
       node = it->first;
       newWeights.push_back(alpha2*cubRule2.getWeight(it->second));
-      newPoints.insert(std::pair<std::vector<Scalar>,int>(node,loc));  
+      newPoints.insert(std::pair<std::vector<Scalar>,ordinal_type>(node,loc));  
       loc++;
     }        
   }  
  
   points_.clear();  points_.insert(newPoints.begin(),newPoints.end());
   weights_.clear(); weights_.assign(newWeights.begin(),newWeights.end());
-  numPoints_ = (int)points_.size(); 
+  numPoints_ = (ordinal_type)points_.size(); 
 }
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
@@ -385,9 +385,9 @@ CubatureTensorSorted<Scalar> kron_prod(CubatureTensorSorted<Scalar> & rule1,
   /* 
     Compute the Kronecker Product of a Tensor Product rule and a 1D rule.
   */
-  int s1   = rule1.getNumPoints();
-  // int s2   = rule2.getNumPoints();
-  int Ndim = rule1.getDimension();
+  ordinal_type s1   = rule1.getNumPoints();
+  // ordinal_type s2   = rule2.getNumPoints();
+  ordinal_type Ndim = rule1.getDimension();
 
   if (s1==0) {
     CubatureTensorSorted<Scalar> TPrule(rule2);
@@ -402,9 +402,9 @@ CubatureTensorSorted<Scalar> kron_prod(CubatureTensorSorted<Scalar> & rule1,
 
     // Perform Kronecker Products
     // Compute Kronecker Product of Nodes
-    typename std::map<std::vector<Scalar>,int>::iterator it = TPrule.begin();
-    typename std::map<std::vector<Scalar>,int>::iterator it_i;
-    typename std::map<Scalar,int>::iterator it_j;
+    typename std::map<std::vector<Scalar>,ordinal_type>::iterator it = TPrule.begin();
+    typename std::map<std::vector<Scalar>,ordinal_type>::iterator it_i;
+    typename std::map<Scalar,ordinal_type>::iterator it_j;
     for (it_i=rule1.begin(); it_i!=rule1.end(); it_i++) {
       for (it_j=rule2.begin(); it_j!=rule2.end(); it_j++) {
 	std::vector<Scalar> node = rule1.getNode(it_i);

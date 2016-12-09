@@ -45,7 +45,8 @@ SET(UNIT_TEST_DRIVER
 # If this assumption is incorrect, or the build system is changed this might
 # have to be fixed!
 ###############################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+                    ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

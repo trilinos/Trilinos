@@ -58,8 +58,37 @@
 #include "Intrepid2_PointTools.hpp"
 
 #include "Intrepid2_Basis.hpp"
+
+// -- HGRAD family
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
+
+// -- HCURL family
+//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
+#include "Intrepid2_HCURL_HEX_In_FEM.hpp"
+
+// -- HDIV family
+//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
+//#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HDIV_HEX_In_FEM.hpp"
+
+// -- Lower order family
+#include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
+
+#include "Intrepid2_HDIV_QUAD_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
+
+#include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TET_I1_FEM.hpp"
+#include "Intrepid2_HCURL_WEDGE_I1_FEM.hpp"
+
+#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TET_I1_FEM.hpp"
+#include "Intrepid2_HDIV_WEDGE_I1_FEM.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 
@@ -145,89 +174,130 @@ namespace Intrepid2 {
       
       /** \brief  Compute coefficient matrix by collocating point values
           
-          \param  lineBasis [in]  - line basis function 
+          \param  subcellBasis [in]  - subcell basis function 
           \param  cellBasis [in]  - cell basis function
-          \param  edgeId    [in]  - edge Id in the cell topology
-          \param  edgeOrt   [in]  - orientation number between 0 and 1
+          \param  subcellId    [in]  - subcell Id in the cell topology
+          \param  subcellOrt   [in]  - orientation number between 0 and 1
 
           \return rank 2 coefficient matrix
       */
       template<typename outputViewType,
-               typename lineBasisType,
+               typename subcellBasisType,
                typename cellBasisType>
       inline
       static void
-      getEdgeCoeffMatrix_HGRAD(outputViewType &output,
-                               const lineBasisType lineBasis,
-                               const cellBasisType cellBasis,
-                               const ordinal_type edgeId,
-                               const ordinal_type edgeOrt);
+      getCoeffMatrix_HGRAD(outputViewType &output,
+                           const subcellBasisType subcellBasis,
+                           const cellBasisType cellBasis,
+                           const ordinal_type subcellId,
+                           const ordinal_type subcellOrt);
 
-      // /** \brief  Compute coefficient matrix by collocating point values
-          
-      //     \param  faceBasis [in]  - triangle face basis function 
-      //     \param  cellBasis [in]  - cell basis function
-      //     \param  faceId    [in]  - face Id in the cell topology
-      //     \param  faceOrt   [in]  - orientation number between 0 and 5
+      template<typename outputViewType,
+               typename subcellBasisType,
+               typename cellBasisType>
+      inline
+      static void
+      getCoeffMatrix_HCURL(outputViewType &output,
+                           const subcellBasisType subcellBasis,
+                           const cellBasisType cellBasis,
+                           const ordinal_type subcellId,
+                           const ordinal_type subcellOrt);
 
-      //     \return rank 2 coefficient matrix
-      // */
-      // template<typename ExecSpaceType,
-      //          typename ValueType>
-      // inline
-      // static Kokkos::View<ValueType**,ExecSpaceType,Kokkos::LayoutStride>
-      // getTriangleCoeffMatrix_HGRAD(const Basis<ExecSpaceType,ValueType,ValueType> faceBasis,
-      //                              const Basis<ExecSpaceType,ValueType,ValueType> cellBasis,
-      //                              const ordinal_type faceId,
-      //                              const ordinal_type faceOrt);
-      
-      // /** \brief  Compute coefficient matrix by collocating point values
-          
-      //     \param  faceBasis [in]  - triangle face basis function 
-      //     \param  cellBasis [in]  - cell basis function
-      //     \param  faceId    [in]  - face Id in the cell topology
-      //     \param  faceOrt   [in]  - orientation number between 0 and 7
-
-      //     \return rank 2 coefficient matrix
-
-      //     For simplicity, this one does not use tensor product space; 
-      //     later It would be better if we use it. 
-      // */
-      // template<typename ExecSpaceType,
-      //          typename ValueType>
-      // inline
-      // static Kokkos::View<ValueType**,ExecSpaceType,Kokkos::LayoutStride> 
-      // getQuadrilateralCoeffMatrix_HGRAD(const Basis<ExecSpaceType,ValueType,ValueType> faceBasis,
-      //                                   const Basis<ExecSpaceType,ValueType,ValueType> cellBasis,
-      //                                   const ordinal_type faceId,
-      //                                   const ordinal_type faceOrt);
+      template<typename outputViewType,
+               typename subcellBasisType,
+               typename cellBasisType>
+      inline
+      static void
+      getCoeffMatrix_HDIV(outputViewType &output,
+                          const subcellBasisType subcellBasis,
+                          const cellBasisType cellBasis,
+                          const ordinal_type subcellId,
+                          const ordinal_type subcellOrt);
     };
   }
 
   template<typename ExecSpaceType>
   class OrientationTools {
   public:
-    // function space, order, subcell ordinal, orientation, matrix m x n
-    typedef Kokkos::View<double******,ExecSpaceType> MatrixDataViewType;
+    // subcell ordinal, orientation, matrix m x n
+    typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
 
-    static MatrixDataViewType quadEdgeData;
+    // key :: basis name, order, value :: matrix data view type 
+    static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
 
-    // space and order is fixed
+    template<typename BasisPtrType>
+    inline 
+    static CoeffMatrixDataViewType createCoeffMatrixInternal(BasisPtrType basis);
+    
+    //
+    // High order elements transformation matrices for HGRAD
+    // 
+
     inline
-    static void initQuadrilateral(Kokkos::View<double****,Kokkos::LayoutStride,ExecSpaceType> matData,
-                                  const EFunctionSpace space,
-                                  const ordinal_type order);
+    static void init_HGRAD_QUAD_Cn_FEM(CoeffMatrixDataViewType matData,
+                                       const ordinal_type order);
 
+    inline
+    static void init_HGRAD_HEX_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    inline
+    static void init_HGRAD_TRI_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+    
+    inline
+    static void init_HGRAD_TET_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    //
+    // High order elements transformation matrices for HCURL
+    // 
+
+    inline
+    static void init_HCURL_QUAD_In_FEM(CoeffMatrixDataViewType matData,
+                                       const ordinal_type order);
+
+    inline
+    static void init_HCURL_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    //
+    // High order elements transformation matrices for HDIV
+    // 
+    
+    inline
+    static void init_HDIV_QUAD_In_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    inline
+    static void init_HDIV_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                     const ordinal_type order);
+
+    //
+    // I1 element specialization
+    //
+    
+    inline
+    static void init_EDGE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                         const ordinal_type edgeId);
+    
+    inline
+    static void init_TRI_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                             const ordinal_type faceId);
+    
+    inline
+    static void init_QUAD_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                              const ordinal_type faceId);
+    
   public:
+    template<typename BasisPtrType>
     inline 
-    static void initialize(const shards::CellTopology cellTopo, 
-                           const EFunctionSpace space,
-                           const ordinal_type order);
+    static CoeffMatrixDataViewType createCoeffMatrix(BasisPtrType basis);
 
     inline 
-    static void finalize();
+    static void clearCoeffMatrix();
 
     // if an element is aligned left, it is an error.
     template<typename ptViewType>
@@ -244,26 +314,30 @@ namespace Intrepid2 {
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
         
-    template<typename outValueValueType, class ...outValueProperties,
-             typename refValueValueType, class ...refValueProperties,
-             typename elemOrtValueType,  class ...elemOrtProperties,
-             typename quadBasisType>
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties,
+             typename ortValueType,    class ...ortProperties,
+             typename BasisPtrType>
     inline
-    static void 
-    getModifiedHgradBasisQuadrilateral(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
-                                       const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
-                                       const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
-                                       const quadBasisType quadBasis);
+    static void
+    modifyBasisByOrientation(/**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                             const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                             const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
+                             const BasisPtrType basis);
   };
   
   template<typename T> 
-  typename OrientationTools<T>::MatrixDataViewType OrientationTools<T>::quadEdgeData;
+  std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<T>::CoeffMatrixDataViewType>
+  OrientationTools<T>::ortCoeffData;
 }
 
 // include templated function definitions
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
-#include "Intrepid2_OrientationToolsDefCoeffMatrix.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HGRAD.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
+
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
 
 #endif

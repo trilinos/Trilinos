@@ -56,6 +56,9 @@
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_TimerManager.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+#include <Teuchos_Tuple.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
 
 namespace Zoltan2{
 
@@ -157,6 +160,45 @@ public:
   }
 #endif
 
+  // Set up validators which are general to all probloems
+  static void getValidParameters(ParameterList & pl)
+  {
+    // bool parameter
+    pl.set("compute_metrics", false, "Compute metrics after computing solution",
+      Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "traditional", "ghosting" )));
+    pl.set("hypergraph_model_type", "traditional", "construction type when "
+      "creating a hypergraph model", hypergraph_model_type_Validator);
+
+    // bool parameter
+    pl.set("subset_graph", false, "If \"true\", the graph input is to be "
+      "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
+      "omitted from the pList.  Otherwise, an invalid neighbor identifier "
+      "is considered an error.", Environment::getBoolValidator());
+
+    RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
+    pl.set("symmetrize_input", "no", "Symmetrize input prior to pList.  "
+      "If \"transpose\", symmetrize A by computing A plus ATranspose.  "
+      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].",
+      symmetrize_input_Validator);
+
+    // these sublists are used for parameters which do not get validated
+    pl.sublist("zoltan_parameters");
+    pl.sublist("parma_parameters");
+  }
+
+  /*! \brief Get the current Environment.
+   *   Useful for testing.
+   */
+  const RCP<const Environment> & getEnvironment() const
+  {
+    return this->envConst_;
+  }
 
 protected:
 
@@ -285,11 +327,7 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
-  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
-  envConst_ = rcp_const_cast<const Environment>(env_);
-
-  ParameterList &processedParameters = env_->getParametersNonConst();
-  params_ = rcp<ParameterList>(&processedParameters, false);
+  setupProblemEnvironment(params);
 
   // We assume the timing output parameters have not changed,
   // and carry on with the same timer.

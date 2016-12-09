@@ -36,8 +36,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 // Some definition that should exist whether the specializations exist or not
 
 namespace Kokkos {
@@ -46,12 +44,25 @@ namespace Kokkos {
 template <typename view_type>
 struct is_view_fad { static const bool value = false; };
 
+// Whether a given type is a view with Sacado FAD scalar type with contiguous
+// layout
+template <typename view_type>
+struct is_view_fad_contiguous { static const bool value = false; };
+
 // Template function for extracting sacado dimension
 template <typename view_type>
 KOKKOS_INLINE_FUNCTION
 constexpr unsigned
 dimension_scalar(const view_type& view) {
   return 0;
+}
+
+// Template function for extracting aligned sacado dimension
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar_aligned(const view_type& view) {
+  return dimension_scalar(view);
 }
 
 }
@@ -62,8 +73,7 @@ dimension_scalar(const view_type& view) {
 #include "Sacado_Traits.hpp"
 #include "impl/KokkosExp_ViewMapping.hpp"
 #include "Kokkos_LayoutContiguous.hpp"
-
-#define SACADO_SUPPORT_RANK_8 0
+#include "Kokkos_LayoutNatural.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -72,6 +82,7 @@ namespace Experimental {
 namespace Impl {
 
 struct ViewSpecializeSacadoFad {};
+struct ViewSpecializeSacadoFadContiguous {};
 
 template< class ... Args >
 struct is_ViewSpecializeSacadoFad { enum { value = false }; };
@@ -97,7 +108,17 @@ struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+};
+
+template <typename T, typename ... P>
+struct is_view_fad_contiguous< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -108,20 +129,31 @@ dimension_scalar(const View<T,P...>& view) {
   return view.implementation_map().dimension_scalar();
 }
 
+template <typename Layout>
+struct ApplyNatural {
+  typedef LayoutNatural<Layout> type;
+};
+
+template <typename Layout>
+struct ApplyNatural< LayoutNatural<Layout> > {
+  typedef LayoutNatural<Layout> type;
+};
+
 template <typename ViewType, typename Enabled = void>
-struct ContiguousArrayType {
+struct NaturalArrayType {
   typedef ViewType type;
 };
 
 template <typename D, typename ... P>
-struct ContiguousArrayType< View<D,P...>,
+struct NaturalArrayType< View<D,P...>,
                             typename std::enable_if< is_view_fad< View<D,P...> >::value >::type > {
   typedef View<D,P...> view_type;
   typedef typename view_type::data_type data_type;
   typedef typename view_type::array_layout layout;
   typedef typename view_type::device_type device;
   typedef typename view_type::memory_traits memory;
-  typedef View<data_type,LayoutContiguous<layout>,device,memory> type;
+  typedef typename ApplyNatural<layout>::type natural_layout;
+  typedef View<data_type,natural_layout,device,memory> type;
 };
 
 // Overload of deep_copy for Fad views intializing to a constant scalar
@@ -131,7 +163,9 @@ void deep_copy(
   const typename Sacado::ScalarType< typename View<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -149,7 +183,9 @@ void deep_copy(
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -166,11 +202,17 @@ inline
 void deep_copy( const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   )>::type * = 0 )
 {
   static_assert(
@@ -185,9 +227,9 @@ void deep_copy( const View<DT,DP...> & dst ,
 
   typedef typename View<DT,DP...>::array_type dst_array_type;
   typedef typename View<ST,SP...>::array_type src_array_type;
-  Kokkos::deep_copy(
-    typename ContiguousArrayType< dst_array_type >::type( dst ) ,
-    typename ContiguousArrayType< src_array_type >::type( src ) );
+  typename NaturalArrayType< dst_array_type >::type dst_array( dst );
+  typename NaturalArrayType< src_array_type >::type src_array( src );
+  Kokkos::deep_copy( dst_array , src_array );
 }
 
 } // namespace Kokkos
@@ -236,26 +278,10 @@ private:
   typedef ScalarType        non_const_scalar_type ;
   typedef const ScalarType  const_scalar_type ;
 
-#if SACADO_SUPPORT_RANK_8
-
-  // Append the FAD static dimension
-  // This is a hack for rank-8 dynamic view
-  typedef typename
-    std::conditional<
-      unsigned(array_analysis::dimension::rank) == 8 ,
-      typename array_analysis::dimension,
-      typename array_analysis::dimension::
-        template append<( DimFad ? DimFad + 1 : 0 )>::type >::type
-      scalar_dimension ;
-
-#else
-
   // Append the FAD static dimension
   typedef typename array_analysis::dimension::
     template append<( DimFad ? DimFad + 1 : 0 )>::type
       scalar_dimension ;
-
-#endif
 
 public:
 
@@ -272,13 +298,78 @@ public:
       non_const_scalar_array_type ;
 };
 
-// Specialization for LayoutContiguous, where we don't allow striding within
+// Specialization for LayoutContiguous, where the Fad type is kept contiguous.
+// This requires a separate view specialization.
+template< class DataType , class ArrayLayout , class ScalarType , unsigned DimFad, unsigned Stride >
+struct FadViewDataAnalysis<DataType, LayoutContiguous<ArrayLayout,Stride>, ScalarType, DimFad>
+{
+private:
+
+  typedef ViewArrayAnalysis< DataType > array_analysis ;
+
+public:
+
+  // For now use the default mapping
+  typedef ViewSpecializeSacadoFadContiguous specialize ;
+
+  typedef typename array_analysis::dimension             dimension ;
+  typedef typename array_analysis::value_type            value_type ;
+  typedef typename array_analysis::const_value_type      const_value_type ;
+  typedef typename array_analysis::non_const_value_type  non_const_value_type ;
+
+  // Generate analogous multidimensional array specification type.
+  typedef typename
+    ViewDataType< value_type , dimension >::type  type ;
+  typedef typename
+    ViewDataType< const_value_type , dimension >::type  const_type ;
+  typedef typename
+    ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
+
+private:
+
+  // A const ?
+  enum { is_const = std::is_same< value_type , const_value_type >::value };
+
+  // The unwrapped scalar types:
+  typedef typename
+    std::conditional< is_const , const ScalarType , ScalarType >::type
+      scalar_type ;
+
+  typedef ScalarType        non_const_scalar_type ;
+  typedef const ScalarType  const_scalar_type ;
+
+  // Prepend/append the FAD dimension
+  typedef typename std::conditional<
+    std::is_same< ArrayLayout, Kokkos::LayoutLeft >::value,
+    typename array_analysis::dimension::
+      template prepend<0>::type,
+    typename array_analysis::dimension::
+      template append<0>::type >::type
+    scalar_dimension ;
+
+public:
+
+  // Generate "flattened" multidimensional array specification type.
+  typedef typename
+    ViewDataType< scalar_type , scalar_dimension >::type scalar_array_type ;
+
+  typedef typename
+    ViewDataType< const_scalar_type , scalar_dimension >::type
+      const_scalar_array_type ;
+
+  typedef typename
+    ViewDataType< non_const_scalar_type , scalar_dimension >::type
+      non_const_scalar_array_type ;
+
+};
+
+// Specialization for LayoutNatural, where we don't allow striding within
 // the FadType.
 //
 // Currently this is implemented by choosing the default ViewMapping
-// specialization.  In the future we will provide our own.
+// specialization.
 template< class DataType , class ArrayLayout , class ScalarType , unsigned DimFad >
-struct FadViewDataAnalysis<DataType, LayoutContiguous<ArrayLayout>, ScalarType, DimFad>
+struct FadViewDataAnalysis<DataType, LayoutNatural<ArrayLayout>, ScalarType, DimFad>
 {
 private:
 
@@ -306,6 +397,7 @@ public:
   typedef type            scalar_array_type ;
   typedef const_type      const_scalar_array_type ;
   typedef non_const_type  non_const_scalar_array_type ;
+
 };
 
 } // namespace Impl
@@ -419,22 +511,6 @@ private:
 
   typedef ViewArrayAnalysis< typename Traits::data_type > array_analysis ;
 
-#if SACADO_SUPPORT_RANK_8
-
-  // Append the fad dimension for the internal offset mapping.
-  // This is a hack for rank-8 dynamic view
-  typedef ViewOffset
-    < typename std::conditional<
-        unsigned(array_analysis::dimension::rank) == 8,
-        typename array_analysis::dimension,
-        typename array_analysis::dimension::
-          template append<( FadStaticDimension ? FadStaticDimension + 1 : 0 )>::type >::type
-    , typename Traits::array_layout
-    , void
-    >  offset_type ;
-
-#else
-
   // Append the fad dimension for the internal offset mapping.
   typedef ViewOffset
     < typename array_analysis::dimension::
@@ -442,8 +518,6 @@ private:
     , typename Traits::array_layout
     , void
     >  offset_type ;
-
-#endif
 
   handle_type  m_handle ;
   offset_type  m_offset ;
@@ -604,20 +678,6 @@ public:
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
-
-#if SACADO_SUPPORT_RANK_8
-
-  // This is a hack for rank-8 dynamic view
-  template< typename I0 , typename I1 , typename I2 , typename I3
-          , typename I4 , typename I5 , typename I6 , typename I7>
-  KOKKOS_FORCEINLINE_FUNCTION
-  reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
-                          , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
-                           , m_fad_size.value
-                           , m_fad_stride.value ); }
-
-#endif
 
   //----------------------------------------
 
@@ -1182,8 +1242,8 @@ broadcast
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #endif // defined(HAVE_SACADO_KOKKOSCORE)
+
+#include "KokkosExp_View_Fad_Contiguous.hpp"
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

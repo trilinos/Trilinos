@@ -212,6 +212,11 @@ namespace {
 	if (hb_type != stk::io::NONE && !global_fields.empty()) {
 	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
+
+	// Flush the data.  This is not necessary in a normal
+	// application, Just being done here to verify that the
+	// function exists and does not core dump.  
+	mesh_data.flush_output();
       }
     }
   }

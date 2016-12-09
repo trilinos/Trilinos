@@ -214,9 +214,17 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
 
   if(RUN_CUDA_OLD_TESTS)
 
+    #TRILINOS_DRIVER_ADD_DASHBOARD(
+    #  OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
+    #  ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_geminga.cmake
+    #  CTEST_INSTALLER_TYPE release
+    #  RUN_SERIAL
+    #  TIMEOUT_MINUTES 420
+    #  )
+
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
-      ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_geminga.cmake
+      OPENMPI_1.10.0_RELEASE_MueLu_Kokkos_Refactor_CUDA
+      ctest_linux_nightly_mpi_release_muelu_kokkos_refactor_cuda_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 420

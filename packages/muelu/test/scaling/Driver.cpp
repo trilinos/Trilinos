@@ -75,10 +75,11 @@
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
+#include <BelosBiCGStabSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
@@ -121,11 +122,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
   bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
+  std::string rowmapFile;                            clp.setOption("rowmap",                &rowmapFile,        "map data file");
   std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
   std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
   std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string rhsFile;                               clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
@@ -233,8 +235,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     }
 
   } else {
-    if (!mapFile.empty())
-      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, lib, comm);
+    if (!rowmapFile.empty())
+      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(rowmapFile, lib, comm);
     comm->barrier();
 
     if (!binaryFormat && !map.is_null()) {
@@ -267,6 +269,24 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     if (!nullFile.empty())
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
+  }
+
+  RCP<MultiVector> X = VectorFactory::Build(map);
+  RCP<MultiVector> B = VectorFactory::Build(map);
+
+  if (rhsFile.empty()) {
+    // we set seed for reproducibility
+    Utilities::SetRandomSeed(*comm);
+    X->randomize();
+    A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+
+    Teuchos::Array<typename STS::magnitudeType> norms(1);
+    B->norm2(norms);
+    B->scale(one/norms[0]);
+
+  } else {
+    // read in B
+    B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(rhsFile, map);
   }
 
   comm->barrier();
@@ -382,21 +402,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      {
-        // we set seed for reproducibility
-        Utilities::SetRandomSeed(*comm);
-        X->randomize();
-        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
-
-        Teuchos::Array<typename STS::magnitudeType> norms(1);
-        B->norm2(norms);
-        B->scale(one/norms[0]);
-        X->putScalar(zero);
-      }
+      X->putScalar(zero);
       tm = Teuchos::null;
 
       if (writeMatricesOPT > -2) {
@@ -421,7 +427,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           H->Iterate(*B, *X, maxIts);
         }
 
-      } else if (solveType == "cg" || solveType == "gmres") {
+      } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 
@@ -472,6 +478,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           solver = rcp(new Belos::PseudoBlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         } else if (solveType == "gmres") {
           solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        } else if (solveType == "bicgstab") {
+          solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         }
 
         // Perform solve

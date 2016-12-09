@@ -171,11 +171,11 @@ namespace Intrepid2 {
                                   POLYTYPE_GAUSS_RADAU_LEFT,
                                   POLYTYPE_GAUSS_RADAU_RIGHT,
                                   POLYTYPE_GAUSS_LOBATTO };
-        for (size_type pid=0;pid<4;++pid) {
+        for (ordinal_type pid=0;pid<4;++pid) {
           const auto ptype = polyType[pid];
           *outStream << "\n  -> Testing poly type " << EPolyTypeToString(ptype) << "\n";
 
-          for (size_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+          for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
             CubatureLineType lineCub(cubDeg, ptype);
             for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) 
               testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
@@ -185,8 +185,8 @@ namespace Intrepid2 {
           }
                     
           // perform comparison
-          for (size_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-            for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) {
+          for (ordinal_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+            for (ordinal_type polyDeg=0;polyDeg<=cubDeg;++polyDeg) {
               const auto abstol  = ( analyticInt(polyDeg,0) == 0 ? tol : std::fabs(tol*analyticInt(polyDeg,0)) );
               const auto absdiff = std::fabs(analyticInt(polyDeg,0) - testInt(cubDeg,polyDeg));
               *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "

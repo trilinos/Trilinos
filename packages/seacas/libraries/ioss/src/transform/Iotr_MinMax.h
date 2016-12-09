@@ -52,7 +52,7 @@ namespace Iotr {
 
   private:
     MinMax_Factory();
-    Ioss::Transform *make(const std::string &type) const;
+    Ioss::Transform *make(const std::string &type) const override;
   };
 
   class MinMax : public Ioss::Transform
@@ -60,13 +60,13 @@ namespace Iotr {
     friend class MinMax_Factory;
 
   public:
-    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-    int output_count(int in) const;
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
+    int output_count(int in) const override;
 
   protected:
     explicit MinMax(const std::string &type);
 
-    bool internal_execute(const Ioss::Field &field, void *data);
+    bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
     bool doMin;

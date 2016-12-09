@@ -127,10 +127,10 @@ PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(residual, normal_dot_flux_plus_pen, 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_CPP);
+    Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+      integrate(residual.get_view(),
+                normal_dot_flux_plus_pen.get_view(), 
+                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   
 }
 

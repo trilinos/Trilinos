@@ -41,11 +41,14 @@
 
 #include "gtest/gtest.h"
 #include "Intrepid2_MiniTensor_FunctionSet.h"
+#include "Teuchos_oblackholestream.hpp"
 
 int
 main(int ac, char * av[])
 {
   Kokkos::initialize();
+
+  ::testing::GTEST_FLAG(print_time) = (ac > 1) ? true : false;
 
   ::testing::InitGoogleTest(&ac, av);
 
@@ -70,12 +73,22 @@ template <typename STEP, typename FN, typename T, Index N>
 bool
 solveFNwithSTEP(STEP & step_method, FN & function, Vector<T, N> & x)
 {
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
   Minimizer<T, N>
   minimizer;
 
   minimizer.solve(step_method, function, x);
 
-  minimizer.printReport(std::cout);
+  minimizer.printReport(os);
 
   return minimizer.converged;
 }
@@ -303,7 +316,131 @@ bool testSystemsAndMethods()
 
 } // anonymous namespace
 
-TEST(NonlinearSystems, NonlinearMethods)
+TEST(MiniTensor, LinearSolver)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Index
+  DIM{11};
+
+  Tensor<Real, DIM> const
+  A = 2.0 * eye<Real, DIM>() + Tensor<Real, DIM>(RANDOM_UNIFORM);
+
+  os << "\n\nMatrix A:" << A;
+
+  Vector<Real, DIM> const
+  x(RANDOM_UNIFORM);
+
+  os << "\n\nVector x:" << x;
+
+  Vector<Real, DIM> const
+  b = A * x;
+
+  os << "\n\nVector b = A * x:" << b;
+
+  Vector<Real, DIM> const
+  y = solve(A, b);
+
+  os << "\n\nVector y = solve(A, b):" << y;
+
+  Real const
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (DIM - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, Preconditioners)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Index
+  DIM{2};
+
+  Tensor<Real, DIM> const
+  A(2.0e32, 1.0e32, 1.0, 2.0);
+
+  os << "\n\nMatrix A:" << A;
+
+  Vector<Real, DIM> const
+  b(1.0e32, 2.0);
+
+  os << "\n\nVector b:" << b;
+
+  Vector<Real, DIM> const
+  x(0.0, 1.0);
+
+  os << "\n\nVector x:" << x;
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (DIM - 1) * machine_epsilon<Real>();
+
+  Vector<Real, DIM>
+  y = solve(A, b, PreconditionerType::IDENTITY);
+
+  os << "\n\nVector y = solve(A, b, IDENTITY):" << y;
+
+  Real
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve(A, b, PreconditionerType::DIAGONAL);
+
+  os << "\n\nVector y = solve(A, b, DIAGONAL):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve(A, b, PreconditionerType::MAX_ABS_ROW);
+
+  os << "\n\nVector y = solve(A, b, MAX_ABS_ROW):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve_full_pivot(A, b);
+
+  os << "\n\nVector y = solve_full_pivot(A, b):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, NonlinearMethods)
 {
   bool const
   passed = testSystemsAndMethods();
@@ -311,8 +448,18 @@ TEST(NonlinearSystems, NonlinearMethods)
   ASSERT_EQ(passed, true);
 }
 
-TEST(Testing, OptimizationMethods)
+TEST(MiniTensor, OptimizationMethods)
 {
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
   constexpr Index
   dimension{2};
 
@@ -337,12 +484,12 @@ TEST(Testing, OptimizationMethods)
 
   minimizer.solve(step, banana, x);
 
-  minimizer.printReport(std::cout);
+  minimizer.printReport(os);
 
   ASSERT_EQ(minimizer.converged, true);
 }
 
-TEST(Testing, ValueGradientHessian)
+TEST(MiniTensor, ValueGradientHessian)
 {
   constexpr Index
   dimension{2};
@@ -362,10 +509,20 @@ TEST(Testing, ValueGradientHessian)
   Tensor<Real, dimension> const
   ddf = p.hessian(x);
 
-  std::cout << "Point   : " << x << '\n';
-  std::cout << "Value   : " << f << '\n';
-  std::cout << "Gradient: " << df << '\n';
-  std::cout << "Hessian : " << ddf << '\n';
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  os << "Point   : " << x << '\n';
+  os << "Value   : " << f << '\n';
+  os << "Gradient: " << df << '\n';
+  os << "Hessian : " << ddf << '\n';
 
   Tensor<Real, dimension> const
   I = identity<Real, dimension>(dimension);
@@ -376,33 +533,43 @@ TEST(Testing, ValueGradientHessian)
   ASSERT_LE(error, machine_epsilon<Real>());
 }
 
-TEST(Testing, MixedStorage)
+TEST(MiniTensor, MixedStorage)
 {
   Index const
   dimension{2};
 
-  std::cout << '\n';
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  os << '\n';
 
   Vector<Real, 3>
   v(1.0, 2.0, 3.0);
 
   v.set_dimension(dimension);
 
-  std::cout << "Vector   : " << v << '\n';
+  os << "Vector   : " << v << '\n';
 
   Tensor<Real, 3>
   A(1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 7.0, 8.0, 9.0);
 
   A.set_dimension(dimension);
 
-  std::cout << "Tensor   : " << A << '\n';
+  os << "Tensor   : " << A << '\n';
 
   Matrix<Real, 3, 4>
   B(ONES);
 
   B.set_dimensions(4, 2);
 
-  std::cout << "Matrix   : " << B << '\n';
+  os << "Matrix   : " << B << '\n';
 
   bool const
   passed = v.get_dimension() == dimension && A.get_dimension() == dimension &&
@@ -411,7 +578,7 @@ TEST(Testing, MixedStorage)
   ASSERT_EQ(passed, true);
 }
 
-TEST(Testing, FailedFlag)
+TEST(MiniTensor, FailedFlag)
 {
   constexpr Index
   dimension{1};
@@ -439,7 +606,7 @@ TEST(Testing, FailedFlag)
   ASSERT_EQ(minimizer.failed, true);
 }
 
-TEST(Testing, Monotonicity)
+TEST(MiniTensor, Monotonicity)
 {
   constexpr Index
   dimension{1};
@@ -470,8 +637,18 @@ TEST(Testing, Monotonicity)
   ASSERT_EQ(minimizer.failed, true);
 }
 
-TEST(Testing, Boundedness)
+TEST(MiniTensor, Boundedness)
 {
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
   constexpr Index
   dimension{1};
 
@@ -497,40 +674,50 @@ TEST(Testing, Boundedness)
 
   minimizer.solve(step, fn, x);
 
-  minimizer.printReport(std::cout);
+  minimizer.printReport(os);
 
   ASSERT_EQ(minimizer.bounded, true);
   ASSERT_EQ(minimizer.failed, false);
 }
 
-TEST(Testing, ConstraintIdentity)
+TEST(MiniTensor, ConstraintIdentity)
 {
   constexpr Index
-  num_rows{2};
+  NUM_CONSTR{2};
 
   constexpr Index
-  num_cols{2};
+  NUM_VAR{2};
 
-  Identity<Real, num_rows>
+  Identity<Real, NUM_CONSTR, NUM_VAR>
   id;
 
-  Vector<Real, num_cols> const
+  Vector<Real, NUM_VAR> const
   x(ZEROS);
 
-  Vector<Real, num_rows> const
+  Vector<Real, NUM_CONSTR> const
   f = id.value(x);
 
-  Matrix<Real, num_rows, num_cols> const
+  Matrix<Real, NUM_CONSTR, NUM_VAR> const
   df = id.gradient(x);
 
-  std::cout << "Point   : " << x << '\n';
-  std::cout << "Value   : " << f << '\n';
-  std::cout << "Gradient: " << df << '\n';
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  os << "Point   : " << x << '\n';
+  os << "Value   : " << f << '\n';
+  os << "Gradient: " << df << '\n';
 
   Real
   error{0.0};
 
-  for (Index i = 0; i < min(num_rows, num_cols); ++i) {
+  for (Index i = 0; i < min(NUM_CONSTR, NUM_VAR); ++i) {
     error += (df(i, i) - 1.0) * (df(i, i) - 1.0);
   }
 

@@ -104,12 +104,13 @@ int main(int argc, char **argv) {
  
 
     Teuchos::ParameterList parlist;
+    Teuchos::ParameterList gplist;
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
        
-    int    nx         = parlist.get("Interior Grid Points",100);
-    RealT gnl        = parlist.get("Nonlinearity Coefficient g",50.0);
-    bool   exactsolve = parlist.get("Solve Exact Augmented System",false);
+    int    nx         = gplist.get("Interior Grid Points",100);
+    RealT gnl         = gplist.get("Nonlinearity Coefficient g",50.0);
+    bool   exactsolve = gplist.get("Solve Exact Augmented System",false);
 
     // Command line option to override parameters.xml for solving the exact augmented system
     if(argc > 1) {

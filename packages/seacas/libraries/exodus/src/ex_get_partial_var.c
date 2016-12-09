@@ -48,6 +48,8 @@
  */
 
 /*!
+\ingroup ResultsData
+
  * reads the values of a single variable for a partial block at one time
  * step from the database; assume the first time step and variable index
  * and start_index are 1
@@ -77,12 +79,12 @@ int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications,
      * etc. */
-    return ex_get_partial_nodal_var(exoid, time_step, var_index, start_index, num_entities,
-                                    var_vals);
+    return ex_get_partial_nodal_var_int(exoid, time_step, var_index, start_index, num_entities,
+                                        var_vals);
   }
   if (var_type == EX_GLOBAL) {
     /* FIXME: Special case: all vars stored in 2-D single array. */
-    return ex_get_glob_vars(exoid, time_step, num_entities, var_vals);
+    return ex_get_glob_vars_int(exoid, time_step, num_entities, var_vals);
   }
 
   exerrval = 0; /* clear error code */

@@ -122,7 +122,7 @@ namespace Intrepid2 {
     fac  = pow(two, apb + one)*GammaFunction(alpha + np + one)*GammaFunction(beta + np + one);
     fac /= GammaFunction((ValueType)(np + one))*GammaFunction(apb + np + one);
 
-    for (auto i = 0; i < np; ++i)
+    for (ordinal_type i = 0; i < np; ++i)
       w(i) = fac/(w(i)*w(i)*(one-z(i)*z(i)));
   }
 
@@ -156,7 +156,7 @@ namespace Intrepid2 {
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= GammaFunction((ValueType)np)*(beta + np)*GammaFunction(apb + np + 1);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac*(1-z(i))/(w(i)*w(i));
       w(0) *= (beta + one);
     }
@@ -190,7 +190,7 @@ namespace Intrepid2 {
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= GammaFunction((ValueType)np)*(alpha + np)*GammaFunction(apb + np + 1);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac*(1+z(i))/(w(i)*w(i));
       w(np-1) *= (alpha + one);
     }
@@ -227,7 +227,7 @@ namespace Intrepid2 {
       fac  = pow(two, apb + 1)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= (np-1)*GammaFunction((ValueType)np)*GammaFunction(alpha + beta + np + one);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac/(w(i)*w(i));
 
       w(0)    *= (beta  + one);
@@ -261,8 +261,8 @@ namespace Intrepid2 {
 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
 
-      for (auto i = 0; i < np; ++i)
-        for (auto j = 0; j < np; ++j)
+      for (ordinal_type i = 0; i < np; ++i)
+        for (ordinal_type j = 0; j < np; ++j)
           if (i != j)
             //D(i*np+j) = pd(j)/(pd(i)*(z(j)-z(i))); <--- This is either a bug, or the derivative matrix is not defined consistently.
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
@@ -299,11 +299,11 @@ namespace Intrepid2 {
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
 
       JacobiPolynomialDerivative(np-1, z_plus_1, pd_plus_1, np-1, alpha, beta+1);
-      for(auto i = 1; i < np; ++i)
+      for(ordinal_type i = 1; i < np; ++i)
         pd(i) *= (1+z(i));
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -337,14 +337,14 @@ namespace Intrepid2 {
       Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
-      for (auto i = 0; i < np-1; ++i)
+      for (ordinal_type i = 0; i < np-1; ++i)
         pd(i) *= (1-z(i));
 
       pd(np-1) = -GammaFunction((ValueType)np+alpha+one);
       pd(np-1) /= GammaFunction((ValueType)np)*GammaFunction(alpha+two);
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -384,14 +384,14 @@ namespace Intrepid2 {
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
 
       JacobiPolynomialDerivative(np-2, z_plus_1, pd_plus_1, np-2, alpha+1, beta+1);
-      for (auto i = 1; i < np-1; ++i) 
+      for (ordinal_type i = 1; i < np-1; ++i) 
         pd(i) *= (one-z(i)*z(i));
 
       pd(np-1)  = -two*GammaFunction((ValueType)np + alpha);
       pd(np-1) /= GammaFunction((ValueType)np - one)*GammaFunction(alpha + two);
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -429,7 +429,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomialDerivative(1, zi, pd, np, alpha, beta);
@@ -460,7 +460,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
     
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
     
     JacobiPolynomial(1, zi, p , null, np-1, alpha, beta + 1);
@@ -496,7 +496,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-1, alpha+1, beta);
@@ -532,7 +532,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-2, alpha + one, beta + one);
@@ -597,17 +597,17 @@ namespace Intrepid2 {
 
     if (n == 0) {
       if (polyi.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyi(i) = one;
       if (polyd.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = zero;
     } else if (n == 1) {
       if (polyi.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyi(i) = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
       if (polyd.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
       ValueType a1, a2, a3, a4;
@@ -615,10 +615,10 @@ namespace Intrepid2 {
       ValueType poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
 
       if (polyi.data()) 
-        for (auto i=0;i<np;++i)
+        for (ordinal_type i=0;i<np;++i)
           poly[i] = polyi(i);
 
-      for (auto i = 0; i < np; ++i) {
+      for (ordinal_type i = 0; i < np; ++i) {
         polyn2[i] = one;
         polyn1[i] = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
       }
@@ -633,7 +633,7 @@ namespace Intrepid2 {
         a3 /= a1;
         a4 /= a1;
 
-        for (auto i = 0; i < np; ++i) {
+        for (ordinal_type i = 0; i < np; ++i) {
           poly  [i] = (a2 + a3*z(i))*polyn1[i] - a4*polyn2[i];
           polyn2[i] = polyn1[i];
           polyn1[i] = poly  [i];
@@ -650,14 +650,14 @@ namespace Intrepid2 {
         a3 /= a4;
 
         // note polyn2 points to polyn1 at end of poly iterations
-        for (auto i = 0; i < np; ++i) {
+        for (ordinal_type i = 0; i < np; ++i) {
           polyd(i)  = (a1- a2*z(i))*poly[i] + a3*polyn2[i];
           polyd(i) /= (one - z(i)*z(i));
         }
       }
 
       if (polyi.data()) 
-        for (auto i=0;i<np;++i)
+        for (ordinal_type i=0;i<np;++i)
           polyi(i) = poly[i];
     }
   }
@@ -676,12 +676,12 @@ namespace Intrepid2 {
                              const ValueType beta) {
     const ValueType one = 1.0;
     if (n == 0)
-      for(auto i = 0; i < np; ++i)
+      for(ordinal_type i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
       Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
-      for(auto i = 0; i < np; ++i)
+      for(ordinal_type i = 0; i < np; ++i)
         polyd(i) *= 0.5*(alpha + beta + (ValueType)n + one);
     }
   }
@@ -730,17 +730,17 @@ namespace Intrepid2 {
       if (k) 
         r(0) = 0.5*(r(0) + rlast);
 
-      for (auto j = 1; j < MaxPolylibIteration; ++j) {
+      for (ordinal_type j = 1; j < MaxPolylibIteration; ++j) {
         JacobiPolynomial(1, r, poly, pder, n, alpha, beta);
 
         ValueType sum = 0;
-        for (auto i = 0; i < k; ++i) 
+        for (ordinal_type i = 0; i < k; ++i) 
           sum += one/(r(0) - z(i));
 
         const ValueType delr = -poly(0) / (pder(0) - sum * poly(0));
         r(0) += delr;
 
-        if( Util::abs(delr) < tol ) 
+        if( Util<ValueType>::abs(delr) < tol ) 
           break;
       }
       z(k)  = r(0);
@@ -772,7 +772,7 @@ namespace Intrepid2 {
     b(0)   = sqrt(4.0*(1.0+alpha)*(1.0+beta)/((apbi+1.0)*apbi*apbi));
 
     auto a2b2 = beta*beta-alpha*alpha;
-    for (auto i = 1; i < n-1; ++i) {
+    for (ordinal_type i = 1; i < n-1; ++i) {
       apbi = 2.0*(i+1) + apb;
       a(i) = a2b2/((apbi-2.0)*apbi);
       b(i) = sqrt(4.0*(i+1)*(i+1+alpha)*(i+1+beta)*(i+1+apb)/
@@ -797,14 +797,16 @@ namespace Intrepid2 {
         /**/  eViewType e,
         const ordinal_type n) {
     ordinal_type m,l,iter,i,k;
-    typename dViewType::value_type s,r,p,g,f,dd,c,b;
+
+    typedef typename dViewType::value_type value_type;
+    value_type s,r,p,g,f,dd,c,b;
 
     for (l=0; l<n; ++l) {
       iter=0;
       do {
         for (m=l; m<n-1; ++m) {
-          dd=Util::abs(d(m))+Util::abs(d(m+1));
-          if (Util::abs(e(m))+dd == dd) break;
+          dd=Util<value_type>::abs(d(m))+Util<value_type>::abs(d(m+1));
+          if (Util<value_type>::abs(e(m))+dd == dd) break;
         }
         if (m != l) {
           if (iter++ == MaxPolylibIteration) {
@@ -814,13 +816,13 @@ namespace Intrepid2 {
           g=(d(l+1)-d(l))/(2.0*e(l));
           r=sqrt((g*g)+1.0);
           //g=d(m)-d(l)+e(l)/(g+sign(r,g));
-          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util::abs(r) : Util::abs(r)));
+          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util<value_type>::abs(r) : Util<value_type>::abs(r)));
           s=c=1.0;
           p=0.0;
           for (i=m-1; i>=l; i--) {
             f=s*e(i);
             b=c*e(i);
-            if (Util::abs(f) >= Util::abs(g)) {
+            if (Util<value_type>::abs(f) >= Util<value_type>::abs(g)) {
               c=g/f;
               r=sqrt((c*c)+1.0);
               e(i+1)=f*r;
@@ -863,12 +865,12 @@ namespace Intrepid2 {
   ValueType
   Polylib::Serial::
   GammaFunction(const ValueType x) {
-    ValueType gamma;
+    ValueType gamma(0);
 
     if      (x == -0.5) gamma = -2.0*sqrt(M_PI);
     else if (x ==  0.0) gamma = 1.0;
-    else if ((x-(int)x) == 0.5) {
-      int n = (int) x;
+    else if ((x-(ordinal_type)x) == 0.5) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = sqrt(M_PI);
@@ -876,8 +878,8 @@ namespace Intrepid2 {
         tmp   -= 1.0;
         gamma *= tmp;
       }
-    } else if ((x-(int)x) == 0.0) {
-      int n = (int) x;
+    } else if ((x-(ordinal_type)x) == 0.0) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = 1.0;

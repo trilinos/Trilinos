@@ -41,15 +41,6 @@ public:
     {
         return numOldStates + 1;
     }
-    //TODO: delete and work with SM to replace usage
-    STK_FUNCTION
-    ngp::Field<T> get_field_of_state(stk::mesh::FieldState state) const
-    {
-        if(state == stk::mesh::StateNew)
-            return fieldNewState;
-        else
-            return fieldOldStates[state-1].get_non_const_field();
-    }
     STK_FUNCTION
     ngp::Field<T> get_field_new_state() const
     {

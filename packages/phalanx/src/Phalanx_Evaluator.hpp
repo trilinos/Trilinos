@@ -54,8 +54,7 @@
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 // amt only works with pthread and qthreads
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #include "Kokkos_Threads.hpp"
 #endif
 
@@ -128,10 +127,10 @@ namespace PHX {
 	@param work_size The number of parallel work units.
 	@param d User defined data.
     */ 
-    virtual Kokkos::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
+    virtual Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d) = 0;
 
     //! Returns the size of the kokkos task for AMT.
@@ -160,17 +159,18 @@ namespace PHX {
     //! Returns the name/identifier of this provider.
     virtual const std::string& getName() const = 0;
 
-    /*! \brief Binds unmanaged memory to a field.
+    /*! \brief Binds memory to a field. WARNING: this is a POWER-USER function. Only use this if you understand the memory binding sequence (see detailed description for more information).
 
-      WARNING: This is a power user function. It swaps out the field
-      memory for user defined and managed memory. All evaluators that
-      evaluate or depend on this field show be bound to the same
-      memory. Otherwise you will get undefined results. To use this
-      consistently, bind all Unmanaged memory from the
+      WARNING: This is a power user function. It sets/swaps the field
+      memory for the suppied field (either an externally defined user
+      managed field or a internally managed from the
+      FieldManager). All evaluators that evaluate or depend on this
+      field should be bound to the same memory. Otherwise you will get
+      undefined results. To use this consistently, do not call this
+      directly. Instead, bind all memory through calls to the
       PHX::FieldManager class.
      */
-    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
-                                    const PHX::any& f) = 0;
+    virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) = 0;
   };
 
 } 

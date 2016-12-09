@@ -305,6 +305,11 @@ namespace Iohb {
     return true;
   }
 
+  void DatabaseIO::flush_database() const
+  {
+    logStream->flush();
+  }
+
   bool DatabaseIO::end_state(Ioss::Region * /* region */, int /* state */, double /* time */)
   {
     if (legend_ != nullptr) {
@@ -333,7 +338,7 @@ namespace Iohb {
     time_t cur_time = time(nullptr);
     if (cur_time - timeLastFlush >= 10) {
       timeLastFlush = cur_time;
-      logStream->flush();
+      flush_database();
     }
 
     return true;

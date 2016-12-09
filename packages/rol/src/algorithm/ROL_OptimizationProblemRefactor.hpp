@@ -41,123 +41,183 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_OPTIMIZATIONPROBLEM_HPP
-#define ROL_OPTIMIZATIONPROBLEM_HPP
+#ifndef ROL_OPTIMIZATIONPROBLEMREFACTOR_HPP
+#define ROL_OPTIMIZATIONPROBLEMREFACTOR_HPP
 
-#include "Teuchos_ParameterList.hpp"
 #include "ROL_BoundConstraint_Partitioned.hpp"
 #include "ROL_CompositeConstraint.hpp"
-#include "ROL_Objective.hpp"
+#include "ROL_SlacklessObjective.hpp"
 
 namespace ROL {
 
-/*
- * Note: We may wish to consider making the get functions private and make Algorithm
- *       a friend of OptimizationProblem as Algorithm is the only class which should 
- *       need these functions and they may return something other than what the user 
- *       expects (penalized instead of raw objective, solution and slack instead of 
- *       solution, etc).
+/* Represents optimization problems in Type-EB form 
  */
 
 template<class Real>
 class OptimizationProblem {
 
-  typedef Vector<Real>            V;
-  typedef PartitionedVector<Real> PV;
+  typedef Vector<Real>                       V;
+  typedef BoundConstraint<Real>              BND;
+  typedef CompositeConstraint<Real>          CCON;
+  typedef EqualityConstraint<Real>           EQCON;
+  typedef InequalityConstraint<Real>         INCON;
+  typedef Objective<Real>                    OBJ;
+  typedef PartitionedVector<Real>            PV;
+  typedef SlacklessObjective<Real>           SLOBJ;
+
+  typedef Elementwise::AbsoluteValue<Real>   ABS;
+  typedef Elementwise::Fill<Real>            FILL;
+
   typedef typename PV::size_type  size_type;
 
 private:
-  Teuchos::RCP<Objective<Real> >            obj_;
-  Teuchos::RCP<Vector<Real> >               sol_;
-  Teuchos::RCP<BoundConstraint<Real> >      bnd_;
-  Teuchos::RCP<EqualityConstraint<Real> >   con_;
-  Teuchos::RCP<Vector<Real> >               mul_;
-  Teuchos::RCP<Teuchos::ParameterList>      parlist_;
 
-  const static size_type OPT   = 0;
-  const static size_type SLACK = 1;
+  Teuchos::RCP<OBJ>      obj_;
+  Teuchos::RCP<V>        sol_;
+  Teuchos::RCP<BND>      bnd_;
+  Teuchos::RCP<EQCON>    con_;
+  Teuchos::RCP<V>        mul_;
+
+  EProblem problemType_;
 
 public:
   virtual ~OptimizationProblem(void) {}
 
-
+  // Complete option constructor [1]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
-                       const Teuchos::RCP<Vector<Real> >               &sol,
-                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd     = Teuchos::null,
-                       const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon   = Teuchos::null,
-                       const Teuchos::RCP<Vector<Real> >               &eqmul   = Teuchos::null,
-                       const Teuchos::RCP<InequalityConstraint<Real> > &incon   = Teuchos::null,
-                       const Teuchos::RCP<Vector<Real> >               &inmul   = Teuchos::null,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) : 
-      obj_(obj), sol_(sol), bnd_(bnd), eqcon_(eqcon), eqmul_(eqcon) {
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
+                       const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
+                       const Teuchos::RCP<Vector<Real> >               &le,
+                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       const Teuchos::RCP<Vector<Real> >               &li ) {
    
-    using Teuchos::RCP; using Teuchos::rcp;
+    using Teuchos::RCP; using Teuchos::rcp; 
 
-    // If we have an inequality constraint, create slack variables and composite constraint
-    if( incon != Teuchos::null && inmul != Teuchos::null ) {
+    // If we have an inequality constraint
+    if( incon != Teuchos::null ) {
 
-       RCP<Vector<Real> > slack = inmul->dual().clone();
+      Real tol = 0;      
 
-       Real zero(0.0);        
+      // Create slack variables s = |c_i(x)|
+      RCP<V> s = li->dual().clone();
+      incon->value(*s,*x,tol);
+      s->applyUnary(ABS()); 
 
-       // Initialize slack variables s_i = max([c(x)]_i,eps)
-       incon->value( *slack, *sol, zero );
-      
-       Real eps = ROL_EPSILON<Real>();
-       
-       if( parlist != Teuchos::null ) {
-         eps = parlist->sublist("General").get("Initial Minimum Slack Value",ROL_EPSILON<Real>());
-       }
+      sol_ = CreatePartitionedVector(x,s);
 
-       slack->applyUnary( Elementwise::ThresholdUpper<Real>(eps) );
+      RCP<BND> xbnd, sbnd; 
 
+      RCP<V> sl = s->clone();
+      RCP<V> su = s->clone();
 
-       // Upper and lower bounds on slack variables
-       RCP<V> lslack = slack->clone();
-       lslack->zero();
+      sl->applyUnary( FILL(0.0) );
+      su->applyUnary( FILL(ROL_INF<Real>()) );
 
-       RCP<V> uslack = slack->clone();
-       uslack->applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>());      
+      sbnd = rcp( new BND(sl,su) );    
+  
+      // Create a do-nothing bound constraint for x if we don't have one
+      if( bnd == Teuchos::null ) {
+        xbnd = rcp( new BND(*x) );
+      }
+      else { // Otherwise use the given bound constraint on x
+        xbnd = bnd;  
+      }
+     
+      // Create a partitioned bound constraint on the optimization and slack variables 
+      bnd_ = CreateBoundConstraint_Partitioned(xbnd,sbnd);
 
-       RCP<BoundConstraint<Real> > bndslack = rcp( new BoundConstraint<Real> (lslack, uslack) );
+      // Create partitioned lagrange multiplier and composite constraint
+      if( eqcon == Teuchos::null ) {
+        mul_ = CreatePartitionedVector(li);
+        con_ = rcp( new CCON(incon) );
+      }
+      else {
+        mul_ = CreatePartitionedVector(li,le);
+        con_ = rcp( new CCON(incon,eqcon) );
+      }
 
-       // Augment solution vector with slack variables
-       sol_ = CreatePartitionedVector(sol,slack);
-
-       // If we have a bound constraint, augment it 
-       if( bndcon != Teuchos::null ) {
-         bnd_ = rcp( new BoundConstraint_Partitioned<Real>( bnd, bndslack ) );
-       }
-       else {
-         bnd_ = bndslack;
-       }
-
-
-       // If we have an equality constraint, include it
-       if( eqcon != Teuchos::null && eqmul != Teuchos::null ) {
-         
-         con_ = rcp( new CompositeConstraint<Real>( incon, eqcon ) );         
-
-         mul_ = CreatePartitionedVector(inmul,eqmul);   
-
-       }        
-       else { // no equality constraint
-         
-         con_ = rcp( new CompositeConstraint<Real>(incon) );
- 
-         mul_ = CreatePartitionedVector( inmul );
-
-       }
-        
-    }  
-    
-    else { // No inequality constraints
-
-
+      obj_ = rcp( new SLOBJ(obj) );
     }
 
+    else {  // There is no inequality constraint
+   
+      obj_ = obj;
+      sol_ = x;
+      mul_ = le;
+      bnd_ = bnd;
+      con_ = eqcon;
+    }
+
+    if( con_ == Teuchos::null ) {    // Type-U or Type-B
+      if( bnd_ == Teuchos::null ) {  // Type-U
+        problemType_ = TYPE_U;        
+      }
+      else { // Type-B
+        problemType_ = TYPE_B; 
+      }
+    }
+    else { // Type-E or Type-EB
+      if( bnd_ == Teuchos::null ) { // Type-E
+        problemType_ = TYPE_E;     
+      }
+      else { // Type-EB
+        problemType_ = TYPE_EB; 
+      }
+    }
   }
 
+  // No inequality constructor [2]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,   
+                       const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon, 
+                       const Teuchos::RCP<Vector<Real> >               &le ) :    
+     OptimizationProblem( obj, x, bnd, eqcon, le, Teuchos::null, Teuchos::null ) { } 
+
+  // No equality constructor [3]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
+                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       const Teuchos::RCP<Vector<Real> >               &li ): 
+     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, incon, li ) { } 
+
+  // No bound constuctor [4]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon, 
+                       const Teuchos::RCP<Vector<Real> >               &le,   
+                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       const Teuchos::RCP<Vector<Real> >               &li ) :
+     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, incon, li ) {}
+
+  // No inequality or equality [5]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<BoundConstraint<Real> >     &bnd ) :
+     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, Teuchos::null, Teuchos::null ) { } 
+  // No inequality or bound [6]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
+                       const Teuchos::RCP<Vector<Real> >               &le ) :
+     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, Teuchos::null, Teuchos::null ) { } 
+
+  // No equality or bound [7]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x,
+                       const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       const Teuchos::RCP<Vector<Real> >               &li ) :
+     OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, incon, li ) { } 
+
+  // Unconstrained problem [8]
+  OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
+                       const Teuchos::RCP<Vector<Real> >               &x ) :
+     OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, 
+                          Teuchos::null, Teuchos::null ) { } 
+
+  /* Get/Set methods */
 
   Teuchos::RCP<Objective<Real> > getObjective(void) {
     return obj_;
@@ -199,46 +259,12 @@ public:
     mul_ = mul;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList(void) {
-    return parlist_;
+  EProblem getProblemType(void) {
+    return problemType_;
   }
 
-  void setParameterList( const Teuchos::RCP<Teuchos::ParameterList> &parlist ) {
-    parlist_ = parlist;
-  }
+}; // class OptimizationProblem
 
-  virtual std::vector<std::vector<Real> > checkObjectiveGradient( const Vector<Real> &d,
-                                                                  const bool printToStream = true,
-                                                                  std::ostream & outStream = std::cout,
-                                                                  const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                                  const int order = 1 ) {
-    if(hasSlack_) {
-      Teuchos::RCP<PV> ds = Teuchos::rcp_static_cast<PV>(sol_->clone());
-      ds->set(OPT,d);
-      RandomizeVector(*(ds->get(SLACK)));
-      return obj_->checkGradient(*sol_,*ds,printToStream,outStream,numSteps,order);
-    }
-    else {
-      return obj_->checkGradient(*sol_,d,printToStream,outStream,numSteps,order);
-    }
-  }
+}  // namespace ROL
 
-  virtual std::vector<std::vector<Real> > checkObjectiveHessVec( const Vector<Real> &v,
-                                                                 const bool printToStream = true,
-                                                                 std::ostream & outStream = std::cout,
-                                                                 const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                                 const int order = 1 ) {
-    if(hasSlack_) {
-      Teuchos::RCP<PV> vs = Teuchos::rcp_static_cast<PV>(sol_->clone());
-      vs->set(OPT,v);
-      RandomizeVector(*(vs->get(SLACK)));
-      return obj_->checkHessVec(*sol_,*vs,printToStream,outStream,numSteps,order);     
-    } 
-    else {
-      return obj_->checkHessVec(*sol_,v,printToStream,outStream,numSteps,order);
-    }
-  }
-
-};
-}
-#endif
+#endif // ROL_OPTIMIZATIONPROBLEMREFACTOR_HPP

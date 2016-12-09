@@ -52,7 +52,7 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_Intrepid_ConstBasis.hpp"
+#include "Intrepid2_Basis_Const_FEM.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -94,17 +94,17 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
 
 RCP<const panzer::FieldPattern> buildConstantFieldPattern(const shards::CellTopology & ct)
 {
-   typedef panzer::Basis_Constant<double,FieldContainer> Intrepid2Type;
+   typedef Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double> Intrepid2Type;
 
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type(ct));
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type(ct));
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -232,7 +232,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, noConnectivityClone)
    RCP<shards::CellTopology> ct = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData<QuadTopo>()));
 
    RCP<const panzer::FieldPattern> fp_hgrad
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> fp_const 
          = buildConstantFieldPattern(*ct);
 
@@ -462,7 +462,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -494,10 +494,12 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
 }
 
 namespace {
-void testAssociatedNeighbors(const STKConnManager<int>& connMngr, const int vals[][3],
-                             Teuchos::FancyOStream& out, bool& success)
+void testAssociatedNeighbors(const STKConnManager<int>& connMngr,
+  const std::vector<std::vector<int> > vals, Teuchos::FancyOStream& out,
+  bool& success)
 {
-  for (int i = 0; i < static_cast<int>(sizeof(vals)/sizeof(*vals)); ++i) {
+  for (int i = 0; i < static_cast<int>(vals.size()); ++i)
+  {
     const std::size_t sz = connMngr.getAssociatedNeighbors(vals[i][0]).size();
     TEST_EQUALITY(sz, vals[i][1]);
     if (sz)
@@ -517,7 +519,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
    TEST_ASSERT( ! mesh.is_null());
 
    RCP<const panzer::FieldPattern>
-     fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+     fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.associateElementsInSideset("vertical_0");
@@ -532,13 +534,13 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
    }
 
    if (numProcs == 1) {
-     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}, {2, 1, 1}, {3, 0, 0}};
+     const std::vector<std::vector<int> > vals{{0, 0, 0}, {1, 1, 2}, {2, 1, 1}, {3, 0, 0}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    } else if (numProcs == 2 && myRank == 0) {
-     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}};
+     const std::vector<std::vector<int> > vals{{0, 0, 0}, {1, 1, 2}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    } else if (numProcs == 2 && myRank == 1) {
-     const int vals[][3] = {{0, 1, 3}, {1, 0, 0}};
+     const std::vector<std::vector<int> > vals{{0, 1, 3}, {1, 0, 0}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    }
    else {

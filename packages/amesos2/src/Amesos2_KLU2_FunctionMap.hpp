@@ -69,6 +69,7 @@ namespace KLU2 {
 #include "klu2_analyze.hpp"
 #include "klu2_factor.hpp"
 #include "klu2_solve.hpp"
+#include "klu2_tsolve.hpp"
 #include "klu2_free_symbolic.hpp"
 #include "klu2_free_numeric.hpp"
 } // end namespace KLU2

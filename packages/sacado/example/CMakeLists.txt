@@ -140,12 +140,13 @@ IF(Sacado_ENABLE_Teuchos)
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
-ENDIF()
 
-IF (Sacado_ENABLE_KokkosCore)
-  TRIBITS_ADD_EXECUTABLE(
-    view_factory_example
-    SOURCES view_factory_example.cpp
-    COMM serial mpi
-    )
+  IF (Sacado_ENABLE_KokkosCore)
+    TRIBITS_ADD_EXECUTABLE(
+      view_factory_example
+      SOURCES view_factory_example.cpp
+      COMM serial mpi
+      )
+  ENDIF()
+
 ENDIF()

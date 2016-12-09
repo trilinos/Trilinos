@@ -32,8 +32,6 @@
 
 #include "Sacado.hpp"
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Kokkos_ViewFactory.hpp"
 
 TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
@@ -168,9 +166,71 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(b.rank(),0);
   }
 
-}
+  // Test unmanaged view of double
+  {
+    Kokkos::View<double*> a("a",5*3);
+    using b_type = Kokkos::View<double**,Kokkos::MemoryUnmanaged>;
+    b_type b = createViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.dimension_0(),5);
+    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),0);
+  }
 
-#endif
+  // Test unmanaged view of Fad
+  {
+    Kokkos::View<FadType*> a("a",5*3,derivative_dim_plus_one);
+    using b_type = Kokkos::View<FadType**,Kokkos::MemoryUnmanaged>;
+    b_type b = createViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.dimension_0(),5);
+    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+  }
+
+  // Test LayoutStride view of double
+  {
+    Kokkos::DynRankView<double> a("a",10,13);
+    auto b = Kokkos::subview(a, std::make_pair(4,8), std::make_pair(5,11));
+    auto c = createDynRankView(b,"c",5,3);
+    using b_type = decltype(b);
+    using c_type = decltype(c);
+    using b_layout = typename b_type::array_layout;
+    using c_layout = typename c_type::array_layout;
+    using default_layout = typename b_type::device_type::execution_space::array_layout;
+    const bool is_b_layout_stride =
+      std::is_same<b_layout,Kokkos::LayoutStride>::value;
+    const bool is_c_default_layout =
+      std::is_same<c_layout,default_layout>::value;
+    TEST_EQUALITY(is_b_layout_stride,true);
+    TEST_EQUALITY(is_c_default_layout,true);
+    TEST_EQUALITY(c.rank(),2);
+    TEST_EQUALITY(c.dimension_0(),5);
+    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),0);
+  }
+
+  // Test LayoutStride view of Fad
+  {
+    Kokkos::DynRankView<FadType> a("a",10,13,derivative_dim_plus_one);
+    auto b = Kokkos::subview(a, std::make_pair(4,8), std::make_pair(5,11));
+    auto c = createDynRankView(b,"c",5,3);
+    using b_type = decltype(b);
+    using c_type = decltype(c);
+    using b_layout = typename b_type::array_layout;
+    using c_layout = typename c_type::array_layout;
+    using default_layout = typename b_type::device_type::execution_space::array_layout;
+    const bool is_b_layout_stride =
+      std::is_same<b_layout,Kokkos::LayoutStride>::value;
+    const bool is_c_default_layout =
+      std::is_same<c_layout,default_layout>::value;
+    TEST_EQUALITY(is_b_layout_stride,true);
+    TEST_EQUALITY(is_c_default_layout,true);
+    TEST_EQUALITY(c.rank(),2);
+    TEST_EQUALITY(c.dimension_0(),5);
+    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+  }
+
+}
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
