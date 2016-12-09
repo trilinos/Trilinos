@@ -9,7 +9,7 @@ ccode: all
 TRILINOS_HOME = /home/srajama/proj/Trilinos_Apr14
 INCLUDE_HOME = /home/srajama/proj/Trilinos_Apr14/hash_build/include
 
-SS_HOME = $(TRILINOS_HOME)/packages/commonTools/auxiliarySoftware/SuiteSparse/src
+SS_HOME = $(TRILINOS_HOME)/packages/common/auxiliarySoftware/SuiteSparse/src
 TEUCHOS_HOME = $(TRILINOS_HOME)/packages/teuchos/src/
 
 #include $(SS_HOME)/UFconfig/amesos_UFconfig.mk

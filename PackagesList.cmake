@@ -59,7 +59,6 @@
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Gtest                 commonTools/gtest                 PT
-  TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PS
   ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
@@ -80,6 +79,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   GlobiPack             packages/globipack                PT
   Triutils              packages/triutils                 PT
   Tpetra                packages/tpetra                   PT
+  TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
   EpetraExt             packages/epetraext                PT
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT

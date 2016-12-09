@@ -82,10 +82,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/commonTools/auxiliarySoftware/SuiteSparse/src/AMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/commonTools/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/commonTools/auxiliarySoftware/SuiteSparse/src/BTF/Include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/commonTools/auxiliarySoftware/SuiteSparse/src/UFconfig)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp

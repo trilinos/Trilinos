@@ -11,9 +11,9 @@ TRIBITS_PACKAGE(Amesos)
 #
 
 # if using SuperLUDist, must also link in ParMETIS for some reason
-#IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND (NOT ${PACKAGE_NAME}_ENABLE_ParMETIS OR NOT ${PACKAGE_NAME}_ENABLE_SuperLUDist_Without_ParMETIS))
-#  MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
-#ENDIF()
+IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND (NOT ${PACKAGE_NAME}_ENABLE_ParMETIS OR NOT ${PACKAGE_NAME}_ENABLE_SuperLUDist_Without_ParMETIS))
+  MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
+ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_PARAKLETE)
   MESSAGE(FATAL_ERROR "Support for the PARAKLETE package has been removed from Amesos.")
