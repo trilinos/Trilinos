@@ -1343,8 +1343,8 @@ std::string RILUK<MatrixType>::description () const
        << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
-  if (! L_solver_.is_null ()) os << L_solver_->description ();
-  if (! U_solver_.is_null ()) os << U_solver_->description ();
+  if (! L_solver_.is_null ()) os << ", " << L_solver_->description ();
+  if (! U_solver_.is_null ()) os << ", " << U_solver_->description ();
 
   os << "}";
   return os.str ();
