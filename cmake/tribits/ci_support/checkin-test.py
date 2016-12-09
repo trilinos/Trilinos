@@ -1231,8 +1231,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
 
   #
-  # Check the input arguments
+  # Check and adjust the input arguments
   #
+
+  if not os.path.isabs(options.srcDir):
+    options.srcDir = os.path.abspath(options.srcDir)
 
   if options.doAll and options.localDoAll:
     print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
