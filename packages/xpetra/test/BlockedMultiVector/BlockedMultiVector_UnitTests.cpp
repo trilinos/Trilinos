@@ -1030,11 +1030,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReordered, M, 
 {
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -1167,7 +1164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReordered, M, 
 
   Teuchos::RCP<const MultiVector> bm = brvvv->Merge();
   {
-     Teuchos::ArrayRCP<const Scalar> vData  = bm->getData(0);
+     vData  = bm->getData(0);
      for(size_t i=0; i< bm->getLocalLength(); i++) {
        TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(bm->getMap()->getGlobalElement(i)));
      }
@@ -1176,13 +1173,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReordered, M, 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -1263,13 +1255,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall2, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -1358,13 +1345,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, BlockedMapDeepCopy, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -1400,12 +1383,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, BlockedMapDeepCopy, M, MA
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, BlockedVectorDeepCopy, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node

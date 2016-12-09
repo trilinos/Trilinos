@@ -931,7 +931,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, 
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
   typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
@@ -1017,7 +1016,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2, M, MA, Scalar, LO, GO, Node )
 {
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
-  typedef Xpetra::BlockedVector<Scalar, LO, GO, Node> BlockedVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
   typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -1060,12 +1058,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyra, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
   typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
@@ -1165,12 +1160,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyTh
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyraSmall, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
-  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
   typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
@@ -1709,7 +1701,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, leftScale, M, MA, Scalar, L
 {
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
   typedef Xpetra::Vector<Scalar,LO,GO,Node> VectorClass;
-  typedef Xpetra::BlockedVector<Scalar,LO,GO,Node> BlockedVectorClass;
   typedef Xpetra::VectorFactory<Scalar,LO,GO,Node> VectorFactoryClass;
 
   // get a comm and node

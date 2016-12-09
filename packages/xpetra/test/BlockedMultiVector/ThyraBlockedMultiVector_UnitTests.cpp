@@ -332,7 +332,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
 
@@ -490,10 +489,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedMapDeepCopy, 
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
-  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
 
