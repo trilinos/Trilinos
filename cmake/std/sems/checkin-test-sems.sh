@@ -202,7 +202,8 @@ fi
 #   --default-builds=MPI_RELEASE_DEBUG_SHARED_PT,MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX
 #
 
-$TRILINOS_DIR/checkin-test.py \
+$TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
+--src-dir=$TRILINOS_DIR \
 --default-builds=MPI_RELEASE_DEBUG_SHARED_PT \
 "$@"
 
