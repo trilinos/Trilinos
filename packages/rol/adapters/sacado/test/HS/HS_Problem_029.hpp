@@ -41,46 +41,96 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_SACADO_STDINEQUALITYCONSTRAINT_HPP
-#define ROL_SACADO_STDINEQUALITYCONSTRAINT_HPP
+#ifndef HS_PROBLEM_029_HPP
+#define HS_PROBLEM_029_HPP
 
-#include "ROL_Sacado_StdEqualityConstraint.hpp"
-#include "ROL_InequalityConstraint.hpp"
+#include "ROL_NonlinearProgram.hpp"
 
-namespace ROL {
+namespace HS {
 
-template<class Real, template<class> class Constr>
-class Sacado_StdInequalityConstraint : public Sacado_StdEqualityConstraint<Real,Constr>,
-                                       public InequalityConstraint<Real> {
+namespace HS_029 {
+template<class Real> 
+class Obj {
+public:
+  template<class ScalarT>
+  ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
+    return -x[0]*x[1]*x[2];
+  }
+};
 
-  typedef Sacado_StdEqualityConstraint<Real,Constr> SEC;
-  typedef Vector<Real>     V;
+
+template<class Real>
+class InCon {
+public:
+  template<class ScalarT> 
+  void value( std::vector<ScalarT> &c,
+              const std::vector<ScalarT> &x,
+              Real &tol ) {
+    c[0] = -x[0]*x[0] -2*x[1]*x[1] -4*x[2]*x[2] + 48;
+  }
+};
+}
+
+
+template<class Real> 
+class Problem_029 : public ROL::NonlinearProgram<Real> {
+
+  template<typename T> using RCP = Teuchos::RCP<T>;
+
+  typedef ROL::NonlinearProgram<Real>     NP;
+  typedef ROL::Vector<Real>               V;
+  typedef ROL::Objective<Real>            OBJ;
+  typedef ROL::InequalityConstraint<Real> INCON;
 
 public:
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    SEC::value(c,x,tol);
+  Problem_029() : NP( dimension_x() ) {
+    NP::noBound();
   }
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    SEC::applyJacobian(jv, v, x, tol);
+  int dimension_x()  { return 3; }
+  int dimension_ci() { return 1; }
+
+  const RCP<OBJ> getObjective() { 
+    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_029::Obj> );
   }
 
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    SEC::applyAdjointJacobian(aju, u, x, tol);
+  const RCP<INCON> getInequalityConstraint() {
+    return Teuchos::rcp( 
+      new ROL::Sacado_StdInequalityConstraint<Real,HS_029::InCon> );
   }
 
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    SEC::applyAdjointHessian(ahuv, u, v, x, tol);
-  } 
-
-}; // class Sacado_StdInequalityConstraint
+  const RCP<const V> getInitialGuess() {
+    Real x[] = {1.0,1.0,1.0};
+    return NP::createOptVector(x);
+  };
+   
+  bool initialGuessIsFeasible() { return true; }
+  
+  Real getInitialObjectiveValue() { 
+    return Real(-1.0);
+  }
  
-} // namespace ROL 
+  Real getSolutionObjectiveValue() {
+    return Real(-16*std::sqrt(2));
+  }
 
-#endif // ROL_SACADO_STDINEQUALITYCONSTRAINT_HPP
+  RCP<const V> getSolutionSet() {
+    Real a = 4; Real b = 2*std::sqrt(2); Real c = 2;
+    
+    Real x1[] = { a, b, c};
+    Real x2[] = { a,-b,-c};
+    Real x3[] = {-a, b,-c};
+    Real x4[] = {-a,-b, c};
 
+    return ROL::CreatePartitionedVector(NP::createOptVector(x1),
+                                        NP::createOptVector(x2), 
+                                        NP::createOptVector(x3),
+                                        NP::createOptVector(x4));
+  }
+ 
+};
+
+} // namespace HS
+
+#endif // HS_PROBLEM_029_HPP
