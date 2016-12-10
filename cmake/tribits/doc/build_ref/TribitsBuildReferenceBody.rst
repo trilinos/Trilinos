@@ -270,8 +270,28 @@ STDOUT by setting::
 
   -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
 
-This will print the basic backward dependencies for each SE package.  To also
-see the direct forward dependencies for each SE package, also include::
+This will print the basic backward dependencies for each SE package.  The find
+this in the output, find the line::
+
+  Printing package dependencies ...
+
+and the dependencies are listed below this for each SE package in the form::
+
+  -- <PKG>_LIB_REQUIRED_DEP_TPLS: <TPL0> <TPL1> ...
+  -- <PKG>_LIB_OPTIONAL_DEP_TPLS: <TPL2> <TPL3> ...
+  -- <PKG>_LIB_REQUIRED_DEP_PACKAGES: <PKG0> <[PKG1> ...
+  -- <PKG>_LIB_OPTIONAL_DEP_PACKAGES: <PKG2> <PKG3> ...
+  -- <PKG>_TEST_REQUIRED_DEP_TPLS: <TPL4> <TPL5> ...
+  -- <PKG>_TEST_OPTIONAL_DEP_TPLS: <TPL6> <TPL7> ...
+  -- <PKG>_TEST_REQUIRED_DEP_PACKAGES: <PKG4> <[PKG5> ...
+  -- <PKG>_TEST_OPTIONAL_DEP_PACKAGES: <PKG6> <PKG7> ...
+  
+(Dependencies that don't exist left out of the output.  For example, if there
+are no ``<PKG>_LIB_OPTIONAL_DEP_PACKAGES`` dependencies, then that line is not
+printed.)
+
+To also see the direct forward dependencies for each SE package, also
+include::
 
   -D <Project>_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
 
@@ -1465,14 +1485,14 @@ b) **Getting verbose output from TriBITS configure:**
 
     -D <Project>_VERBOSE_CONFIGURE=ON
 
-  This produces a *lot* of output but can be very useful when debugging
+  However, this produces a *lot* of output so don't enable this unless you are
+  very desperate.  But this level of details can be very useful when debugging
   configuration problems.
 
-  To just dump the package and TPL dependencies, use::
+  To just view the package and TPL dependencies, it is recommended to use
+  ``-D`` `<Project>_DUMP_PACKAGE_DEPENDENCIES`_ ``= ON``.
 
-    -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
-
-  To just dump the link libraries for each library and executable created,
+  To just print the link libraries for each library and executable created,
   use::
 
     -D <Project>_DUMP_LINK_LIBS=ON
