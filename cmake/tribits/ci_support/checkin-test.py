@@ -235,10 +235,10 @@ extra builds specified with --st-extra-builds and --extra-builds):
   packages forward/downstream. You can manually select which packages get
   enabled (see the enable options above).  (done if --configure, --do-all, or
   --local-do-all is set.)
-  
+
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
-  
+
   4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
   or --local-do-all is set.)
 
@@ -251,10 +251,10 @@ push (done if --push or --do-all is set)
   5.a) Do a final 'git pull' (done if --pull or --do-all is set)
 
   5.b) Do 'git rebase <remoterepo>/<remotebranch>' (done if --rebase is set)
-  
+
   5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
-  
+
   5.d) Push the local commits to the global repo (done if --push is set)
 
 6) Send out final on actions (i.e. 'DID PUSH' email if a push occurred).
@@ -407,7 +407,7 @@ COMMON USE CASES (EXAMPLES):
   ../checkin-test.py \
     --enable-packages=<P0>,<P1>,<P2> --no-enable-fwd-packages \
     --do-all
-  
+
   NOTE: This will override all logic in the script about which packages will
   be enabled based on file changes and only the given packages will be
   enabled.  When there are tens of thousands of changed files and hundreds of
@@ -458,20 +458,20 @@ COMMON USE CASES (EXAMPLES):
   Code and want to include the testing of this in your pre-push testing
   process along with the standard --default-builds build/test cases which can
   only include Primary Tested (PT) Code.  In this case you can run with:
-  
+
     ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
-  
+
   For example, if you have a build that enables the TPL CUDA you would do:
-  
+
     echo "
     -DTPL_ENABLE_MPI:BOOL=ON
     -DTPL_ENABLE_CUDA:BOOL=ON
     " > MPI_DEBUG_CUDA.config
-  
+
   and then run with:
-  
+
     ../checkin-test.py --extra-builds=MPI_DEBUG_CUDA --do-all
-  
+
   This will do the standard --default-builds (e.g. MPI_DEBUG and
   SERIAL_RELEASE) build/test cases along with your non-standard MPI_DEBUG_CUDA
   build/test case.
@@ -485,7 +485,7 @@ COMMON USE CASES (EXAMPLES):
 
   You can also use the checkin-test.py script to continuously integrate
   multiple git repos containing add-on packages. To do so, just run:
-    
+
     ../checkin-test.py --extra-repos=<REPO1>,<REPO2>,... [options]
 
   NOTE: You have to create local commits in all of the extra repos where there
@@ -522,24 +522,24 @@ COMMON USE CASES (EXAMPLES):
   with:
 
     ../checkin-test.py --do-all --no-enable-fwd-packages
-  
+
   On your fast remote test machine, do a full test and push with:
-  
+
     ../checkin-test.py \
       --extra-pull-from=<remote-repo>:master \
       --do-all --push
 
   where <remote-name> is a git remote repo name pointing to
   mymachine:/some/dir/to/your/src (see 'git help remote').
-  
+
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
-  
+
   NOTE: Once you invoke the checkin-test.py script on the remote test machine
   and it has pulled the commits from mymachine, then you can start changing
   files again on your local development machine and just check your email to
   see what happens on the remote test machine.
-  
+
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
   development machine and then do the process over again.
@@ -557,7 +557,7 @@ COMMON USE CASES (EXAMPLES):
 
   NOTE: This would also work for multiple repos if the remote name
   '<remote-repo>' pointed to the right remote repo in all the local repos.
-  
+
 (*) Check push readiness status:
 
   ../checkin-test.py
@@ -711,7 +711,7 @@ returned but that does *not* mean that it is okay to do a push.  Therefore, a
 return value of is a necessary but not sufficient condition for readiness to
 push, it depends on the requested actions.
 
-"""        
+"""
 
 # ToDo: Break up the above huge documentation block into different "topics"
 # and then display those topics with --help-topic=<topic>.  Also provide a
@@ -719,21 +719,21 @@ push, it depends on the requested actions.
 # standard documentation to produce where is there now.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
-  
+
   clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
   clp.add_option(
     "--project-configuration", dest="projectConfiguration", type="string", default="",
     help="Custom file to provide configuration defaults for the project." \
       + "  By default, the file project-checkin-test-config.py is looked for" \
-      + " in <checkin-test-path>/../.. (assuming default <projectDir>/cmake/tribits/" \
-      + " directory structure and second is looked for in <checkin-test-path>/ (which" \
-      + " is common practice to symlink the checkin-test.py script into the project's" \
-      + " base directory).  If this file is set to a location that is not in the" \
+      + " in <checkin-test-path> (in case it is symlinked into <projectDir>/checkin-test.py)" \
+      + " if not found there, then it is looked for in <checkin-test-path>/../../.." \
+      +"  (assuming default TriBITS snapshot <projectDir>/cmake/tribits/ci_support/)" \
+      + " If this file is set to a location that is not in the" \
       + " project's base directory, then --src-dir must be set to point to the" \
       + " project's base directory."
     )
-  
+
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
     help="Show the default option values and do nothing at all.",
@@ -1114,7 +1114,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   (options, args) = clp.parse_args(args=commandLineArgs)
 
-  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
+  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...)
   # takes effect!  That is why the commands are ordered the way they are!
 
 
@@ -1169,7 +1169,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-show-all-tests \\"
   if options.withoutDefaultBuilds:
-    print "  --without-default-builds \\" 
+    print "  --without-default-builds \\"
   print "  --st-extra-builds='"+options.stExtraBuilds+"' \\"
   print "  --extra-builds='"+options.extraBuilds+"' \\"
   print "  --send-email-to='"+options.sendEmailTo+"' \\"
@@ -1294,16 +1294,16 @@ def getConfigurationSearchPaths():
   """
   result = []
 
-  # Always look for the configuration file assuming the checkin-test.py script
-  # is run out of the standard snapshotted tribits directory
-  # <project-root>/cmake/tribits/.
-  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
-
-  # Lastly, look for the checkin-test.py file's base directory path. It is
+  # First, look for the checkin-test.py file's base directory path. It is
   # common practice to symbolically link the checkin-test.py script into the
   # project's base source directory.  NOTE: Don't use realpath here!  We don't
   # want to follow symbolic links!
   result.append(os.path.dirname(os.path.abspath(__file__)))
+
+  # Second, look for the configuration file assuming the checkin-test.py
+  # script is run out of the standard snapshotted tribits directory
+  # <project-root>/cmake/tribits/ci_support
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..', '..'))
 
   return result
 
@@ -1370,7 +1370,7 @@ def locateAndLoadConfiguration(path_hints = []):
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
-    
+
 
 #
 # Main
