@@ -66,7 +66,7 @@ KLU_symbolic *KLU_alloc_symbolic
 	    return (NULL) ;
 	}
     }
-    P = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    P = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
     if (Common->status < KLU_OK)
     {
 	/* out of memory */
@@ -108,8 +108,8 @@ KLU_symbolic *KLU_alloc_symbolic
 	return (NULL) ;
     }
 
-    Q = (long*) KLU_malloc (n, sizeof (Int), Common) ;
-    R = (long*) KLU_malloc (n+1, sizeof (Int), Common) ;
+    Q = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    R = (Int*) KLU_malloc (n+1, sizeof (Int), Common) ;
     Lnz = (double*) KLU_malloc (n, sizeof (double), Common) ;
 
     Symbolic->n = n ;
@@ -208,11 +208,11 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
 
 	Int *Pinv, *Work, *Bi, k1, k2, nk, oldcol ;
 
-	Work = (long*) KLU_malloc (4*n, sizeof (Int), Common) ;
-	Pinv = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+	Work = (Int*) KLU_malloc (4*n, sizeof (Int), Common) ;
+	Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
 	if (Puser != (Int *) NULL)
 	{
-	    Bi = (long*) KLU_malloc (nz+1, sizeof (Int), Common) ;
+	    Bi = (Int*) KLU_malloc (nz+1, sizeof (Int), Common) ;
 	}
 	else
 	{

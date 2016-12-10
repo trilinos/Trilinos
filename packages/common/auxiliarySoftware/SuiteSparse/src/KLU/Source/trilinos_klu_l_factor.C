@@ -456,15 +456,15 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     Numeric->n = n ;
     Numeric->nblocks = nblocks ;
     Numeric->nzoff = nzoff ;
-    Numeric->Pnum = (long*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Offp = (long*) KLU_malloc (n1, sizeof (Int), Common) ;
-    Numeric->Offi = (long*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
+    Numeric->Pnum = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Offp = (Int*) KLU_malloc (n1, sizeof (Int), Common) ;
+    Numeric->Offi = (Int*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
     Numeric->Offx = (Entry*) KLU_malloc (nzoff1, sizeof (Entry), Common) ;
 
-    Numeric->Lip  = (long*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Uip  = (long*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Llen = (long*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Ulen = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Lip  = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Uip  = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Llen = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Ulen = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
 
     Numeric->LUsize = (size_t*) KLU_malloc (nblocks, sizeof (size_t), Common) ;
 
@@ -489,7 +489,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 	Numeric->Rs = NULL ;
     }
 
-    Numeric->Pinv = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
 
     /* allocate permanent workspace for factorization and solve.  Note that the
      * solver will use an Xwork of size 4n, whereas the factorization codes use
