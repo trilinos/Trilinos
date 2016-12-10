@@ -77,11 +77,12 @@ testInterComm (bool& success,
   int lclSuccess = 1; // to be updated below
   int gblSuccess = 0; // output argument (see below)
 
+#ifdef HAVE_TPETRACORE_MPI
   const int myRank = origCommWrapped.getRank ();
   const int numProcs = origCommWrapped.getSize ();
 
-#ifdef HAVE_TPETRACORE_MPI
   out << "Test Tpetra::Details::isInterComm with MPI enabled" << endl;
+  Teuchos::OSTab tab1 (out);
 
   MPI_Comm origComm =
     Tpetra::Details::extractMpiCommFromTeuchos (origCommWrapped);
@@ -343,6 +344,7 @@ testInterComm (bool& success,
 #else // NOT HAVE_TPETRACORE_MPI
 
   out << "Test Tpetra::Details::isInterComm with MPI disabled" << endl;
+  Teuchos::OSTab tab1 (out);
 
   out << "Test Tpetra::Details::isInterComm on the input communicator "
     "(should return false)" << endl;
