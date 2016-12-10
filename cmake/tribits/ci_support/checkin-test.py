@@ -1296,8 +1296,8 @@ def getConfigurationSearchPaths():
 
   # Always look for the configuration file assuming the checkin-test.py script
   # is run out of the standard snapshotted tribits directory
-  # <project-root>/cmake/tribits/ci_support/.
-  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..', '..'))
+  # <project-root>/cmake/tribits/.
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
 
   # Lastly, look for the checkin-test.py file's base directory path. It is
   # common practice to symbolically link the checkin-test.py script into the
