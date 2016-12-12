@@ -11,7 +11,7 @@ TRIBITS_PACKAGE(Amesos)
 #
 
 # if using SuperLUDist, must also link in ParMETIS for some reason
-IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND (NOT ${PACKAGE_NAME}_ENABLE_ParMETIS OR NOT ${PACKAGE_NAME}_ENABLE_SuperLUDist_Without_ParMETIS))
+IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND NOT ${PACKAGE_NAME}_ENABLE_ParMETIS)
   MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
 ENDIF()
 
