@@ -249,6 +249,7 @@ int main(int argc, char* argv[])
 
   
   //-----------------------Start Basker (Test - 4, 4 thread)--------------------//
+/*
   {
     std::cout << "============Starting Test 4, 4 Threads=============" 
               << std::endl;
@@ -327,6 +328,7 @@ int main(int argc, char* argv[])
 
     mybasker.Finalize();
   }
+*/
 
   
   Kokkos::finalize();
