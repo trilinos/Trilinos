@@ -930,15 +930,15 @@ namespace Xpetra {
       // check whether input parameters are blocked or not
       RCP<const MultiVector>         refX = rcpFromRef(X);
       RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
-      RCP<MultiVector>               tmpY = rcpFromRef(Y);
-      RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
+      //RCP<MultiVector>               tmpY = rcpFromRef(Y);
+      //RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
 
       // TODO get rid of me: adapt MapExtractor
       bool bBlockedX = (refbX != Teuchos::null) ? true : false;
 
       // create (temporary) vectors for output
       // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
-      tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
+      RCP<MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
 
       //RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
 
@@ -951,7 +951,7 @@ namespace Xpetra {
           for (size_t col = 0; col < Cols(); col++) {
 
             // extract matrix block
-            RCP<Matrix>            Ablock = getMatrix(row, col);
+            RCP<Matrix> Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
               continue;
@@ -1045,6 +1045,80 @@ namespace Xpetra {
     RCP<const MapExtractor> getDomainMapExtractor() const { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMapExtractor()"); return domainmaps_; }
 
     //@}
+
+    //! Special multiplication routine (for BGS smoother)
+    //{@
+
+    //! \brief Computes the sparse matrix-multivector multiplication.
+    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+      - calculates result only for blocked row "row"
+      - useful for BGS smoother in MueLu: there we have to calculate the residual for the current block row
+        we can skip the MatVec calls in all other block rows
+      */
+    virtual void bgs_apply(const MultiVector& X, MultiVector& Y, size_t row,
+                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                       Scalar alpha = ScalarTraits<Scalar>::one(),
+                       Scalar beta  = ScalarTraits<Scalar>::zero()) const
+    {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::apply");
+      //using Teuchos::RCP;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError,
+                                 "apply() only supports the following modes: NO_TRANS and TRANS." );
+
+      // check whether input parameters are blocked or not
+      RCP<const MultiVector>         refX = rcpFromRef(X);
+      RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
+      //RCP<MultiVector>               tmpY = rcpFromRef(Y);
+      //RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
+
+      bool bBlockedX = (refbX != Teuchos::null) ? true : false;
+
+      // create (temporary) vectors for output
+      // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
+      RCP<MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
+
+      SC one = ScalarTraits<SC>::one();
+
+      if (mode == Teuchos::NO_TRANS) {
+        RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
+        for (size_t col = 0; col < Cols(); col++) {
+
+          // extract matrix block
+          RCP<Matrix> Ablock = getMatrix(row, col);
+
+          if (Ablock.is_null())
+            continue;
+
+          // check whether Ablock is itself a blocked operator
+          // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
+          bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
+
+          // input/output vectors for local block operation
+          RCP<const MultiVector> Xblock = Teuchos::null; // subpart of X vector to be applied to subblock of A
+
+          // extract sub part of X using Xpetra or Thyra GIDs
+          // if submatrix is again blocked, we extract it using Xpetra style gids. If it is a single
+          // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
+          if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_);
+          else          Xblock = domainmaps_->ExtractVector(refX,  col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
+
+          RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
+          Ablock->apply(*Xblock, *tmpYblock);
+
+          Yblock->update(one, *tmpYblock, one);
+        }
+        rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Xpetra::Exceptions::NotImplemented,"Xpetar::BlockedCrsMatrix::bgs_apply: not implemented for transpose case.");
+      }
+      Y.update(alpha, *tmpY, beta);
+    }
+
+
+    //@}
+
 
     //! Implements DistObject interface
     //{@
