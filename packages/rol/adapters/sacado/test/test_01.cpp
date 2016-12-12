@@ -54,6 +54,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_RandomVector.hpp"
+#include "ROL_ValidParameters.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
     outStream = rcp(&bhs, false);
 
   int errorFlag   = 0;
-  int numProblems = 20;
+  int numProblems = 40;
 
   RealT errtol = 1e-5; // Require norm of computed solution error be less than this
 
@@ -102,11 +103,19 @@ int main(int argc, char *argv[]) {
 
   RCP<NLP>  nlp;
   RCP<OPT>  opt;
+
+  // Get two copies so we can validate without setting defaults
   RCP<PL>   parlist = rcp( new PL() );
+  RCP<PL>   parlistCopy = rcp( new PL() );
   RCP<PL>   test = rcp( new PL() );
 
   Teuchos::updateParametersFromXmlFile(std::string("hs_parameters.xml"),parlist.ptr());
+  Teuchos::updateParametersFromXmlFile(std::string("hs_parameters.xml"),parlistCopy.ptr());
   Teuchos::updateParametersFromXmlFile(std::string("test_parameters.xml"),test.ptr());
+
+  RCP<const PL> validParameters = getValidROLParameters();
+
+  parlistCopy->validateParametersAndSetDefaults(*validParameters);
 
   RCP<V>           x;
   RCP<const STATE> algo_state;

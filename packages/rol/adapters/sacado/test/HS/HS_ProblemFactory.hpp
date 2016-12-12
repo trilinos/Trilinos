@@ -64,6 +64,26 @@
 #include "HS_Problem_018.hpp"
 #include "HS_Problem_019.hpp"
 #include "HS_Problem_020.hpp"
+#include "HS_Problem_021.hpp"
+#include "HS_Problem_022.hpp"
+#include "HS_Problem_023.hpp"
+#include "HS_Problem_024.hpp"
+#include "HS_Problem_025.hpp"
+#include "HS_Problem_026.hpp"
+#include "HS_Problem_027.hpp"
+#include "HS_Problem_028.hpp"
+#include "HS_Problem_029.hpp"
+#include "HS_Problem_030.hpp"
+#include "HS_Problem_031.hpp"
+#include "HS_Problem_032.hpp"
+#include "HS_Problem_033.hpp"
+#include "HS_Problem_034.hpp"
+#include "HS_Problem_035.hpp"
+#include "HS_Problem_036.hpp"
+#include "HS_Problem_037.hpp"
+#include "HS_Problem_038.hpp"
+#include "HS_Problem_039.hpp"
+#include "HS_Problem_040.hpp"
 
 namespace HS {
 template<class Real> 
@@ -92,6 +112,28 @@ public:
       case  18: np = Teuchos::rcp( new Problem_018<Real>() ); break;
       case  19: np = Teuchos::rcp( new Problem_019<Real>() ); break;
       case  20: np = Teuchos::rcp( new Problem_020<Real>() ); break;
+      case  21: np = Teuchos::rcp( new Problem_021<Real>() ); break;
+      case  22: np = Teuchos::rcp( new Problem_022<Real>() ); break;
+      case  23: np = Teuchos::rcp( new Problem_023<Real>() ); break;
+      case  24: np = Teuchos::rcp( new Problem_024<Real>() ); break;
+      case  25: np = Teuchos::rcp( new Problem_025<Real>() ); break;
+      case  26: np = Teuchos::rcp( new Problem_026<Real>() ); break;
+      case  27: np = Teuchos::rcp( new Problem_027<Real>() ); break;
+      case  28: np = Teuchos::rcp( new Problem_028<Real>() ); break;
+      case  29: np = Teuchos::rcp( new Problem_029<Real>() ); break;
+      case  30: np = Teuchos::rcp( new Problem_030<Real>() ); break;
+      case  31: np = Teuchos::rcp( new Problem_031<Real>() ); break;
+      case  32: np = Teuchos::rcp( new Problem_032<Real>() ); break;
+      case  33: np = Teuchos::rcp( new Problem_033<Real>() ); break;
+      case  34: np = Teuchos::rcp( new Problem_034<Real>() ); break;
+      case  35: np = Teuchos::rcp( new Problem_035<Real>() ); break;
+      case  36: np = Teuchos::rcp( new Problem_036<Real>() ); break;
+      case  37: np = Teuchos::rcp( new Problem_037<Real>() ); break;
+      case  38: np = Teuchos::rcp( new Problem_038<Real>() ); break;
+      case  39: np = Teuchos::rcp( new Problem_039<Real>() ); break;
+      case  40: np = Teuchos::rcp( new Problem_040<Real>() ); break;
+
+
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Unknown problem number.");
       break;
