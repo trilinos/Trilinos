@@ -387,7 +387,8 @@ namespace MueLu {
     for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // 1) calculate current residual
       residual->update(one,*rcpB,zero); // residual = B
-      A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
+      if(InitialGuessIsZero == false || run > 0)
+        A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
 
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
