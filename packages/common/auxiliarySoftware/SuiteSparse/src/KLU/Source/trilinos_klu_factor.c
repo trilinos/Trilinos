@@ -456,9 +456,9 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     Numeric->n = n ;
     Numeric->nblocks = nblocks ;
     Numeric->nzoff = nzoff ;
-    Numeric->Pnum = (int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Offp = (int*) KLU_malloc (n1, sizeof (Int), Common) ;
-    Numeric->Offi = (int*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
+    Numeric->Pnum = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Offp = (Int*) KLU_malloc (n1, sizeof (Int), Common) ;
+    Numeric->Offi = (Int*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
     Numeric->Offx = (Entry*) KLU_malloc (nzoff1, sizeof (Entry), Common) ;
 
     Numeric->Lip  = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
@@ -489,7 +489,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 	Numeric->Rs = NULL ;
     }
 
-    Numeric->Pinv = (int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
 
     /* allocate permanent workspace for factorization and solve.  Note that the
      * solver will use an Xwork of size 4n, whereas the factorization codes use
