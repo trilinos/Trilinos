@@ -117,7 +117,7 @@ public:
   }
  
   Real getSolutionObjectiveValue() {
-    return Real(6.0);
+    return Real(1.0/9.0);
   }
 
   RCP<const V> getSolutionSet() {
