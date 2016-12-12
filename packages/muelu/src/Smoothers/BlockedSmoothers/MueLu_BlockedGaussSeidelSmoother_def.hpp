@@ -311,8 +311,8 @@ namespace MueLu {
         // calculate block residual r = B-A*X
         // note: A_ is the full blocked operator
         residual->update(1.0,*rcpB,0.0); // r = B
-
-        A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
+        if(InitialGuessIsZero == false || i > 0 || run > 0)
+          A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
         // extract corresponding subvectors from X and residual
         bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode();
