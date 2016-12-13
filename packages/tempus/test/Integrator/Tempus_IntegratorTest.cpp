@@ -41,7 +41,7 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, DefaultConstruction)
   RCP<ParameterList> refIntegratorPL =
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
 
-  TEST_ASSERT(*defaultIntegratorPL == *refIntegratorPL)
+  TEST_ASSERT(haveSameValues(*defaultIntegratorPL,*refIntegratorPL))
 
   Teuchos::TimeMonitor::summarize();
 }

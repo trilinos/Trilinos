@@ -100,6 +100,9 @@ public:
       {return solutionHistory_->getCurrentState();}
   //@}
 
+  /// Parse when screen output should be executed
+  void parseScreenOutput();
+
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);

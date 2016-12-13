@@ -47,7 +47,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Integrator").set("Initial Time Step", dt);
+    pl->sublist("Demo Integrator")
+       .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
@@ -58,7 +59,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
     // Test if at 'Final Time'
     double time = integrator->getTime();
-    double timeFinal =pl->sublist("Demo Integrator").get<double>("Final Time");
+    double timeFinal = pl->sublist("Demo Integrator")
+      .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
     // Time-integrated solution and the exact solution
