@@ -70,7 +70,7 @@ void globalWeightedCutsMessagesHopsByPart(
     ArrayRCP<typename Adapter::scalar_t> &globalSums,
     const RCP <const MachineRep> machine)
 {
-  env->debug(DETAILED_STATUS, "Entering globalWeightedCutsMessagesByPart");
+  env->debug(DETAILED_STATUS, "Entering globalWeightedCutsMessagesHopsByPart");
   //////////////////////////////////////////////////////////
   // Initialize return values
 
@@ -110,11 +110,11 @@ void globalWeightedCutsMessagesHopsByPart(
   typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
 
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
+  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ){
     mv_t * newMetric = new mv_t;                  // allocate the new memory
     env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);   // check errors
     metrics[n] = rcp( newMetric);         // create the new members
-    }
+  }
   array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
   std::vector <part_t> e_parts (localNumEdges);
@@ -190,7 +190,7 @@ void globalWeightedCutsMessagesHopsByPart(
     }
 
 
-    for (int weight_index = -1; weight_index < numWeightPerEdge ; ++weight_index ){
+    for (int weight_index = -1; weight_index < numWeightPerEdge ; ++weight_index){
 
       //MD: these two should be part_t.
       //but we dont want to compile tpetra from the beginning.
@@ -377,7 +377,7 @@ void globalWeightedCutsMessagesHopsByPart(
   }
   env->timerStop(MACRO_TIMERS, "Communication Graph Create");
 
-  env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsMessagesByPart");
+  env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsMessagesHopsByPart");
 }
 
 
@@ -431,11 +431,11 @@ void globalWeightedCutsMessagesByPart(
   typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
 
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
+  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ){
     mv_t * newMetric = new mv_t;                  // allocate the new memory
     env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);   // check errors
     metrics[n] = rcp( newMetric);         // create the new members
-    }
+  }
   array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
   std::vector <part_t> e_parts (localNumEdges);
@@ -510,8 +510,7 @@ void globalWeightedCutsMessagesByPart(
       part_begins[ap] = i;
     }
 
-
-    for (int weight_index = -1; weight_index < numWeightPerEdge ; ++weight_index ){
+    for (int weight_index = -1; weight_index < numWeightPerEdge ; ++weight_index){
 
       //MD: these two should be part_t.
       //but we dont want to compile tpetra from the beginning.
