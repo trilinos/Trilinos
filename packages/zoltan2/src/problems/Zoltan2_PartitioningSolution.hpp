@@ -1478,7 +1478,7 @@ template <typename Adapter>
     int numLocalParts, int numGlobalParts)
 {
 #ifdef _MSC_VER
-	typedef SSIZE_T ssize_t;
+  typedef SSIZE_T ssize_t;
 #endif
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
@@ -1486,7 +1486,7 @@ template <typename Adapter>
   ssize_t sumGlobal=0, sumLocal=0;
   ssize_t maxGlobal=0, maxLocal=0;
   ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
-      numGlobalParts, numLocalParts};
+                     numGlobalParts, numLocalParts};
 
   partDist_.clear();
   procDist_.clear();

@@ -341,7 +341,8 @@ public:
       Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
         0, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
     pl.set("num_local_parts", 0, "number of parts to compute for this "
-      "process (0 means one)", num_local_parts_Validator);
+      "process (num_global_parts == sum of all num_local_parts)", 
+      num_local_parts_Validator);
 
     RCP<Teuchos::StringValidator> partitioning_approach_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
