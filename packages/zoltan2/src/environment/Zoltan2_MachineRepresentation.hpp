@@ -32,9 +32,9 @@ public:
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
     typedef MachineBGQTest<pcoord_t,part_t> machine_t;
 #else
-    //typedef MachineForTesting<pcoord_t,part_t> machine_t;
+    typedef MachineForTesting<pcoord_t,part_t> machine_t;
     //typedef MachineBGQTest<pcoord_t,part_t> machine_t;
-    typedef MachineRCATest<pcoord_t,part_t> machine_t;
+    //typedef MachineRCATest<pcoord_t,part_t> machine_t;
 #endif
 
     /*! \brief Constructor MachineRepresentation Class
