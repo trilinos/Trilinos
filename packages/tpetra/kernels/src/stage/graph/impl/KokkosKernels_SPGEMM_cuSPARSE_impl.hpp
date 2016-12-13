@@ -99,9 +99,9 @@ namespace Impl{
 
     if (Kokkos::Impl::is_same<idx, int>::value){
 
-      const idx *a_xadj = row_mapA.ptr_on_device();
-      const idx *b_xadj = row_mapB.ptr_on_device();
-      idx *c_xadj = row_mapC.ptr_on_device();
+      const idx *a_xadj = (int *)row_mapA.ptr_on_device();
+      const idx *b_xadj = (int *)row_mapB.ptr_on_device();
+      idx *c_xadj = (int *)row_mapC.ptr_on_device();
 
       const idx *a_adj = entriesA.ptr_on_device();
       const idx *b_adj = entriesB.ptr_on_device();
@@ -139,7 +139,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      this->handle->get_spgemm_handle()->set_c_nnz(nnzC);
+      handle->set_c_nnz(nnzC);
       //entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
