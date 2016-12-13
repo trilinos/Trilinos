@@ -53,6 +53,18 @@ public:
 
   }
 
+  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
+    int dim = 0;
+    int transformed_network_dim = networkDim;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    return true;
+  }
+
   MachineRCA(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
     networkDim(3),
