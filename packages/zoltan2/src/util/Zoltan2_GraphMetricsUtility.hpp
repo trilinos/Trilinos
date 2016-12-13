@@ -53,6 +53,8 @@
 #include <Zoltan2_MetricUtility.hpp>
 #include <zoltan_dd.h>
 #include <Zoltan2_TPLTraits.hpp>
+#include <map>
+#include <vector>
 
 namespace Zoltan2{
 
@@ -151,10 +153,22 @@ void globalWeightedCutsMessagesHopsByPart(
   } else
 #endif
   {
+
+    std::map<t_gno_t,t_lno_t> global_id_to_local_index;
+
     //else everything is local.
+    //we need a globalid to local index conversion.
+    //this does not exists till this point, so we need to create one.
+    for (t_lno_t i = 0; i < localNumVertices; ++i){
+      //at the local index i, we have the global index Ids[i].
+      //so write i, to Ids[i] index of the vector.
+      global_id_to_local_index[Ids[i]] = i;
+    }
+
     for (t_lno_t i = 0; i < localNumEdges; ++i){
       t_gno_t ei = edgeIds[i];
-      part_t p = parts[ei];
+      //ei is the global index of the neighbor one.
+      part_t p = parts[global_id_to_local_index[ei]];
       e_parts[i] = p;
     }
   }
@@ -460,10 +474,22 @@ void globalWeightedCutsMessagesByPart(
   } else
 #endif
   {
+
+    std::map<t_gno_t,t_lno_t> global_id_to_local_index;
+
     //else everything is local.
+    //we need a globalid to local index conversion.
+    //this does not exists till this point, so we need to create one.
+    for (t_lno_t i = 0; i < localNumVertices; ++i){
+      //at the local index i, we have the global index Ids[i].
+      //so write i, to Ids[i] index of the vector.
+      global_id_to_local_index[Ids[i]] = i;
+    }
+
     for (t_lno_t i = 0; i < localNumEdges; ++i){
       t_gno_t ei = edgeIds[i];
-      part_t p = parts[ei];
+      //ei is the global index of the neighbor one.
+      part_t p = parts[global_id_to_local_index[ei]];
       e_parts[i] = p;
     }
   }
