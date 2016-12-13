@@ -1,15 +1,10 @@
-#ifndef _ZOLTAN2_MACHINE_RCALIB_HPP_
-#define _ZOLTAN2_MACHINE_RCALIB_HPP_
+#ifndef _ZOLTAN2_MACHINE_RCALIBTEST_HPP_
+#define _ZOLTAN2_MACHINE_RCALIBTEST_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_Machine.hpp>
-
-#ifdef HAVE_ZOLTAN2_RCALIB
-extern "C"{
-#include <rca_lib.h>
-}
-#endif
+#include <cstdlib>     /* srand, rand */
 
 
 namespace Zoltan2{
@@ -19,21 +14,21 @@ namespace Zoltan2{
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineRCA : public Machine <pcoord_t, part_t> {
+class MachineRCATest : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: A BlueGeneQ network machine description;
    *  \param comm Communication object.
    */
 
-  MachineRCA(const Teuchos::Comm<int> &comm):
+  MachineRCATest(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
     networkDim(3),  
     procCoords(NULL), machine_extent(NULL),
     pl(NULL)
   {
     machine_extent = new int[networkDim];
-    this->getInitialMachineExtent(this->machine_extent);
+    this->getRealMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
     for (int i = 0; i < networkDim; ++i){
@@ -41,6 +36,7 @@ public:
       memset(procCoords[i], 0, sizeof(pcoord_t) * this->numRanks);
     }
 
+    srand (this->myRank);
     //obtain the coordinate of the processor.
     pcoord_t *xyz = new pcoord_t[networkDim];
     getMyActualMachineCoordinate(xyz);
@@ -65,14 +61,14 @@ public:
     return true;
   }
 
-  MachineRCA(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl_ ):
+  MachineRCATest(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
     networkDim(3),
     procCoords(NULL), machine_extent(NULL),
     pl(&pl_)
   {
     machine_extent = new int[networkDim];
-    this->getInitialMachineExtent(this->machine_extent);
+    this->getRealMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
     for (int i = 0; i < networkDim; ++i){
@@ -120,7 +116,7 @@ public:
   
 
 
-  virtual ~MachineRCA() {
+  virtual ~MachineRCATest() {
     for (int i = 0; i < networkDim; i++){
       delete [] procCoords[i];
     }
@@ -133,29 +129,21 @@ public:
   int getMachineDim() const { return this->networkDim;/*transformed_network_dim;*/  }
 
   bool getMachineExtent(int *nxyz) const {
-#if defined (HAVE_ZOLTAN2_RCALIB)
+
     int dim = 0;
     nxyz[dim++] = this->machine_extent[0]; //x
     nxyz[dim++] = this->machine_extent[1]; //y
     nxyz[dim++] = this->machine_extent[2]; //z
     return true;
-#else
-    return false;
-#endif
+
   }
 
-  bool getInitialMachineExtent(int *nxyz) const {
-#if defined (HAVE_ZOLTAN2_RCALIB)
-    mesh_coord_t mxyz;
-    rca_get_max_dimension(&mxyz);
+  bool getRealMachineExtent(int *nxyz) const {
     int dim = 0;
-    nxyz[dim++] = mxyz.mesh_x + 1; //x
-    nxyz[dim++] = mxyz.mesh_y + 1; //y
-    nxyz[dim++] = mxyz.mesh_z + 1; //z
+    nxyz[dim++] = 25; //x
+    nxyz[dim++] = 16; //y
+    nxyz[dim++] = 24; //z
     return true;
-#else
-    return false;
-#endif
   }
 
 
@@ -176,23 +164,10 @@ public:
   }
 
   bool getMyActualMachineCoordinate(pcoord_t *xyz) {
-#if defined (HAVE_ZOLTAN2_RCALIB)
-    rs_node_t nodeInfo;  /* Cray node info for node running this function */
-    rca_get_nodeid(&nodeInfo);
-    int NIDs = (int)nodeInfo.rs_node_s._node_id;  /* its node ID */
-
-    mesh_coord_t node_coord;
-    int returnval = rca_get_meshcoord((uint16_t)NIDs, &node_coord);
-    if (returnval == -1){
-      return false;
-    }
-    xyz[0] = node_coord.mesh_x;
-    xyz[1] = node_coord.mesh_y;
-    xyz[2] = node_coord.mesh_z;
+    xyz[0] = rand() % 25;
+    xyz[1] = rand() % 16;
+    xyz[2] = rand() % 24;
     return true;
-#else
-    return false;
-#endif
   }
 
   inline bool getMachineCoordinate(const int rank,
