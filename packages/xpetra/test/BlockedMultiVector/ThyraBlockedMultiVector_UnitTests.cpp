@@ -65,7 +65,9 @@
 #include <Xpetra_Exceptions.hpp>
 #include <Xpetra_ThyraUtils.hpp>
 
+#ifdef HAVE_XPETRA_THYRA
 #include <Thyra_DefaultProductVectorSpace_decl.hpp>
+#endif
 
 namespace XpetraBlockMatrixTests {
 
@@ -224,6 +226,7 @@ Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, Constructor, M, MA, Scalar, LO, GO, Node )
 {
+#ifdef HAVE_XPETRA_THYRA
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
@@ -264,8 +267,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, Constructor, M, MA, 
   TEST_NOTHROW( vv->norm2(fnorms) );
   TEST_NOTHROW( bvv->norm2(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
-
-  // new stuff
 
   M testMap(1,0,comm);
   Xpetra::UnderlyingLib lib = testMap.lib();
@@ -321,11 +322,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, Constructor, M, MA, 
   Teuchos::RCP<const Map> pp3m = ppbm->getMap(1,false);
   Teuchos::RCP<const BlockedMap> pp3bm = Teuchos::rcp_dynamic_cast<const BlockedMap>(pp3m);
   TEST_EQUALITY(pp3bm.is_null(),false);
-
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M, MA, Scalar, LO, GO, Node )
 {
+#ifdef HAVE_XPETRA_THYRA
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
@@ -454,10 +456,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     }
   }
 
+#ifdef HAVE_XPETRA_DEBUG
   // sub vectors are Thyra vectors: currently the implementation throws if we try to
   // access the Xpetra version. We probably can remove the getMultiVector(...,bool)
   // routine...
   TEST_THROW(bvec->getMultiVector(1,false),Xpetra::Exceptions::RuntimeError);
+#endif
 
   Teuchos::RCP<const MultiVector> bvecit = bvec->getMultiVector(1,true);
   TEST_EQUALITY(bvecit.is_null(),false);
@@ -482,10 +486,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(1,true)->getGlobalElement(i), map3->getGlobalElement(i) );
     }
   }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedMapDeepCopy, M, MA, Scalar, LO, GO, Node )
 {
+#ifdef HAVE_XPETRA_THYRA
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
@@ -563,11 +569,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedMapDeepCopy, 
   TEST_EQUALITY(subMapXpetra->getNumMaps(), 2);
   TEST_EQUALITY(subMapXpetra->getFullMap()->getMinAllGlobalIndex(), 10);
   TEST_EQUALITY(subMapXpetra->getFullMap()->getMaxAllGlobalIndex(), 42);
-
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedVectorDeepCopy, M, MA, Scalar, LO, GO, Node )
 {
+#ifdef HAVE_XPETRA_THYRA
   typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
@@ -705,6 +712,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedVectorDeepCop
   for (size_t t = 0; t < bvec2->getNumVectors(); t++) {
     TEST_EQUALITY(nn[t],nn2[t]);
   }
+#endif
 }
 
 //

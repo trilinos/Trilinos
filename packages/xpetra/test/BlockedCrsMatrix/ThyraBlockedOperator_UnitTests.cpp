@@ -623,7 +623,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
   A->apply(*ones_A, *exp);
   bOp->apply(*ones_bOp, *res);
 
-  TEST_EQUALITY(res->norm2(),exp->norm2());
+  TEST_EQUALITY(res->norm1(),exp->norm1());
   TEST_EQUALITY(res->normInf(),exp->normInf());
   TEST_EQUALITY(bOp->getRangeMapExtractor()->getThyraMode(), true);
   TEST_EQUALITY(bOp->getDomainMapExtractor()->getThyraMode(), true);

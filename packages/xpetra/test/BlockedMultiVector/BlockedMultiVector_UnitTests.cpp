@@ -812,8 +812,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
   // TAW: CUDA produces a "dirty zero" (not exactly zero)
   // this might be numerical effects caused by the ordering of calculations
-  TEST_COMPARE( bnorms1[0], < , 1e-12);
-  TEST_COMPARE( bnorms1[1], < , 1e-12);
+  TEST_COMPARE( bnorms1[0], < , 3e-12);
+  TEST_COMPARE( bnorms1[1], < , 3e-12);
   //TEST_EQUALITY( bnorms1[0], STS::zero());
   //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>STS::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
@@ -972,7 +972,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   Teuchos::RCP< BlockedMultiVector > bvv2 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv2);
   TEST_EQUALITY( bvv2->getNumVectors(), 3);
   TEST_EQUALITY( bvv2->getBlockedMap()->getNumMaps(), noBlocks);
+#ifdef HAVE_XPETRA_DEBUG
   TEST_THROW( bvv2->setMultiVector(0,bvv->getMultiVector(0),false), Xpetra::Exceptions::RuntimeError);
+#endif
 
   // create a new standard multivector (with an underlying BlockedMap)
   Teuchos::RCP< MultiVector > vv3 = MultiVectorFactory::Build(vvm, 3, true);
@@ -981,7 +983,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   Teuchos::RCP< BlockedMultiVector > bvv3 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv3);
   TEST_EQUALITY( bvv3->getNumVectors(), 3);
   TEST_EQUALITY( bvv3->getBlockedMap()->getNumMaps(), noBlocks);
+#ifdef HAVE_XPETRA_DEBUG
   TEST_THROW( bvv3->setMultiVector(0,bvv->getMultiVector(0),false), Xpetra::Exceptions::RuntimeError);
+#endif
 
   // create a new standard multivector
   Teuchos::RCP< MultiVector > vv4 = MultiVectorFactory::Build(vv->getMap(), 3, true);
@@ -1329,7 +1333,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
     vData  = mmv->getData(0);
     vData2 = mmv->getData(1);
     for(size_t i=0; i< mmv->getMap()->getNodeNumElements(); i++) {
-      GO expected, expected2;
+      GO expected = 42, expected2 = 43;
       if(i >=0 && i < 10) expected = comm->getRank() * 20 + 10 + i;
       if(i >=10 && i < 15) expected = comm->getRank() * 20 + i - 10;
       if(i >=15 && i < 20) expected = comm->getRank() * 20 + 5 + i - 15;
@@ -1371,8 +1375,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, BlockedMapDeepCopy, M, MA
 
   TEST_EQUALITY(ppbm->getMap(0,false)->isSameAs(*(ppbm2->getMap(0,false))),true);
   TEST_EQUALITY(ppbm->getMap(1,false)->isSameAs(*(ppbm2->getMap(1,false))),true);
+#ifdef HAVE_XPETRA_DEBUG
   TEST_THROW(ppbm->getMap(0,true)->isSameAs(*(ppbm2->getMap(0,true))),Xpetra::Exceptions::RuntimeError);
   TEST_THROW(ppbm->getMap(1,true)->isSameAs(*(ppbm2->getMap(1,true))),Xpetra::Exceptions::RuntimeError);
+#endif
   TEST_EQUALITY(ppbm->getMap(1,false)->getMinGlobalIndex(),ppbm2->getMap(1,false)->getMinGlobalIndex());
 
   ppbm = Teuchos::null;

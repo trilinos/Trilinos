@@ -1190,8 +1190,10 @@ namespace MueLuTests {
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
       // We should remove the boolean from ExtractVector. It is not necessary
+#ifdef HAVE_XPETRA_DEBUG
       TEST_THROW(doMapExtractor->ExtractVector(X,0,false),Xpetra::Exceptions::RuntimeError);
       TEST_THROW(doMapExtractor->ExtractVector(X,1,false),Xpetra::Exceptions::RuntimeError);
+#endif
       Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0,true);
       Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1,true);
 
