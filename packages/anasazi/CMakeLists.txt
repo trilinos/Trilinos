@@ -35,7 +35,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RBGen
 # Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
 # tests depend heavily on Teuchos' complex arithmetic support.
 
-IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE  AND  Teuchos_ENABLE_COMPLEX)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  ON)
 ELSE()
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT OFF)
