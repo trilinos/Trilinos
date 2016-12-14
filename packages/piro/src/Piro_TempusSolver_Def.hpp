@@ -167,8 +167,9 @@ void Piro::TempusSolver<Scalar>::initialize(
     //based on that sublist, rather than hard-coding it here.
     solnVerbLevel = Teuchos::VERB_DEFAULT;
 
-    t_initial = integratorPL->get<Scalar>("Initial Time", 0.0);
-    t_final = integratorPL->get<Scalar>("Final Time", 0.1);
+    RCP<Teuchos::ParameterList> timeStepControlPL = sublist(integratorPL, "Time Step Control", true);
+    t_initial = timeStepControlPL->get<Scalar>("Initial Time", 0.0);
+    t_final = timeStepControlPL->get<Scalar>("Final Time", 0.1);
     RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
     //*out << "stepperPL = " << *stepperPL << "\n"; 
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
@@ -767,6 +768,7 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");
   validPL->sublist("Tempus Integrator", false, "");
   validPL->sublist("Tempus Stepper", false, "");
+  validPL->sublist("Time Step Control", false, "");
   return validPL;
 }
 
