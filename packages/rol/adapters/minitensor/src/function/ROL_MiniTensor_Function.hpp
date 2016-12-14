@@ -42,13 +42,13 @@
 #if !defined(ROL_MiniTensor_Function_hpp)
 #define ROL_MiniTensor_Function_hpp
 
-#include "Intrepid2_MiniTensor_Solvers.h"
+#include "MiniTensor_Solvers.h"
 #include "ROL_Objective.hpp"
 #include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 ///
 /// Function base class that defines the interface to Mini Solvers.

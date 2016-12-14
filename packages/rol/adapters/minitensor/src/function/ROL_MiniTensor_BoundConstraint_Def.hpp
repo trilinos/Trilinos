@@ -42,7 +42,7 @@
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 template<typename T, Index N>
 MiniTensor_BoundConstraint<T, N>::

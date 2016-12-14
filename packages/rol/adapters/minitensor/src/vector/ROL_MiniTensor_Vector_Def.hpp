@@ -44,14 +44,14 @@ namespace ROL {
 //
 // Covert from ROL to MiniTensor
 //
-template<typename T, Intrepid2::Index N>
-Intrepid2::Vector<T, N>
+template<typename T, minitensor::Index N>
+minitensor::Vector<T, N>
 MTfromROL(Vector<T> const & x)
 {
   MiniTensorVector<T, N> const &
   xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
-  Intrepid2::Vector<T, N> const &
+  minitensor::Vector<T, N> const &
   xval = xe.getVector();
 
   return xval;
@@ -60,9 +60,9 @@ MTfromROL(Vector<T> const & x)
 //
 // Convert from MiniTensor to ROL
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
-MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x)
+MTtoROL(minitensor::Vector<T, N> const & xval, Vector<T> & x)
 {
   MiniTensorVector<T, N> &
   xe = Teuchos::dyn_cast<MiniTensorVector<T, N>>(x);
@@ -73,9 +73,9 @@ MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 MiniTensorVector<T, N>::
-MiniTensorVector(Intrepid2::Vector<T, N> const & v) : vector_(v)
+MiniTensorVector(minitensor::Vector<T, N> const & v) : vector_(v)
 {
   return;
 }
@@ -83,7 +83,7 @@ MiniTensorVector(Intrepid2::Vector<T, N> const & v) : vector_(v)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 MiniTensorVector<T, N>::
 ~MiniTensorVector()
 {
@@ -93,7 +93,7 @@ MiniTensorVector<T, N>::
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 set(Vector<T> const & x)
@@ -104,10 +104,10 @@ set(Vector<T> const & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
-set(Intrepid2::Vector<T, N> const & x)
+set(minitensor::Vector<T, N> const & x)
 {
   vector_ = x;
 }
@@ -115,12 +115,12 @@ set(Intrepid2::Vector<T, N> const & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 plus(Vector<T> const & x)
 {
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   xval = MTfromROL<T, N>(x);
 
   auto const
@@ -128,7 +128,7 @@ plus(Vector<T> const & x)
 
   assert(vector_.get_dimension() == dim);
 
-  for (Intrepid2::Index i{0}; i < dim; ++i) {
+  for (minitensor::Index i{0}; i < dim; ++i) {
     vector_(i) += xval(i);
   }
 }
@@ -136,12 +136,12 @@ plus(Vector<T> const & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 axpy(T const alpha, Vector<T> const & x)
 {
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   xval = MTfromROL<T, N>(x);
 
   auto const
@@ -149,7 +149,7 @@ axpy(T const alpha, Vector<T> const & x)
 
   assert(vector_.get_dimension() == dim);
 
-  for (Intrepid2::Index i{0}; i < dim; ++i) {
+  for (minitensor::Index i{0}; i < dim; ++i) {
     vector_(i) += alpha * xval(i);
   }
 }
@@ -157,7 +157,7 @@ axpy(T const alpha, Vector<T> const & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 scale(T const alpha)
@@ -165,7 +165,7 @@ scale(T const alpha)
   auto const
   dim = vector_.get_dimension();
 
-  for (Intrepid2::Index i{0}; i < dim; ++i) {
+  for (minitensor::Index i{0}; i < dim; ++i) {
     vector_(i) *= alpha;
   }
 }
@@ -173,32 +173,32 @@ scale(T const alpha)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 T
 MiniTensorVector<T, N>::
 dot(Vector<T> const & x) const
 {
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   xval = MTfromROL<T, N>(x);
 
-  return Intrepid2::dot(vector_, xval);
+  return minitensor::dot(vector_, xval);
 }
 
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 T
 MiniTensorVector<T, N>::
 norm() const
 {
-  return Intrepid2::norm(vector_);
+  return minitensor::norm(vector_);
 }
 
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 Teuchos::RCP<Vector<T>>
 MiniTensorVector<T, N>::
 clone() const
@@ -206,8 +206,8 @@ clone() const
   auto const
   dim = vector_.get_dimension();
 
-  Intrepid2::Vector<T, N>
-  val(dim, Intrepid2::ZEROS);
+  minitensor::Vector<T, N>
+  val(dim, minitensor::ZEROS);
 
   Teuchos::RCP<MiniTensorVector>
   e = Teuchos::rcp(new MiniTensorVector(val));
@@ -218,8 +218,8 @@ clone() const
 //
 //
 //
-template<typename T, Intrepid2::Index N>
-Intrepid2::Vector<T, N>
+template<typename T, minitensor::Index N>
+minitensor::Vector<T, N>
 MiniTensorVector<T, N>::
 getVector() const
 {
@@ -229,8 +229,8 @@ getVector() const
 //
 //
 //
-template<typename T, Intrepid2::Index N>
-Intrepid2::Vector<T, N>
+template<typename T, minitensor::Index N>
+minitensor::Vector<T, N>
 MiniTensorVector<T, N>::
 getVector()
 {
@@ -240,7 +240,7 @@ getVector()
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 Teuchos::RCP<Vector<T>>
 MiniTensorVector<T, N>::
 basis(int const i) const
@@ -248,8 +248,8 @@ basis(int const i) const
   auto const
   dim = vector_.get_dimension();
 
-  Intrepid2::Vector<T, N>
-  val(dim, Intrepid2::ZEROS);
+  minitensor::Vector<T, N>
+  val(dim, minitensor::ZEROS);
 
   val(i) = 1.0;
 
@@ -262,7 +262,7 @@ basis(int const i) const
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 int
 MiniTensorVector<T, N>::
 dimension() const
@@ -273,7 +273,7 @@ dimension() const
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 applyUnary(Elementwise::UnaryFunction<T> const & f)
@@ -281,7 +281,7 @@ applyUnary(Elementwise::UnaryFunction<T> const & f)
   auto const
   dim = vector_.get_dimension();
 
-  for(Intrepid2::Index i{0}; i < dim; ++i) {
+  for(minitensor::Index i{0}; i < dim; ++i) {
     vector_(i) = f.apply(vector_(i));
   }
 }
@@ -289,18 +289,18 @@ applyUnary(Elementwise::UnaryFunction<T> const & f)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
 MiniTensorVector<T, N>::
 applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
 {
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   xval = MTfromROL<T, N>(x);
 
   auto const
   dim  = vector_.get_dimension();
 
-  for(Intrepid2::Index i{0}; i < dim; ++i) {
+  for(minitensor::Index i{0}; i < dim; ++i) {
     vector_(i) = f.apply(vector_(i), xval(i));
   }
 }
@@ -308,7 +308,7 @@ applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
 //
 //
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 T
 MiniTensorVector<T, N>::
 reduce(Elementwise::ReductionOp<T> const & r) const
@@ -319,7 +319,7 @@ reduce(Elementwise::ReductionOp<T> const & r) const
   auto const
   dim = vector_.get_dimension();
 
-  for(Intrepid2::Index i{0}; i < dim; ++i) {
+  for(minitensor::Index i{0}; i < dim; ++i) {
     r.reduce(vector_(i), result);
   }
 

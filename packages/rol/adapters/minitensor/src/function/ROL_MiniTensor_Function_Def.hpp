@@ -42,7 +42,7 @@
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 //
 //
@@ -72,7 +72,7 @@ S
 MiniTensor_Objective<MSFN, S, M>::
 value(Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   xval = MTfromROL<S, M>(x);
 
   return minisolver_fn_.value(xval);
@@ -86,10 +86,10 @@ void
 MiniTensor_Objective<MSFN, S, M>::
 gradient(Vector<S> & g, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   xval = MTfromROL<S, M>(x);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   gval = minisolver_fn_.gradient(xval);
 
   MTtoROL<S, M>(gval, g);
@@ -103,16 +103,16 @@ void
 MiniTensor_Objective<MSFN, S, M>::
 hessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   xval = MTfromROL<S, M>(x);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   vval = MTfromROL<S, M>(v);
 
-  Intrepid2::Tensor<S, M> const
+  minitensor::Tensor<S, M> const
   H = minisolver_fn_.hessian(xval);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   hvval = H * vval;
 
   MTtoROL<S, M>(hvval, hv);
@@ -126,17 +126,17 @@ void
 MiniTensor_Objective<MSFN, S, M>::
 invHessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   xval = MTfromROL<S, M>(x);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   vval = MTfromROL<S, M>(v);
 
-  Intrepid2::Tensor<S, M> const
+  minitensor::Tensor<S, M> const
   H = minisolver_fn_.hessian(xval);
 
-  Intrepid2::Vector<S, M> const
-  hvval = Intrepid2::inverse(H) * vval;
+  minitensor::Vector<S, M> const
+  hvval = minitensor::inverse(H) * vval;
 
   MTtoROL<S, M>(hvval, hv);
 }

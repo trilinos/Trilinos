@@ -49,7 +49,7 @@
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 //
 //
@@ -77,19 +77,19 @@ solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
     FN & fn,
-    Intrepid2::Vector<T, N> & soln)
+    minitensor::Vector<T, N> & soln)
 {
   step_method_name = algoname.c_str();
   function_name = FN::NAME;
   initial_guess = soln;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   resi = fn.gradient(soln);
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
   failed = failed || fn.failed;
-  initial_norm = Intrepid2::norm(resi);
+  initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
   ROL::MiniTensor_Objective<FN, T, N>
@@ -110,7 +110,7 @@ solve(
   resi = fn.gradient(soln);
 
   T const
-  norm_resi = Intrepid2::norm(resi);
+  norm_resi = minitensor::norm(resi);
 
   updateConvergenceCriterion(norm_resi);
 
@@ -138,19 +138,19 @@ solve(
     Teuchos::ParameterList & params,
     FN & fn,
     BC & bc,
-    Intrepid2::Vector<T, N> & soln)
+    minitensor::Vector<T, N> & soln)
 {
   step_method_name = algoname.c_str();
   function_name = FN::NAME;
   initial_guess = soln;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   resi = fn.gradient(soln);
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
   failed = failed || fn.failed;
-  initial_norm = Intrepid2::norm(resi);
+  initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
   ROL::MiniTensor_Objective<FN, T, N>
@@ -181,7 +181,7 @@ solve(
   resi = fn.gradient(soln);
 
   T const
-  norm_resi = Intrepid2::norm(resi);
+  norm_resi = minitensor::norm(resi);
 
   updateConvergenceCriterion(norm_resi);
 
@@ -209,20 +209,20 @@ solve(
     Teuchos::ParameterList & params,
     FN & fn,
     EIC & eic,
-    Intrepid2::Vector<T, N> & soln,
-    Intrepid2::Vector<T, NC> & cv)
+    minitensor::Vector<T, N> & soln,
+    minitensor::Vector<T, NC> & cv)
 {
   step_method_name = algoname.c_str();
   function_name = FN::NAME;
   initial_guess = soln;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   resi = fn.gradient(soln);
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
   failed = failed || fn.failed;
-  initial_norm = Intrepid2::norm(resi);
+  initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
   ROL::MiniTensor_Objective<FN, T, N>
@@ -255,7 +255,7 @@ solve(
   resi = fn.gradient(soln);
 
   T const
-  norm_resi = Intrepid2::norm(resi);
+  norm_resi = minitensor::norm(resi);
 
   updateConvergenceCriterion(norm_resi);
 
@@ -285,20 +285,20 @@ solve(
     FN & fn,
     EIC & eic,
     BC & bc,
-    Intrepid2::Vector<T, N> & soln,
-    Intrepid2::Vector<T, NC> & cv)
+    minitensor::Vector<T, N> & soln,
+    minitensor::Vector<T, NC> & cv)
 {
   step_method_name = algoname.c_str();
   function_name = FN::NAME;
   initial_guess = soln;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   resi = fn.gradient(soln);
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
   failed = failed || fn.failed;
-  initial_norm = Intrepid2::norm(resi);
+  initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
   ROL::MiniTensor_Objective<FN, T, N>
@@ -341,7 +341,7 @@ solve(
   resi = fn.gradient(soln);
 
   T const
-  norm_resi = Intrepid2::norm(resi);
+  norm_resi = minitensor::norm(resi);
 
   updateConvergenceCriterion(norm_resi);
 
@@ -449,7 +449,7 @@ template<typename T, Index N>
 template<typename FN>
 void
 MiniTensor_Minimizer<T, N>::
-recordFinals(FN & fn, Intrepid2::Vector<T, N> const & x)
+recordFinals(FN & fn, minitensor::Vector<T, N> const & x)
 {
   final_soln = x;
   final_value = fn.value(x);

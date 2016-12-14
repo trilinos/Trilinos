@@ -42,7 +42,7 @@
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 //
 //
@@ -72,10 +72,10 @@ void
 MiniTensor_EqualityConstraint<MSEC, S, M, N>::
 value(Vector<S> & c, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, N> const
+  minitensor::Vector<S, N> const
   xval = MTfromROL<S, N>(x);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   cval = minisolver_ec_.value(xval);
 
   MTtoROL<S, M>(cval, c);
@@ -89,17 +89,17 @@ void
 MiniTensor_EqualityConstraint<MSEC, S, M, N>::
 applyJacobian(Vector<S> & jv, Vector<S> const & v, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, N> const
+  minitensor::Vector<S, N> const
   xval = MTfromROL<S, N>(x);
 
-  Intrepid2::Vector<S, N> const
+  minitensor::Vector<S, N> const
   vval = MTfromROL<S, N>(v);
 
-  Intrepid2::Matrix<S, M, N> const
+  minitensor::Matrix<S, M, N> const
   J = minisolver_ec_.gradient(xval);
 
-  Intrepid2::Vector<S, M> const
-  jvval = Intrepid2::dot(J, vval);
+  minitensor::Vector<S, M> const
+  jvval = minitensor::dot(J, vval);
 
   MTtoROL<S, M>(jvval, jv);
 }
@@ -112,17 +112,17 @@ void
 MiniTensor_EqualityConstraint<MSEC, S, M, N>::
 applyAdjointJacobian(Vector<S> & ajv, Vector<S> const & v, Vector<S> const & x, S &)
 {
-  Intrepid2::Vector<S, N> const
+  minitensor::Vector<S, N> const
   xval = MTfromROL<S, N>(x);
 
-  Intrepid2::Vector<S, M> const
+  minitensor::Vector<S, M> const
   vval = MTfromROL<S, M>(v);
 
-  Intrepid2::Matrix<S, M, N> const
+  minitensor::Matrix<S, M, N> const
   J = minisolver_ec_.gradient(xval);
 
-  Intrepid2::Vector<S, N> const
-  ajvval = Intrepid2::dot(vval, J);
+  minitensor::Vector<S, N> const
+  ajvval = minitensor::dot(vval, J);
 
   MTtoROL<S, N>(ajvval, ajv);
 }
