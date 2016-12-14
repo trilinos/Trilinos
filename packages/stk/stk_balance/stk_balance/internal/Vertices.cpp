@@ -67,7 +67,7 @@ void Vertices::fillFieldVertexWeights(const stk::balance::BalanceSettings& balan
                 for(size_t weight_index=0;weight_index<numCriteria;weight_index++)
                 {
                     unsigned index = stk::balance::internal::get_index(numSelectors, numCriteria, i, sel, weight_index);
-                    mVertexWeights[index] = balanceSettings.getGraphVertexWeight(entitiesToBalance[i], weight_index);;
+                    mVertexWeights[index] = balanceSettings.getGraphVertexWeight(entitiesToBalance[i], weight_index);
                 }
             }
         }

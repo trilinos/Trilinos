@@ -143,7 +143,7 @@ void FieldBaseImpl::insert_restriction(
       ThrowErrorMsgIf( bad_stride,
           arg_method << " FAILED for " << *this <<
           " WITH BAD STRIDE " <<
-          print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));;
+          print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));
     }
   }
 
