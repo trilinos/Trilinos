@@ -73,53 +73,6 @@ APPEND_SET(HEADERS
   Kokkos/Intrepid2_FieldContainer_Kokkos_Serial_Right.hpp
  )
 
-
-
-#
-# MiniTensor headers
-#
-IF (Intrepid2_ENABLE_Boost)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
-  APPEND_SET(HEADERS ${HEADERS}
-    Shared/MiniTensor/Intrepid2_MiniTensor.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_TensorBase.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_TensorBase.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_TensorBase.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Definitions.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_FunctionSet.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_LinearAlgebra.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_LinearAlgebra.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_LinearAlgebra.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Mechanics.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Mechanics.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Mechanics.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Solvers.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Solvers.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Storage.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Storage.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor3.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor3.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor3.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor4.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor4.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Tensor4.t.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Utilities.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Utilities.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Vector.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Vector.i.h
-    Shared/MiniTensor/Intrepid2_MiniTensor_Vector.t.h
-  )
-ENDIF()
-
 #
 # Discretization headers
 #
