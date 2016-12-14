@@ -1040,13 +1040,13 @@ init (const keys_type& keys,
 
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   {
-    const offset_type maxVal = ::Kokkos::Details::ArithTraits<offset_type>::max ();
-    const size_type maxValST = static_cast<size_type> (maxVal);
+    const offset_type theMaxVal = ::Kokkos::Details::ArithTraits<offset_type>::max ();
+    const size_type maxValST = static_cast<size_type> (theMaxVal);
     TEUCHOS_TEST_FOR_EXCEPTION
       (keys.dimension_0 () > maxValST, std::invalid_argument, prefix << "The "
        "number of keys " << keys.dimension_0 () << " does not fit in "
        "offset_type = " << TypeNameTraits<offset_type>::name () << ", whose "
-       "max value is " << maxVal << ".  This means that it is not possible to "
+       "max value is " << theMaxVal << ".  This means that it is not possible to "
        "use this constructor.");
   }
   TEUCHOS_TEST_FOR_EXCEPTION
