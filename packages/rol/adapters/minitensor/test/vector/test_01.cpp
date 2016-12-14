@@ -74,22 +74,22 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   os = (print_output == true) ? std::cout : bhs;
 
   T const
-  epsilon{Intrepid2::machine_epsilon<T>()};
+  epsilon{minitensor::machine_epsilon<T>()};
 
   T const
   error_tol{16.0 * epsilon};
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   N{16};
 
-  Intrepid2::Vector<T, N>
-  vx(Intrepid2::RANDOM);
+  minitensor::Vector<T, N>
+  vx(minitensor::RANDOM);
 
-  Intrepid2::Vector<T, N>
-  vy(Intrepid2::RANDOM);
+  minitensor::Vector<T, N>
+  vy(minitensor::RANDOM);
 
-  Intrepid2::Vector<T, N>
-  vz(Intrepid2::RANDOM);
+  minitensor::Vector<T, N>
+  vz(minitensor::RANDOM);
 
   ROL::MiniTensorVector<T, N>
   x(vx);
@@ -104,15 +104,15 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   std::vector<T>
   consistency = x.checkVector(y, z, true, os);
 
-  Intrepid2::Index const
+  minitensor::Index const
   num_tests = consistency.size();
 
-  Intrepid2::Vector<T>
+  minitensor::Vector<T>
   checkvec(num_tests);
 
   checkvec.fill(&consistency[0]);
 
-  ASSERT_LE(Intrepid2::norm(checkvec), std::sqrt(epsilon));
+  ASSERT_LE(minitensor::norm(checkvec), std::sqrt(epsilon));
 
   // Basis tests.
   // set x to first basis vector
@@ -156,7 +156,7 @@ TEST(MiniTensor_ROL, VectorAdaptor)
 
   checkvec.fill(&consistency[0]);
 
-  ASSERT_EQ(Intrepid2::norm(checkvec), 0.0);
+  ASSERT_EQ(minitensor::norm(checkvec), 0.0);
 }
 
 TEST(MiniTensor_ROL, VectorValue)
@@ -172,16 +172,16 @@ TEST(MiniTensor_ROL, VectorValue)
   os = (print_output == true) ? std::cout : bhs;
 
   T const
-  epsilon{Intrepid2::machine_epsilon<T>()};
+  epsilon{minitensor::machine_epsilon<T>()};
 
   constexpr
-  Intrepid2::Index
+  minitensor::Index
   N{4};
 
-  Intrepid2::Vector<T, N> const
-  x(Intrepid2::ONES);
+  minitensor::Vector<T, N> const
+  x(minitensor::ONES);
 
-  os << "Intrepid2::Vector x     : " << x << '\n';
+  os << "minitensor::Vector x     : " << x << '\n';
 
   ROL::MiniTensorVector<T, N>
   y(x);
@@ -189,37 +189,37 @@ TEST(MiniTensor_ROL, VectorValue)
   os << "ROL::MiniTensorVector y : " << y << '\n';
 
   T const
-  error0 = std::abs(y.norm() - Intrepid2::norm(x));
+  error0 = std::abs(y.norm() - minitensor::norm(x));
 
   ASSERT_LE(error0, epsilon);
 
   ROL::Vector<T> &
   z = y;
 
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   a = ROL::MTfromROL<T, N>(z);
 
-  os << "Intrepid2::Vector a     : " << a << '\n';
+  os << "minitensor::Vector a     : " << a << '\n';
 
   T const
-  error1 = Intrepid2::norm(x - a);
+  error1 = minitensor::norm(x - a);
 
   ASSERT_LE(error1, epsilon);
 
-  Intrepid2::Vector<T, N> const
-  b(Intrepid2::SEQUENCE);
+  minitensor::Vector<T, N> const
+  b(minitensor::SEQUENCE);
 
-  os << "Intrepid2::Vector b     : " << b << '\n';
+  os << "minitensor::Vector b     : " << b << '\n';
 
   ROL::MTtoROL(b, z);
 
-  Intrepid2::Vector<T, N> const
+  minitensor::Vector<T, N> const
   c = ROL::MTfromROL<T, N>(z);
 
-  os << "Intrepid2::Vector c     : " << c << '\n';
+  os << "minitensor::Vector c     : " << c << '\n';
 
   T const
-  error2 = Intrepid2::norm(b - c);
+  error2 = minitensor::norm(b - c);
 
   ASSERT_LE(error2, epsilon);
 }

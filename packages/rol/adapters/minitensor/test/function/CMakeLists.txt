@@ -1,4 +1,4 @@
-IF(ROL_ENABLE_Intrepid2)
+IF(ROL_ENABLE_MiniTensor)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_01
     SOURCES test_01.cpp

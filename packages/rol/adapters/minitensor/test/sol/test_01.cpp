@@ -40,7 +40,7 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include <Intrepid2_MiniTensor_FunctionSet.h>
+#include <MiniTensor_FunctionSet.h>
 #include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
@@ -77,7 +77,7 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   DIM{2};
 
   Real const
@@ -86,7 +86,7 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   Real const
   b = 100.0;
 
-  Intrepid2::Rosenbrock<Real, DIM>
+  minitensor::Rosenbrock<Real, DIM>
   fn(a, b);
 
   // Define algorithm.
@@ -105,8 +105,8 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
-  Intrepid2::Vector<Real, DIM>
-  x(Intrepid2::RANDOM);
+  minitensor::Vector<Real, DIM>
+  x(minitensor::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, DIM>
   minimizer;
@@ -118,11 +118,11 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   Real const
   tol{1.0e-10};
 
-  Intrepid2::Vector<Real, DIM>
+  minitensor::Vector<Real, DIM>
   soln(a, a * a);
 
   Real const
-  error = Intrepid2::norm(soln - x);
+  error = minitensor::norm(soln - x);
 
   ASSERT_LE(error, tol);
 }
@@ -139,21 +139,21 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_VAR{2};
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   lo(1.0, -10.0);
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   hi(10.0, 10.0);
 
   // Function to optimize
-  Intrepid2::Paraboloid<Real, NUM_VAR>
+  minitensor::Paraboloid<Real, NUM_VAR>
   fn;
 
   // Constraint that defines the feasible region
-  Intrepid2::Bounds<Real, NUM_VAR>
+  minitensor::Bounds<Real, NUM_VAR>
   bounds(lo, hi);
 
   // Define algorithm.
@@ -172,8 +172,8 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
-  Intrepid2::Vector<Real, NUM_VAR>
-  x(Intrepid2::RANDOM);
+  minitensor::Vector<Real, NUM_VAR>
+  x(minitensor::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -185,11 +185,11 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
   Real const
   tol{0.04};
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   soln(1.0, 0.0);
 
   Real const
-  error = Intrepid2::norm(soln - x);
+  error = minitensor::norm(soln - x);
 
   ASSERT_LE(error, tol);
 }
@@ -206,10 +206,10 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_VAR{2};
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_CONSTR{1};
 
   Real const
@@ -222,11 +222,11 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   r = 1.0;
 
   // Function to optimize
-  Intrepid2::Paraboloid<Real, NUM_VAR>
+  minitensor::Paraboloid<Real, NUM_VAR>
   fn;
 
   // Constraint that defines the feasible region
-  Intrepid2::Circumference<Real, NUM_CONSTR, NUM_VAR>
+  minitensor::Circumference<Real, NUM_CONSTR, NUM_VAR>
   eq_constr(r, a, b);
 
   // Define algorithm.
@@ -258,12 +258,12 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
-  Intrepid2::Vector<Real, NUM_VAR>
-  x(Intrepid2::RANDOM);
+  minitensor::Vector<Real, NUM_VAR>
+  x(minitensor::RANDOM);
 
   // Set constraint vector
-  Intrepid2::Vector<Real, NUM_CONSTR>
-  c(Intrepid2::RANDOM);
+  minitensor::Vector<Real, NUM_CONSTR>
+  c(minitensor::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -275,11 +275,11 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   Real const
   tol{0.04};
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   soln(1.0, 0.0);
 
   Real const
-  error = Intrepid2::norm(soln - x);
+  error = minitensor::norm(soln - x);
 
   ASSERT_LE(error, tol);
 }
@@ -296,10 +296,10 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_VAR{2};
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_CONSTR{1};
 
   Real const
@@ -312,11 +312,11 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
   r = 1.0;
 
   // Function to optimize
-  Intrepid2::Paraboloid<Real, NUM_VAR>
+  minitensor::Paraboloid<Real, NUM_VAR>
   fn;
 
   // Constraint that defines the feasible region
-  Intrepid2::Circle<Real, NUM_CONSTR, NUM_VAR>
+  minitensor::Circle<Real, NUM_CONSTR, NUM_VAR>
   ineq_constr(r, a, b);
 
   // Define algorithm.
@@ -348,12 +348,12 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
-  Intrepid2::Vector<Real, NUM_VAR>
-  x(Intrepid2::RANDOM);
+  minitensor::Vector<Real, NUM_VAR>
+  x(minitensor::RANDOM);
 
   // Set constraint vector
-  Intrepid2::Vector<Real, NUM_CONSTR>
-  c(Intrepid2::RANDOM);
+  minitensor::Vector<Real, NUM_CONSTR>
+  c(minitensor::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -365,11 +365,11 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
   Real const
   tol{0.04};
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   soln(1.0, 0.0);
 
   Real const
-  error = Intrepid2::norm(soln - x);
+  error = minitensor::norm(soln - x);
 
   ASSERT_LE(error, tol);
 }
@@ -377,8 +377,8 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
 namespace
 {
 
-template<typename S, Intrepid2::Index M = 2>
-class HS24 : public Intrepid2::Function_Base<HS24<S, M>, S, M>
+template<typename S, minitensor::Index M = 2>
+class HS24 : public minitensor::Function_Base<HS24<S, M>, S, M>
 {
 public:
 
@@ -390,12 +390,12 @@ public:
   char const * const
   NAME{"HS24's Function"};
 
-  using Base = Intrepid2::Function_Base<HS24<S, M>, S, M>;
+  using Base = minitensor::Function_Base<HS24<S, M>, S, M>;
 
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, minitensor::Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(minitensor::Vector<T, N> const & x)
   {
     T const
     sqrt3 = std::sqrt(3.0);
@@ -407,25 +407,25 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N>
+  minitensor::Vector<T, N>
+  gradient(minitensor::Vector<T, N> const & x)
   {
     return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N>
+  minitensor::Tensor<T, N>
+  hessian(minitensor::Vector<T, N> const & x)
   {
     return Base::hessian(*this, x);
   }
 
 };
 
-template<typename S, Intrepid2::Index M = 2>
-class HS4 : public Intrepid2::Function_Base<HS4<S, M>, S, M>
+template<typename S, minitensor::Index M = 2>
+class HS4 : public minitensor::Function_Base<HS4<S, M>, S, M>
 {
 public:
 
@@ -437,12 +437,12 @@ public:
   char const * const
   NAME{"HS4's Function"};
 
-  using Base = Intrepid2::Function_Base<HS4<S, M>, S, M>;
+  using Base = minitensor::Function_Base<HS4<S, M>, S, M>;
 
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, minitensor::Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(minitensor::Vector<T, N> const & x)
   {
     T const
     a = x(0) + 1.0;
@@ -451,17 +451,17 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N>
+  minitensor::Vector<T, N>
+  gradient(minitensor::Vector<T, N> const & x)
   {
     return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N>
+  minitensor::Tensor<T, N>
+  hessian(minitensor::Vector<T, N> const & x)
   {
     return Base::hessian(*this, x);
   }
@@ -471,8 +471,8 @@ public:
 //
 // HS24 feasible region
 //
-template<typename S, Intrepid2::Index NC = 3, Intrepid2::Index NV = 2>
-class HS24_Region : public Intrepid2::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>
+template<typename S, minitensor::Index NC = 3, minitensor::Index NV = 2>
+class HS24_Region : public minitensor::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>
 {
 public:
 
@@ -484,20 +484,20 @@ public:
   char const * const
   NAME{"HS24 feasible region"};
 
-  using Base = Intrepid2::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>;
+  using Base = minitensor::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
-  template<typename T, Intrepid2::Index N = 2>
-  Intrepid2::Vector<T, NC>
-  value(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N = 2>
+  minitensor::Vector<T, NC>
+  value(minitensor::Vector<T, N> const & x)
   {
     assert(x.get_dimension() == NV);
 
     T const
     c = std::sqrt(3.0);
 
-    Intrepid2::Vector<T, NC>
-    f(Intrepid2::ZEROS);
+    minitensor::Vector<T, NC>
+    f(minitensor::ZEROS);
 
     f(0) = x(0) / c- x(1);
 
@@ -509,9 +509,9 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N = 2>
-  Intrepid2::Matrix<T, NC, NV>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, minitensor::Index N = 2>
+  minitensor::Matrix<T, NC, NV>
+  gradient(minitensor::Vector<T, N> const & x)
   {
     return Base::gradient(*this, x);
   }
@@ -532,7 +532,7 @@ TEST(MiniTensor_ROL, HS24_BoundOnlyMod)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_VAR{2};
 
   // Function to optimize
@@ -556,18 +556,18 @@ TEST(MiniTensor_ROL, HS24_BoundOnlyMod)
 
   // These are not the original bounds for these problems.
   // We use them to check the algorithm.
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   lo(-1.0, -1.0);
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   hi(1.0, 1.0);
 
   // Constraint that defines the feasible region
-  Intrepid2::Bounds<Real, NUM_VAR>
+  minitensor::Bounds<Real, NUM_VAR>
   bounds(lo, hi);
 
   // Set initial guess
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   x(-0.9, -0.9);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
@@ -580,11 +580,11 @@ TEST(MiniTensor_ROL, HS24_BoundOnlyMod)
   Real const
   tol{1.0e-10};
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   soln(-1.0, -1.0);
 
   Real const
-  error = Intrepid2::norm(soln - x);
+  error = minitensor::norm(soln - x);
 
   ASSERT_LE(error, tol);
 }

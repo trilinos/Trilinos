@@ -42,11 +42,11 @@
 #if !defined(ROL_MiniTensor_MiniSolver_hpp)
 #define ROL_MiniTensor_MiniSolver_hpp
 
-#include "Intrepid2_MiniTensor_Solvers.h"
+#include "MiniTensor_Solvers.h"
 
 namespace ROL {
 
-using Index = Intrepid2::Index;
+using Index = minitensor::Index;
 
 ///
 /// Minimizer Struct
@@ -63,7 +63,7 @@ public:
       std::string const & algoname,
       Teuchos::ParameterList & params,
       FN & fn,
-      Intrepid2::Vector<T, N> & soln);
+      minitensor::Vector<T, N> & soln);
 
   template<typename FN, typename BC>
   void
@@ -72,7 +72,7 @@ public:
       Teuchos::ParameterList & params,
       FN & fn,
       BC & bc,
-      Intrepid2::Vector<T, N> & soln);
+      minitensor::Vector<T, N> & soln);
 
   template<typename FN, typename EIC, Index NC>
   void
@@ -81,8 +81,8 @@ public:
       Teuchos::ParameterList & params,
       FN & fn,
       EIC & eic,
-      Intrepid2::Vector<T, N> & soln,
-      Intrepid2::Vector<T, NC> & cv);
+      minitensor::Vector<T, N> & soln,
+      minitensor::Vector<T, NC> & cv);
 
   template<typename FN, typename EIC, typename BC, Index NC>
   void
@@ -92,8 +92,8 @@ public:
       FN & fn,
       EIC & eic,
       BC & bc,
-      Intrepid2::Vector<T, N> & soln,
-      Intrepid2::Vector<T, NC> & cv);
+      minitensor::Vector<T, N> & soln,
+      minitensor::Vector<T, NC> & cv);
 
   void
   printReport(std::ostream & os);
@@ -107,7 +107,7 @@ private:
 
   template<typename FN>
   void
-  recordFinals(FN & fn, Intrepid2::Vector<T, N> const & x);
+  recordFinals(FN & fn, minitensor::Vector<T, N> const & x);
 
 public:
   T
@@ -158,16 +158,16 @@ public:
   bool
   enforce_boundedness{false};
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   initial_guess;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   final_soln;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   final_gradient;
 
-  Intrepid2::Tensor<T, N>
+  minitensor::Tensor<T, N>
   final_hessian;
 
   char const *

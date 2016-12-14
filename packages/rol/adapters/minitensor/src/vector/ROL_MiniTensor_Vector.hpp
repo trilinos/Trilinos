@@ -42,7 +42,7 @@
 #if !defined(ROL_MiniTensor_Vector_hpp)
 #define ROL_MiniTensor_Vector_hpp
 
-#include "Intrepid2_MiniTensor.h"
+#include "MiniTensor.h"
 #include "ROL_Vector.hpp"
 
 namespace ROL {
@@ -50,12 +50,12 @@ namespace ROL {
 ///
 /// ROL container for MiniTensor Vector
 ///
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 class MiniTensorVector : public Vector<T> {
 
 public:
 
-  MiniTensorVector(Intrepid2::Vector<T, N> const & v);
+  MiniTensorVector(minitensor::Vector<T, N> const & v);
 
   virtual
   ~MiniTensorVector();
@@ -115,12 +115,12 @@ public:
   // Utilities
   //
   void
-  set(Intrepid2::Vector<T, N> const & x);
+  set(minitensor::Vector<T, N> const & x);
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   getVector() const;
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   getVector();
 
   friend
@@ -141,23 +141,23 @@ public:
 
 private:
 
-  Intrepid2::Vector<T, N>
+  minitensor::Vector<T, N>
   vector_;
 }; // class MiniTensorVector
 
 ///
 /// Covert from ROL to MiniTensor
 ///
-template<typename T, Intrepid2::Index N>
-Intrepid2::Vector<T, N>
+template<typename T, minitensor::Index N>
+minitensor::Vector<T, N>
 MTfromROL(Vector<T> const & x);
 
 //
 // Convert from MiniTensor to ROL
 //
-template<typename T, Intrepid2::Index N>
+template<typename T, minitensor::Index N>
 void
-MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x);
+MTtoROL(minitensor::Vector<T, N> const & xval, Vector<T> & x);
 
 } // namespace ROL
 

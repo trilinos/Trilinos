@@ -40,7 +40,7 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include <Intrepid2_MiniTensor_FunctionSet.h>
+#include <MiniTensor_FunctionSet.h>
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
@@ -79,12 +79,12 @@ TEST(MiniTensor_ROL, Paraboloid)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   DIM{2};
 
-  using MSFN = Intrepid2::Paraboloid<Real, DIM>;
+  using MSFN = minitensor::Paraboloid<Real, DIM>;
 
-  Intrepid2::Vector<Real, DIM>
+  minitensor::Vector<Real, DIM>
   min(0.0, 0.0);
 
   MSFN
@@ -109,24 +109,24 @@ TEST(MiniTensor_ROL, Paraboloid)
   algo("Line Search", params);
 
   // Set Initial Guess
-  Intrepid2::Vector<Real, DIM>
-  xval(Intrepid2::RANDOM);
+  minitensor::Vector<Real, DIM>
+  xval(minitensor::RANDOM);
 
   ROL::MiniTensorVector<Real, DIM> x(xval);
 
   // Run Algorithm
   algo.run(x, obj, true, os);
 
-  Intrepid2::Vector<Real, DIM> const
+  minitensor::Vector<Real, DIM> const
   sol = ROL::MTfromROL<Real, DIM>(x);
 
   os << "Solution : " << sol << '\n';
 
   Real const
-  epsilon{Intrepid2::machine_epsilon<Real>()};
+  epsilon{minitensor::machine_epsilon<Real>()};
 
   Real const
-  error = Intrepid2::norm(sol - min);
+  error = minitensor::norm(sol - min);
 
   ASSERT_LE(error, epsilon);
 }
@@ -143,10 +143,10 @@ TEST(MiniTensor_ROL, Rosenbrock)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   DIM{2};
 
-  using MSFN = Intrepid2::Rosenbrock<Real, DIM>;
+  using MSFN = minitensor::Rosenbrock<Real, DIM>;
 
   Real const
   a = 1.0;
@@ -176,8 +176,8 @@ TEST(MiniTensor_ROL, Rosenbrock)
   algo("Line Search", params);
 
   // Set Initial Guess
-  Intrepid2::Vector<Real, DIM>
-  xval(Intrepid2::RANDOM);
+  minitensor::Vector<Real, DIM>
+  xval(minitensor::RANDOM);
 
   ROL::MiniTensorVector<Real, DIM>
   x(xval);
@@ -185,19 +185,19 @@ TEST(MiniTensor_ROL, Rosenbrock)
   // Run Algorithm
   algo.run(x, obj, true, os);
 
-  Intrepid2::Vector<Real, DIM> const
+  minitensor::Vector<Real, DIM> const
   sol = ROL::MTfromROL<Real, DIM>(x);
 
   os << "Solution : " << sol << '\n';
 
   Real const
-  epsilon{2.0 * Intrepid2::machine_epsilon<Real>()};
+  epsilon{2.0 * minitensor::machine_epsilon<Real>()};
 
   xval(0) = a;
   xval(1) = a * a;
 
   Real const
-  error = Intrepid2::norm(sol - xval);
+  error = minitensor::norm(sol - xval);
 
   ASSERT_LE(error, epsilon);
 }
@@ -216,13 +216,13 @@ TEST(MiniTensor_ROL, NLLS01)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_CONSTR{3};
 
-  constexpr Intrepid2::Index
+  constexpr minitensor::Index
   NUM_VAR{5};
 
-  using MSEC = Intrepid2::Nonlinear01<Real, NUM_CONSTR>;
+  using MSEC = minitensor::Nonlinear01<Real, NUM_CONSTR>;
 
   MSEC
   msec;
@@ -230,14 +230,14 @@ TEST(MiniTensor_ROL, NLLS01)
   ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, NUM_VAR>
-  xval(Intrepid2::ZEROS);
+  minitensor::Vector<Real, NUM_VAR>
+  xval(minitensor::ZEROS);
 
-  Intrepid2::Vector<Real, NUM_CONSTR>
-  cval(Intrepid2::ZEROS);
+  minitensor::Vector<Real, NUM_CONSTR>
+  cval(minitensor::ZEROS);
 
-  Intrepid2::Vector<Real, NUM_VAR>
-  solval(Intrepid2::ZEROS);
+  minitensor::Vector<Real, NUM_VAR>
+  solval(minitensor::ZEROS);
 
   // Set initial guess.
   xval(0) = -1.8;
@@ -297,13 +297,13 @@ TEST(MiniTensor_ROL, NLLS01)
 
   algo.run(x, nlls, true, os);
 
-  Intrepid2::Vector<Real, NUM_VAR>
+  minitensor::Vector<Real, NUM_VAR>
   xfinal = ROL::MTfromROL<Real, NUM_VAR>(x);
 
   os << "\nfinal x : " << xfinal << "\n";
 
   Real
-  error = std::abs(Intrepid2::norm(xfinal - solval) - error_full_hess);
+  error = std::abs(minitensor::norm(xfinal - solval) - error_full_hess);
 
   os << "\nerror : " << error << "\n";
 
@@ -323,7 +323,7 @@ TEST(MiniTensor_ROL, NLLS01)
 
   os << "\nfinal x : " << xfinal << "\n";
 
-  error = std::abs(Intrepid2::norm(xfinal - solval) - error_gn_hess);
+  error = std::abs(minitensor::norm(xfinal - solval) - error_gn_hess);
 
   os << "\nerror : " << error << "\n";
 
