@@ -87,7 +87,7 @@ fi
 
 echo "TRILINOS_DIR = '$TRILINOS_DIR'"
 if [ "$TRILINOS_DIR" == "" ] ; then
-  echo "ERROR: Count not determine TRILINOS_DIR. Please use standard directory structure or set TRILINOS_DIR in env!"
+  echo "ERROR: Cannot determine TRILINOS_DIR (you must be on a non-Linux system or you must have copied the script instead of symlinking it as per instructions). If you want to try to use this script on this system then please use standard directory structure or set TRILINOS_DIR manually in the env!  But this script and build process is currently only set up to support RHEL Linux 6 machines using the SEMS env."
   exit 1
 fi
 
