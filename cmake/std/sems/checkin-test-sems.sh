@@ -105,15 +105,21 @@ echo "
 " > COMMON.config
 
 # All of the options needed for the --default-builds
-# MPI_RELEASE_DEBUG_SHARED_PT and MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX are in
-# project-checkin-test-config.py so no need to set them here.  Also note that
-# the SEMS env will be read in automatically because load_ci_sems_dev_env.sh
-# was sourced above.
+# MPI_RELEASE_DEBUG_SHARED_PT are in project-checkin-test-config.py so no need
+# to set them here.  Also note that the SEMS env will be read in automatically
+# because load_ci_sems_dev_env.sh was sourced above.
 
 echo "
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
+# The fillowing extra build configurations can be run using
+# --st-extra-builds=<build0>,<build1>,...
+
 echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
+-DTrilinos_ENABLE_COMPLEX=ON
+-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+-DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX.config
 
 echo "
@@ -197,13 +203,8 @@ fi
 #
 # NOTE: default args are read in from the local-checkin-test-defaults.py file
 #
-# NOTE: to run the other PT default builds, use:
-#
-#   --default-builds=MPI_RELEASE_DEBUG_SHARED_PT,MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX
-#
 
 $TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
---default-builds=MPI_RELEASE_DEBUG_SHARED_PT \
 "$@"
 
 
