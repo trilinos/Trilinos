@@ -269,6 +269,7 @@ namespace Xpetra {
 
     //! Set all values in the multivector with the given value.
     virtual void putScalar(const Scalar &value) {
+      XPETRA_MONITOR("BlockedMultiVector::putScalar");
       for(size_t r = 0; r < map_->getNumMaps(); r++) {
         getMultiVector(r)->putScalar(value);
       }
@@ -339,6 +340,7 @@ namespace Xpetra {
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha) {
+      XPETRA_MONITOR("BlockedMultiVector::scale (Scalar)");
       for (size_t r = 0; r < map_->getNumMaps(); ++r) {
         if(getMultiVector(r)!=Teuchos::null) {
           getMultiVector(r)->scale(alpha);
@@ -348,6 +350,7 @@ namespace Xpetra {
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     virtual void scale (Teuchos::ArrayView< const Scalar > alpha) {
+      XPETRA_MONITOR("BlockedMultiVector::scale (Array)");
       for (size_t r = 0; r < map_->getNumMaps(); ++r) {
         if(getMultiVector(r)!=Teuchos::null) {
           getMultiVector(r)->scale(alpha);
@@ -357,6 +360,7 @@ namespace Xpetra {
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     virtual void update(const Scalar &alpha, const MultiVector&A, const Scalar &beta) {
+      XPETRA_MONITOR("BlockedMultiVector::update");
       Teuchos::RCP<const MultiVector> rcpA = Teuchos::rcpFromRef(A);
       Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
       TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != rcpA->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector).");
@@ -416,6 +420,7 @@ namespace Xpetra {
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
     virtual void update(const Scalar &alpha, const MultiVector&A, const Scalar &beta, const MultiVector&B, const Scalar &gamma) {
+      XPETRA_MONITOR("BlockedMultiVector::update2");
       Teuchos::RCP<const MultiVector> rcpA = Teuchos::rcpFromRef(A);
       Teuchos::RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
       Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
@@ -439,6 +444,7 @@ namespace Xpetra {
 
     //! Compute 1-norm of each vector in multi-vector.
     virtual void norm1(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {
+      XPETRA_MONITOR("BlockedMultiVector::norm1");
       typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
       Array<Magnitude> temp_norms(getNumVectors());
       std::fill(norms.begin(),norms.end(),ScalarTraits<Magnitude>::zero());
@@ -454,6 +460,7 @@ namespace Xpetra {
 
     //!
     virtual void norm2(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {
+      XPETRA_MONITOR("BlockedMultiVector::norm2");
       typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
       Array<Magnitude> results(getNumVectors());
       Array<Magnitude> temp_norms(getNumVectors());
@@ -473,6 +480,7 @@ namespace Xpetra {
 
     //! Compute Inf-norm of each vector in multi-vector.
     virtual void normInf(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {
+      XPETRA_MONITOR("BlockedMultiVector::normInf");
       typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
       Array<Magnitude> temp_norms(getNumVectors());
       std::fill(norms.begin(),norms.end(),ScalarTraits<Magnitude>::zero());
@@ -498,6 +506,7 @@ namespace Xpetra {
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     virtual void elementWiseMultiply(Scalar scalarAB, const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&A, const MultiVector&B, Scalar scalarThis) {
+      XPETRA_MONITOR("BlockedMultiVector::elementWiseMultiply");
       XPETRA_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(this->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::elementWiseMultipy: B must have same blocked map than this.");
       //XPETRA_TEST_FOR_EXCEPTION(A.getMap()->isSameAs(*(this->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::elementWiseMultipy: A must have same blocked map than this.");
       TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getNodeNumElements() != B.getMap()->getNodeNumElements(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::elementWiseMultipy: A has " << A.getMap()->getNodeNumElements() << " elements, B has " << B.getMap()->getNodeNumElements() << ".");
@@ -544,6 +553,7 @@ namespace Xpetra {
 
     //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const {
+      XPETRA_MONITOR("BlockedMultiVector::getGlobalLength()");
       return map_->getFullMap()->getGlobalNumElements();
     }
 
@@ -565,6 +575,7 @@ namespace Xpetra {
     }
 
     virtual void replaceMap(const RCP<const Map>& map) {
+      XPETRA_MONITOR("BlockedMultiVector::replaceMap");
       RCP<const BlockedMap> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map);
       if (bmap.is_null() == true) {
         // if this has more than 1 sub blocks but "map" is not a blocked map, they are very likely not compatible

@@ -1061,7 +1061,7 @@ namespace Xpetra {
                        Scalar alpha = ScalarTraits<Scalar>::one(),
                        Scalar beta  = ScalarTraits<Scalar>::zero()) const
     {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::apply");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::bgs_apply");
       //using Teuchos::RCP;
 
       TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError,
