@@ -211,7 +211,7 @@ void globalWeightedCutsMessagesHopsByPart(
       std::vector <t_scalar_t> part_neighbor_weights_ordered(numParts);
 
       //coarsen for all vertices in my part in order with parts.
-      for (t_lno_t i = 0; i < numParts; ++i){
+      for (global_part_type i = 0; i < (global_part_type) numParts; ++i){
         part_t num_neighbor_parts = 0;
         t_lno_t v = part_begins[i];
         //get part i, and first vertex in this part v.
@@ -243,7 +243,7 @@ void globalWeightedCutsMessagesHopsByPart(
 
         //insert it to tpetra crsmatrix.
         if (num_neighbor_parts > 0){
-          Teuchos::ArrayView<const part_t> destinations(&(part_neighbors[0]), num_neighbor_parts);
+          Teuchos::ArrayView<const global_part_type> destinations(&(part_neighbors[0]), num_neighbor_parts);
           Teuchos::ArrayView<const t_scalar_t> vals(&(part_neighbor_weights_ordered[0]), num_neighbor_parts);
           tMatrix->insertGlobalValues (i,destinations, vals);
         }
@@ -531,7 +531,7 @@ void globalWeightedCutsMessagesByPart(
       std::vector <t_scalar_t> part_neighbor_weights_ordered(numParts);
 
       //coarsen for all vertices in my part in order with parts.
-      for (t_lno_t i = 0; i < numParts; ++i){
+      for (global_part_type i = 0; i < (global_part_type) numParts; ++i){
         part_t num_neighbor_parts = 0;
         t_lno_t v = part_begins[i];
         //get part i, and first vertex in this part v.
@@ -563,7 +563,7 @@ void globalWeightedCutsMessagesByPart(
 
         //insert it to tpetra crsmatrix.
         if (num_neighbor_parts > 0){
-          Teuchos::ArrayView<const part_t> destinations(&(part_neighbors[0]), num_neighbor_parts);
+          Teuchos::ArrayView<const global_part_type> destinations(&(part_neighbors[0]), num_neighbor_parts);
           Teuchos::ArrayView<const t_scalar_t> vals(&(part_neighbor_weights_ordered[0]), num_neighbor_parts);
           tMatrix->insertGlobalValues (i,destinations, vals);
         }

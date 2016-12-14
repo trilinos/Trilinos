@@ -53,10 +53,10 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
   //int rank = tcomm->getRank();
   myTasks = numGlobalTasks / numProcs;
   zgno_t taskLeftOver = numGlobalTasks % numProcs;
-  if (rank < taskLeftOver ) ++myTasks;
+  if (zgno_t(rank) < taskLeftOver ) ++myTasks;
 
   zgno_t myTaskBegin = (numGlobalTasks / numProcs) * rank;
-  myTaskBegin += min (taskLeftOver, rank);
+  myTaskBegin += (taskLeftOver < zgno_t(rank) ? taskLeftOver : rank);
   zgno_t myTaskEnd = myTaskBegin + myTasks;
 
   //zscalar_t **partCenters = NULL;
@@ -67,23 +67,21 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
 
 
   zgno_t *task_gnos = new zgno_t [myTasks];
-  zlno_t *task_communication_xadj_ = new zlno_t [myTasks+1];
-  zlno_t *task_communication_adj_ = new zlno_t [myTasks * 6];
+  zgno_t *task_communication_xadj_ = new zgno_t [myTasks+1];
+  zgno_t *task_communication_adj_ = new zgno_t [myTasks * 6];
 
   env->timerStart(Zoltan2::MACRO_TIMERS, "TaskGraphCreate");
   zlno_t prevNCount = 0;
   task_communication_xadj_[0] = 0;
-  for (zlno_t i = myTaskBegin; i < myTaskEnd; ++i) {
+  for (zgno_t i = myTaskBegin; i < myTaskEnd; ++i) {
     task_gnos[i - myTaskBegin] = i;
 
-    zlno_t x = i % nx;
-    zlno_t y = (i / (nx)) % ny;
-    zlno_t z = (i / (nx)) / ny;
+    int x = i % nx;
+    int y = (i / (nx)) % ny;
+    int z = (i / (nx)) / ny;
     partCenters[0][i - myTaskBegin] = x;
     partCenters[1][i - myTaskBegin] = y;
     partCenters[2][i - myTaskBegin] = z;
-
-
 
     if (x > 0){
       task_communication_adj_[prevNCount++] = i - 1;
@@ -115,7 +113,7 @@ RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int n
 
   env->timerStart(Zoltan2::MACRO_TIMERS, "TpetraGraphCreate");
 
-  for (zlno_t lclRow = 0; lclRow < myTasks; ++lclRow) {
+  for (zgno_t lclRow = 0; lclRow < myTasks; ++lclRow) {
     const zgno_t gblRow = map->getGlobalElement (lclRow);
     zgno_t begin = task_communication_xadj_[lclRow];
     zgno_t end = task_communication_xadj_[lclRow + 1];
