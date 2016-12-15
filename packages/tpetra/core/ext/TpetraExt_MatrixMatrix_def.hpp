@@ -1822,9 +1822,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-
-
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPESFC"))));
 #endif
