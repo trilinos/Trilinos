@@ -350,7 +350,7 @@ void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const B
 std::vector<int> getLocalIdsOfEntitiesNotSelected(const stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector selector, const stk::mesh::impl::LocalIdMapper& localIds)
 {
     selector = (!selector) & stkMeshBulkData.mesh_meta_data().locally_owned_part();
-    std::vector<int> local_ids;;
+    std::vector<int> local_ids;
     size_t num_total_elements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
     const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::ELEMENT_RANK, selector);
