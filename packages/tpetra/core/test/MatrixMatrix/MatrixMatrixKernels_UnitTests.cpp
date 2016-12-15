@@ -60,6 +60,7 @@
 #include <cmath>
 #include "KokkosKernels_SPGEMM.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "Tpetra_Import_Util2.hpp"
 
 namespace {
   static const double defaultEpsilon = 1e-10;
@@ -446,6 +447,9 @@ mult_test_results multiply_test_kernel(
     KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
     
+    // Sort
+    Tpetra::Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+
     // Compare the returned arrays with that of actual C
     Teuchos::ArrayRCP<const size_t> Real_rowptr;
     Teuchos::ArrayRCP<const LO> Real_colind;
