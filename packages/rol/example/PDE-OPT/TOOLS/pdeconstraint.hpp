@@ -733,6 +733,10 @@ public:
     return assembler_;
   }
 
+  const Teuchos::RCP<PDE<Real> > getPDE(void) const {
+    return pde_;
+  }
+
   using ROL::EqualityConstraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
     computeJ1_ = (flag ? true : computeJ1_);

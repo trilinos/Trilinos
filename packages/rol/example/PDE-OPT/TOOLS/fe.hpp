@@ -254,14 +254,21 @@ public:
 
     // Compute local degrees of freedom on reference cell sides.
     int numSides = cellTopo_->getSideCount();
-    for (int i=0; i<numSides; ++i) {
-      sideDofs_.push_back(computeBoundaryDofs(i));
+    if ( numSides ) {
+      for (int i=0; i<numSides; ++i) {
+        sideDofs_.push_back(computeBoundaryDofs(i));
+      }
+    }
+    else {
+      sideDofs_.push_back(computeBoundaryDofs(0));
     }
 
     // Get coordinates of DOFs in reference cell.
     Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
       Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
-    coord_iface->getDofCoords(*dofPoints_);
+    if (d_ > 1) {
+      coord_iface->getDofCoords(*dofPoints_);
+    }
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -428,7 +435,9 @@ public:
     // Get coordinates of DOFs in reference cell.
     Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
       Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
-    coord_iface->getDofCoords(*dofPoints_);
+    if (d_ > 1) {
+      coord_iface->getDofCoords(*dofPoints_);
+    }
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -606,7 +615,10 @@ public:
     std::vector<int> bdrydofs;
     std::vector<int> nodeids, edgeids, faceids;
 
-    if (cellTopo_->getDimension() == 2) {
+    if (cellTopo_->getDimension() == 1) {
+      nodeids.push_back(cellTopo_->getNodeMap(0, locSideId, 0));
+    }
+    else if (cellTopo_->getDimension() == 2) {
       edgeids.push_back(locSideId);
       int numVertices = 2;
       for (int i=0; i<numVertices; ++i) {
