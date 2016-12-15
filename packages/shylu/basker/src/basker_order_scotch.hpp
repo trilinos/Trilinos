@@ -590,7 +590,11 @@ namespace BaskerNS
             printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
             printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
           }
-      printf(" ShyLU Basker Error: num domains != ideal num domains\n");
+      printf(" ShyLU Basker Error: do_complete_tree routine \n");
+      printf("   num domains != ideal num domains\n");
+      printf("  This error occurs when the matrix to be solved is too small for given number of threads\n \
+            The number of threads must match the number of leaves in the tree\n \
+            To resolve this, rerun with fewer threads\n");
       // Make this throw exception instead
     	exit(EXIT_FAILURE);
       }
