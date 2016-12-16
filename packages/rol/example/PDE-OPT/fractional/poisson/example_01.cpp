@@ -202,8 +202,16 @@ int main(int argc, char *argv[]) {
     int iter(0), flag(0);
     Teuchos::RCP<ROL::Vector<RealT> > Xvec = Fvec->clone();
     solver->run(*Xvec,*A,*Fvec,*M,iter,flag);
-
     *outStream << "CG Iterations: " << iter << "  CG Flag: " << flag << std::endl;
+
+    // Print solution
+    Teuchos::RCP<Linear_PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<Linear_PDE_Constraint<RealT> >(con_local);
+    pdecon->printMeshData(*outStream);
+    Teuchos::RCP<const Tpetra::MultiVector<> > Xrcp
+      = Teuchos::rcp_dynamic_cast<const ROL::TpetraMultiVector<RealT> >(Xvec)->getVector();
+    Teuchos::Array<size_t> col(1,0);
+    pdecon->outputTpetraVector(Xrcp->subView(col()),"state.txt");
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

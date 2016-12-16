@@ -1,11 +1,15 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Fractional Power"          type="double" value="0.5" />
-    <Parameter name="Diffusion FE Basis Order"  type="int"    value="1"   />
-    <Parameter name="Diffusion Cubature Degree" type="int"    value="4"   />
-    <Parameter name="Cylinder FE Basis Order"   type="int"    value="1"   />
-    <Parameter name="Cylinder Cubature Degree"  type="int"    value="4"   />
+    <Parameter name="State Cost"                    type="double" value="1.0"   />
+    <Parameter name="Control Cost"                  type="double" value="1e-2"  />
+    <Parameter name="Fractional Power"              type="double" value="0.5"   />
+    <Parameter name="Diffusion FE Basis Order"      type="int"    value="1"     />
+    <Parameter name="Diffusion Cubature Degree"     type="int"    value="4"     />
+    <Parameter name="Cylinder FE Basis Order"       type="int"    value="1"     />
+    <Parameter name="Cylinder Cubature Degree"      type="int"    value="4"     />
+    <Parameter name="Use State and Adjoint Storage" type="bool"   value="true"  />
+    <Parameter name="Check Derivatives"             type="bool"   value="false" />
   </ParameterList>
 
   <!-- SOLVER INFORMATION -->
@@ -13,33 +17,6 @@
     <Parameter name="Use Direct Solver" type="bool"   value="true" />
     <ParameterList name="Direct">
       <Parameter name="Solver Type"     type="string" value="KLU2" />
-    </ParameterList>
-    <ParameterList name="MueLu">
-      <Parameter name="verbosity"                 type="string"  value="none"          />
-      <Parameter name="number of equations"       type="int"     value="1"             />
-      <Parameter name="problem: symmetric"        type="bool"    value="false"         />
-      <Parameter name="multigrid algorithm"       type="string"  value="sa"            />
-      <Parameter name="coarse: type"              type="string"  value="KLU2"          />
-    </ParameterList>
-    <ParameterList name="Belos">
-      <Parameter name="Block Size"                type="int"     value="1"             />
-      <Parameter name="Maximum Iterations"        type="int"     value="100"            />
-      <Parameter name="Convergence Tolerance"     type="double"  value="1e-10"         />
-      <Parameter name="Output Style"              type="int"     value="1"             />
-      <Parameter name="Output Frequency"          type="int"     value="1"             />
-      <Parameter name="Verbosity"                 type="int"     value="0"             />
-    </ParameterList>
-  </ParameterList>
-
-  <!-- VECTOR INFORMATION -->
-  <ParameterList name="Vector">
-    <ParameterList name="Sim">
-      <Parameter name="Use Riesz Map"  type="bool" value="false" />
-      <Parameter name="Lump Riesz Map" type="bool" value="false" />
-    </ParameterList>
-    <ParameterList name="Opt">
-      <Parameter name="Use Riesz Map"  type="bool" value="false" />
-      <Parameter name="Lump Riesz Map" type="bool" value="false" />
     </ParameterList>
   </ParameterList>
 

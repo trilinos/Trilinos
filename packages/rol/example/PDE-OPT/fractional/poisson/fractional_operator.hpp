@@ -79,18 +79,13 @@ public:
     zvec = assembler_cylinder->createControlVector();
     assembler_cylinder->assemblePDEJacobian1(Kcylinder_,pde_cylinder,uvec,zvec);
     assembler_cylinder->assemblePDERieszMap1(Mcylinder_,pde_cylinder);
-    // Print operators
-    outputTpetraData();
   }
 
   FractionalOperator(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Klocal,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mlocal,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Kcylinder,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder)
-    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder) {
-    // Print operators
-    outputTpetraData();
-  }
+    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder) {}
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
     Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
@@ -115,14 +110,6 @@ public:
         Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
       }
     }
-  }
-
-  void outputTpetraData() const {
-    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > matWriter;
-    matWriter.writeSparseFile("LocalStiff.txt", Klocal_);
-    matWriter.writeSparseFile("LocalMass.txt",  Mlocal_);
-    matWriter.writeSparseFile("CylinderStiff.txt", Kcylinder_);
-    matWriter.writeSparseFile("CylinderMass.txt",  Mcylinder_);
   }
 
 private: // Vector accessor functions
@@ -199,6 +186,47 @@ public:
 //        Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
 //      }
 //    }
+  }
+
+private: // Vector accessor functions
+
+  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    return Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    return Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+  }
+};
+
+template <class Real>
+class FractionalControlOperator : public ROL::LinearOperator<Real> {
+private:
+  const Teuchos::RCP<Tpetra::CrsMatrix<> > Blocal_;
+  const int numCylinder_;
+
+  bool transpose_;
+
+public:
+  FractionalControlOperator(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Blocal,
+                            const int numCylinder)
+    : Blocal_(Blocal), numCylinder_(numCylinder), transpose_(false) {}
+
+  void setTranspose(const bool trans = true) {
+    transpose_ = trans;
+  }
+
+  void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
+    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+
+    if ( !transpose_ ) {
+      Hv.zero();
+      Blocal_->apply(*vf, *(Hvf->getVectorNonConst(0)));
+    }
+    else {
+      Blocal_->apply(*(vf->getVector(0)), *Hvf, Teuchos::TRANS);
+    }
   }
 
 private: // Vector accessor functions

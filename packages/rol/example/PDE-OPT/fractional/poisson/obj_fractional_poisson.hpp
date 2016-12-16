@@ -45,14 +45,14 @@
     \brief Provides the interface for local (cell-based) objective function computations.
 */
 
-#ifndef PDEOPT_QOI_L2TRACKING_POISSON_HPP
-#define PDEOPT_QOI_L2TRACKING_POISSON_HPP
+#ifndef PDEOPT_QOI_FRACTIONAL_POISSON_HPP
+#define PDEOPT_QOI_FRACTIONAL_POISSON_HPP
 
-#include "../TOOLS/qoi.hpp"
-#include "pde_poisson.hpp"
+#include "../../TOOLS/qoi.hpp"
+#include "pde_fractional_poisson.hpp"
 
 template <class Real>
-class QoI_L2Tracking_Poisson : public QoI<Real> {
+class QoI_L2Tracking_Fractional_Poisson : public QoI<Real> {
 private:
   Teuchos::RCP<FE<Real> > fe_;
 
@@ -68,7 +68,7 @@ private:
   }
 
 public:
-  QoI_L2Tracking_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {
+  QoI_L2Tracking_Fractional_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
     int d = fe_->cubPts()->dimension(2);
@@ -181,12 +181,12 @@ public:
 }; // QoI_L2Tracking
 
 template <class Real>
-class QoI_L2Penalty_Poisson : public QoI<Real> {
+class QoI_L2Penalty_Fractional_Poisson : public QoI<Real> {
 private:
   Teuchos::RCP<FE<Real> > fe_;
 
 public:
-  QoI_L2Penalty_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {}
+  QoI_L2Penalty_Fractional_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {}
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -276,33 +276,5 @@ public:
   }
 
 }; // QoI_L2Penalty
-
-template <class Real>
-class StdObjective_Poisson : public ROL::StdObjective<Real> {
-private:
-  Real alpha_;
-
-public:
-  StdObjective_Poisson(Teuchos::ParameterList &parlist) {
-    alpha_ = parlist.sublist("Poisson Objective Function").get("Control Penalty",1.e-4);
-  }
-
-  Real value(const std::vector<Real> &x, Real &tol) {
-    return x[0] + alpha_*x[1];
-  }
-
-  void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
-    const Real one(1);
-    g[0] = one;
-    g[1] = alpha_;
-  }
-
-  void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    hv[0] = zero;
-    hv[1] = zero;
-  }
-
-}; // OBJ_SCALAR
 
 #endif

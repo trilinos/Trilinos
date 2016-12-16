@@ -94,8 +94,8 @@ public:
     F_ = Teuchos::rcp(new ROL::TpetraMultiVector<Real>(Frcp_));
   }
 
-  FractionalVector(const Teuchos::RCP<Tpetra::MultiVector<> > &F,
-                   const Teuchos::RCP<Tpetra::Map<> > &map,
+  FractionalVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &F,
+                   const Teuchos::RCP<const Tpetra::Map<> > &map,
                    const int numCylinder,
                    const Real s) {
     // Build fractional vector
