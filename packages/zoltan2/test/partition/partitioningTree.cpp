@@ -90,7 +90,7 @@ int main(int argc, char** argv)
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool distributeInput = true;
   int success = 0;
-  int numParts = 2;
+  int numParts = 8;
 
 
   //////////////////////////////////////////////////////////////////////
@@ -203,11 +203,16 @@ int main(int argc, char** argv)
   err = testForMJ(matAdapter,me,numParts);
 
 
+
   delete ca;
 
 
-  std::cout << "PASS" << std::endl;
-  return success;
+  if(err==0)
+  {
+    std::cout << "PASS" << std::endl;
+    return success;
+  }
+  return 1;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
