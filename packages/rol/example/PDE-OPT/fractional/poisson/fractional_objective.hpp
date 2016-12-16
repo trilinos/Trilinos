@@ -83,7 +83,7 @@ public:
       = Teuchos::rcp(new ROL::TpetraMultiVector<Real>(
           Teuchos::rcp_const_cast<Tpetra::MultiVector<> >(uf)->subViewNonConst(cols())));
     g.zero();
-    obj_->gradient_2(*gr,*ur,z,tol);
+    obj_->gradient_1(*gr,*ur,z,tol);
     //Teuchos::RCP<Tpetra::MultiVector<Real> > grf = getField(*gr);
     //gf->getVectorNonConst(0)->scale(static_cast<Real>(1),*grf);
   }

@@ -74,30 +74,32 @@ private:
   Teuchos::RCP<Tpetra::MultiVector<> > ucylinder_;
   Teuchos::RCP<Tpetra::MultiVector<> > zcylinder_;
 
+  Teuchos::ParameterList parlist_;
+
   Real fracPower_;
 
   bool isAssembled_;
 
   void assemble(const ROL::Vector<Real> &z) {
     if ( !isAssembled_ ) {
-      Teuchos::RCP<const Tpetra::MultiVector<> > zf
-        = Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z).getVector(); 
       // Assemble local components
       assembler_local_->assemblePDEJacobian1(Klocal_,pde_local_,ulocal_,zlocal_);
       assembler_local_->assemblePDEJacobian2(Blocal_,pde_local_,ulocal_,zlocal_);
       assembler_local_->assemblePDERieszMap1(Mlocal_,pde_local_);
-      assembler_local_->assemblePDEResidual(Flocal_,pde_local_,ulocal_,zf);
       // Assemble cylinder components
       assembler_cylinder_->assemblePDEJacobian1(Kcylinder_,pde_cylinder_,ucylinder_,zcylinder_);
       assembler_cylinder_->assemblePDERieszMap1(Mcylinder_,pde_cylinder_);
       // Create fractional operator and vector
       A_   = Teuchos::rcp(new FractionalOperator<Real>(Klocal_,Mlocal_,Kcylinder_,Mcylinder_));
       B_   = Teuchos::rcp(new FractionalControlOperator<Real>(Blocal_,Mcylinder_->getGlobalNumCols()));
-      M_   = Teuchos::rcp(new FractionalPreconditioner<Real>(Klocal_,Mlocal_,Kcylinder_,Mcylinder_));
-      Vec_ = Teuchos::rcp(new FractionalVector<Real>(Flocal_,Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols(),fracPower_));
+      M_   = Teuchos::rcp(new FractionalPreconditioner<Real>(Klocal_,Mlocal_,Kcylinder_,Mcylinder_,parlist_));
 
       isAssembled_ = true;
     }
+    Teuchos::RCP<const Tpetra::MultiVector<> > zf
+      = Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z).getVector(); 
+    assembler_local_->assemblePDEResidual(Flocal_,pde_local_,ulocal_,zf);
+    Vec_ = Teuchos::rcp(new FractionalVector<Real>(Flocal_,Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols(),fracPower_));
   }
 
 public:
@@ -109,7 +111,7 @@ public:
                        const Teuchos::RCP<const Teuchos::Comm<int> > & comm_cylinder,
                        Teuchos::ParameterList                        & parlist,
                        std::ostream                                  & outStream = std::cout)
-    : pde_local_(pde_local), pde_cylinder_(pde_cylinder), isAssembled_(false) {
+    : pde_local_(pde_local), pde_cylinder_(pde_cylinder), parlist_(parlist), isAssembled_(false) {
     assembler_local_ = Teuchos::rcp(new Assembler<Real>(pde_local_->getFields(),
                                                         mesh_local,
                                                         comm_local,

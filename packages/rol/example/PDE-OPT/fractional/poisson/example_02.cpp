@@ -56,7 +56,7 @@
 #include <iostream>
 #include <algorithm>
 
-//#include "ROL_Algorithm.hpp"
+#include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../../TOOLS/meshmanager.hpp"
@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
 
     // Build vectors
     Teuchos::RCP<Tpetra::MultiVector<> > stateVec = assembler->createStateVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp    = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI));
-    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp    = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp   = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp    = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI+1));
+    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp    = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI+1));
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp   = Teuchos::rcp(new Tpetra::MultiVector<>(stateVec->getMap(),NI+1));
     u_rcp->randomize();  //u_rcp->putScalar(static_cast<RealT>(1));
     p_rcp->randomize();  //p_rcp->putScalar(static_cast<RealT>(1));
     du_rcp->randomize(); //du_rcp->putScalar(static_cast<RealT>(0));
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     // Create residual vectors
     Teuchos::RCP<Tpetra::MultiVector<> > conVec = assembler->createResidualVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp  = Teuchos::rcp(new Tpetra::MultiVector<>(conVec->getMap(),NI));
+    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp  = Teuchos::rcp(new Tpetra::MultiVector<>(conVec->getMap(),NI+1));
     r_rcp->randomize(); //r_rcp->putScalar(static_cast<RealT>(1));
     Teuchos::RCP<ROL::Vector<RealT> > rp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(r_rcp));
     // Create control vector and set to ones
@@ -189,6 +189,14 @@ int main(int argc, char *argv[]) {
       obj->checkGradient_2(*up,*zp,*dzp,true,*outStream);
       *outStream << "\n\nCheck Gradient of Full Objective Function\n";
       obj->checkGradient(x,d,true,*outStream);
+      *outStream << "\n\nCheck Hessian_11 of Full Objective Function\n";
+      obj->checkHessVec_11(*up,*zp,*dup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_12 of Full Objective Function\n";
+      obj->checkHessVec_12(*up,*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian_21 of Full Objective Function\n";
+      obj->checkHessVec_21(*up,*zp,*dup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_22 of Full Objective Function\n";
+      obj->checkHessVec_22(*up,*zp,*dzp,true,*outStream);
       *outStream << "\n\nCheck Hessian of Full Objective Function\n";
       obj->checkHessVec(x,d,true,*outStream);
       *outStream << "\n\nCheck Full Jacobian of PDE Constraint\n";
@@ -217,6 +225,12 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
       objReduced->checkHessVec(*zp,*dzp,true,*outStream);
     }
+
+    // Run optimization
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo
+      = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    zp->zero();
+    algo->run(*zp,*objReduced,true,*outStream);
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

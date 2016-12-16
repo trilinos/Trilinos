@@ -202,7 +202,13 @@ int main(int argc, char *argv[]) {
     int iter(0), flag(0);
     Teuchos::RCP<ROL::Vector<RealT> > Xvec = Fvec->clone();
     solver->run(*Xvec,*A,*Fvec,*M,iter,flag);
-    *outStream << "CG Iterations: " << iter << "  CG Flag: " << flag << std::endl;
+    *outStream << "GMRES Iterations: " << iter << "  GMRES Flag: " << flag << std::endl;
+
+    RealT tol(1e-8);
+    Teuchos::RCP<ROL::Vector<RealT> > Rvec = Fvec->clone();
+    A->apply(*Rvec,*Xvec,tol);
+    Rvec->axpy(static_cast<RealT>(-1),*Fvec);
+    *outStream << "GMRES Residual: " << Rvec->norm() << std::endl;
 
     // Print solution
     Teuchos::RCP<Linear_PDE_Constraint<RealT> > pdecon

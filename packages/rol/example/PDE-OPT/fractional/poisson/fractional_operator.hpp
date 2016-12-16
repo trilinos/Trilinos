@@ -52,6 +52,16 @@ class FractionalOperator : public ROL::LinearOperator<Real> {
 private:
   Teuchos::RCP<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
   Teuchos::RCP<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> > KcylinderT_, McylinderT_;
+
+  void transposeMats(void) {
+    Tpetra::RowMatrixTransposer<> transposerK(Kcylinder_);
+    KcylinderT_ = transposerK.createTranspose();
+    Tpetra::RowMatrixTransposer<> transposerM(Mcylinder_);
+    McylinderT_ = transposerM.createTranspose();
+  }
+
+  bool transpose_;
 
 public:
   FractionalOperator(const Teuchos::RCP<PDE<Real> > &pde_local,
@@ -60,7 +70,8 @@ public:
                      const Teuchos::RCP<MeshManager<Real> > &mesh_cylinder,
                      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                      Teuchos::ParameterList &parlist,
-                     std::ostream &outStream = std::cout) {
+                     std::ostream &outStream = std::cout)
+    : transpose_(false) {
     Teuchos::RCP<Tpetra::MultiVector<> > uvec;
     Teuchos::RCP<Tpetra::MultiVector<> > zvec;
     // Assemble local components
@@ -79,35 +90,47 @@ public:
     zvec = assembler_cylinder->createControlVector();
     assembler_cylinder->assemblePDEJacobian1(Kcylinder_,pde_cylinder,uvec,zvec);
     assembler_cylinder->assemblePDERieszMap1(Mcylinder_,pde_cylinder);
+    // Transpose cylinder components
+    transposeMats();
   }
 
   FractionalOperator(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Klocal,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mlocal,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Kcylinder,
                      const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder)
-    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder) {}
+    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder),
+      transpose_(false) {
+    // Transpose cylinder components
+    transposeMats();
+  }
+
+  void setTranspose(const bool trans = true) {
+    transpose_ = trans;
+  }
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
     Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
     Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
-    size_t numRowEntries(0);
-    Teuchos::Array<int> indices;
-    Teuchos::Array<Real> values;
-    for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
-      numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
-      indices.resize(numRowEntries); values.resize(numRowEntries);
-      Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
-      for (int c = 0; c < indices.size(); ++c) {
-        Klocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
+    if ( !transpose_ ) {
+      size_t numRowEntries(0);
+      Teuchos::Array<int> indices;
+      Teuchos::Array<Real> values;
+      for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+        numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
+        indices.resize(numRowEntries); values.resize(numRowEntries);
+        Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+        for (int c = 0; c < indices.size(); ++c) {
+          Klocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
+        }
       }
-    }
-    for (size_t r = 0; r < Kcylinder_->getGlobalNumRows(); ++r) {
-      numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
-      indices.resize(numRowEntries); values.resize(numRowEntries);
-      Kcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
-      for (int c = 0; c < indices.size(); ++c) {
-        Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
+      for (size_t r = 0; r < Kcylinder_->getGlobalNumRows(); ++r) {
+        numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
+        indices.resize(numRowEntries); values.resize(numRowEntries);
+        Kcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+        for (int c = 0; c < indices.size(); ++c) {
+          Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
+        }
       }
     }
   }
@@ -128,6 +151,12 @@ class FractionalPreconditioner : public ROL::LinearOperator<Real> {
 private:
   Teuchos::RCP<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
   Teuchos::RCP<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
+  mutable Teuchos::RCP<Tpetra::CrsMatrix<> > M_;
+  mutable Teuchos::RCP<Solver<Real> > solver_;
+
+  mutable Teuchos::ParameterList parlist_;
+
+  bool transpose_;
 
 public:
   FractionalPreconditioner(const Teuchos::RCP<PDE<Real> > &pde_local,
@@ -136,7 +165,8 @@ public:
                            const Teuchos::RCP<MeshManager<Real> > &mesh_cylinder,
                            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                            Teuchos::ParameterList &parlist,
-                           std::ostream &outStream = std::cout) {
+                           std::ostream &outStream = std::cout)
+    : parlist_(parlist), transpose_(false) {
     Teuchos::RCP<Tpetra::MultiVector<> > uvec;
     Teuchos::RCP<Tpetra::MultiVector<> > zvec;
     // Assemble local components
@@ -155,37 +185,93 @@ public:
     zvec = assembler_cylinder->createControlVector();
     assembler_cylinder->assemblePDEJacobian1(Kcylinder_,pde_cylinder,uvec,zvec);
     assembler_cylinder->assemblePDERieszMap1(Mcylinder_,pde_cylinder);
+    // Create linear solver object
+    solver_ = Teuchos::rcp(new Solver<Real>(parlist));
   }
 
   FractionalPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Klocal,
                            const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mlocal,
                            const Teuchos::RCP<Tpetra::CrsMatrix<> > &Kcylinder,
-                           const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder)
-    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder) {}
+                           const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder,
+                           Teuchos::ParameterList                   &parlist)
+    : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder),
+      parlist_(parlist), transpose_(false) {
+    // Create linear solver object
+    solver_ = Teuchos::rcp(new Solver<Real>(parlist));
+  }
+
+  void setTranspose(const bool trans = true) {
+    transpose_ = trans;
+  }
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Hv.set(v);
-//    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(v);
-//    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
-//
-//    Teuchos::Array<int> indices;
-//    Teuchos::Array<Real> values;
-//    for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
-//      numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
-//      indices.resize(numRowEntries); values.resize(numRowEntries);
-//      Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
-//      for (int c = 0; c < indices.size(); ++c) {
-//        Klocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
-//      }
-//    }
-//    for (size_t r = 0; r < Kcylinder_->getGlobalNumRows(); ++r) {
-//      numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
-//      indices.resize(numRowEntries); values.resize(numRowEntries);
-//      Kcylinder_->getGlobalRowView(r,indices(),values(),numRowEntries);
-//      for (int c = 0; c < indices.size(); ++c) {
-//        Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
-//      }
-//    }
+    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+
+    size_t numRowEntries(0);
+    Real massVal(0), stiffVal(0);
+    Teuchos::Array<int> indices;
+    Teuchos::Array<Real> values;
+    for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+      numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
+      indices.resize(numRowEntries); values.resize(numRowEntries);
+      Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+      massVal = static_cast<Real>(0);
+      for (int c = 0; c < indices.size(); ++c) {
+        if ( indices[c] == static_cast<int>(r) ) {
+          massVal = values[c];
+          break;
+        }
+      }
+      numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
+      indices.resize(numRowEntries); values.resize(numRowEntries);
+      Kcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+      stiffVal = static_cast<Real>(0);
+      for (int c = 0; c < indices.size(); ++c) {
+        if ( indices[c] == static_cast<int>(r) ) {
+          stiffVal = values[c];
+          break;
+        }
+      }
+      M_ = Tpetra::MatrixMatrix::add(massVal, transpose_, *Klocal_, stiffVal, transpose_, *Mlocal_);
+      M_->apply(*(vf->getVector(r)),*(Hvf->getVectorNonConst(r)));
+    }
+  }
+
+  void applyInverse( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
+    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+
+    size_t numRowEntries(0);
+    Real massVal(0), stiffVal(0);
+    Teuchos::Array<int> indices;
+    Teuchos::Array<Real> values;
+    for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+      numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
+      indices.resize(numRowEntries); values.resize(numRowEntries);
+      Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+      massVal = static_cast<Real>(0);
+      for (int c = 0; c < indices.size(); ++c) {
+        if ( indices[c] == static_cast<int>(r) ) {
+          massVal = values[c];
+          break;
+        }
+      }
+      numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
+      indices.resize(numRowEntries); values.resize(numRowEntries);
+      Kcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
+      stiffVal = static_cast<Real>(0);
+      for (int c = 0; c < indices.size(); ++c) {
+        if ( indices[c] == static_cast<int>(r) ) {
+          stiffVal = values[c];
+          break;
+        }
+      }
+      M_ = Tpetra::MatrixMatrix::add(massVal, false, *Klocal_, stiffVal, false, *Mlocal_);
+      solver_ = Teuchos::rcp(new Solver<Real>(parlist_));
+      solver_->setA(M_);
+      solver_->solve(Hvf->getVectorNonConst(r),vf->getVector(r),transpose_);
+    }
   }
 
 private: // Vector accessor functions
