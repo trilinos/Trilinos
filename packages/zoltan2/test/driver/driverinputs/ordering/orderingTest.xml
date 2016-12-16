@@ -1,29 +1,29 @@
 <!--////////////////////////////////////////////////////////////////////////////
  ////////////////////////////////////////////////////////////////////////////////
- 
+
  REQUIRED BLOCKS:
  1. Input parameters
  2. Problem parameters
- 
+
  OPTIONAL Blocks:
  3. Comparison
- 
+
  SUPPORTED INPUT FILE TYPES:
  1. Geometric Generator
  2. Pamgen
  3. Chaco
  4. Matrix Market
- 
+
  SUPPORTED PROBLEM TYPES:
  1. partitioning
- 
+
  SUPPORTED INPUT DATA TYPES:
  1. coordinates
  2. (x,t,e)petra_crs_matrix
  3. (x,t,e)petra_crs_graph
  4. (x,t,e)petra_vector
  5. (x,t,e)petra_multivector
- 
+
  SUPPORTED INPUT ADAPTERS:
  1. BasicIdentifier
  2. XpetraMultiVector
@@ -31,9 +31,9 @@
  4. XpetraCrsMatrix
  5. BasicVector
  5. PamgenMesh
- 
+
  ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
- 
+
  ////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////-->
 
@@ -60,7 +60,7 @@
       <Parameter name="scotch_ordering_strategy" type="string" value=""/>
       <Parameter name="scotch_level" type="int" value="2"/>
       <Parameter name="scotch_imbalance_ratio" type="double" value="0.25"/>
-    </ParameterList> 
+    </ParameterList>
 
     <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">

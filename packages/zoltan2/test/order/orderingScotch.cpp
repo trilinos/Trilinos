@@ -180,7 +180,7 @@ void tempDebugTest(
   }
 
   // print oldMatrix
-  std::cout << std::endl << "unsolved graph in matrix form:" << std::endl;
+  std::cout << std::endl << "original graph in matrix form:" << std::endl;
   for(lno_t y = 0; y < showSize; ++y) {
     for(lno_t x = 0; x < showSize; ++x) {
       std::cout << " " << oldMatrix[x + y*numRows];
@@ -199,7 +199,7 @@ void tempDebugTest(
   std::cout << std::endl;
 
   // print newMatrix
-  std::cout << std::endl << "solved graph in matrix form:" << std::endl;
+  std::cout << std::endl << "reordered graph in matrix form:" << std::endl;
   for(lno_t y = 0; y < showSize; ++y) {
     for(lno_t x = 0; x < showSize; ++x) {
       std::cout << " " << newMatrix[x + y*numRows];
@@ -220,8 +220,7 @@ void tempDebugTest(
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-int mainExecute(int narg, char** arg,
-  RCP<const Teuchos::Comm<int> > comm)
+int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 {
   std::string inputFile = "";            // Matrix Market file to read
   std::string outputFile = "";           // Output file to write
@@ -305,13 +304,15 @@ int mainExecute(int narg, char** arg,
   }
 
   ////// Create a vector to use with the matrix.
-  // NOTE Currently Not Used
+  // Currently Not Used
+  /*
   RCP<Vector> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
+  */
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;

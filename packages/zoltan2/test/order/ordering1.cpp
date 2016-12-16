@@ -200,13 +200,15 @@ int main(int narg, char** arg)
          << "NumProcs = " << comm->getSize() << endl;
 
   ////// Create a vector to use with the matrix.
-  // NOTE Currently Not Used
+  // Currently Not Used
+  /*
   RCP<Vector> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
+  */
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
@@ -256,12 +258,10 @@ int main(int narg, char** arg)
 
   cout << "Going to compute the bandwidth" << endl;
   // Compute original bandwidth
-  cout << "Original Bandwidth: " <<
-    computeBandwidth(origMatrix, nullptr) << endl;
+  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, nullptr) << endl;
   // Compute permuted bandwidth
   z2TestLO * iperm = soln->getPermutationView(true);
-  cout << "Permuted Bandwidth: " <<
-    computeBandwidth(origMatrix, iperm) << endl;
+  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << endl;
 
   } catch (std::exception &e){
       if (comm->getSize() != 1)

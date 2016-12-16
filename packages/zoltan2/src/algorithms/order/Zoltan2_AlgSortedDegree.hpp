@@ -103,8 +103,11 @@ class AlgSortedDegree : public Algorithm<Adapter>
   
     // Get local graph.
     const size_t nVtx = model->getLocalNumVertices();
+    ArrayView<const gno_t> edgeIds;
     ArrayView<const lno_t> offsets;
-    model->getOffsets(offsets);
+    ArrayView<StridedData<lno_t, scalar_t> > wgts;
+    model->getEdgeList(edgeIds, offsets, wgts);
+
   
     // Store degrees together with index so we can sort.
     Teuchos::Array<std::pair<lno_t, size_t> >  degrees(nVtx);

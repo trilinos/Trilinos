@@ -52,12 +52,7 @@
 
 #include <Zoltan2_Standards.hpp>
 
-// Add these names to static_allMetricNames_ below
 #define UNKNOWN_METRICS_TYPE_NAME "UnknownMetricClass"  // Unknown would be error
-#define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"  // For the ImbalanceMetrics class
-#define GRAPH_METRICS_TYPE_NAME "GraphMetrics"          // For the GraphMetrics class
-#define ORDERING_METRICS_TYPE_NAME "OrderingMetrics"    // For the OrderingMetrics class
-
 #define METRICS_UNSET_STRING "unset"
 
 namespace Zoltan2{
@@ -194,15 +189,6 @@ std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ =
  */
 template <typename scalar_t>
 std::vector<std::string> BaseClassMetrics<scalar_t>::static_metricNames_ = {};
-
-/*! \This is a list of all possible types - it is used to generate an empty
- * output for print messages when a metric does not appear in a list.
- */
-template <typename scalar_t>
-std::vector<std::string> BaseClassMetrics<scalar_t>::static_allMetricNames_ =
-  { IMBALANCE_METRICS_TYPE_NAME,
-    GRAPH_METRICS_TYPE_NAME,
-    ORDERING_METRICS_TYPE_NAME };
 
 } // namespace Zoltan2
 #endif

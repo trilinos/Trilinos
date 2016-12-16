@@ -400,8 +400,9 @@ void AlgPTScotch<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Get vertex info
+  ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexListWeights(vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertlocnbr, nVtx);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
@@ -554,8 +555,9 @@ void AlgPTScotch<Adapter>::partition(
   // TODO:  instead of duplicating it here.
   // TODO
   // TODO:  Actual logic should call Scotch when number of processes == 1.
+  ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexListWeights(vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
 
   ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
@@ -679,18 +681,6 @@ int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const Paramete
 
     SCOTCH_stratInit(c_strat_ptr);
 
-    // From Scotch 6.0 guide
-    // SCOTCH STRATLEVELMAX
-    //   Create at most the prescribed levels of nested dissection separators.
-    // SCOTCH STRATLEVELMIN
-    //   Create at least the prescribed levels of nested dissection separators.
-    //   When used in conjunction with SCOTCH STRATLEVELMAX, the exact number of
-    //   nested dissection levels will be performed, unless the graph to order
-    //   is too small.
-    // SCOTCH STRATLEAFSIMPLE
-    //   Order nested dissection leaves as cheaply as possible.
-    // SCOTCH STRATSEPASIMPLE
-    //   Order nested dissection separators as cheaply as possible.
     ierr = SCOTCH_stratGraphOrderBuild( c_strat_ptr,
         SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN |
         SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
@@ -745,7 +735,7 @@ int AlgPTScotch<Adapter>::localOrder(
   // build a local graph model
   this->buildModel(true);
   if (isVerbose && me==0) {
-    std::cout << "Scotch: Built local graph model" << std::endl;
+    std::cout << "Built local graph model." << std::endl;
   }
 
   // based off of Siva's example
@@ -755,14 +745,15 @@ int AlgPTScotch<Adapter>::localOrder(
 
   ierr = SCOTCH_graphInit( &c_graph_ptr);
   if ( ierr != 0) {
-    throw std::runtime_error("Scotch: Failed to initialize graph!");
+    throw std::runtime_error("Failed to initialize Scotch graph!");
   } else if (isVerbose && me == 0) {
-    std::cout << "Scotch: Initialized graph" << std::endl;
+    std::cout << "Initialized Scotch graph." << std::endl;
   }
 
   // Get vertex info
+  ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexListWeights(vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertnbr, nVtx);
 
@@ -792,13 +783,13 @@ int AlgPTScotch<Adapter>::localOrder(
   int nVwgts = model->getNumWeightsPerVertex();
   int nEwgts = model->getNumWeightsPerEdge();
   if (nVwgts > 1 && me == 0) {
-    std::cerr << "Scotch Warning:  NumWeightsPerVertex is " << nVwgts
-             << " but Scotch allows only one weight. "
+    std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
+              << " but Scotch allows only one weight. "
               << " Zoltan2 will use only the first weight per vertex."
               << std::endl;
   }
   if (nEwgts > 1 && me == 0) {
-    std::cerr << "Scotch Warning:  NumWeightsPerEdge is " << nEwgts
+    std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
               << " but Scotch allows only one weight. "
               << " Zoltan2 will use only the first weight per edge."
               << std::endl;
@@ -823,25 +814,25 @@ int AlgPTScotch<Adapter>::localOrder(
                             vertnbr, verttab, vendtab, velotab, vlbltab,
                             edgenbr, edgetab, edlotab);
   if (ierr != 0) {
-    throw std::runtime_error("Scotch ERROR: Failed to build graph!");
+    throw std::runtime_error("Failed to build Scotch graph!");
   } else if (isVerbose && me == 0) {
-    std::cout << "Scotch: Built graph" << std::endl;
+    std::cout << "Built Scotch graph." << std::endl;
   }
 
   ierr = SCOTCH_graphCheck(&c_graph_ptr);
   if (ierr != 0) {
-    throw std::runtime_error("Scotch ERROR: Graph is inconsistent!");
+    throw std::runtime_error("Graph is inconsistent!");
   } else if (isVerbose && me == 0) {
-    std::cout << "Scotch: Graph is consistent" << std::endl;
+    std::cout << "Graph is consistent." << std::endl;
   }
 
   // set the strategy 
   ierr = AlgPTScotch<Adapter>::setStrategy(&c_strat_ptr, pl, me); 
 
   if (ierr != 0) {
-    throw std::runtime_error("Scotch ERROR: Can't build strategy!");
+    throw std::runtime_error("Can't build strategy!");
   }else if (isVerbose && me == 0) {
-    std::cout << "Scotch: Graphing strategy built" << std::endl;
+    std::cout << "Graphing strategy built." << std::endl;
   }
 
   // Allocate results
@@ -867,9 +858,9 @@ int AlgPTScotch<Adapter>::localOrder(
   ierr = SCOTCH_graphOrder(&c_graph_ptr, &c_strat_ptr, permtab, peritab, 
                            &cblk, rangetab, treetab);
   if (ierr != 0) {
-    throw std::runtime_error("Scotch ERROR: Could not compute ordering!");
+    throw std::runtime_error("Could not compute ordering!!");
   } else if(isVerbose && me == 0) {
-    std::cout << "Scotch: Ordering computed" << std::endl;
+    std::cout << "Ordering computed." << std::endl;
   }
   
   lno_t nSepBlocks;
@@ -913,9 +904,8 @@ int AlgPTScotch<Adapter>::localOrder(
   SCOTCH_graphFree(&c_graph_ptr);
 
   if (isVerbose && problemComm->getRank() == 0) {
-    std::cout << "Scotch: Freed graph" << std::endl;
+    std::cout << "Freed Scotch graph!" << std::endl;
   }
-
   return 0;
 }
 

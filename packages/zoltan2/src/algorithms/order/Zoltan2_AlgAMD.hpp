@@ -54,11 +54,13 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
+
 #ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
 #endif
 
 namespace Zoltan2{
+
 
 #ifdef HAVE_ZOLTAN2_AMD
 template <typename Ordinal>

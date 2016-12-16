@@ -90,7 +90,7 @@ void globalWeightedCutsMessagesHopsByPart(
   ArrayView<t_input_t> v_wghts;
   graph->getVertexList(Ids, v_wghts);
 
-  typedef GraphMetrics<t_scalar_t> mv_t;
+  typedef GraphMetrics<t_scalar_t> gm_t;
 
   //get the edge ids, and weights
   ArrayView<const t_gno_t> edgeIds;
@@ -106,15 +106,10 @@ void globalWeightedCutsMessagesHopsByPart(
   if (numWeightPerEdge) numMetrics += numWeightPerEdge * 2;   // "weight n", weighted hops per weight n
 
   // add some more metrics to the array
-  typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
-  metrics.resize( metrics.size() + numMetrics );
-
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ){
-    mv_t * newMetric = new mv_t;                  // allocate the new memory
-    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);   // check errors
-    metrics[n] = rcp( newMetric);         // create the new members
+  auto next = metrics.size(); // where we begin filling
+  for (auto n = 0; n < numMetrics; ++n)  {
+    addNewMetric<gm_t, t_scalar_t>(env, metrics);
   }
-  array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
   std::vector <part_t> e_parts (localNumEdges);
 #ifdef HAVE_ZOLTAN2_MPI
@@ -410,7 +405,7 @@ void globalWeightedCutsMessagesByPart(
   ArrayView<t_input_t> v_wghts;
   graph->getVertexList(Ids, v_wghts);
 
-  typedef GraphMetrics<t_scalar_t> mv_t;
+  typedef GraphMetrics<t_scalar_t> gm_t;
 
   //get the edge ids, and weights
   ArrayView<const t_gno_t> edgeIds;
@@ -426,15 +421,10 @@ void globalWeightedCutsMessagesByPart(
   if (numWeightPerEdge) numMetrics += numWeightPerEdge;   // "weight n"
 
   // add some more metrics to the array
-  typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
-  metrics.resize( metrics.size() + numMetrics );
-
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ){
-    mv_t * newMetric = new mv_t;                  // allocate the new memory
-    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);   // check errors
-    metrics[n] = rcp( newMetric);         // create the new members
+  auto next = metrics.size(); // where we begin filling
+  for (auto n = 0; n < numMetrics; ++n)  {
+    addNewMetric<gm_t, t_scalar_t>(env, metrics);
   }
-  array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
   std::vector <part_t> e_parts (localNumEdges);
 #ifdef HAVE_ZOLTAN2_MPI
@@ -711,6 +701,7 @@ template <typename Adapter>
   typedef GraphMetrics<scalar_t> gm_t;
   for (auto n = 0; n < numMetrics; ++n)  {
     addNewMetric<gm_t, scalar_t>(env, metrics);
+  }
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.

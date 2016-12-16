@@ -95,7 +95,7 @@ using namespace Zoltan2_TestingFramework;
 struct AdapterWithTemplateName
 {
   Zoltan2::BaseAdapterRoot * adapter = nullptr; // generic base class
-  std::string template_name; // string to convert back to proper type
+  EAdapterType adapterType; // convert back to proper adapter type
 };
 
 struct AdapterWithOptionalCoordinateAdapter
@@ -119,12 +119,8 @@ public:
   AdapterFactory(
     UserInputForTests *uinput, const ParameterList &pList,
     const RCP<const Comm<int> > &comm);
-  
-  ~AdapterFactory(); // handles deleting BaseAdapterRoot * data for adapter
 
-  bool isValid() const {
-    return ( adaptersSet.main.adapter != nullptr );
-  }
+  ~AdapterFactory(); // handles deleting BaseAdapterRoot * data for adapter
 
   AdapterWithOptionalCoordinateAdapter adaptersSet;
 
@@ -132,9 +128,8 @@ public:
    */
   size_t getLocalNumIDs() const {
       #define GET_LOCAL_NUM_IDS(adapterClass)                                  \
-        if(adaptersSet.main.template_name == #adapterClass)                    \
           return dynamic_cast<adapterClass*>(adaptersSet.main.adapter)->getLocalNumIDs();
-      TEMPLATE_CONVERSION(GET_LOCAL_NUM_IDS);
+      Z2_TEST_UPCAST(adaptersSet.main.adapterType, GET_LOCAL_NUM_IDS);
       throw std::logic_error( "getLocalNumIDs() failed to match adapter name" );
   }
 
@@ -142,9 +137,8 @@ public:
    */
   void getIDsView(const zgno_t *&Ids) const {
       #define GET_IDS_VIEW(adapterClass)                                       \
-        if(adaptersSet.main.template_name == #adapterClass)                    \
           return dynamic_cast<adapterClass*>(adaptersSet.main.adapter)->getIDsView(Ids);
-      TEMPLATE_CONVERSION(GET_IDS_VIEW);
+      Z2_TEST_UPCAST(adaptersSet.main.adapterType, GET_IDS_VIEW);
       throw std::logic_error( "getIDsView() failed to match adapter name" );
   }
 
@@ -250,28 +244,6 @@ private:
                                          vector<int> & strides,
                                          int stride);
 #endif
-
-private:
-
-  /*! \brief dynamic_cast adapter and throw if it fails to match
-   */
-  bool validateAdapterCast() const {
-    #define VALIDATE_DYN_CAST(adapterClass)                                    \
-      if(adaptersSet.main.template_name == #adapterClass) {                    \
-        if(!dynamic_cast<adapterClass*>(adaptersSet.main.adapter)) {           \
-          throw std::logic_error( "AdapterFactory adapter_name '"              \
-            + adaptersSet.main.template_name +                                 \
-            "' failed dynamic_cast to class '"                                 \
-            + #adapterClass + "'." );                                          \
-            return false;                                                      \
-          }                                                                    \
-        }                                                                      \
-
-    // the object is defined by the adapter class and the input class
-    // the strings are adapter_name and type_name
-    TEMPLATE_CONVERSION(VALIDATE_DYN_CAST);
-    return true;
-  }
 };
 
 
@@ -301,13 +273,10 @@ AdapterFactory::AdapterFactory(
     adaptersSet.main = getBasicVectorAdapterForInput(uinput,pList, comm);
   else if(input_adapter_name == "PamgenMesh")
     adaptersSet.main = getPamgenMeshAdapterForInput(uinput,pList, comm);
-  else
-    std::cerr << "Input adapter type: " << input_adapter_name
-              << ", is unavailable, or misspelled." << std::endl;
 
-  // currently rcbTest.xml will generate failure points here
-  // still need to resolve
-  validateAdapterCast();
+  if(adaptersSet.main.adapter == nullptr) {
+    throw std::logic_error("AdapterFactory failed to create adapter!");
+  }
 }
 
 AdapterFactory::~AdapterFactory() {
@@ -445,8 +414,8 @@ AdapterWithTemplateName
   }
 #endif
 
-  result.template_name = "basic_id_t";
-  result.adapter = new Zoltan2_TestingFramework::basic_id_t( zlno_t(localCount),
+  result.adapterType = AT_basic_id_t;
+  result.adapter = new Zoltan2_TestingFramework::basic_id_t(zlno_t(localCount),
                                                    globalIds,
                                                    weights,weightStrides);
   return result;
@@ -488,7 +457,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
       weightStrides.push_back(1);
     }
   }
-
+  
   // set adapter
   if(input_type == "coordinates")
   {
@@ -499,7 +468,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
     else {
       result.adapter = new xMV_tMV_t(const_data,weights,weightStrides);
     }
-    result.template_name = "xMV_tMV_t";
+    result.adapterType = AT_xMV_tMV_t;
   }
   else if(input_type == "tpetra_multivector")
   {
@@ -510,7 +479,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
       result.adapter = new xMV_tMV_t(const_data);
     else
       result.adapter = new xMV_tMV_t(const_data,weights,weightStrides);
-    result.template_name = "xMV_tMV_t";
+    result.adapterType = AT_xMV_tMV_t;
   }
   else if(input_type == "xpetra_multivector")
   {
@@ -522,7 +491,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
     else{
       result.adapter = new xMV_xMV_t(const_data,weights,weightStrides);
     }
-    result.template_name = "xMV_xMV_t";
+    result.adapterType = AT_xMV_xMV_t;
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   else if(input_type == "epetra_multivector")
@@ -535,7 +504,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
       result.adapter = new xMV_eMV_t(const_data);
     else
       result.adapter = new xMV_eMV_t(const_data,weights,weightStrides);
-    result.template_name = "xMV_eMV_t";
+    result.adapterType = AT_xMV_eMV_t;
   }
 #endif
   
@@ -551,12 +520,13 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
-  AdapterWithOptionalCoordinateAdapter set;
+  
+  AdapterWithOptionalCoordinateAdapter adapters;
 
   if(!pList.isParameter("data type"))
   {
     std::cerr << "Input data type unspecified" << std::endl;
-    return set;
+    return adapters;
   }
 
   string input_type = pList.get<string>("data type");
@@ -564,9 +534,9 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
   {
     std::cerr << "Input type: " + input_type + ", unavailable or misspelled." 
               << std::endl; // bad type
-    return set;
+    return adapters;
   }
-
+  
   vector<const zscalar_t *> vtx_weights;
   vector<const zscalar_t *> edge_weights;
   vector<int> vtx_weightStride;
@@ -595,7 +565,7 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
       edge_weightStride.push_back(1);
     }
   }
-
+  
   // make the coordinate adapter
   // get an adapter for the coordinates
   // need to make a copy of the plist and change the vector type
@@ -603,12 +573,10 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
   pCopy = pCopy.set<std::string>("data type","coordinates");
 
   // for coordinate adapter
-  #define SET_COORDINATE_INPUT(adapterClass)                                   \
-      if(set.coordinate.template_name == #adapterClass) {                      \
-        auto * ca = dynamic_cast<adapterClass*>(set.coordinate.adapter);       \
+  #define SET_COORDS_INPUT_1(adapterClass)                                     \
+        auto * ca = dynamic_cast<adapterClass*>(adapters.coordinate.adapter);  \
         if(!ca) {throw std::logic_error( "Coordinate adapter case failed!" );} \
-        ia->setCoordinateInput(ca);                                            \
-      }
+        ia->setCoordinateInput(ca);
 
   if(input_type == "tpetra_crs_graph")
   {
@@ -616,8 +584,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     RCP<const tcrsGraph_t> const_data = rcp_const_cast<const tcrsGraph_t>(data);
 
     xCG_tCG_t * ia = new xCG_tCG_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
-    set.main.template_name = "xCG_tCG_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCG_tCG_t;
+    adapters.main.adapter = ia;
 
     if(!vtx_weights.empty()) {
       for(int i = 0; i < (int)vtx_weights.size(); i++)
@@ -630,8 +598,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     }
     
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_1);
     }
   }
   else if(input_type == "xpetra_crs_graph")
@@ -640,8 +608,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     RCP<const xcrsGraph_t> const_data = rcp_const_cast<const xcrsGraph_t>(data);
 
     xCG_xCG_t * ia = new xCG_xCG_t(const_data, (int)vtx_weights.size(), (int)edge_weights.size());
-    set.main.template_name = "xCG_xCG_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCG_xCG_t;
+    adapters.main.adapter = ia;
     if(!vtx_weights.empty())
     {
       for(int i = 0; i < (int)vtx_weights.size(); i++)
@@ -655,18 +623,19 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     }
 
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_1);
     }
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
+
   else if(input_type == "epetra_crs_graph")
   {
     RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
     RCP<const Epetra_CrsGraph> const_data = rcp_const_cast<const Epetra_CrsGraph>(data);
     xCG_eCG_t * ia = new xCG_eCG_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
-    set.main.template_name = "xCG_eCG_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCG_eCG_t;
+    adapters.main.adapter = ia;
     if(!vtx_weights.empty())
     {
       for(int i = 0; i < (int)vtx_weights.size(); i++)
@@ -680,19 +649,19 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
     }
 
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_1);
     }
   }
 #endif
   
-  if(set.main.adapter == nullptr) {
+  if(adapters.main.adapter == nullptr) {
     std::cerr << "Input data chosen not compatible with "
               << "XpetraCrsGraph adapter." << std::endl;
-    return set;
+    return adapters;
   }
 
-  return set;
+  return adapters;
 }
 
 
@@ -701,12 +670,12 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
-  AdapterWithOptionalCoordinateAdapter set;
+  AdapterWithOptionalCoordinateAdapter adapters;
 
   if(!pList.isParameter("data type"))
   {
     std::cerr << "Input data type unspecified" << std::endl;
-    return set;
+    return adapters;
   }
   
   string input_type = pList.get<string>("data type");
@@ -714,7 +683,7 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
   {
     std::cerr << "Input type:" + input_type + ", unavailable or misspelled."
               << std::endl; // bad type
-    return set;
+    return adapters;
   }
   
   vector<const zscalar_t *> weights;
@@ -743,12 +712,10 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
   pCopy = pCopy.set<std::string>("data type","coordinates");
 
   // for coordinate adapter
-  #define SET_COORDINATE_INPUT(adapterClass)                                   \
-      if(set.coordinate.template_name == #adapterClass) {                      \
-        auto * ca = dynamic_cast<adapterClass*>(set.coordinate.adapter);       \
+  #define SET_COORDS_INPUT_2(adapterClass)                                     \
+        auto * ca = dynamic_cast<adapterClass*>(adapters.coordinate.adapter);  \
         if(!ca) {throw std::logic_error( "Coordinate adapter case failed!" );} \
-        ia->setCoordinateInput(ca);                                            \
-      }
+        ia->setCoordinateInput(ca);
 
   // set adapter
   if(input_type == "tpetra_crs_matrix")
@@ -761,8 +728,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     
     // new adapter
     xCM_tCM_t *ia = new xCM_tCM_t(const_data, (int)weights.size());
-    set.main.template_name = "xCM_tCM_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCM_tCM_t;
+    adapters.main.adapter = ia;
 
     // if we have weights set them
     if(!weights.empty())
@@ -772,8 +739,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     }
 
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_2);
     }
   }
   else if(input_type == "xpetra_crs_matrix")
@@ -783,8 +750,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     
     // new adapter
     xCM_xCM_t *ia = new xCM_xCM_t(const_data, (int)weights.size());
-    set.main.template_name = "xCM_xCM_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCM_xCM_t;
+    adapters.main.adapter = ia;
 
     // if we have weights set them
     if(!weights.empty())
@@ -794,12 +761,11 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     }
 
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_2);
     }
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
-  
   else if(input_type == "epetra_crs_matrix")
   {
     RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
@@ -807,8 +773,8 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     
     // new adapter
     xCM_eCM_t *ia = new xCM_eCM_t(const_data, (int)weights.size());
-    set.main.template_name = "xCM_eCM_t";
-    set.main.adapter = ia;
+    adapters.main.adapterType = AT_xCM_eCM_t;
+    adapters.main.adapter = ia;
 
     // if we have weights set them
     if(!weights.empty())
@@ -818,20 +784,20 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
     }
 
     if (uinput->hasUICoordinates()) {
-      set.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      TEMPLATE_CONVERSION_COORDINATES(SET_COORDINATE_INPUT);
+      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
+      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_2);
     }
   }
 #endif
   
-  if(set.main.adapter == nullptr)
+  if(adapters.main.adapter == nullptr)
   {
     std::cerr << "Input data chosen not compatible with "
               << "XpetraCrsMatrix adapter." << std::endl;
-    return set;
+    return adapters;
   }
 
-  return set;
+  return adapters;
 }
 
 AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
@@ -879,7 +845,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
   if(pList.isParameter("stride"))
     stride = pList.get<int>("stride");
 
-  result.template_name = "basic_vector_adapter";
+  result.adapterType = AT_basic_vector_adapter;
 
   if(input_type == "coordinates")
   {
@@ -1232,15 +1198,14 @@ AdapterFactory::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
   AdapterWithTemplateName result;
 
 #ifdef HAVE_ZOLTAN2_PAMGEN
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
   if(uinput->hasPamgenMesh())
   {
-
     if(uinput->hasPamgenMesh())
     {
 //      if(comm->getRank() == 0) cout << "Have pamgen mesh, constructing adapter...." << endl;
-      result.main.adapter = new pamgen_adapter_t(*(comm.get()), "region");
-      result.main.template_name = "pamgen_adapter_t";
+      result.adapter =
+        new pamgen_adapter_t(*(comm.get()), "region");
+      result.adapterType = AT_pamgen_adapter_t;
 //      if(comm->getRank() == 0)
 //        ia->print(0);
     }

@@ -63,14 +63,22 @@
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-//! \brief Problem base class from which other classes (PartitioningProblem, 
-//!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-     
+//! \brief ProblemRoot allows ptr storage and safe dynamic_cast of all
+// problem types.
+
 class ProblemRoot {
   public:
     virtual ~ProblemRoot() {} // required virtual declaration
+
+    // could consider storing comm_ here...
+    // this accessor means we can get comm without template upcast first
+    virtual RCP<const Comm<int> > getComm() = 0;
 };
 
+////////////////////////////////////////////////////////////////////////
+//! \brief Problem base class from which other classes (PartitioningProblem, 
+//!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
+     
 template<typename Adapter>
 class Problem : public ProblemRoot {
 public:

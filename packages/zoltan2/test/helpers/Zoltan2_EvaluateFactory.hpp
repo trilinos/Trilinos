@@ -74,59 +74,56 @@ namespace Zoltan2_TestingFramework {
     ///
     /// @return returns a pointer to new Zoltan2::Problem or a nullptr if kind was not known.
 
-    EvaluateFactory(const std::string &problem_name,
+    EvaluateFactory(const std::string & problemName,
                     RCP<AdapterFactory> adapterFactory,
                     ParameterList *params,
-                    RCP<ProblemFactory> problem) {
+                    RCP<ProblemFactory> problemFactory) {
 
-      adapter_template_name = adapterFactory->adaptersSet.main.template_name;
-      this->problem_name = problem_name;
+      adapterType = adapterFactory->adaptersSet.main.adapterType;
+      problem_name = problemName;
 
       if (problem_name == "partitioning") {
         #define PARTITIONING_PROBLEM(adapterClass) rcp_dynamic_cast<           \
-          PartitioningProblem<adapterClass>> (problem->getProblem())
+          PartitioningProblem<adapterClass>> (problemFactory->getProblem())
 
         #define EVALUATE_PARTITION(adapterClass)                               \
-        if (adapter_template_name == #adapterClass) {                          \
           const adapterClass * pAdapterClassUpCast = dynamic_cast<             \
             const adapterClass *>(adapterFactory->adaptersSet.main.adapter);   \
-          if(!pAdapterClassUpCast) throw std::logic_error( "Bad adapter class cast!"  );   \
+          if(!pAdapterClassUpCast) throw std::logic_error(                     \
+            "Bad adapter class cast!"  );                                      \
           evaluate = rcp(new EvaluatePartition<adapterClass>(                  \
-             pAdapterClassUpCast,                                              \
-              params, problem->getComm(),                                      \
-              (&PARTITIONING_PROBLEM(adapterClass)->getSolution())));          \
-        }
+             pAdapterClassUpCast, params,                                      \
+             problemFactory->getProblem()->getComm(),                          \
+              (&PARTITIONING_PROBLEM(adapterClass)->getSolution())));
 
-        TEMPLATE_CONVERSION(EVALUATE_PARTITION)
+        Z2_TEST_UPCAST(adapterType, EVALUATE_PARTITION)
       }
       else if(problem_name == "ordering") {
         #define ORDERING_PROBLEM(adapterClass) rcp_dynamic_cast<               \
-          OrderingProblem<adapterClass>> (problem->getProblem())
+          OrderingProblem<adapterClass>> (problemFactory->getProblem())
 
         #define LOCAL_ORDERING(adapterClass)                                   \
-        if (adapter_template_name == #adapterClass) {                          \
           const adapterClass * pAdapterClassUpCast = dynamic_cast<             \
             const adapterClass *>(adapterFactory->adaptersSet.main.adapter);   \
-          if(!pAdapterClassUpCast) throw std::logic_error( "Bad adapter class cast!"  );   \
+          if(!pAdapterClassUpCast) throw std::logic_error(                     \
+            "Bad adapter class cast!");                                        \
           evaluate = rcp(new EvaluateLocalOrdering<adapterClass>(              \
-              pAdapterClassUpCast,                                             \
-              params, problem->getComm(),                                      \
-              ORDERING_PROBLEM(adapterClass)->getLocalOrderingSolution()));    \
-        }
+              pAdapterClassUpCast, params,                                     \
+              problemFactory->getProblem()->getComm(),                         \
+              ORDERING_PROBLEM(adapterClass)->getLocalOrderingSolution()));
 
         // EvaluateGlobalOrdering not tested/implemented yet
         #define GLOBAL_ORDERING(adapterClass)                                  \
-        if (adapter_template_name == #adapterClass) {                          \
           const adapterClass * pAdapterClassUpCast = dynamic_cast<             \
             const adapterClass *>(adapterFactory->adaptersSet.main);           \
-          if(!pAdapterClassUpCast) throw std::logic_error( "Bad adapter class cast!"  );   \
+          if(!pAdapterClassUpCast) throw std::logic_error(                     \
+            "Bad adapter class cast!"  );                                      \
           evaluate = rcp(new EvaluateGlobalOrdering<adapterClass>(             \
               pAdapterClassUpCast,                                             \
               params, ORDERING_PROBLEM(adapterClass)->getComm(),               \
-              ORDERING_PROBLEM(adapterClass)->getGlobalOrderingSolution()));   \
-        }
+              ORDERING_PROBLEM(adapterClass)->getGlobalOrderingSolution()));
 
-        TEMPLATE_CONVERSION(LOCAL_ORDERING)
+        Z2_TEST_UPCAST(adapterType, LOCAL_ORDERING)
       }
       else if(problem_name == "coloring") {
         // Coloring code here... EvaluateColoringFactory not created yet
@@ -134,53 +131,87 @@ namespace Zoltan2_TestingFramework {
         //           dynamic_cast<coloring_problem_t*> (problem),
         //           adapter_name, input, params);
       }
+
+      if(evaluate == Teuchos::null) {
+        throw std::logic_error("EvaluateFactory failed to create!");
+      }
     }
 
     void printMetrics(std::ostringstream & msg) {
-
-      #define PRINT_METRICS(adapterClass)                          \
-        if (adapter_template_name == #adapterClass) {                                      \
-          RCP<EvaluateBaseClass<adapterClass>> pCast = rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate); \
-          if(pCast == Teuchos::null) throw std::logic_error( "Bad evaluate class cast in printMetrics!"  );   \
-          pCast->printMetrics(msg);                                         \
-        }
-        TEMPLATE_CONVERSION(PRINT_METRICS)
+      #define PRINT_METRICS(adapterClass)                                      \
+        RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+          rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate);         \
+        if(pCast == Teuchos::null) throw std::logic_error(                     \
+          "Bad evaluate class cast in printMetrics!"  );                       \
+        pCast->printMetrics(msg);
+        Z2_TEST_UPCAST(adapterType, PRINT_METRICS)
     }
 
     bool analyzeMetrics(std::ostringstream & msg,
       const ParameterList &problem_parameters) {
+      #define ANALYZE_METRICS(adapterClass, metricAnalyzerClass)               \
+        RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+          rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate);         \
+        if(pCast == Teuchos::null) throw std::logic_error(                     \
+          "Bad evaluate class cast in analyzeMetrics!"  );                     \
+        metricAnalyzerClass analyzer(pCast);                                   \
+        return analyzer.analyzeMetrics(                                        \
+          problem_parameters.sublist("Metrics"), msg);
 
-      #define ANALYZE_METRICS(adapterClass)                        \
-        if (adapter_template_name == #adapterClass) {                                      \
-          RCP<EvaluateBaseClass<adapterClass>> pCast = rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate); \
-          if(pCast == Teuchos::null) throw std::logic_error( "Bad evaluate class cast in analyzeMetrics!"  );   \
-          return MetricAnalyzer<adapterClass>::analyzeMetrics(pCast, problem_parameters.sublist("Metrics"), msg);                                         \
-        }
-        TEMPLATE_CONVERSION(ANALYZE_METRICS)
-        return false;
+      #define ANALYZE_METRICS_PARTITIONING(adapterClass)                       \
+        ANALYZE_METRICS(adapterClass,                                          \
+          MetricAnalyzerEvaluatePartition<adapterClass>)
+
+      #define ANALYZE_METRICS_ORDERING(adapterClass)                           \
+        ANALYZE_METRICS(adapterClass,                                          \
+          MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+      if(problem_name == "partitioning") {
+        Z2_TEST_UPCAST(adapterType, ANALYZE_METRICS_PARTITIONING)
+      }
+      else if(problem_name == "ordering") {
+        Z2_TEST_UPCAST(adapterType, ANALYZE_METRICS_ORDERING)
+      }
+      else {
+        throw std::logic_error(
+          "analyzeMetrics not implemented for this problem type!"  );
+      }
     }
 
-    void loadMetricInfo(std::vector<MetricAnalyzerInfo<zscalar_t>> & metricInfo,
+    void loadMetricInfo(std::vector<MetricAnalyzerInfo> & metricInfo,
       const ParameterList &metricsPlist) {
 
-      #define LOAD_METRIC_INFO(adapterClass)                       \
-        if (adapter_template_name == #adapterClass) {                                      \
-        RCP<EvaluateBaseClass<adapterClass>> pCast = rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate); \
-        if(pCast == Teuchos::null) throw std::logic_error( "Bad evaluate class cast in loadMetricInfo!"  );   \
-          MetricAnalyzer<adapterClass>::LoadMetricInfo(metricInfo,             \
-          pCast,          \
-          metricsPlist.sublist("Metrics"));                                    \
-        }
-        TEMPLATE_CONVERSION(LOAD_METRIC_INFO)
-    }
+      #define LOAD_METRIC_INFO(adapterClass, metricAnalyzerClass)              \
+        RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+          rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluate);         \
+        if(pCast == Teuchos::null) throw std::logic_error(                     \
+          "Bad evaluate class cast in loadMetricInfo!"  );                     \
+          metricAnalyzerClass analyzer(pCast);                                 \
+          analyzer.LoadMetricInfo(metricInfo, metricsPlist.sublist("Metrics"));
 
-    bool isValid() const {
-      return ( evaluate != Teuchos::null );
+      #define LOAD_METRIC_INFO_PARTITIONING(adapterClass)                      \
+        LOAD_METRIC_INFO(adapterClass,                                         \
+          MetricAnalyzerEvaluatePartition<adapterClass>)
+
+      #define LOAD_METRIC_INFO_ORDERING(adapterClass)                          \
+        LOAD_METRIC_INFO(adapterClass,                                         \
+          MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+      if(problem_name == "partitioning") {
+        Z2_TEST_UPCAST(adapterType, LOAD_METRIC_INFO_PARTITIONING)
+      }
+      else if(problem_name == "ordering") {
+        Z2_TEST_UPCAST(adapterType, LOAD_METRIC_INFO_ORDERING)
+      }
+      else {
+        throw std::logic_error(
+          "loadMetricInfo not implemented for this problem type!"  );
+      }
     }
 
     private:
       std::string problem_name;  // string converts to a problem type
-      std::string adapter_template_name;  // string converts to an adapter type
+      EAdapterType adapterType;  // converts to an adapter type
       RCP<EvaluateBaseClassRoot> evaluate;
   };
 }

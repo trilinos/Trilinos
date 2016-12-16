@@ -105,26 +105,21 @@ namespace Zoltan2{
 template <typename Adapter>
 class EvaluateOrdering : public EvaluateBaseClass<Adapter> {
 
-  // these define key names which convert to an API call
-  // the could go into getMetricResult except they are also being used for
-  // the api calls - however that may change - right now I have the API calls
-  // looking strictly for a single matching metric which is different than
-  // the way EvaluatePartition handles things (has normed and weights)
-  // so just need to find out exactly how we want to throw errors and organize
-  #define API_STRING_getBandwidth "bandwidth"
-  #define API_STRING_getEnvelope "envelope"
-  #define API_STRING_getSeparatorSize "separator size"
-
 private:
-  using EvaluateBaseClass<Adapter>::getAllMetricsOfType;
-  using EvaluateBaseClass<Adapter>::getAllMetrics;
-
-  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
-  typedef BaseClassMetrics<scalar_t> base_metric_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  // To do - this is only appropriate for the local ordering
+  // Need to decide how to organize these classes
+  // Do we potentially want local + global in this class
+  // Do we want to eliminate the EvaluateLocalOrdering and EvaluateGlobalOrdering
+  // derived classes? Or perhaps make them completely independent of each other
+  lno_t bandwidth;
+  lno_t envelope;
+  lno_t separatorSize;
 
   void sharedConstructor(const Adapter *ia,
                          ParameterList *p,
@@ -195,71 +190,153 @@ public:
   }
 #endif
 
-  // To do - resolve how to handle local and global
-  lno_t getBandwidth() const {
-    auto bandwidthMetric = EvaluateBaseClass<Adapter>::getMetric(
-      ORDERING_METRICS_TYPE_NAME, "bandwidth"); // can throw
-    return bandwidthMetric->getMetricValue("solved");
-  }
-
-  // To do - resolve how to handle local and global
-  lno_t getEnvelops() const {
-    auto envelopeMetric = EvaluateBaseClass<Adapter>::getMetric(
-      ORDERING_METRICS_TYPE_NAME, "envelope"); // can throw
-    return envelopeMetric->getMetricValue("solved");
-  }
-
-  // To do - resolve how to handle local and global
-  lno_t getSeparationSize() const {
-    auto sepSizeMetric = EvaluateBaseClass<Adapter>::getMetric(
-      ORDERING_METRICS_TYPE_NAME, "separator size");  // can throw
-    return sepSizeMetric->getMetricValue("solved");
-  }
+  lno_t getBandwidth() const { return bandwidth; }
+  lno_t getEnvelope() const { return envelope; }
+  lno_t getSeparatorSize() const { return separatorSize; }
 
   /*! \brief Print all metrics of type metricType based on the metric object type
    *  Note that parent class currently suppresses this if the list is empty.
    */
-  virtual void callStaticPrintMetrics(std::ostream &os,
-    ArrayView<RCP<base_metric_t>> metrics, std::string metricType) const {
-      if( metricType == ORDERING_METRICS_TYPE_NAME ) {
-        Zoltan2::printOrderingMetrics<scalar_t>(os, metrics);
+  virtual void printMetrics(std::ostream &os) const {
+
+    // To Do - complete this formatting
+    os << "Ordering Metrics" << std::endl;
+    os << std::setw(20) << " " << std::setw(11) << "ordered" << std::endl;
+    os << std::setw(20) << "envelope" << std::setw(11) << std::setprecision(4)
+       << envelope << std::endl;
+    os << std::setw(20) << "bandwidth" << std::setw(11) << std::setprecision(4)
+       << bandwidth << std::endl;
+  }
+
+  void localOrderingMetrics(
+    const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &comm,
+    const Adapter *ia,
+    const LocalOrderingSolution<typename Adapter::lno_t> *localSoln)
+  {
+    env->debug(DETAILED_STATUS, "Entering orderingMetrics"); // begin
+
+    typedef StridedData<lno_t, scalar_t> input_t;
+
+    // get graph
+    std::bitset<NUM_MODEL_FLAGS> modelFlags;
+    RCP<GraphModel<base_adapter_t> > graph;
+    const RCP<const base_adapter_t> bia =
+      rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+    graph = rcp(new GraphModel<base_adapter_t>(bia,env,comm,modelFlags));
+    ArrayView<const gno_t> Ids;
+    ArrayView<input_t> vwgts;
+    ArrayView<const gno_t> edgeIds;
+    ArrayView<const lno_t> offsets;
+    ArrayView<input_t> wgts;
+    ArrayView<input_t> vtx;
+    graph->getEdgeList(edgeIds, offsets, wgts);
+    lno_t numVertex = graph->getVertexList(Ids, vwgts);
+
+    lno_t * perm = localSoln->getPermutationView();
+
+    // print as matrix - this was debugging code which can be deleted later
+    #define MDM
+    #ifdef MDM
+    for( int checkRank = 0; checkRank < comm->getSize(); ++checkRank ) {
+      comm->barrier();
+      if( checkRank == comm->getRank() ) {
+        std::cout << "-----------------------------------------" << std::endl;
+        std::cout << "Inspect rank: " << checkRank << std::endl;
+        std::cout << std::endl;
+        if(numVertex < 30) { // don't spam if it's too many...
+          Array<lno_t> oldMatrix(numVertex*numVertex);
+          Array<lno_t> newMatrix(numVertex*numVertex);
+
+          // print the solution permutation
+          std::cout << std::endl << "perm:  ";
+          for(lno_t n = 0; n < numVertex; ++n) {
+            std::cout << " " << perm[n] << " ";
+          }
+
+          lno_t * iperm = localSoln->getPermutationView(true);
+          std::cout << std::endl << "iperm: ";
+          for(lno_t n = 0; n < numVertex; ++n) {
+            std::cout << " " << iperm[n] << " ";
+          }
+          std::cout << std::endl;
+          // write 1's to old matrix (original form) and new matrix (using solution)
+          for (lno_t y = 0; y < numVertex; y++) {
+            for (lno_t n = offsets[y]; n < offsets[y+1]; ++n) {
+              lno_t x = static_cast<lno_t>(edgeIds[n]); // to resolve
+              if (x < numVertex && y < numVertex) { // to develop - for MPI this may not be local
+                oldMatrix[x + y*numVertex] = 1;
+                newMatrix[perm[x] + perm[y]*numVertex] = 1;
+              }
+            }
+          }
+
+          // print oldMatrix
+          std::cout << std::endl << "original graph in matrix form:" << std::endl;
+          for(lno_t y = 0; y < numVertex; ++y) {
+            for(lno_t x = 0; x < numVertex; ++x) {
+              std::cout << " " << oldMatrix[x + y*numVertex];
+            }
+            std::cout << std::endl;
+          }
+
+          // print newMatrix
+          std::cout << std::endl << "reordered graph in matrix form:" << std::endl;
+          for(lno_t y = 0; y < numVertex; ++y) {
+            for(lno_t x = 0; x < numVertex; ++x) {
+              std::cout << " " << newMatrix[x + y*numVertex];
+            }
+            std::cout << std::endl;
+          }
+          std::cout << std::endl;
+        }
       }
-  }
 
-  /*! \brief Return true for any names we accept.
-   */
-  virtual bool isMetricCheckNameValid(std::string metricCheckName) const {
-    // currently EvaluateOrdering does not implement any special anems
-    return false;
-  }
-
-  /*! \brief Reads a metric value for bounds checking.
-   * Handle any special optional parameters.
-   */
-  virtual MetricAnalyzerInfo<typename Adapter::scalar_t> getMetricResult(
-    const ParameterList & metricCheckParameters, std::string keyWord) const {
-
-    MetricAnalyzerInfo<typename Adapter::scalar_t> result;
-
-    if (keyWord == API_STRING_getBandwidth) {
-      result.theValue = getBandwidth();
+      comm->barrier();
     }
-    else if (keyWord == API_STRING_getEnvelope) {
-      result.theValue = getEnvelops();
-    }
-    else if (keyWord == API_STRING_getSeparatorSize) {
-      result.theValue = getSeparationSize();
-    }
-    else {
-      // we have found an invalid key word - throw an error
-      throw std::logic_error( "The parameter '" +
-        std::string(KEYWORD_PARAMETER_NAME) + "' was specified as '" +
-        keyWord + "' which is not understood." );
+    #endif // Ends temporary logging which can be deleted later
+
+    // calculate bandwidth and envelope for unsolved and solved case
+    lno_t bw_right = 0;
+    lno_t bw_left = 0;
+    envelope = 0;
+
+    for (lno_t j = 0; j < numVertex; j++) {
+      lno_t y = Ids[j];
+      for (auto n = offsets[j]; n < offsets[j+1]; ++n) {
+        lno_t x = static_cast<lno_t>(edgeIds[n]); // to resolve
+        if(x < numVertex) {
+          lno_t x2 = perm[x];
+          lno_t y2 = perm[y];
+
+          // solved bandwidth calculation
+          lno_t delta_right = y2 - x2;
+          if (delta_right > bw_right) {
+            bw_right = delta_right;
+          }
+          lno_t delta_left = y2 - x2;
+          if (delta_left > bw_left) {
+            bw_left = delta_left;
+          }
+
+          // solved envelope calculation
+          if(delta_right > 0) {
+            envelope += delta_right;
+          }
+          if(delta_left > 0) {
+            envelope += delta_left;
+          }
+          envelope += 1; // need to check this - do we count center?
+        }
+      }
     }
 
-    result.parameterDescription = keyWord; // just give default name for now
+    bandwidth = (bw_left + bw_right + 1);
 
-    return result;
+    // TO DO - No implementation yet for this metric
+    separatorSize = 0;
+
+    env->debug(DETAILED_STATUS, "Exiting orderingMetrics"); // end
   }
 };
 
@@ -289,8 +366,7 @@ void EvaluateOrdering<Adapter>::sharedConstructor(
     // But it depends on whether we eventually may have both types and perhaps
     // want to combine the metrics
     if(localSoln) {
-      localOrderingMetrics<Adapter>(env, problemComm, ia, localSoln,
-        getAllMetrics());
+      localOrderingMetrics(env, problemComm, ia, localSoln);
     }
 
     if(globalSoln) {

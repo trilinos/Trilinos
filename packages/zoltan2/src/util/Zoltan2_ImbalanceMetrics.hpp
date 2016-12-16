@@ -53,6 +53,8 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_MetricUtility.hpp>
 
+#define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"
+
 namespace Zoltan2{
 
 /*! \ImbalanceMetrics class containing the metrics for one measurable item. */

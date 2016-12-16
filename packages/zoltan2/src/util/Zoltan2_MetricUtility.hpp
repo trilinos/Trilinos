@@ -58,6 +58,9 @@ namespace Zoltan2{
 // the array is composed of an array of ptrs to BaseClassMetric
 // but each ptr is allocated to the specific derived metric type
 // So the array can access the polymorphic hierarchy
+//
+// Note this is currently only relevant to EvaluatePartition and the
+// GraphMetrics and ImbalanceMetrics calculations
 template <typename metric_t, typename scalar_t>
 RCP<metric_t> addNewMetric(const RCP<const Environment> &env,
   ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &metrics)

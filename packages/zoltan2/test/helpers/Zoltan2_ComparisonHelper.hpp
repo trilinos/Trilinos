@@ -112,10 +112,7 @@ public:
  */
 class ComparisonHelper
 {
-  
 public:
-  typedef Zoltan2::MetricAnalyzerInfo<zscalar_t> metric_analyzer_info_t;
-  
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
    * \param comm is the process communicator
@@ -193,8 +190,8 @@ private:
    */
   static bool
   metricComparisonTest(const RCP<const Comm<int> > &comm,
-                       const metric_analyzer_info_t & metric,
-                       const metric_analyzer_info_t &ref_metric,
+                       const MetricAnalyzerInfo & metric,
+                       const MetricAnalyzerInfo &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
                        ostringstream &msg);
   
@@ -373,53 +370,25 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   ostringstream status;
   int failed = 0;
 
-  if(!sourceA->problemFactory->isValid()) { failed = 1;}
-  ComparisonHelper::reduceWithMessage(comm,
-    "Solution A is NULL. Solution comparison FAILED.", failed, status);
+  if(sourceA->adapterFactory->getLocalNumIDs()
+    != sourceB->adapterFactory->getLocalNumIDs()) {
+      failed = 1;
+  }
   
-  if(!failed && !sourceB->problemFactory->isValid()){ failed = 1;}
   ComparisonHelper::reduceWithMessage(comm,
-    "Solution B is NULL. Solution comparison FAILED.", failed, status);
-
-  if(!failed) {
-    if (sourceA->problemFactory->isValid()) {
-      if(sourceB->problemFactory->isValid()) {
-        if(sourceA->adapterFactory->getLocalNumIDs()
-          != sourceB->adapterFactory->getLocalNumIDs()) {
-          failed = 1;
-        }
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Number of parts in Solution A != Solution B. \
-                                            Partitioning solution comparison FAILED.",
-                                            failed,
-                                            status);
+                                  "Number of parts in Solution A != Solution B. \
+                                  Partitioning solution comparison FAILED.",
+                                  failed, status);
         
-        if (!failed) {
-          for(size_t i = 0; i < sourceA->adapterFactory->getLocalNumIDs(); i++) {
-            if(!failed && sourceA->problemFactory->getPartListView()[i] !=
-              sourceB->problemFactory->getPartListView()[i]) {
-              failed = 1;
-              ComparisonHelper::reduceWithMessage(comm, "Solution sets A and B have different values for getPartListView(). Solution comparison FAILED.", failed, status);
-            }
-          }
-        }
-      }
-      else {
+  if (!failed) {
+    for(size_t i = 0; i < sourceA->adapterFactory->getLocalNumIDs(); i++) {
+      if(!failed && sourceA->problemFactory->getPartListView()[i] !=
+        sourceB->problemFactory->getPartListView()[i]) {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
-                                            "Solution sets A and B are from different problem types. \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
+          "Solution sets A and B have different values for getPartListView(). "
+          "Solution comparison FAILED.", failed, status);
       }
-      
-    } else {
-        failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Could not cast solution A to valid problem type.  \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
     }
   }
   
@@ -442,88 +411,44 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
   int rank = comm->getRank();
   ostringstream status;
   int failed = 0;
-  
-  if(!sourceA->problemFactory->isValid()) {
-    failed = 1;
+
+  // TO DO - implement coloring comparison
+  /*
+  if(sourceA->problemFactory->getNumColors()
+    != sourceB->problemFactory->getNumColors()) {
+      failed = 1;
   }
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution A is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
   
-  if(!failed && !sourceB->problemFactory->isValid()) {
-    failed = 1;
-  }
   ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution B is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
+                              "Number of colors for Solution A != Solution B. \
+                              Coloring solution comparison FAILED.",
+                              failed, status);
+        
   if (!failed) {
-    // have some solutions lets compare them
-    typedef Zoltan2::ColoringProblem<basic_id_t> coloring_problem_t; //BDD unused
-    // have some solutions lets compare them
-    if(coloring_problem_t * problem_a =
-      reinterpret_cast<coloring_problem_t *>(sourceA->problemFactory->isValid())) {
-      if(coloring_problem_t * problem_b =
-        reinterpret_cast<coloring_problem_t *>(sourceB->problemFactory->isValid())) {
-        auto solution_a = problem_a->getSolution();
-        auto solution_b = problem_b->getSolution();
-        
-        if(solution_a->getNumColors() != solution_b->getNumColors()) {
-          failed = 1;
-        }
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Number of colors for Solution A != Solution B. \
-                                            Coloring solution comparison FAILED.",
-                                            failed,
-                                            status);
-        
-        if (!failed) {
-          if(solution_a->getColorsSize() != solution_b->getColorsSize()) {
-            failed = 1;
-          }
-          ComparisonHelper::reduceWithMessage(comm,
-                                              "Size of colors array for Solution A != Solution B. \
-                                              Coloring solution comparison FAILED.",
-                                              failed,
-                                              status);
-          
-        }
-        
-        if (!failed) {
-          for(size_t i = 0; i < solution_a->getColorsSize(); i++) {
-            if (solution_a->getColors()[i] != solution_b->getColors()[i]) {
-              if(!failed) {
-        	failed = 1;              // fail
-              }
-            }
-          }
-          ComparisonHelper::reduceWithMessage(comm,
-                                              "Coloring solution comparison FAILED.",
-                                              failed,
-                                              status);
-        }
-      }
-      else {
+    if(sourceA->problemFactory->getColorsSize()
+      != sourceB->problemFactory->getColorsSize()) {
         failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Solution sets A and B are from different problem types. \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
-      }
-      
     }
-    else {
-        failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Could not cast solution A to valid problem type.  \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
-    }
+    ComparisonHelper::reduceWithMessage(comm,
+                              "Size of colors array for Solution A != Solution B. \
+                              Coloring solution comparison FAILED.",
+                              failed,
+                              status);
   }
+
+  if (!failed) {
+    for(size_t i = 0; i < sourceA->problemFactory->getColorsSize(); i++) {
+      if (sourceA->problemFactory->getColors()[i] !=
+        sourceB->problemFactory->getColors()[i]) {
+          failed = 1;              // fail
+      }
+    }
+    ComparisonHelper::reduceWithMessage(comm,
+                                        "Coloring solution comparison FAILED.",
+                                        failed,
+                                        status);
+  }
+  */
   
   if (!failed) {
     status << "Solution sets A and B are the same. ";
@@ -544,47 +469,8 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   ostringstream status;
   int failed = 0;
   
-  if (!sourceA->problemFactory->isValid()) {
-    failed = 1;
-  }
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution A is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
-  if(!failed && !sourceB->problemFactory->isValid()){ failed = 1;}
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution B is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
-  //  if(!failed) //BDD, finish implementation when ordering problem metrics defined
-  //  {
-  //    // have some solutions lets compare them
-  //    typedef Zoltan2::OrderingProblem<basic_id_t> ordering_problem_t;
-  //    // have some solutions lets compare them
-  //    if(ordering_problem_t * problem_a = reinterpret_cast<ordering_problem_t *>(sourceA->problem.getRawPtr()))
-  //    {
-  //      if(ordering_problem_t * problem_b = reinterpret_cast<ordering_problem_t *>(sourceB->problem.getRawPtr()))
-  //      {
-  //
-  //      }else{
-  //        status << "Solution sets A and B are from different problem types. ";
-  //        status << "Solution comparison FAILED.";
-  //        failed = true;
-  //      }
-  //
-  //
-  //    }else{
-  //      if(rank == 0)
-  //      {
-  //        status << "Could not cast solution A to valid problem type. ";
-  //        status << "Solution comparison FAILED.";
-  //      }
-  //    }
-  //  }
-  
-  
+  // TO DO - implement ordering comparison
+
   if(!failed) {
     status << "Solution sets A and B are the same. ";
     status << "Solution set comparison PASSED.";
@@ -630,8 +516,8 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
     metric_name = metrics.front().name();
 
     if (metric_name == "Metrics") { // special key word means compare the metrics list
-      std::vector<metric_analyzer_info_t> metricInfoSetPrb;
-      std::vector<metric_analyzer_info_t> metricInfoSetRef;
+      std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
+      std::vector<MetricAnalyzerInfo> metricInfoSetRef;
 
       sourcePrb.get()->evaluateFactory->loadMetricInfo(metricInfoSetPrb, metricsPlist);
       sourceRef.get()->evaluateFactory->loadMetricInfo(metricInfoSetRef, metricsPlist);
@@ -691,10 +577,10 @@ std::map<const string, const double> ComparisonHelper::timerDataToMap(const map<
 }
 
 bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
-                        const metric_analyzer_info_t & metric,
-                        const metric_analyzer_info_t & ref_metric,
-                        const Teuchos::ParameterList & metricPlist,
-                        ostringstream &msg)
+                                       const MetricAnalyzerInfo & metric,
+                                       const MetricAnalyzerInfo & ref_metric,
+                                       const Teuchos::ParameterList & metricPlist,
+                                       ostringstream &msg)
 {
   // run a comparison of min and max against a given metric
   // return an error message on failure

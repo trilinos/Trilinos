@@ -225,12 +225,6 @@ bool run(const UserInputForTests &uinput,
 
   comparison_source->timers["adapter construction time"]->stop();
 
-  if(!adapterFactory->isValid())
-  {
-    cout << "Get adapter for input failed on rank " << rank << endl;
-    return false;
-  }
-
   comparison_source->adapterFactory = adapterFactory; // saves until done
 
   ////////////////////////////////////////////////////////////
@@ -260,11 +254,7 @@ bool run(const UserInputForTests &uinput,
                                     #endif
                                       ));
 
-  if (!problemFactory->isValid()) {
-    std::cerr << "Problem construction failed" << std::endl;
-    return false;
-  }
-  else if(rank == 0) {
+  if(rank == 0) {
     std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
 
@@ -331,11 +321,8 @@ bool run(const UserInputForTests &uinput,
                                         adapterFactory,
                                         &zoltan2_parameters,
                                         problemFactory));
-    if (!evaluateFactory->isValid()) {
-      std::cerr << "Evaluate construction failed" << std::endl;
-      return false;
-    }
-    else if(rank == 0) {
+
+    if(rank == 0) {
       std::cout << "Create evaluate class for: " + problem_kind << std::endl;
     }
 
@@ -363,12 +350,9 @@ bool run(const UserInputForTests &uinput,
 //#define BDD
 #ifdef BDD 
     if (problem_kind == "ordering") {
-      ordering_problem_t * orderingProblem =
-        reinterpret_cast<ordering_problem_t *>(problem);
-
       std::cout << "\nLet's examine the solution..." << std::endl;
       LocalOrderingSolution<zlno_t> * localOrderingSolution =
-         orderingProblem->getLocalOrderingSolution();
+         problemFactory->getLocalOrderingSolution();
       if (localOrderingSolution->haveSeparators() ) {
         std::cout << "Number of column blocks: "
           << localOrderingSolution->getNumSeparatorBlocks() << std::endl;

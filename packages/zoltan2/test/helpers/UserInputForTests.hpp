@@ -469,6 +469,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 
   if(pList.isParameter("input file"))
   {
+
     // get input path
     string path(".");
     if(pList.isParameter("input path"))

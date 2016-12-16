@@ -194,8 +194,7 @@ public:
 
   /*! \brief Set number of separator column blocks.
    */
-  void setNumSeparatorBlocks(index_t nblks)
-    {separatorColBlocks_ = nblks;}
+  inline void setNumSeparatorBlocks(index_t nblks) {separatorColBlocks_ = nblks;}
 
   //////////////////////////////////////////////
   // Accessor functions, allowing algorithms to get ptrs to solution memory.
@@ -204,22 +203,22 @@ public:
 
   /*! \brief Get (local) size of permutation.
    */
-  size_t getPermutationSize() const {return perm_size_;}
+  inline size_t getPermutationSize() const {return perm_size_;}
   
   /*! \brief Get number of separator column blocks.
    */
-  index_t getNumSeparatorBlocks() const {return separatorColBlocks_;}
+  inline index_t getNumSeparatorBlocks() const {return separatorColBlocks_;}
 
   /*! \brief Get (local) permuted GIDs by RCP.
    */
- // ArrayRCP<lno_t>  &getGidsRCP()  {return gids_;}
+ // inline ArrayRCP<index_t>  &getGidsRCP()  {return gids_;}
 
   /*! \brief Get (local) permutation by RCP.
    *  If inverse = true, return inverse permutation.
    *  By default, perm[i] is where new index i can be found in the old ordering.
    *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
-  const ArrayRCP<index_t> &getPermutationRCP(bool inverse=false) const
+  inline const ArrayRCP<index_t> &getPermutationRCP(bool inverse=false) const
   {
     if (inverse)
       return invperm_;
@@ -245,23 +244,23 @@ public:
 
   /*! \brief Get (local) seperator range by RCP.
    */
-  const ArrayRCP<index_t> &getSeparatorRangeRCP() const
+  inline const ArrayRCP<index_t> &getSeparatorRangeRCP() const
   {
     return separatorRange_;
   }
   
   /*! \brief Get (local) seperator tree by RCP.
    */
-  const ArrayRCP<index_t> &getSeparatorTreeRCP() const
+  inline const ArrayRCP<index_t> &getSeparatorTreeRCP() const
   {
     return separatorTree_;
   }
 
   /*! \brief Get (local) permuted GIDs by const RCP.
    */
- // ArrayRCP<lno_t>  &getGidsRCPConst()  const
+ // inline ArrayRCP<index_t>  &getGidsRCPConst()  const
  // {
- //   return const_cast<ArrayRCP<lno_t>& > (gids_);
+ //   return const_cast<ArrayRCP<index_t>& > (gids_);
  // }
 
   /*! \brief Get (local) permutation by const RCP.
@@ -269,7 +268,7 @@ public:
    *  By default, perm[i] is where new index i can be found in the old ordering.
    *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
-  ArrayRCP<index_t> &getPermutationRCPConst(bool inverse=false) const
+  inline ArrayRCP<index_t> &getPermutationRCPConst(bool inverse=false) const
   {
     if (inverse)
       return const_cast<ArrayRCP<index_t>& > (invperm_);
@@ -279,14 +278,14 @@ public:
   
   /*! \brief Get seperator range by const RCP.
    */
-  ArrayRCP<index_t> &getSeparatorRangeRCPConst() const
+  inline ArrayRCP<index_t> &getSeparatorRangeRCPConst() const
   {
     return const_cast<ArrayRCP<index_t> & > (separatorRange_);
   }
   
   /*! \brief Get seperator tree by const RCP.
    */
-  ArrayRCP<index_t> &getSeparatorTreeRCPConst() const
+  inline ArrayRCP<index_t> &getSeparatorTreeRCPConst() const
   {
     return const_cast<ArrayRCP<index_t> & > (separatorTree_);
   }
@@ -297,7 +296,7 @@ public:
    *  When inverse==true, perm[i] is where old index i can be found 
    *  in the new ordering.
    */
-  index_t *getPermutationView(bool inverse = false) const
+  inline index_t *getPermutationView(bool inverse = false) const
   {
     if (perm_size_) {
       if (inverse)
@@ -311,7 +310,7 @@ public:
   
   /*! \brief Get pointer to separator range.
    */
-  index_t *getSeparatorRangeView() const
+  inline index_t *getSeparatorRangeView() const
   {
     // Here, don't need to check perm_size_ before calling getRawPtr.
     // separatorRange_ always has some length, since it is allocated larger
@@ -321,7 +320,7 @@ public:
 
   /*! \brief Get pointer to separator tree.
    */
-  index_t *getSeparatorTreeView() const
+  inline index_t *getSeparatorTreeView() const
   {
     if (perm_size_)
       return separatorTree_.getRawPtr();
@@ -388,16 +387,14 @@ template <typename lno_t>
 class LocalOrderingSolution : public OrderingSolution<lno_t>
 {
 public:
-  LocalOrderingSolution(lno_t perm_size) :
-    OrderingSolution<lno_t>(perm_size) {}
+  LocalOrderingSolution(lno_t perm_size) : OrderingSolution<lno_t>(perm_size) {}
 };
 
 template <typename gno_t>
 class GlobalOrderingSolution : public OrderingSolution<gno_t>
 {
 public:
-  GlobalOrderingSolution(gno_t perm_size) :
-    OrderingSolution<gno_t>(perm_size) {}
+  GlobalOrderingSolution(gno_t perm_size) : OrderingSolution<gno_t>(perm_size) {}
 };
 
 }

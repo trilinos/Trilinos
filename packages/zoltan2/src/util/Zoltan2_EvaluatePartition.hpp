@@ -94,6 +94,10 @@
 #ifndef ZOLTAN2_EVALUATEPARTITION_HPP
 #define ZOLTAN2_EVALUATEPARTITION_HPP
 
+#include <Zoltan2_GraphMetrics.hpp>
+#include <Zoltan2_GraphMetricsUtility.hpp>
+#include <Zoltan2_ImbalanceMetrics.hpp>
+#include <Zoltan2_ImbalanceMetricsUtility.hpp>
 #include <Zoltan2_EvaluateBaseClass.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
@@ -109,31 +113,30 @@ namespace Zoltan2{
 template <typename Adapter>
 class EvaluatePartition : public EvaluateBaseClass<Adapter> {
 
-  // defines for metric checks - these are key words used in xml
-  #define WEIGHT_PARAMETER_NAME "weight"
-  #define NORMED_PARAMETER_NAME "normed"
-
 private:
-  using EvaluateBaseClass<Adapter>::getAllMetricsOfType;
-  using EvaluateBaseClass<Adapter>::getAllMetrics;
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
-  typedef BaseClassMetrics<scalar_t> base_metric_t;
 
   typedef StridedData<lno_t, scalar_t> input_t;
+
   part_t numGlobalParts_;           // desired
   part_t targetGlobalParts_;        // actual
   part_t numNonEmpty_;              // of actual
 
+  typedef BaseClassMetrics<scalar_t> base_metric_type;
+  typedef ArrayRCP<RCP<base_metric_type> > base_metric_array_type;
+  base_metric_array_type metricsBase_;
+
+protected:
   void sharedConstructor(const Adapter *ia,
                          ParameterList *p,
                          const RCP<const Comm<int> > &problemComm,
                          const PartitioningSolution<Adapter> *soln,
                          const RCP<const GraphModel
-                           <typename Adapter::base_adapter_t> > &graphModel);
+                         <typename Adapter::base_adapter_t> > &graphModel);
 
 
 
@@ -192,11 +195,12 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel= 
           Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0)
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
   {
     RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
     sharedConstructor(ia, p, problemComm, soln, graphModel);
   }
+
 
   /*! \brief Constructor where Teuchos communicator is specified
       \param ia the problem input adapter
@@ -214,7 +218,7 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
           Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0)
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
   {
     sharedConstructor(ia, p, problemComm, soln, graphModel);
   }
@@ -236,7 +240,7 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
           Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0)
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
   {
     RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
         Teuchos::opaqueWrapper(comm);
@@ -245,6 +249,33 @@ public:
     sharedConstructor(ia, p, problemComm, soln, graphModel);
   }
 #endif
+
+  /*! \brief Return the metric list for types matching the given metric type.
+   */
+
+  // TO DO - note that with current status it probably makes more sense to
+  // break up metricsBase_ into imbalanceMetrics_ and graphMetrics_.
+  // So instead of mixing them just keep two arrays and eliminate this function.
+  // That will clean up several places in this class.
+  ArrayView<RCP<base_metric_type>> getAllMetricsOfType(
+    std::string metricType) const {
+    // find the beginning and the end of the contiguous block
+    // the list is an ArrayRCP and must preserve any ordering
+    int beginIndex = -1;
+    int sizeOfArrayView = 0;
+    for(auto n = 0; n < metricsBase_.size(); ++n) {
+      if( metricsBase_[n]->getMetricType() == metricType ) {
+        if (beginIndex == -1) {
+          beginIndex = int(n);
+        }
+        ++sizeOfArrayView;
+      }
+    }
+    if (sizeOfArrayView == 0) {
+      return ArrayView<RCP<base_metric_type> >(); // empty array view
+    }
+    return metricsBase_.view(beginIndex, sizeOfArrayView);
+  }
 
   /*! \brief Return the object count imbalance.
    */
@@ -385,133 +416,25 @@ public:
     return graphMetrics[indexInArray]->getMetricValue("global sum");
   }
 
-  /*! \brief Print all metrics of type metricType based on the metric object type
-   *  Note that parent class currently suppresses this if the list is empty.
+  /*! \brief Print all metrics
    */
-  virtual void callStaticPrintMetrics(std::ostream &os,
-    ArrayView<RCP<base_metric_t>> metrics, std::string metricType) const {
-      if( metricType == GRAPH_METRICS_TYPE_NAME ) {
+  void printMetrics(std::ostream &os) const {
+    // this could be a critical decision - do we want a blank table with
+    // headers when the list is empty - for debugging that is probably better
+    // but it's very messy to have lots of empty tables in the logs
+    ArrayView<RCP<base_metric_type>> graphMetrics =
+      getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    if (graphMetrics.size() != 0) {
         Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_,
-                            numGlobalParts_, metrics);
-      }
-      else if( metricType == IMBALANCE_METRICS_TYPE_NAME ) {
+          numGlobalParts_, graphMetrics);
+    }
+
+    ArrayView<RCP<base_metric_type>> imbalanceMetrics =
+      getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+    if (imbalanceMetrics.size() != 0) {
         Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_,
-                            numGlobalParts_, numNonEmpty_, metrics);
+          numGlobalParts_, numNonEmpty_, imbalanceMetrics);
     }
-  }
-
-  /*! \brief Return true for any names we accept.
-   */
-  virtual bool isMetricCheckNameValid(std::string metricCheckName) const {
-    return (metricCheckName == WEIGHT_PARAMETER_NAME ||
-            metricCheckName == NORMED_PARAMETER_NAME);
-  }
-
-  /*! \brief Reads a metric value for bounds checking.
-   * Handle any special optional parameters.
-   */
-  virtual MetricAnalyzerInfo<typename Adapter::scalar_t> getMetricResult(
-    const ParameterList & metricCheckParameters, std::string keyWord) const {
-
-    MetricAnalyzerInfo<typename Adapter::scalar_t> result;
-
-    // didn't want to duplicate this value - a weight index should be 0 or
-    // larger but it's optional to specify it
-    #define UNDEFINED_PARAMETER_INT_INDEX -1
-
-    // Read the weight index parameter and throw if not a good format
-    // This is an optional parameter for EvaluatePartition
-    int weightIndex = UNDEFINED_PARAMETER_INT_INDEX;
-    if( metricCheckParameters.isParameter(WEIGHT_PARAMETER_NAME)) {
-      weightIndex = metricCheckParameters.get<int>(WEIGHT_PARAMETER_NAME);
-      if( weightIndex < 0 ) {
-        throw std::logic_error( "Optional weight index was specified as: " +
-          std::to_string(weightIndex) +
-          "   Weight index must be 0 or positive." );
-      }
-    }
-
-    // Read the norm index and throw if not a good format
-    // This is an optional parameter for EvaluatePartition
-    int normedSetting = UNDEFINED_PARAMETER_INT_INDEX;
-    if( metricCheckParameters.isParameter(NORMED_PARAMETER_NAME)) {
-      bool bNormSetting = metricCheckParameters.get<bool>(NORMED_PARAMETER_NAME);
-      normedSetting = bNormSetting ? 1 : 0;
-      if( normedSetting != 0 && normedSetting != 1 ) {
-        throw std::logic_error( "Optional normed parameter was specified as: "
-          + std::to_string(normedSetting) +
-          "   Normed parameter must be true or false." );
-      }
-    }
-
-    if( weightIndex != UNDEFINED_PARAMETER_INT_INDEX &&
-      normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
-      throw std::logic_error( "Both parameters 'normed' and 'weight' were "
-        " specified. They should never appear together." );
-    }
-
-    // these define key names which convert to an API call
-    #define API_STRING_getWeightImbalance "imbalance"
-    #define API_STRING_getTotalEdgeCuts "total edge cuts"
-    #define API_STRING_getMaxEdgeCuts "max edge cuts"
-
-    // throw if normed set and weight is set
-    if( keyWord != API_STRING_getWeightImbalance &&
-      normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
-      throw std::logic_error( "'normed' was specified but this only has meaning"
-       " for the 'imbalance' parameter." );
-    }
-
-    // Enforcing parallel usage to the API calls exist in EvaluatePartition
-    if (keyWord == API_STRING_getWeightImbalance) {
-      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-        if( normedSetting == 1 ) {
-          result.theValue = getNormedImbalance();
-        }
-        else {
-          result.theValue = getObjectCountImbalance(); // this will be index
-        }
-      }
-      else {
-        // this will get the proper index specified
-        result.theValue = getWeightImbalance(weightIndex);
-      }
-    }
-    else if (keyWord == API_STRING_getTotalEdgeCuts) {
-      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-        result.theValue = getTotalEdgeCut();
-      }
-      else {
-        result.theValue = getTotalWeightEdgeCut(weightIndex);
-      }
-    }
-    else if (keyWord == API_STRING_getMaxEdgeCuts) {
-      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-        result.theValue = getMaxEdgeCut();
-      }
-      else {
-        result.theValue = getMaxWeightEdgeCut(weightIndex);
-      }
-    }
-    else {
-      // we have found an invalid key word - throw an error
-      throw std::logic_error( "The parameter '" +
-        std::string(KEYWORD_PARAMETER_NAME) + "' was specified as '" +
-        keyWord + "' which is not understood." );
-    }
-
-    result.parameterDescription = keyWord;
-    if( weightIndex != UNDEFINED_PARAMETER_INT_INDEX ) {
-      result.parameterDescription = result.parameterDescription +
-        " (weight: " + std::to_string(weightIndex) + ")";
-    }
-    else if( normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
-      // throw above would catch the case where both of these were set
-      result.parameterDescription = result.parameterDescription + " (normed: "
-        + ( ( normedSetting == 0 ) ? "false" : "true" ) + ")";
-    }
-
-    return result;
   }
 };
 
@@ -525,8 +448,12 @@ void EvaluatePartition<Adapter>::sharedConstructor(
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel
 )
 {
-  RCP<const Comm<int> > problemComm = (comm == Teuchos::null) ?
-    DefaultComm<int>::getComm() : comm;
+  RCP<const Comm<int> > problemComm;
+  if (comm == Teuchos::null) {
+    problemComm = DefaultComm<int>::getComm();//communicator is Teuchos default
+  } else {
+    problemComm = comm;
+  }
 
   RCP<Environment> env;
 
@@ -577,9 +504,13 @@ void EvaluatePartition<Adapter>::sharedConstructor(
       mcnorm = normMinimizeMaximumWeight;
   }
 
+  const RCP<const base_adapter_t> bia =
+    rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+
   try{
     imbalanceMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, partArray, 
-      graphModel, numGlobalParts_, numNonEmpty_, getAllMetrics());
+                              graphModel,
+                              numGlobalParts_, numNonEmpty_, metricsBase_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -590,8 +521,6 @@ void EvaluatePartition<Adapter>::sharedConstructor(
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
 
-  const RCP<const base_adapter_t> bia =
-    rcp(dynamic_cast<const base_adapter_t *>(ia), false);
   BaseAdapterType inputType = bia->adapterType();
 
   if (inputType == GraphAdapterType ||
@@ -602,21 +531,27 @@ void EvaluatePartition<Adapter>::sharedConstructor(
     // should check those here.  For now we compute graph metrics
     // using all weights.
 
-    // Create a GraphModel based on input data.
     std::bitset<NUM_MODEL_FLAGS> modelFlags;
+
+    // Create a GraphModel based on input data.
+
     RCP<const GraphModel<base_adapter_t> > graph = graphModel;
-    if (graph == Teuchos::null) {
+    if (graphModel == Teuchos::null) {
       graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm,
-        modelFlags));
+                                                modelFlags));
     }
 
+    // compute weighted cuts
+    ArrayRCP<scalar_t> globalSums;
     try {
-      ArrayRCP<scalar_t> globalSums; // compute weighted cuts
-      globalWeightedCutsByPart<Adapter>(env, problemComm, graph, partArray,
-        numGlobalParts_, getAllMetrics(), globalSums);
-        
-      this->calculate_graph_metrics(env, problemComm, graph, partArray,
-        numGlobalParts_, getAllMetrics(), globalSums);
+      globalWeightedCutsByPart<Adapter>(env,
+                                        problemComm, graph, partArray,
+                                        numGlobalParts_, metricsBase_,
+                                        globalSums);
+      this->calculate_graph_metrics(env,
+              problemComm, graph, partArray,
+              numGlobalParts_, metricsBase_,
+              globalSums);
     }
     Z2_FORWARD_EXCEPTIONS;
 

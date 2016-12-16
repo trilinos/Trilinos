@@ -73,7 +73,7 @@ namespace Zoltan2_TestingFramework {
     ///
     /// @return returns a pointer to new Zoltan2::Problem or a nullptr if
     /// problem_name was not known.
-    ProblemFactory(const std::string &problem_name,
+    ProblemFactory(const std::string & problemName,
                    RCP<AdapterFactory> adapterFactory,
                    ParameterList *params
                    #ifdef HAVE_ZOLTAN2_MPI
@@ -81,27 +81,25 @@ namespace Zoltan2_TestingFramework {
                    #endif
                    ) {
 
-      this->problem_name = problem_name;
-      adapter_templated_name = adapterFactory->adaptersSet.main.template_name;
+      problem_name = problemName;
+      adapterType = adapterFactory->adaptersSet.main.adapterType;
 
       #ifdef HAVE_ZOLTAN2_MPI
         #define CREATE_PRBLM(problemClass, adapterClass)                       \
-            if (adapter_templated_name == #adapterClass) {                     \
-              adapterClass * pCast = dynamic_cast<adapterClass *>              \
-                (adapterFactory->adaptersSet.main.adapter);                    \
-              if(!pCast) { throw std::logic_error(                             \
-                "ProblemFactory adapter dynamic_cast failed for problem name " \
-                + problem_name + " and adapterClass " + #adapterClass ); }     \
-              problem = rcp(new problemClass<adapterClass>(pCast, params, comm)); }
+          adapterClass * pCast = dynamic_cast<adapterClass *>                  \
+            (adapterFactory->adaptersSet.main.adapter);                        \
+          if(!pCast) { throw std::logic_error(                                 \
+            "ProblemFactory adapter dynamic_cast failed for problem name "     \
+              + problem_name + " and adapterClass " + #adapterClass ); }       \
+          problem = rcp(new problemClass<adapterClass>(pCast, params, comm));
       #else
         #define CREATE_PRBLM(problemClass, adapterClass)                       \
-            if (adapter_templated_name == #adapterClass) {                     \
-              adapterClass * pCast = dynamic_cast<adapterClass *>              \
-                (adapterFactory->adaptersSet.main.adapter);                    \
-              if(!pCast) { throw std::logic_error(                             \
-                "ProblemFactory adapter dynamic_cast failed for problem name " \
-                + problem_name + " and adapterClass " + #adapterClass ); }     \
-              problem = rcp(new problemClass<adapterClass>(pCast, params)); }
+          adapterClass * pCast = dynamic_cast<adapterClass *>                  \
+            (adapterFactory->adaptersSet.main.adapter);                        \
+          if(!pCast) { throw std::logic_error(                                 \
+            "ProblemFactory adapter dynamic_cast failed for problem name "     \
+              + problem_name + " and adapterClass " + #adapterClass ); }       \
+          problem = rcp(new problemClass<adapterClass>(pCast, params));
       #endif
 
       #define MAKE_PARTITION_PROBLEM(adapterClass)  \
@@ -112,34 +110,21 @@ namespace Zoltan2_TestingFramework {
 
       // PartitioningProblem
       if(problem_name == "partitioning") {
-        TEMPLATE_CONVERSION(MAKE_PARTITION_PROBLEM)
+        Z2_TEST_UPCAST(adapterType, MAKE_PARTITION_PROBLEM)
       }
       else if(problem_name == "ordering") {
-        TEMPLATE_CONVERSION(MAKE_ORDERING_PROBLEM)
+        Z2_TEST_UPCAST(adapterType, MAKE_ORDERING_PROBLEM)
       }
-      else { // future types here...
-        throw std::logic_error(
-          "ProblemFactory did not recognize problem name " + problem_name );
-      }
-    }
 
-    RCP<const Comm<int> > getComm() const {
-      #define GET_PROBLEM_COMM(adapterClass)                                   \
-        if(adapter_templated_name == #adapterClass) {                          \
-          return (rcp_dynamic_cast<Problem<adapterClass>>(problem))->getComm();\
-        }
-      TEMPLATE_CONVERSION(GET_PROBLEM_COMM)
-      return Teuchos::null;
+      if(problem == Teuchos::null) {
+        throw std::logic_error("ProblemFactory failed to create Problem!");
+      }
     }
 
     void solve() {
       #define SOLVE_PROBLEM(adapterClass)                                      \
-        if(adapter_templated_name == #adapterClass) {                          \
-          (rcp_dynamic_cast<Problem<adapterClass>>(problem))->solve();         \
-          return;                                                              \
-        }
-      TEMPLATE_CONVERSION(SOLVE_PROBLEM)
-      throw std::logic_error("ProblemFactory solve() failed.");
+          (rcp_dynamic_cast<Problem<adapterClass>>(problem))->solve();
+      Z2_TEST_UPCAST(adapterType, SOLVE_PROBLEM)
     }
 
     // this is not good - forcing the part_t to basic_id_t
@@ -152,27 +137,25 @@ namespace Zoltan2_TestingFramework {
           "which is not a partitioning problem." );
       }
       #define GET_PROBLEM_PARTS(adapterClass)                                  \
-        if(adapter_templated_name == #adapterClass) {                          \
-          return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(problem))  \
-            ->getSolution().getPartListView();                                 \
-        }
-      TEMPLATE_CONVERSION(GET_PROBLEM_PARTS)
-      throw std::logic_error("ProblemFactory getPartListView() failed.");
+          return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(problem))\
+            ->getSolution().getPartListView();
+      Z2_TEST_UPCAST(adapterType, GET_PROBLEM_PARTS)
     }
 
-    bool isValid() const {
-      return ( problem != Teuchos::null );
+    // currently exists only to support some BDD test code in test_driver.cpp
+    LocalOrderingSolution<zlno_t> * getLocalOrderingSolution() {
+      #define GET_LOCAL_ORDERING(adapterClass)                                 \
+          return (rcp_dynamic_cast<OrderingProblem<adapterClass>>(problem))    \
+            ->getLocalOrderingSolution();
+      Z2_TEST_UPCAST(adapterType, GET_LOCAL_ORDERING)
     }
 
-    RCP<ProblemRoot> getProblem() {
-      return problem;
-    }
-
+    RCP<ProblemRoot> getProblem() { return problem; }
     const std::string & getProblemName() const { return problem_name; }
 
     private:
       std::string problem_name; // string converts to a problem type
-      std::string adapter_templated_name; // string converts to an adapter type
+      EAdapterType adapterType; // converts to an adapter type
       RCP<ProblemRoot> problem;
   };
 }

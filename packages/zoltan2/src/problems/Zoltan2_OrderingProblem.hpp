@@ -110,8 +110,8 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) :
-    Problem<Adapter>(A, p, comm)
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm)
+                      : Problem<Adapter>(A, p, comm) 
   {
     HELLO;
     createOrderingProblem();
@@ -166,7 +166,7 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
   
-  virtual void solve(bool updateInputData = true);
+  void solve(bool updateInputData=true);
 
   //!  \brief Get the local ordering solution to the problem.
   //
@@ -238,17 +238,6 @@ void OrderingProblem<Adapter>::solve(bool updateInputData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  // Reset status for perm and InvPerm.
-  // This is currently redundant to constructors above - may want to delete
-  if(localOrderingSolution_ != Teuchos::null) {
-    localOrderingSolution_->setHavePerm(false);
-    localOrderingSolution_->setHaveInverse(false);
-  }
-  if(globalOrderingSolution_ != Teuchos::null) {
-    globalOrderingSolution_->setHavePerm(false);
-    globalOrderingSolution_->setHaveInverse(false);
-  }
-
   // Determine which algorithm to use based on defaults and parameters.
   // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
@@ -260,7 +249,9 @@ void OrderingProblem<Adapter>::solve(bool updateInputData)
   try
   {
 
-  // coult be a template... seems maybe more awkward
+  // could be a template... seems maybe more awkward
+  // added this to avoid duplicating local/global below
+  // so many times.
   #define ZOLTAN2_COMPUTE_ORDERING                      \
       if(localOrderingSolution_ != Teuchos::null) {     \
         alg.localOrder(localOrderingSolution_);         \
@@ -270,49 +261,48 @@ void OrderingProblem<Adapter>::solve(bool updateInputData)
       }
 
   if (method.compare("rcm") == 0) {
-      AlgRCM<base_adapter_t> alg(this->graphModel_,
-                                 this->params_, this->comm_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgRCM<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("natural") == 0) {
-      AlgNatural<base_adapter_t> alg(this->identifierModel_,
-                                     this->params_, this->comm_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgNatural<base_adapter_t> alg(this->identifierModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("random") == 0) {
-      AlgRandom<base_adapter_t> alg(this->identifierModel_,
-                                    this->params_, this->comm_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgRandom<base_adapter_t> alg(this->identifierModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("sorted_degree") == 0) {
-      AlgSortedDegree<base_adapter_t> alg(this->graphModel_,
-                                          this->params_, this->comm_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgSortedDegree<base_adapter_t> alg(this->graphModel_, this->params_,
+      this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("minimum_degree") == 0) {
-      std::string pkg = this->params_->template
-        get<std::string>("order_package", "amd");
-      if (pkg.compare("amd") == 0)
-      {
-        AlgAMD<base_adapter_t> alg(this->graphModel_,
-                                     this->params_, this->comm_);
-        ZOLTAN2_COMPUTE_ORDERING
-      }
+    std::string pkg = this->params_->template get<std::string>(
+      "order_package", "amd");
+    if (pkg.compare("amd") == 0)
+    {
+      AlgAMD<base_adapter_t> alg(this->graphModel_,
+        this->params_, this->comm_);
+      ZOLTAN2_COMPUTE_ORDERING
+    }
   }
   else if (method.compare("scotch") == 0) { // BDD Adding scotch ordering
-      AlgPTScotch<Adapter> alg(this->envConst_,
-                                    this->comm_,
-                                    this->baseInputAdapter_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgPTScotch<Adapter> alg(this->envConst_, this->comm_,
+      this->baseInputAdapter_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
   else if (method == std::string("nd")) {
-      AlgND<Adapter> alg(this->envConst_,this->comm_,this->graphModel_,
-                         this->coordinateModel_,this->baseInputAdapter_);
-      ZOLTAN2_COMPUTE_ORDERING
+    AlgND<Adapter> alg(this->envConst_, this->comm_, this->graphModel_,
+      this->coordinateModel_,this->baseInputAdapter_);
+    ZOLTAN2_COMPUTE_ORDERING
   }
 #endif
+
   }
   Z2_FORWARD_EXCEPTIONS;
 }

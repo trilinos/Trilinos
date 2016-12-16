@@ -99,8 +99,8 @@ static string strParams[NUMSTR][3]={
   {"mj_minimum_migration_imbalance", "1.1", "invalid_option"}, // AnyNumberParameterEntryValidator
   {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
   {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
-  {"compute_metrics", "false", "invalid_bool_setting"},        // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
+  {"compute_metrics", "false", "invalid_bool_setting"},        // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"rectilinear", "false", "invalid_bool_setting"},            // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"subset_graph", "false", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"mj_enable_rcb", "true", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"

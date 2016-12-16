@@ -87,6 +87,7 @@ int AlgSpectral(
 
   HELLO;
 
+// TODO: Check params to do local or global ordering.
   bool localOrder = true;
 
   const size_t nVtx = model->getLocalNumVertices();

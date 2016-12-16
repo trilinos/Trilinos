@@ -178,14 +178,6 @@ public:
     ArrayView<input_t> &wgts) const
   {
     Ids = vGids_.view(0, nLocalVertices_);
-    return(getVertexListWeights(wgts));
-  }
-
-  /*! \brief Get just the weights
-      */
-  size_t getVertexListWeights(
-    ArrayView<input_t> &wgts) const
-  {
     wgts = vWeights_.view(0, nWeightsPerVertex_);
     return nLocalVertices_;
   }
@@ -225,13 +217,6 @@ public:
     offsets = eOffsets_.view(0, nLocalVertices_+1);
     wgts = eWeights_.view(0, nWeightsPerEdge_);
     return nLocalEdges_;
-  }
-
-  /*! \brief Return just the offsets
-  */
-  void getOffsets(ArrayView<const lno_t> &offsets) const
-  {
-    offsets = eOffsets_.view(0, nLocalVertices_+1);
   }
 
   /*! \brief Return the vtxDist array 

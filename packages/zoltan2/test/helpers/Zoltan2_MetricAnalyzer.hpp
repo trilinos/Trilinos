@@ -52,7 +52,8 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_Typedefs.hpp>
-#include <Zoltan2_EvaluateBaseClass.hpp>
+#include <Zoltan2_EvaluateOrdering.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_FileInputSource.hpp>
@@ -67,21 +68,40 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using namespace Zoltan2_TestingFramework;
 
+struct MetricAnalyzerInfo
+{
+  double theValue;
+  double upperValue;
+  double lowerValue;
+  bool bFoundUpperBound;
+  bool bFoundLowerBound;
+  std::string parameterDescription;
+};
+
 template<class Adapter>
 class MetricAnalyzer {
-public:
-  typedef Zoltan2::MetricAnalyzerInfo<typename Adapter::scalar_t> metric_analyzer_info_t;
 
-  /// \brief Analyze metrics for a problem based on a range of tolerances
-  ///
-  /// @param metricsPlist parameter list defining tolerances
-  /// @param problem the problem whose metrics are to be analyzed
-  /// @param[out] msg_stream to return information from the analysis
-  ///
-  /// @return returns a boolean value indicated pass/failure.
-  static bool analyzeMetrics(
-    RCP<Zoltan2::EvaluateBaseClass<Adapter>> pEvaluate,
-    const ParameterList &metricsParameters, 
+protected:
+  RCP<Zoltan2::EvaluateBaseClass<Adapter>> evaluate_;
+
+public:
+  #define KEYWORD_PARAMETER_NAME "check" // should be the first entry
+  #define UPPER_PARAMETER_NAME "upper"
+  #define LOWER_PARAMETER_NAME "lower"
+
+  /*! \brief MetricAnalyzer constructor takes an EvaluateBaseClass such
+       as EvaluateOrdering or EvaluatePartition.
+   */
+  MetricAnalyzer(RCP<Zoltan2::EvaluateBaseClass<Adapter>> evaluate)
+    : evaluate_(evaluate) {
+  }
+
+  /*! \brief analyzeMetrics for a problem based on a range of tolerances
+       @param metricsPlist parameter list defining tolerances
+       @param[out] msg_stream to return information from the analysis
+       @return returns a boolean value indicated pass/failure.
+   */
+  bool analyzeMetrics(const ParameterList &metricsParameters,
     std::ostringstream & msg_stream )
   {
     if (metricsParameters.numParams() == 0) {
@@ -91,8 +111,8 @@ public:
 
     bool bAllPassed = true;
 
-    std::vector<metric_analyzer_info_t> metricInfoSet;
-    LoadMetricInfo(metricInfoSet, pEvaluate, metricsParameters);
+    std::vector<MetricAnalyzerInfo> metricInfoSet;
+    LoadMetricInfo(metricInfoSet, metricsParameters);
 
     int countFailedMetricChecks = 0;
     for (auto metricInfo = metricInfoSet.begin();
@@ -119,30 +139,16 @@ public:
     return bAllPassed;
   }
 
-  static void LoadMetricInfo(
-    std::vector<metric_analyzer_info_t> & metricInfoSet,
-    RCP<Zoltan2::EvaluateBaseClass<Adapter>> pEvaluate,
+  /*! \brief getMetricValue is abstract and the derived class must define
+   * the proper method to check optional values and determine the resulting
+   * scalar value. The derived class will also throw if formatting is incorrect.
+   */
+  virtual MetricAnalyzerInfo getMetricResult(
+    const ParameterList & metricCheckParameters, std::string keyWord) const = 0;
+
+  void LoadMetricInfo(std::vector<MetricAnalyzerInfo> & metricInfoSet,
     const ParameterList &metricsParameters) {
 
-    // at this point we should be looking at a metricsPlist with the following 
-    // format - note that weight is optional
-
-    //      <ParameterList name="metriccheck1">
-    //        <Parameter name="check" type="string" value="imbalance"/>
-    //        <Parameter name="lower" type="double" value="0.99"/>
-    //        <Parameter name="upper" type="double" value="1.4"/>
-    //      </ParameterList>
-    //      <ParameterList name="metriccheck2">
-    //        <Parameter name="check" type="string" value="imbalance"/>
-    //        <Parameter name="weight" type="int" value="0"/>
-    //        <Parameter name="lower" type="double" value="0.99"/>
-    //        <Parameter name="upper" type="double" value="1.4"/>
-    //      </ParameterList>
-
-    // first let's get a list of all the headings, so "metriccheck1",
-    // "metriccheck2" in this case. I've currently got this enforcing those
-    // names strictly to make sure formatting is correct. But really the
-    // headings could just be any unique names and are arbitrary
     int headingIndex = 1;
 
     for (auto iterateArbitraryHeadingNames = metricsParameters.begin(); 
@@ -160,16 +166,75 @@ public:
       }
 
       // get the parameters specific to the check we want to run
-      metric_analyzer_info_t metricInfo = pEvaluate->getMetricAnalyzerInfo(
+      MetricAnalyzerInfo metricInfo = getMetricAnalyzerInfo(
         metricsParameters.sublist(headingName));
       metricInfoSet.push_back(metricInfo);
       ++headingIndex;
     }
   }
 
-private:
+  /*! \brief getMetricAnalyzerInfo is responsible for reading a metric value
+   * and then checking it against upper and lower bounds. Any fomratting errors
+   * should throw.
+   */
+  MetricAnalyzerInfo getMetricAnalyzerInfo(
+    const ParameterList & metricCheckParameters) const {
 
-  static bool executeMetricCheck(const metric_analyzer_info_t & metricInfo,
+    // first validate that all the string names in the metric check are correct
+    for (auto iterateAllKeys = metricCheckParameters.begin();
+         iterateAllKeys != metricCheckParameters.end(); ++iterateAllKeys) {
+      auto checkName = metricCheckParameters.name(iterateAllKeys);
+
+      bool bIsGeneralName = (checkName == KEYWORD_PARAMETER_NAME ||
+                             checkName == UPPER_PARAMETER_NAME ||
+                             checkName == LOWER_PARAMETER_NAME );
+
+      if (!bIsGeneralName && !isMetricCheckNameValid(checkName)) {
+        throw std::logic_error(
+          "Key name: '" + checkName + "' is not understood" );
+      }
+    }
+
+    if( !metricCheckParameters.isParameter(KEYWORD_PARAMETER_NAME)) {
+     throw std::logic_error( "Matric check must specify a key name using "
+       "the keyword " + std::string(KEYWORD_PARAMETER_NAME) );
+    }
+
+    std::string keyWord =
+      metricCheckParameters.get<std::string>(KEYWORD_PARAMETER_NAME);
+
+    // one of the parameters called "check" should define a string which is a
+    // keyword which correlates to an API call forthis class.
+    MetricAnalyzerInfo result
+      = getMetricResult(metricCheckParameters, keyWord);
+
+    // now we can obtain the upper and lower bounds for this test
+    result.bFoundUpperBound =
+      metricCheckParameters.isParameter(UPPER_PARAMETER_NAME);
+    result.bFoundLowerBound =
+      metricCheckParameters.isParameter(LOWER_PARAMETER_NAME);
+
+    if (result.bFoundUpperBound) {
+      result.upperValue =
+        metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
+    }
+    if (result.bFoundLowerBound) {
+      result.lowerValue =
+        metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
+    }
+
+    return result;
+  }
+
+  /*! \brief Return true for any names we accept.
+   */
+  virtual bool isMetricCheckNameValid(std::string metricCheckName) const {
+    // EvaluatePartition will have special key words 'weight' and 'normed'
+    return false;
+  }
+
+private:
+   bool executeMetricCheck(const MetricAnalyzerInfo & metricInfo,
     std::ostringstream &msg_stream)
   {
     bool bDoesThisTestPass = true; // will set this false if a test fails
@@ -219,5 +284,185 @@ private:
   }
 };
 
+template<class Adapter>
+class MetricAnalyzerEvaluatePartition : public MetricAnalyzer<Adapter> {
+public:
+  // defines for metric checks - these are key words used in xml
+  #define WEIGHT_PARAMETER_NAME "weight"
+  #define NORMED_PARAMETER_NAME "normed"
+
+  /*! \brief MetricAnalyzerEvaluatePartition constructor.
+   */
+  MetricAnalyzerEvaluatePartition(
+    RCP<Zoltan2::EvaluateBaseClass<Adapter>> evaluate)
+    : MetricAnalyzer<Adapter>(evaluate) {
+  }
+
+  /*! \brief Reads a metric value for bounds checking.
+   * Handle any special optional parameters.
+   */
+  virtual MetricAnalyzerInfo getMetricResult(
+    const ParameterList & metricCheckParameters, std::string keyWord) const {
+
+    RCP<Zoltan2::EvaluatePartition<Adapter>> pEvaluatePartition =
+      Teuchos::rcp_dynamic_cast<Zoltan2::EvaluatePartition<Adapter>>(this->evaluate_);
+
+    MetricAnalyzerInfo result;
+
+    // didn't want to duplicate this value - a weight index should be 0 or
+    // larger but it's optional to specify it
+    #define UNDEFINED_PARAMETER_INT_INDEX -1
+
+    // Read the weight index parameter and throw if not a good format
+    // This is an optional parameter for EvaluatePartition
+    int weightIndex = UNDEFINED_PARAMETER_INT_INDEX;
+    if( metricCheckParameters.isParameter(WEIGHT_PARAMETER_NAME)) {
+      weightIndex = metricCheckParameters.get<int>(WEIGHT_PARAMETER_NAME);
+      if( weightIndex < 0 ) {
+        throw std::logic_error( "Optional weight index was specified as: " +
+          std::to_string(weightIndex) +
+          "   Weight index must be 0 or positive." );
+      }
+    }
+
+    // Read the norm index and throw if not a good format
+    // This is an optional parameter for EvaluatePartition
+    int normedSetting = UNDEFINED_PARAMETER_INT_INDEX;
+    if( metricCheckParameters.isParameter(NORMED_PARAMETER_NAME)) {
+      bool bNormSetting = metricCheckParameters.get<bool>(NORMED_PARAMETER_NAME);
+      normedSetting = bNormSetting ? 1 : 0;
+      if( normedSetting != 0 && normedSetting != 1 ) {
+        throw std::logic_error( "Optional normed parameter was specified as: "
+          + std::to_string(normedSetting) +
+          "   Normed parameter must be true or false." );
+      }
+    }
+
+    if( weightIndex != UNDEFINED_PARAMETER_INT_INDEX &&
+      normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
+      throw std::logic_error( "Both parameters 'normed' and 'weight' were "
+        " specified. They should never appear together." );
+    }
+
+    // these define key names which convert to an API call
+    #define API_STRING_getWeightImbalance "imbalance"
+    #define API_STRING_getTotalEdgeCuts "total edge cuts"
+    #define API_STRING_getMaxEdgeCuts "max edge cuts"
+
+    // throw if normed set and weight is set
+    if( keyWord != API_STRING_getWeightImbalance &&
+      normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
+      throw std::logic_error( "'normed' was specified but this only has meaning"
+       " for the 'imbalance' parameter." );
+    }
+
+    // Enforcing parallel usage to the API calls exist in EvaluatePartition
+    if (keyWord == API_STRING_getWeightImbalance) {
+      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
+        if( normedSetting == 1 ) {
+          result.theValue = pEvaluatePartition->getNormedImbalance();
+        }
+        else {
+          result.theValue = pEvaluatePartition->getObjectCountImbalance();
+        }
+      }
+      else {
+        // this will get the proper index specified
+        result.theValue = pEvaluatePartition->getWeightImbalance(weightIndex);
+      }
+    }
+    else if (keyWord == API_STRING_getTotalEdgeCuts) {
+      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
+        result.theValue = pEvaluatePartition->getTotalEdgeCut();
+      }
+      else {
+        result.theValue = pEvaluatePartition->getTotalWeightEdgeCut(weightIndex);
+      }
+    }
+    else if (keyWord == API_STRING_getMaxEdgeCuts) {
+      if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
+        result.theValue = pEvaluatePartition->getMaxEdgeCut();
+      }
+      else {
+        result.theValue = pEvaluatePartition->getMaxWeightEdgeCut(weightIndex);
+      }
+    }
+    else {
+      // we have found an invalid key word - throw an error
+      throw std::logic_error( "The parameter '" +
+        std::string(KEYWORD_PARAMETER_NAME) + "' was specified as '" +
+        keyWord + "' which is not understood." );
+    }
+
+    result.parameterDescription = keyWord;
+    if( weightIndex != UNDEFINED_PARAMETER_INT_INDEX ) {
+      result.parameterDescription = result.parameterDescription +
+        " (weight: " + std::to_string(weightIndex) + ")";
+    }
+    else if( normedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {
+      // throw above would catch the case where both of these were set
+      result.parameterDescription = result.parameterDescription + " (normed: "
+        + ( ( normedSetting == 0 ) ? "false" : "true" ) + ")";
+    }
+
+    return result;
+  }
+
+  /*! \brief Return true for any names we accept.
+   */
+  virtual bool isMetricCheckNameValid(std::string metricCheckName) const {
+    return (metricCheckName == WEIGHT_PARAMETER_NAME ||
+            metricCheckName == NORMED_PARAMETER_NAME);
+  }
+};
+
+template<class Adapter>
+class MetricAnalyzerEvaluateOrdering : public MetricAnalyzer<Adapter> {
+public:
+
+  // these define key names which convert to an API call
+  #define API_STRING_getBandwidth "bandwidth"
+  #define API_STRING_getEnvelope "envelope"
+  #define API_STRING_getSeparatorSize "separator size"
+
+  /*! \brief MetricAnalyzerEvaluatePartition constructor.
+   */
+  MetricAnalyzerEvaluateOrdering(
+    RCP<Zoltan2::EvaluateBaseClass<Adapter>> evaluate)
+    : MetricAnalyzer<Adapter>(evaluate) {
+  }
+
+  /*! \brief Reads a metric value for bounds checking.
+   * Handle any special optional parameters.
+   */
+  virtual MetricAnalyzerInfo getMetricResult(
+    const ParameterList & metricCheckParameters, std::string keyWord) const {
+
+    RCP<Zoltan2::EvaluateOrdering<Adapter>> pEvaluateOrdering =
+      Teuchos::rcp_dynamic_cast<Zoltan2::EvaluateOrdering<Adapter>>(this->evaluate_);
+
+    MetricAnalyzerInfo result;
+
+    if (keyWord == API_STRING_getBandwidth) {
+      result.theValue = pEvaluateOrdering->getBandwidth();
+    }
+    else if (keyWord == API_STRING_getEnvelope) {
+      result.theValue = pEvaluateOrdering->getEnvelope();
+    }
+    else if (keyWord == API_STRING_getSeparatorSize) {
+      result.theValue = pEvaluateOrdering->getSeparatorSize();
+    }
+    else {
+      // we have found an invalid key word - throw an error
+      throw std::logic_error( "The parameter '" +
+        std::string(KEYWORD_PARAMETER_NAME) + "' was specified as '" +
+        keyWord + "' which is not understood." );
+    }
+
+    result.parameterDescription = keyWord; // just give default name for now
+
+    return result;
+  }
+};
 
 #endif //ZOLTAN2_METRIC_ANALYZER_HPP
