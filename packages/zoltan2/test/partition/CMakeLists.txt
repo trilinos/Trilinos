@@ -484,3 +484,21 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+##########################################
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PartitioningTree
+  SOURCES partitioningTree.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+
+ENDIF()
+##########################################
+
