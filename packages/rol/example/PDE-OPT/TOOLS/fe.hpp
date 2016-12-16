@@ -254,6 +254,9 @@ public:
 
     // Compute local degrees of freedom on reference cell sides.
     int numSides = cellTopo_->getSideCount();
+    if (cellTopo_->getDimension() == 1) {
+      numSides = 2;
+    }
     if ( numSides ) {
       for (int i=0; i<numSides; ++i) {
         sideDofs_.push_back(computeBoundaryDofs(i));
@@ -616,7 +619,7 @@ public:
     std::vector<int> nodeids, edgeids, faceids;
 
     if (cellTopo_->getDimension() == 1) {
-      nodeids.push_back(cellTopo_->getNodeMap(0, locSideId, 0));
+      nodeids.push_back(locSideId);
     }
     else if (cellTopo_->getDimension() == 2) {
       edgeids.push_back(locSideId);

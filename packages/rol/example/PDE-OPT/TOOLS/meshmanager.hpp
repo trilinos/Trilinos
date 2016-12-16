@@ -840,7 +840,7 @@ private:
     meshNodes_ = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numNodes_,1) );
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
-    for( int i=0; i<nx_; ++i ) {
+    for( int i=0; i<nx_+1; ++i ) {
       nodes(i, 0) = X0_ + std::pow(static_cast<Real>(i)/nx_,gamma_) * width_;
     }
   } // computeNodes
@@ -881,7 +881,7 @@ private:
     (*meshSideSets_)[1].resize(numSides);
     (*meshSideSets_)[1][0].resize(0);
     (*meshSideSets_)[1][1].resize(1);
-    (*meshSideSets_)[1][1](0) = numCells_+1;
+    (*meshSideSets_)[1][1](0) = numCells_-1;
 
   } // computeSideSets
 
