@@ -4566,7 +4566,8 @@ namespace Tpetra {
         constexpr bool LO_GO_same = std::is_same<LO, GO>::value;
         if (nodeNumAllocated_ && LO_GO_same) {
           // This prevents a build error (illegal assignment) if
-          // LO_GO_same is _not_ true.
+          // LO_GO_same is _not_ true.  Only the first branch
+          // (returning k_gblInds1D_) should ever get taken.
           k_lclInds1D_ = Kokkos::Impl::if_c<LO_GO_same,
             t_GlobalOrdinal_1D,
             lcl_col_inds_type>::select (k_gblInds1D_, k_lclInds1D_);
@@ -4577,6 +4578,11 @@ namespace Tpetra {
              "k_rowPtrs_.dimension_0() == 0.  This should never happen at this "
              "point.  Please report this bug to the Tpetra developers.");
 
+          // FIXME (mfh 17 Dec 2016) If we can assume UVM, or if we
+          // can otherwise access the memory space directly, don't
+          // bother with create_mirror_view and deep_copy; just read
+          // the last entry.
+          //
           // Don't assume UVM.  Get a ("0-D") View of the last entry
           // of k_rowPtrs_, get its host mirror View, and use that to
           // get the number of entries.
@@ -4585,7 +4591,27 @@ namespace Tpetra {
           Kokkos::deep_copy (lastEnt_h, lastEnt_d);
           const auto numEnt = lastEnt_h ();
 
-          k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::lclind", numEnt);
+          // mfh 17 Dec 2016: We don't need initial zero-fill of
+          // k_lclInds1D_, because we will fill it below anyway.
+          // AllowPadding would only help for aligned access (e.g.,
+          // for vectorization) if we also were to pad each row to the
+          // same alignment, so we'll skip AllowPadding for now.
+
+          // using Kokkos::AllowPadding;
+          using Kokkos::view_alloc;
+          using Kokkos::WithoutInitializing;
+
+          // When giving the label as an argument to
+          // Kokkos::view_alloc, the label must be a string and not a
+          // char*, else the code won't compile.  This is because
+          // view_alloc also allows a raw pointer as its first
+          // argument.  See
+          // https://github.com/kokkos/kokkos/issues/434.  This is a
+          // large allocation typically, so the overhead of creating
+          // an std::string is minor.
+          const std::string label ("Tpetra::CrsGraph::lclind");
+          k_lclInds1D_ =
+            lcl_col_inds_type (view_alloc (label, WithoutInitializing), numEnt);
         }
 
         auto lclColMap = colMap.getLocalMap ();
