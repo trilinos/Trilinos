@@ -1408,7 +1408,7 @@ namespace Tpetra {
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
-        const auto op = KokkosRefactor::Details::InsertOp ();
+        KokkosRefactor::Details::InsertOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
@@ -1439,7 +1439,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ADD) {
-        const auto op = KokkosRefactor::Details::AddOp ();
+        KokkosRefactor::Details::AddOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
@@ -1469,7 +1469,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
-        const auto op = KokkosRefactor::Details::AbsMaxOp ();
+        KokkosRefactor::Details::AbsMaxOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
