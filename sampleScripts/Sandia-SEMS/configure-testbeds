@@ -16,25 +16,37 @@ export COMPLEX=OFF
 # Set up Architecture
 
 #Intel SandyBridge / IvyBridge
-#export ARCH_FLAG="-mavx"
+#export ARCH_CXX_FLAG="-mavx"
+#export ARCH_C_FLAG="-mavx"
+#export BLAS_LIBRARIES="-lblas"
+#export LAPACK_LIBRARIES="-llapack" 
 #Intel Haswell
-export ARCH_CXX_FLAG="-xCORE-AVX2"
-export ARCH_C_FLAG="-xCORE-AVX2"
-export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
-export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
-#Intel KNL
-#export ARCH_CXX_FLAG="-xMIC-AVX512"
-#export ARCH_C_FLAG="-xMIC-AVX512"
-#export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
+#export ARCH_CXX_FLAG="-xCORE-AVX2 -mkl"
+#export ARCH_C_FLAG="-xCORE-AVX2 -mkl"
+#export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
 #export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+#Intel KNL
+export ARCH_CXX_FLAG="-xMIC-AVX512 -mkl"
+export ARCH_C_FLAG="-xMIC-AVX512 -mkl"
+export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
+export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #IBM Power8:
-#export ARCH_FLAG="-mcpu=power8"
+#export ARCH_CXX_FLAG="-mcpu=power8"
+#export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
 #IBM Power8 + NVIDIA K80
+#export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
 #export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37"
 #export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
 #IBM Power8 + NVIDIA P100
+#export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
 #export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_60"
 #export ARCH_C_FLAG="-mcpu=power8"
+#export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+#export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
 
 
 # Set up Tests/Examples
