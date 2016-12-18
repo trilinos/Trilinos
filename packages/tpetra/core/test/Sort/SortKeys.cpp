@@ -201,6 +201,13 @@ test_fixedTypes_fixedArrayLength (bool& success,
   shellSortKeys (keysCopy2, arrayLength);
   const bool equalKeys = isEqual (keysCopy, keysCopy2, arrayLength);
   TEST_ASSERT( equalKeys );
+
+  // Compare against Tpetra::Details::shellSortKeys.
+  KeyType keysCopy3[arrayLength];
+  copyArray (keysCopy3, keys, arrayLength);
+  ::Tpetra::Details::shellSortKeys (keysCopy3, arrayLength);
+  const bool equalKeys3 = isEqual (keysCopy2, keysCopy3, arrayLength);
+  TEST_ASSERT( equalKeys3 );
 }
 
 // \brief Test shortSortKeys_${arrayLength} for fixed \c KeyType type,

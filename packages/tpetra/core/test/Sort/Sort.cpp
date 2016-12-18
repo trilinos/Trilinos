@@ -229,6 +229,20 @@ test_fixedTypes_fixedArrayLength (bool& success,
     const bool equalValues = isEqual (valuesCopy, valuesCopy2, arrayLength);
     TEST_ASSERT( equalValues );
   }
+
+  // Compare against Tpetra::Details::shellSortKeysAndValues.
+  KeyType keysCopy3[arrayLength];
+  ValueType valuesCopy3[arrayLength];
+  copyArray (keysCopy3, keys, arrayLength);
+  copyArray (valuesCopy3, values, arrayLength);
+  ::Tpetra::Details::shellSortKeysAndValues (keysCopy3, valuesCopy3, arrayLength);
+  const bool equalKeys3 = isEqual (keysCopy2, keysCopy3, arrayLength);
+  TEST_ASSERT( equalKeys3 );
+
+  if (! keysMayContainDuplicates || expectStableSort) {
+    const bool equalValues3 = isEqual (valuesCopy2, valuesCopy3, arrayLength);
+    TEST_ASSERT( equalValues3 );
+  }
 }
 
 // Fill the given array with distinct values.

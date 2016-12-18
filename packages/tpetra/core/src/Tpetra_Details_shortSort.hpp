@@ -338,6 +338,84 @@ shortSortKeys_8 (KeyType keys[8])
   TPETRA_DETAILS_SWAP_KEYS(3, 4);
 }
 
+/// \brief Shellsort (yes, it's one word) the input array \c keys, and
+///   apply the resulting permutation to the input array \c values.
+///
+/// mfh 28 Nov 2016, 17 Dec 2016: I adapted this function from
+/// sh_sort2 in Tpetra_Util.hpp (in this directory).
+template<class KeyType, class ValueType, class IndexType>
+void
+shellSortKeysAndValues (KeyType keys[],
+                        ValueType values[],
+                        const IndexType n)
+{
+  static_assert (std::is_integral<IndexType>::value,
+                 "IndexType must be a signed integer type.");
+  static_assert (std::is_signed<IndexType>::value,
+                 "IndexType must be a signed integer type.  "
+                 "This implementation does a count-down loop, "
+                 "and may thus loop forever "
+                 "if one attempts to use it with unsigned IndexType.");
+  constexpr IndexType ZERO = 0;
+  IndexType midpoint = n / static_cast<IndexType> (2);
+
+  while (midpoint > ZERO) {
+    // Avoid names like "max" in case they collide with macros.
+    const IndexType theMax = n - midpoint;
+    for (IndexType j = 0; j < theMax; ++j) {
+      // IndexType is signed, so it's legit to compare >= 0.
+      for (IndexType k = j; k >= 0; k -= midpoint) {
+        if (keys[k + midpoint] >= keys[k]) {
+          break;
+        }
+        const KeyType tmpKey = keys[k + midpoint];
+        keys[k + midpoint] = keys[k];
+        keys[k] = tmpKey;
+        const ValueType tmpVal = values[k + midpoint];
+        values[k + midpoint] = values[k];
+        values[k] = tmpVal;
+      }
+    }
+    midpoint = midpoint / 2;
+  }
+}
+
+/// \brief Shellsort (yes, it's one word) the input array \c keys.
+///
+/// \param keys [in/out] Input array of keys to sort.
+/// \param n [in] Length of the input array \c keys.
+template<class KeyType, class IndexType>
+KOKKOS_FUNCTION void
+shellSortKeys (KeyType keys[], const IndexType n)
+{
+  static_assert (std::is_integral<IndexType>::value,
+                 "IndexType must be a signed integer type.");
+  static_assert (std::is_signed<IndexType>::value,
+                 "IndexType must be a signed integer type.  "
+                 "This implementation does a count-down loop, "
+                 "and may thus loop forever "
+                 "if one attempts to use it with unsigned IndexType.");
+  constexpr IndexType ZERO = 0;
+  IndexType midpoint = n / static_cast<IndexType> (2);
+
+  while (midpoint > ZERO) {
+    // Avoid names like "max" in case they collide with macros.
+    const IndexType theMax = n - midpoint;
+    for (int j = 0; j < theMax; ++j) {
+      // IndexType must be signed, so it's legit to compare >= 0.
+      for (int k = j; k >= 0; k -= midpoint) {
+        if (keys[k + midpoint] >= keys[k]) {
+          break;
+        }
+        const KeyType tmpKey = keys[k + midpoint];
+        keys[k + midpoint] = keys[k];
+        keys[k] = tmpKey;
+      }
+    }
+    midpoint = midpoint / 2;
+  }
+}
+
 } // namespace Details
 } // namespace Tpetra
 
