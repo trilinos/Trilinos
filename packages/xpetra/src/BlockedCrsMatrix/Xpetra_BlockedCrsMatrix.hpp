@@ -245,10 +245,16 @@ namespace Xpetra {
       std::vector<GlobalOrdinal> gids;
       for(size_t tt = 0; tt<subMaps.size(); ++tt) {
         Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
-        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(subMap->getNodeNumElements()); ++l) {
+#if 1
+        Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getNodeElementList();
+        gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
+#else
+        size_t myNumElements = subMap->getNodeNumElements();
+        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(myNumElements); ++l) {
           GlobalOrdinal gid = subMap->getGlobalElement(l);
           gids.push_back(gid);
         }
+#endif
       }
 
       // we have to sort the matrix entries and get rid of the double entries

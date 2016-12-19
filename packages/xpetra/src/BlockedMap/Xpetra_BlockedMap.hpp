@@ -141,8 +141,9 @@ namespace Xpetra {
         std::vector<GlobalOrdinal> fullMapGids;
         const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
         for(size_t v = 0; v < maps.size(); ++v) {
-          std::vector<GlobalOrdinal> subMapGids(maps[v]->getNodeNumElements(),0);
-          for (LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(maps[v]->getNodeNumElements()); ++l) {
+          size_t myNumElements = maps[v]->getNodeNumElements();
+          std::vector<GlobalOrdinal> subMapGids(myNumElements,0);
+          for (LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(myNumElements); ++l) {
             GlobalOrdinal myGid = maps[v]->getGlobalElement(l);
             subMapGids[l] = myGid + gidOffsets[v];
             fullMapGids.push_back(myGid + gidOffsets[v]);
@@ -193,7 +194,7 @@ namespace Xpetra {
       for(size_t v = 0; v < thyramaps.size(); ++v) {
         TEUCHOS_TEST_FOR_EXCEPTION(thyramaps[v]->getMinAllGlobalIndex() != 0, std::logic_error,
                                            "logic error. When using Thyra-style numbering all sub-block maps must start with zero as GID.");
-        TEUCHOS_TEST_FOR_EXCEPTION(thyramaps[v]->getNodeNumElements() != maps[v]->getNodeNumElements(), std::logic_error,
+        XPETRA_TEST_FOR_EXCEPTION(thyramaps[v]->getNodeNumElements() != maps[v]->getNodeNumElements(), std::logic_error,
                                            "logic error. The size of the submaps must be identical (same distribution, just different GIDs)");
       }
 
@@ -550,10 +551,16 @@ namespace Xpetra {
       std::vector<GlobalOrdinal> gids;
       for(size_t tt = 0; tt<subMaps.size(); ++tt) {
         Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
-        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(subMap->getNodeNumElements()); ++l) {
+#if 1
+        Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getNodeElementList();
+        gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
+#else
+        size_t myNumElements = subMap->getNodeNumElements();
+        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(myNumElements); ++l) {
           GlobalOrdinal gid = subMap->getGlobalElement(l);
           gids.push_back(gid);
         }
+#endif
       }
 
       const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
