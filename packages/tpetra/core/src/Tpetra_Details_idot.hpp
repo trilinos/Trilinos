@@ -43,11 +43,20 @@
 #define TPETRA_DETAILS_IDOT_HPP
 
 /// \file Tpetra_Details_idot.hpp
-/// \brief Declaration of Tpetra::Details::idot, a nonblocking dot
-///   product of two Kokkos::View.
+/// \brief Declaration of Tpetra::Details::idot, a nonblocking dot product.
 ///
 /// \warning This file and its contents are implementation details of
 ///   Tpetra.  Users must not rely on them.
+///
+/// Tpetra::Details::idot implements a nonblocking dot product.  That
+/// is the only thing in this file upon which Tpetra developers should
+/// rely.  Tpetra developers should not rely on anything else in this
+/// file.  <i>Users</i> may not rely on <i>anything</i> in this file!
+///
+/// If you want to find the only thing in this file that you are
+/// supposed to use, search for "SKIP DOWN TO HERE" (no quotes).
+/// "You" only refers to Tpetra developers.  Users, this file is not
+/// for you!
 
 #include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
@@ -263,21 +272,42 @@ struct Idot<ResultViewType, VecViewType, 1, 1, false> {
 
 } // namespace Impl
 
-/// \brief Nonblocking dot product, with Tpetra::MultiVector or
+//
+// SKIP DOWN TO HERE
+//
+
+/// \brief Nonblocking dot product, with either Tpetra::MultiVector or
 ///   Tpetra::Vector inputs, and raw pointer output.
 ///
-/// \param result [out] Output; raw array / pointer to the return
+/// \param result [out] Output; raw array (/ pointer) to the return
 ///   value(s).  It is only valid to read this after calling wait() on
-///   the return value.
+///   the return value.  It must be legal to write to the first
+///   <tt>X.getNumVectors()</tt> entries of this array.
+///
 /// \param X [in] First input Tpetra::MultiVector or Tpetra::Vector.
-///   If a MultiVector, this must have same number of columns as Y.
+///   This must have same number of rows (globally, and on each (MPI)
+///   process) as Y.  If this is a Tpetra::MultiVector, then this must
+///   have the same number of columns as Y.
+///
 /// \param Y [in] Second input Tpetra::MultiVector or Tpetra::Vector.
-///   If a MultiVector, this must have same number of columns as X.
+///   This must have same number of rows (globally, and on each (MPI)
+///   process) as X.  If this is a Tpetra::MultiVector, then this must
+///   have the same number of columns as X.
 ///
 /// \return Pointer to an object representing the nonblocking
 ///   collective (communication operation).  Call wait() on this
 ///   object to complete the collective.  After calling wait(), you
 ///   may read the result.
+///
+/// In this version of the function, the dot product result goes into
+/// an array (just a raw pointer).  The \c dot_type typedef is the
+/// type of a dot product result, for a Tpetra::Vector whose entries
+/// have type \c SC (the "Scalar" type).  For most \c SC types,
+/// <tt>dot_type == SC</tt>.  However, once you start dipping into
+/// more interesting Scalar types, such as those found in the Sacado
+/// or Stokhos packages, \c dot_type may be a different type.  Most
+/// users should not have to worry about this, but Tpetra developers
+/// may need to worry about this.
 template<class SC, class LO, class GO, class NT>
 std::shared_ptr<CommRequest>
 idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
@@ -346,13 +376,34 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
 /// \param result [out] Output; rank-0 Kokkos::View of the return
 ///   value.  It is only valid to read this after calling wait() on
 ///   the return value.
-/// \param X [in] First input Tpetra::Vector.
-/// \param Y [in] Second input Tpetra::Vector.
+///
+/// \param X [in] First input Tpetra::Vector.  This must have same
+///   number of rows (globally, and on each (MPI) process) as Y.
+///
+/// \param Y [in] Second input Tpetra::Vector.  This must have same
+///   number of rows (globally, and on each (MPI) process) as X.
 ///
 /// \return Pointer to an object representing the nonblocking
 ///   collective (communication operation).  Call wait() on this
 ///   object to complete the collective.  After calling wait(), you
 ///   may read the result.
+///
+/// In this version of the function, the dot product result goes into
+/// a rank-0 ("zero-dimensional") Kokkos::View.  Rank-0 Views just
+/// view a single value.  We prefer that you use the versions of
+/// idot() that take a Kokkos::View as their output argument, because
+/// this ensures that the output will still exist (not be deallocated
+/// or fall out of scope).  The versions of idot() that take a raw
+/// pointer cannot promise that the memory will continue to exist
+/// until the dot product is done.
+///
+/// The \c dot_type typedef is the type of a dot product result, for a
+/// Tpetra::Vector whose entries have type \c SC (the "Scalar" type).
+/// For most \c SC types, <tt>dot_type == SC</tt>.  However, once you
+/// start dipping into more interesting Scalar types, such as those
+/// found in the Sacado or Stokhos packages, \c dot_type may be a
+/// different type.  Most users should not have to worry about this,
+/// but Tpetra developers may need to worry about this.
 template<class SC, class LO, class GO, class NT>
 std::shared_ptr<CommRequest>
 idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
@@ -395,18 +446,43 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
   }
 }
 
-/// \brief Nonblocking dot product, with Tpetra::MultiVector inputs.
+/// \brief Nonblocking dot product, with Tpetra::MultiVector inputs,
+///   and rank-1 (one-dimensional array) Kokkos::View output.
 ///
-/// \param result [out] Output Kokkos::View.  This result
-///   is only valid after calling wait() on the return value.
-/// \param X [in] Input Tpetra::MultiVector (must have same number of
-///   columns as Y).
-/// \param Y [in] Input Tpetra::MultiVector (must have same number of
-///   columns as X).
+/// \param result [out] Output; rank-1 Kokkos::View.  It is only valid
+///   to read the entries of this after calling wait() on the return
+///   value.
+///
+/// \param X [in] First input Tpetra::MultiVector or Tpetra::Vector.
+///   This must have same number of rows (globally, and on each (MPI)
+///   process) as Y.  If this is a Tpetra::MultiVector, then this must
+///   have the same number of columns as Y.
+///
+/// \param Y [in] Second input Tpetra::MultiVector or Tpetra::Vector.
+///   This must have same number of rows (globally, and on each (MPI)
+///   process) as X.  If this is a Tpetra::MultiVector, then this must
+///   have the same number of columns as X.
 ///
 /// \return Pointer to an object representing the nonblocking
 ///   collective (communication operation).  Call wait() on this
-///   object to complete the collective.
+///   object to complete the collective.  After calling wait(), you
+///   may read the results.
+///
+/// In this version of the function, the dot product results go into a
+/// rank-1 (one-dimensional) Kokkos::View.  We prefer that you use the
+/// versions of idot() that take a Kokkos::View as their output
+/// argument, because this ensures that the output will still exist
+/// (not be deallocated or fall out of scope).  The versions of idot()
+/// that take a raw pointer cannot promise that the memory will
+/// continue to exist until the dot product is done.
+///
+/// The \c dot_type typedef is the type of a dot product result, for a
+/// Tpetra::Vector whose entries have type \c SC (the "Scalar" type).
+/// For most \c SC types, <tt>dot_type == SC</tt>.  However, once you
+/// start dipping into more interesting Scalar types, such as those
+/// found in the Sacado or Stokhos packages, \c dot_type may be a
+/// different type.  Most users should not have to worry about this,
+/// but Tpetra developers may need to worry about this.
 template<class SC, class LO, class GO, class NT>
 std::shared_ptr<CommRequest>
 idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type*,
