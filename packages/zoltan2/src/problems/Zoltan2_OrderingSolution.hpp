@@ -330,7 +330,7 @@ public:
   
   /*! \brief Get reference to separator column block.
    */
-  index_t &NumSeparatorBlocks()
+  inline index_t &NumSeparatorBlocks()
   {
     return separatorColBlocks_; 
   }
