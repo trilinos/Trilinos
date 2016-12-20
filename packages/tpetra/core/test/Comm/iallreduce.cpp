@@ -91,6 +91,12 @@ namespace {
         << " and Device=" << deviceTypeName << endl;
     Teuchos::OSTab tab1 (out);
 
+    TEST_ASSERT( lclNumPackets >= static_cast<LO> (1) );
+    if (lclNumPackets < static_cast<LO> (1)) {
+      out << "lclNumPackets must be a positive integer" << endl;
+      return;
+    }
+
     int lclSuccess = 1; // to be updated below
     int gblSuccess = 0; // output argument
 
@@ -120,7 +126,7 @@ namespace {
     auto sendbuf_bak_h = Kokkos::create_mirror_view (sendbuf_bak);
     Kokkos::deep_copy (sendbuf_bak_h, sendbuf_bak);
 
-    out << "Test that the function compiles and runs without crashing" << endl;
+    out << "Test version of iallreduce that takes a rank-1 Kokkos::View" << endl;
 
     Kokkos::View<const val_type*, device_type> sendbuf_const = sendbuf;
 
@@ -128,6 +134,15 @@ namespace {
     TEST_ASSERT( request.get () != NULL );
     if (request.get () != NULL) {
       TEST_NOTHROW( request->wait () );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "iallreduce call or wait failed on at least one process!" << endl;
+      return;
     }
 
     out << "Make sure the input values were not changed" << endl;
@@ -147,7 +162,7 @@ namespace {
 
       Kokkos::deep_copy (recvbuf_h, recvbuf);
       for (LO k = 0; k < lclNumPackets; ++k) {
-        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak(k) * np );
+        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak_h(k) * np );
       }
     }
 
@@ -201,6 +216,53 @@ namespace {
       return;
     }
 #endif // MPI_VERSION >= 3
+
+    out << "Test rank-0 Kokkos::View output version of iallreduce" << endl;
+    auto sendbuf_0d = Kokkos::subview (sendbuf, 0);
+    auto recvbuf_0d = Kokkos::subview (recvbuf, 0);
+    auto sendbuf_h_0d = Kokkos::subview (sendbuf_h, 0);
+    auto recvbuf_h_0d = Kokkos::subview (recvbuf_h, 0);
+
+    // Reset contents of output buffer (important, since it currently
+    // contains the correct answer!).
+    recvbuf_h_0d() = STS::zero ();
+    Kokkos::deep_copy (recvbuf_0d, recvbuf_h_0d);
+
+    // Fill input buffer with value chosen so that we know what its
+    // sum across processes should be.
+    sendbuf_h_0d(0) = STS::one ();
+    Kokkos::deep_copy (sendbuf_0d, sendbuf_h_0d);
+
+    // Make a "back-up" of the send buffer with input values, just in
+    // case iallreduce has a bug that corrupts it (hopefully not).
+    auto sendbuf_bak_0d = Kokkos::subview (sendbuf_bak, 0);
+    auto sendbuf_bak_h_0d = Kokkos::subview (sendbuf_bak_h, 0);
+    Kokkos::deep_copy (sendbuf_bak_h_0d, sendbuf_h_0d);
+    Kokkos::deep_copy (sendbuf_bak_0d, sendbuf_bak_h_0d);
+
+    Kokkos::View<const val_type, device_type> sendbuf_0d_const = sendbuf_0d;
+    request = iallreduce (sendbuf_0d_const, recvbuf_0d, Teuchos::REDUCE_SUM, comm);
+    TEST_ASSERT( request.get () != NULL );
+    if (request.get () != NULL) {
+      TEST_NOTHROW( request->wait () );
+    }
+
+    out << "Make sure the input value was not changed" << endl;
+    {
+      Kokkos::deep_copy (sendbuf_h_0d, sendbuf_0d);
+      TEST_EQUALITY( sendbuf_h_0d(), sendbuf_bak_h_0d() );
+    }
+
+    out << "Make sure the output value is correct" << endl;
+    {
+      // There's no direct cast from int to some Scalar types (e.g.,
+      // std::complex<mag_type> or Kokkos::complex<mag_type>).  Thus,
+      // we make an intermediate cast through (real-valued) mag_type.
+      const val_type np = static_cast<val_type> (static_cast<mag_type> (numProcs));
+
+      Kokkos::deep_copy (recvbuf_h_0d, recvbuf_0d);
+      TEST_EQUALITY( recvbuf_h_0d(), sendbuf_bak_h_0d() * np );
+    }
 
     // TODO (mfh 14 Nov 2016) Add the following tests:
     //

@@ -201,8 +201,11 @@ private:
 /// Tpetra developers should not use this directly; they should
 /// instead create instances of this via the wrapIallreduceCommRequest
 /// function (see below).
+template<class PacketType, class DeviceType, const int rank>
+class IallreduceCommRequest;
+
 template<class PacketType, class DeviceType>
-class IallreduceCommRequest : public CommRequest {
+class IallreduceCommRequest<PacketType, DeviceType, 1> : public CommRequest {
 public:
   //! Default constructor.
   IallreduceCommRequest ()
@@ -281,6 +284,86 @@ private:
   ::Kokkos::View<PacketType*, DeviceType> recvbuf_;
 };
 
+template<class PacketType, class DeviceType>
+class IallreduceCommRequest<PacketType, DeviceType, 0> : public CommRequest {
+public:
+  //! Default constructor.
+  IallreduceCommRequest ()
+  {}
+
+  /// \brief Constructor that takes a wrapped request (representing
+  ///   the pending MPI_Iallreduce operation itself), and saved
+  ///   buffers.
+  IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
+                         const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
+                         const ::Kokkos::View<PacketType, DeviceType>& recvbuf) :
+    req_ (req),
+    sendbuf_ (sendbuf),
+    recvbuf_ (recvbuf)
+  {}
+
+  virtual ~IallreduceCommRequest () {
+    if (req_.get () != NULL) {
+      // We're in a destructor, so don't throw.  We'll just try our best
+      // to handle whatever happens here without throwing.
+      try {
+        req_->cancel ();
+      }
+      catch (...) {}
+
+      try {
+        req_ = std::shared_ptr<CommRequest> ();
+      }
+      catch (...) {}
+    }
+  }
+
+  /// \brief Wait on this communication request to complete.
+  ///
+  /// This is a blocking operation.  The user is responsible for
+  /// avoiding deadlock.
+  void
+  wait ()
+  {
+    if (req_.get () != NULL) {
+      req_->wait ();
+      // Relinquish request handle.
+      req_ = std::shared_ptr<CommRequest> ();
+    }
+    // Relinquish references to saved buffers, if we have not already
+    // done so.  This operation is idempotent.
+    sendbuf_ = ::Kokkos::View<const PacketType, DeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType, DeviceType> ();
+  }
+
+  /// \brief Cancel the pending communication request.
+  ///
+  /// This operation must be idempotent.
+  void
+  cancel ()
+  {
+    if (req_.get () != NULL) {
+      req_->cancel ();
+      // Relinquish request handle.
+      req_ = std::shared_ptr<CommRequest> ();
+    }
+    // Relinquish references to saved buffers, if we have not already
+    // done so.  This operation is idempotent.
+    sendbuf_ = ::Kokkos::View<const PacketType, DeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType, DeviceType> ();
+  }
+
+private:
+  //! The wrapped request
+  std::shared_ptr<CommRequest> req_;
+
+  //! Saved send buffer from iallreduce call
+  ::Kokkos::View<const PacketType, DeviceType> sendbuf_;
+
+  //! Saved recv buffer from iallreduce call
+  ::Kokkos::View<PacketType, DeviceType> recvbuf_;
+};
+
 /// \brief Function for wrapping the CommRequest to be returned from
 ///   ::Tpetra::Details::iallreduce.
 ///
@@ -295,7 +378,16 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
                            const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
                            const ::Kokkos::View<PacketType*, DeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType, 1> (req, sendbuf, recvbuf));
+}
+
+template<class PacketType, class DeviceType>
+std::shared_ptr<CommRequest>
+wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
+                           const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
+                           const ::Kokkos::View<PacketType, DeviceType>& recvbuf)
+{
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType, 0> (req, sendbuf, recvbuf));
 }
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -364,16 +456,87 @@ iallreduceRaw (const Packet sendbuf[],
 #endif // HAVE_TPETRACORE_MPI
 }
 
+template<class PacketType, class DeviceType, const int rank>
+struct Iallreduce {};
+
+template<class PacketType, class DeviceType>
+struct Iallreduce<PacketType, DeviceType, 1> {
+  static std::shared_ptr<CommRequest>
+  iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
+              const ::Kokkos::View<PacketType*, DeviceType>& recvbuf,
+              const ::Teuchos::EReductionType op,
+              const ::Teuchos::Comm<int>& comm)
+  {
+    static_assert (! std::is_const<PacketType>::value,
+                   "PacketType must be a nonconst type.");
+#ifdef HAVE_TPETRACORE_MPI
+    // Avoid instantiating Impl::iallreduceRaw for both T and const T,
+    // by canonicalizing to the non-const version of T.
+    typedef typename std::remove_const<PacketType>::type packet_type;
+
+    std::shared_ptr<CommRequest> req =
+      Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
+                                        recvbuf.ptr_on_device (),
+                                        static_cast<int> (sendbuf.dimension_0 ()),
+                                        op, comm);
+    return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
+#else // NOT HAVE_TPETRACORE_MPI
+
+    // MPI is disabled, so comm is a SerialComm.
+    // Avoid needing to check the SerialComm case in Impl::iallreduce.
+    // That lets Impl::iallreduce not need to know about DeviceType.
+    ::Kokkos::deep_copy (recvbuf, sendbuf);
+    // This request has already finished.  There's nothing more to do.
+    return Impl::emptyCommRequest ();
+#endif // HAVE_TPETRACORE_MPI
+  }
+};
+
+template<class PacketType, class DeviceType>
+struct Iallreduce<PacketType, DeviceType, 0> {
+  static std::shared_ptr<CommRequest>
+  iallreduce (const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
+              const ::Kokkos::View<PacketType, DeviceType>& recvbuf,
+              const ::Teuchos::EReductionType op,
+              const ::Teuchos::Comm<int>& comm)
+  {
+    static_assert (! std::is_const<PacketType>::value,
+                   "PacketType must be a nonconst type.");
+
+#ifdef HAVE_TPETRACORE_MPI
+    // Avoid instantiating Impl::iallreduceRaw for both T and const T,
+    // by canonicalizing to the non-const version of T.
+    typedef typename std::remove_const<PacketType>::type packet_type;
+
+    std::shared_ptr<CommRequest> req =
+      Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
+                                        recvbuf.ptr_on_device (),
+                                        static_cast<int> (1),
+                                        op, comm);
+    return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
+#else // NOT HAVE_TPETRACORE_MPI
+
+    // MPI is disabled, so comm is a SerialComm.
+    // Avoid needing to check the SerialComm case in Impl::iallreduce.
+    // That lets Impl::iallreduce not need to know about DeviceType.
+    ::Kokkos::deep_copy (recvbuf, sendbuf);
+    // This request has already finished.  There's nothing more to do.
+    return Impl::emptyCommRequest ();
+#endif // HAVE_TPETRACORE_MPI
+  }
+};
+
 } // namespace Impl
 
 //
 // SKIP DOWN TO HERE
 //
 
-/// \brief Nonblocking all-reduce
+/// \brief Nonblocking all-reduce, for either rank-1 or rank-0
+///   Kokkos::View objects.
 ///
-/// \tparam PacketType Type of the object(s) to send and receive
-/// \tparam DeviceType Kokkos::Device specialization
+/// \tparam InputViewType Type of the send buffer
+/// \tparam OutputViewType Type of the receive buffer
 ///
 /// This function wraps MPI_Iallreduce.  It does a nonblocking
 /// all-reduce over the input communicator \c comm, from \c sendbuf
@@ -381,8 +544,10 @@ iallreduceRaw (const Packet sendbuf[],
 /// function returns without blocking; the all-reduce only blocks for
 /// completion when one calls wait() on the returned request.
 ///
-/// \param sendbuf [in] Input array of PacketType.
-/// \param recvbuf [out] Output array of PacketType.
+/// \param sendbuf [in] Input buffer; must be either a rank-1 or
+///   rank-0 Kokkos::View, and must have the same rank as recvbuf.
+/// \param recvbuf [in] Output buffer; must be either a rank-1 or
+///   rank-0 Kokkos::View, and must have the same rank as sendbuf.
 /// \param op [in] Teuchos enum representing the reduction operator.
 /// \param comm [in] Communicator over which to do the all-reduce.
 ///
@@ -392,36 +557,35 @@ iallreduceRaw (const Packet sendbuf[],
 /// an intracommunicator.  It may not be an intercommunicator.  If you
 /// don't know what an intercommunicator is, you probably just have an
 /// intracommunicator, so everything is fine.
-template<class PacketType, class DeviceType>
+template<class InputViewType, class OutputViewType>
 std::shared_ptr<CommRequest>
-iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
-            const ::Kokkos::View<PacketType*, DeviceType>& recvbuf,
+iallreduce (const InputViewType& sendbuf,
+            const OutputViewType& recvbuf,
             const ::Teuchos::EReductionType op,
             const ::Teuchos::Comm<int>& comm)
 {
-  static_assert (! std::is_const<PacketType>::value,
-                 "PacketType must be a nonconst type.");
+  static_assert (Kokkos::Impl::is_view<InputViewType>::value,
+                 "InputViewType must be a Kokkos::View specialization.");
+  static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
+                 "OutputViewType must be a Kokkos::View specialization.");
+  constexpr int rank = static_cast<int> (OutputViewType::rank);
+  static_assert (static_cast<int> (InputViewType::rank) == rank,
+                 "InputViewType and OutputViewType must have the same rank.");
+  static_assert (rank == 0 || rank == 1,
+                 "InputViewType and OutputViewType must both have "
+                 "rank 0 or rank 1.");
+  typedef typename OutputViewType::non_const_value_type packet_type;
+  static_assert (std::is_same<typename OutputViewType::value_type,
+                   packet_type>::value,
+                 "OutputViewType must be a nonconst Kokkos::View.");
+  static_assert (std::is_same<typename InputViewType::non_const_value_type,
+                   packet_type>::value,
+                 "InputViewType and OutputViewType must be Views "
+                 "whose entries have the same type.");
+  typedef typename OutputViewType::device_type device_type;
 
-#ifdef HAVE_TPETRACORE_MPI
-  // Avoid instantiating Impl::iallreduceRaw for both T and const T,
-  // by canonicalizing to the non-const version of T.
-  typedef typename std::remove_const<PacketType>::type packet_type;
-
-  std::shared_ptr<CommRequest> req =
-    Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
-                                      recvbuf.ptr_on_device (),
-                                      static_cast<int> (sendbuf.dimension_0 ()),
-                                      op, comm);
-  return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
-#else // NOT HAVE_TPETRACORE_MPI
-
-  // MPI is disabled, so comm is a SerialComm.
-  // Avoid needing to check the SerialComm case in Impl::iallreduce.
-  // That lets Impl::iallreduce not need to know about DeviceType.
-  ::Kokkos::deep_copy (recvbuf, sendbuf);
-  // This request has already finished.  There's nothing more to do.
-  return Impl::emptyCommRequest ();
-#endif // HAVE_TPETRACORE_MPI
+  typedef Impl::Iallreduce<packet_type, device_type, rank> impl_type;
+  return impl_type::iallreduce (sendbuf, recvbuf, op, comm);
 }
 
 } // namespace Details
