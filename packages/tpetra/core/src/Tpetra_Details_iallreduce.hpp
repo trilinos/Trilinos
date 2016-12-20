@@ -201,9 +201,17 @@ private:
 /// Tpetra developers should not use this directly; they should
 /// instead create instances of this via the wrapIallreduceCommRequest
 /// function (see below).
+///
+/// \tparam PacketType Type of each entry of the send and receive
+///   buffers.
+/// \tparam DeviceType Kokkos::Device specialization used by the send
+///   and receive buffers.
+/// \tparam rank Integer rank of the send and receive buffers.  Must
+///   be either 0 or 1.
 template<class PacketType, class DeviceType, const int rank>
 class IallreduceCommRequest;
 
+//! Partial pecialization for rank-1 send and receive buffers.
 template<class PacketType, class DeviceType>
 class IallreduceCommRequest<PacketType, DeviceType, 1> : public CommRequest {
 public:
@@ -222,6 +230,7 @@ public:
     recvbuf_ (recvbuf)
   {}
 
+  //! Destructor (virtual for memory safety).
   virtual ~IallreduceCommRequest () {
     if (req_.get () != NULL) {
       // We're in a destructor, so don't throw.  We'll just try our best
@@ -284,6 +293,7 @@ private:
   ::Kokkos::View<PacketType*, DeviceType> recvbuf_;
 };
 
+//! Partial pecialization for rank-0 (single-value) send and receive buffers.
 template<class PacketType, class DeviceType>
 class IallreduceCommRequest<PacketType, DeviceType, 0> : public CommRequest {
 public:
@@ -302,6 +312,7 @@ public:
     recvbuf_ (recvbuf)
   {}
 
+  //! Destructor (virtual for memory safety).
   virtual ~IallreduceCommRequest () {
     if (req_.get () != NULL) {
       // We're in a destructor, so don't throw.  We'll just try our best
@@ -365,13 +376,24 @@ private:
 };
 
 /// \brief Function for wrapping the CommRequest to be returned from
-///   ::Tpetra::Details::iallreduce.
+///   ::Tpetra::Details::iallreduce; overload for rank-1 send and
+///   receive buffers.
 ///
 /// The object returned from this function keeps the send and receive
 /// buffers.  Since ::Kokkos::View reference-counts, this ensures that
 /// the buffers will not be deallocated until the iallreduce
 /// completes.  The buffer references get cleared on wait() or
 /// cancel().
+///
+/// \param req [in] Pointer to CommRequest from
+///   ::Tpetra::Details::iallreduce.
+/// \param sendbuf [in] Send buffer for ::Tpetra::Details::iallreduce.
+/// \param recvbuf [in] Receive buffer for
+///   ::Tpetra::Details::iallreduce.  This is an input argument,
+///   because this function itself does not modify the contents of the
+///   receive buffer; it just keeps a reference to it.
+///
+/// \return Pointer to wrapped CommRequest.
 template<class PacketType, class DeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
@@ -381,6 +403,25 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
   return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType, 1> (req, sendbuf, recvbuf));
 }
 
+/// \brief Function for wrapping the CommRequest to be returned from
+///   ::Tpetra::Details::iallreduce; overload for rank-0 send and
+///   receive buffers.
+///
+/// The object returned from this function keeps the send and receive
+/// buffers.  Since ::Kokkos::View reference-counts, this ensures that
+/// the buffers will not be deallocated until the iallreduce
+/// completes.  The buffer references get cleared on wait() or
+/// cancel().
+///
+/// \param req [in] Pointer to CommRequest from
+///   ::Tpetra::Details::iallreduce.
+/// \param sendbuf [in] Send buffer for ::Tpetra::Details::iallreduce.
+/// \param recvbuf [in] Receive buffer for
+///   ::Tpetra::Details::iallreduce.  This is an input argument,
+///   because this function itself does not modify the contents of the
+///   receive buffer; it just keeps a reference to it.
+///
+/// \return Pointer to wrapped CommRequest.
 template<class PacketType, class DeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
@@ -392,7 +433,8 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
 
 #ifdef HAVE_TPETRACORE_MPI
 
-/// \brief Lowest-level implementation of ::Tpetra::Details::iallreduce.
+/// \brief Bottom (lowest)-level implementation of
+///   ::Tpetra::Details::iallreduce (see below in this header file).
 ///
 /// This doesn't need to know about Packet, because the MPI_Datatype
 /// expresses that information (how MPI should communicate Packet
@@ -413,7 +455,10 @@ iallreduceRawVoid (const void* sendbuf,
 
 #endif // HAVE_TPETRACORE_MPI
 
-/// \brief Medium-level implementation of ::Tpetra::Details::iallreduce.
+/// \brief Second lowest-level implementation of
+///   ::Tpetra::Details::iallreduce.
+///
+/// \tparam Packet Type of each entry of the send and receive buffer.
 ///
 /// This doesn't need to know about Device, because we assume that MPI
 /// implementations can read CUDA device memory, host memory, or
@@ -456,9 +501,24 @@ iallreduceRaw (const Packet sendbuf[],
 #endif // HAVE_TPETRACORE_MPI
 }
 
+/// \brief Implementation of ::Tpetra::Details::iallreduce.
+///
+/// \tparam PacketType Type of each entry of the send and receive
+///   buffer.
+/// \tparam DeviceType Kokkos::Device specialization used by the send
+///   and receive buffers.
+/// \tparam rank Integer rank of the send and receive buffers.  Must
+///   be either 0 or 1.
+///
+/// The actual implementation of ::Tpetra::Details::iallreduce lives
+/// in the partial specializations of this struct.  See below.  We do
+/// this complicated struct thing in order to make it easier to
+/// overload ::Tpetra::Details::iallreduce for different kinds of
+/// output arguments (e.g., rank-0 or rank-1 Kokkos::View).
 template<class PacketType, class DeviceType, const int rank>
 struct Iallreduce {};
 
+//! Partial specialization of Iallreduce for rank-1 send and receive buffers.
 template<class PacketType, class DeviceType>
 struct Iallreduce<PacketType, DeviceType, 1> {
   static std::shared_ptr<CommRequest>
@@ -492,6 +552,7 @@ struct Iallreduce<PacketType, DeviceType, 1> {
   }
 };
 
+//! Partial specialization of Iallreduce for rank-0 send and receive buffers.
 template<class PacketType, class DeviceType>
 struct Iallreduce<PacketType, DeviceType, 0> {
   static std::shared_ptr<CommRequest>
