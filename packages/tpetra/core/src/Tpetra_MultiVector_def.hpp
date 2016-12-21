@@ -52,7 +52,6 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Details_MultiVectorDistObjectKernels.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
