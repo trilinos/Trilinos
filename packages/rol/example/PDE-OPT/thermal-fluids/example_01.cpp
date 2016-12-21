@@ -160,8 +160,10 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new StdObjective_ThermalFluids<RealT>(*parlist));
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
+    Teuchos::RCP<ROL::SimController<RealT> > stateStore
+      = Teuchos::rcp(new ROL::SimController<RealT>());
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, stateStore, up, zp, pp, true, false));
 
     //up->zero();
     //zp->zero();
@@ -177,33 +179,36 @@ int main(int argc, char *argv[]) {
       con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
       con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
       u_rcp->putScalar(1);
+      pdecon->outputTpetraData();
       con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
       con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
       robj->checkGradient(*zp,*dzp,true,*outStream);
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
+    up->zero();
     zp->zero();
+
+    RealT tol(1.e-8);
+    con->solve(*rp,*up,*zp,tol);
+    pdecon->outputTpetraVector(u_rcp,"state_uncontrolled.txt");
+
     bool useCompositeStep = parlist->sublist("Problem").get("Full space",false);
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
     if ( useCompositeStep ) {
-      RealT tol(1.e-8);
-      Teuchos::Array<RealT> res(1,0);
-      up->zero();
-      con->solve(*rp,*up,*zp,tol);
       algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
       algo->run(x,*rp,*obj,*con,true,*outStream);
     }
     else {
       algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
       algo->run(*zp,*robj,true,*outStream);
+      std::vector<RealT> param;
+      stateStore->get(*up,param);
     }
 
     // Output.
     assembler->printMeshData(*outStream);
-    RealT tol(1.e-8);
     Teuchos::Array<RealT> res(1,0);
-    up->zero();
-    con->solve(*rp,*up,*zp,tol);
+    //con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
     pdecon->outputTpetraVector(z_rcp,"control.txt");
     con->value(*rp,*up,*zp,tol);
@@ -211,6 +216,11 @@ int main(int argc, char *argv[]) {
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
     //pdecon->outputTpetraData();
+
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj0
+      = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
+    RealT val = obj0->value(*up,*zp,tol);
+    *outStream << "Vorticity Value: " << val << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -378,7 +378,7 @@ private:
 
   virtual void computeSideSets() {
 
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(9));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(10));
     int numSides = 4;
     int numVertices = 4;
     (*meshSideSets_)[0].resize(numSides); // bottom
@@ -390,6 +390,7 @@ private:
     (*meshSideSets_)[6].resize(numSides); // left lower
     (*meshSideSets_)[7].resize(numVertices); // L-corner cell
     (*meshSideSets_)[8].resize(numSides); // top corner cell
+    (*meshSideSets_)[9].resize(numVertices); // between side 4 and 5
     (*meshSideSets_)[0][0].resize(nx1_+nx2_);
     (*meshSideSets_)[1][1].resize(ny2_);
     (*meshSideSets_)[2][1].resize(ny5_);
@@ -399,6 +400,7 @@ private:
     (*meshSideSets_)[6][3].resize(ny1_);
     (*meshSideSets_)[7][0].resize(1);
     (*meshSideSets_)[8][3].resize(1);
+    (*meshSideSets_)[9][0].resize(1);
 
     for (int i=0; i<nx1_+nx2_; ++i) {
       (*meshSideSets_)[0][0](i) = i;
@@ -424,6 +426,7 @@ private:
     }
     (*meshSideSets_)[7][0](0) = offset + nx3_;
     (*meshSideSets_)[8][3](0) = (ny1_-1)*(nx1_+nx2_);
+    (*meshSideSets_)[9][0](0) = offset + (ny3_-1)*(nx3_+nx4_+nx5_); 
 
   } // computeSideSets
 
