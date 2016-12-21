@@ -153,6 +153,8 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
 
   for(int i=0; i<numCols;i++) {
     h_x(i) = (Scalar) (1.0*(rand()%40)-20.);
+  }
+  for(int i=0; i<numRows;i++) {
     h_y(i) = (Scalar) (1.0*(rand()%40)-20.);
   }
 
