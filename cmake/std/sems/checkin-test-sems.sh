@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Test (and push) Trilinos on any machine that has the SEMS Dev Env available
@@ -91,9 +91,13 @@ if [ "$TRILINOS_DIR" == "" ] ; then
   exit 1
 fi
 
-# Make sure the right env is loaded!
-export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
+  export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
+  source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+else
+  echo "Skipping load of standard SEMS CI env because TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD=$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD!"
+  module list
+fi
 
 #
 # B) Set up the bulid configurations
@@ -206,5 +210,3 @@ fi
 
 $TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
 "$@"
-
-
