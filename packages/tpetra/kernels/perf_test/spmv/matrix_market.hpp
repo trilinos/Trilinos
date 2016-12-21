@@ -92,13 +92,17 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
   line[0]='%';
   int count=-1;
   char* symmetric = NULL;
+  char* pattern = NULL;
   int nlines;
 
   while(line[0]=='%')
   {
           fgets(line,511,file);
           count++;
-          if(count==0) symmetric=strstr(line,"symmetric");
+          if(count==0) {
+            symmetric=strstr(line,"symmetric");
+            pattern=strstr(line,"pattern");
+          }
   }
   rewind(file);
   for(int i=0;i<count;i++)
@@ -106,9 +110,9 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
   fscanf(file,"%i",&nrows);
   fscanf(file,"%i",&ncols);
   fscanf(file,"%i",&nlines);
-  printf("Matrix dimension: %i %i %i %s\n",nrows,ncols,nlines,symmetric?"Symmetric":"General");
+  printf("Matrix dimension: %i %i %i %s %s\n",nrows,ncols,nlines,symmetric?"Symmetric":"General",pattern?"Pattern":"Real");
 
-  if(symmetric) nnz=nlines*2 - nrows;
+  if(symmetric) nnz=nlines*2;
   else nnz=nlines;
 
   OrdinalType* colIndtmp = new OrdinalType[nnz];
@@ -121,7 +125,12 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
   for(int ii=0;ii<nlines;ii++)
   {
 
-          fscanf(file,"%i %i %le",&rowIndtmp[nnz],&colIndtmp[nnz],&valuestmp[nnz]);
+          if(pattern) {
+            fscanf(file,"%i %i",&rowIndtmp[nnz],&colIndtmp[nnz]);
+            valuestmp[nnz] = (1.0*(ii%nrows))/ncols;
+          }
+          else
+            fscanf(file,"%i %i %le",&rowIndtmp[nnz],&colIndtmp[nnz],&valuestmp[nnz]);
           if(ii<10||ii>nlines-10)
             printf("Read: %i %i %i %le\n",nnz,rowIndtmp[nnz],colIndtmp[nnz],valuestmp[nnz]);
           rowIndtmp[nnz]-= idx_offset;
