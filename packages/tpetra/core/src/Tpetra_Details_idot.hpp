@@ -490,16 +490,22 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
 {
+  using ::Kokkos::subview;
   using ::Teuchos::Comm;
   using ::Teuchos::RCP;
+  typedef ::Kokkos::pair<size_t, size_t> pair_type;
   typedef ::Tpetra::MultiVector<SC, LO, GO, NT> mv_type;
   typedef typename mv_type::device_type device_type;
   typedef typename device_type::memory_space dev_memory_space;
-  typedef typename ::Kokkos::View<SC*, device_type>::host_mirror_space::memory_space host_memory_space;
-  typedef Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type*,
-    typename ::Tpetra::MultiVector<SC, LO, GO, NT>::device_type> result_view_type;
+  typedef typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type dot_type;
+  typedef ::Kokkos::View<dot_type*, device_type> result_view_type;
+  // mfh 21 Dec 2016: It would be nicer to derive this from
+  // Tpetra::MultiVector, but I'm not sure if Kokkos gives me a
+  // convenient way to get the host memory space from a device_type,
+  // rather than from a View.
+  typedef typename result_view_type::host_mirror_space::memory_space host_memory_space;
 
-  auto map = X.getMap ();
+  RCP<const typename mv_type::map_type> map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
   if (! comm.is_null ()) {
     if (X.template need_sync<dev_memory_space> () &&
@@ -508,18 +514,22 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
       auto Y_lcl = Y.template getLocalView<host_memory_space> ();
 
       if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
         typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        auto result_0d = subview (result, 0);
+        typedef decltype (result_0d) result_0d_view_type;
+        typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
       }
       else {
-        auto X_lcl_2d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
-        auto Y_lcl_2d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
+        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
+        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
         typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
       }
     }
     else { // use device version
@@ -527,18 +537,22 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
       auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
 
       if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
         typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        auto result_0d = subview (result, 0);
+        typedef decltype (result_0d) result_0d_view_type;
+        typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
       }
       else {
-        auto X_lcl_2d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
-        auto Y_lcl_2d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
+        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
+        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
         typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
       }
     }
   }

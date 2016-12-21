@@ -65,6 +65,7 @@ typedef vec_type::scalar_type SC;
 typedef vec_type::mag_type mag_type;
 typedef map_type::local_ordinal_type LO;
 typedef map_type::global_ordinal_type GO;
+typedef vec_type::device_type device_type;
 typedef Teuchos::ScalarTraits<SC> STS;
 
 /// \brief Test Tpetra::Details::idot.
@@ -150,6 +151,41 @@ testIdot (bool& success,
     success = (gblSuccess != 0);
   }
 
+  out << "Test Tpetra::MultiVector inputs and rank-1 Kokkos::View output" << endl;
+  {
+    constexpr size_t numVecs = 3;
+    mv_type x (map, numVecs);
+    mv_type y (map, numVecs);
+    const SC valX = TWO;
+    const SC valY = THREE;
+    x.putScalar (valX);
+    y.putScalar (valY);
+
+    Kokkos::View<SC*, device_type> results ("results[numVecs]", numVecs);
+    auto results_h = Kokkos::create_mirror_view (results);
+    for (size_t k = 0; k < numVecs; ++k) {
+      results_h(k) = ZERO;
+    }
+    Kokkos::deep_copy (results, results_h);
+
+    auto req = Tpetra::Details::idot (results, x, y);
+    req->wait ();
+    Kokkos::deep_copy (results_h, results);
+    const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
+    const SC expectedResult = N * valX * valY;
+
+    for (size_t k = 0; k < numVecs; ++k) {
+      TEST_EQUALITY( expectedResult, results_h(k) );
+    }
+
+    lclSuccess = success ? 1 : 0; // input argument
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    success = (gblSuccess != 0);
+  }
+
+  if (false) {
   out << "Test Tpetra::MultiVector inputs and raw pointer output" << endl;
   {
     constexpr size_t numVecs = 3;
@@ -178,6 +214,7 @@ testIdot (bool& success,
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
     success = (gblSuccess != 0);
+  }
   }
 }
 
