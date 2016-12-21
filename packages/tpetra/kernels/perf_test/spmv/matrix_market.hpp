@@ -235,7 +235,11 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType &nrows, Ord
           line[511] = 0;
           count++;
           if(count==0) symmetric=strstr(line,"symmetric");
-          fprintf ( DescrFile , "%s",line);
+
+          if(line[0]=='%')
+            fprintf ( DescrFile , "%s",line);
+          else
+            fprintf ( DescrFile , "%i %i %i\n",nrows,ncols,nnz);
   }
   fprintf ( DescrFile , "\n");
 
@@ -291,10 +295,9 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType &nrows, Ordi
           fgets(line,511,file);
   fscanf(file,"%i",&nrows);
   fscanf(file,"%i",&ncols);
-  fscanf(file,"%i",&nlines);
-  printf("Matrix dimension: %i %i %i %s\n",nrows,ncols,nlines,symmetric?"Symmetric":"General");
-  if(symmetric) nnz=nlines*2 - nrows;
-  else nnz=nlines;
+  fscanf(file,"%i",&nnz);
+  printf("Matrix dimension: %i %i %i %s\n",nrows,ncols,nnz,symmetric?"Symmetric":"General");
+
   fclose(file);
 
   char * filename_row = new char[strlen(filename)+5];
