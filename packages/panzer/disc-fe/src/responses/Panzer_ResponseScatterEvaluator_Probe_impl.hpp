@@ -143,7 +143,7 @@ computeBasisValues(typename Traits::EvalData d)
   const int num_points = 1; // Always a single point in this evaluator!
   Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points);
   Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points, num_dim);
-  for (size_t cell=0; cell<d.num_cells; ++cell)
+  for (panzer::index_t cell(0); cell < d.num_cells; ++cell)
     for (size_t dim=0; dim<num_dim; ++dim)
       physical_points_cell(cell,0,dim) = point_[dim];
 

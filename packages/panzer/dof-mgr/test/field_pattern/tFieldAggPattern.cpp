@@ -206,7 +206,7 @@ namespace panzer {
         for (int i=0;i<9;++i) 
           size_fields_B += (fields_B[i] > 0);
 
-        TEST_ASSERT(fieldsPerId.size()==size_fields_B);
+        TEST_ASSERT(static_cast<int>(fieldsPerId.size()) == size_fields_B);
         for(std::size_t i=0;i<fieldsPerId.size();i++) {
           allMatch &= (fieldsPerId[i]==fields_B[i]);
         }

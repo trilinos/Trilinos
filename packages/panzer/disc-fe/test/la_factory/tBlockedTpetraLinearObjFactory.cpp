@@ -137,8 +137,6 @@ void putScalar(ScalarT s,CrsMatrixType & A)
 template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
- 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -150,8 +148,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 
 Teuchos::RCP<const panzer::BlockedDOFManager<int,Ordinal64> > buildBlockedIndexer64(int myRank,int numProc,int numBlocks)
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
-
   std::string names[] = {"U","V","W","X"};
 
   Teuchos::RCP<const FieldPattern> patternC1

@@ -80,18 +80,21 @@ public:
 
 private:
 
-  bool isField(const std::string & field) const
+  bool isField(const std::string& field) const
   {
-    // check both main and auxiliary UGIs
-    bool useAux = true;
-    std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int,GlobalOrdinalT> > > fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
-    for(int b = 0; b < fieldDOFMngrs.size(); ++b){
-       for(int f = 0; f < fieldDOFMngrs[b]->getNumFields(); ++f){
-          if(fieldDOFMngrs[b]->getFieldString(f) == field)
-            useAux = false;
-       }
+    // Check both the main and auxiliary UGIs.
+    bool useAux(true);
+    std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int, GlobalOrdinalT>>>
+      fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
+    for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
+    {
+      for (int f(0); f < fieldDOFMngrs[b]->getNumFields(); ++f)
+      {
+        if (fieldDOFMngrs[b]->getFieldString(f) == field)
+          useAux = false;
+      }
     }
-    if(useAux)
+    if (useAux)
       return (aux_blocked_ugi_->getFieldNum(field) != -1);
     else
       return (blocked_ugi_->getFieldNum(field) != -1);

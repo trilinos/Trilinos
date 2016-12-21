@@ -88,8 +88,8 @@ namespace panzer {
   const std::vector<int> &
   Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const
   {
-    if (dim < subcellIndicies_.size() && 
-        cellIndex < subcellIndicies_[dim].size())
+    if ((dim       < static_cast<int>(subcellIndicies_.size()     ))  and 
+        (cellIndex < static_cast<int>(subcellIndicies_[dim].size())))
       return subcellIndicies_[dim][cellIndex];
 
     return empty_;

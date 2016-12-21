@@ -88,7 +88,8 @@ ProjectToEdges(
     int numQPoints = quadRule->getNumPoints(); 
  
     vector_values.resize(numQPoints);
-    for(unsigned qp = 0; qp < numQPoints; ++qp){
+    for (int qp(0); qp < numQPoints; ++qp)
+    {
       vector_values[qp] = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector"+"_qp_"+std::to_string(qp),vector_layout);
       this->addDependentField(vector_values[qp]);
     }
@@ -191,10 +192,10 @@ evaluateFields(typename Traits::EvalData workset)
 
       // get nodal coordinates for this cell 
       Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
-      for (int point = 0; point < vertex_coords.dimension(1); ++point){
-        for(int ict = 0; ict < num_dim; ict++){
-           physicalNodes(0,point,ict) = vertex_coords(cell,point,ict);
-        }
+      for (int point(0); point < vertex_coords.extent_int(1); ++point)
+      {
+        for (int ict(0); ict < num_dim; ict++)
+          physicalNodes(0, point, ict) = vertex_coords(cell, point, ict);
       }
 
       // loop over edges
@@ -204,7 +205,8 @@ evaluateFields(typename Traits::EvalData workset)
         // get quad weights/pts on reference 2d cell
         const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
         edgeQuad = quadFactory.create<PHX::exec_space,double,double>(subcell, quad_degree);
-        TEUCHOS_ASSERT(edgeQuad->getNumPoints() == vector_values.size());
+        TEUCHOS_ASSERT(
+          edgeQuad->getNumPoints() == static_cast<int>(vector_values.size()));
         Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",edgeQuad->getNumPoints());
         Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",edgeQuad->getNumPoints(),subcell_dim);
         edgeQuad->getCubature(quadPts,quadWts);

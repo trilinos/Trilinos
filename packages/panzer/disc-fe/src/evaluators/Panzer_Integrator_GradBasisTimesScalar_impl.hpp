@@ -139,9 +139,8 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisTimesScalar,workset)
 { 
 
   // Zero the residuals
-  for(int i=0; i<_num_dims; ++i){
+  for (int i(0); i < static_cast<int>(_num_dims); ++i)
     Kokkos::deep_copy(_residuals[i].get_static_view(), ScalarT(0.0));
-  }
 
   // do a scaled copy to initialize _tmp
   for (int i=0; i < _scalar.extent_int(0); ++i)
