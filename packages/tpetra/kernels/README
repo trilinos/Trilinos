@@ -1,9 +1,8 @@
-The Kernels subpackage of Tpetra ("TpetraKernels") contains local
-computational kernels.  "Local" means no MPI or other
-distributed-memory communication.  "Computational kernels" are
-coarse-grained operations; they take a lot of work and make sense to
-parallelize inside using Kokkos.  Computational kernels in this
-subpackage include the following:
+The Kernels subpackage of Tpetra ("TpetraKernels"/"KokkosKernels")
+ contains local computational kernels.  "Local" means no MPI or other
+ distributed-memory communication.  "Computational kernels" are coarse-grained
+ operations; they take a lot of work and make sense to parallelize inside using
+ Kokkos.  Computational kernels in this subpackage include the following:
 
   - (Multi)vector dot products, norms, and updates (AXPY-like
     operations that add vectors together entry-wise)
