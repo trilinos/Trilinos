@@ -167,7 +167,6 @@ public:
                       InView& X_in,
                       const Teuchos::ArrayView<const LO>& perm) const
   {
-    for(LO i = 0; i < perm.size(); ++i)
     //note: j is col, i is row
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);

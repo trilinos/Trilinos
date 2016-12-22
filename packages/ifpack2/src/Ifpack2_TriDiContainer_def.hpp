@@ -141,9 +141,9 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   // Check whether the input set of local row indices is correct.
   const map_type& rowMap = *(matrix->getRowMap());
   {
-    Teuchos::ArrayView<const local_ordinal_type> localRows = this->getLocalRows(0);
     for(local_ordinal_type j = 0; j < this->blockRows_[0]; j++)
     {
+      //Check that all rows in only block are valid and locally owned
       TEUCHOS_TEST_FOR_EXCEPTION(
         !rowMap.isNodeLocalElement(this->partitions_[this->partitionIndices_[0] + j]),
         std::invalid_argument, "Ifpack2::TriDiContainer: "
