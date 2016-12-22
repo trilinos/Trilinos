@@ -58,10 +58,11 @@
 
 #include <KokkosKernels_SPMV.hpp>
 #include <Kokkos_SPMV.hpp>
+#include <Kokkos_SPMV_Inspector.hpp>
 #include <CuSparse_SPMV.hpp>
 #include <MKL_SPMV.hpp>
 
-enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS};
+enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_INSP};
 
 typedef Kokkos::DefaultExecutionSpace execution_space;
 
@@ -101,10 +102,13 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
   }
   return nnz;
 }
+
 template<typename AType, typename XType, typename YType>
 void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length, int test) {
   if(test == KOKKOS)
     kk_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+  if(test == KK_INSP)
+    kk_inspector_matvec(A, x, y, rows_per_thread, team_size, vector_length);
   #ifdef HAVE_MKL
   if(test == MKL)
     mkl_matvec(A, x, y, rows_per_thread, team_size, vector_length);
@@ -272,6 +276,8 @@ int main(int argc, char **argv)
       test = CUSPARSE;
     if((strcmp(argv[i],"kk-kernels")==0))
       test = KK_KERNELS;
+    if((strcmp(argv[i],"kk-insp")==0))
+      test = KK_INSP;
     continue;
   }
   if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
