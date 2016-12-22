@@ -143,21 +143,23 @@ enum EBelosSolverType {
 /// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
 /// parameter to true in the input parameter list.
 ///
-///  Solver name | Aliases | Solver Manager Class
-///  ----------- | ------- | ----------
-///  Pseudoblock GMRES |  GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres | \c PseudoBlockGmresSolMgr
-///  Block GMRES | Flexible GMRES | \c BlockGmresSolMgr
-///  Block CG |  |  \c BlockCGSolMgr
-///  Pseudoblock CG | PseudoBlockCG, Pseudo Block CG | \c PseudoBlockCGSolMgr
-///  Pseudoblock Stochastic CG | Stochastic CG | \c PseudoBlockStochasticCGSolMgr
-///  GCRODR | Recycling GMRES | \c GCRODRSolMgr
-///  RCG | Recycling CG | \c RCGSolMgr
-///  MINRES | | \c MinresSolMgr
-///  LSQR | | \c LSQRSolMgr
-///  TFQMR | Transpose-Free QMR | \c TFQMRSolMgr
-///  Pseudoblock TFQMR | Pseudo Block Transpose-Free QMR | \c PseudoBlockTFQMRSolMgr
-///  Hybrid Block GMRES | GmresPoly, Seed GMRES | \c GmresPolySolMgr
-///  PCPG | CGPoly, Seed CG | \c PCPGSolMgr
+/// <table>
+/// <caption> Mapping of solver names and aliases to Belos classes </caption>
+/// <tr><th> Solver name </th>               <th> Aliases </th>                                                        <th> \c SolverManager subclass </th></tr>
+/// <tr><td> Pseudoblock GMRES </td>         <td> GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres </td>  <td> \c PseudoBlockGmresSolMgr </td></tr>
+/// <tr><td> Block GMRES </td>               <td> Flexible GMRES </td>                                                 <td> \c BlockGmresSolMgr </td></tr>
+/// <tr><td> Block CG </td>                  <td> Block CG </td>                                                       <td> \c BlockCGSolMgr </td></tr>
+/// <tr><td> Pseudoblock CG </td>            <td> PseudoBlockCG, Pseudo Block CG </td>                                 <td> \c PseudoBlockCGSolMgr </td></tr>
+/// <tr><td> Pseudoblock Stochastic CG </td> <td> Stochastic CG </td>                                                  <td> \c PseudoBlockStochasticCGSolMgr </td></tr>
+/// <tr><td> GCRODR </td>                    <td> Recycling GMRES </td>                                                <td> \c GCRODRSolMgr </td></tr>
+/// <tr><td> RCG </td>                       <td> Recycling CG </td>                                                   <td> \c RCGSolMgr </td></tr>
+/// <tr><td> MINRES </td>                    <td> MINRES </td>                                                         <td> \c MinresSolMgr </td></tr>
+/// <tr><td> LSQR </td>                      <td> LSQR </td>                                                           <td> \c LSQRSolMgr </td></tr>
+/// <tr><td> TFQMR </td>                     <td> TFQMR, Transpose-Free QMR </td>                                      <td> \c TFQMRSolMgr </td></tr>
+/// <tr><td> Pseudoblock TFQMR </td>         <td> Pseudoblock TFQMR, Pseudo Block Transpose-Free QMR </td>             <td> \c PseudoBlockTFQMRSolMgr </td></tr>
+/// <tr><td> Hybrid Block GMRES </td>        <td> GmresPoly, Seed GMRES </td>                                          <td> \c GmresPolySolMgr </td></tr>
+/// <tr><td> PCPG </td>                      <td> CGPoly, Seed CG </td>                                                <td> \c PCPGSolMgr </td></tr>
+/// </table>
 ///
 /// This class' template parameters are the same as those of
 /// Belos::SolverManager.  Scalar is the scalar type (of entries in
