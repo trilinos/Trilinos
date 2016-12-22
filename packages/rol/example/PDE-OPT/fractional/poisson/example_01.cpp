@@ -59,7 +59,7 @@
 //#include "ROL_Algorithm.hpp"
 //#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_KrylovFactory.hpp"
-#include "ROL_BelosKrylov.hpp"
+//#include "ROL_BelosKrylov.hpp"
 
 #include "../../TOOLS/meshmanager.hpp"
 #include "../../TOOLS/linearpdeconstraint.hpp"
@@ -206,8 +206,8 @@ int main(int argc, char *argv[]) {
     *outStream << "Preconditioner error: " << PPFvec->norm() << std::endl;
 
     // Build CG object.
-    Teuchos::RCP<ROL::Krylov<RealT> > solver = Teuchos::rcp(new ROL::BelosKrylov<RealT>(*parlist));
-    //Teuchos::RCP<ROL::Krylov<RealT> > solver = ROL::KrylovFactory<RealT>(*parlist);
+    //Teuchos::RCP<ROL::Krylov<RealT> > solver = Teuchos::rcp(new ROL::BelosKrylov<RealT>(*parlist));
+    Teuchos::RCP<ROL::Krylov<RealT> > solver = ROL::KrylovFactory<RealT>(*parlist);
 
     // Run CG
     int iter(0), flag(0);
