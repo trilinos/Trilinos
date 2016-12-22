@@ -256,24 +256,30 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/
     /*************************************************************************/
-    int nsamp = parlist->sublist("Problem").get("Number of samples", 4);
-    RealT minL = parlist->sublist("Problem").get("Min load perturbation", 0.0);
-    RealT maxL = parlist->sublist("Problem").get("Max load perturbation", 1.0);
-    RealT minA = parlist->sublist("Problem").get("Min angle perturbation", 0.0);
-    RealT maxA = parlist->sublist("Problem").get("Max angle perturbation", 90.0);
-    std::vector<RealT> loadMagBounds(2,0);
-    std::vector<RealT> angleBounds(2,0);
-    loadMagBounds[0] = minL; loadMagBounds[1] = maxL;
-    angleBounds[0] = minA; angleBounds[1] = maxA;
-    std::vector<std::vector<RealT> > bounds;
-    bounds.push_back(loadMagBounds);
-    bounds.push_back(angleBounds);
+    int nsamp  = parlist->sublist("Problem").get("Number of samples", 4);
+    Teuchos::Array<RealT> loadMag
+      = Teuchos::getArrayFromStringParameter<double>(parlist->sublist("Problem").sublist("Load"), "Magnitude");
+    int nLoads = loadMag.size();
+    int dim    = 2;
+    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dim*nLoads);
+    for (int i = 0; i < nLoads; ++i) {
+      std::stringstream sli;
+      sli << "Stochastic Load " << i;
+      Teuchos::ParameterList magList;
+      magList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Magnitude");
+      //magList.print(*outStream);
+      distVec[i*dim + 0] = ROL::DistributionFactory<RealT>(magList);
+      Teuchos::ParameterList angList;
+      angList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Polar Angle");
+      //angList.print(*outStream);
+      distVec[i*dim + 1] = ROL::DistributionFactory<RealT>(angList);
+    }
     //Teuchos::RCP<ROL::BatchManager<RealT> > bman
     //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
       = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman));
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,bman));
 
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/

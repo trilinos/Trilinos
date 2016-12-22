@@ -6,10 +6,6 @@
     <Parameter name="Number of output samples"    type="int"     value="4"             />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="4"             />
-    <Parameter name="Min load perturbation"       type="double"  value="0.0"           />
-    <Parameter name="Max load perturbation"       type="double"  value="1.0"           />
-    <Parameter name="Min angle perturbation"      type="double"  value="0.0"           />
-    <Parameter name="Max angle perturbation"      type="double"  value="90.0"          />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Young's Modulus"             type="double"  value="1.0"           />
     <Parameter name="Poisson Ratio"               type="double"  value="0.3"           />
@@ -17,15 +13,39 @@
     <Parameter name="Maximum Density"             type="double"  value="1.0"           />
     <Parameter name="SIMP Power"                  type="double"  value="3.0"           />
     <Parameter name="Use Plain Stress"            type="bool"    value="true"          />
-    <Parameter name="Load Magnitude"              type="double"  value="1.0"           />
-    <Parameter name="Load Angle"                  type="string"  value="{270.0}"       />
-    <Parameter name="Load Location"               type="string"  value="{2.0, 0.5}"    />
-    <Parameter name="Load Width"                  type="string"  value="{1e-2, 1e-2}"  />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <Parameter name="Objective Scaling"           type="double"  value="2.2e-2"        />
     <Parameter name="Use state storage"           type="bool"    value="true"          />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
     <Parameter name="Filter Radius"               type="double"  value="0.1"           />
+    <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->
+    <ParameterList name="Load">
+      <Parameter name="Magnitude"     type="string"  value="{1.0}"   />
+      <Parameter name="Polar Angle"   type="string"  value="{270.0}" />
+      <Parameter name="Azimuth Angle" type="string"  value="{0.0}"   />
+      <Parameter name="X Location"    type="string"  value="{2.0}"   />
+      <Parameter name="Y Location"    type="string"  value="{0.5}"   />
+      <Parameter name="Z Location"    type="string"  value="{0.0}"   />
+      <Parameter name="X Width"       type="string"  value="{1e-2}"  />
+      <Parameter name="Y Width"       type="string"  value="{1e-2}"  />
+      <Parameter name="Z Width"       type="string"  value="{0.0}"   />
+    </ParameterList>
+    <ParameterList name="Stochastic Load 0">
+      <ParameterList name="Magnitude">
+        <Parameter name="Name" type="string" value="Uniform" />
+        <ParameterList name="Uniform">
+          <Parameter name="Lower Bound" type="double" value="0.0" />
+          <Parameter name="Upper Bound" type="double" value="1.0" />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Polar Angle">
+        <Parameter name="Name" type="string" value="Uniform" />
+        <ParameterList name="Uniform">
+          <Parameter name="Lower Bound" type="double" value="0.0"  />
+          <Parameter name="Upper Bound" type="double" value="90.0" />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="2"             />
   </ParameterList>
