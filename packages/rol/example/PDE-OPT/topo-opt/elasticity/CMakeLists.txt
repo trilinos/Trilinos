@@ -20,6 +20,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_03
+    SOURCES example_03.cpp
+    ADD_DIR_TO_NAME
+  )
+
   #TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #  example_02
   #  SOURCES example_02.cpp
@@ -39,6 +45,14 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
 
   TRIBITS_ADD_TEST(
     example_02
+    ARGS PrintItAll
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_03
     ARGS PrintItAll
     NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"

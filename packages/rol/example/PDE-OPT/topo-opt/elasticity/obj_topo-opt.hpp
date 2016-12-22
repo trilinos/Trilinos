@@ -292,21 +292,27 @@ public:
 
 template <class Real>
 class StdObjective_TopoOpt : public ROL::StdObjective<Real> {
+private:
+  const Real lambda_;
+
 public:
-  StdObjective_TopoOpt() {}
+  StdObjective_TopoOpt(const Real lambda = 1) : lambda_(lambda) {}
 
   Real value(const std::vector<Real> &x, Real &tol) {
-    return x[0];
+    const Real one(1);
+    return x[0] + (std::exp(lambda_ * x[1]) - one)/lambda_;
   }
 
   void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
     const Real one(1);
     g[0] = one;
+    g[1] = std::exp(lambda_ * x[1]);
   }
 
   void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
     const Real zero(0);
     hv[0] = zero;
+    hv[1] = lambda_ * std::exp(lambda_ * x[1]) * v[1];
   }
 
 }; // StdObjective_TopOpt
