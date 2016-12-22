@@ -116,20 +116,27 @@ public:
       size_t numRowEntries(0);
       Teuchos::Array<int> indices;
       Teuchos::Array<Real> values;
+      Teuchos::Array<size_t> col(1), row(1);
       for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+        row[0] = r;
         numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
         indices.resize(numRowEntries); values.resize(numRowEntries);
         Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
         for (int c = 0; c < indices.size(); ++c) {
-          Klocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
+          col[0] = static_cast<size_t>(indices[c]);
+          Klocal_->apply(*(vf->subView(col())),*(Hvf->subViewNonConst(row())),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
+          //Klocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(0));
         }
       }
       for (size_t r = 0; r < Kcylinder_->getGlobalNumRows(); ++r) {
+        row[0] = r;
         numRowEntries = Kcylinder_->getNumEntriesInGlobalRow(r);
         indices.resize(numRowEntries); values.resize(numRowEntries);
         Kcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
         for (int c = 0; c < indices.size(); ++c) {
-          Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
+          col[0] = static_cast<size_t>(indices[c]);
+          Mlocal_->apply(*(vf->subView(col())),*(Hvf->subViewNonConst(row())),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
+          //Mlocal_->apply(*(vf->getVector(indices[c])),*(Hvf->getVectorNonConst(r)),Teuchos::NO_TRANS,values[c],static_cast<Real>(1));
         }
       }
     }
@@ -212,7 +219,9 @@ public:
     Real massVal(0), stiffVal(0);
     Teuchos::Array<int> indices;
     Teuchos::Array<Real> values;
+    Teuchos::Array<size_t> row(1);
     for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+      row[0] = r;
       numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
       indices.resize(numRowEntries); values.resize(numRowEntries);
       Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
@@ -234,7 +243,8 @@ public:
         }
       }
       M_ = Tpetra::MatrixMatrix::add(massVal, transpose_, *Klocal_, stiffVal, transpose_, *Mlocal_);
-      M_->apply(*(vf->getVector(r)),*(Hvf->getVectorNonConst(r)));
+      M_->apply(*(vf->subView(row())),*(Hvf->subViewNonConst(row())));
+      //M_->apply(*(vf->getVector(r)),*(Hvf->getVectorNonConst(r)));
     }
   }
 
@@ -246,7 +256,9 @@ public:
     Real massVal(0), stiffVal(0);
     Teuchos::Array<int> indices;
     Teuchos::Array<Real> values;
+    Teuchos::Array<size_t> row(1);
     for (size_t r = 0; r < Mcylinder_->getGlobalNumRows(); ++r) {
+      row[0] = r;
       numRowEntries = Mcylinder_->getNumEntriesInGlobalRow(r);
       indices.resize(numRowEntries); values.resize(numRowEntries);
       Mcylinder_->getGlobalRowCopy(r,indices(),values(),numRowEntries);
@@ -270,7 +282,8 @@ public:
       M_ = Tpetra::MatrixMatrix::add(massVal, false, *Klocal_, stiffVal, false, *Mlocal_);
       solver_ = Teuchos::rcp(new Solver<Real>(parlist_));
       solver_->setA(M_);
-      solver_->solve(Hvf->getVectorNonConst(r),vf->getVector(r),transpose_);
+      solver_->solve(Hvf->subViewNonConst(row()),vf->subView(row()),transpose_);
+      //solver_->solve(Hvf->getVectorNonConst(r),vf->getVector(r),transpose_);
     }
   }
 
@@ -306,12 +319,15 @@ public:
     Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
     Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
+    Teuchos::Array<size_t> col(1,0);
     if ( !transpose_ ) {
       Hv.zero();
-      Blocal_->apply(*vf, *(Hvf->getVectorNonConst(0)));
+      Blocal_->apply(*vf, *(Hvf->subViewNonConst(col())));
+      //Blocal_->apply(*vf, *(Hvf->getVectorNonConst(0)));
     }
     else {
-      Blocal_->apply(*(vf->getVector(0)), *Hvf, Teuchos::TRANS);
+      Blocal_->apply(*(vf->subView(col())), *Hvf, Teuchos::TRANS);
+      //Blocal_->apply(*(vf->getVector(0)), *Hvf, Teuchos::TRANS);
     }
   }
 

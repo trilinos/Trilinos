@@ -36,6 +36,14 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- ===========  BELOS OPTIONS  =========== -->
+  <Parameter name="Use Belos"                              type="bool"   value="true"                />
+  <Parameter name="Krylov Method"                          type="string" value="GMRES"               />
+  <Parameter name="Number of Stored Vectors"               type="int"    value="500"                 />
+  <Parameter name="Absolute Krylov Tolerance"              type="double" value="1.e-8"               />
+  <Parameter name="Relative Krylov Tolerance"              type="double" value="1.e-4"               />
+  <Parameter name="Maximum Number of Krylov Iterations"    type="int"    value="500"                 />
+
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
