@@ -59,8 +59,8 @@ void SparseGraph_SortRows(OrdinalType nrows, OrdinalType* rowPtr, OrdinalType* c
   for(int row = 0; row < nrows; row++) {
     OrdinalType row_start = rowPtr[row];
     OrdinalType row_end = rowPtr[row+1];
-    for(size_t i = row_start; i < row_end-1; i++) {
-      for(size_t j = row_end-1; j > i; j--) {
+    for(OrdinalType i = row_start; i < row_end-1; i++) {
+      for(OrdinalType j = row_end-1; j > i; j--) {
         if(colInd[j] < colInd[j-1]) {
           int idx = colInd[j];
           colInd[j] = colInd[j-1];
@@ -76,7 +76,7 @@ void SparseGraph_SortRows(OrdinalType nrows, OrdinalType* rowPtr, OrdinalType* c
   for(int row = 0; row < nrows; row++) {
     OrdinalType row_start = rowPtr[row];
     OrdinalType row_end = rowPtr[row+1];
-    for(size_t i = row_start; i < row_end-1; i++) {
+    for(OrdinalType i = row_start; i < row_end-1; i++) {
       if(colInd[i+1] < colInd[i]) printf("Error Not sorted %i %i | %i %i\n",row,i,colInd[i],colInd[i+1]);
     }
   }
@@ -185,10 +185,12 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
       if(colInd[i]<min) min = colInd[i];
       if(colInd[i]>max) max = colInd[i];
     }
-    int span = max-min;
-    if(span<min_span) min_span = span;
-    if(span>max_span) max_span = span;
-    ave_span += span;
+    if(rowPtr[row+1]>rowPtr[row]) {
+      int span = max-min;
+      if(span<min_span) min_span = span;
+      if(span>max_span) max_span = span;
+      ave_span += span;
+    } else min_span = 0;
   }
 
   printf("Spans: %lu %lu %lu\n",min_span,max_span,ave_span/nrows);
@@ -261,10 +263,12 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType &nrows, Ord
       if(colInd[i]<min) min = colInd[i];
       if(colInd[i]>max) max = colInd[i];
     }
-    int span = max-min;
-    if(span<min_span) min_span = span;
-    if(span>max_span) max_span = span;
-    ave_span += span;
+    if(rowPtr[row+1]>rowPtr[row]) {
+      int span = max-min;
+      if(span<min_span) min_span = span;
+      if(span>max_span) max_span = span;
+      ave_span += span;
+    } else min_span = 0;
   }
   printf("Spans: %lu %lu %lu\n",min_span,max_span,ave_span/nrows);
 
@@ -334,10 +338,12 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType &nrows, Ordi
       if(colInd[i]<min) min = colInd[i];
       if(colInd[i]>max) max = colInd[i];
     }
-    int span = max-min;
-    if(span<min_span) min_span = span;
-    if(span>max_span) max_span = span;
-    ave_span += span;
+    if(rowPtr[row+1]>rowPtr[row]) {
+      int span = max-min;
+      if(span<min_span) min_span = span;
+      if(span>max_span) max_span = span;
+      ave_span += span;
+    } else min_span = 0;
   }
   printf("Spans: %lu %lu %lu\n",min_span,max_span,ave_span/nrows);
 
