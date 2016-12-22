@@ -47,7 +47,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include "MueLu_TestHelpers.hpp"
+#include "MueLu_TestHelpers_HO.hpp"
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -108,21 +108,21 @@ namespace MueLuTests {
 
       for(int i=0;i<max_degree; i++) {
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-	RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(i,Intrepid2::POINTTYPE_EQUISPACED));
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(i,Intrepid2::POINTTYPE_EQUISPACED));
 #else
-	RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
 #endif
-	std::vector<size_t> lo_node_in_hi;
-	FC hi_dofCoords;
+        std::vector<size_t> lo_node_in_hi;
+        FC hi_dofCoords;
 
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
 #else
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
-#endif	
-	TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());	
-	TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
-	TEST_EQUALITY(lo_node_in_hi.size(),(size_t)lo->getCardinality());
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+#endif  
+        TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());  
+        TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
+        TEST_EQUALITY(lo_node_in_hi.size(),(size_t)lo->getCardinality());
       }
     }
   }
@@ -185,41 +185,41 @@ namespace MueLuTests {
 #endif
 
       for(int degree=2; degree < max_degree; degree++) {
-	int Nn = (degree+1)*(degree+1);
+        int Nn = (degree+1)*(degree+1);
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-	RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-	FCi hi_e2n("hi_e2n",1,Nn), lo_e2n;
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n("hi_e2n",1,Nn), lo_e2n;
 #else
-	RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-	FCi hi_e2n(1,Nn), lo_e2n;
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n(1,Nn), lo_e2n;
 #endif
-	std::vector<bool> hi_owned(Nn,false),lo_owned;
-	std::vector<size_t> lo_node_in_hi;
-	std::vector<LO> hi_to_lo_map;
-	int lo_numOwnedNodes=0;
-	FC hi_dofCoords;
+        std::vector<bool> hi_owned(Nn,false),lo_owned;
+        std::vector<size_t> lo_node_in_hi;
+        std::vector<LO> hi_to_lo_map;
+        int lo_numOwnedNodes=0;
+        FC hi_dofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
 #else
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
-#endif	
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+#endif  
 
-	for(int i=0; i<Nn; i++) {
-	  hi_e2n(0,i)=i;
-	  if(i < Nn-(degree+1)) hi_owned[i]=true;
-	}
+        for(int i=0; i<Nn; i++) {
+          hi_e2n(0,i)=i;
+          if(i < Nn-(degree+1)) hi_owned[i]=true;
+        }
 
-	MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
-	
-	// Checks
-	TEST_EQUALITY(lo_numOwnedNodes,2);
+        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
+        
+        // Checks
+        TEST_EQUALITY(lo_numOwnedNodes,2);
 
-	size_t num_lo_nodes_located=0;
-	for(size_t i=0;i<hi_to_lo_map.size(); i++) {
-	  if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
-	    num_lo_nodes_located++;
-	}
-	TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
+        size_t num_lo_nodes_located=0;
+        for(size_t i=0;i<hi_to_lo_map.size(); i++) {
+          if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
+            num_lo_nodes_located++;
+        }
+        TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
       }
     }//end QUAD
 
@@ -314,7 +314,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
     fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
 
@@ -368,10 +368,10 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // Fill serial GOLD vecs on Proc 0
     if(!MyPID) {
       for(size_t i=0; i<(size_t)pn_gold_in.size(); i++)
-	s_InVec->replaceLocalValue(i,pn_gold_in[i]);
+        s_InVec->replaceLocalValue(i,pn_gold_in[i]);
 
       for(size_t i=0; i<(size_t)pn_gold_out.size(); i++)
-	s_OutVec->replaceLocalValue(i,pn_gold_out[i]);
+        s_OutVec->replaceLocalValue(i,pn_gold_out[i]);
     }
 
     // Migrate input data
@@ -400,7 +400,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // GOLD vector collection
     std::vector<Scalar> p2_gold_in = {0,1,2,3,4,5,6,7,8,9};
     std::vector<Scalar> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
-				  0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
+                                  0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
     TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p2_gold_in.size(),2,p2_gold_in,p2_gold_out,std::string("hgrad_line_c2"));
   }
 
@@ -421,8 +421,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     size_t idx=total_num_points;
     for(size_t i=0; i<total_num_points-1; i++) {
       for(size_t j=0; j<(size_t)degree-1; j++) {
-	p3_gold_out[idx] = i + ((double)j+1)/degree;
-	idx++;
+        p3_gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
       }
     }
 
@@ -446,8 +446,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     size_t idx=total_num_points;
     for(size_t i=0; i<total_num_points-1; i++) {
       for(size_t j=0; j<(size_t)degree-1; j++) {
-	gold_out[idx] = i + ((double)j+1)/degree;
-	idx++;
+        gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
       }
     }
 
@@ -492,7 +492,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
     RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -560,7 +560,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
     RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -628,7 +628,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
     RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
