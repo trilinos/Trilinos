@@ -164,7 +164,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
   return rows_per_team;
 }
 
-template<typename AType, typename XType, typename YType>
+template<typename AType, typename XType, typename YType,class ScheduleType>
 void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
 
   typedef typename XType::non_const_value_type Scalar;
@@ -181,12 +181,12 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
 
   int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
 
-  Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> > policy(1,1);
+  Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> > policy(1,1);
 
   if(team_size>0)
-    policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+    policy = Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> >(worksets,team_size,vector_length);
   else
-    policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+    policy = Kokkos::TeamPolicy<Kokkos::Schedule<ScheduleType> >(worksets,Kokkos::AUTO,vector_length);
 
   Kokkos::parallel_for(policy,func);
 }
