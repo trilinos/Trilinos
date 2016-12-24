@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
-    //MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
+    MeshManager_Rectangle<RealT> meshmgr(*parlist);
+    //MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
@@ -110,6 +110,14 @@ int main(int argc, char *argv[]) {
                << cellToNodeMap(i,1) << "  "
                << cellToNodeMap(i,2) << "  "
                << cellToNodeMap(i,3) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("edges.txt");
+    for (int i=0; i<cellToEdgeMap.dimension(0); ++i) {
+      meshfile << cellToEdgeMap(i,0) << "  "
+               << cellToEdgeMap(i,1) << "  "
+               << cellToEdgeMap(i,2) << "  "
+               << cellToEdgeMap(i,3) << std::endl;
     }
     meshfile.close();
     meshfile.open("nodes.txt");

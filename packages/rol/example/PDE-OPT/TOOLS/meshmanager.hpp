@@ -436,8 +436,7 @@ private:
 
 /** \class  MeshManager_Rectangle
     \brief  Mesh construction and mesh management for the
-            backward-facing step channel geometry, on
-            quadrilateral grids.
+            rectangle geometry, on quadrilateral grids.
 */
 template <class Real>
 class MeshManager_Rectangle : public MeshManager<Real> {
@@ -889,5 +888,219 @@ private:
   } // computeSideSets
 
 }; // MeshManager_Fractional_Cylinder
+
+
+/** \class  MeshManager_Brick
+    \brief  Mesh construction and mesh management for the
+            brick geometry, on hexahedral grids.
+*/
+template <class Real>
+class MeshManager_Brick : public MeshManager<Real> {
+
+/* Brick geometry.
+
+                   ***********************
+                 *                     * *
+  :--depth--:  *                     *   *
+             *                     *     *
+           ***********************       *
+           *                     *   :   *
+           *                     *   |   *
+           *                     * height
+           *                     *   |
+           *                     *   :
+           *                     * *
+           ***********************
+      (X0,Y0,Z0) :--width--:
+
+*/
+
+private:
+  Real width_;   // rectangle width
+  Real depth_;   // rectangle width
+  Real height_;  // rectangle height
+  Real X0_;      // x coordinate of bottom left corner
+  Real Y0_;      // y coordinate of bottom left corner
+  Real Z0_;      // z coordinate of bottom left corner
+
+  int nx_;
+  int ny_;
+  int nz_;
+
+  int numCells_;
+  int numNodes_;
+  int numEdges_;
+
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+
+public:
+
+  MeshManager_Brick(Teuchos::ParameterList &parlist) {
+    // Geometry data.
+    width_  = parlist.sublist("Geometry").get( "Width", 3.0);
+    height_ = parlist.sublist("Geometry").get( "Depth", 2.0);
+    height_ = parlist.sublist("Geometry").get("Height", 1.0);
+    X0_     = parlist.sublist("Geometry").get(    "X0", 0.0);
+    Y0_     = parlist.sublist("Geometry").get(    "Y0", 0.0);
+    Z0_     = parlist.sublist("Geometry").get(    "Z0", 0.0);
+    // Mesh data.
+    nx_ = parlist.sublist("Geometry").get("NX", 3);
+    nx_ = parlist.sublist("Geometry").get("NY", 2);
+    ny_ = parlist.sublist("Geometry").get("NZ", 1);
+    numCells_ = nx_ * ny_ * nz_;
+    numNodes_ = (nx_+1) * (ny_+1) * (nz_+1);
+    numEdges_ = ((nx_+1)*ny_ + (ny_+1)*nx_)*(nz_+1) + 2*(nx_+ny_)*nz_;
+    // Compute and store mesh data structures.
+    computeNodes(); 
+    computeCellToNodeMap(); 
+    computeCellToEdgeMap();
+    computeSideSets();
+  }
+
+
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+    return meshNodes_;
+  }
+
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+    return meshCellToNodeMap_;
+  }
+
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return meshCellToEdgeMap_;
+  }
+
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+      std::ostream & outStream = std::cout,
+      const bool verbose = false) const {
+    return meshSideSets_;
+  }
+
+
+  int getNumCells() const {
+    return numCells_;
+  } // getNumCells
+
+
+  int getNumNodes() const {
+    return numNodes_;
+  } // getNumNodes
+
+
+  int getNumEdges() const {
+    return numEdges_;
+  } // getNumEdges
+
+private:
+
+  void computeNodes() {
+
+    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 3));
+    Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
+
+    Real dx = width_ / nx_;
+    Real dy = depth_ / ny_;
+    Real dz = height_ / nz_;
+    int nodeCt = 0;
+
+    for (int k=0; k<=nz_; ++k) {
+      Real zcoord = Z0_ + k*dz;
+      for (int j=0; j<=ny_; ++j) {
+        Real ycoord = Y0_ + j*dy;
+        for (int i=0; i<=nx_; ++i) {
+          nodes(nodeCt, 0) = X0_ + i*dx;
+          nodes(nodeCt, 1) = ycoord; 
+          nodes(nodeCt, 2) = zcoord; 
+          ++nodeCt;
+        }
+      }
+    }
+
+  } // computeNodes
+
+
+  void computeCellToNodeMap() {
+
+    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 8));
+    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+
+    int cellCt = 0;
+
+    for (int k=0; k<nz_; ++k) {
+      for (int j=0; j<ny_; ++j) {
+        for (int i=0; i<nx_; ++i) {
+          //
+          ctn(cellCt, 0) = k*(nx_+1)*(ny_+1) + j*(nx_+1) + i;
+          ctn(cellCt, 1) = k*(nx_+1)*(ny_+1) + j*(nx_+1) + (i+1);
+          ctn(cellCt, 2) = k*(nx_+1)*(ny_+1) + (j+1)*(nx_+1) + (i+1);
+          ctn(cellCt, 3) = k*(nx_+1)*(ny_+1) + (j+1)*(nx_+1) + i;
+          //
+          ctn(cellCt, 4) = (k+1)*(nx_+1)*(ny_+1) + j*(nx_+1) + i;
+          ctn(cellCt, 5) = (k+1)*(nx_+1)*(ny_+1) + j*(nx_+1) + (i+1);
+          ctn(cellCt, 6) = (k+1)*(nx_+1)*(ny_+1) + (j+1)*(nx_+1) + (i+1);
+          ctn(cellCt, 7) = (k+1)*(nx_+1)*(ny_+1) + (j+1)*(nx_+1) + i;
+          //
+          ++cellCt;
+        }
+      }
+    }
+
+  } // computeCellToNodeMap
+
+
+  void computeCellToEdgeMap() {
+
+    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+
+    int cellCt = 0;
+
+    for (int j=0; j<ny_; ++j) {
+      for (int i=0; i<nx_; ++i) {
+        cte(cellCt, 0) = j*(2*nx_+1) + i;
+        cte(cellCt, 1) = j*(2*nx_+1) + nx_ + (i+1);
+        cte(cellCt, 2) = (j+1)*(2*nx_+1) + i;
+        cte(cellCt, 3) = j*(2*nx_+1) + nx_ + i;
+        ++cellCt;
+      }
+    }
+
+  } // computeCellToEdgeMap
+
+
+  virtual void computeSideSets() {
+
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(1));
+    int numSides = 4;
+    (*meshSideSets_)[0].resize(numSides);
+    (*meshSideSets_)[0][0].resize(nx_);
+    (*meshSideSets_)[0][1].resize(ny_);
+    (*meshSideSets_)[0][2].resize(nx_);
+    (*meshSideSets_)[0][3].resize(ny_);
+    
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][0](i) = i;
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
+    }
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][2](i) = i + nx_*(ny_-1);
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][3](i) = i*nx_;
+    }
+
+  } // computeSideSets
+
+
+}; // MeshManager_Brick
 
 #endif
