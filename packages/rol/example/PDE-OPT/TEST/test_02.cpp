@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_01.cpp
+/*! \file  test_02.cpp
     \brief Unit test for the mesh manager and the degree-of-freedom manager.
-           Mesh type: RECTANGLE with QUAD CELLS and HGRAD SPACE.
+           Mesh type: BACKWARD-FACING STEP with QUAD CELLS and HGRAD SPACE.
 */
 
 #include "ROL_Algorithm.hpp"
@@ -83,13 +83,13 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    std::string filename = "input_01.xml";
+    std::string filename = "input_02.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
-    MeshManager_Rectangle<RealT> meshmgr(*parlist);
+    MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
@@ -174,9 +174,9 @@ int main(int argc, char *argv[]) {
     }
 
     bool correct = true;
-    static const int checkDofs[] = {20, 23, 35, 32, 55, 63, 69, 61, 81};
+    static const int checkDofs[] = {149, 152, 176, 173, 350, 366, 380, 364, 468};
     for (int i=0; i<dofmgr.getLocalFieldSize(2); ++i) {
-      correct = correct && ( (*(dofmgr.getFieldDofs(2)))(5,i) == checkDofs[i] );
+      correct = correct && ( (*(dofmgr.getFieldDofs(2)))(43,i) == checkDofs[i] );
     }
     if (!correct) {
       errorFlag = -1;
