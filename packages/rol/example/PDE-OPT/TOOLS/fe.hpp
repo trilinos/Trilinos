@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  FE.hpp
+/*! \file  fe.hpp
     \brief Given a set of cells with geometric node information, sets up
-           data structures used in finite element integration.
+           data structures used in finite element integration in HGRAD.
 */
 
 #ifndef PDEOPT_FE_HPP
@@ -62,8 +62,7 @@ class FE {
 private:
 
   const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;                            // coordinates of the cell nodes
-  //const Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;              // Intrepid basis
   const Teuchos::RCP<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > cubature_;  // Intrepid cubature (quadrature, integration) rule
   const int sideId_;                                                                         // local side id for boundary integration
 
@@ -388,10 +387,10 @@ public:
         for (int p=0; p<p_; ++p) {
           (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
           if (d_ > 1) {
-	        (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+            (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
           }
           if (d_ > 2) {
-	        (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+            (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
           }
         }
       }
@@ -655,10 +654,6 @@ public:
       //for (unsigned i=0; i<faceids.size(); ++i) {
       //  std::cout << "\nfaceid = " << faceids[i];
       //}
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (PDEOPT::FE::getBoundaryDofs): "
-                                                               "Only dimensions 2 and 3 are supported.");
     }
 
     std::vector<std::vector<std::vector<int> > > tagToId = basis_->getDofOrdinalData();
