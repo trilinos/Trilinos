@@ -148,21 +148,16 @@ IF (Trilinos_ENABLE_ML AND Trilinos_ENABLE_Epetra)
     )
 ENDIF()
 
-ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-  # SolverFactory test (doesn't make sense to run unless Trilinos is
-  # doing run-time registration of solver factories).
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SolverFactory
-    SOURCES 
-    Ifpack2_SolverFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF ()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory
+  SOURCES 
+  Ifpack2_SolverFactory.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LocalSparseTriangularSolver
