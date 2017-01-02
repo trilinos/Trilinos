@@ -204,16 +204,24 @@ private:
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
-/// \tparam DeviceType Kokkos::Device specialization used by the send
-///   and receive buffers.
+/// \tparam SendDeviceType Kokkos::Device specialization used by the
+///   send buffer.
+/// \tparam RecvDeviceType Kokkos::Device specialization used by the
+///   receive buffer.  It's OK for this to differ from SendDeviceType.
+///   We assume that MPI implementations can handle this.  (This is a
+///   reasonable assumption with CUDA-enabled MPI implementations.)
 /// \tparam rank Integer rank of the send and receive buffers.  Must
 ///   be either 0 or 1.
-template<class PacketType, class DeviceType, const int rank>
+template<class PacketType,
+         class SendDeviceType,
+         class RecvDeviceType,
+         const int rank>
 class IallreduceCommRequest;
 
 //! Partial pecialization for rank-1 send and receive buffers.
-template<class PacketType, class DeviceType>
-class IallreduceCommRequest<PacketType, DeviceType, 1> : public CommRequest {
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
+class IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 1> :
+    public CommRequest {
 public:
   //! Default constructor.
   IallreduceCommRequest ()
@@ -223,8 +231,8 @@ public:
   ///   the pending MPI_Iallreduce operation itself), and saved
   ///   buffers.
   IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                         const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
-                         const ::Kokkos::View<PacketType*, DeviceType>& recvbuf) :
+                         const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
+                         const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf) :
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
@@ -261,8 +269,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType*, DeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType*, DeviceType> ();
+    sendbuf_ = ::Kokkos::View<const PacketType*, SendDeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType*, RecvDeviceType> ();
   }
 
   /// \brief Cancel the pending communication request.
@@ -278,8 +286,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType*, DeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType*, DeviceType> ();
+    sendbuf_ = ::Kokkos::View<const PacketType*, SendDeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType*, RecvDeviceType> ();
   }
 
 private:
@@ -287,15 +295,16 @@ private:
   std::shared_ptr<CommRequest> req_;
 
   //! Saved send buffer from iallreduce call
-  ::Kokkos::View<const PacketType*, DeviceType> sendbuf_;
+  ::Kokkos::View<const PacketType*, SendDeviceType> sendbuf_;
 
   //! Saved recv buffer from iallreduce call
-  ::Kokkos::View<PacketType*, DeviceType> recvbuf_;
+  ::Kokkos::View<PacketType*, RecvDeviceType> recvbuf_;
 };
 
 //! Partial pecialization for rank-0 (single-value) send and receive buffers.
-template<class PacketType, class DeviceType>
-class IallreduceCommRequest<PacketType, DeviceType, 0> : public CommRequest {
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
+class IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 0> :
+    public CommRequest {
 public:
   //! Default constructor.
   IallreduceCommRequest ()
@@ -305,8 +314,8 @@ public:
   ///   the pending MPI_Iallreduce operation itself), and saved
   ///   buffers.
   IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                         const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
-                         const ::Kokkos::View<PacketType, DeviceType>& recvbuf) :
+                         const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
+                         const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf) :
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
@@ -343,8 +352,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType, DeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType, DeviceType> ();
+    sendbuf_ = ::Kokkos::View<const PacketType, SendDeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType, RecvDeviceType> ();
   }
 
   /// \brief Cancel the pending communication request.
@@ -360,8 +369,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType, DeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType, DeviceType> ();
+    sendbuf_ = ::Kokkos::View<const PacketType, SendDeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType, RecvDeviceType> ();
   }
 
 private:
@@ -369,10 +378,10 @@ private:
   std::shared_ptr<CommRequest> req_;
 
   //! Saved send buffer from iallreduce call
-  ::Kokkos::View<const PacketType, DeviceType> sendbuf_;
+  ::Kokkos::View<const PacketType, SendDeviceType> sendbuf_;
 
   //! Saved recv buffer from iallreduce call
-  ::Kokkos::View<PacketType, DeviceType> recvbuf_;
+  ::Kokkos::View<PacketType, RecvDeviceType> recvbuf_;
 };
 
 /// \brief Function for wrapping the CommRequest to be returned from
@@ -394,13 +403,13 @@ private:
 ///   receive buffer; it just keeps a reference to it.
 ///
 /// \return Pointer to wrapped CommRequest.
-template<class PacketType, class DeviceType>
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                           const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
-                           const ::Kokkos::View<PacketType*, DeviceType>& recvbuf)
+                           const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
+                           const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType, 1> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 1> (req, sendbuf, recvbuf));
 }
 
 /// \brief Function for wrapping the CommRequest to be returned from
@@ -422,13 +431,13 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
 ///   receive buffer; it just keeps a reference to it.
 ///
 /// \return Pointer to wrapped CommRequest.
-template<class PacketType, class DeviceType>
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                           const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
-                           const ::Kokkos::View<PacketType, DeviceType>& recvbuf)
+                           const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
+                           const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType, 0> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 0> (req, sendbuf, recvbuf));
 }
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -505,8 +514,10 @@ iallreduceRaw (const Packet sendbuf[],
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffer.
-/// \tparam DeviceType Kokkos::Device specialization used by the send
-///   and receive buffers.
+/// \tparam SendDeviceType Kokkos::Device specialization used by the
+///   send buffer.
+/// \tparam RecvDeviceType Kokkos::Device specialization used by the
+///   receive buffer.
 /// \tparam rank Integer rank of the send and receive buffers.  Must
 ///   be either 0 or 1.
 ///
@@ -515,15 +526,18 @@ iallreduceRaw (const Packet sendbuf[],
 /// this complicated struct thing in order to make it easier to
 /// overload ::Tpetra::Details::iallreduce for different kinds of
 /// output arguments (e.g., rank-0 or rank-1 Kokkos::View).
-template<class PacketType, class DeviceType, const int rank>
+template<class PacketType,
+         class SendDeviceType,
+         class RecvDeviceType,
+         const int rank>
 struct Iallreduce {};
 
 //! Partial specialization of Iallreduce for rank-1 send and receive buffers.
-template<class PacketType, class DeviceType>
-struct Iallreduce<PacketType, DeviceType, 1> {
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
+struct Iallreduce<PacketType, SendDeviceType, RecvDeviceType, 1> {
   static std::shared_ptr<CommRequest>
-  iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
-              const ::Kokkos::View<PacketType*, DeviceType>& recvbuf,
+  iallreduce (const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
+              const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf,
               const ::Teuchos::EReductionType op,
               const ::Teuchos::Comm<int>& comm)
   {
@@ -539,7 +553,7 @@ struct Iallreduce<PacketType, DeviceType, 1> {
                                         recvbuf.ptr_on_device (),
                                         static_cast<int> (sendbuf.dimension_0 ()),
                                         op, comm);
-    return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
+    return Impl::wrapIallreduceCommRequest (req, sendbuf, recvbuf);
 #else // NOT HAVE_TPETRACORE_MPI
 
     // MPI is disabled, so comm is a SerialComm.
@@ -553,11 +567,11 @@ struct Iallreduce<PacketType, DeviceType, 1> {
 };
 
 //! Partial specialization of Iallreduce for rank-0 send and receive buffers.
-template<class PacketType, class DeviceType>
-struct Iallreduce<PacketType, DeviceType, 0> {
+template<class PacketType, class SendDeviceType, class RecvDeviceType>
+struct Iallreduce<PacketType, SendDeviceType, RecvDeviceType, 0> {
   static std::shared_ptr<CommRequest>
-  iallreduce (const ::Kokkos::View<const PacketType, DeviceType>& sendbuf,
-              const ::Kokkos::View<PacketType, DeviceType>& recvbuf,
+  iallreduce (const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
+              const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf,
               const ::Teuchos::EReductionType op,
               const ::Teuchos::Comm<int>& comm)
   {
@@ -574,7 +588,7 @@ struct Iallreduce<PacketType, DeviceType, 0> {
                                         recvbuf.ptr_on_device (),
                                         static_cast<int> (1),
                                         op, comm);
-    return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
+    return Impl::wrapIallreduceCommRequest (req, sendbuf, recvbuf);
 #else // NOT HAVE_TPETRACORE_MPI
 
     // MPI is disabled, so comm is a SerialComm.
@@ -643,9 +657,11 @@ iallreduce (const InputViewType& sendbuf,
                    packet_type>::value,
                  "InputViewType and OutputViewType must be Views "
                  "whose entries have the same type.");
-  typedef typename OutputViewType::device_type device_type;
+  typedef typename InputViewType::device_type send_device_type;
+  typedef typename OutputViewType::device_type recv_device_type;
 
-  typedef Impl::Iallreduce<packet_type, device_type, rank> impl_type;
+  typedef Impl::Iallreduce<packet_type, send_device_type,
+    recv_device_type, rank> impl_type;
   return impl_type::iallreduce (sendbuf, recvbuf, op, comm);
 }
 
