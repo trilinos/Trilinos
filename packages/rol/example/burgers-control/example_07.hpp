@@ -871,10 +871,10 @@ private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
   typedef H1VectorDual<Real> DualStateVector;
-  
+
   typedef L2VectorPrimal<Real> PrimalControlVector;
   typedef L2VectorDual<Real> DualControlVector;
-  
+
   typedef H1VectorDual<Real> PrimalConstraintVector;
   typedef H1VectorPrimal<Real> DualConstraintVector;
 
@@ -1116,9 +1116,11 @@ private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
   typedef H1VectorDual<Real> DualStateVector;
-  
+
   typedef L2VectorPrimal<Real> PrimalControlVector;
   typedef L2VectorDual<Real> DualControlVector;
+
+  typedef typename std::vector<Real>::size_type uint;
 
   Teuchos::RCP<BurgersFEM<Real> > fem_;
 
