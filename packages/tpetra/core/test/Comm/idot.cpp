@@ -107,8 +107,11 @@ testIdot (bool& success,
     y.putScalar (valY);
 
     SC result = ZERO;
+    out << "About to call idot" << endl;
     auto req = Tpetra::Details::idot (&result, x, y);
+    out << "Finished calling idot" << endl;
     req->wait ();
+    out << "Finished wait" << endl;
     const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
     const SC expectedResult = N * valX * valY;
 

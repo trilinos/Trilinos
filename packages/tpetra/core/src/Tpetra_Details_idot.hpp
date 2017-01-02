@@ -63,133 +63,103 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_Blas1_MV.hpp"
+#include <stdexcept>
+#include <sstream>
 
 namespace Tpetra {
 namespace Details {
 namespace Impl {
 
-template<class ViewType,
-         const bool isView = Kokkos::Impl::is_view<ViewType>::value>
-struct RankOfView {};
+// Implementation detail of Idot specializations with raw pointer or
+// array DotViewType.
+template<class DotViewType,
+         class VecViewType,
+         const int dotViewRank = static_cast<int> (VecViewType::rank) - 1>
+struct GetDotView {
+  // Assume that we can access DotViewType on host, but use
+  // VecViewType's device_type for the Kokkos kernel.
+  typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
+                           ::Kokkos::HostSpace> host_device_type;
+  typedef ::Kokkos::View<DotViewType, host_device_type> view_type;
 
-template<class T>
-struct RankOfView<T*, false> {
-  static const int rank = 1;
+  static view_type getView (DotViewType raw, const size_t numVecs);
 };
 
-template<class T>
-struct RankOfView<const T*, false> {
-  static const int rank = 1;
+template<class DotViewType,
+         class VecViewType>
+struct GetDotView<DotViewType, VecViewType, 0> {
+  typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
+                           ::Kokkos::HostSpace> host_device_type;
+  // view_type must be a rank-0 Kokkos::View.  This means we can't
+  // just use DotViewType as the first template parameter of
+  // Kokkos::View.  However, we can use Kokkos::View<DotViewType> to
+  // get the type of the (only) entry of DotViewType.
+  typedef typename ::Kokkos::View<DotViewType,
+    host_device_type>::non_const_value_type dot_type;
+  // We want view_type to have the same layout as VecViewType, since
+  // that is what both KokkosBlas::dot and iallreduce expect.
+  // However, only Kokkos::LayoutLeft and Kokkos::LayoutRight work for
+  // rank-0 Views.  so we have to make sure that the layout is one of
+  // these.
+  typedef typename std::conditional<std::is_same<typename VecViewType::array_layout,
+                                                 ::Kokkos::LayoutLeft>::value,
+                                    ::Kokkos::LayoutLeft,
+                                    ::Kokkos::LayoutRight>::type array_layout;
+  typedef ::Kokkos::View<dot_type, array_layout, host_device_type> view_type;
+
+  static view_type getView (DotViewType raw, const size_t numVecs) {
+    if (numVecs != 1) {
+      std::ostringstream os;
+      os << "You cannot create a Kokkos::View of rank 0 from a raw pointer or "
+        "array, if the number of entries is not exactly 1.  You specified " <<
+        numVecs << " entries.";
+      throw std::invalid_argument (os.str ());
+    }
+    return view_type (raw);
+  }
 };
 
-template<class T>
-struct RankOfView<T, true> {
-  static const int rank = static_cast<int> (T::rank);
+template<class DotViewType,
+         class VecViewType>
+struct GetDotView<DotViewType, VecViewType, 1> {
+  typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
+                           ::Kokkos::HostSpace> host_device_type;
+  typedef typename VecViewType::array_layout array_layout;
+  typedef ::Kokkos::View<DotViewType, array_layout, host_device_type> view_type;
+
+  static view_type getView (DotViewType raw, const size_t numVecs) {
+    static_assert (std::is_same<array_layout, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<array_layout, ::Kokkos::LayoutRight>::value,
+                   "This function requires that VecViewType be either "
+                   "LayoutLeft or LayoutRight.");
+    return view_type (raw, numVecs);
+  }
 };
 
 /// \brief Struct implementing Tpetra::Details::idot.
 ///
 /// We use this struct to do partial specialization on the different
 /// kinds of arguments that the overloads of idot can accept.
-template<class ResultViewType,
+///
+/// \tparam DotViewType Type of the result of the dot product.
+/// \tparam VecViewType Type of the vector / multivector input arguments.
+/// \tparam dotViewTypeIsView Whether DotViewType is a Kokkos::View.
+template<class DotViewType,
          class VecViewType,
-         const int resultViewRank = RankOfView<ResultViewType>::rank,
-         const int vecViewRank = static_cast<int> (VecViewType::rank),
-         const bool resultViewTypeIsView = Kokkos::Impl::is_view<ResultViewType>::value>
+         const bool dotViewTypeIsView = Kokkos::Impl::is_view<DotViewType>::value>
 struct Idot {
   static std::shared_ptr<CommRequest>
-  idot (const ResultViewType& result,
+  idot (const DotViewType& result,
         const VecViewType& X,
         const VecViewType& Y,
         const ::Teuchos::Comm<int>& comm);
 };
 
-/// \brief Specialization for rank-1 result and rank-2 (multi)vectors.
-///
-/// Any LayoutLeft or LayoutRight rank-1 View can be assigned to a
-/// View of the same rank and either of these layouts, so we don't
-/// need two specializations.
-template<class ResultViewType, class VecViewType>
-struct Idot<ResultViewType, VecViewType, 1, 2, true> {
-  typedef ResultViewType dot_view_type;
-  typedef VecViewType multivec_view_type;
-
-  static std::shared_ptr<CommRequest>
-  idot (const dot_view_type& result,
-        const multivec_view_type& X,
-        const multivec_view_type& Y,
-        const ::Teuchos::Comm<int>& comm)
-  {
-    static_assert (Kokkos::Impl::is_view<ResultViewType>::value,
-                   "ResultViewType must be a Kokkos::View specialization.");
-    static_assert (Kokkos::Impl::is_view<VecViewType>::value,
-                   "VecViewType must be a Kokkos::View specialization.");
-    static_assert (static_cast<int> (ResultViewType::rank) == 1,
-                   "ResultViewType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (VecViewType::rank) == 2,
-                   "VecViewType must be a rank-2 Kokkos::View.");
-    using ::Tpetra::Details::iallreduce;
-    using ::Teuchos::REDUCE_SUM;
-    typedef typename dot_view_type::device_type device_type;
-
-    // TODO (mfh 19 Nov 2016) Once we get asynchronous kernel launch, it
-    // would make sense to attach launching the iallreduce to the dot
-    // product as a continuation task.  This would make the returned
-    // "request" not actually a "CommRequest"; rather, it would be the
-    // future of the asynchronous task.  The only issue is that this
-    // approach would require MPI_THREAD_MULTIPLE (or issuing MPI calls
-    // through an intermediary service that funnels or serializes them).
-    ::KokkosBlas::dot (result, X, Y);
-
-    if (isInterComm (comm)) {
-      auto resultCopy = ::Kokkos::create_mirror (device_type (), result);
-      ::Kokkos::deep_copy (resultCopy, result);
-      return iallreduce (resultCopy, result, REDUCE_SUM, comm);
-    }
-    else {
-      return iallreduce (result, result, REDUCE_SUM, comm);
-    }
-  }
-};
-
-//! Specialization for raw pointer result and rank-2 (multi)vectors.
-template<class ResultViewType, class VecViewType>
-struct Idot<ResultViewType, VecViewType, 1, 2, false> {
-  typedef ResultViewType dot_view_type;
-  typedef VecViewType multivec_view_type;
-
-  static std::shared_ptr<CommRequest>
-  idot (dot_view_type result,
-        const multivec_view_type& X,
-        const multivec_view_type& Y,
-        const ::Teuchos::Comm<int>& comm)
-  {
-    static_assert (! Kokkos::Impl::is_view<ResultViewType>::value,
-                   "ResultViewType must NOT be a Kokkos::View specialization.");
-    static_assert (Kokkos::Impl::is_view<VecViewType>::value,
-                   "VecViewType must be a Kokkos::View specialization.");
-    static_assert (static_cast<int> (VecViewType::rank) == 2,
-                   "VecViewType must be a rank-2 Kokkos::View.");
-    static_assert (std::is_pointer<ResultViewType>::value ||
-                   std::is_array<ResultViewType>::value,
-                   "ResultViewType must either be a pointer or an array.");
-
-    // Assume that we can access dot_view_type on host, but use
-    // multivec_view_type's device_type for the Kokkos kernel.
-    typedef typename multivec_view_type::HostMirror::execution_space host_execution_space;
-    typedef Kokkos::Device<host_execution_space, Kokkos::HostSpace> host_device_type;
-    typedef Kokkos::View<ResultViewType, host_device_type> result_view_type;
-
-    const size_t numVecs = X.dimension_1 ();
-    result_view_type resultView (result, numVecs);
-    return Idot<result_view_type, VecViewType, 1, 2, true>::idot (resultView, X, Y, comm);
-  }
-};
-
-//! Specialization for rank-0 result and rank-1 vectors.
-template<class ResultViewType, class VecViewType>
-struct Idot<ResultViewType, VecViewType, 0, 1, true> {
-  typedef ResultViewType dot_view_type;
+//! Specialization for DotViewType and VecViewType both Kokkos::View.
+template<class DotViewType,
+         class VecViewType>
+struct Idot<DotViewType, VecViewType, true> {
+  typedef DotViewType dot_view_type;
   typedef VecViewType vec_view_type;
 
   static std::shared_ptr<CommRequest>
@@ -198,44 +168,81 @@ struct Idot<ResultViewType, VecViewType, 0, 1, true> {
         const vec_view_type& Y,
         const ::Teuchos::Comm<int>& comm)
   {
-    static_assert (Kokkos::Impl::is_view<ResultViewType>::value,
-                   "ResultViewType must be a Kokkos::View specialization.");
+    static_assert (Kokkos::Impl::is_view<DotViewType>::value,
+                   "DotViewType must be a Kokkos::View specialization.");
     static_assert (Kokkos::Impl::is_view<VecViewType>::value,
                    "VecViewType must be a Kokkos::View specialization.");
-    static_assert (static_cast<int> (ResultViewType::rank) == 0,
-                   "ResultViewType must be a rank-0 Kokkos::View.");
-    static_assert (static_cast<int> (VecViewType::rank) == 1,
-                   "VecViewType must be a rank-1 Kokkos::View.");
+    static_assert (static_cast<int> (VecViewType::rank) != 1 ||
+                   static_cast<int> (DotViewType::rank) == 0,
+                   "If VecViewType has rank 1, then DotViewType must have "
+                   "rank 0.");
+    static_assert (static_cast<int> (VecViewType::rank) != 2 ||
+                   static_cast<int> (DotViewType::rank) == 1,
+                   "If VecViewType has rank 2, then DotViewType must have "
+                   "rank 1.");
     using ::Tpetra::Details::iallreduce;
     using ::Teuchos::REDUCE_SUM;
-    typedef typename dot_view_type::device_type device_type;
+    using ::Kokkos::Impl::MemorySpaceAccess;
+    typedef typename dot_view_type::memory_space dot_mem_space;
+    typedef typename vec_view_type::memory_space vec_mem_space;
 
-    // TODO (mfh 19 Nov 2016) Once we get asynchronous kernel launch, it
-    // would make sense to attach launching the iallreduce to the dot
-    // product as a continuation task.  This would make the returned
-    // "request" not actually a "CommRequest"; rather, it would be the
-    // future of the asynchronous task.  The only issue is that this
-    // approach would require MPI_THREAD_MULTIPLE (or issuing MPI calls
-    // through an intermediary service that funnels or serializes them).
-    ::KokkosBlas::dot (result, X, Y);
+    // TODO (mfh 19 Nov 2016) Once we get asynchronous kernel launch,
+    // it would make sense to attach launching the iallreduce to the
+    // dot product as a continuation task.  This would make the
+    // returned "request" not actually a "CommRequest"; rather, it
+    // would be the future of the asynchronous task.  The only issue
+    // is that this approach would require MPI_THREAD_MULTIPLE (or
+    // issuing MPI calls through an intermediary service that funnels
+    // or serializes them).
+    //
+    // KokkosBlas::dot uses the execution space of its vector inputs
+    // (in particular, the first vector input) to run the kernel.  If
+    // the vectors' execution space cannot access the result's memory
+    // space, then we need to make a deep copy of the result buffer.
+    // We also need to do this if the input comm is an intercomm, for
+    // a different reason.  The reasons differ for each of these
+    // cases, but the code is the same.  (MemorySpaceAccess wants
+    // memory spaces for both of its arguments.)
+    const bool needCopy =
+      ! MemorySpaceAccess<vec_mem_space, dot_mem_space>::accessible ||
+      isInterComm (comm);
 
-    if (isInterComm (comm)) {
-      auto resultCopy = ::Kokkos::create_mirror (device_type (), result);
-      ::Kokkos::deep_copy (resultCopy, result);
+    if (needCopy) {
+      typedef typename vec_view_type::device_type vec_device_type;
+      auto resultCopy = ::Kokkos::create_mirror (vec_device_type (), result);
+      static_assert (std::is_same<typename dot_view_type::array_layout,
+                     typename decltype (resultCopy)::array_layout>::value,
+                     "result and resultCopy must have the same array_layout.");
+      try {
+        ::KokkosBlas::dot (resultCopy, X, Y);
+      }
+      catch (std::exception& e) {
+        std::ostringstream os;
+        os << "Tpetra::Details::idot: KokkosBlas::dot threw an exception: "
+           << e.what ();
+        throw std::runtime_error (os.str ());
+      }
       return iallreduce (resultCopy, result, REDUCE_SUM, comm);
     }
     else {
+      try {
+        ::KokkosBlas::dot (result, X, Y);
+      }
+      catch (std::exception& e) {
+        std::ostringstream os;
+        os << "Tpetra::Details::idot: KokkosBlas::dot threw an exception: "
+           << e.what ();
+        throw std::runtime_error (os.str ());
+      }
       return iallreduce (result, result, REDUCE_SUM, comm);
     }
   }
 };
 
-/// \brief Specialization for raw pointer result and rank-1 vectors.
-///
-/// Raw pointer result counts as a "rank-1 View."
-template<class ResultViewType, class VecViewType>
-struct Idot<ResultViewType, VecViewType, 1, 1, false> {
-  typedef ResultViewType dot_view_type;
+//! Specialization for raw pointer dot product result type.
+template<class DotViewType, class VecViewType>
+struct Idot<DotViewType, VecViewType, false> {
+  typedef DotViewType dot_view_type;
   typedef VecViewType vec_view_type;
 
   static std::shared_ptr<CommRequest>
@@ -244,29 +251,30 @@ struct Idot<ResultViewType, VecViewType, 1, 1, false> {
         const vec_view_type& Y,
         const ::Teuchos::Comm<int>& comm)
   {
-    static_assert (! Kokkos::Impl::is_view<ResultViewType>::value,
-                   "ResultViewType must NOT be a Kokkos::View specialization.");
+    static_assert (! Kokkos::Impl::is_view<DotViewType>::value,
+                   "DotViewType must NOT be a Kokkos::View specialization.");
     static_assert (Kokkos::Impl::is_view<VecViewType>::value,
                    "VecViewType must be a Kokkos::View specialization.");
-    static_assert (static_cast<int> (VecViewType::rank) == 1,
-                   "VecViewType must be a rank-1 Kokkos::View.");
-    static_assert (std::is_pointer<ResultViewType>::value ||
-                   std::is_array<ResultViewType>::value,
-                   "ResultViewType must either be a pointer or an array.");
+    static_assert (static_cast<int> (VecViewType::rank) == 1 ||
+                   static_cast<int> (VecViewType::rank) == 2,
+                   "VecViewType must have rank 1 or rank 2.");
+    static_assert (std::is_pointer<DotViewType>::value ||
+                   std::is_array<DotViewType>::value,
+                   "DotViewType must either be a pointer or an array.");
 
-    // Assume that we can access dot_view_type on host, but use
-    // vec_view_type's device_type for the Kokkos kernel.
-    typedef typename vec_view_type::HostMirror::execution_space host_execution_space;
-    typedef Kokkos::Device<host_execution_space, Kokkos::HostSpace> host_device_type;
-    // We must ensure that the result_view_type is a rank-0 View.
-    // Furthermore, ResultViewType may be either a pointer (dot_type*)
-    // or an array (dot_type[], dot_type[1], etc.).  This is why we go
-    // through a bit of trouble to extract the dot product value type.
-    typedef typename Kokkos::View<ResultViewType, host_device_type>::value_type dot_type;
-    typedef Kokkos::View<dot_type, host_device_type> result_view_type;
-
-    result_view_type resultView (result);
-    return Idot<result_view_type, VecViewType, 0, 1, true>::idot (resultView, X, Y, comm);
+    // Even if VecViewType is rank 1, it's still syntactically correct
+    // to call X.dimension_1().
+    const size_t numVecs =
+      (static_cast<int> (VecViewType::rank) == 1) ?
+      static_cast<size_t> (1) :
+      static_cast<size_t> (X.dimension_1 ());
+    // tmp_dot_view_type must have rank exactly 1 less than vec_view_type.
+    typedef typename GetDotView<DotViewType, VecViewType>::view_type
+      tmp_dot_view_type;
+    tmp_dot_view_type resultView =
+      GetDotView<DotViewType, VecViewType>::getView (result, numVecs);
+    typedef Idot<tmp_dot_view_type, vec_view_type, true> impl_type;
+    return impl_type::idot (resultView, X, Y, comm);
   }
 };
 
