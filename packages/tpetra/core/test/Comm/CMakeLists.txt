@@ -27,16 +27,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-# mfh 01 Jan 2017: Temporarily disable idot test in a CUDA build.  
-# See #957.
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF(NOT TPL_ENABLE_CUDA)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  idot
+  SOURCES
     idot
-    SOURCES
-      idot
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    NUM_MPI_PROCS 1-4
-    COMM serial mpi
-    )
-ENDIF()
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1-4
+  COMM serial mpi
+  )
