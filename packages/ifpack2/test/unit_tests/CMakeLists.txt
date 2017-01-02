@@ -132,7 +132,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (Trilinos_ENABLE_ML)
+ASSERT_DEFINED (Trilinos_ENABLE_ML)
+# mfh 01 Jan 2017: 
+# Fix for https://github.com/trilinos/Trilinos/issues/935
+ASSERT_DEFINED (Trilinos_ENABLE_Epetra)
+IF (Trilinos_ENABLE_ML AND Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BlockRelaxationPerformance
     SOURCES
