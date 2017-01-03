@@ -409,62 +409,108 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
   using ::Kokkos::subview;
   using ::Teuchos::Comm;
   using ::Teuchos::RCP;
-  typedef ::Tpetra::MultiVector<SC, LO, GO, NT> mv_type;
-  typedef typename mv_type::device_type DT;
+  typedef ::Tpetra::Vector<SC, LO, GO, NT> vec_type;
+  typedef typename vec_type::device_type DT;
   typedef typename DT::memory_space dev_memory_space;
   typedef typename ::Kokkos::View<SC*, DT>::host_mirror_space::memory_space
     host_memory_space;
-  typedef typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result_view_type;
+  typedef typename vec_type::dot_type* result_view_type;
   typedef typename ::Kokkos::pair<size_t, size_t> pair_type;
 
   auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
-  if (! comm.is_null ()) {
-    if (X.template need_sync<dev_memory_space> () &&
-        ! X.template need_sync<host_memory_space> ()) { // use host version
-      auto X_lcl = X.template getLocalView<host_memory_space> ();
-      auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+  const size_t numVecs = X.getNumVectors ();
 
-      if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
-        typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
-      }
-      else {
-        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
-      }
-    }
-    else { // use device version
-      auto X_lcl = X.template getLocalView<dev_memory_space> ();
-      auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
-
-      if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
-        typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
-      }
-      else {
-        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
-      }
-    }
+  // The number of vectors in each MultiVector is (supposed to be)
+  // globally the same across all participating processes.
+  if (Y.getNumVectors () != numVecs) {
+    std::ostringstream os;
+    os << "Tpetra::Details::idot: X.getNumVectors() = " << numVecs
+       << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
+    throw std::invalid_argument (os.str ());
   }
-  else { // calling process does not participate
+
+  if (! comm.is_null ()) {
+    const bool X_or_Y_have_nonconstant_stride =
+      ! X.isConstantStride () || ! Y.isConstantStride ();
+    if (X_or_Y_have_nonconstant_stride && numVecs > static_cast<size_t> (1)) {
+      // This case relates to the ability of a Tpetra::MultiVector to
+      // view multiple, noncontiguous columns of another
+      // Tpetra::MultiVector.  In this case, we can't just get the
+      // Kokkos::View out of X and Y, since the Kokkos::View has all
+      // the columns, not just the columns that X or Y view.  The
+      // Kokkos::View of X or Y would view a contiguous subset of
+      // columns of the latter, "parent" MultiVector, not of the
+      // former, "child" MultiVector.  This is because Kokkos::View
+      // doesn't have a notion of noncontiguous column Views with
+      // possibly varying strides.
+      //
+      // FIXME (mfh 03 Jan 2017) We could handle the global part of
+      // the computation as a single global iallreduce.  However, this
+      // should still work.
+      typedef ::Tpetra::Details::CommRequest req_base_type;
+      std::vector<std::shared_ptr<req_base_type> > requests (numVecs);
+      for (size_t j = 0; j < numVecs; ++j) {
+        RCP<const vec_type> X_j = X.getVector (j);
+        RCP<const vec_type> Y_j = Y.getVector (j);
+        requests[j] = idot<SC, LO, GO, NT> (result + j, *X_j, *Y_j);
+      }
+      typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
+      return std::shared_ptr<req_base_type> (new req_type ([=] () {
+          for (size_t j = 0; j < numVecs; ++j) {
+            if (requests[j].get () != NULL) {
+              requests[j]->wait ();
+            }
+          }
+        }));
+    }
+    else { // numVecs == 1 || ! X_or_Y_have_nonconstant_stride
+      if (X.template need_sync<dev_memory_space> () &&
+          ! X.template need_sync<host_memory_space> ()) { // use host version
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+
+        if (numVecs == 1) {
+          auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+          auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
+          typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        }
+        else {
+          auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        }
+      }
+      else { // use device version
+        auto X_lcl = X.template getLocalView<dev_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
+
+        if (numVecs == 1) {
+          auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+          auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
+          typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        }
+        else {
+          auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        }
+      } // host or device?
+    } // multivector with nonconstant stride?
+  }
+  else { // comm.is_null(); calling process does not participate
     return std::shared_ptr<CommRequest> (NULL);
   }
 }
@@ -518,7 +564,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
   typedef typename DT::memory_space dev_memory_space;
   typedef typename ::Kokkos::View<SC*, DT>::host_mirror_space::memory_space
     host_memory_space;
-  typedef typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type dot_type;
+  typedef typename vec_type::dot_type dot_type;
   typedef ::Kokkos::View<dot_type, DT> result_view_type;
   typedef ::Kokkos::pair<size_t, size_t> pair_type;
 
@@ -589,8 +635,8 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
 /// but Tpetra developers may need to worry about this.
 template<class SC, class LO, class GO, class NT>
 std::shared_ptr<CommRequest>
-idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type*,
-        typename ::Tpetra::MultiVector<SC, LO, GO, NT>::device_type>& result,
+idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
+        typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type>& result,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
 {
@@ -598,10 +644,10 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
   using ::Teuchos::Comm;
   using ::Teuchos::RCP;
   typedef ::Kokkos::pair<size_t, size_t> pair_type;
-  typedef ::Tpetra::MultiVector<SC, LO, GO, NT> mv_type;
-  typedef typename mv_type::device_type device_type;
+  typedef ::Tpetra::Vector<SC, LO, GO, NT> vec_type;
+  typedef typename vec_type::device_type device_type;
   typedef typename device_type::memory_space dev_memory_space;
-  typedef typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type dot_type;
+  typedef typename vec_type::dot_type dot_type;
   typedef ::Kokkos::View<dot_type*, device_type> result_view_type;
   // mfh 21 Dec 2016: It would be nicer to derive this from
   // Tpetra::MultiVector, but I'm not sure if Kokkos gives me a
@@ -610,58 +656,105 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
   typedef typename result_view_type::host_mirror_space::memory_space
     host_memory_space;
 
-  RCP<const typename mv_type::map_type> map = X.getMap ();
+  auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
-  if (! comm.is_null ()) {
-    if (X.template need_sync<dev_memory_space> () &&
-        ! X.template need_sync<host_memory_space> ()) { // use host version
-      auto X_lcl = X.template getLocalView<host_memory_space> ();
-      auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+  const size_t numVecs = X.getNumVectors ();
 
-      if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
-        typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        auto result_0d = subview (result, 0);
-        typedef decltype (result_0d) result_0d_view_type;
-        typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
-      }
-      else {
-        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
-      }
-    }
-    else { // use device version
-      auto X_lcl = X.template getLocalView<dev_memory_space> ();
-      auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
-
-      if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
-        typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        auto result_0d = subview (result, 0);
-        typedef decltype (result_0d) result_0d_view_type;
-        typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
-      }
-      else {
-        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                 pair_type (0, X.getNumVectors ()));
-        typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
-        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
-      }
-    }
+  // The number of vectors in each MultiVector is (supposed to be)
+  // globally the same across all participating processes.
+  if (Y.getNumVectors () != numVecs) {
+    std::ostringstream os;
+    os << "Tpetra::Details::idot: X.getNumVectors() = " << numVecs
+       << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
+    throw std::invalid_argument (os.str ());
   }
-  else { // calling process does not participate
+
+  if (! comm.is_null ()) {
+    const bool X_or_Y_have_nonconstant_stride =
+      ! X.isConstantStride () || ! Y.isConstantStride ();
+    if (X_or_Y_have_nonconstant_stride && numVecs > static_cast<size_t> (1)) {
+      // This case relates to the ability of a Tpetra::MultiVector to
+      // view multiple, noncontiguous columns of another
+      // Tpetra::MultiVector.  In this case, we can't just get the
+      // Kokkos::View out of X and Y, since the Kokkos::View has all
+      // the columns, not just the columns that X or Y view.  The
+      // Kokkos::View of X or Y would view a contiguous subset of
+      // columns of the latter, "parent" MultiVector, not of the
+      // former, "child" MultiVector.  This is because Kokkos::View
+      // doesn't have a notion of noncontiguous column Views with
+      // possibly varying strides.
+      //
+      // FIXME (mfh 03 Jan 2017) We could handle the global part of
+      // the computation as a single global iallreduce.  However, this
+      // should still work.
+      typedef ::Tpetra::Details::CommRequest req_base_type;
+      std::vector<std::shared_ptr<req_base_type> > requests (numVecs);
+      for (size_t j = 0; j < numVecs; ++j) {
+        RCP<const vec_type> X_j = X.getVector (j);
+        RCP<const vec_type> Y_j = Y.getVector (j);
+        auto result_j = subview (result, j);
+        requests[j] = idot<SC, LO, GO, NT> (result_j, *X_j, *Y_j);
+      }
+      typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
+      return std::shared_ptr<req_base_type> (new req_type ([=] () {
+          for (size_t j = 0; j < numVecs; ++j) {
+            if (requests[j].get () != NULL) {
+              requests[j]->wait ();
+            }
+          }
+        }));
+    }
+    else { // numVecs == 1 || ! X_or_Y_have_nonconstant_stride
+      if (X.template need_sync<dev_memory_space> () &&
+          ! X.template need_sync<host_memory_space> ()) { // use host version
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+
+        if (numVecs == 1) {
+          auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+          auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
+          typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
+          auto result_0d = subview (result, 0);
+          typedef decltype (result_0d) result_0d_view_type;
+          typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
+        }
+        else {
+          auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        }
+      }
+      else { // use device version
+        auto X_lcl = X.template getLocalView<dev_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
+
+        if (numVecs == 1) {
+          auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+          auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
+          typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
+          auto result_0d = subview (result, 0);
+          typedef decltype (result_0d) result_0d_view_type;
+          typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
+        }
+        else {
+          auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                   pair_type (0, numVecs));
+          typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
+          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        }
+      } // host or device?
+    } // multivector with nonconstant stride?
+  }
+  else { // comm.is_null(); calling process does not participate
     return std::shared_ptr<CommRequest> (NULL);
   }
 }
