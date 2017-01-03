@@ -16,7 +16,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
  
 TRIBITS_ADD_EXECUTABLE(
-  spemm
+  spgemm
   SOURCES KokkosKernels_SPMM_KK.cpp  
   )
   
