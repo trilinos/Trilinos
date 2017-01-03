@@ -117,7 +117,7 @@ struct CopyVectorFunctor{
 template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2, typename MyExecSpace>
 inline void kk_a_times_x_plus_b(
                   typename in_array_t::value_type num_elements,
-                  in_array_t out_arr, in_array_t in_arr,
+                  out_array_t out_arr, in_array_t in_arr,
                   scalar_1 a, scalar_2 b){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_for( my_exec_space(0, num_elements),

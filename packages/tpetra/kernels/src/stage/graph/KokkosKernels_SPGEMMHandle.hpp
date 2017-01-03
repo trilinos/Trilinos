@@ -61,7 +61,7 @@ namespace Experimental{
 namespace Graph{
 
 enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
-                      SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_VIENNA,
+                      SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
                      //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
                      SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
@@ -142,6 +142,8 @@ public:
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
+
+
 
 
 #ifdef KERNELS_HAVE_CUSPARSE
@@ -241,13 +243,22 @@ private:
   nnz_lno_t num_multi_colors, num_used_colors;
 
   double multi_color_scale;
-
-
+  int mkl_sort_option;
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
 
+  typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
+  bool mkl_keep_output;
+  bool mkl_convert_to_1base;
+
+  void set_mkl_sort_option(int mkl_sort_option_){
+    this->mkl_sort_option = mkl_sort_option_;
+  }
+  int get_mkl_sort_option(){
+    return this->mkl_sort_option;
+  }
   void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_){
     this->c_column_indices = c_col_indices_;
   }
@@ -349,7 +360,10 @@ private:
     tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
     num_colors(0),
-    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1)
+    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1), mkl_sort_option(7),
+    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
+    mkl_keep_output(true),
+    mkl_convert_to_1base(true)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif

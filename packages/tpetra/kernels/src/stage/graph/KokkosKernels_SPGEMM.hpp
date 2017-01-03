@@ -48,6 +48,7 @@
 #include "KokkosKernels_SPGEMM_cuSPARSE_impl.hpp"
 #include "KokkosKernels_SPGEMM_CUSP_impl.hpp"
 #include "KokkosKernels_SPGEMM_mkl_impl.hpp"
+#include "KokkosKernels_SPGEMM_mkl2phase_impl.hpp"
 #include "KokkosKernels_SPGEMM_impl.hpp"
 
 namespace KokkosKernels{
@@ -91,8 +92,16 @@ namespace Graph{
           row_mapB, entriesB, transposeB,
           row_mapC);
       break;
-
     case SPGEMM_CUSP:
+      break;
+
+    case SPGEMM_MKL2PHASE:
+      Impl::mkl2phase_symbolic(
+          sh,
+          m, n, k,
+          row_mapA, entriesA, transposeA,
+          row_mapB, entriesB, transposeB,
+          row_mapC,handle->get_verbose());
       break;
 
     case SPGEMM_DEFAULT:
@@ -204,6 +213,15 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
+    case SPGEMM_MKL2PHASE:
+      Impl::mkl2phase_apply(
+          sh,
+          m,n,k,
+          row_mapA, entriesA, valuesA, transposeA,
+          row_mapB, entriesB, valuesB, transposeB,
+          row_mapC, entriesC, valuesC, handle->get_verbose());
+      break;
+
     case SPGEMM_VIENNA:
       Impl::viennaCL_apply<spgemmHandleType>(
                 sh,
