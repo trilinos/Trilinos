@@ -3,7 +3,7 @@
   <ParameterList name="Problem">
     <!-- OUTPUT -->
     <Parameter name="Check derivatives"           type="bool"    value="false"         />
-    <Parameter name="Number of output samples"    type="int"     value="10000"         />
+    <Parameter name="Number of Output Samples"    type="int"     value="10000"         />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="400"           />
     <!-- PROBLEM INFORMATION -->
