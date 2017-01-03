@@ -693,8 +693,8 @@ namespace MueLuTests {
       TEST_EQUALITY((v01->getData(0))[0], Teuchos::as<Scalar>(1.0));
       TEST_EQUALITY(v00->getLocalLength(), 20);
       TEST_EQUALITY(v01->getLocalLength(), 5);
-      TEST_EQUALITY(v00->getGlobalLength(), comm->getSize() * 20);
-      TEST_EQUALITY(v01->getGlobalLength(), comm->getSize() * 5);
+      TEST_EQUALITY(v00->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 20));
+      TEST_EQUALITY(v01->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
 
       TEST_EQUALITY(v00->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v00->getMap()->getMaxLocalIndex(), 19);
@@ -721,8 +721,8 @@ namespace MueLuTests {
       TEST_EQUALITY((v10->getData(0))[0], Teuchos::as<Scalar>(0.5));
       TEST_EQUALITY(v10->getLocalLength(), 5);
       TEST_EQUALITY(v11->getLocalLength(), 10);
-      TEST_EQUALITY(v10->getGlobalLength(), comm->getSize() * 5);
-      TEST_EQUALITY(v11->getGlobalLength(), comm->getSize() * 10);
+      TEST_EQUALITY(v10->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
+      TEST_EQUALITY(v11->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 10));
 
       TEST_EQUALITY(v10->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v10->getMap()->getMaxLocalIndex(), 4);
@@ -1216,8 +1216,8 @@ namespace MueLuTests {
       TEST_EQUALITY((v01->getData(0))[0], Teuchos::as<Scalar>(1.0));
       TEST_EQUALITY(v00->getLocalLength(), 20);
       TEST_EQUALITY(v01->getLocalLength(), 5);
-      TEST_EQUALITY(v00->getGlobalLength(), comm->getSize() * 20);
-      TEST_EQUALITY(v01->getGlobalLength(), comm->getSize() * 5);
+      TEST_EQUALITY(v00->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 20));
+      TEST_EQUALITY(v01->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
 
       TEST_EQUALITY(v00->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v00->getMap()->getMaxLocalIndex(), 19);
@@ -1244,8 +1244,8 @@ namespace MueLuTests {
       TEST_EQUALITY((v10->getData(0))[0], Teuchos::as<Scalar>(0.5));
       TEST_EQUALITY(v10->getLocalLength(), 5);
       TEST_EQUALITY(v11->getLocalLength(), 10);
-      TEST_EQUALITY(v10->getGlobalLength(), comm->getSize() * 5);
-      TEST_EQUALITY(v11->getGlobalLength(), comm->getSize() * 10);
+      TEST_EQUALITY(v10->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 5));
+      TEST_EQUALITY(v11->getGlobalLength(), Teuchos::as<size_t>(comm->getSize() * 10));
 
       TEST_EQUALITY(v10->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v10->getMap()->getMaxLocalIndex(), 4);
@@ -1566,7 +1566,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -1747,7 +1747,7 @@ namespace MueLuTests {
         simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
         Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
         bool bCheck = true;
-        for(int i=0; i<X->getLocalLength(); i++) {
+        for(size_t i=0; i<X->getLocalLength(); i++) {
           if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
           if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
           if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -1930,7 +1930,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2111,7 +2111,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2707,7 +2707,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2860,7 +2860,7 @@ namespace MueLuTests {
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 0.5) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -2998,7 +2998,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 5 ) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5  && i< 15) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -3155,7 +3155,7 @@ namespace MueLuTests {
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -3309,7 +3309,7 @@ namespace MueLuTests {
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 0.5) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -3875,7 +3875,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4053,7 +4053,7 @@ namespace MueLuTests {
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4681,7 +4681,7 @@ namespace MueLuTests {
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4859,7 +4859,7 @@ namespace MueLuTests {
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
       Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
