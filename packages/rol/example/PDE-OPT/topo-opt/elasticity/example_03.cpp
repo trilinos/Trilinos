@@ -369,6 +369,25 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
     pdecon->outputTpetraVector(z_rcp,"density.txt");
+    // Build objective function distribution
+    int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,distVec,bman));
+    std::stringstream name;
+    name << "obj_samples_" << bman->batchID() << ".txt";
+    std::ofstream file;
+    file.open(name.str());
+    int stochDim = dim*nLoads;
+    for (int i = 0; i < sampler_dist->numMySamples(); ++i) {
+      std::vector<RealT> sample = sampler_dist->getMyPoint(i);
+      objRed->setParameter(sample);
+      RealT val = objRed->value(*zp,tol);
+      for (int j = 0; j < stochDim; ++j) {
+        file << sample[j] << "  ";
+      }
+      file << val << "\n";
+    }
+    file.close();
     //Teuchos::Array<RealT> res(1,0);
     //con->value(*rp,*up,*zp,tol);
     //r_rcp->norm2(res.view(0,1));
