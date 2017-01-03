@@ -70,43 +70,95 @@ namespace Tpetra {
 namespace Details {
 namespace Impl {
 
-// Implementation detail of Idot specializations with raw pointer or
-// array DotViewType.
+/// \brief Implementation detail of Idot specializations (see below in
+///   this header file) with raw pointer or array DotViewType.
+///
+/// \tparam DotViewType Type of the idot() result argument.  Must be
+///   either a raw pointer to nonconst (T* for some T) or a raw array
+///   of nonconst (T[] for some T).
+/// \tparam VecViewType Type of the vector or multivector View
+///   arguments of idot().
+/// \tparam dotViewRank Rank of view_type, the Kokkos::View that wraps
+///   the input raw pointer or raw array given to getView().  Please
+///   only use the default value here.
 template<class DotViewType,
          class VecViewType,
          const int dotViewRank = static_cast<int> (VecViewType::rank) - 1>
 struct GetDotView {
-  // Assume that we can access DotViewType on host, but use
-  // VecViewType's device_type for the Kokkos kernel.
+  /// \brief Kokkos::Device type of the Kokkos::View returned by getView().
+  ///
+  /// Assume that we can access DotViewType on host, but use
+  /// VecViewType's device_type for the Kokkos kernel.
   typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
                            ::Kokkos::HostSpace> host_device_type;
-  typedef ::Kokkos::View<DotViewType, host_device_type> view_type;
 
-  static view_type getView (DotViewType raw, const size_t numVecs);
-};
-
-template<class DotViewType,
-         class VecViewType>
-struct GetDotView<DotViewType, VecViewType, 0> {
-  typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
-                           ::Kokkos::HostSpace> host_device_type;
-  // view_type must be a rank-0 Kokkos::View.  This means we can't
-  // just use DotViewType as the first template parameter of
-  // Kokkos::View.  However, we can use Kokkos::View<DotViewType> to
-  // get the type of the (only) entry of DotViewType.
-  typedef typename ::Kokkos::View<DotViewType,
-    host_device_type>::non_const_value_type dot_type;
-  // We want view_type to have the same layout as VecViewType, since
-  // that is what both KokkosBlas::dot and iallreduce expect.
-  // However, only Kokkos::LayoutLeft and Kokkos::LayoutRight work for
-  // rank-0 Views.  so we have to make sure that the layout is one of
-  // these.
+  /// \brief Array layout of the Kokkos::View returned by getView().
+  ///
+  /// We want view_type to have the same layout as VecViewType, since
+  /// that is what both KokkosBlas::dot and iallreduce expect.
+  /// However, only Kokkos::LayoutLeft and Kokkos::LayoutRight work
+  /// for rank-0 Views, so we have to make sure that the layout is one
+  /// of these.
   typedef typename std::conditional<std::is_same<typename VecViewType::array_layout,
                                                  ::Kokkos::LayoutLeft>::value,
                                     ::Kokkos::LayoutLeft,
                                     ::Kokkos::LayoutRight>::type array_layout;
+
+  /// \brief Type of the Kokkos::View that wraps the raw pointer or
+  ///   raw array input to getView().
+  typedef ::Kokkos::View<DotViewType, array_layout, host_device_type> view_type;
+
+  /// \brief Return a Kokkos::View that wraps the raw pointer or raw
+  ///   array input argument \c raw.
+  ///
+  /// \param raw [in] Raw pointer or raw array to wrap.
+  /// \param numVecs [in] Number of entries in the input raw array.
+  ///   If the input is a raw pointer to a single entry, this may only
+  ///   be one.
+  static view_type getView (DotViewType raw, const size_t numVecs);
+};
+
+//! Specialization for returning a rank-0 Kokkos::View.
+template<class DotViewType,
+         class VecViewType>
+struct GetDotView<DotViewType, VecViewType, 0> {
+  /// \brief Kokkos::Device type of the Kokkos::View returned by getView().
+  ///
+  /// Assume that we can access DotViewType on host, but use
+  /// VecViewType's device_type for the Kokkos kernel.
+  typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
+                           ::Kokkos::HostSpace> host_device_type;
+
+  /// \brief Type of the one entry of the Kokkos::View returned by getView().
+  ///
+  /// view_type must be a rank-0 Kokkos::View.  This means we can't
+  /// just use DotViewType as the first template parameter of
+  /// Kokkos::View.  However, we can use Kokkos::View<DotViewType> to
+  /// get the type of the (only) entry of DotViewType.
+  typedef typename ::Kokkos::View<DotViewType,
+    host_device_type>::non_const_value_type dot_type;
+
+  /// \brief Array layout of the Kokkos::View returned by getView().
+  ///
+  /// We want view_type to have the same layout as VecViewType, since
+  /// that is what both KokkosBlas::dot and iallreduce expect.
+  /// However, only Kokkos::LayoutLeft and Kokkos::LayoutRight work
+  /// for rank-0 Views, so we have to make sure that the layout is one
+  /// of these.
+  typedef typename std::conditional<std::is_same<typename VecViewType::array_layout,
+                                                 ::Kokkos::LayoutLeft>::value,
+                                    ::Kokkos::LayoutLeft,
+                                    ::Kokkos::LayoutRight>::type array_layout;
+
+  /// \brief Type of the Kokkos::View that wraps the raw pointer or
+  ///   raw array input to getView().
   typedef ::Kokkos::View<dot_type, array_layout, host_device_type> view_type;
 
+  /// \brief Return a Kokkos::View that wraps the raw pointer or raw
+  ///   array input argument \c raw.
+  ///
+  /// \param raw [in] Raw pointer or raw array to wrap.
+  /// \param numVecs [in] Number of entries; must be exactly 1 in this case.
   static view_type getView (DotViewType raw, const size_t numVecs) {
     if (numVecs != 1) {
       std::ostringstream os;
@@ -119,14 +171,40 @@ struct GetDotView<DotViewType, VecViewType, 0> {
   }
 };
 
+//! Specialization for returning a rank-1 Kokkos::View.
 template<class DotViewType,
          class VecViewType>
 struct GetDotView<DotViewType, VecViewType, 1> {
+  /// \brief Kokkos::Device type of the Kokkos::View returned by getView().
+  ///
+  /// Assume that we can access DotViewType on host, but use
+  /// VecViewType's device_type for the Kokkos kernel.
   typedef ::Kokkos::Device<typename VecViewType::HostMirror::execution_space,
                            ::Kokkos::HostSpace> host_device_type;
-  typedef typename VecViewType::array_layout array_layout;
+
+  /// \brief Array layout of the Kokkos::View returned by getView().
+  ///
+  /// We want view_type to have the same layout as VecViewType, since
+  /// that is what both KokkosBlas::dot and iallreduce expect.
+  /// However, if we're wrapping a raw pointer or raw array, we need
+  /// to make sure that we only use either Kokkos::LayoutLeft or
+  /// Kokkos::LayoutRight.
+  typedef typename std::conditional<std::is_same<typename VecViewType::array_layout,
+                                                 ::Kokkos::LayoutLeft>::value,
+                                    ::Kokkos::LayoutLeft,
+                                    ::Kokkos::LayoutRight>::type array_layout;
+
+  /// \brief Type of the Kokkos::View that wraps the raw pointer or
+  ///   raw array input to getView().
   typedef ::Kokkos::View<DotViewType, array_layout, host_device_type> view_type;
 
+  /// \brief Return a Kokkos::View that wraps the raw pointer or raw
+  ///   array input argument \c raw.
+  ///
+  /// \param raw [in] Raw pointer or raw array to wrap.
+  /// \param numVecs [in] Number of entries in the input raw array.
+  ///   If the input is a raw pointer to a single entry, this may only
+  ///   be one.
   static view_type getView (DotViewType raw, const size_t numVecs) {
     static_assert (std::is_same<array_layout, ::Kokkos::LayoutLeft>::value ||
                    std::is_same<array_layout, ::Kokkos::LayoutRight>::value,
@@ -141,8 +219,14 @@ struct GetDotView<DotViewType, VecViewType, 1> {
 /// We use this struct to do partial specialization on the different
 /// kinds of arguments that the overloads of idot can accept.
 ///
-/// \tparam DotViewType Type of the result of the dot product.
-/// \tparam VecViewType Type of the vector / multivector input arguments.
+/// \tparam DotViewType Type of the result of the dot product.  This
+///   may be any of the following: a rank-0 or rank-1 Kokkos::View, a
+///   raw pointer, or a raw array.  If a Kokkos::View, the rank must
+///   be exactly one less than the rank of VecViewType.  If a raw
+///   pointer or raw array, we assume that this is a pointer to
+///   host-accessible memory.
+/// \tparam VecViewType Type of the vector / multivector input
+///   arguments.  Must be a rank-1 or rank-2 Kokkos::View.
 /// \tparam dotViewTypeIsView Whether DotViewType is a Kokkos::View.
 template<class DotViewType,
          class VecViewType,
@@ -322,13 +406,16 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
 {
+  using ::Kokkos::subview;
   using ::Teuchos::Comm;
   using ::Teuchos::RCP;
   typedef ::Tpetra::MultiVector<SC, LO, GO, NT> mv_type;
-  typedef typename mv_type::device_type device_type;
-  typedef typename device_type::memory_space dev_memory_space;
-  typedef typename ::Kokkos::View<SC*, device_type>::host_mirror_space::memory_space host_memory_space;
+  typedef typename mv_type::device_type DT;
+  typedef typename DT::memory_space dev_memory_space;
+  typedef typename ::Kokkos::View<SC*, DT>::host_mirror_space::memory_space
+    host_memory_space;
   typedef typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result_view_type;
+  typedef typename ::Kokkos::pair<size_t, size_t> pair_type;
 
   auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
@@ -339,18 +426,20 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
       auto Y_lcl = Y.template getLocalView<host_memory_space> ();
 
       if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
         typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
       }
       else {
-        auto X_lcl_2d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
-        auto Y_lcl_2d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
+        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
+        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
         typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
       }
     }
     else { // use device version
@@ -358,18 +447,20 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
       auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
 
       if (X.getNumVectors () == 1) {
-        auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-        auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+        auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+        auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
         typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
       }
       else {
-        auto X_lcl_2d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
-        auto Y_lcl_2d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()),
-                                         Kokkos::pair<size_t, size_t> (0, X.getNumVectors ()));
+        auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
+        auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
+                                 pair_type (0, X.getNumVectors ()));
         typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-        return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
+        typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+        return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
       }
     }
   }
@@ -419,14 +510,17 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
       const ::Tpetra::Vector<SC, LO, GO, NT>& X,
       const ::Tpetra::Vector<SC, LO, GO, NT>& Y)
 {
+  using ::Kokkos::subview;
   using ::Teuchos::Comm;
   using ::Teuchos::RCP;
   typedef ::Tpetra::Vector<SC, LO, GO, NT> vec_type;
-  typedef typename vec_type::device_type device_type;
-  typedef typename device_type::memory_space dev_memory_space;
-  typedef typename ::Kokkos::View<SC*, device_type>::host_mirror_space::memory_space host_memory_space;
+  typedef typename vec_type::device_type DT;
+  typedef typename DT::memory_space dev_memory_space;
+  typedef typename ::Kokkos::View<SC*, DT>::host_mirror_space::memory_space
+    host_memory_space;
   typedef typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type dot_type;
-  typedef Kokkos::View<dot_type, device_type> result_view_type;
+  typedef ::Kokkos::View<dot_type, DT> result_view_type;
+  typedef ::Kokkos::pair<size_t, size_t> pair_type;
 
   auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
@@ -435,18 +529,20 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
         ! X.template need_sync<host_memory_space> ()) { // use host version
       auto X_lcl = X.template getLocalView<host_memory_space> ();
       auto Y_lcl = Y.template getLocalView<host_memory_space> ();
-      auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-      auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+      auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+      auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
       typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-      return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+      typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+      return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
     }
     else { // use device version
       auto X_lcl = X.template getLocalView<dev_memory_space> ();
       auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
-      auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::pair<size_t, size_t> (0, X.getLocalLength ()), 0);
-      auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::pair<size_t, size_t> (0, Y.getLocalLength ()), 0);
+      auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
+      auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
       typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-      return Impl::Idot<result_view_type, vec_view_type>::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
+      typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+      return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
     }
   }
   else { // calling process does not participate
@@ -511,7 +607,8 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
   // Tpetra::MultiVector, but I'm not sure if Kokkos gives me a
   // convenient way to get the host memory space from a device_type,
   // rather than from a View.
-  typedef typename result_view_type::host_mirror_space::memory_space host_memory_space;
+  typedef typename result_view_type::host_mirror_space::memory_space
+    host_memory_space;
 
   RCP<const typename mv_type::map_type> map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
