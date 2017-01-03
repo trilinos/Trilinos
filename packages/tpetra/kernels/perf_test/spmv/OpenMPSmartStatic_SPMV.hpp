@@ -60,7 +60,9 @@ void establishSmartSchedule(AType A) {
   	posix_memalign((void**) &rowSizes, 64, sizeof(int) * A.numRows());
   	posix_memalign((void**) &threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1));
   	
-  	threadStarts[omp_get_max_threads()] = A.numRows();
+	for(int i = 0; i < omp_get_max_threads(); ++i) {
+  		threadStarts[i] = A.numRows();
+	}
   	
   	unsigned long long int nnz = 0;
   	
@@ -80,7 +82,8 @@ void establishSmartSchedule(AType A) {
   	int nextRow = 0;
   	
   	printf("Target NZ Per Thread: %20d\n", nzPerThreadTarget);
-  	
+	threadStarts[0] = 0;  	
+
   	for(int thread = 1; thread < omp_get_max_threads(); ++thread) {
   		int nzAccum = 0;
   		
