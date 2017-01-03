@@ -204,8 +204,10 @@ private:
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
+/// \tparam SendLayoutType array_layout of the send buffer.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
 ///   receive buffer.  It's OK for this to differ from SendDeviceType.
 ///   We assume that MPI implementations can handle this.  (This is a
@@ -213,26 +215,42 @@ private:
 /// \tparam rank Integer rank of the send and receive buffers.  Must
 ///   be either 0 or 1.
 template<class PacketType,
+         class SendLayoutType,
          class SendDeviceType,
+         class RecvLayoutType,
          class RecvDeviceType,
          const int rank>
 class IallreduceCommRequest;
 
 //! Partial pecialization for rank-1 send and receive buffers.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
-class IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 1> :
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
+class IallreduceCommRequest<PacketType,
+                            SendLayoutType,
+                            SendDeviceType,
+                            RecvLayoutType,
+                            RecvDeviceType,
+                            1> :
     public CommRequest {
 public:
   //! Default constructor.
   IallreduceCommRequest ()
   {}
 
+  typedef ::Kokkos::View<const PacketType*, SendLayoutType,
+                         SendDeviceType> send_buffer_type;
+  typedef ::Kokkos::View<PacketType*, RecvLayoutType,
+                         RecvDeviceType> recv_buffer_type;
+
   /// \brief Constructor that takes a wrapped request (representing
   ///   the pending MPI_Iallreduce operation itself), and saved
   ///   buffers.
   IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                         const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
-                         const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf) :
+                         const send_buffer_type& sendbuf,
+                         const recv_buffer_type& recvbuf) :
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
@@ -269,8 +287,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType*, SendDeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType*, RecvDeviceType> ();
+    sendbuf_ = send_buffer_type ();
+    recvbuf_ = recv_buffer_type ();
   }
 
   /// \brief Cancel the pending communication request.
@@ -286,8 +304,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType*, SendDeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType*, RecvDeviceType> ();
+    sendbuf_ = send_buffer_type ();
+    recvbuf_ = recv_buffer_type ();
   }
 
 private:
@@ -295,27 +313,43 @@ private:
   std::shared_ptr<CommRequest> req_;
 
   //! Saved send buffer from iallreduce call
-  ::Kokkos::View<const PacketType*, SendDeviceType> sendbuf_;
+  send_buffer_type sendbuf_;
 
   //! Saved recv buffer from iallreduce call
-  ::Kokkos::View<PacketType*, RecvDeviceType> recvbuf_;
+  recv_buffer_type recvbuf_;
 };
 
 //! Partial pecialization for rank-0 (single-value) send and receive buffers.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
-class IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 0> :
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
+class IallreduceCommRequest<PacketType,
+                            SendLayoutType,
+                            SendDeviceType,
+                            RecvLayoutType,
+                            RecvDeviceType,
+                            0> :
     public CommRequest {
 public:
   //! Default constructor.
   IallreduceCommRequest ()
   {}
 
+  //! Type of the send buffer.
+  typedef ::Kokkos::View<const PacketType, SendLayoutType,
+                         SendDeviceType> send_buffer_type;
+  //! Type of the receive buffer.
+  typedef ::Kokkos::View<PacketType, RecvLayoutType,
+                         RecvDeviceType> recv_buffer_type;
+
   /// \brief Constructor that takes a wrapped request (representing
   ///   the pending MPI_Iallreduce operation itself), and saved
   ///   buffers.
   IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                         const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
-                         const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf) :
+                         const send_buffer_type& sendbuf,
+                         const recv_buffer_type& recvbuf) :
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
@@ -352,8 +386,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType, SendDeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType, RecvDeviceType> ();
+    sendbuf_ = send_buffer_type ();
+    recvbuf_ = recv_buffer_type ();
   }
 
   /// \brief Cancel the pending communication request.
@@ -369,8 +403,8 @@ public:
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
-    sendbuf_ = ::Kokkos::View<const PacketType, SendDeviceType> ();
-    recvbuf_ = ::Kokkos::View<PacketType, RecvDeviceType> ();
+    sendbuf_ = send_buffer_type ();
+    recvbuf_ = recv_buffer_type ();
   }
 
 private:
@@ -378,10 +412,10 @@ private:
   std::shared_ptr<CommRequest> req_;
 
   //! Saved send buffer from iallreduce call
-  ::Kokkos::View<const PacketType, SendDeviceType> sendbuf_;
+  send_buffer_type sendbuf_;
 
   //! Saved recv buffer from iallreduce call
-  ::Kokkos::View<PacketType, RecvDeviceType> recvbuf_;
+  recv_buffer_type recvbuf_;
 };
 
 /// \brief Function for wrapping the CommRequest to be returned from
@@ -403,13 +437,32 @@ private:
 ///   receive buffer; it just keeps a reference to it.
 ///
 /// \return Pointer to wrapped CommRequest.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
+///
+/// \tparam PacketType Type of each entry of the send and receive
+///   buffers.
+/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendDeviceType Kokkos::Device specialization used by the
+///   send buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvDeviceType Kokkos::Device specialization used by the
+///   receive buffer.  It's OK for this to differ from SendDeviceType.
+///   We assume that MPI implementations can handle this.  (This is a
+///   reasonable assumption with CUDA-enabled MPI implementations.)
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                           const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
-                           const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf)
+                           const ::Kokkos::View<const PacketType*,
+                             SendLayoutType,
+                             SendDeviceType>& sendbuf,
+                           const ::Kokkos::View<PacketType*,
+                             RecvLayoutType,
+                             RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 1> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType, RecvLayoutType, RecvDeviceType, 1> (req, sendbuf, recvbuf));
 }
 
 /// \brief Function for wrapping the CommRequest to be returned from
@@ -431,13 +484,32 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
 ///   receive buffer; it just keeps a reference to it.
 ///
 /// \return Pointer to wrapped CommRequest.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
+///
+/// \tparam PacketType Type of each entry of the send and receive
+///   buffers.
+/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendDeviceType Kokkos::Device specialization used by the
+///   send buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvDeviceType Kokkos::Device specialization used by the
+///   receive buffer.  It's OK for this to differ from SendDeviceType.
+///   We assume that MPI implementations can handle this.  (This is a
+///   reasonable assumption with CUDA-enabled MPI implementations.)
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
 std::shared_ptr<CommRequest>
 wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
-                           const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
-                           const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf)
+                           const ::Kokkos::View<const PacketType,
+                             SendLayoutType,
+                             SendDeviceType>& sendbuf,
+                           const ::Kokkos::View<PacketType,
+                             RecvLayoutType,
+                             RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendDeviceType, RecvDeviceType, 0> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType, RecvLayoutType, RecvDeviceType, 0> (req, sendbuf, recvbuf));
 }
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -513,11 +585,15 @@ iallreduceRaw (const Packet sendbuf[],
 /// \brief Implementation of ::Tpetra::Details::iallreduce.
 ///
 /// \tparam PacketType Type of each entry of the send and receive
-///   buffer.
+///   buffers.
+/// \tparam SendLayoutType array_layout of the send buffer.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
-///   receive buffer.
+///   receive buffer.  It's OK for this to differ from SendDeviceType.
+///   We assume that MPI implementations can handle this.  (This is a
+///   reasonable assumption with CUDA-enabled MPI implementations.)
 /// \tparam rank Integer rank of the send and receive buffers.  Must
 ///   be either 0 or 1.
 ///
@@ -527,17 +603,35 @@ iallreduceRaw (const Packet sendbuf[],
 /// overload ::Tpetra::Details::iallreduce for different kinds of
 /// output arguments (e.g., rank-0 or rank-1 Kokkos::View).
 template<class PacketType,
+         class SendLayoutType,
          class SendDeviceType,
+         class RecvLayoutType,
          class RecvDeviceType,
          const int rank>
 struct Iallreduce {};
 
 //! Partial specialization of Iallreduce for rank-1 send and receive buffers.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
-struct Iallreduce<PacketType, SendDeviceType, RecvDeviceType, 1> {
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
+struct Iallreduce<PacketType,
+                  SendLayoutType,
+                  SendDeviceType,
+                  RecvLayoutType,
+                  RecvDeviceType,
+                  1> {
+  typedef ::Kokkos::View<const PacketType*,
+                         SendLayoutType,
+                         SendDeviceType> send_buffer_type;
+  typedef ::Kokkos::View<PacketType*,
+                         RecvLayoutType,
+                         RecvDeviceType> recv_buffer_type;
+
   static std::shared_ptr<CommRequest>
-  iallreduce (const ::Kokkos::View<const PacketType*, SendDeviceType>& sendbuf,
-              const ::Kokkos::View<PacketType*, RecvDeviceType>& recvbuf,
+  iallreduce (const send_buffer_type& sendbuf,
+              const recv_buffer_type& recvbuf,
               const ::Teuchos::EReductionType op,
               const ::Teuchos::Comm<int>& comm)
   {
@@ -567,11 +661,31 @@ struct Iallreduce<PacketType, SendDeviceType, RecvDeviceType, 1> {
 };
 
 //! Partial specialization of Iallreduce for rank-0 send and receive buffers.
-template<class PacketType, class SendDeviceType, class RecvDeviceType>
-struct Iallreduce<PacketType, SendDeviceType, RecvDeviceType, 0> {
+template<class PacketType,
+         class SendLayoutType,
+         class SendDeviceType,
+         class RecvLayoutType,
+         class RecvDeviceType>
+struct Iallreduce<PacketType,
+                  SendLayoutType,
+                  SendDeviceType,
+                  RecvLayoutType,
+                  RecvDeviceType,
+                  0> {
+  // mfh 02 Jan 2017: For rank-0 Views, LayoutLeft and LayoutRight are
+  // unfortunately NOT mutually assignable, even though it would make
+  // sense for this to be the case.  That's why we have to template on
+  // the layout types.
+  typedef ::Kokkos::View<const PacketType,
+                         SendLayoutType,
+                         SendDeviceType> send_buffer_type;
+  typedef ::Kokkos::View<PacketType,
+                         RecvLayoutType,
+                         RecvDeviceType> recv_buffer_type;
+
   static std::shared_ptr<CommRequest>
-  iallreduce (const ::Kokkos::View<const PacketType, SendDeviceType>& sendbuf,
-              const ::Kokkos::View<PacketType, RecvDeviceType>& recvbuf,
+  iallreduce (const send_buffer_type& sendbuf,
+              const recv_buffer_type& recvbuf,
               const ::Teuchos::EReductionType op,
               const ::Teuchos::Comm<int>& comm)
   {
@@ -657,11 +771,13 @@ iallreduce (const InputViewType& sendbuf,
                    packet_type>::value,
                  "InputViewType and OutputViewType must be Views "
                  "whose entries have the same type.");
+  typedef typename InputViewType::array_layout send_layout_type;
+  typedef typename OutputViewType::array_layout recv_layout_type;
   typedef typename InputViewType::device_type send_device_type;
   typedef typename OutputViewType::device_type recv_device_type;
 
-  typedef Impl::Iallreduce<packet_type, send_device_type,
-    recv_device_type, rank> impl_type;
+  typedef Impl::Iallreduce<packet_type, send_layout_type, send_device_type,
+    recv_layout_type, recv_device_type, rank> impl_type;
   return impl_type::iallreduce (sendbuf, recvbuf, op, comm);
 }
 
