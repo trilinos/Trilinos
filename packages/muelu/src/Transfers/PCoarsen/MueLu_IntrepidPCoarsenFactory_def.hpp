@@ -172,9 +172,9 @@ Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  Basi
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
 template<class Scalar,class KokkosDeviceType>
 void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&hi_basis,
-			   const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&lo_basis,
-			   std::vector<size_t> & lo_node_in_hi,
-			   Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords) {
+                           const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&lo_basis,
+                           std::vector<size_t> & lo_node_in_hi,
+                           Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords) {
   
   typedef typename KokkosDeviceType::execution_space KokkosExecutionSpace;
   // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
@@ -199,9 +199,9 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDe
 #else
 typedef<class Scalar, class ArrayScalar>
 void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
-			   const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
-			   std::vector<size_t> & lo_node_in_hi,
-			   ArrayScalar & hi_DofCoords) {
+                           const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
+                           std::vector<size_t> & lo_node_in_hi,
+                           ArrayScalar & hi_DofCoords) {
   
   // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
   size_t degree         = hi_basis->getDegree();
@@ -230,12 +230,12 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScala
 /*********************************************************************************************************/
   template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
-		       const std::vector<bool> & hi_nodeIsOwned,
-		       const std::vector<size_t> & lo_node_in_hi,
-		       LOFieldContainer & lo_elemToNode,
-		       std::vector<bool> & lo_nodeIsOwned,
-		       std::vector<LocalOrdinal> & hi_to_lo_map,
-		       int & lo_numOwnedNodes) {
+                       const std::vector<bool> & hi_nodeIsOwned,
+                       const std::vector<size_t> & lo_node_in_hi,
+                       LOFieldContainer & lo_elemToNode,
+                       std::vector<bool> & lo_nodeIsOwned,
+                       std::vector<LocalOrdinal> & hi_to_lo_map,
+                       int & lo_numOwnedNodes) {
   typedef LocalOrdinal LO;
   using Teuchos::RCP;
   //  printf("CMS:BuildLoElemToNode: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
@@ -333,7 +333,7 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   
   lo_columnMap = Xpetra::MapFactory<LO,GO,NO>::Build(lo_domainMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),lo_col_data(),lo_domainMap.getIndexBase(),lo_domainMap.getComm());
 }
-		  
+                  
 }//end MueLu::MueLuIntrepid namespace
 
 
@@ -342,15 +342,15 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
-														 const std::vector<bool> & hi_nodeIsOwned,
-														 const SCFieldContainer hi_DofCoords,
-														 const std::vector<size_t> &lo_node_in_hi,
-														 const Basis &lo_basis,
-														 const std::vector<LocalOrdinal> & hi_to_lo_map,
-														 const Teuchos::RCP<const Map> & lo_colMap, 
-														 const Teuchos::RCP<const Map> & lo_domainMap, 
-														 const Teuchos::RCP<const Map> & hi_map,
-														 Teuchos::RCP<Matrix>& P) const{
+                                                                                                                 const std::vector<bool> & hi_nodeIsOwned,
+                                                                                                                 const SCFieldContainer hi_DofCoords,
+                                                                                                                 const std::vector<size_t> &lo_node_in_hi,
+                                                                                                                 const Basis &lo_basis,
+                                                                                                                 const std::vector<LocalOrdinal> & hi_to_lo_map,
+                                                                                                                 const Teuchos::RCP<const Map> & lo_colMap, 
+                                                                                                                 const Teuchos::RCP<const Map> & lo_domainMap, 
+                                                                                                                 const Teuchos::RCP<const Map> & hi_map,
+                                                                                                                 Teuchos::RCP<Matrix>& P) const{
   typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
   size_t numFieldsHi = hi_elemToNode.dimension(1);
@@ -380,17 +380,17 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       LO row_lid = hi_elemToNode(i,j);
       GO row_gid = hi_map->getGlobalElement(row_lid);
       if(hi_nodeIsOwned[row_lid] && !touched[row_lid]) {
-	for(size_t k=0; k<numFieldsLo; k++) {
-	  // Get the local id in P1's column map
-	  LO col_lid = hi_to_lo_map[hi_elemToNode(i,lo_node_in_hi[k])];
-	  col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
-	  val[0]     = LoValues_at_HiDofs(k,j);
-	  
-	  // Skip near-zeros
-	  if(Teuchos::ScalarTraits<SC>::magnitude(val[0]) >= effective_zero)
-	    P->insertGlobalValues(row_gid,col_gid(),val());
-	}
-	touched[row_lid]=true;
+        for(size_t k=0; k<numFieldsLo; k++) {
+          // Get the local id in P1's column map
+          LO col_lid = hi_to_lo_map[hi_elemToNode(i,lo_node_in_hi[k])];
+          col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
+          val[0]     = LoValues_at_HiDofs(k,j);
+          
+          // Skip near-zeros
+          if(Teuchos::ScalarTraits<SC>::magnitude(val[0]) >= effective_zero)
+            P->insertGlobalValues(row_gid,col_gid(),val());
+        }
+        touched[row_lid]=true;
       }
     }
   }
@@ -509,8 +509,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     LO num_owned_rows = 0;
     for(size_t i=0; i<rowMap->getNodeNumElements(); i++) {
       if(rowMap->getGlobalElement(i) == colMap->getGlobalElement(i)) {
-	Pn_nodeIsOwned[i] = true;
-	num_owned_rows++;
+        Pn_nodeIsOwned[i] = true;
+        num_owned_rows++;
       }
     }
 
