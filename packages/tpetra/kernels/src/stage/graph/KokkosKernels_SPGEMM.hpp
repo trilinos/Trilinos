@@ -108,6 +108,7 @@ namespace Graph{
     case SPGEMM_KK_MEMSPEED:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
+    case SPGEMM_KK_MEMORY2:
     case SPGEMM_KK_COLOR:
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:
@@ -235,6 +236,7 @@ namespace Graph{
     case SPGEMM_KK_MEMSPEED:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
+    case SPGEMM_KK_MEMORY2:
     case SPGEMM_KK_COLOR:
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:

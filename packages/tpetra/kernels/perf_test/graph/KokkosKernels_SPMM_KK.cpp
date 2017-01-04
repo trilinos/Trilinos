@@ -58,7 +58,7 @@ int check_output = 0;
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
 
-//#define KOKKOS_HAVE_OPENMP
+#define KOKKOS_HAVE_OPENMP
 
 enum MEMSPACE{HBM, DDR4}; //GPUS GPU vs DDR4
 MEMSPACE amemspace = HBM; //DEFAULT
@@ -442,11 +442,20 @@ int main (int argc, char ** argv){
       else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 3;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 8;
+      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 4;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 5;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEM2" ) ) {
+    	  cmdline[ CMD_SPGEMM_ALGO ] = 6;
       }
       else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 7;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 8;
       }
       else if ( 0 == strcasecmp( argv[i] , "KKCOLOR" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 9;
@@ -463,12 +472,7 @@ int main (int argc, char ** argv){
       else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 13;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 5;
-      }
+
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
@@ -680,187 +684,258 @@ int main (int argc, char ** argv){
 
   if ( cmdline[ CMD_USE_OPENMP ] ) {
 
-    if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-      Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
-          cmdline[ CMD_USE_NUMA ] ,
-          cmdline[ CMD_USE_CORE_PER_NUMA ] );
-    }
-    else {
-      Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
-    }
-    if (cmdline[ CMD_SPGEMM_ALGO ] == 2 || cmdline[ CMD_SPGEMM_ALGO ] == 3){
-      std::cerr << "CUSP and CUSPARSE cannot be run with OPENMP" << std::endl ;
-      return 0;
-    }
+	  if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+		  Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
+				  cmdline[ CMD_USE_NUMA ] ,
+				  cmdline[ CMD_USE_CORE_PER_NUMA ] );
+	  }
+	  else {
+		  Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
+	  }
+	  if (cmdline[ CMD_SPGEMM_ALGO ] == 2 || cmdline[ CMD_SPGEMM_ALGO ] == 3){
+		  std::cerr << "CUSP and CUSPARSE cannot be run with OPENMP" << std::endl ;
+		  return 0;
+	  }
 
-    Kokkos::OpenMP::print_configuration(std::cout);
+	  Kokkos::OpenMP::print_configuration(std::cout);
 
-    KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
-    idx nv = m;
-    idx ne = nnzA;
-
-
-    typedef Kokkos::OpenMP myExecSpace;
-    typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> myHostExecSpace;
-    typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
-    typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myHostExecSpace, void, size_type > crsMat_host_t;
+	  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
+	  idx nv = m;
+	  idx ne = nnzA;
 
 
-    typedef typename crsMat_t::StaticCrsGraphType graph_t;
-    typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
-    typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
-    typedef typename crsMat_t::values_type::non_const_type values_view_t;
+	  typedef Kokkos::OpenMP myExecSpace;
+	  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> myHostExecSpace;
+	  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
+	  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myHostExecSpace, void, size_type > crsMat_host_t;
 
 
-    typedef typename crsMat_host_t::StaticCrsGraphType host_graph_t;
-    typedef typename crsMat_host_t::row_map_type::non_const_type host_row_map_view_t;
-    typedef typename crsMat_host_t::index_type::non_const_type   host_cols_view_t;
-    typedef typename crsMat_host_t::values_type::non_const_type host_values_view_t;
-
-    crsMat_t crsmat;
-    crsMat_host_t host_crsmat;
-
-    if (cmdline[ CMD_MM_MODE ] != 2){
-    	if (amemspace == HBM){
-    		crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
-    	}
-    	else {
-    		host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
-    	}
-    }
-    else {
-    	if (bmemspace == HBM){
-    		crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
-    	}
-    	else {
-    		host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
-    	}
-    }
-    delete [] xadj;
-    delete [] adj;
-    delete [] ew;
+	  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+	  typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+	  typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+	  typedef typename crsMat_t::values_type::non_const_type values_view_t;
 
 
-    //std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
-    //run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-    //std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
+	  typedef typename crsMat_host_t::StaticCrsGraphType host_graph_t;
+	  typedef typename crsMat_host_t::row_map_type::non_const_type host_row_map_view_t;
+	  typedef typename crsMat_host_t::index_type::non_const_type   host_cols_view_t;
+	  typedef typename crsMat_host_t::values_type::non_const_type host_values_view_t;
 
-    if (cmdline[ CMD_MM_MODE ] == 0){
+	  crsMat_t crsmat;
+	  crsMat_host_t host_crsmat;
 
-      run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>(
-    		  crsmat, crsmat,
-			  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-    }else if (cmdline[ CMD_MM_MODE ] == 1){
-      {
-        std::cout << "MULTIPLYING A*P" << std::endl;
-        idx m_ = 0, nnzA_ = 0;
-        idx *xadj_, *adj_;
-        wt *ew_;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
-        crsMat_t crsmat2;
-        crsMat_host_t host_crsmat2;
-
-        if (bmemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-
-        delete [] xadj_;
-        delete [] adj_;
-        delete [] ew_;
-
-        if (amemspace == HBM){
-            if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat =
-                			run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                			(crsmat, crsmat2,
-                			cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-							cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-							cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-							cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                	crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
-                	host_crsmat = crsMat_host_t ();
-                }
-            }
-            else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
-                	crsmat = crsMat_t ();
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-            }
-        }
-        else {
-        	if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
-                	host_crsmat = crsMat_host_t ();
-                }
-        	}
-        	else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
-                	crsmat = crsMat_t ();
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        }
+	  if (cmdline[ CMD_MM_MODE ] != 2){
+		  if (amemspace == HBM){
+			  crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+		  }
+		  else {
+			  host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+		  }
+	  }
+	  else {
+		  if (bmemspace == HBM){
+			  crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+		  }
+		  else {
+			  host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+		  }
+	  }
+	  delete [] xadj;
+	  delete [] adj;
+	  delete [] ew;
 
 
+	  //std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
+	  //run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+	  //std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
 
-        /*
+	  if (cmdline[ CMD_MM_MODE ] == 0){
+
+		  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>(
+				  crsmat, crsmat,
+				  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+	  }else if (cmdline[ CMD_MM_MODE ] == 1){
+		  {
+			  std::cout << "MULTIPLYING A*P" << std::endl;
+			  idx m_ = 0, nnzA_ = 0;
+			  idx *xadj_, *adj_;
+			  wt *ew_;
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
+			  crsMat_t crsmat2;
+			  crsMat_host_t host_crsmat2;
+
+			  if (bmemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+
+			  delete [] xadj_;
+			  delete [] adj_;
+			  delete [] ew_;
+
+			  if (amemspace == HBM){
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM){
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+							  (crsmat, crsmat2,
+									  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+									  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+									  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+									  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  }
+						  else {
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+							  (crsmat, crsmat2,
+									  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+									  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+									  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+									  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  }
+					  }
+					  else{
+
+						  if (workmemspace == HBM){
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+							  (crsmat, crsmat2,
+									  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+									  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+									  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+									  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  }
+						  else {
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+							  (crsmat, crsmat2,
+									  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+									  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+									  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+									  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  }
+
+						  crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
+						  host_crsmat = crsMat_host_t ();
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+						  host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
+						  crsmat = crsMat_t ();
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
+			  else {
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
+						  host_crsmat = crsMat_host_t ();
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
+						  crsmat = crsMat_t ();
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
+
+
+
+			  /*
         char *file = "AP.mtx";
         KokkosKernels::Experimental::Util::write_graph_bin(
             m, (idx) crsmat.graph.entries.dimension_0(),
@@ -868,477 +943,756 @@ int main (int argc, char ** argv){
             ( const idx *)crsmat.graph.entries.ptr_on_device(),
             ( const wt *)crsmat.values.ptr_on_device(),
             ( const char *)file);
-         */
-      }
-      {
-        std::cout << "MULTIPLYING R*(AP)" << std::endl;
-        idx m__ = 0, nnzA__ = 0;
-        idx *xadj__, *adj__;
-        wt *ew__;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m__, &nnzA__, &xadj__, &adj__, &ew__, r_mtx_bin_file);
+			   */
+		  }
+		  {
+			  std::cout << "MULTIPLYING R*(AP)" << std::endl;
+			  idx m__ = 0, nnzA__ = 0;
+			  idx *xadj__, *adj__;
+			  wt *ew__;
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m__, &nnzA__, &xadj__, &adj__, &ew__, r_mtx_bin_file);
 
-        crsMat_t crsmat2;
-        crsMat_host_t host_crsmat2;
-        if (amemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
+			  crsMat_t crsmat2;
+			  crsMat_host_t host_crsmat2;
+			  if (amemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
 
-        delete [] xadj__;
-        delete [] adj__;
-        delete [] ew__;
+			  delete [] xadj__;
+			  delete [] adj__;
+			  delete [] ew__;
 
-        //cmdline[ CMD_SPGEMM_ALGO ] = 1;
-        /* crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+			  //cmdline[ CMD_SPGEMM_ALGO ] = 1;
+			  /* crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
         		(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-        		*/
-        if (amemspace == HBM){
-            if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat =
-                			run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                			(crsmat2, crsmat,
-                			cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-							cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-							cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-							cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			   */
+			  if (amemspace == HBM){
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t,Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
 
-                }
-            }
-            else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-            }
-        }
+					  }
+					  else{
 
-        else {
-        	if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
 
-                }
-        	}
-        	else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  else {
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
 
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        }
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
-      }
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
 
-    }
-    else if (cmdline[ CMD_MM_MODE ] == 2){
-      {
-        std::cout << "MULTIPLYING R*A" << std::endl;
-        idx m_ = 0, nnzA_ = 0;
-        idx *xadj_, *adj_;
-        wt *ew_;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
-        crsMat_t crsmat2;
-        crsMat_host_t host_crsmat2;
-        if (amemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        delete [] xadj_;
-        delete [] adj_;
-        delete [] ew_;
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
 
-        //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-        //		(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+		  }
 
-        if (amemspace == HBM){
-            if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat =
-                			run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                			(crsmat2, crsmat,
-                			cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-							cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-							cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-							cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+	  }
+	  else if (cmdline[ CMD_MM_MODE ] == 2){
+		  {
+			  std::cout << "MULTIPLYING R*A" << std::endl;
+			  idx m_ = 0, nnzA_ = 0;
+			  idx *xadj_, *adj_;
+			  wt *ew_;
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
 
-                	crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
-                	host_crsmat = crsMat_host_t ();
-                }
-            }
-            else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  crsMat_t crsmat2;
+			  crsMat_host_t host_crsmat2;
+			  if (amemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  delete [] xadj_;
+			  delete [] adj_;
+			  delete [] ew_;
 
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
-                	host_crsmat = crsMat_host_t ();
-                }
-            }
-        }
+			  //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+			  //		(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
+			  if (amemspace == HBM){
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
 
-        else {
-        	if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
-                	crsmat = crsMat_t ();
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat2, crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        	else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                	host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
-                	crsmat = crsMat_t ();
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat2, host_crsmat,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        }
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
+						  crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
+						  host_crsmat = crsMat_host_t ();
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
 
-      }
-      {
-        std::cout << "MULTIPLYING (RA)*P" << std::endl;
-        idx m_ = 0, nnzA_ = 0;
-        idx *xadj_, *adj_;
-        wt *ew_;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
-        crsMat_t crsmat2;
-        crsMat_host_t host_crsmat2;
-        if (bmemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  crsmat = copy_crsmat<myExecSpace, crsMat_host_t, crsMat_t>(host_crsmat);
+						  host_crsmat = crsMat_host_t ();
+					  }
+				  }
+			  }
 
 
-        delete [] xadj_;
-        delete [] adj_;
-        delete [] ew_;
+			  else {
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
+						  crsmat = crsMat_t ();
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  host_crsmat = copy_crsmat<myExecSpace, crsMat_t, crsMat_host_t>(crsmat);
+						  crsmat = crsMat_t ();
+					  }
+					  else{
 
-        /*
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat2, host_crsmat,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
+
+
+		  }
+		  {
+			  std::cout << "MULTIPLYING (RA)*P" << std::endl;
+			  idx m_ = 0, nnzA_ = 0;
+			  idx *xadj_, *adj_;
+			  wt *ew_;
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
+
+			  crsMat_t crsmat2;
+			  crsMat_host_t host_crsmat2;
+			  if (bmemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+
+
+			  delete [] xadj_;
+			  delete [] adj_;
+			  delete [] ew_;
+
+			  /*
         crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
         		(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-         */
-        if (amemspace == HBM){
-            if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat =
-                			run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                			(crsmat, crsmat2,
-                			cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-							cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-							cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-							cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			   */
+			  if (amemspace == HBM){
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
 
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
 
-                }
-            }
-            else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                }
-            }
-        }
-
-        else {
-        	if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                }
-        	}
-        	else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        }
-
-      }
-    }
-    else if (cmdline[ CMD_MM_MODE ] == 3){
-      {
-        std::cout << "MULTIPLYING R*P" << std::endl;
-        idx m_ = 0, nnzA_ = 0;
-        idx *xadj_, *adj_;
-        wt *ew_;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
+						  if (workmemspace == HBM)
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
 
 
-        crsMat_t crsmat2;
-        crsMat_host_t host_crsmat2;
-        if (amemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+					  else{
+
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+				  }
+			  }
+
+			  else {
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
+
+		  }
+	  }
+	  else if (cmdline[ CMD_MM_MODE ] == 3){
+		  {
+			  std::cout << "MULTIPLYING R*P" << std::endl;
+			  idx m_ = 0, nnzA_ = 0;
+			  idx *xadj_, *adj_;
+			  wt *ew_;
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
 
 
-        delete [] xadj_;
-        delete [] adj_;
-        delete [] ew_;
-        crsmat = crsmat2;
-        host_crsmat= host_crsmat2;
 
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
-        if (bmemspace == HBM){
-        	crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-        else {
-        	host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
-        }
-
-        delete [] xadj_;
-        delete [] adj_;
-        delete [] ew_;
-        //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-        //		(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-        if (amemspace == HBM){
-            if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat =
-                			run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                			(crsmat, crsmat2,
-                			cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-							cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-							cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-							cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  crsMat_t crsmat2;
+			  crsMat_host_t host_crsmat2;
+			  if (amemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
 
 
-                }
-            }
-            else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  delete [] xadj_;
+			  delete [] adj_;
+			  delete [] ew_;
+			  crsmat = crsmat2;
+			  host_crsmat= host_crsmat2;
 
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
+			  if (bmemspace == HBM){
+				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
+			  else {
+				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+			  }
 
-                }
-            }
-        }
+			  delete [] xadj_;
+			  delete [] adj_;
+			  delete [] ew_;
+			  //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+			  //		(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
-        else {
-        	if (bmemspace == HBM){
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+			  if (amemspace == HBM){
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
 
-                }
-        	}
-        	else{
-                if (cmemspace == HBM){
-                	crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
-                }
-                else{
-                	host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
-                	        		(host_crsmat, host_crsmat2,
-                	        				cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
-                	        				cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
-											cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
-											cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-                }
-        	}
-        }
-
-      }
-
-    }
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat =
+									  run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
 
-    myExecSpace::finalize();
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+
+							  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+				  }
+			  }
+
+			  else {
+				  if (bmemspace == HBM){
+					  if (cmemspace == HBM){
+						  if (workmemspace == HBM)
+
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+					  }
+				  }
+				  else{
+					  if (cmemspace == HBM){
+
+						  if (workmemspace == HBM)
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+							  crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+
+
+					  }
+					  else{
+						  if (workmemspace == HBM)
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, myExecSpace, myExecSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+						  else
+
+							  host_crsmat = run_experiment<myExecSpace, crsMat_host_t,crsMat_host_t,crsMat_host_t, Kokkos::HostSpace, Kokkos::HostSpace>
+						  (host_crsmat, host_crsmat2,
+								  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+								  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+								  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+								  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+					  }
+				  }
+			  }
+
+		  }
+
+	  }
+
+
+	  myExecSpace::finalize();
   }
 
 #endif
@@ -1815,7 +2169,9 @@ crsMat_t3 run_experiment(
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL2PHASE);
     kh.get_spgemm_handle()->set_mkl_sort_option(mkl_sort_option);
     break;
-
+  case 6:
+	  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY2);
+	  break;
   case 7:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
       break;
