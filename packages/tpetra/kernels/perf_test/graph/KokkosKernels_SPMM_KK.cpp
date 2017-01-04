@@ -58,7 +58,7 @@ int check_output = 0;
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
 
-#define KOKKOS_HAVE_OPENMP
+//#define KOKKOS_HAVE_OPENMP
 
 enum MEMSPACE{HBM, DDR4}; //GPUS GPU vs DDR4
 MEMSPACE amemspace = HBM; //DEFAULT
