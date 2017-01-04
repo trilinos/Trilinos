@@ -79,8 +79,9 @@ testIdot (bool& success,
           const RCP<const Comm<int> >& comm)
 {
   const SC ZERO = STS::zero ();
-  const SC TWO = STS::one () + STS::one ();
-  const SC THREE = TWO + STS::one ();
+  const SC ONE = STS::one ();
+  const SC TWO = ONE + ONE;
+  const SC THREE = TWO + ONE;
   const int numProcs = comm->getSize ();
 
   // lclSuccess: Local success status.  0 means a failure happened on
@@ -188,27 +189,92 @@ testIdot (bool& success,
     success = (gblSuccess != 0);
   }
 
-  out << "Test Tpetra::MultiVector inputs and raw pointer output" << endl;
+  out << "Test noncontiguous Tpetra::MultiVector inputs and raw pointer output" << endl;
   {
-    constexpr size_t numVecs = 3;
-    mv_type x (map, numVecs);
-    mv_type y (map, numVecs);
-    const SC valX = TWO;
-    const SC valY = THREE;
-    x.putScalar (valX);
-    y.putScalar (valY);
+    out << " First, test contiguous Tpetra::MultiVector inputs "
+      "and raw pointer output" << endl;
+    constexpr size_t origNumVecs = 5;
+    mv_type X (map, origNumVecs);
+    mv_type Y (map, origNumVecs);
 
-    SC results[numVecs];
-    for (size_t k = 0; k < numVecs; ++k) {
-      results[k] = ZERO;
+    SC valX = ONE;
+    SC valY = TWO;
+    for (size_t j = 0; j < origNumVecs; ++j, valX += ONE, valY += ONE) {
+      X.getVectorNonConst (j)->putScalar (valX);
+      Y.getVectorNonConst (j)->putScalar (valY);
     }
-    auto req = Tpetra::Details::idot (results, x, y);
-    req->wait ();
-    const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
-    const SC expectedResult = N * valX * valY;
 
-    for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY( expectedResult, results[k] );
+    SC origResults[origNumVecs];
+    for (size_t k = 0; k < origNumVecs; ++k) {
+      origResults[k] = ZERO;
+    }
+    auto req = Tpetra::Details::idot (origResults, X, Y);
+    req->wait ();
+
+    // Print results all to a single string first, then to the output
+    // stream, to make results more coherent across processes.
+    {
+      std::ostringstream os;
+      os << "  Results: [";
+      for (size_t j = 0; j < origNumVecs; ++j) {
+        os << origResults[j];
+        if (j + 1 < origNumVecs) {
+          os << ", ";
+        }
+      }
+      os << "]" << endl;
+      out << os.str ();
+    }
+
+    const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
+    valX = ONE;
+    valY = TWO;
+    for (size_t j = 0; j < origNumVecs; ++j, valX += ONE, valY += ONE) {
+      const SC expectedResult = N * valX * valY;
+      TEST_EQUALITY( expectedResult, origResults[j] );
+    }
+
+    lclSuccess = success ? 1 : 0; // input argument
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    success = (gblSuccess != 0);
+
+    out << " Now, test noncontiguous Tpetra::MultiVector inputs "
+      "and raw pointer output" << endl;
+    constexpr size_t newNumVecs = 2;
+    Teuchos::Array<size_t> whichCols (newNumVecs);
+    // For maximum generality, pick noncontiguous columns, and don't
+    // use the zeroth column.
+    whichCols[0] = 1;
+    whichCols[1] = 3;
+    RCP<mv_type> X_sub = X.subViewNonConst (whichCols ());
+    RCP<mv_type> Y_sub = Y.subViewNonConst (whichCols ());
+
+    SC newResults[newNumVecs];
+    for (size_t k = 0; k < newNumVecs; ++k) {
+      newResults[k] = ZERO;
+    }
+    req = Tpetra::Details::idot (newResults, *X_sub, *Y_sub);
+    req->wait ();
+
+    // Print results all to a single string first, then to the output
+    // stream, to make results more coherent across processes.
+    {
+      std::ostringstream os;
+      os << "  Results: [";
+      for (size_t j = 0; j < newNumVecs; ++j) {
+        os << newResults[j];
+        if (j + 1 < newNumVecs) {
+          os << ", ";
+        }
+      }
+      os << "]" << endl;
+      out << os.str ();
+    }
+
+    for (size_t k = 0; k < newNumVecs; ++k) {
+      TEST_EQUALITY( origResults[whichCols[k]], newResults[k] );
     }
 
     lclSuccess = success ? 1 : 0; // input argument

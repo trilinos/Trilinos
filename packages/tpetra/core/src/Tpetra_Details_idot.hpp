@@ -456,7 +456,16 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
         requests[j] = idot<SC, LO, GO, NT> (result + j, *X_j, *Y_j);
       }
       typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
-      return std::shared_ptr<req_base_type> (new req_type ([=] () {
+      // mfh 04 Jan 2017: If I used [=] as the capture clause here,
+      // GCC 4.7.2 claimed that I was using numVecs uninitialized, and
+      // the idot() test thats exercise this case (noncontiguous,
+      // multiple-column MultiVector inputs) failed.  It passed with
+      // Clang 3.9.0 and CUDA 7.5 with GCC 4.8.4.  I know that GCC
+      // 4.7.2 has issues with lambdas.  Fortunately, if I specify the
+      // variables to capture explicitly in the capture clause, the
+      // "uninitialized" warning goes away, and the tests pass.  See
+      // #974.
+      return std::shared_ptr<req_base_type> (new req_type ([numVecs,requests] () {
           for (size_t j = 0; j < numVecs; ++j) {
             if (requests[j].get () != NULL) {
               requests[j]->wait ();
@@ -696,7 +705,16 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
         requests[j] = idot<SC, LO, GO, NT> (result_j, *X_j, *Y_j);
       }
       typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
-      return std::shared_ptr<req_base_type> (new req_type ([=] () {
+      // mfh 04 Jan 2017: If I used [=] as the capture clause here,
+      // GCC 4.7.2 claimed that I was using numVecs uninitialized, and
+      // the idot() test thats exercise this case (noncontiguous,
+      // multiple-column MultiVector inputs) failed.  It passed with
+      // Clang 3.9.0 and CUDA 7.5 with GCC 4.8.4.  I know that GCC
+      // 4.7.2 has issues with lambdas.  Fortunately, if I specify the
+      // variables to capture explicitly in the capture clause, the
+      // "uninitialized" warning goes away, and the tests pass.  See
+      // #974.
+      return std::shared_ptr<req_base_type> (new req_type ([numVecs,requests] () {
           for (size_t j = 0; j < numVecs; ++j) {
             if (requests[j].get () != NULL) {
               requests[j]->wait ();
