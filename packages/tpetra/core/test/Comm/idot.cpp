@@ -188,7 +188,6 @@ testIdot (bool& success,
     success = (gblSuccess != 0);
   }
 
-  if (false) {
   out << "Test Tpetra::MultiVector inputs and raw pointer output" << endl;
   {
     constexpr size_t numVecs = 3;
@@ -217,7 +216,6 @@ testIdot (bool& success,
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
     success = (gblSuccess != 0);
-  }
   }
 }
 
