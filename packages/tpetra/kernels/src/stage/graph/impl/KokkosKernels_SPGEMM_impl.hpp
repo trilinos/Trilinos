@@ -3880,14 +3880,17 @@ public:
       Kokkos::parallel_for( gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     }
     else {
+    	//USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
+    	/*
       if (use_dynamic_schedule){
-        //call cpu kernel with dynamic schedule
+    	 //call cpu kernel with dynamic schedule
         Kokkos::parallel_for( dynamic_multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       }
       else {
-        //call cpu kernel with static schedule
+      */
+    	//call cpu kernel with static schedule
         Kokkos::parallel_for( multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
-      }
+      //}
 
     }
     MyExecSpace::fence();
