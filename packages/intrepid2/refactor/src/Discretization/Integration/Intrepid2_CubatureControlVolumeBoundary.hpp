@@ -125,7 +125,7 @@ namespace Intrepid2{
 
     // cubature points and weights associated with sub-control volume.
     Kokkos::View<ordinal_type**,Kokkos::HostSpace> boundarySidesHost_;
-    Kokkos::View<ordinal_type**,ExecSpaceType> sideNodeMap_;
+    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,ExecSpaceType> sideNodeMap_;
     Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
     
   public:
