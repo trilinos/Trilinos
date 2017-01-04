@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Details_idot.hpp"
+#include "Tpetra_idot.hpp"
 #ifdef HAVE_TPETRACORE_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
 #else
@@ -68,7 +68,7 @@ typedef map_type::global_ordinal_type GO;
 typedef vec_type::device_type device_type;
 typedef Teuchos::ScalarTraits<SC> STS;
 
-/// \brief Test Tpetra::Details::idot.
+/// \brief Test Tpetra::idot.
 ///
 /// \param out [out] Output stream; valid (writeable) only on Process
 ///   0 in the input communicator.
@@ -109,7 +109,7 @@ testIdot (bool& success,
 
     SC result = ZERO;
     out << "About to call idot" << endl;
-    auto req = Tpetra::Details::idot (&result, x, y);
+    auto req = Tpetra::idot (&result, x, y);
     out << "Finished calling idot" << endl;
     req->wait ();
     out << "Finished wait" << endl;
@@ -139,7 +139,7 @@ testIdot (bool& success,
     result_h() = ZERO;
     Kokkos::deep_copy (result, result_h);
 
-    auto req = Tpetra::Details::idot (result, x, y);
+    auto req = Tpetra::idot (result, x, y);
     req->wait ();
     const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
     const SC expectedResult = N * valX * valY;
@@ -172,7 +172,7 @@ testIdot (bool& success,
     }
     Kokkos::deep_copy (results, results_h);
 
-    auto req = Tpetra::Details::idot (results, x, y);
+    auto req = Tpetra::idot (results, x, y);
     req->wait ();
     Kokkos::deep_copy (results_h, results);
     const SC N = static_cast<SC> (static_cast<mag_type> (gblNumRows));
@@ -208,7 +208,7 @@ testIdot (bool& success,
     for (size_t k = 0; k < origNumVecs; ++k) {
       origResults[k] = ZERO;
     }
-    auto req = Tpetra::Details::idot (origResults, X, Y);
+    auto req = Tpetra::idot (origResults, X, Y);
     req->wait ();
 
     // Print results all to a single string first, then to the output
@@ -255,7 +255,7 @@ testIdot (bool& success,
     for (size_t k = 0; k < newNumVecs; ++k) {
       newResults[k] = ZERO;
     }
-    req = Tpetra::Details::idot (newResults, *X_sub, *Y_sub);
+    req = Tpetra::idot (newResults, *X_sub, *Y_sub);
     req->wait ();
 
     // Print results all to a single string first, then to the output
@@ -288,7 +288,7 @@ testIdot (bool& success,
 
 TEUCHOS_UNIT_TEST( idot, basic )
 {
-  out << "Testing Tpetra::Details::idot" << endl;
+  out << "Testing Tpetra::idot" << endl;
   Teuchos::OSTab tab1 (out);
 
 #ifdef HAVE_TPETRACORE_MPI

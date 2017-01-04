@@ -42,21 +42,21 @@
 #ifndef TPETRA_DETAILS_IDOT_HPP
 #define TPETRA_DETAILS_IDOT_HPP
 
-/// \file Tpetra_Details_idot.hpp
-/// \brief Declaration of Tpetra::Details::idot, a nonblocking dot product.
+/// \file Tpetra_idot.hpp
+/// \brief Declaration of Tpetra::idot, a nonblocking dot product.
 ///
-/// \warning This file and its contents are implementation details of
-///   Tpetra.  Users must not rely on them.
+/// Tpetra::idot implements a nonblocking dot product.  It takes two
+/// Tpetra::Vector or Tpetra::MultiVector inputs, and computes their
+/// vector-wise dot product(s).
 ///
-/// Tpetra::Details::idot implements a nonblocking dot product.  That
-/// is the only thing in this file upon which Tpetra developers should
-/// rely.  Tpetra developers should not rely on anything else in this
-/// file.  <i>Users</i> may not rely on <i>anything</i> in this file!
+/// The overloads of Tpetra::idot in this file are the only contents
+/// of this file upon which users should rely.  Users should not rely
+/// on anything else in this file.  In particular, anything in the
+/// Tpetra::Details namespace is an implementation detail and is NOT
+/// for users.
 ///
-/// If you want to find the only thing in this file that you are
-/// supposed to use, search for "SKIP DOWN TO HERE" (no quotes).
-/// "You" only refers to Tpetra developers.  Users, this file is not
-/// for you!
+/// If you want to find the only functions in this file that you are
+/// supposed to use, search for "SKIP DOWN TO HERE" (omit the quotes).
 
 #include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
@@ -68,7 +68,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Impl {
 
 /// \brief Implementation detail of Idot specializations (see below in
 ///   this header file) with raw pointer or array DotViewType.
@@ -214,7 +213,7 @@ struct GetDotView<DotViewType, VecViewType, 1> {
   }
 };
 
-/// \brief Struct implementing Tpetra::Details::idot.
+/// \brief Struct implementing Tpetra::idot.
 ///
 /// We use this struct to do partial specialization on the different
 /// kinds of arguments that the overloads of idot can accept.
@@ -302,7 +301,7 @@ struct Idot<DotViewType, VecViewType, true> {
       }
       catch (std::exception& e) {
         std::ostringstream os;
-        os << "Tpetra::Details::idot: KokkosBlas::dot threw an exception: "
+        os << "Tpetra::idot: KokkosBlas::dot threw an exception: "
            << e.what ();
         throw std::runtime_error (os.str ());
       }
@@ -314,7 +313,7 @@ struct Idot<DotViewType, VecViewType, true> {
       }
       catch (std::exception& e) {
         std::ostringstream os;
-        os << "Tpetra::Details::idot: KokkosBlas::dot threw an exception: "
+        os << "Tpetra::idot: KokkosBlas::dot threw an exception: "
            << e.what ();
         throw std::runtime_error (os.str ());
       }
@@ -362,19 +361,20 @@ struct Idot<DotViewType, VecViewType, false> {
   }
 };
 
-} // namespace Impl
+} // namespace Details
 
 //
 // SKIP DOWN TO HERE
 //
 
 /// \brief Nonblocking dot product, with either Tpetra::MultiVector or
-///   Tpetra::Vector inputs, and raw pointer output.
+///   Tpetra::Vector inputs, and raw pointer or array output.
 ///
-/// \param result [out] Output; raw array (/ pointer) to the return
+/// \param result [out] Output; raw pointer or raw array to the return
 ///   value(s).  It is only valid to read this after calling wait() on
 ///   the return value.  It must be legal to write to the first
-///   <tt>X.getNumVectors()</tt> entries of this array.
+///   <tt>X.getNumVectors()</tt> entries of this array.  This memory
+///   must be accessible from the host CPU.
 ///
 /// \param X [in] First input Tpetra::MultiVector or Tpetra::Vector.
 ///   This must have same number of rows (globally, and on each (MPI)
@@ -391,6 +391,11 @@ struct Idot<DotViewType, VecViewType, false> {
 ///   object to complete the collective.  After calling wait(), you
 ///   may read the result.
 ///
+/// \tparam SC Same as the first template parameter of Tpetra::Vector.
+/// \tparam LO Same as the second template parameter of Tpetra::Vector.
+/// \tparam GO Same as the third template parameter of Tpetra::Vector.
+/// \tparam NT Same as the fourth template parameter of Tpetra::Vector.
+///
 /// In this version of the function, the dot product result goes into
 /// an array (just a raw pointer).  The \c dot_type typedef is the
 /// type of a dot product result, for a Tpetra::Vector whose entries
@@ -401,7 +406,7 @@ struct Idot<DotViewType, VecViewType, false> {
 /// users should not have to worry about this, but Tpetra developers
 /// may need to worry about this.
 template<class SC, class LO, class GO, class NT>
-std::shared_ptr<CommRequest>
+std::shared_ptr< ::Tpetra::Details::CommRequest>
 idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
@@ -425,7 +430,7 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
   // globally the same across all participating processes.
   if (Y.getNumVectors () != numVecs) {
     std::ostringstream os;
-    os << "Tpetra::Details::idot: X.getNumVectors() = " << numVecs
+    os << "Tpetra::idot: X.getNumVectors() = " << numVecs
        << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
     throw std::invalid_argument (os.str ());
   }
@@ -483,7 +488,7 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
           auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
           auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
           typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
         }
         else {
@@ -492,7 +497,7 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
                                    pair_type (0, numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
         }
       }
@@ -504,7 +509,7 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
           auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
           auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
           typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
         }
         else {
@@ -513,14 +518,14 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
                                    pair_type (0, numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
         }
       } // host or device?
     } // multivector with nonconstant stride?
   }
   else { // comm.is_null(); calling process does not participate
-    return std::shared_ptr<CommRequest> (NULL);
+    return std::shared_ptr< ::Tpetra::Details::CommRequest> (NULL);
   }
 }
 
@@ -542,6 +547,11 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
 ///   object to complete the collective.  After calling wait(), you
 ///   may read the result.
 ///
+/// \tparam SC Same as the first template parameter of Tpetra::Vector.
+/// \tparam LO Same as the second template parameter of Tpetra::Vector.
+/// \tparam GO Same as the third template parameter of Tpetra::Vector.
+/// \tparam NT Same as the fourth template parameter of Tpetra::Vector.
+///
 /// In this version of the function, the dot product result goes into
 /// a rank-0 ("zero-dimensional") Kokkos::View.  Rank-0 Views just
 /// view a single value.  We prefer that you use the versions of
@@ -559,7 +569,7 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
 /// different type.  Most users should not have to worry about this,
 /// but Tpetra developers may need to worry about this.
 template<class SC, class LO, class GO, class NT>
-std::shared_ptr<CommRequest>
+std::shared_ptr< ::Tpetra::Details::CommRequest>
 idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
         typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type>& result,
       const ::Tpetra::Vector<SC, LO, GO, NT>& X,
@@ -587,7 +597,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
       auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
       auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
       typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-      typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+      typedef Details::Idot<result_view_type, vec_view_type> impl_type;
       return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
     }
     else { // use device version
@@ -596,12 +606,12 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
       auto X_lcl_1d = subview (X_lcl, pair_type (0, X.getLocalLength ()), 0);
       auto Y_lcl_1d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()), 0);
       typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
-      typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+      typedef Details::Idot<result_view_type, vec_view_type> impl_type;
       return impl_type::idot (result, X_lcl_1d, Y_lcl_1d, *comm);
     }
   }
   else { // calling process does not participate
-    return std::shared_ptr<CommRequest> (NULL);
+    return std::shared_ptr< ::Tpetra::Details::CommRequest> (NULL);
   }
 }
 
@@ -627,6 +637,11 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
 ///   object to complete the collective.  After calling wait(), you
 ///   may read the results.
 ///
+/// \tparam SC Same as the first template parameter of Tpetra::Vector.
+/// \tparam LO Same as the second template parameter of Tpetra::Vector.
+/// \tparam GO Same as the third template parameter of Tpetra::Vector.
+/// \tparam NT Same as the fourth template parameter of Tpetra::Vector.
+///
 /// In this version of the function, the dot product results go into a
 /// rank-1 (one-dimensional) Kokkos::View.  We prefer that you use the
 /// versions of idot() that take a Kokkos::View as their output
@@ -643,7 +658,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
 /// different type.  Most users should not have to worry about this,
 /// but Tpetra developers may need to worry about this.
 template<class SC, class LO, class GO, class NT>
-std::shared_ptr<CommRequest>
+std::shared_ptr< ::Tpetra::Details::CommRequest>
 idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
         typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type>& result,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
@@ -673,7 +688,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
   // globally the same across all participating processes.
   if (Y.getNumVectors () != numVecs) {
     std::ostringstream os;
-    os << "Tpetra::Details::idot: X.getNumVectors() = " << numVecs
+    os << "Tpetra::idot: X.getNumVectors() = " << numVecs
        << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
     throw std::invalid_argument (os.str ());
   }
@@ -734,7 +749,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
           typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
           auto result_0d = subview (result, 0);
           typedef decltype (result_0d) result_0d_view_type;
-          typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_0d_view_type, vec_view_type> impl_type;
           return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
         }
         else {
@@ -743,7 +758,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
                                    pair_type (0, numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
         }
       }
@@ -757,7 +772,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
           typedef typename decltype (X_lcl_1d)::const_type vec_view_type;
           auto result_0d = subview (result, 0);
           typedef decltype (result_0d) result_0d_view_type;
-          typedef Impl::Idot<result_0d_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_0d_view_type, vec_view_type> impl_type;
           return impl_type::idot (result_0d, X_lcl_1d, Y_lcl_1d, *comm);
         }
         else {
@@ -766,18 +781,17 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
                                    pair_type (0, numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
-          typedef Impl::Idot<result_view_type, vec_view_type> impl_type;
+          typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
         }
       } // host or device?
     } // multivector with nonconstant stride?
   }
   else { // comm.is_null(); calling process does not participate
-    return std::shared_ptr<CommRequest> (NULL);
+    return std::shared_ptr< ::Tpetra::Details::CommRequest> (NULL);
   }
 }
 
-} // namespace Details
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_IDOT_HPP
