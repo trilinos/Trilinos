@@ -317,17 +317,28 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType &nrows, Ordi
   FILE* ColFile = fopen(filename_col,"r");
   FILE* ValsFile = fopen(filename_vals,"r");
 
+  bool read_values = true; 
+  if(ValsFile == NULL) 
+    read_values = false;
+
   values = new ScalarType[nnz];
   rowPtr = new OrdinalType[nrows+1];
   colInd = new OrdinalType[nnz];
 
   fread ( rowPtr, sizeof(OrdinalType), nrows+1, RowFile);
   fread ( colInd, sizeof(OrdinalType), nnz, ColFile);
-  fread ( values, sizeof(ScalarType), nnz, ValsFile);
+  
+  if(read_values)
 
   fclose(RowFile);
   fclose(ColFile);
-  fclose(ValsFile);
+  if(read_values) {
+    fread ( values, sizeof(ScalarType), nnz, ValsFile);
+    fclose(ValsFile);
+  } else {
+    for(int i = 0; i<nnz; i++) 
+      values[i] = 0.001*(rand()%1000);
+  }
 
   size_t min_span = nrows+1;
   size_t max_span = 0;
