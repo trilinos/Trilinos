@@ -98,6 +98,8 @@ void establishSmartSchedule(AType A) {
   		threadStarts[thread] = nextRow;
   	}
   	
+  	threadStarts[omp_get_max_threads()] = A.numRows();
+  	
   	//printf("Schedule: Target-per-Row=%20d\n", rowsPerThreadTarget);
   	//for(int i = 0; i < omp_get_max_threads(); ++i) {
   	//	printf("thread [%5d] start=%20d end=%20d\n", i, threadStarts[i], threadStarts[i+1]);
