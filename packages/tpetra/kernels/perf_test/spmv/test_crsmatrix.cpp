@@ -277,8 +277,10 @@ void print_help() {
   printf("                    Options:\n");
   printf("                      kk,kk-kernels          (Kokkos/Trilinos)\n");
   printf("                      kk-insp                (Kokkos Structure Inspection)\n");
+#ifdef _OPENMP
   printf("                      omp-dynamic,omp-static (Standard OpenMP)\n");
   printf("                      omp-insp               (OpenMP Structure Inspection)\n");
+#endif
   printf("                      mkl,cusparse           (Vendor Libraries)\n\n");
   printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
   printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
