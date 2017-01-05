@@ -1,0 +1,152 @@
+#!/bin/sh
+#
+
+export TRILINOS_HOME=/gscratch/gahanse/Codes/Trilinos
+BUILD_DIR=`pwd`
+INSTALL_DIR=/gscratch/gahanse/trilinos/MPI_REL
+BOOST_DIR=/home/gahanse/intel-5.1/intel-15.0
+LIB_DIR=/home/gahanse/intel-5.1/intel-15.0
+MPI_BASE_DIR=/opt/intel-mpi-5.1
+NETCDF=/home/gahanse/intel-5.1/intel-15.0
+HDFDIR=/home/gahanse/intel-5.1/intel-15.0
+ZLIB_DIR=/home/gahanse/intel-5.1/intel-15.0
+PARMETISDIR=/home/gahanse/intel-5.1/intel-15.0
+SUPERLU_DIR=/home/gahanse/intel-5.1/intel-15.0/SuperLU_4.3
+MKL_PATH=/opt/intel-15.0/mkl/lib/intel64
+LABLAS_LIBRARIES="-L$MKL_PATH -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+
+#print all variables
+#cmake -LAH
+
+cmake \
+	-Wno-dev \
+	-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+	-D Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF \
+	-D Trilinos_ENABLE_SCOREC:BOOL=ON \
+	-D PCU_COMPRESS:BOOL=ON \
+	-D SCOREC_DISABLE_STRONG_WARNINGS:BOOL=ON \
+	-D BUILD_SHARED_LIBS:BOOL=ON \
+	-D CMAKE_BUILD_TYPE:STRING=NONE \
+	-D Trilinos_SHOW_DEPRECATED_WARNINGS:BOOL=OFF \
+	-D CMAKE_CXX_COMPILER:STRING=mpiicpc \
+	-D CMAKE_C_COMPILER:STRING=mpiicc \
+	-D CMAKE_Fortran_COMPILER:STRING=mpiifort \
+	-D CMAKE_CXX_FLAGS:STRING="-fPIC -axAVX -O3 -L/opt/intel-mpi-5.1/lib" \
+	-D CMAKE_C_FLAGS:STRING="-fPIC -axAVX -O3 -L/opt/intel-mpi-5.1/lib" \
+	-D CMAKE_Fortran_FLAGS:STRING="-fPIC -axAVX -O3 -L/opt/intel-mpi-5.1/lib" \
+	-D Rythmos_ENABLE_DEBUG:BOOL=ON \
+	-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+	-D Tpetra_INST_INT_LONG_LONG:BOOL=ON \
+	-D Tpetra_INST_INT_INT:BOOL=OFF \
+	-D Tpetra_INST_DOUBLE:BOOL=ON \
+	-D Tpetra_INST_FLOAT:BOOL=OFF \
+	-D Tpetra_INST_COMPLEX_FLOAT:BOOL=OFF \
+	-D Tpetra_INST_COMPLEX_DOUBLE:BOOL=OFF \
+	-D Tpetra_INST_INT_LONG:BOOL=OFF \
+	-D Tpetra_INST_INT_UNSIGNED:BOOL=OFF \
+	-D Zoltan_ENABLE_ULONG_IDS:BOOL=ON \
+	-D MDS_ID_TYPE:STRING="long long int" \
+	-D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
+	-D Trilinos_ENABLE_Kokkos:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosCore:BOOL=ON \
+	-D Phalanx_KOKKOS_DEVICE_TYPE:STRING="SERIAL" \
+	-D Phalanx_INDEX_SIZE_TYPE:STRING="LONGINT" \
+	-D Kokkos_ENABLE_Serial:BOOL=ON \
+	-D Kokkos_ENABLE_OpenMP:BOOL=OFF \
+	-D Kokkos_ENABLE_Pthread:BOOL=OFF \
+\
+	-D TPL_ENABLE_MPI:BOOL=ON \
+	-D MPI_BASE_DIR:PATH=$MPI_BASE_DIR \
+\
+	-D TPL_ENABLE_Pthread:BOOL=OFF \
+\
+	-D TPL_ENABLE_Boost:BOOL=ON \
+	-D TPL_ENABLE_BoostLib:BOOL=ON \
+	-D TPL_ENABLE_BoostAlbLib:BOOL=ON \
+	-D Boost_INCLUDE_DIRS:PATH=$BOOST_DIR/include \
+	-D Boost_LIBRARY_DIRS:PATH=$BOOST_DIR/lib \
+	-D BoostLib_INCLUDE_DIRS:PATH=$BOOST_DIR/include \
+	-D BoostLib_LIBRARY_DIRS:PATH=$BOOST_DIR/lib \
+	-D BoostAlbLib_INCLUDE_DIRS:PATH=$BOOST_DIR/include \
+	-D BoostAlbLib_LIBRARY_DIRS:PATH=$BOOST_DIR/lib \
+\
+	-D TPL_ENABLE_Netcdf:STRING=ON \
+	-D Netcdf_INCLUDE_DIRS:PATH=$NETCDF/include \
+	-D TPL_Netcdf_LIBRARIES:FILEPATH="-L${NETCDF}/lib -lnetcdf -L${HDFDIR}/lib -lhdf5_hl -lhdf5 -lz" \
+\
+	-D TPL_ENABLE_HDF5:STRING=ON \
+	-D HDF5_INCLUDE_DIRS:PATH=$HDFDIR/include \
+	-D HDF5_LIBRARY_DIRS:PATH=$HDFDIR/lib \
+\
+	-D TPL_ENABLE_Zlib:STRING=ON \
+	-D Zlib_INCLUDE_DIRS:PATH=$HDFDIR/include \
+	-D Zlib_LIBRARY_DIRS:PATH=$HDFDIR/lib \
+\
+\
+	-D TPL_ENABLE_BLAS:STRING=ON \
+	-D TPL_ENABLE_LAPACK:STRING=ON \
+	-D TPL_BLAS_LIBRARIES:STRING="$LABLAS_LIBRARIES" \
+	-D TPL_LAPACK_LIBRARIES:STRING="$LABLAS_LIBRARIES" \
+\
+	-D TPL_ENABLE_ParMETIS:STRING=ON \
+	-D ParMETIS_INCLUDE_DIRS:PATH="${PARMETISDIR}/include" \
+	-D ParMETIS_LIBRARY_DIRS:PATH="${PARMETISDIR}/lib" \
+\
+	-D CMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR \
+\
+	-D Trilinos_ENABLE_TriKota:BOOL=OFF \
+	-D Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF \
+\
+	-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+	-D Trilinos_ENABLE_Shards:BOOL=ON \
+	-D Trilinos_ENABLE_Sacado:BOOL=ON \
+	-D Trilinos_ENABLE_Belos:BOOL=ON \
+	-D Trilinos_ENABLE_Phalanx:BOOL=ON \
+	-D Trilinos_ENABLE_Intrepid2:BOOL=ON \
+	-D Trilinos_ENABLE_NOX:BOOL=ON \
+	-D Trilinos_ENABLE_Stratimikos:BOOL=ON \
+	-D Stratimikos_ENABLE_ThyraTpetraAdapters:BOOL=ON \
+	-D Stratimikos_ENABLE_ThyraEpetraAdapters:BOOL=OFF \
+	-D Trilinos_ENABLE_Thyra:BOOL=ON \
+	-D Trilinos_ENABLE_Rythmos:BOOL=ON \
+	-D Trilinos_ENABLE_Stokhos:BOOL=OFF \
+	-D Trilinos_ENABLE_Piro:BOOL=ON \
+	-D Piro_ENABLE_Epetra:BOOL=OFF \
+	-D Trilinos_ENABLE_Teko:BOOL=OFF \
+\
+	-D Trilinos_ENABLE_STKIO:BOOL=ON \
+	-D Trilinos_ENABLE_STKMesh:BOOL=ON \
+	-D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
+	-D Trilinos_ENABLE_SEACASExodus:BOOL=ON \
+	-D Trilinos_ENABLE_Tpetra:BOOL=ON \
+	-D Trilinos_ENABLE_Kokkos:BOOL=ON \
+	-D Trilinos_ENABLE_Ifpack2:BOOL=ON \
+	-D Trilinos_ENABLE_Amesos2:BOOL=ON \
+	-D Amesos2_ENABLE_KLU2:BOOL=OFF \
+	-D Amesos2_ENABLE_Basker:BOOL=ON \
+	-D Xpetra_ENABLE_Epetra:BOOL=OFF \
+	-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+	-D Trilinos_ENABLE_MueLu:BOOL=ON \
+	-D MueLu_ENABLE_Epetra:BOOL=OFF \
+\
+	-D Trilinos_ENABLE_GlobiPack:BOOL=OFF \
+	-D Trilinos_ENABLE_OptiPack:BOOL=OFF \
+	-D Trilinos_ENABLE_Isorropia:BOOL=OFF \
+	-D Trilinos_ENABLE_Galeri:BOOL=OFF \
+	-D Trilinos_ENABLE_Pamgen:BOOL=OFF \
+	-D Trilinos_ENABLE_ML:BOOL=OFF \
+	-D Trilinos_ENABLE_Epetra:BOOL=OFF \
+	-D Trilinos_ENABLE_EpetraExt:BOOL=OFF \
+	-D Trilinos_ENABLE_Ifpack:BOOL=OFF \
+	-D Trilinos_ENABLE_AztecOO:BOOL=OFF \
+	-D Trilinos_ENABLE_Amesos:BOOL=OFF \
+	-D Trilinos_ENABLE_Anasazi:BOOL=ON \
+	-D TPL_ENABLE_SuperLU:STRING=ON \
+	-D TPL_SuperLU_INCLUDE_DIRS:PATH="${SUPERLU_DIR}/include" \
+	-D TPL_SuperLU_LIBRARIES:PATH="-L${SUPERLU_DIR}/lib -lsuperlu_4.3" \
+\
+$EXTRA_ARGS \
+${TRILINOS_HOME}
+
+exit 0
+

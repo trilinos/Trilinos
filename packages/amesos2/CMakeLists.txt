@@ -20,6 +20,12 @@ IF (NOT Tpetra_INST_INT_INT)
 
 ENDIF ()
 
+# Original behavior was to include Amesos as a required dependency.
+# Modify this to make sure Amesos is set if Epetra is set - this will allow
+# disabling Amesos in an Epetra-free build
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
+  SET(${PACKAGE_NAME}_ENABLE_Amesos ON)
+ENDIF()
 
 
 
