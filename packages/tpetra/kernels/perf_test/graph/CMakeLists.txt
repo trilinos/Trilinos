@@ -14,12 +14,14 @@ TRIBITS_ADD_EXECUTABLE(
   conMTX2BIN
   SOURCES KokkosKernels_WriteBinaryFromMTX.cpp 
   )
- 
-TRIBITS_ADD_EXECUTABLE(
-  spgemm
-  SOURCES KokkosKernels_SPMM_KK.cpp  
-  )
-  
+
+#
+# Disabled temporarily per #980
+#
+# TRIBITS_ADD_EXECUTABLE(
+#   spgemm
+#   SOURCES KokkosKernels_SPMM_KK.cpp  
+#   )
   
 #TRIBITS_ADD_EXECUTABLE(
 #  spemm_cuda
