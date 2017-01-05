@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
+      = Teuchos::rcp(new MeshManager_Brick<RealT>(*parlist));
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_Maxwells<RealT> > pde
       = Teuchos::rcp(new PDE_Maxwells<RealT>(*parlist));
@@ -266,6 +266,7 @@ int main(int argc, char *argv[]) {
 
     // Output uncontrolled state.
     zp->zero();
+    z_rcp->putScalar(static_cast<RealT>(1));
     pdecon->printMeshData(*outStream);
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state_uncontrolled.txt");
@@ -281,6 +282,7 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
     pdecon->outputTpetraVector(z_rcp,"control.txt");
+    assembler->serialPrintStateEdgeField(u_rcp,"stateCellCenter.txt",pde->getFE());
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

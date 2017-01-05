@@ -50,9 +50,9 @@
 #define PDE_MAXWELLS_HPP
 
 #include "../TOOLS/pde.hpp"
-#include "../TOOLS/fe.hpp"
+#include "../TOOLS/fe_curl.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid_HCURL_HEX_I1_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -140,8 +140,8 @@ private:
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_;
-  std::vector<Teuchos::RCP<FE<Real> > > feBdry_;
+  Teuchos::RCP<FE_CURL<Real> > fe_;
+  std::vector<Teuchos::RCP<FE_CURL<Real> > > feBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fidx_;
   // Coordinates of degrees freedom on boundary cells.
@@ -156,9 +156,9 @@ private:
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
   void computeMuInv(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &muInv) const {
-    int c = fe_->gradN()->dimension(0);
-    int p = fe_->gradN()->dimension(2);
-    int d = fe_->gradN()->dimension(3);
+    int c = fe_->curlN()->dimension(0);
+    int p = fe_->curlN()->dimension(2);
+    int d = fe_->curlN()->dimension(3);
    
     std::vector<Real> x(d);
     for (int i = 0; i < c; ++i) {
@@ -166,15 +166,15 @@ private:
         for (int k = 0; k < d; ++k) {
           x[k] = (*fe_->cubPts())(i,j,k);
         }
-        (*muInv)(i,j) = static_cast<Real>(1)/evaluateMu(x,component);
+        (*muInv)(i,j) = static_cast<Real>(1)/evaluateMu(x);
       }
     } 
   }
 
   void computeKappa(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &kappa, const int component) const {
-    int c = fe_->gradN()->dimension(0);
-    int p = fe_->gradN()->dimension(2);
-    int d = fe_->gradN()->dimension(3);
+    int c = fe_->curlN()->dimension(0);
+    int p = fe_->curlN()->dimension(2);
+    int d = fe_->curlN()->dimension(3);
    
     std::vector<Real> x(d);
     for (int i = 0; i < c; ++i) {
@@ -188,9 +188,9 @@ private:
   }
 
   void computeRHS(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &F, const int component) const {
-    int c = fe_->gradN()->dimension(0);
-    int p = fe_->gradN()->dimension(2);
-    int d = fe_->gradN()->dimension(3);
+    int c = fe_->curlN()->dimension(0);
+    int p = fe_->curlN()->dimension(2);
+    int d = fe_->curlN()->dimension(3);
    
     std::vector<Real> x(d);
     for (int i = 0; i < c; ++i) {
@@ -333,7 +333,7 @@ public:
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > F(nr);
     for (int i=0; i<nr; ++i) {
       F[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-      computeForce(F[i],i);
+      computeRHS(F[i],i);
     }
 
     /*******************************************************************/
@@ -343,7 +343,7 @@ public:
     /*******************************************************************/
     for (int i=0; i<nr; ++i) {
       Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
-                                                    *muInvCurlU_eval[i], // 1/mu * curl U
+                                                    *muInvCurlU[i],      // 1/mu * curl U
                                                     *fe_->curlNdetJ(),   // curl N
                                                     Intrepid::COMP_CPP,
                                                     false);
@@ -513,10 +513,8 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Retrieve dimensions.
-    int c = fe_->gradN()->dimension(0);
-    int f = fe_->gradN()->dimension(1);
-    int p = fe_->gradN()->dimension(2);
-    int d = fe_->gradN()->dimension(3);
+    int c = fe_->curlN()->dimension(0);
+    int f = fe_->curlN()->dimension(1);
 
     // Initialize Jacobians.
     const int nr = 2;
@@ -650,20 +648,20 @@ public:
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    fe_ = Teuchos::rcp(new FE_CURL<Real>(volCellNodes_,basisPtr_,cellCub_));
     fidx_ = fe_->getBoundaryDofs();
-    // Construct boundary FE
-    int sideset = 0;
-    int numLocSides = bdryCellNodes[sideset].size();
-    feBdry_.resize(numLocSides);
-    for (int j = 0; j < numLocSides; ++j) {
-      if (bdryCellNodes[sideset][j] != Teuchos::null) {
-        feBdry_[j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[sideset][j],basisPtr_,bdryCub_,j));
-      }
-    }
+//    // Construct boundary FE
+//    int sideset = 0;
+//    int numLocSides = bdryCellNodes[sideset].size();
+//    feBdry_.resize(numLocSides);
+//    for (int j = 0; j < numLocSides; ++j) {
+//      if (bdryCellNodes[sideset][j] != Teuchos::null) {
+//        feBdry_[j] = Teuchos::rcp(new FE_CURL<Real>(bdryCellNodes[sideset][j],basisPtr_,bdryCub_,j));
+//      }
+//    }
     // Compute control weight
-    computeControlWeight();
-    buildControlJacobian();
+    //computeControlWeight();
+    //buildControlJacobian();
   }
 
   void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
@@ -671,11 +669,11 @@ public:
     fieldHelper_ = Teuchos::rcp(new FieldHelper<Real>(numFields_, numDofs_, numFieldDofs_, fieldPattern_));
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
+  const Teuchos::RCP<FE_CURL<Real> > getFE(void) const {
     return fe_;
   }
 
-  const std::vector<Teuchos::RCP<FE<Real> > > getBdryFE(void) const {
+  const std::vector<Teuchos::RCP<FE_CURL<Real> > > getBdryFE(void) const {
     return feBdry_;
   }
 
