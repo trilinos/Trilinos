@@ -63,9 +63,12 @@
 #include <Kokkos_SPMV_Inspector.hpp>
 #include <CuSparse_SPMV.hpp>
 #include <MKL_SPMV.hpp>
+
+#ifdef _OPENMP
 #include <OpenMPStatic_SPMV.hpp>
 #include <OpenMPDynamic_SPMV.hpp>
 #include <OpenMPSmartStatic_SPMV.hpp>
+#endif
 
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
@@ -265,16 +268,18 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
 }
 
 void print_help() {
-  printf("SPMV benchmark code written by Christian Trott.\n\n");
+  printf("SPMV benchmark code written by Christian Trott.\n");
   printf("OpenMP implementations written by Simon Hammond (Sandia National Laboratories).\n\n");
   printf("Options:\n");
   printf("  -s [N]          : generate a semi-random banded (band size 0.01xN) NxN matrix\n");
   printf("                    with average of 10 entries per row.\n");
   printf("  --test [OPTION] : Use different kernel implementations\n");
   printf("                    Options:\n");
-  printf("                      kk,kk-insp,kk-kernels (Kokkos/Trilinos)\n");
+  printf("                      kk,kk-kernels          (Kokkos/Trilinos)\n");
+  printf("                      kk-insp                (Kokkos Structure Inspection)\n");
   printf("                      omp-dynamic,omp-static (Standard OpenMP)\n");
-  printf("                      mkl,cusparse (Vendor Libraries)\n\n");
+  printf("                      omp-insp               (OpenMP Structure Inspection)\n");
+  printf("                      mkl,cusparse           (Vendor Libraries)\n\n");
   printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
   printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
@@ -323,12 +328,14 @@ int main(int argc, char **argv)
       test = KK_KERNELS;
     if((strcmp(argv[i],"kk-insp")==0))
       test = KK_INSP;
+#ifdef _OPENMP
     if((strcmp(argv[i],"omp-static") == 0))
       test = OMP_STATIC;
     if((strcmp(argv[i], "omp-dynamic") == 0))
       test = OMP_DYNAMIC;
     if((strcmp(argv[i], "omp-insp") == 0))
       test = OMP_INSP;
+#endif
     continue;
   }
   if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
