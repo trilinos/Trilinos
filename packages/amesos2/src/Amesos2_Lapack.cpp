@@ -51,12 +51,13 @@
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT
-namespace Amesos2 {
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(Lapack);
 #endif
-}
 #endif
+
+}
+
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 namespace Amesos2 {

@@ -168,8 +168,8 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
 
   INCLUDE_DIRECTORIES(  
-    ${CMAKE_SOURCE_DIR}/common/auxiliarySoftware/SuiteSparse/src/AMD/Include
-    ${CMAKE_SOURCE_DIR}/common/auxiliarySoftware/SuiteSparse/src/UFconfig
+    ${PACKAGE_SOURCE_DIR}/../amesos/src/SuiteSparse/AMD/Include
+    ${PACKAGE_SOURCE_DIR}/../amesos/src/SuiteSparse/UFconfig
     )
 
   Set(HEADERS ${HEADERS}
