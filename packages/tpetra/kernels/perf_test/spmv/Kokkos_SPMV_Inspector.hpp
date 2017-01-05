@@ -70,19 +70,15 @@ struct SPMV_Inspector_Functor {
   const value_type beta;
   YVector m_y;
 
-  const ordinal_type rows_per_team;
-
   SPMV_Inspector_Functor (const value_type alpha_,
                const AMatrix m_A_,
                const XVector m_x_,
                const Kokkos::View<const int*> m_workset_offsets_,
                const value_type beta_,
-               const YVector m_y_,
-               const int rows_per_team_) :
+               const YVector m_y_) :
     alpha (alpha_), m_A (m_A_), m_x (m_x_),
     m_workset_offsets (m_workset_offsets_),
-    beta (beta_), m_y (m_y_),
-    rows_per_team (rows_per_team_)
+    beta (beta_), m_y (m_y_)
   {
     static_assert (static_cast<int> (XVector::rank) == 1,
                    "XVector must be a rank 1 View.");
@@ -124,7 +120,7 @@ struct SPMV_Inspector_Functor {
   }
 };
 
-template<typename AType, typename XType, typename YType>
+template<typename AType, typename XType, typename YType,class Schedule>
 void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
 
   typedef typename XType::non_const_value_type Scalar;
@@ -133,14 +129,16 @@ void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int tea
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> y_type;
   typedef typename Kokkos::View<const Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > x_type;
 
-  int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
-  static int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
-
+  //int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
+  //static int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
+  static int worksets = std::is_same<Schedule,Kokkos::Static>::value ? 
+                        team_size>0?execution_space::concurrency()/team_size:execution_space::concurrency() : //static
+                        team_size>0?execution_space::concurrency()*32/team_size:execution_space::concurrency()*32 ; //dynamic
   static Kokkos::View<int*> workset_offsets;
   if(workset_offsets.dimension_0() == 0) {
     workset_offsets = Kokkos::View<int*> ("WorksetOffsets",worksets+1);
     const size_t nnz = A.nnz();
-    int nnz_per_workset = nnz/worksets;
+    int nnz_per_workset = (nnz+worksets-1)/worksets;
     workset_offsets(0) = 0;
     int ws = 1;
     for(int row = 0; row<A.numRows(); row++) {
@@ -157,9 +155,8 @@ void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int tea
   }
   double s_a = 1.0;
   double s_b = 0.0;
-  SPMV_Inspector_Functor<matrix_type,x_type,y_type,0,false,int> func (s_a,A,x,workset_offsets,s_b,y,rows_per_team);
+  SPMV_Inspector_Functor<matrix_type,x_type,y_type,0,false,int> func (s_a,A,x,workset_offsets,s_b,y);
 
-  typedef Kokkos::Static Schedule;
   Kokkos::TeamPolicy<Kokkos::Schedule<Schedule> > policy(1,1);
 
   if(team_size>0)

@@ -118,18 +118,20 @@ void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int v
 	switch(test) {
 	
 	case KOKKOS:
-		if(test == KOKKOS) {
-		  if(schedule == AUTO)
- 		    schedule = A.nnz()>10000000?DYNAMIC:STATIC;
-                  if(schedule == STATIC)
-                    kk_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
-                  if(schedule == DYNAMIC)
-                    kk_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
-                }
-
+		if(schedule == AUTO)
+ 		  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
+                if(schedule == STATIC)
+                  kk_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
+                if(schedule == DYNAMIC)
+                  kk_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
 	case KK_INSP:
-		kk_inspector_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                if(schedule == AUTO)
+                  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
+                if(schedule == STATIC)
+                  kk_inspector_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
+                if(schedule == DYNAMIC)
+                  kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
 		
 #ifdef _OPENMP
@@ -166,7 +168,7 @@ void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int v
 }
 
 template<typename Scalar>
-int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile, int rows_per_thread, int team_size, int vector_length,int idx_offset, int schedule) {
+int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile, int rows_per_thread, int team_size, int vector_length,int idx_offset, int schedule, int loop) {
   typedef Kokkos::CrsMatrix<Scalar,int,execution_space,void,int> matrix_type ;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> mv_type;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > mv_random_read_type;
@@ -248,14 +250,18 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   total_sum += sum;
 
   // Benchmark
-  int loop = 100;
-
-  Kokkos::Timer timer;
+  double min_time = 1.0e32;
+  double max_time = 0.0;
+  double ave_time = 0.0;
   for(int i=0;i<loop;i++) {
+    Kokkos::Timer timer;
     matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
+    execution_space::fence();
+    double time = timer.seconds();
+    ave_time += time;
+    if(time>max_time) max_time = time;
+    if(time<min_time) min_time = time;
   }
-  execution_space::fence();
-  double time = timer.seconds();
 
   // Performance Output
   double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
@@ -263,7 +269,12 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   double vector_readwrite = (nnz+numCols)*sizeof(Scalar)/1024/1024;
 
   double problem_size = matrix_size+vector_size;
-  printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf GFlop/s %6.3lf ms %i\n",nnz, numRows,numCols,1,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, 2.0*nnz*loop/time/1e9, time/loop*1000, num_errors);
+  printf("NNZ NumRows NumCols ProblemSize(MB) AveBandwidth(GB/s) MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop aveTime(ms) maxTime(ms) minTime(ms) numErrors\n");
+  printf("%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf ) %i RESULT\n",nnz, numRows,numCols,problem_size,
+          (matrix_size+vector_readwrite)/ave_time*loop/1024, (matrix_size+vector_readwrite)/max_time/1024,(matrix_size+vector_readwrite)/min_time/1024,
+          2.0*nnz*loop/ave_time/1e9, 2.0*nnz/max_time/1e9, 2.0*nnz/min_time/1e9,
+          ave_time/loop*1000, max_time*1000, min_time*1000,
+          num_errors);
   return (int)total_error;
 }
 
@@ -291,6 +302,7 @@ void print_help() {
   printf("  -rpt [K]        : Number of Rows assigned to a thread.\n");
   printf("  -ts [T]         : Number of threads per team.\n");
   printf("  -vl [V]         : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
+  printf("  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
 }
 
 int main(int argc, char **argv)
@@ -308,6 +320,7 @@ int main(int argc, char **argv)
  int team_size = -1;
  int idx_offset = 0;
  int schedule=AUTO;
+ int loop = 100;
 
  if(argc == 1) {
    print_help();
@@ -348,6 +361,7 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"-vl")==0)) {vector_length=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--offset")==0)) {idx_offset=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--write-binary")==0)) {write_binary=true;}
+  if((strcmp(argv[i],"-l")==0)) {loop=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--schedule")==0)) {
     i++;
     if((strcmp(argv[i],"auto")==0))
@@ -375,7 +389,7 @@ int main(int argc, char **argv)
 
  Kokkos::initialize(argc,argv);
 
- int total_errors = test_crs_matrix_singlevec<double>(size,size,size*10,test,filename,binaryfile,rows_per_thread,team_size,vector_length,idx_offset,schedule);
+ int total_errors = test_crs_matrix_singlevec<double>(size,size,size*10,test,filename,binaryfile,rows_per_thread,team_size,vector_length,idx_offset,schedule,loop);
 
  if(total_errors == 0)
    printf("Kokkos::MultiVector Test: Passed\n");
