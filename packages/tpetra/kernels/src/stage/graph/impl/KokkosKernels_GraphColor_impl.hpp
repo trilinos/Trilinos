@@ -146,7 +146,10 @@ public:
 
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
+
+    //typename nnz_lno_host_view_t::HostMirror::HostMirror::HostMirror h_adj = tmp;
+
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
 
@@ -212,7 +215,7 @@ public:
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
 
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -297,7 +300,7 @@ public:
     num_phases = 1;
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -533,7 +536,7 @@ public:
     num_phases = 1;
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();

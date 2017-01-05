@@ -73,7 +73,7 @@ namespace NOX {
    * container class can be stored in each NOX object, and if a new
    * global object is needed, it can be added here without modifying
    * the rest of the code.  This is an alternative to true global or
-   * static objects which are note safe in many contexts (threading).
+   * static objects which are not safe in many contexts (threading).
    * In particular, this approach allows multiple %NOX "invocations"
    * to be in memory at the same time.
    */

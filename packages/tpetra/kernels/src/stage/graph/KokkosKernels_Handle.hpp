@@ -188,15 +188,13 @@ public:
       return this->team_work_size;
     }
     else {
-      return team_size;
-      /*
       if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
         return team_size;
       }
       else {
-        return overall_work_size / (concurrency * team_size) ;
+        return 16;
       }
-      */
+
     }
   }
 

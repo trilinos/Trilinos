@@ -544,11 +544,11 @@ namespace MueLu {
     RCP<Time> Synchronize_center       = Teuchos::TimeMonitor::getNewCounter(prefix + "Synchronize_center");
     RCP<Time> Synchronize_end          = Teuchos::TimeMonitor::getNewCounter(prefix + "Synchronize_end");
 
-    RCP<Level> 		Fine = Levels_[0];
-    RCP<Level> 		Coarse;
+    RCP<Level>          Fine = Levels_[0];
+    RCP<Level>          Coarse;
 
     RCP<Operator> A = Fine->Get< RCP<Operator> >("A");
-    Teuchos::RCP< const Teuchos::Comm< int > > communicator = A->getDomainMap()->getComm();		
+    Teuchos::RCP< const Teuchos::Comm< int > > communicator = A->getDomainMap()->getComm();             
 
     //Synchronize_beginning->start();
     //communicator->barrier();
@@ -576,46 +576,46 @@ namespace MueLu {
 
     if( Levels_.size()>1 )
     {     
-	     Coarse = Levels_[1];
+             Coarse = Levels_[1];
             if (Coarse->IsAvailable("Importer"))
                importer = Coarse->Get< RCP<const Import> >("Importer");
 
-	     R = Coarse->Get< RCP<Operator> >("R");
+             R = Coarse->Get< RCP<Operator> >("R");
              P = Coarse->Get< RCP<Operator> >("P");
 
-	     //if(Coarse->IsAvailable("Pbar"))
-	     Pbar = Coarse->Get< RCP<Operator> >("Pbar");   
+             //if(Coarse->IsAvailable("Pbar"))
+             Pbar = Coarse->Get< RCP<Operator> >("Pbar");   
  
-	     coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
+             coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
              
              Ac = Coarse->Get< RCP< Operator > >("A");
 
              ApplyR->start();
-	     R->apply(B, *coarseRhs, Teuchos::NO_TRANS, one, zero);
-	     //P->apply(B, *coarseRhs, Teuchos::TRANS, one, zero);
+             R->apply(B, *coarseRhs, Teuchos::NO_TRANS, one, zero);
+             //P->apply(B, *coarseRhs, Teuchos::TRANS, one, zero);
              ApplyR->stop();        
 
-	     if (doPRrebalance_ || importer.is_null()) {
+             if (doPRrebalance_ || importer.is_null()) {
 
-	      coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), true);
+              coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), true);
 
-	     } else {
-					
-		  RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"      , Timings0));
-		  RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix, Timings0));
+             } else {
+                                        
+                  RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"      , Timings0));
+                  RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix, Timings0));
 
-		  // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
-		  RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getTargetMap(), coarseRhs->getNumVectors());
-		  coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
-		  coarseRhs.swap(coarseTmp);
+                  // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
+                  RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getTargetMap(), coarseRhs->getNumVectors());
+                  coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
+                  coarseRhs.swap(coarseTmp);
 
-		  coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), true);
-	     }
+                  coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), true);
+             }
 
-	    if (Coarse->IsAvailable("PreSmoother")) 
-	      preSmoo_coarse = Coarse->Get< RCP<SmootherBase> >("PreSmoother");
-	    if (Coarse->IsAvailable("PostSmoother")) 
-	      postSmoo_coarse = Coarse->Get< RCP<SmootherBase> >("PostSmoother");
+            if (Coarse->IsAvailable("PreSmoother")) 
+              preSmoo_coarse = Coarse->Get< RCP<SmootherBase> >("PreSmoother");
+            if (Coarse->IsAvailable("PostSmoother")) 
+              postSmoo_coarse = Coarse->Get< RCP<SmootherBase> >("PostSmoother");
 
     }
 
@@ -639,7 +639,7 @@ namespace MueLu {
         throw Exceptions::Incompatible(ss.str());
       }
 #endif
-	}
+        }
 
    bool emptyFineSolve = true;
 
@@ -662,7 +662,7 @@ namespace MueLu {
    }
    if (Fine->IsAvailable("PostSmoother")) {
      RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-		
+                
      CompFine->start();
      postSmoo->Apply(*fineX, B, zeroGuess);
      CompFine->stop();
@@ -673,48 +673,48 @@ namespace MueLu {
      GetOStream(Warnings1) << "No fine grid smoother" << std::endl;
      // Fine grid smoother is identity
      fineX->update(one, B, zero);
-   }		 
+   }             
 
      if( Levels_.size()>1 )
      {    
-	     // NOTE: we need to check using IsAvailable before Get here to avoid building default smoother
-	     if (Coarse->IsAvailable("PreSmoother")) {
+             // NOTE: we need to check using IsAvailable before Get here to avoid building default smoother
+             if (Coarse->IsAvailable("PreSmoother")) {
                CompCoarse->start();
-	       preSmoo_coarse->Apply(*coarseX, *coarseRhs, zeroGuess);
+               preSmoo_coarse->Apply(*coarseX, *coarseRhs, zeroGuess);
                CompCoarse->stop();
-	       emptyCoarseSolve = false;
+               emptyCoarseSolve = false;
 
-	     }
-	     if (Coarse->IsAvailable("PostSmoother")) {
+             }
+             if (Coarse->IsAvailable("PostSmoother")) {
                CompCoarse->start();
-	       postSmoo_coarse->Apply(*coarseX, *coarseRhs, zeroGuess);
+               postSmoo_coarse->Apply(*coarseX, *coarseRhs, zeroGuess);
                CompCoarse->stop();
-	       emptyCoarseSolve = false;
+               emptyCoarseSolve = false;
 
-	     }
-	     if (emptyCoarseSolve == true) {
-	       GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
-	       // Coarse operator is identity
-	       coarseX->update(one, *coarseRhs, zero);
-	     }		 
+             }
+             if (emptyCoarseSolve == true) {
+               GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
+               // Coarse operator is identity
+               coarseX->update(one, *coarseRhs, zero);
+             }           
 
              Concurrent->stop();
              //Synchronize_end->start();
              //communicator->barrier();
              //Synchronize_end->stop();
 
-	    if (!doPRrebalance_ && !importer.is_null()) {
-	       RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      , Timings0));
-	       RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix, Timings0));
+            if (!doPRrebalance_ && !importer.is_null()) {
+               RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      , Timings0));
+               RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix, Timings0));
 
-	       // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
-	       RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors());
-	       coarseTmp->doExport(*coarseX, *importer, Xpetra::INSERT);
-	       coarseX.swap(coarseTmp);
-	     }
+               // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
+               RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors());
+               coarseTmp->doExport(*coarseX, *importer, Xpetra::INSERT);
+               coarseX.swap(coarseTmp);
+             }
 
              ApplyPbar->start();
-	     Pbar->apply(*coarseX, *coarseX_prolonged, Teuchos::NO_TRANS, one, zero);
+             Pbar->apply(*coarseX, *coarseX_prolonged, Teuchos::NO_TRANS, one, zero);
              ApplyPbar->stop();
      }
 
@@ -872,7 +872,7 @@ namespace MueLu {
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
         if (Coarse->IsAvailable("Pbar"))
            P = Coarse->Get< RCP<Operator> >("Pbar");
-	
+        
         RCP<MultiVector> coarseRhs, coarseX;
         const bool initializeWithZeros = true;
         {
@@ -896,11 +896,11 @@ namespace MueLu {
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
         if (doPRrebalance_ || importer.is_null()) {
-					//std::cout<<"Rebalance skips import-export"<<std::endl;
+                                        //std::cout<<"Rebalance skips import-export"<<std::endl;
           coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
 
         } else {
-					//std::cout<<"Rebalance does NOT skip import-export"<<std::endl;
+                                        //std::cout<<"Rebalance does NOT skip import-export"<<std::endl;
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"      , Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix, Timings0));
 

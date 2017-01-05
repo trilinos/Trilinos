@@ -1,9 +1,10 @@
-To enable compilation see Trilinos/packages/tpetra/kernels/src/CMakeLists.txt, 
-and remove the commented out portion at the bottom.
+The package includes graph coloring algorithms, and an implementation
+of symmetric multithreaded Gauss-Seidel that uses those graph coloring
+algorithms. 
 
-The package includes couple graph coloring algorithms, and 
-a Symmetric Gauss Seidel implementation. The performance tests can be 
-found in Trilinos/packages/tpetra/kernels/perf_test/graph 
-where there are test for graph coloring, and symetric gauss seidel 
-plugging in Preconditioned Conjugate Gradient Algorithm.
+Both algorithms have performance tests in
+Trilinos/packages/tpetra/kernels/perf_test/graph.  The performance
+test for symmetric Gauss-Seidel exercises the algorithm in the context
+of a preconditioned iterative linear solve, using the Method of
+Conjugate Gradients (CG).
 

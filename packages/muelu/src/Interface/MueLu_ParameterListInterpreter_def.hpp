@@ -432,7 +432,7 @@ namespace MueLu {
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab" && multigridAlgo != "pcoarsen",
-			       Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+                               Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
@@ -617,8 +617,8 @@ namespace MueLu {
       if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || 
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos" ||
-	  coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
-	  coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
           coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else {
@@ -782,7 +782,7 @@ namespace MueLu {
 
     // === Prolongation ===
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
-			       && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+                               && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");

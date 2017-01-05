@@ -128,9 +128,10 @@ struct IsIdenticalFunctor{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_t &is_equal) const {
-    auto val_diff = view1(i) - view2(i);
+    typename view_type2::value_type val_diff = view1(i) - view2(i);
 
     if (KOKKOSKERNELS_MACRO_ABS (val_diff) > eps) {
+      //std::cout << "i:" << i << "view1(i) == view2(i):" << int (view1(i) == view2(i)) << std::setprecision(15) << " view1(i):" << view1(i) << " view2(i):" << view2(i) << " val_diff:" << val_diff <<  " eps:" << eps << std::endl;
       is_equal+=1;
     }
   }

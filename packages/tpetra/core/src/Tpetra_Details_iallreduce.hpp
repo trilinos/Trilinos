@@ -204,10 +204,12 @@ private:
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
-/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendLayoutType array_layout of the send buffer.  Must be
+///   Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
-/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.  Must
+///   be Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
 ///   receive buffer.  It's OK for this to differ from SendDeviceType.
 ///   We assume that MPI implementations can handle this.  (This is a
@@ -240,8 +242,10 @@ public:
   IallreduceCommRequest ()
   {}
 
+  //! Type of the send buffer.
   typedef ::Kokkos::View<const PacketType*, SendLayoutType,
                          SendDeviceType> send_buffer_type;
+  //! Type of the receive buffer.
   typedef ::Kokkos::View<PacketType*, RecvLayoutType,
                          RecvDeviceType> recv_buffer_type;
 
@@ -254,7 +258,16 @@ public:
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
-  {}
+  {
+    static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                   "SendLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+    static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                   "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+  }
 
   //! Destructor (virtual for memory safety).
   virtual ~IallreduceCommRequest () {
@@ -353,7 +366,16 @@ public:
     req_ (req),
     sendbuf_ (sendbuf),
     recvbuf_ (recvbuf)
-  {}
+  {
+    static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                   "SendLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+    static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                   "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+  }
 
   //! Destructor (virtual for memory safety).
   virtual ~IallreduceCommRequest () {
@@ -440,10 +462,12 @@ private:
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
-/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendLayoutType array_layout of the send buffer.  Must be
+///   Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
-/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.  Must
+///   be Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
 ///   receive buffer.  It's OK for this to differ from SendDeviceType.
 ///   We assume that MPI implementations can handle this.  (This is a
@@ -462,7 +486,17 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
                              RecvLayoutType,
                              RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType, RecvLayoutType, RecvDeviceType, 1> (req, sendbuf, recvbuf));
+  static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                 std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                 "SendLayoutType must be either Kokkos::LayoutLeft or "
+                 "Kokkos::LayoutRight.");
+  static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                 std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                 "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                 "Kokkos::LayoutRight.");
+  typedef IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType,
+    RecvLayoutType, RecvDeviceType, 1> req_type;
+  return std::shared_ptr<CommRequest> (new req_type (req, sendbuf, recvbuf));
 }
 
 /// \brief Function for wrapping the CommRequest to be returned from
@@ -487,10 +521,12 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
-/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendLayoutType array_layout of the send buffer.  Must be
+///   Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
-/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.  Must
+///   be Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
 ///   receive buffer.  It's OK for this to differ from SendDeviceType.
 ///   We assume that MPI implementations can handle this.  (This is a
@@ -509,22 +545,31 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
                              RecvLayoutType,
                              RecvDeviceType>& recvbuf)
 {
-  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType, RecvLayoutType, RecvDeviceType, 0> (req, sendbuf, recvbuf));
+  static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                 std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                 "SendLayoutType must be either Kokkos::LayoutLeft or "
+                 "Kokkos::LayoutRight.");
+  static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                 std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                 "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                 "Kokkos::LayoutRight.");
+  typedef IallreduceCommRequest<PacketType, SendLayoutType, SendDeviceType,
+    RecvLayoutType, RecvDeviceType, 0> req_type;
+  return std::shared_ptr<CommRequest> (new req_type (req, sendbuf, recvbuf));
 }
 
 #ifdef HAVE_TPETRACORE_MPI
 
 /// \brief Bottom (lowest)-level implementation of
-///   ::Tpetra::Details::iallreduce (see below in this header file).
+///   ::Tpetra::Details::iallreduce (see bottom of this header file).
 ///
-/// This doesn't need to know about Packet, because the MPI_Datatype
-/// expresses that information (how MPI should communicate Packet
-/// instances) in a run-time way.
+/// This doesn't need to know about the "Packet" type, because the
+/// MPI_Datatype expresses that information (how MPI should
+/// communicate Packet instances) in a run-time way.
 ///
-/// This doesn't need to know about Device, because we assume that MPI
-/// implementations can read CUDA device memory, host memory, or
-/// indeed from any memory space.  If they can't, Tpetra::DistObject
-/// must then first copy to a space from which they can.
+/// This doesn't need to know about the Kokkos "Device" type, because
+/// we assume that MPI implementations can read CUDA device memory,
+/// host memory, or indeed from any memory space.
 std::shared_ptr<CommRequest>
 iallreduceRawVoid (const void* sendbuf,
                    void* recvbuf,
@@ -537,14 +582,13 @@ iallreduceRawVoid (const void* sendbuf,
 #endif // HAVE_TPETRACORE_MPI
 
 /// \brief Second lowest-level implementation of
-///   ::Tpetra::Details::iallreduce.
+///   ::Tpetra::Details::iallreduce (see bottom of this header file).
 ///
 /// \tparam Packet Type of each entry of the send and receive buffer.
 ///
-/// This doesn't need to know about Device, because we assume that MPI
-/// implementations can read CUDA device memory, host memory, or
-/// indeed from any memory space.  If they can't, Tpetra::DistObject
-/// must then first copy to a space from which they can.
+/// This doesn't need to know about the Kokkos "Device" type, because
+/// we assume that MPI implementations can read CUDA device memory,
+/// host memory, or indeed from any memory space.
 template<class Packet>
 std::shared_ptr<CommRequest>
 iallreduceRaw (const Packet sendbuf[],
@@ -586,10 +630,12 @@ iallreduceRaw (const Packet sendbuf[],
 ///
 /// \tparam PacketType Type of each entry of the send and receive
 ///   buffers.
-/// \tparam SendLayoutType array_layout of the send buffer.
+/// \tparam SendLayoutType array_layout of the send buffer.  Must be
+///   Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam SendDeviceType Kokkos::Device specialization used by the
 ///   send buffer.
-/// \tparam RecvLayoutType array_layout of the receive buffer.
+/// \tparam RecvLayoutType array_layout of the receive buffer.  Must
+///   be Kokkos::LayoutLeft or Kokkos::LayoutRight.
 /// \tparam RecvDeviceType Kokkos::Device specialization used by the
 ///   receive buffer.  It's OK for this to differ from SendDeviceType.
 ///   We assume that MPI implementations can handle this.  (This is a
@@ -637,6 +683,14 @@ struct Iallreduce<PacketType,
   {
     static_assert (! std::is_const<PacketType>::value,
                    "PacketType must be a nonconst type.");
+    static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                   "SendLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+    static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                   "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
 #ifdef HAVE_TPETRACORE_MPI
     // Avoid instantiating Impl::iallreduceRaw for both T and const T,
     // by canonicalizing to the non-const version of T.
@@ -691,7 +745,14 @@ struct Iallreduce<PacketType,
   {
     static_assert (! std::is_const<PacketType>::value,
                    "PacketType must be a nonconst type.");
-
+    static_assert (std::is_same<SendLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<SendLayoutType, ::Kokkos::LayoutRight>::value,
+                   "SendLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
+    static_assert (std::is_same<RecvLayoutType, ::Kokkos::LayoutLeft>::value ||
+                   std::is_same<RecvLayoutType, ::Kokkos::LayoutRight>::value,
+                   "RecvLayoutType must be either Kokkos::LayoutLeft or "
+                   "Kokkos::LayoutRight.");
 #ifdef HAVE_TPETRACORE_MPI
     // Avoid instantiating Impl::iallreduceRaw for both T and const T,
     // by canonicalizing to the non-const version of T.

@@ -105,7 +105,7 @@ namespace MueLu {
           }
           else if( name == "P" || name == "R") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-	    level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
+            level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
           }
           else if (name == "Nullspace")
           {
@@ -121,7 +121,7 @@ namespace MueLu {
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
 #ifdef HAVE_MUELU_INTREPID2
-	  else if (name == "ipc: element to node map")
+          else if (name == "ipc: element to node map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -160,11 +160,11 @@ namespace MueLu {
               level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
           }
 #else
-	  {
-	    throw std::runtime_error("Invalid non-serializable data on list");
-	  }
+          {
+            throw std::runtime_error("Invalid non-serializable data on list");
+          }
 #endif
-	}
+        }
       }
     }   
   }

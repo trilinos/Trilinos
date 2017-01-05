@@ -593,19 +593,24 @@ private:
                             global_ordinal_type, node_type> block_multivector_type;
 
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType crs_graph_type;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::values_type scalar_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type TemporaryWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type PersistentWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::execution_space MyExecSpace;
+
+  //@}
+  //! \name Implementation of multithreaded Gauss-Seidel.
+  //@{
+
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,
-      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
-  Teuchos::RCP<KernelHandle> kh;
-#endif
+      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
+  Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
+#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{

@@ -136,7 +136,7 @@ namespace Intrepid2{
     ordinal_type degree_;
 
     // cubature points and weights associated with sub-control volume.
-    Kokkos::View<ordinal_type**,ExecSpaceType> sideNodeMap_;
+    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,ExecSpaceType> sideNodeMap_;
     Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
 
   public:

@@ -93,19 +93,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of long deprecated Ifpack2 code.  This is OFF by default.  DO NOT ENABLE THIS UNLESS YOU INSIST ON BUILDING DEPRECATED CODE.  You may see lots of deprecated warnings if you enable this.  That's your problem; you wanted to use the code."
   NO )
 
-ASSERT_DEFINED (TpetraKernels_ENABLE_Experimental)
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental)
-IF (TpetraKernels_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental)
-  SET (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT ON)
-ELSE ()
-  SET (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT OFF)
-ENDIF ()
+# mfh 04 Jan 2017: Per #288, we want to enable this code by default.
+SET (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT ON)
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features
   HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  "Enable building and installation of experimental Ifpack2 features that use experimental KokkosKernels features."
+  "Enable building and installation of some Ifpack2 features that use new KokkosKernels features."
   "${${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features_DEFAULT}"
   )
 

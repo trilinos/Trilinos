@@ -8,90 +8,99 @@ SET(GTEST_SOURCE_DIR ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}../kokkos/tpls/gtest)
 
 INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
 
-#TRIBITS_ADD_LIBRARY(
-#  kokkos_gtest
-#  HEADERS ${GTEST_SOURCE_DIR}/gtest/gtest.h
-#  SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
-#  TESTONLY
-#  )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  spgemm_unit_test
-  SOURCES UnitTestMain.cpp KokkosKernels_Test_SPGEMM.cpp
-  COMM serial mpi
-  ARGS "--mtx-file wathen_30_30.mtx"
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "  FAILED  "
-  TESTONLYLIBS kokkos_gtest
+SET(GTEST_SOURCE_DIR ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/../kokkos/tpls/gtest)
+INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
+TRIBITS_ADD_LIBRARY(
+  kokkos_gtest
+  HEADERS ${GTEST_SOURCE_DIR}/gtest/gtest.h
+  SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
+  TESTONLY
   )
 
-TRIBITS_ADD_TEST(
-    spgemm_unit_test
-    NAME spgemm_sherman
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-	ARGS "--mtx-file sherman1.mtx"
-	FAIL_REGULAR_EXPRESSION "  FAILED  "
-)
+#
+# Disabled test temporarily; see #978.
+# 
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   spgemm_unit_test
+#   SOURCES UnitTestMain.cpp KokkosKernels_Test_SPGEMM.cpp
+#   COMM serial mpi
+#   ARGS "--mtx-file wathen_30_30.mtx"
+#   NUM_MPI_PROCS 1
+#   FAIL_REGULAR_EXPRESSION "  FAILED  "
+#   TESTONLYLIBS kokkos_gtest
+#   )
 
-TRIBITS_ADD_TEST(
-    spgemm_unit_test
-    NAME spgemm_si2
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-	ARGS "--mtx-file Si2.mtx"
-	FAIL_REGULAR_EXPRESSION "  FAILED  "
-)
+# TRIBITS_ADD_TEST(
+#     spgemm_unit_test
+#     NAME spgemm_sherman
+#     NUM_MPI_PROCS 1
+#     COMM serial mpi
+# 	ARGS "--mtx-file sherman1.mtx"
+# 	FAIL_REGULAR_EXPRESSION "  FAILED  "
+# )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  coloring_unit_test
-  SOURCES UnitTestMain.cpp KokkosKernels_Test_GraphColoring.cpp
-  COMM serial mpi
-  ARGS "--mtx-file wathen_30_30.mtx"
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "  FAILED  "
-  TESTONLYLIBS kokkos_gtest
-  )
+# TRIBITS_ADD_TEST(
+#     spgemm_unit_test
+#     NAME spgemm_si2
+#     NUM_MPI_PROCS 1
+#     COMM serial mpi
+# 	ARGS "--mtx-file Si2.mtx"
+# 	FAIL_REGULAR_EXPRESSION "  FAILED  "
+# )
+
+#
+# Disabled temporarily per #979.
+#
+
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   coloring_unit_test
+#   SOURCES UnitTestMain.cpp KokkosKernels_Test_GraphColoring.cpp
+#   COMM serial mpi
+#   ARGS "--mtx-file wathen_30_30.mtx"
+#   NUM_MPI_PROCS 1
+#   FAIL_REGULAR_EXPRESSION "  FAILED  "
+#   TESTONLYLIBS kokkos_gtest
+#   )
   
-TRIBITS_ADD_TEST(
-    coloring_unit_test
-    NAME coloring_sherman
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-	ARGS "--mtx-file sherman1.mtx"
-	FAIL_REGULAR_EXPRESSION "  FAILED  "
-)
+# TRIBITS_ADD_TEST(
+#     coloring_unit_test
+#     NAME coloring_sherman
+#     NUM_MPI_PROCS 1
+#     COMM serial mpi
+# 	ARGS "--mtx-file sherman1.mtx"
+# 	FAIL_REGULAR_EXPRESSION "  FAILED  "
+# )
 
-TRIBITS_ADD_TEST(
-    coloring_unit_test
-    NAME coloring_si2
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-	ARGS "--mtx-file Si2.mtx"
-	FAIL_REGULAR_EXPRESSION "  FAILED  "
-)
+# TRIBITS_ADD_TEST(
+#     coloring_unit_test
+#     NAME coloring_si2
+#     NUM_MPI_PROCS 1
+#     COMM serial mpi
+# 	ARGS "--mtx-file Si2.mtx"
+# 	FAIL_REGULAR_EXPRESSION "  FAILED  "
+# )
 
+#
+# Disabled test temporarily; see #977.
+# 
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   gauss_seidel_unit_test
+#   SOURCES UnitTestMain.cpp KokkosKernels_Test_GaussSeidel.cpp
+#   COMM serial mpi
+#   ARGS "--mtx-file wathen_30_30.mtx"
+#   NUM_MPI_PROCS 1
+#   FAIL_REGULAR_EXPRESSION "  FAILED  "
+#   TESTONLYLIBS kokkos_gtest
+#   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  gauss_seidel_unit_test
-  SOURCES UnitTestMain.cpp KokkosKernels_Test_GaussSeidel.cpp
-  COMM serial mpi
-  ARGS "--mtx-file wathen_30_30.mtx"
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "  FAILED  "
-  TESTONLYLIBS kokkos_gtest
-  )
-
-  
-TRIBITS_ADD_TEST(
-    gauss_seidel_unit_test
-    NAME gs_sherman
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-	ARGS "--mtx-file sherman1.mtx"
-	FAIL_REGULAR_EXPRESSION "  FAILED  "
-)
+# TRIBITS_ADD_TEST(
+#     gauss_seidel_unit_test
+#     NAME gs_sherman
+#     NUM_MPI_PROCS 1
+#     COMM serial mpi
+# 	ARGS "--mtx-file sherman1.mtx"
+# 	FAIL_REGULAR_EXPRESSION "  FAILED  "
+# )
 
 #TRIBITS_ADD_TEST(
 #    gauss_seidel_unit_test
