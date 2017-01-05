@@ -142,7 +142,7 @@ void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int v
 		openmp_dynamic_matvec(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
 	case OMP_INSP:
-		openmp_smart_static_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+		openmp_smart_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
 #endif
 

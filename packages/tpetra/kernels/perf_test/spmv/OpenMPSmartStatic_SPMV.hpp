@@ -52,13 +52,13 @@
 
 int* OMP_BENCH_RESTRICT threadStarts;
 
-template<typename AType>
+template<typename AType, typename LocalOrdinal, typename Scalar>
 void establishSmartSchedule(AType A) {
-	const int rowCount                              = A.numRows();
-	const int* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
+	const LocalOrdinal rowCount                              = A.numRows();
+	const LocalOrdinal* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
 
 	// Generate a schedule
-  	int* rowSizes = NULL;
+  	LocalOrdinal* rowSizes = NULL;
   	posix_memalign((void**) &rowSizes, 64, sizeof(int) * A.numRows());
   	posix_memalign((void**) &threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1));
   	
@@ -69,25 +69,25 @@ void establishSmartSchedule(AType A) {
   	unsigned long long int nnz = 0;
   	
   	#pragma omp parallel for reduction(+:nnz)
-  	for(int row = 0; row < rowCount; ++row) {
-  		const int rowElements = matrixRowOffsets[row + 1] - matrixRowOffsets[row];
+  	for(LocalOrdinal row = 0; row < rowCount; ++row) {
+  		const LocalOrdinal rowElements = matrixRowOffsets[row + 1] - matrixRowOffsets[row];
   		rowSizes[row] = rowElements;
   		nnz += rowElements;
   	}
   	
-  	int nzPerThreadTarget = (int)(nnz / (unsigned long long int) omp_get_max_threads());
+  	LocalOrdinal nzPerThreadTarget = (int)(nnz / (unsigned long long int) omp_get_max_threads());
   	
   	if(nzPerThreadTarget > 128) {
   		nzPerThreadTarget &= 0xFFFFFFFC;
   	}
   	
-  	int nextRow = 0;
+  	LocalOrdinal nextRow = 0;
   	
   	printf("Target NZ Per Thread: %20d\n", nzPerThreadTarget);
 	threadStarts[0] = 0;  	
 
   	for(int thread = 1; thread < omp_get_max_threads(); ++thread) {
-  		int nzAccum = 0;
+  		LocalOrdinal nzAccum = 0;
   		
   		while(nzAccum < nzPerThreadTarget) {
   			if(nextRow >= rowCount) 
@@ -110,24 +110,24 @@ void establishSmartSchedule(AType A) {
 	free(rowSizes);
 }
 
-template<typename AType, typename XType, typename YType>
+template<typename AType, typename XType, typename YType, typename LocalOrdinal, typename Scalar>
 void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
 	int team_size, int vector_length) {
 	
   if( NULL == threadStarts ) {
   	//printf("Generating Schedule...\n");
-  	establishSmartSchedule<AType>(A);
+  	establishSmartSchedule<AType, LocalOrdinal, Scalar>(A);
   }
 
-  const double s_a                                = 1.0;
-  const double s_b                                = 0.0;
+  const Scalar s_a                                = 1.0;
+  const Scalar s_b                                = 0.0;
 
-  const int rowCount                              = A.numRows();
-  const double* OMP_BENCH_RESTRICT x_ptr          = (double*) x.ptr_on_device();
-  double* OMP_BENCH_RESTRICT y_ptr                = (double*) y.ptr_on_device();
-  const double* OMP_BENCH_RESTRICT matrixCoeffs   = A.values.ptr_on_device();
-  const int* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.ptr_on_device();
-  const int* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
+  const LocalOrdinal rowCount                           = A.numRows();
+  const Scalar* OMP_BENCH_RESTRICT x_ptr           	= (Scalar*) x.ptr_on_device();
+  Scalar* OMP_BENCH_RESTRICT y_ptr                	= (Scalar*) y.ptr_on_device();
+  const Scalar* OMP_BENCH_RESTRICT matrixCoeffs   	= A.values.ptr_on_device();
+  const LocalOrdinal* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.ptr_on_device();
+  const LocalOrdinal* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
   
   #pragma omp parallel
   {
@@ -135,18 +135,18 @@ void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
     __assume_aligned(y_ptr, 64);
    
     const int myID    = omp_get_thread_num();
-    const int myStart = threadStarts[myID];
-    const int myEnd   = threadStarts[myID + 1];
+    const LocalOrdinal myStart = threadStarts[myID];
+    const LocalOrdinal myEnd   = threadStarts[myID + 1];
   
   	for(int row = myStart; row < myEnd; ++row) {
-  		const int rowStart = matrixRowOffsets[row];
-  		const int rowEnd   = matrixRowOffsets[row + 1];
+  		const LocalOrdinal rowStart = matrixRowOffsets[row];
+  		const LocalOrdinal rowEnd   = matrixRowOffsets[row + 1];
   	
-  		double sum = 0.0;
+  		Scalar sum = 0.0;
   	
-  		for(int i = rowStart; i < rowEnd; ++i) {
-  			const int x_entry      =  matrixCols[i];
-  			const double alpha_MC  =  s_a * matrixCoeffs[i];
+  		for(LocalOrdinal i = rowStart; i < rowEnd; ++i) {
+  			const LocalOrdinal x_entry      =  matrixCols[i];
+  			const Scalar alpha_MC  =  s_a * matrixCoeffs[i];
   			sum                    += alpha_MC * x_ptr[x_entry];
   		}
   	
