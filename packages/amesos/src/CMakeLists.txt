@@ -218,6 +218,10 @@ SET(PARAKLETE_KLU_COMMON
        # No flags
   ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
+  ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Cray")
+       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                PROPERTIES
+                COMPILE_FLAGS "-hmsglevel_4")
   ELSE()
        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
                 PROPERTIES
@@ -293,6 +297,10 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
        # No flags
     ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Cray")
+       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                PROPERTIES
+                COMPILE_FLAGS "-hmsglevel_4")
     ELSE()
          SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
                 PROPERTIES
@@ -349,6 +357,10 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
        # No flags
    ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
+   ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Cray")
+        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                                PROPERTIES
+                                COMPILE_FLAGS "-hmsglevel_4")
    ELSE()
         SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
                                 PROPERTIES
@@ -443,6 +455,10 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
        # No flags
   ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
+  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Cray")
+      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                              PROPERTIES
+                              COMPILE_FLAGS "-hmsglevel_4")
   ELSE()
       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
                               PROPERTIES
