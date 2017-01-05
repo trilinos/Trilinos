@@ -321,15 +321,6 @@ void test_spgemm(KokkosKernels::Experimental::Graph::SPGEMMAlgorithm spgemm_algo
 }
 
 
-template <typename device>
-void init_device() {
-  device::execution_space::initialize();
-}
-
-template <typename device>
-void finalize_device() {
-  device::execution_space::finalize();
-}
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY); \
@@ -338,18 +329,41 @@ void finalize_device() {
 	test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE); \
 	test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_MKL); \
 
-#define INSTMACRO2(DEVICE) \
-		init_device<DEVICE>();
-
-#define INSTMACRO3(DEVICE) \
-		finalize_device<DEVICE>();
 
 
 TEST (SPGEMM_TEST, SPGEMM) {
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::initialize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::initialize();
+#endif
+
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::initialize( );
+#endif
+
+
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
-  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO2)
   TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
-  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO3)
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::finalize( );
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::finalize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::finalize();
+#endif
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::finalize();
+#endif
 }
  
 

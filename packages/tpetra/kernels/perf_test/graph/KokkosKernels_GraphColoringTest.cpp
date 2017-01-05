@@ -172,8 +172,9 @@ int main (int argc, char ** argv){
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
       //typedef Kokkos::View<color_t * , RowMemorySpace> color_view_type;
+      typedef Kokkos::Device<Kokkos::OpenMP::execution_space, Kokkos::HostSpace> host_device_type;
 
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
+      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, host_device_type, Kokkos::MemoryUnmanaged> um_array_type;
       typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
 
       um_array_type _xadj (xadj, nr + 1);
@@ -233,7 +234,8 @@ int main (int argc, char ** argv){
 
       //typedef Kokkos::View<color_t * , Kokkos::LayoutStride, RowMemorySpace> color_view_type;
 
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
+      typedef Kokkos::Device<Kokkos::OpenMP::execution_space, Kokkos::HostSpace> host_device_type;
+      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, host_device_type, Kokkos::MemoryUnmanaged> um_array_type;
       typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
 
       um_array_type _xadj (xadj, nr + 1);

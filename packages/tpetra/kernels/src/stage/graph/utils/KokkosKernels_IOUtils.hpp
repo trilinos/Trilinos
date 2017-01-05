@@ -75,6 +75,7 @@ struct Edge{
   wt ew;
   bool operator<(const Edge <idx,wt> & a) const
   {
+    //return !((this->src < a.src) || (this->src == a.src && this->dst < a.dst));
     return (this->src < a.src) || (this->src == a.src && this->dst < a.dst);
   }
 };
@@ -180,6 +181,8 @@ void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *e
   myFile.write((char *) ew, sizeof(wt) * (ne));
   myFile.close();
 }
+
+
 
 template <typename idx, typename wt>
 void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char *filename){

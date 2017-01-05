@@ -158,20 +158,6 @@ void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm colorin
 
 }
 
-template <typename device>
-void init_device() {
-  device::execution_space::initialize();
-}
-
-template <typename device>
-void finalize_device() {
-  device::execution_space::finalize();
-}
-#define INSTMACRO2(DEVICE) \
-		init_device<DEVICE>();
-
-#define INSTMACRO3(DEVICE) \
-		finalize_device<DEVICE>();
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_coloring<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::COLORING_DEFAULT); \
@@ -184,10 +170,36 @@ void finalize_device() {
 
 
 TEST (COLORING_TEST, GC) {
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::initialize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::initialize();
+#endif
+
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::initialize( );
+#endif
+
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
-  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO2)
   TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
-  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO3)
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::finalize( );
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::finalize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::finalize();
+#endif
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::finalize();
+#endif
 }
  
 

@@ -5,6 +5,7 @@
 //#include <Ifpack2_Version.hpp>
 #include <iostream>
 #include <fstream>
+#include "MatrixMarket_Tpetra.hpp"
 
 #include <Ifpack2_Relaxation.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -89,6 +90,7 @@ int main( int argc, char* argv[] )
         &nr, &ne, &xadj, &adj, &vals, argv[1]);
   }
 
+  
   tcomm->broadcast (0, sizeof(int), (char *)&nr);
   tcomm->broadcast (0, sizeof(int), (char *)&ne);
   std::cout << "nr:" << nr << " ne:" << ne <<std::endl;
@@ -143,6 +145,13 @@ int main( int argc, char* argv[] )
   }
   TpetraCrsMatrix->fillComplete ();
 
+  Tpetra::MatrixMarket::Writer<tcrsMatrix_t> crs_writer;
+  std::string file_name = "Ifpack2_MT_GS.mtx";
+  Teuchos::RCP<const tcrsMatrix_t> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const tcrsMatrix_t> (TpetraCrsMatrix);
+  crs_writer.writeSparseFile(file_name, rcp_crs_mat);
+
+
+  
   delete []xadj; delete [] adj; delete []vals;
   delete []tmp_indices; delete [] tmp_vals;
 
