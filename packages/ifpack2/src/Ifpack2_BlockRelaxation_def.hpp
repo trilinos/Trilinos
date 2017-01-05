@@ -888,8 +888,13 @@ description () const
     out << "INVALID";
   }
 
+  out << ", overlap: " << OverlapLevel_;
+
   out  << ", " << "sweeps: " << NumSweeps_ << ", "
       << "damping factor: " << DampingFactor_ << ", ";
+
+  std::string containerType = ContainerType::getName();
+  out << "block container: " << ((containerType == "Generic") ? containerType_ : containerType);
 
   out << "}";
   return out.str();
