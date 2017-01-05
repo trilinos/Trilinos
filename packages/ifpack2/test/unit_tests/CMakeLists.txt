@@ -91,10 +91,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     )
 ENDIF ()
 
-TRIBITS_ADD_EXECUTABLE(
-    Distributed_SGS
-    SOURCES Ifpack2_DistributedRelaxationTest.cpp 
-  )
+#TRIBITS_ADD_EXECUTABLE(
+#    Distributed_SGS
+#    SOURCES Ifpack2_DistributedRelaxationTest.cpp 
+#  )
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
