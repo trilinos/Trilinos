@@ -44,10 +44,14 @@
 #define _KOKKOSKERNELS_SIMPLEUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
+#include "Kokkos_ArithTraits.hpp"
 #include "impl/Kokkos_Timer.hpp"
+#include <type_traits>
+
 
 #define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define KOKKOSKERNELS_MACRO_ABS(x) ((x) > (0) ? (x): (-x))
+
+#define KOKKOSKERNELS_MACRO_ABS(x)  Kokkos::Details::ArithTraits<typename std::decay<decltype(x)>::type>::abs (x)
 
 namespace KokkosKernels{
 
@@ -116,7 +120,7 @@ void kk_inclusive_parallel_prefix_sum(typename forward_array_type::value_type nu
 }
 
 
-template<typename view_type1, typename view_type2, typename eps_type>
+template<typename view_type1, typename view_type2, typename eps_type = typename Kokkos::Details::ArithTraits<typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor{
   view_type1 view1;
   view_type2 view2;
@@ -128,10 +132,13 @@ struct IsIdenticalFunctor{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_t &is_equal) const {
-    typename view_type2::value_type val_diff = view1(i) - view2(i);
+	typedef typename view_type2::non_const_value_type val_type;
+	typedef Kokkos::Details::ArithTraits<val_type> KAT;
+	typedef typename KAT::mag_type mag_type;
+    const mag_type val_diff = KAT::abs (view1(i) - view2(i));
 
-    if (KOKKOSKERNELS_MACRO_ABS (val_diff) > eps) {
-      //std::cout << "i:" << i << "view1(i) == view2(i):" << int (view1(i) == view2(i)) << std::setprecision(15) << " view1(i):" << view1(i) << " view2(i):" << view2(i) << " val_diff:" << val_diff <<  " eps:" << eps << std::endl;
+
+    if (val_diff > eps ) {
       is_equal+=1;
     }
   }

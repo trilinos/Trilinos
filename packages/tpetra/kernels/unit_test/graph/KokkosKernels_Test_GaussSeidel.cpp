@@ -54,6 +54,8 @@
 
 #include "TpetraKernels_ETIHelperMacros.h"
 #include <cstdlib>
+#include <iostream>
+#include <complex>
 
 //const char *input_filename = "sherman1.mtx";
 //const char *input_filename = "Si2.mtx";
@@ -127,7 +129,7 @@ int run_gauss_seidel_1(
 }
 
 template<typename scalar_view_t>
-scalar_view_t create_x_vector(size_t nv, typename scalar_view_t::value_type max_value = 10.0){
+scalar_view_t create_x_vector(size_t nv, double max_value = 10.0){
   scalar_view_t kok_x ("X", nv);
 
 
@@ -156,7 +158,7 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
 template <typename scalar_t, typename lno_t, typename device>
 void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algorithm) {
   ASSERT_TRUE( (input_filename != NULL));
-  device::execution_space::initialize();
+  //device::execution_space::initialize();
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -185,7 +187,9 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
 
 
   scalar_t dot_product = KokkosBlas::dot( x_vector , x_vector );
-  scalar_t initial_norm_res  = sqrt( dot_product );
+  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  mag_t initial_norm_res = Kokkos::Details::ArithTraits<scalar_t>::abs (dot_product);
+  initial_norm_res  = Kokkos::Details::ArithTraits<mag_t>::sqrt( initial_norm_res );
 
   Kokkos::deep_copy (x_vector , 0);
 
@@ -209,16 +213,33 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
           KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
           //KokkosKernels::Experimental::Util::print_1Dview(x_vector);
           scalar_t result_dot_product = KokkosBlas::dot( x_vector , x_vector );
-          scalar_t result_norm_res  = sqrt( result_dot_product );
-          //std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
+          mag_t result_norm_res  = Kokkos::Details::ArithTraits<scalar_t>::abs( result_dot_product );
+          result_norm_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(result_norm_res);
+          std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
           EXPECT_TRUE( (result_norm_res < initial_norm_res));
         }
       }
     }
   }
 
+  //device::execution_space::finalize();
+}
+
+template <typename device>
+void init_device() {
+  device::execution_space::initialize();
+}
+
+template <typename device>
+void finalize_device() {
   device::execution_space::finalize();
 }
+#define INSTMACRO2(DEVICE) \
+		init_device<DEVICE>();
+
+#define INSTMACRO3(DEVICE) \
+		finalize_device<DEVICE>();
+
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_gauss_seidel<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::GS_DEFAULT); \
@@ -229,7 +250,9 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
 TEST (GAUSSSEIDEL_TEST, GS) {
 
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
+  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO2)
   TPETRAKERNELS_INSTANTIATE_SLD_NO_ORDINAL_SCALAR(INSTMACRO)
+  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO3)
 }
  
 

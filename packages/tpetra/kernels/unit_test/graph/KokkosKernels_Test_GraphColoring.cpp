@@ -96,7 +96,7 @@ template <typename scalar_t, typename lno_t, typename device>
 void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm coloring_algorithm) {
   ASSERT_TRUE( (input_filename != NULL));
 
-  device::execution_space::initialize();
+  //device::execution_space::initialize();
   //device::execution_space::print_configuration(std::cout);
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device> crsMat_t;
@@ -154,9 +154,24 @@ void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm colorin
 
   EXPECT_TRUE( (num_conflict == 0));
 
-  device::execution_space::finalize();
+  //device::execution_space::finalize();
 
 }
+
+template <typename device>
+void init_device() {
+  device::execution_space::initialize();
+}
+
+template <typename device>
+void finalize_device() {
+  device::execution_space::finalize();
+}
+#define INSTMACRO2(DEVICE) \
+		init_device<DEVICE>();
+
+#define INSTMACRO3(DEVICE) \
+		finalize_device<DEVICE>();
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_coloring<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::COLORING_DEFAULT); \
@@ -170,7 +185,9 @@ void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm colorin
 
 TEST (COLORING_TEST, GC) {
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
+  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO2)
   TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
+  TPETRAKERNELS_INSTANTIATE_D(INSTMACRO3)
 }
  
 

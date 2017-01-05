@@ -58,8 +58,6 @@ int check_output = 0;
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
 
-#define KOKKOS_HAVE_OPENMP
-
 enum MEMSPACE{HBM, DDR4}; //GPUS GPU vs DDR4
 MEMSPACE amemspace = HBM; //DEFAULT
 MEMSPACE bmemspace = HBM; //DEFAULT
@@ -471,6 +469,9 @@ int main (int argc, char ** argv){
       }
       else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 13;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "MULTIMEM" ) ) {
+          cmdline[ CMD_SPGEMM_ALGO ] = 14;
       }
 
       else {
@@ -2194,6 +2195,9 @@ crsMat_t3 run_experiment(
     break;
   case 13:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMSPEED);
+    break;
+  case 14:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTIMEM);
     break;
 
   default:
