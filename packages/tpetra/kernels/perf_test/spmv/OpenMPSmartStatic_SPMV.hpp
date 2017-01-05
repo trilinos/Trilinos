@@ -44,6 +44,8 @@
 #ifndef OPENMP_SMART_STATIC_SPMV_HPP_
 #define OPENMP_SMART_STATIC_SPMV_HPP_
 
+#ifdef _OPENMP
+
 #include <omp.h>
 
 #define OMP_BENCH_RESTRICT __restrict__
@@ -159,4 +161,5 @@ void openmp_smart_static_matvec(AType A, XType x, YType y, int rows_per_thread,
 
 #undef OMP_BENCH_RESTRICT
 
+#endif /* _OPENMP */
 #endif /* OPENMP_SMART_STATIC_SPMV_HPP_ */
