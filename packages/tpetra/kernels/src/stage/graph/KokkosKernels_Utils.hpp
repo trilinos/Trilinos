@@ -49,11 +49,11 @@
 #include <iostream>
 #include <limits>
 
-#include "utils/KokkosKernels_ExecSpaceUtils.hpp"
-#include "utils/KokkosKernels_SimpleUtils.hpp"
-#include "utils/KokkosKernels_SparseUtils.hpp"
-#include "utils/KokkosKernels_PrintUtils.hpp"
-#include "utils/KokkosKernels_VectorUtils.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_PrintUtils.hpp"
+#include "KokkosKernels_VectorUtils.hpp"
 
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP

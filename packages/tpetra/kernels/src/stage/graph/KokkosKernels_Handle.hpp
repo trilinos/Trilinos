@@ -43,7 +43,7 @@
 #include <KokkosKernels_GraphColorHandle.hpp>
 #include <KokkosKernels_GaussSeidelHandle.hpp>
 #include <KokkosKernels_SPGEMMHandle.hpp>
-#include "utils/KokkosKernels_ExecSpaceUtils.hpp"
+#include <KokkosKernels_ExecSpaceUtils.hpp>
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
