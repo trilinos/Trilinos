@@ -50,9 +50,9 @@
 //#define NUMERIC_USE_STATICMEM
 //#define twostep
 #include <KokkosKernels_Utils.hpp>
-#include "../utils/KokkosKernels_SimpleUtils.hpp"
-#include "../utils/KokkosKernels_SparseUtils.hpp"
-#include "../utils/KokkosKernels_VectorUtils.hpp"
+#include <KokkosKernels_SimpleUtils.hpp>
+#include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosKernels_VectorUtils.hpp>
 #include <KokkosKernels_HashmapAccumulator.hpp>
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_GraphColor.hpp"
