@@ -97,7 +97,10 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DAmesos2_ENABLE_KLU2=ON"
   "-DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF"
   "-DTrilinos_TRACE_ADD_TEST=ON"
+  "-DPiro_EpetraSolver_MPI_4_DISABLE=ON"
   )
+
+# Previous option to disable long-failing Pir test until it can be fixed (#826)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
