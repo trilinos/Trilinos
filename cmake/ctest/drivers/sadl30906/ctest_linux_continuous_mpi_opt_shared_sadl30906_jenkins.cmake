@@ -74,8 +74,6 @@ SET(TRIBITS_2ND_CTEST_DROP_SITE
 SET(TRIBITS_2ND_CTEST_DROP_LOCATION
   "/extended/cdash/submit.php?project=Trilinos" )
 
-SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-
 SET(Trilinos_BRANCH develop)
 
 SET(EXTRA_EXCLUDE_PACKAGES Claps Optika)
@@ -83,6 +81,7 @@ SET(EXTRA_EXCLUDE_PACKAGES Claps Optika)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
+  "-DTrilinos_ENABLE_DEBUG_SYMBOLS=ON"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
   "-DMPI_BASE_DIR:PATH=/projects/install/rhel6-x86_64/sems/compiler/gcc/4.7.2/openmpi/1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
@@ -96,6 +95,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
   "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
   "-DAmesos2_ENABLE_KLU2=ON"
+  "-DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF"
   "-DTrilinos_TRACE_ADD_TEST=ON"
   )
 
