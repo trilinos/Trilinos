@@ -44,7 +44,7 @@
 #ifndef OPENMP_STATIC_SPMV_HPP_
 #define OPENMP_STATIC_SPMV_HPP_
 
-template<typename AType, typename XType, typename YType>
+template<typename AType, typename XType, typename YType, typename LocalOrdinal, typename Scalar>
 void openmp_static_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
 
   #define OMP_BENCH_RESTRICT __restrict__
