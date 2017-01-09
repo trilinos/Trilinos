@@ -146,6 +146,45 @@ protected:
   /** @name Overridden protected functions from MultiVectorBase */
   //@{
 
+  /** \brief Default implementation of assign(vector) using RTOps. */
+  //virtual void assignImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of randomize using RTOps. */
+  virtual void randomizeImpl(Scalar l, Scalar u);
+
+  /** \brief Default implementation of abs using RTOps. */
+  virtual void absImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of reciprocal using RTOps. */
+  virtual void reciprocalImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of ele_wise_scale using RTOps. */
+  virtual void ele_wise_scaleImpl(const VectorBase<Scalar>& x);
+
+  /** \brief Default implementation of update using RTOps. */
+  /*virtual void updateImpl(
+    Scalar alpha,
+    const VectorBase<Scalar>& x);*/
+
+  /** \brief Default implementation of linear_combination using RTOps. */
+  /*virtual void linear_combinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    );*/
+
+  /** \brief Default implementation of norm_1 using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_1Impl() const;
+
+  /** \brief Default implementation of norm_2 using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2Impl() const;
+
+  /** \brief Default implementation of norm_inf using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_infImpl() const;
+
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
