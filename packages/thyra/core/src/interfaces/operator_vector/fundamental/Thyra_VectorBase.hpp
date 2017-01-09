@@ -151,6 +151,123 @@ public:
   using MultiVectorBase<Scalar>::apply;
 #endif
 
+  /** @name Minimal mathematical functions */
+  //@{
+
+  /** \brief Vector assignment:
+   *
+   * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  //void assign(const VectorBase<Scalar>& x)
+  //  { assignImpl(x); }
+
+  /** \brief Random vector generation:
+   *
+   * <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
+   * 
+   * The elements <tt>v(i)</tt> are randomly generated between
+   * <tt>[l,u]</tt>.
+   *
+   * NVI function.
+   */
+  void randomize(Scalar l, Scalar u)
+    { randomizeImpl(l,u); }
+
+  /** \brief Element-wise absolute value:
+   *
+   * <tt>y(i) = abs(x(i)), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  void abs(const VectorBase<Scalar>& x)
+    { absImpl(x); }
+
+  /** \brief Element-wise reciprocal:
+   *
+   * <tt>y(i) = 1/x(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  void reciprocal(const VectorBase<Scalar>& x)
+    { reciprocalImpl(x); }
+
+  /** \brief Element-wise scaling:
+   *
+   * <tt>y(i) *= x(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  void ele_wise_scale(const VectorBase<Scalar>& x)
+    { ele_wise_scaleImpl(x); }
+
+  /** \brief AXPY:
+   *
+   * <tt>y(i) = alpha * x(i) + y(i), i = 0...y->space()->dim()-1</tt>.
+   *
+   * NVI function.
+   */
+  /*void update(
+    Scalar alpha,
+    const VectorBase<Scalar>& x)
+    { updateImpl(alpha, x); }*/
+
+  /** \brief Linear combination:
+   *
+   * <tt>y(i) = beta*y(i) + sum( alpha[k]*x[k](i), k=0...m-1 ), i = 0...y->space()->dim()-1</tt>.
+   *
+   * \param m [in] Number of vectors x[]
+   *
+   * \param alpha [in] Array (length <tt>m</tt>) of input scalars.
+   *
+   * \param x [in] Array (length <tt>m</tt>) of input vectors.
+   *
+   * \param beta [in] Scalar multiplier for y
+   *
+   * \param y [in/out] Target vector that is the result of the linear
+   * combination.
+   *
+   * This function implements a general linear combination:
+   \verbatim
+     y(i) = beta*y(i) + alpha[0]*x[0](i) + alpha[1]*x[1](i)
+            + ... + alpha[m-1]*x[m-1](i), i = 0...y->space()->dim()-1
+   \endverbatim
+   *
+   * NVI function.
+   */
+  /*void linear_combination(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    )
+    { linear_combinationImpl(alpha, x, beta); }*/
+
+  /** \brief  One (1) norm: <tt>result = ||v||1</tt>.
+   *
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_1() const
+    { return norm_1Impl(); }
+
+  /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2() const
+    { return norm_2Impl(); }
+
+  /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_inf() const
+    { return norm_infImpl(); }
+
+  //@}
+
   /** @name Space membership */
   //@{
 
@@ -269,6 +386,65 @@ protected:
 
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
+
+  /** \brief Virtual implementation for NVI assign.
+   *
+   */
+  //virtual void assignImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI randomize.
+   *
+   */
+  virtual void randomizeImpl(Scalar l, Scalar u) = 0;
+
+  /** \brief Virtual implementation for NVI abs.
+   *
+   */
+  virtual void absImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI reciprocal.
+   *
+   */
+  virtual void reciprocalImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI ele_wise_scale.
+   *
+   */
+  virtual void ele_wise_scaleImpl(const VectorBase<Scalar>& x) = 0;
+
+  /** \brief Virtual implementation for NVI update.
+   *
+   */
+  /*virtual void updateImpl(
+    Scalar alpha,
+    const VectorBase<Scalar>& x) = 0;*/
+
+  /** \brief Virtual implementation for NVI linear_combination.
+   *
+   */
+  /*virtual void linear_combinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta
+    ) = 0;*/
+
+  /** \brief Virtual implementation for NVI norm_1.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_1Impl() const = 0;
+
+  /** \brief Virtual implementation for NVI norm_2.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2Impl() const = 0;
+
+  /** \brief Virtual implementation for NVI norm_inf.
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_infImpl() const = 0;
 
   /** \brief Apply a reduction/transformation operator over a set of vectors:
    * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
