@@ -42,20 +42,15 @@
 
 #ifndef IFPACK2_OVERLAPPINGPARTITIONER_DEF_HPP
 #define IFPACK2_OVERLAPPINGPARTITIONER_DEF_HPP
+#include <vector>
+#include <string>
+#include <algorithm>
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_OverlappingPartitioner_decl.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include <vector>
-#include <string>
 
 namespace Ifpack2 {
-
-template <class local_ordinal_type>
-bool isSubset(Teuchos::Array<local_ordinal_type> const & Ci,
-              size_t const &lengCi,
-              Teuchos::Array<local_ordinal_type> const & Cj,
-              size_t const &lengCj);
 
 template<class GraphType>
 OverlappingPartitioner<GraphType>::
@@ -321,28 +316,23 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     Teuchos::Array<local_ordinal_type> newIndices;
     newIndices.resize(MaxNumEntries_tmp);
 
-//#   define IFPACK_DEBUG_PARTITIONING
-#   ifdef IFPACK_DEBUG_PARTITIONING
-    std::cout << "block = cell(" << NumLocalParts_ << ",1);" << std::endl;
-#   endif
+    //int mypid = Graph_->getComm()->getRank();
+
     for (int part = 0; part < NumLocalParts_ ; ++part) {
-#     ifdef IFPACK_DEBUG_PARTITIONING
-      std::cout << "block{" << part+1 << "} = [";
-#     endif
       for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
         const local_ordinal_type LRID = Parts_[part][i];
         
-        size_t NumIndices;
-        Graph_->getLocalRowCopy (LRID, Indices (), NumIndices);
+        size_t numIndices;
+        Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
         if (maintainSparsity_) {
           //JJH: the entries in Indices are already sorted.  However, the Tpetra documentation states
           //     that we can't count on this always being true, hence we sort.  Also note that there are
           //     unused entries at the end of Indices (it's sized to hold any row).  This means we can't
-          //     just use Indices.end() in sorting and Indices.size() in isSubset().
-          std::sort(Indices.begin(),Indices.begin()+NumIndices);
+          //     just use Indices.end() in sorting and in std::includes
+          std::sort(Indices.begin(),Indices.begin()+numIndices);
         }
 
-        for (size_t j = 0; j < NumIndices; ++j) {
+        for (size_t j = 0; j < numIndices; ++j) {
           // use *local* indices only
           const local_ordinal_type col = Indices[j];
           if (Teuchos::as<size_t> (col) >= Graph_->getNodeNumRows ()) {
@@ -361,12 +351,10 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
               size_t numNewIndices;
               Graph_->getLocalRowCopy(col, newIndices(), numNewIndices);
               std::sort(newIndices.begin(),newIndices.begin()+numNewIndices);
-              flag = isSubset(Indices,NumIndices,newIndices,numNewIndices);
+              flag = std::includes(Indices.begin(),Indices.begin()+numIndices,
+                                   newIndices.begin(),newIndices.begin()+numNewIndices);
             }
             if (flag) {
-#             ifdef IFPACK_DEBUG_PARTITIONING
-              std::cout << col+1 << " ";
-#             endif
               tmp[part].push_back (col);
             }
           }
@@ -380,14 +368,8 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
         // a zero pivot entry if this gets pushed back first. So... Last.
         if (where == tmp[part].end ()) {
           tmp[part].push_back (LRID);
-#         ifdef IFPACK_DEBUG_PARTITIONING
-          std::cout << LRID+1 << " ";
-#         endif
         }
       }
-#     ifdef IFPACK_DEBUG_PARTITIONING
-      std::cout << "];" << std::endl;
-#     endif
     }
 
     // now I convert the STL vectors into Teuchos Array RCP's
@@ -455,26 +437,6 @@ void  OverlappingPartitioner<GraphType>::describe(Teuchos::FancyOStream &os, con
   os << "Overlapping level     = " << OverlappingLevel_ << endl;
   os << "Is computed           = " << IsComputed_ << endl;
   os << "================================================================================" << endl;
-}
-
-template <class local_ordinal_type>
-bool isSubset(Teuchos::Array<local_ordinal_type> const & Ci,
-              size_t const & ni,
-              Teuchos::Array<local_ordinal_type> const & Cj,
-              size_t const & nj)
-{
-  size_t jind=0;
-  bool subset=false;
-  for (size_t k=0; k<ni; ++k) {
-    if (Ci[k] != Cj[jind])
-      continue;
-    if (jind < nj-1)
-      //match for Cj(jind) has been found
-      ++jind;
-    else
-      subset=true;
-  }
-  return subset;
 }
 
 }// namespace Ifpack2
