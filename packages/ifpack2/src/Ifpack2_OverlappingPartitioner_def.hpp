@@ -313,61 +313,105 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     Indices.resize (MaxNumEntries_tmp);
     Teuchos::Array<local_ordinal_type> newIndices;
     newIndices.resize(MaxNumEntries_tmp);
+    
+    if (!maintainSparsity_) {
 
-    for (int part = 0; part < NumLocalParts_ ; ++part) {
-      for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
-        const local_ordinal_type LRID = Parts_[part][i];
-        
-        size_t numIndices;
-        Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
-        if (maintainSparsity_) {
+      local_ordinal_type numLocalRows = Graph_->getNodeNumRows();
+      for (int part = 0; part < NumLocalParts_ ; ++part) {
+        for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
+          const local_ordinal_type LRID = Parts_[part][i];
+          
+          size_t numIndices;
+          Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
+
+          for (size_t j = 0; j < numIndices; ++j) {
+            // use *local* indices only
+            const local_ordinal_type col = Indices[j];
+            if (col >= numLocalRows) {
+              continue;
+            }
+
+            // has this column already been inserted?
+            std::vector<size_t>::iterator where = 
+              std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
+
+
+            if (where == tmp[part].end()) {
+              tmp[part].push_back (col);
+            }
+          }
+
+          //10-Jan-2017 JHU : A possible optimization is to avoid the std::find's in the loop above,
+          //but instead sort and make unique afterwards.  One would have to be careful to only sort/
+          //make unique the insertions associated with the current row LRID, as for each row, LRID
+          //may occur after all other col indices for row LRID (see comment about zero pivot below).
+
+          // has this column already been inserted?
+          std::vector<size_t>::iterator where =
+            std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (LRID));
+          
+          // This happens here b/c Vanka on Stokes with Stabilized elements will have
+          // a zero pivot entry if this gets pushed back first. So... Last.
+          if (where == tmp[part].end ()) {
+            tmp[part].push_back (LRID);
+          }
+        }
+      } //for (int part = 0; ...
+
+    } else {
+      //maintainSparsity_ == true
+
+      for (int part = 0; part < NumLocalParts_ ; ++part) {
+        for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
+          const local_ordinal_type LRID = Parts_[part][i];
+          
+          size_t numIndices;
+          Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
           //JJH: the entries in Indices are already sorted.  However, the Tpetra documentation states
           //     that we can't count on this always being true, hence we sort.  Also note that there are
           //     unused entries at the end of Indices (it's sized to hold any row).  This means we can't
           //     just use Indices.end() in sorting and in std::includes
           std::sort(Indices.begin(),Indices.begin()+numIndices);
-        }
 
-        for (size_t j = 0; j < numIndices; ++j) {
-          // use *local* indices only
-          const local_ordinal_type col = Indices[j];
-          if (Teuchos::as<size_t> (col) >= Graph_->getNodeNumRows ()) {
-            continue;
-          }
+          for (size_t j = 0; j < numIndices; ++j) {
+            // use *local* indices only
+            const local_ordinal_type col = Indices[j];
+            if (Teuchos::as<size_t> (col) >= Graph_->getNodeNumRows ()) {
+              continue;
+            }
 
-          // has this column already been inserted?
-          std::vector<size_t>::iterator where = 
-            std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
+            // has this column already been inserted?
+            std::vector<size_t>::iterator where = 
+              std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
 
 
-          if (where == tmp[part].end()) {
-            // Check if row associated with "col" increases connectivity already defined by row LRID's stencil.
-            // If it does and maintainSparsity_ is true, do not add "col" to the current partition (block).
-            bool flag=true;
-            if (maintainSparsity_) {
+            if (where == tmp[part].end()) {
+              // Check if row associated with "col" increases connectivity already defined by row LRID's stencil.
+              // If it does and maintainSparsity_ is true, do not add "col" to the current partition (block).
               size_t numNewIndices;
               Graph_->getLocalRowCopy(col, newIndices(), numNewIndices);
               std::sort(newIndices.begin(),newIndices.begin()+numNewIndices);
-              flag = std::includes(Indices.begin(),Indices.begin()+numIndices,
+              bool isSubset = std::includes(Indices.begin(),Indices.begin()+numIndices,
                                    newIndices.begin(),newIndices.begin()+numNewIndices);
-            }
-            if (flag) {
-              tmp[part].push_back (col);
+              if (isSubset) {
+                tmp[part].push_back (col);
+              }
             }
           }
-        }
 
-        // has this column already been inserted?
-        std::vector<size_t>::iterator where =
-          std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (LRID));
-        
-        // This happens here b/c Vanka on Stokes with Stabilized elements will have
-        // a zero pivot entry if this gets pushed back first. So... Last.
-        if (where == tmp[part].end ()) {
-          tmp[part].push_back (LRID);
+          // has this column already been inserted?
+          std::vector<size_t>::iterator where =
+            std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (LRID));
+          
+          // This happens here b/c Vanka on Stokes with Stabilized elements will have
+          // a zero pivot entry if this gets pushed back first. So... Last.
+          if (where == tmp[part].end ()) {
+            tmp[part].push_back (LRID);
+          }
         }
-      }
-    }
+      } //for (int part = 0;
+
+    } //if (maintainSparsity_) ... else
 
     // now I convert the STL vectors into Teuchos Array RCP's
     //
