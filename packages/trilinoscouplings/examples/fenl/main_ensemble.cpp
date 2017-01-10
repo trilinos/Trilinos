@@ -428,7 +428,9 @@ void run_tasmanian(
       break;
     }
 
-    perf_total.uq_count += num_new_points;
+    // Don't add new points to the count if this is the last iteration
+    if (level < max_level)
+      perf_total.uq_count += num_new_points;
     ++level;
   }
   R_total = R_total_num / R_total_denom;
