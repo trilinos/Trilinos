@@ -307,16 +307,12 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     // cycle over all rows in the local graph (that is the overlapping
     // graph). For each row, all columns will belong to the subgraph
     // of row `i'.
-    // TODO Optimization: don't check if already inserted, but instead
-    //                    sort and make unique afterwards
 
     int MaxNumEntries_tmp = Graph_->getNodeMaxNumRowEntries();
     Teuchos::Array<local_ordinal_type> Indices;
     Indices.resize (MaxNumEntries_tmp);
     Teuchos::Array<local_ordinal_type> newIndices;
     newIndices.resize(MaxNumEntries_tmp);
-
-    //int mypid = Graph_->getComm()->getRank();
 
     for (int part = 0; part < NumLocalParts_ ; ++part) {
       for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
@@ -345,7 +341,8 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
 
           if (where == tmp[part].end()) {
-            // check if row associated with "col" increases connectivity already defined by row LRID's stencil.
+            // Check if row associated with "col" increases connectivity already defined by row LRID's stencil.
+            // If it does and maintainSparsity_ is true, do not add "col" to the current partition (block).
             bool flag=true;
             if (maintainSparsity_) {
               size_t numNewIndices;
