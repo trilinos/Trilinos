@@ -89,11 +89,11 @@ IF (Sacado_ENABLE_Teuchos AND Sacado_ENABLE_KokkosCore)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      fad_kokkos_mat_vec_perf
-      SOURCES fad_kokkos_mat_vec_perf.cpp
-      COMM serial mpi
-      )
+#    TRIBITS_ADD_EXECUTABLE(
+#      fad_kokkos_mat_vec_perf
+#      SOURCES fad_kokkos_mat_vec_perf.cpp
+#      COMM serial mpi
+#      )
   ENDIF()
 
 ENDIF()
