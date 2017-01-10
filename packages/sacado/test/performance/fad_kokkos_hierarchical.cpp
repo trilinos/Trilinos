@@ -821,8 +821,6 @@ struct DrekarTest {
   }
 
   void compute(const int ntrial, const bool do_check) {
-    Sacado::createGlobalMemoryPool(ExecSpace(), N*16*10*ncells*sizeof(double));
-
     auto kernel_flat =
       create_advection_kernel(flux_m_i_fad, wgb_fad, src_m_i_fad, wbs_fad, residual_m_i_fad, coeff);
     Kokkos::Impl::Timer timer;
@@ -868,8 +866,6 @@ struct DrekarTest {
       check(residual_m_i, residual_m_i_const, tol);
       check(residual_m_i, tresidual_m_i, tol);
     }
-
-    Sacado::destroyGlobalMemoryPool(ExecSpace());
   }
 };
 
@@ -880,6 +876,22 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
   const int fad_dim = 50;
   const int dim = 3;
   typedef DrekarTest<ExecSpace,dim,fad_dim> test_type;
+
+  // The kernel allocates 2*N double's per warp on Cuda.  Approximate
+  // the maximum number of warps as the maximum concurrency / 32.
+  // Include a fudge factor of 1.2 since memory pool treats a block as full
+  // once it reaches 80% capacity
+  std::cout << "concurrency = " << ExecSpace::concurrency() << std::endl;
+  size_t mem_pool_size =
+    static_cast<size_t>(1.2*ExecSpace::concurrency()*2*fad_dim*sizeof(double));
+#if defined(KOKKOS_HAVE_CUDA)
+  if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
+    mem_pool_size /= 32;
+#endif
+    std::cout << "Memory pool size = " << mem_pool_size / (1024.0 * 1024.0)
+              << " MB" << std::endl;
+    ExecSpace exec_space;
+    Sacado::createGlobalMemoryPool(exec_space, mem_pool_size);
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
   std::cout << "hierarchical";
@@ -896,6 +908,8 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
     test_type test(i,nbasis,npoint);
     test.compute(ntrial, check);
   }
+
+  Sacado::destroyGlobalMemoryPool(exec_space);
 }
 
 int main(int argc, char* argv[]) {
