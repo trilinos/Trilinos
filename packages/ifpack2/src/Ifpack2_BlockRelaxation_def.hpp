@@ -121,14 +121,10 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 setParameters (const Teuchos::ParameterList& List)
 {
-  //Teuchos::ParameterList validparams;
-  //Ifpack2::getValidParameters (validparams);
-  //List.validateParameters (validparams);
-
-  // Don't change ANY parameter unless the user specified it
-  // explicitly, thus indicating that the user wants to change it.
-  // This avoids the (not really sensible) defaults in
-  // Ifpack2::getValidParameters.
+  // Note that the validation process does not change List.
+  Teuchos::ParameterList validparams;
+  Ifpack2::getValidParameters (validparams);
+  List.validateParameters (validparams);
 
   if (List.isParameter ("relaxation: container")) {
     // If the container type isn't a string, this will throw, but it
