@@ -125,9 +125,11 @@ private:
   int team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
+
   KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
   bool use_dynamic_scheduling;
   bool KKVERBOSE;
+  int vector_size;
 public:
 
 
@@ -137,7 +139,7 @@ public:
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Experimental::Util::kk_get_exec_space_type<HandleExecSpace>()),
-      use_dynamic_scheduling(true), KKVERBOSE(false){}
+      use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1){}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
@@ -240,7 +242,16 @@ public:
    * \param nnz: number of nonzeroes, or edges.
    */
   int get_suggested_vector_size(const size_t nr,const size_t nnz){
-    return KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(nr, nnz, my_exec_space);
+    if (vector_size == -1){
+      return KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(nr, nnz, my_exec_space);
+    }
+    else {
+      return vector_size;
+    }
+  }
+
+  int set_suggested_vector_size(int vector_size_){
+    this->vector_size = vector_size_;
   }
 
   /**

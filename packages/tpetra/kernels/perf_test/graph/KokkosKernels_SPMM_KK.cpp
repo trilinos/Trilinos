@@ -57,6 +57,7 @@ int mkl_keep_output = 1;
 int check_output = 0;
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
+int vector_size = -1;
 
 enum MEMSPACE{HBM, DDR4}; //GPUS GPU vs DDR4
 MEMSPACE amemspace = HBM; //DEFAULT
@@ -344,6 +345,9 @@ int main (int argc, char ** argv){
     }
     else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
       cmdline[ CMD_TEAMSIZE ] = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+      vector_size = atoi( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
@@ -2063,6 +2067,7 @@ crsMat_t3 run_experiment(
   kh.set_team_work_size(chunk_size);
   kh.set_shmem_size(shmemsize);
   kh.set_suggested_team_size(team_size);
+  kh.set_suggested_vector_size(vector_size);
 
   if (use_dynamic_scheduling){
     kh.set_dynamic_scheduling(true);
