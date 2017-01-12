@@ -334,13 +334,13 @@ public:
     // first calucale GID offsets in submaps
     // we need that for generating Xpetra GIDs
     std::vector<GlobalOrdinal> gidOffsets(numMaps,0);
-    for(int i = 1; i < numMaps; ++i) {
+    for(size_t i = 1; i < numMaps; ++i) {
       gidOffsets[i] = rcpBlockedInput->getMap(i-1,true)->getMaxAllGlobalIndex() + gidOffsets[i-1] + 1;
     }
 
     std::vector<RCP<const Map> > mapsXpetra(rcpBlockedInput->getNumMaps(), Teuchos::null);
     std::vector<RCP<const Map> > mapsThyra (rcpBlockedInput->getNumMaps(), Teuchos::null);
-    for (int b = 0; b < rcpBlockedInput->getNumMaps(); ++b){
+    for (size_t b = 0; b < rcpBlockedInput->getNumMaps(); ++b){
       // extract sub map with Thyra style gids
       // this can be an underlying Map or BlockedMap object
       RCP<const Map> subMapThyra  = rcpBlockedInput->getMap(b,true);
