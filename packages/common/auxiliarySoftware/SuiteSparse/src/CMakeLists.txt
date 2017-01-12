@@ -65,6 +65,7 @@ TRIBITS_ADD_LIBRARY(
   trilinosss
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  IMPORTEDLIBS m  # for ceil, sqrt etc.
   )
 
 target_link_libraries(trilinosss m)
