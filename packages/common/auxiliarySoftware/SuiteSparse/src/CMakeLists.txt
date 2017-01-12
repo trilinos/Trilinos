@@ -67,6 +67,5 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-target_link_libraries(trilinosss m)
 
 
