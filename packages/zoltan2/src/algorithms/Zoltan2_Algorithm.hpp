@@ -61,6 +61,7 @@ class Algorithm;
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
+#include <Zoltan2_PartitionTree.hpp>
 
 
 namespace Zoltan2 {
@@ -119,6 +120,90 @@ public:
   virtual void map(const RCP<MappingSolution<Adapter> > &solution) 
   {
     Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  for partitioning methods, return partition tree of the
+  //          computed parts
+  //
+  virtual const std::vector<partitionTreeNode<part_t> > &
+  getPartitionTreeNodes() const
+  {
+    return partitionTree;
+  }
+
+  //! \brief  for partitioning methods, set partition tree of the
+  //          computed parts.
+  //
+  void setPartitionTreeNodes(
+    const std::vector<partitionTreeNode<part_t> > & setPartitionTree)
+  {
+    partitionTree = setPartitionTree;
+
+    // now by convention the last node is the root
+    // this would not be the natural result of rcb
+    // however other algorithms may also need this swap step so
+    // I made it general here
+    int findRoot = -1;
+    for(int n = 0; n < static_cast<int>(partitionTree.size()); ++n) {
+      if(partitionTree[n].parent == 0) { // root has parent=0 by convention
+        if(findRoot != -1) {
+          throw std::logic_error("setPartitionTreeNodes found more than one root. "
+            " This is not expected.");
+        }
+        findRoot = n;
+      }
+    }
+
+    if(findRoot == -1) {
+      throw std::logic_error( "setPartitionTreeNodes did not find a root. "
+        " This is not expected." );
+    }
+
+    // potentially we would not do this and simply apply the 'swap' on the
+    // data write out when requested - but that could create confusion
+    // To do - verify how we want to apply this convention
+    swapPartitionTreeNodes(findRoot, partitionTree.size()-1);
+
+    // Swap the order of the two nodes under the root
+    // This would intentionally put permPartNums out of sequence for rcb for ex.
+    // Just for validating code right now...
+    /*
+    int newRoot = partitionTree.size()-1;
+    int save1 = partitionTree[newRoot].children[1];
+    partitionTree[newRoot].children[1] = partitionTree[newRoot].children[0];
+    partitionTree[newRoot].children[0] = save1;
+    */
+  }
+
+  //! \brief  swap to node indices and update all the corresponding parent and
+  //          children indices to preserve the tree structure.
+  //
+  void swapPartitionTreeNodes(int a, int b) {
+    if(a != b) {
+      partitionTreeNode<part_t> saveOld = partitionTree[a];
+      partitionTree[a] = partitionTree[b];
+      partitionTree[b] = saveOld;
+
+      // now we have to remap all parent/child indices
+      for(int n = 0; n < static_cast<int>(partitionTree.size()); ++n) {
+        partitionTreeNode<part_t> & node = partitionTree[n];
+        if(node.parent == a+1) { // index+1 convention
+          node.parent = b+1; // index+1 convention
+        }
+        else if(node.parent == b+1) { // index+1 convention
+          node.parent = a+1; // index+1 convention
+        }
+
+        for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+          if(node.children[c] > 0 && node.children[c] == a+1) { // index+1 convention
+            node.children[c] = b+1; // index+1 convention
+          }
+          else if(node.children[c] == b+1) { // index+1 convention
+            node.children[c] = a+1; // index+1 convention
+          }
+        }
+      }
+    }
   }
 
   //! \brief  for partitioning methods, return bounding boxes of the 
@@ -214,6 +299,7 @@ public:
 
 
 private:
+  std::vector<partitionTreeNode<part_t> > partitionTree;
 };
   
 }  //namespace Zoltan2

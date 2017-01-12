@@ -212,6 +212,142 @@ private:
     //                         (void *) &(*adp));
   }
   
+  void loadRCBPartitionTree(const RCP<PartitioningSolution<Adapter> > &solution)
+  {
+    // This method is responsible for accessing the rcb formatted partition
+    // tree and converting it to a general format all algorithms can use.
+    // This would only be called if param "keep_partition_tree" was turned on.
+
+    // For clarity - summarize the conventions - we convert from rcb to general:
+    // From RCB:
+    //   Each node has two children (binary) called left_leaf or right_leaf
+    //   The 0 index node is not part of the tree - allows rcb sign conventions.
+    //   A leaf <= 0 means it points to a terminal with part = -leaf
+    //   Parent < 0 meant node was the left leaf of the parent. So use -parent.
+    //   Parent by convention each node index + 1 so it starts at index 1
+    //   However rcb also adds a second + 1 to parent
+    //
+    // To General:
+    //   Each node has 2 or more children nodes - can be non-binary (MJ for ex.)
+    //   The children are the indices into the array.
+    //   Each node has a parent - also an index into the array.
+
+    // design decision - original plan includes the trivial nodes which add
+    // a tree node which points simply to the part ID. In rcb conventions this
+    // tree node is not included - the terminal branch points to 2 parts.
+    // This flag controls whether to insert them here. They are added at this
+    // stage so that all follow up methods on the tree can act naturally
+    // without worrying about the convention but it makes the loading a bit
+    // convoluted. We have to insert the extra tree nodes at the beginning,
+    // offset all node parent and leaf indices to account for the change, and
+    // also make sure parent mapping is correct for these trivial nodes.
+    bool bLoadTrivialNodes = true;
+
+    // get the total number of global parts
+    int num_parts = static_cast<int>(solution->getTargetGlobalNumberOfParts());
+
+    // Determine how many nodes are in the rcb tree
+    int numTreeNodes = num_parts - 1; // always true for rcb binary?
+    if(bLoadTrivialNodes) { // if using trivial nodes we insert the extra
+      numTreeNodes += num_parts; // 1 trivial node for each part is inserted
+    }
+
+    // Allocate partitionTreeNode vector and we will set all values below
+    std::vector<partitionTreeNode<int>> partitionTreeNodes(numTreeNodes);
+
+    // Add the rcb nodes to the general tree, converting conventions as we go
+    for(int n = 0; n < numTreeNodes; ++n) {
+      // is this a trivial node
+      // rcb doesn't include these
+      // we won't know the parent until we load the parent
+      bool bTrivialNode = (bLoadTrivialNodes && n < num_parts);
+
+      if(bTrivialNode) {
+        // node parent will be determined when we load it below
+        // the trivial terminal node will have it's own node index
+        // and also be point to a single child - the part
+        // We may need to set a bool flag instead of the neg convnetion
+        ArrayRCP<int> children(1);
+        children[0] = -n;
+        partitionTreeNodes[n].children = children;
+      }
+      else {
+        // call zoltan wrapper to get the node information - starts at +1 by conv
+        int parent = -1;
+        int left_leaf = -1;
+        int right_leaf = -1;
+
+        int rcbIndex = n + 1; // rcb starts at 1
+        if(bLoadTrivialNodes) {
+          rcbIndex -= num_parts; // shift back to account for extra trivial nodes
+        }
+
+        zz->RCB_Partition_Tree(rcbIndex, parent, left_leaf, right_leaf);
+
+        // convert parent from rcb conventions to our generalized convention
+        parent = abs(parent); // remove negative it exists
+        parent -= 1; // remove +1 shift from rcb leaving parent=arrayIndex+1
+
+        // if using trivial nodes we need to offset node indices += num_parts
+        // also we need to offset parts ids += num_parts
+        if(bLoadTrivialNodes) {
+          // parent just shifts up by num_parts - though conv is parent
+          // for leaf we need to shift in the sign direction because currently
+          // we are keeping the convention that a negative sign indicates a
+          // part id (terminal), otherwise it's a node index - however in both
+          // cases we shift by num_parts
+          // part id is determined by leaf <= 0 -> so 0 means shift negative
+          if(parent != 0) { // do not shift the root - preserve convention
+            parent += num_parts; // offset for parent is easier
+          }
+          left_leaf += (left_leaf > 0) ? num_parts : -num_parts;
+          right_leaf += (right_leaf > 0) ? num_parts : -num_parts;
+        }
+
+        // set node parent
+        partitionTreeNodes[n].parent = parent;
+
+        // set node children
+        ArrayRCP<int> children(2);
+        children[0] = left_leaf;
+        children[1] = right_leaf;
+        partitionTreeNodes[n].children = children;
+
+        // special case - if we are the parent of a trivial node tell them
+        // terminal means leaf <= 0 in which case partID = -leaf
+        // but trivials are also inserted first so node index = partID
+        // and parent convention is node index + 1, so parent = n + 1
+        if(bLoadTrivialNodes) {
+          if(left_leaf <= 0) { // is left terminal?
+            partitionTreeNodes[-left_leaf - num_parts].parent = n + 1; // [CONVENTION]
+            partitionTreeNodes[n].children[0] = -left_leaf - num_parts + 1;
+          }
+          if(right_leaf <= 0) { // is right terminal?
+            partitionTreeNodes[-right_leaf - num_parts].parent = n + 1; // [CONVENTION]
+            partitionTreeNodes[n].children[1] = -right_leaf - num_parts + 1;
+          }
+        }
+      }
+    }
+
+    // For debugging output the tree with the children for each
+    /*
+    for(size_t n = 0; n < static_cast<int>(partitionTreeNodes.size()); ++n) {
+      const partitionTreeNode<int> & node = partitionTreeNodes[n];
+      std::cout << "General index: " << n
+        << " parent: " << partitionTreeNodes[n].parent << " ";
+      for(size_t c = 0; c < node.children.size(); ++c) {
+        std::cout << "Child" << c+1 << ": " << node.children[c] << " ";
+      }
+      std::cout << std::endl; // end the child lines
+      std::cout << std::endl; // space between lines
+    }
+    */
+
+    // might want to avoid this copy - not sure if this is important
+    this->setPartitionTreeNodes(partitionTreeNodes);
+  }
+
 public:
 
   /*! Zoltan constructor
@@ -345,6 +481,14 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("RCB_MULTICRITERIA_NORM", "3");
   }
 
+  bool bKeepPartitionTree = false;
+  pe = pl.getEntryPtr("keep_partition_tree");
+  if (pe) {
+    bKeepPartitionTree = pe->getValue(&bKeepPartitionTree);
+    if (bKeepPartitionTree)
+      zz->Set_Param("KEEP_CUTS", "1");
+  }
+
   pe = pl.getEntryPtr("rectilinear");
   if (pe) {
     bool val = pe->getValue(&val);
@@ -424,6 +568,12 @@ void AlgZoltan<Adapter>::partition(
     partList[tmp] = oParts[i];
   }
   
+  // if the param keep_partition_tree is not set true then the tree
+  // will not be available and not loaded - attempts to obtain it will throw
+  if(bKeepPartitionTree) {
+    loadRCBPartitionTree(solution);
+  }
+
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {

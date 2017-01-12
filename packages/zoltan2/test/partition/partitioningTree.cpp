@@ -77,9 +77,12 @@ typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> MultiVectorAdapter_t;
 
 
 
-int testForRCB(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts);
-int testForPHG(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts);
-int testForMJ(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts);
+int testForRCB(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> > comm);
+int testForPHG(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> >);
+int testForMJ(SparseMatrixAdapter_t &matAdapter, int myrank, int numparts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> >);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -198,9 +201,10 @@ int main(int argc, char** argv)
   matAdapter.setCoordinateInput(ca);
   //////////////////////////////////////////////////////////////////////
 
-  int err = testForRCB(matAdapter,me,numParts);
-  err = testForPHG(matAdapter,me,numParts);
-  err = testForMJ(matAdapter,me,numParts);
+  // MDM - disabled the other tests - just did rcb so far...
+//  int err = testForMJ(matAdapter, me, numParts, coords, comm);
+  int err = testForRCB(matAdapter, me, numParts, coords, comm);
+//  int err = testForPHG(matAdapter, me, numParts, coords, comm);
 
 
 
@@ -217,10 +221,127 @@ int main(int argc, char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
+// General test function to analyze solution and print out some information
+////////////////////////////////////////////////////////////////////////////////
+int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
+  RCP<const Teuchos::Comm<int> > comm)
+{
+  typedef SparseMatrixAdapter_t::part_t part_t;
+  int numTreeVerts = 0;
+  std::vector<part_t> permPartNums; // peritab in Scotch
+  std::vector<int> splitRangeBeg;
+  std::vector<int> splitRangeEnd;
+  std::vector<int> treeVertParents;
+
+  Zoltan2::PartitioningSolution<SparseMatrixAdapter_t> solution =
+    problem.getSolution();
+
+  solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
+			    splitRangeEnd,treeVertParents);
+
+  comm->barrier(); // for tidy output...
+  if(comm->getRank() == 0) { // for now just plot for rank 0
+    // for debugging use the recursive search to generate a list of all
+    // children under each node and print them. The splitRangeBeg and
+    // splitRangeEnd have to match up with these properly:
+    cout << "partitioningTree.cpp test output for rank: " << comm->getRank() << endl;
+    #define MDM
+    #ifdef MDM
+    for(int n = 0; n <
+      static_cast<int>(solution.getPartitionTreeNodes().size()); ++n) {
+      const Zoltan2::partitionTreeNode<int> & node =
+        solution.getPartitionTreeNodes()[n];
+      cout << "  Info for Node index " << n << endl;
+
+      // print the nodes that branch from this node
+      cout << "    Connects to node indices: ";
+      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+        if(node.children[c] > 0) {
+          cout << node.children[c]-1 << " "; // leaf = node index = 1 convention
+        }
+      }
+      cout << endl;
+
+      // print the terminal children part IDs that branch from this node
+      cout << "    Connects to terminal part IDs: ";
+      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+        if(node.children[c] <= 0) {
+          cout << -node.children[c] << " "; // negative sign convention
+        }
+      }
+      cout << endl;
+
+      // print all part IDs that are under this node (recursive)
+      cout << "    All part IDs under this node: ";
+      std::vector<int> allParts;
+      solution.recursiveCollectAllParts(n, allParts);
+      for(int i = 0; i < static_cast<int>(allParts.size()); ++i) {
+        cout << allParts[i] << " ";
+      }
+      cout << endl;
+    }
+    #endif
+
+    // print the acquired information about the tree
+
+    // Header
+    cout << endl << "Printing partition tree info..." << endl << endl;
+
+    // numTreeVerts
+    cout << "  numTreeVerts: " << numTreeVerts << endl << endl;
+
+    // array index values 0 1 2 3 ...
+    cout << "  part array index:";
+    for(int n = 0; n < (int) permPartNums.size(); ++n) {
+      cout << setw(4) << n << " ";
+    }
+    cout << endl;
+
+    // permParNums
+    cout << "  permPartNums:    ";
+    for(int n = 0; n < (int) permPartNums.size(); ++n) {
+      cout << setw(4) << permPartNums[n] << " ";
+    }
+    cout << endl << endl;
+
+    // node index values 0 1 2 3 ...
+    cout << "  node index:      ";
+    for(int n = 0; n < (int) splitRangeBeg.size(); ++n) {
+      cout << setw(4) << n << " ";
+    }
+    cout << endl;
+
+    // splitRangeBeg
+    cout << "  splitRangeBeg:   ";
+    for(int n = 0; n < (int) splitRangeBeg.size(); ++n) {
+      cout << setw(4) << splitRangeBeg[n] << " ";
+    }
+    cout << endl;
+
+    // splitRangeEnd
+    cout << "  splitRangeEnd:   ";
+    for(int n = 0; n < (int) splitRangeEnd.size(); ++n) {
+      cout << setw(4) << splitRangeEnd[n] << " ";
+    }
+    cout << endl;
+
+    // treeVertParents
+    cout << "  treeVertParents: ";
+    for(int n = 0; n < (int) treeVertParents.size(); ++n) {
+      cout << setw(4) << treeVertParents[n] << " ";
+    }
+    cout << endl << endl;
+  }
+  comm->barrier(); // for tidy output...
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Test partitioning tree access for RCB partitioning.  This partitioning tree
 // should be binary..
 ////////////////////////////////////////////////////////////////////////////////
-int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
+int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> > comm)
 {
 
   //////////////////////////////////////////////////////////////////////
@@ -231,6 +352,8 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
   params.set("num_global_parts", numParts);
   params.set("partitioning_approach", "partition");
   params.set("algorithm", "rcb");
+  params.set("keep_partition_tree", true);
+
   //////////////////////////////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////
@@ -281,7 +404,6 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
 
   Zoltan2::PartitioningSolution<SparseMatrixAdapter_t> solution = problem.getSolution();
 
-  /*
   bool binary = solution.isPartitioningTreeBinary();
 
   if (binary == false)
@@ -290,22 +412,7 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
     return -1;
   }
 
-  int numTreeVertss;
-  std::vector<part_t> permPartNums; // peritab in Scotch
-  std::vector<int> splitRangeBeg;
-  std::vector<int> splitRangeEnd;
-  std::vector<int> treeVertParents;
-
-
-  solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
-
-
-  // Perhaps verify these arrays for specific problem?
-  // Not sure if this is a good idea
-  */
-
-  return 0;
+  return analyze(problem, comm);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -313,7 +420,8 @@ int testForRCB(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
 // Test partitioning tree access for PHG partitioning.  This partitioning tree
 // should be balanced.
 ////////////////////////////////////////////////////////////////////////////////
-int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
+int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, int numParts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> > comm)
 {
 
   //////////////////////////////////////////////////////////////////////
@@ -379,8 +487,6 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
 
   Zoltan2::PartitioningSolution<SparseMatrixAdapter_t> solution = problem.getSolution();
 
-  /* COMMENT OUT so this compiles for now
-
   bool binary = solution.isPartitioningTreeBinary();
 
   if (binary == false)
@@ -389,23 +495,7 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
     return -1;
   }
 
-  int numTreeVertss;
-  std::vector<part_t> permPartNums; // peritab in Scotch
-  std::vector<int> splitRangeBeg;
-  std::vector<int> splitRangeEnd;
-  std::vector<int> treeVertParents;
-
-
-  solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
-
-
-  // Perhaps verify these arrays for specific problem?
-  // Not sure if this is a good idea
-
-  */
-
-  return 0;
+  return analyze(problem, comm);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -413,7 +503,8 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
 // Test partitioning tree access for MJ partitioning.  This partitioning tree
 // should be balanced.
 ////////////////////////////////////////////////////////////////////////////////
-int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
+int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, int numParts,
+  RCP<tMVector_t> coords, RCP<const Teuchos::Comm<int> > comm)
 {
 
   //////////////////////////////////////////////////////////////////////
@@ -424,10 +515,8 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
   params.set("num_global_parts", numParts);
   params.set("algorithm", "multijagged");
   params.set("rectilinear", true);
-
-  // TODO: need to set up input file/mj parameters that do not result in
-  //       a binary tree
-
+  // params.set("mj_keep_part_boxes", true); // allows getPartBoxesView on solution
+  params.set("keep_partition_tree", true);
 
   //////////////////////////////////////////////////////////////////////
 
@@ -476,10 +565,34 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
   }
   //////////////////////////////////////////////////////////////////////
 
+  typedef SparseMatrixAdapter_t::scalar_t scalar_t;
+  typedef SparseMatrixAdapter_t::part_t part_t;
 
   Zoltan2::PartitioningSolution<SparseMatrixAdapter_t> solution = problem.getSolution();
 
-  /* COMMENT OUT so this compiles for now
+  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> >
+    & pBoxes = solution.getPartBoxesView();
+
+  // copied from the MultiJaggedTest.cpp to inspect boxes
+  // To activate set mj_keep_part_boxes true above
+  /*
+  int coordDim = coords->getNumVectors();
+  std::cout << std::endl;
+  std::cout << "Plot final boxes..." << std::endl;
+  for (size_t i = 0; i < pBoxes.size(); i++) {
+    zscalar_t *lmin = pBoxes[i].getlmins();
+    zscalar_t *lmax = pBoxes[i].getlmaxs();;
+    int dim = pBoxes[i].getDim();
+    std::set<int> * pNeighbors = pBoxes[i].getNeighbors();
+    std::vector<int> * pGridIndices = pBoxes[i].getGridIndices();
+
+    std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
+              << " dim: " << dim
+              << " (" << lmin[0] << "," << lmin[1] << ") "
+              << "x"
+              << " (" << lmax[0] << "," << lmax[1] << ")" << std::endl;
+  }
+  */
 
   bool binary = solution.isPartitioningTreeBinary();
 
@@ -489,25 +602,7 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, int numParts)
     return -1;
   }
 
-  int numTreeVertss;
-  std::vector<part_t> permPartNums; // peritab in Scotch
-  std::vector<int> splitRangeBeg;
-  std::vector<int> splitRangeEnd;
-  std::vector<int> treeVertParents;
-
-
-  solution.getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
-			    splitRangeEnd,treeVertParents);
-
-
-
-  // Perhaps verify these arrays for specific problem?
-  // Not sure if this is a good idea
-
-  */
-
-
-  return 0;
+  return analyze(problem, comm);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
