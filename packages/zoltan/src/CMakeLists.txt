@@ -400,6 +400,7 @@ APPEND_SET(SOURCES
   rcb/inertial3d.c
   rcb/point_assign.c
   rcb/rcb_box.c
+  rcb/rcb_partition_tree.c
   rcb/rcb.c
   rcb/rcb_util.c
   rcb/rib.c

@@ -261,6 +261,15 @@ public:
     return Zoltan_LB_Eval( ZZ_Ptr, print_stats, eval, graph, hg); 
   }
 
+  int RCB_Partition_Tree( const int &treeNodeIndex,
+                          int &parent,
+                          int &left_leaf,
+                          int &right_leaf)
+  {
+    return Zoltan_RCB_Partition_Tree(
+      ZZ_Ptr, treeNodeIndex, &parent, &left_leaf, &right_leaf);
+  }
+
   int RCB_Box( const int &part,
                 int &ndim, 
                 double &xmin, 

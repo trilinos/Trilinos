@@ -383,6 +383,94 @@ public:
     else                   return NULL;
   }
 
+  /*! \brief returns the partition tree nodes.
+   */
+  virtual const std::vector<partitionTreeNode<int> > &
+  getPartitionTreeNodes() const
+  {
+    return this->algorithm_->getPartitionTreeNodes();
+  }
+
+  /*! \brief calculate if partition tree is binary.
+   */
+  virtual bool isPartitioningTreeBinary() const
+  {
+    // returns true if tree is binary
+    // TO DO - determine if this should be true if tree is in fact binary
+    // or must have been binary - for example if an MJ algorithm could have
+    // done a 3-split but all end up being 2, do we want true here?
+    if(getPartitionTreeNodes().size() == 0) {
+      throw std::logic_error(
+        "no binary tree available. Set param 'keep_partition_tree' true");
+    }
+    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+      if(getPartitionTreeNodes()[n].children.size() > 2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /*! \brief build a list of all children under the indexed node
+   */
+  void recursiveCollectAllParts(int nodeIndex, std::vector<part_t> & parts) const {
+    // traverse the tree filling with all children
+    const partitionTreeNode<part_t> & node = getPartitionTreeNodes()[nodeIndex];
+    for(int n = 0; n < static_cast<int>(node.children.size()); ++n) {
+      int child = node.children[n];
+      if(child <= 0) { // this is a terminal
+        parts.push_back(static_cast<part_t>(-child)); // terminal = -child convention
+      }
+      else { // if not terminal, -1 for convention and recursive continue
+        recursiveCollectAllParts(child-1, parts); // node+1 convention
+      }
+    }
+  }
+
+  /*! \brief get the partition tree - fill the relevant arrays
+   */
+  void getPartitionTree(int & numTreeVerts,
+                        std::vector<int> & permPartNums,
+                        std::vector<int> & splitRangeBeg,
+                        std::vector<int> & splitRangeEnd,
+                        std::vector<int> & treeVertParents) const {
+
+    // determine number of nodes - design indicates count does not include root
+    numTreeVerts = static_cast<int>(getPartitionTreeNodes().size()) - 1;
+
+    // determine permPartNums - by convention root is designated as last element
+    int rootIndex = static_cast<int>(getPartitionTreeNodes().size()) - 1;
+    recursiveCollectAllParts(rootIndex, permPartNums);
+
+    // determine splitRangeBeg and splitRangeEnd
+    // this could be done a bit more efficiently with a new recursive function
+    // specifically designed to fill these values. However I'm not sure yet if
+    // other algorithms will have different needs since things may not be sorted
+    // ahead of time the exact way as rcb - so for now I am just reusing the
+    // recursiveCollectAllParts method and then scan that for min and max
+    splitRangeBeg = std::vector<int>(getPartitionTreeNodes().size());
+    splitRangeEnd = std::vector<int>(getPartitionTreeNodes().size());
+    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+      splitRangeBeg[n] = -1; // means not set yet
+      splitRangeEnd[n] = -1; // means not set yet
+      std::vector<part_t> allParts;
+      recursiveCollectAllParts(n, allParts);
+      for(int c = 0; c < static_cast<int>(allParts.size()); ++c) {
+        if(splitRangeBeg[n] == -1 || splitRangeBeg[n] > allParts[c]) {
+          splitRangeBeg[n] = allParts[c]; // inclusive
+        }
+        if(splitRangeEnd[n] == -1 || splitRangeEnd[n] < allParts[c] + 1) {
+          splitRangeEnd[n] = allParts[c] + 1; // exclusive
+        }
+      }
+    }
+
+    // determine treeVertParents - simply fill from the tree nodes
+    treeVertParents = std::vector<int>(getPartitionTreeNodes().size());
+    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+      treeVertParents[n] = getPartitionTreeNodes()[n].parent - 1;
+    }
+  }
 
   /*! \brief returns the part box boundary list.
    */
@@ -524,6 +612,9 @@ private:
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
 
+  //part partition tree.
+  RCP < std::vector <Zoltan2::partitionTreeNode<part_t> > > partPartitionTree;
+
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
 
@@ -634,7 +725,7 @@ template <typename Adapter>
     int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm),
-      partBoxes(),
+      partBoxes(), partPartitionTree(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -669,7 +760,7 @@ template <typename Adapter>
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm),
-      partBoxes(),
+      partBoxes(), partPartitionTree(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
