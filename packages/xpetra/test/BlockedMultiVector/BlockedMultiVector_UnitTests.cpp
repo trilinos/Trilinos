@@ -826,7 +826,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 {
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 
@@ -854,6 +853,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 
 #ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
 #endif
