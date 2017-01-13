@@ -432,6 +432,7 @@ applyImpl (HostViewLocal& X,
     }
     else {
       Y_tmp = ptr (new HostViewLocal ("", Y.dimension_0(), Y.dimension_1()));
+      Kokkos::deep_copy(*Y_tmp, X);
       deleteYT = true;
     }
     local_scalar_type* Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();
