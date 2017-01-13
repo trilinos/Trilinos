@@ -452,7 +452,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
-      TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i );
+      TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), Teuchos::as<GO>(bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i) );
     }
   }
 
@@ -691,7 +691,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedVectorDeepCop
     for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
-      TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i );
+      TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), Teuchos::as<GO>(bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i) );
     }
   }
 

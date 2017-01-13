@@ -962,7 +962,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   Teuchos::RCP<const BlockedMap> bvvm = bvv->getBlockedMap();
   TEST_EQUALITY( bvvm.is_null(), false );
   TEST_EQUALITY( bvvm->getMap()->isSameAs(*(vv->getMap())),true);
-  TEST_EQUALITY( bvvm->getNumMaps(), noBlocks );
+  TEST_EQUALITY( bvvm->getNumMaps(), Teuchos::as<size_t>(noBlocks) );
   TEST_EQUALITY( bvvm->getThyraMode(), false);
 
   // create new BlockedMultiVector based on bvvm
@@ -971,7 +971,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   TEST_EQUALITY( Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv2).is_null(), false );
   Teuchos::RCP< BlockedMultiVector > bvv2 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv2);
   TEST_EQUALITY( bvv2->getNumVectors(), 3);
-  TEST_EQUALITY( bvv2->getBlockedMap()->getNumMaps(), noBlocks);
+  TEST_EQUALITY( bvv2->getBlockedMap()->getNumMaps(), Teuchos::as<size_t>(noBlocks));
 #ifdef HAVE_XPETRA_DEBUG
   TEST_THROW( bvv2->setMultiVector(0,bvv->getMultiVector(0),false), Xpetra::Exceptions::RuntimeError);
 #endif
@@ -982,7 +982,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   TEST_EQUALITY( Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv3).is_null(), false );
   Teuchos::RCP< BlockedMultiVector > bvv3 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(vv3);
   TEST_EQUALITY( bvv3->getNumVectors(), 3);
-  TEST_EQUALITY( bvv3->getBlockedMap()->getNumMaps(), noBlocks);
+  TEST_EQUALITY( bvv3->getBlockedMap()->getNumMaps(), Teuchos::as<size_t>(noBlocks));
 #ifdef HAVE_XPETRA_DEBUG
   TEST_THROW( bvv3->setMultiVector(0,bvv->getMultiVector(0),false), Xpetra::Exceptions::RuntimeError);
 #endif

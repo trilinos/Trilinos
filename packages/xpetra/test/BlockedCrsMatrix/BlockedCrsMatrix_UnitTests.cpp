@@ -1667,7 +1667,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, getLocalDiagCopy, M, MA, Sc
     Teuchos::RCP<BlockedMultiVectorClass> bsubvec = Teuchos::rcp_dynamic_cast<BlockedMultiVectorClass>(subvec);
     if(bsubvec == Teuchos::null) {
       Teuchos::ArrayRCP< const Scalar > vdata2 = subvec->getData(0);
-      for(size_t l = 0; l<vdata2.size(); l++) {
+      for(size_t l = 0; l<Teuchos::as<size_t>(vdata2.size()); l++) {
         if(vdata2[l] != Teuchos::as<Scalar>(expectedResult)) bCheck = false;
       }
       expectedResult--;
@@ -1677,7 +1677,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, getLocalDiagCopy, M, MA, Sc
         TEST_EQUALITY(ssubvec->getNumVectors(),1);
         TEST_EQUALITY(Teuchos::rcp_dynamic_cast<BlockedMultiVectorClass>(ssubvec)==Teuchos::null,true);
         Teuchos::ArrayRCP< const Scalar > vdata3 = ssubvec->getData(0);
-        for(size_t l2 = 0; l2<vdata3.size(); l2++) {
+        for(size_t l2 = 0; l2<Teuchos::as<size_t>(vdata3.size()); l2++) {
           if(vdata3[l2] != Teuchos::as<Scalar>(expectedResult)) bCheck = false;
         }
         expectedResult--;
