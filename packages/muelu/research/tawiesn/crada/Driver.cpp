@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
       }
 
       std::vector<GlobalOrdinal> mySpecialNodeGids;
-      for(size_t k = 0; k < mySpecialGids.size(); k++) {
+      for(size_t k = 0; k < Teuchos::as<size_t>(mySpecialGids.size()); k++) {
         mySpecialNodeGids.push_back(mySpecialGids[k]/3);
       }
 
