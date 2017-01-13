@@ -438,7 +438,7 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> XX = bX->Merge();
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
         if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -550,7 +550,7 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> XX = bX->Merge();
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
         if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -720,7 +720,7 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> XX = bX->Merge();
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -889,7 +889,7 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> XX = bX->Merge();
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
