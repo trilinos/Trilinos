@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_NullspaceFactory_decl.hpp"
@@ -136,12 +137,17 @@ namespace MueLu {
         GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
 
-        for (int i=0; i<numPDEs; ++i) {
-          ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-          int numBlocks = nsValues.size() / numPDEs;
-          for (int j=0; j< numBlocks; ++j) {
-            nsValues[j*numPDEs + i] = 1.0;
+        RCP<BlockedMultiVector> bnsp = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(nullspace);
+        if(bnsp.is_null() == true) {
+          for (int i=0; i<numPDEs; ++i) {
+            ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+            int numBlocks = nsValues.size() / numPDEs;
+            for (int j=0; j< numBlocks; ++j) {
+              nsValues[j*numPDEs + i] = 1.0;
+            }
           }
+        } else {
+          fillNullspaceVector(bnsp,numPDEs);
         }
       } // end if "Nullspace" not available
     } else {
@@ -156,6 +162,28 @@ namespace MueLu {
     Set(currentLevel, "Nullspace", nullspace);
 
   } // Build
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs) const {
+    RCP< const BlockedMap> bmap = nsp->getBlockedMap();
+
+    for(size_t r = 0; r < bmap->getNumMaps(); r++) {
+      Teuchos::RCP<MultiVector> part = nsp->getMultiVector(r);
+      Teuchos::RCP<BlockedMultiVector> bpart = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(part);
+      if(bpart.is_null() == true) {
+        for (int i=0; i<numPDEs; ++i) {
+          ArrayRCP<Scalar> nsValues = part->getDataNonConst(i);
+          int numBlocks = nsValues.size() / numPDEs;
+          for (int j=0; j< numBlocks; ++j) {
+            nsValues[j*numPDEs + i] = 1.0;
+          }
+        }
+      } else {
+        // call this routine recursively
+        fillNullspaceVector(bpart,numPDEs);
+      }
+    }
+  }
 
 } //namespace MueLu
 
