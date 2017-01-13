@@ -84,7 +84,6 @@ void globalWeightedCutsMessagesHopsByPart(
   typedef typename Zoltan2::GraphModel<typename Adapter::base_adapter_t>::input_t t_input_t;
 
   t_lno_t localNumVertices = graph->getLocalNumVertices();
-  t_gno_t globalNumVertices = graph->getGlobalNumVertices();
   t_lno_t localNumEdges = graph->getLocalNumEdges();
 
   ArrayView<const t_gno_t> Ids;
@@ -405,7 +404,6 @@ void globalWeightedCutsMessagesByPart(
   typedef typename Zoltan2::GraphModel<typename Adapter::base_adapter_t>::input_t t_input_t;
 
   t_lno_t localNumVertices = graph->getLocalNumVertices();
-  t_gno_t globalNumVertices = graph->getGlobalNumVertices();
   t_lno_t localNumEdges = graph->getLocalNumEdges();
 
   ArrayView<const t_gno_t> Ids;
