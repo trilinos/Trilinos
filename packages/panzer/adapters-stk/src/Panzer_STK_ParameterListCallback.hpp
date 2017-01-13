@@ -103,6 +103,10 @@ public:
    void buildCoordinates();
    void buildArrayToVector();
 
+   //! Store a vector solely for the purpose of making it persist with this object
+   void storeExtraVector(const Teuchos::RCP<const std::vector<double> > & extra)
+   { extraVecs_.push_back(extra); }
+
 private:
 
    void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
@@ -118,6 +122,7 @@ private:
    std::vector<double> zcoords_;
 
    mutable Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > arrayToVector_;
+   std::vector<Teuchos::RCP<const std::vector<double> > > extraVecs_;
 };
 
 }

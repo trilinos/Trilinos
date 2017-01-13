@@ -55,6 +55,8 @@
 #include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
 
+#include "ml_rbm.h"
+
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -154,9 +156,6 @@ namespace {
     using Teuchos::ptrFromRef;
     using Teuchos::ptr_dynamic_cast;
     using panzer::DOFManager;
-#ifdef PANZER_HAVE_FEI
-    using panzer::DOFManagerFEI;
-#endif
 
     // first standard dof manager
     {
@@ -175,26 +174,6 @@ namespace {
         return;
       }
     }
-
-#ifdef PANZER_HAVE_FEI
-    // now FEI dof manager
-    {
-      Ptr<const DOFManagerFEI<int,int> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,int> >(ptrFromRef(globalIndexer));
-
-      if(dofManager!=Teuchos::null) {
-        fillFieldPatternMap(*dofManager,fieldName,fieldPatterns);
-        return;
-      }
-    }
-    {
-      Ptr<const DOFManagerFEI<int,panzer::Ordinal64> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,panzer::Ordinal64> >(ptrFromRef(globalIndexer));
-
-      if(dofManager!=Teuchos::null) {
-        fillFieldPatternMap(*dofManager,fieldName,fieldPatterns);
-        return;
-      }
-    }
-#endif
   }
 }
 
@@ -214,6 +193,10 @@ namespace {
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
                    )
   {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
     // Note if you want to use new solvers within Teko they have to be added to the solver builer
@@ -238,29 +221,83 @@ namespace {
 
 
     #ifdef PANZER_HAVE_TEKO
-    Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
+    RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
 
     if(!blockedAssembly) {
 
        std::string fieldName;
 
-       // try to set request handler from member variable
+       // try to set request handler from member variable; This is a potential segfault
+       // if its internally stored data (e.g. callback) gets released and all its data
+       // required by ML or whatever gets hosed
        if(reqHandler_local==Teuchos::null)
-          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
+          reqHandler_local = rcp(new Teko::RequestHandler);
 
        // add in the coordinate parameter list callback handler
        if(determineCoordinateField(*globalIndexer,fieldName)) {
-          std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
+          std::map<std::string,RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
           fillFieldPatternMap(*globalIndexer,fieldName,fieldPatterns);
 
-          Teuchos::RCP<panzer_stk::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
+          RCP<panzer_stk::ParameterListCallback<int,GO> > callback = rcp(new
                 panzer_stk::ParameterListCallback<int,GO>(fieldName,fieldPatterns,stkConn_manager,
-                Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer)));
+                rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer)));
           reqHandler_local->addRequestCallback(callback);
+
+          // determine if you want rigid body null space modes...currently an extremely specialized case!
+          if(strat_params->sublist("Preconditioner Types").isSublist("ML")) {
+             Teuchos::ParameterList & ml_params = strat_params->sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
+
+             {
+                // force parameterlistcallback to build coordinates
+                callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
+
+                // extract coordinate vectors
+                std::vector<double> & xcoords = const_cast<std::vector<double> & >(callback->getXCoordsVector());
+                std::vector<double> & ycoords = const_cast<std::vector<double> & >(callback->getYCoordsVector());
+                std::vector<double> & zcoords = const_cast<std::vector<double> & >(callback->getZCoordsVector());
+
+                ml_params.set<double*>("x-coordinates",&xcoords[0]);
+                ml_params.set<double*>("y-coordinates",&ycoords[0]);
+                ml_params.set<double*>("z-coordinates",&zcoords[0]);
+             }
+/*
+             bool useRigidBodyNullSpace = false;
+             if(ml_params.isType<std::string>("null space: type"))
+               useRigidBodyNullSpace = ml_params.get<std::string>("null space: type") == "pre-computed";
+
+             if(useRigidBodyNullSpace) {
+                // force parameterlistcallback to build coordinates
+                callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
+
+                RCP<std::vector<double> > rbm = rcp(new std::vector<double>);
+                std::vector<double> & rbm_ref = *rbm;
+
+                // extract coordinate vectors
+                std::vector<double> & xcoords = const_cast<std::vector<double> & >(callback->getXCoordsVector());
+                std::vector<double> & ycoords = const_cast<std::vector<double> & >(callback->getYCoordsVector());
+                std::vector<double> & zcoords = const_cast<std::vector<double> & >(callback->getZCoordsVector());
+ 
+                // use ML to build the null space modes for ML
+                int Nnodes     = Teuchos::as<int>(xcoords.size());
+                int NscalarDof = 0;
+                int Ndof       = spatialDim;
+                int nRBM       = spatialDim==3 ? 6 : (spatialDim==2 ? 3 : 1);
+                int rbmSize    = Nnodes*(nRBM+NscalarDof)*(Ndof+NscalarDof);
+                rbm_ref.resize(rbmSize);
+ 
+                ML_Coord2RBM(Nnodes,&xcoords[0],&ycoords[0],&zcoords[0],&rbm_ref[0],Ndof,NscalarDof);
+
+                ml_params.set<double*>("null space: vectors",&rbm_ref[0]);
+                ml_params.set<int>("null space: dimension",nRBM);
+
+                callback->storeExtraVector(rbm);
+             }
+*/
+          }
 
           if(writeCoordinates) {
              // force parameterlistcallback to build coordinates
-             callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+             callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
              // extract coordinate vectors
              const std::vector<double> & xcoords = callback->getXCoordsVector();
@@ -272,16 +309,16 @@ namespace {
                                                                  // and all users of this object are on the stack (within scope of mpi_comm
              Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
-             Teuchos::RCP<Epetra_Vector> vec;
+             RCP<Epetra_Vector> vec;
              switch(spatialDim) {
              case 3:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
+                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
              case 2:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
+                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
              case 1:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
+                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
                 break;
              default:
@@ -290,32 +327,32 @@ namespace {
           }
 
           #ifdef PANZER_HAVE_MUELU
-          if(Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null) {
+          if(rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null) {
              if(!writeCoordinates)
-                callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+                callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
              typedef Tpetra::Map<int,panzer::Ordinal64,panzer::TpetraNodeType> Map;
              typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,panzer::TpetraNodeType> MV;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = Teuchos::as<unsigned>(spatialDim);
-             Teuchos::RCP<MV> coords;
+             RCP<MV> coords;
              for(unsigned d=0;d<dim;d++) {
                const std::vector<double> & coord = callback->getCoordsVector(d);
 
                // no coords vector has been build yet, build one
                if(coords==Teuchos::null) {
                  if(globalIndexer->getNumFields()==1) {
-                   Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi
-                       = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer);
+                   RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi
+                       = rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer);
                    std::vector<panzer::Ordinal64> ownedIndices;
                    ugi->getOwnedIndices(ownedIndices);
-                   Teuchos::RCP<const Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
-                   coords = Teuchos::rcp(new MV(coords_map,dim));
+                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
+                   coords = rcp(new MV(coords_map,dim));
                  }
                  else {
-                   Teuchos::RCP<const Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
-                   coords = Teuchos::rcp(new MV(coords_map,dim));
+                   RCP<const Map> coords_map = rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
+                   coords = rcp(new MV(coords_map,dim));
                  }
                }
 
@@ -330,7 +367,7 @@ namespace {
 
              // inject coordinates into parameter list
              Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu-Tpetra");
-             muelu_params.set<Teuchos::RCP<MV> >("Coordinates",coords);
+             muelu_params.set<RCP<MV> >("Coordinates",coords);
           }
           #endif
        }
@@ -341,27 +378,27 @@ namespace {
     else {
        // try to set request handler from member variable
        if(reqHandler_local==Teuchos::null)
-          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
+          reqHandler_local = rcp(new Teko::RequestHandler);
 
        std::string fieldName;
        if(determineCoordinateField(*globalIndexer,fieldName)) {
-          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
-             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
-          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > auxBlkDofs =
-             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(auxGlobalIndexer);
-          Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
-                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs,auxBlkDofs));
+          RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
+             rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          RCP<const panzer::BlockedDOFManager<int,GO> > auxBlkDofs =
+             rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(auxGlobalIndexer);
+          RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
+                rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs,auxBlkDofs));
           reqHandler_local->addRequestCallback(callback);
        }
 
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
        if(writeCoordinates) {
-          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
-             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
+             rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
 
           // loop over blocks
-          const std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int,GO> > > & dofVec
+          const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & dofVec
              = blkDofs->getFieldDOFManagers();
           for(std::size_t i=0;i<dofVec.size();i++) {
             std::string fieldName;
@@ -369,7 +406,7 @@ namespace {
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofVec[i],fieldName));
 
-            std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
+            std::map<std::string,RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
             fillFieldPatternMap(*dofVec[i],fieldName,fieldPatterns);
             panzer_stk::ParameterListCallback<int,GO> plCall(fieldName,fieldPatterns,stkConn_manager,dofVec[i]);
             plCall.buildArrayToVector();
@@ -385,16 +422,16 @@ namespace {
                                                                 // and all users of this object are on the stack (within scope of mpi_comm
             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
-            Teuchos::RCP<Epetra_Vector> vec;
+            RCP<Epetra_Vector> vec;
             switch(spatialDim) {
             case 3:
-               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
+               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
             case 2:
-               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
+               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
             case 1:
-               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
+               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);
                break;
             default:
@@ -404,20 +441,29 @@ namespace {
        }
 
        if(writeTopo) {
-          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
-             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          /*
+          RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
+             rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
 
           writeTopology(*blkDofs);
+          */
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                     "Topology writing is no longer implemented. It needs to be reimplemented for the "
+                                     "default DOFManager (estimate 2 days with testing)");
        }
     }
     #endif
 
     linearSolverBuilder.setParameterList(strat_params);
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     return lowsFactory;
   }
 
+/*
+ * This FEI stuff is no longer needed, but I'm keeping it around in case this code needs to be
+ * recreated for the current DOFManager
+ *
   template<typename GO>
   void 
   writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs)
@@ -446,7 +492,6 @@ namespace {
 #endif
     }
   }
-
 #ifdef PANZER_HAVE_FEI
   template <typename GO>
   void 
@@ -487,6 +532,7 @@ namespace {
     }
   }
 #endif
+*/
 
 }
 

@@ -102,6 +102,10 @@ buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
                  );
 
+/*
+ * Topology writing is no longer implemented. It needs to be reimplemented for the
+ * default DOFManager (estimate 2 days with testing)")
+ *                                   
 template <typename GO>
 void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
 
@@ -109,6 +113,8 @@ void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
 template <typename GO> 
 void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
 #endif
+ *
+ */
 
 }
 
