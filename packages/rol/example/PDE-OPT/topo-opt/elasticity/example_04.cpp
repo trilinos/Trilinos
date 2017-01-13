@@ -100,24 +100,53 @@ void print(ROL::Objective<Real> &obj,
   Real tol(1e-8);
   // Build objective function distribution
   int nsamp = sampler.numMySamples();
-  std::vector<Real> values(nsamp);
+  std::vector<Real> myvalues(nsamp), myzerovec(nsamp, 0);
+  std::vector<double> gvalues(ngsamp), gzerovec(ngsamp, 0);
+  std::vector<Real> sample = sampler.getMyPoint(0);
+  int sdim = sample.size();
+  std::vector<std::vector<Real> > mysamples(sdim, myzerovec);
+  std::vector<std::vector<double> > gsamples(sdim, gzerovec);
   for (int i = 0; i < nsamp; ++i) {
-    std::vector<RealT> sample = sampler.getMyPoint(i);
+    sample = sampler.getMyPoint(i);
     obj.setParameter(sample);
-    values[i] = obj.value(z,tol);
+    myvalues[i] = static_cast<double>(obj.value(z,tol));
+    for (int j = 0; j < sdim; ++j) {
+      mysamples[j][i] = static_cast<double>(sample[j]);
+    }
   }
-  std::vector<Real> gvalues(ngsamp);
-  Teuchos::gather<int,Real>(&values[0],nsamp,&gvalues[0],ngsamp,0,*comm);
+
+  // Send data to root processor
+  try{
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm
+      = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    int nproc = Teuchos::size<int>(*mpicomm);
+    std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
+    MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
+    for (int i = 1; i < nproc; ++i) {
+      sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
+    }
+    MPI_Gatherv(&myvalues[0],nsamp,MPI_DOUBLE,&gvalues[0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+    for (int j = 0; j < sdim; ++j) {
+      MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+    }
+  }
+  catch (std::exception &e) {
+    gvalues.assign(myvalues.begin(),myvalues.end());
+    for (int j = 0; j < sdim; ++j) {
+      gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
+    }
+  }
 
   // Print
-  int rank = Teuchos::rank<int>(*comm);
-  if ( !rank ) {
-    std::stringstream name;
-    name << filename;
+  int rank  = Teuchos::rank<int>(*comm);
+  if ( rank==0 ) {
     std::ofstream file;
-    file.open(name.str());
+    file.open(filename);
     file << std::scientific << std::setprecision(15);
     for (int i = 0; i < ngsamp; ++i) {
+      for (int j = 0; j < sdim; ++j) {
+        file << std::setw(25) << std::left << gsamples[j][i];
+      }
       file << std::setw(25) << std::left << gvalues[i] << std::endl;
     }
     file.close();
@@ -354,10 +383,10 @@ int main(int argc, char *argv[]) {
       vol.push_back(volObj->value(*up,*zp,tol));
       var.push_back(opt->getSolutionStatistic());
       std::stringstream nameDens;
-      nameDens << "density_CVaR_" << i << ".txt";
+      nameDens << "density_CVaR_" << N-i-1 << "_" << N << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameDens.str().c_str());
       std::stringstream nameObj;
-      nameObj << "obj_samples_CVaR_" << i << ".txt";
+      nameObj << "obj_samples_CVaR_" << N-i-1 << "_" << N << ".txt";
       print<RealT>(*objRed,*zp,*sampler_dist,nsamp_dist,comm,nameObj.str());
     }
 
@@ -365,7 +394,7 @@ int main(int argc, char *argv[]) {
     /***************** PRINT VOLUME AND VAR **********************************/
     /*************************************************************************/
     const int rank = Teuchos::rank<int>(*comm);
-    if ( !rank ) {
+    if ( rank==0 ) {
       std::stringstream nameVOL, nameVAR;
       nameVOL << "vol.txt";
       nameVAR << "var.txt";
