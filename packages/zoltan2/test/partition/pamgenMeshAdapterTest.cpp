@@ -191,7 +191,6 @@ int main(int narg, char *arg[]) {
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t *ia = new inputAdapter_t(*CommT, "region");
   ia->print(me);

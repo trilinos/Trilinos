@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.

@@ -189,7 +189,6 @@ void getSolutionCenterCoordinates(
 
 
   for (lno_t i=0; i < numLocalCoords; i++){
-    gno_t g = gnos[i];
     part_t p = parts[i];
     //add up all coordinates in each part.
     for(int j = 0; j < coordDim; ++j){
@@ -263,7 +262,6 @@ void getCoarsenedPartGraph(
 
 
   t_lno_t localNumVertices = graph->getLocalNumVertices();
-  t_gno_t globalNumVertices = graph->getGlobalNumVertices();
   t_lno_t localNumEdges = graph->getLocalNumEdges();
 
   //get the vertex global ids, and weights
@@ -330,7 +328,7 @@ void getCoarsenedPartGraph(
     /*
     std::cout << "localNumVertices:" << localNumVertices
               << " np:" << np
-              << " globalNumVertices:" << globalNumVertices
+              << " globalNumVertices:" << graph->getGlobalNumVertices()
               << " localNumEdges:" << localNumEdges << std::endl;
               */
 
