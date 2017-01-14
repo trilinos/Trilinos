@@ -440,7 +440,6 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 {
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsgraph_t;
-  typedef Tpetra::RowGraph<lno_t, gno_t, node_t> trowgraph_t;
 
   // We cannot create a Tpetra::RowGraph, unless the underlying type is 
   // something we know (like Tpetra::CrsGraph).
@@ -461,7 +460,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
                            "implement migration for your RowGraph.");
   }
 
-  lno_t base = 0;
+  gno_t base = 0;
 
   // source map
   const RCP<const map_t> &smap = from.getRowMap();

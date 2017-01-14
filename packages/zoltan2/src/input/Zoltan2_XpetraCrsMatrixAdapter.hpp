@@ -223,7 +223,6 @@ private:
   RCP<const xmatrix_t> matrix_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
-  lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
@@ -243,7 +242,7 @@ template <typename User, typename UserCoord>
   XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
       env_(rcp(new Environment)),
-      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
+      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(),
       offset_(), columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
@@ -257,7 +256,6 @@ template <typename User, typename UserCoord>
 
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
-  base_ = rowMap_->getIndexBase();
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
@@ -271,7 +269,7 @@ template <typename User, typename UserCoord>
 //TODO WE ARE COPYING THE MATRIX HERE.  IS THERE A WAY TO USE VIEWS?
 //TODO THEY ARE AVAILABLE IN EPETRA; ARE THEY AVAIL IN TPETRA AND XPETRA?
   for (size_t i=0; i < nrows; i++){
-    lno_t row = i + base_;
+    lno_t row = i;
     nnz = matrix_->getNumEntriesInLocalRow(row);
     matrix_->getLocalRowView(row, indices, nzs);
     for (size_t j=0; j < nnz; j++){

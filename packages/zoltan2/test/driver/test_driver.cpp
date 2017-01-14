@@ -295,7 +295,7 @@ bool run(const UserInputForTests &uinput,
     cout << problem_kind + " problem solved." << endl;
   }
  
-#define KDDKDD
+#undef KDDKDD
 #ifdef KDDKDD
   {
   const base_adapter_t::gno_t *kddIDs = NULL;
@@ -446,7 +446,8 @@ bool run(const UserInputForTests &uinput,
                                        problem_parameters.get<string>("kind") :
                                        "?");
     comparison_source->adapter_kind = adapter_name;
-  
+    comparison_source->printTimers();
+
     // write mesh solution
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
     //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);

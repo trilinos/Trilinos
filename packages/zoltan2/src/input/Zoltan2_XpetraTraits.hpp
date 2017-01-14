@@ -143,7 +143,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
+    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
@@ -245,7 +245,7 @@ struct XpetraTraits<Epetra_CrsMatrix>
   static RCP<Epetra_CrsMatrix> doMigration(const Epetra_CrsMatrix &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    lno_t base = 0;
+    int base = 0;
 
     // source map
     const Epetra_Map &smap = from.RowMap();
@@ -418,7 +418,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
+    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
@@ -509,7 +509,7 @@ struct XpetraTraits<Epetra_CrsGraph>
   static RCP<Epetra_CrsGraph> doMigration(const Epetra_CrsGraph &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    lno_t base = 0;
+    int base = 0;
 
     // source map
     const Epetra_BlockMap &smap = from.RowMap();
@@ -664,7 +664,7 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
   static RCP<t_vector_t> doMigration(const t_vector_t &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
+    gno_t base = 0;
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
 
     // source map
@@ -728,7 +728,7 @@ struct XpetraTraits<Epetra_Vector>
   static RCP<Epetra_Vector> doMigration(const Epetra_Vector &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
+    int base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
@@ -866,7 +866,7 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalElts, const gno_t *myNewElts)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
+    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getMap();
@@ -929,7 +929,7 @@ struct XpetraTraits<Epetra_MultiVector>
   static RCP<Epetra_MultiVector> doMigration(const Epetra_MultiVector &from,
     size_t numLocalElts, const gno_t *myNewElts)
   {
-    lno_t base = 0;
+    int base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();

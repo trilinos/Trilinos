@@ -170,7 +170,6 @@ private:
   RCP<const x_mvector_t> vector_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > map_;
   RCP<Environment> env_;    // for error messages, etc.
-  lno_t base_;
 
   int numWeights_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
@@ -185,7 +184,7 @@ template <typename User>
     const RCP<const User> &invector,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
-      env_(rcp(new Environment)), base_(),
+      env_(rcp(new Environment)),
       numWeights_(weights.size()), weights_(weights.size())
 {
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -198,7 +197,6 @@ template <typename User>
   Z2_FORWARD_EXCEPTIONS
 
   map_ = vector_->getMap();
-  base_ = map_->getIndexBase();
 
   size_t length = vector_->getLocalLength();
 
@@ -219,7 +217,7 @@ template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
       invector_(invector), vector_(), map_(),
-      env_(rcp(new Environment)), base_(),
+      env_(rcp(new Environment)),
       numWeights_(0), weights_()
 {
   try {
@@ -230,7 +228,6 @@ template <typename User>
   Z2_FORWARD_EXCEPTIONS
 
   map_ = vector_->getMap();
-  base_ = map_->getIndexBase();
 }
 
 ////////////////////////////////////////////////////////////////////////////
