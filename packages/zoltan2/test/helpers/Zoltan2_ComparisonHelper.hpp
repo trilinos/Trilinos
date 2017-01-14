@@ -92,6 +92,16 @@ public:
     timers.insert(std::pair<const std::string &, RCP<Time> >(name,rcp(new Time(name))));
     timers[name]->enable();
   }
+
+  void printTimers() 
+  {
+    for(auto it = timers.begin(); it != timers.end(); ++it) {
+      std::cout << it->first << " " << it->second->totalElapsedTime() 
+                << std::endl;
+    }
+  }
+
+  // TODO:  Add method to print a timer summary:  max/min/avg over all procs
   
   RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
   RCP<base_problem_t> problem;
