@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   err_count += convert_stk_to_ioss_topology();
 
   stk::parallel_machine_finalize();
-  OUTPUT << "\n" << argv[0];;
+  OUTPUT << "\n" << argv[0];
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << std::endl;
     return EXIT_SUCCESS;

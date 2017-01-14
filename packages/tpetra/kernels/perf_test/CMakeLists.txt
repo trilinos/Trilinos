@@ -8,13 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # build correctly with or without MPI, but only run them with a single
 # MPI process.
 
-#to bind the kernels graph subpackage test, uncomment below
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-ADD_SUBDIRECTORIES(
-	graph
-)
-ENDIF()
-
+ADD_SUBDIRECTORIES(graph)
 
 TRIBITS_ADD_EXECUTABLE(
   blas1

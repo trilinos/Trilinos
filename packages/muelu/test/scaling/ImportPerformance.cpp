@@ -292,6 +292,7 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
 // =========================================================================
 // =========================================================================
 // =========================================================================
+#if defined(HAVE_MUELU_EPETRA)
 bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Import & B) {
   int MyPID = A.SourceMap().Comm().MyPID();
   bool is_correct=true;
@@ -410,6 +411,7 @@ bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Imp
 
   return is_correct;
 }
+#endif //if defined(HAVE_MUELU_EPETRA)
 
 // =========================================================================
 // =========================================================================

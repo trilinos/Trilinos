@@ -19,7 +19,9 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
   dimension_ = element_block_topologies_[0].getDimension();
 
   for (int i=0;i<num_blocks_; ++i) {
-    TEUCHOS_ASSERT(element_block_topologies_[i].getDimension() == dimension_);
+    TEUCHOS_ASSERT(
+      static_cast<int>(element_block_topologies_[i].getDimension()) ==
+      dimension_);
     // Currently this only works if all the topologies are the same due to field pattern stuff
     TEUCHOS_ASSERT(element_block_topologies_[i] ==element_block_topologies_[0] );
   }
@@ -62,8 +64,6 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
     }
   }
   elem_map = Teuchos::RCP<Map>( new Map(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), &elem_gids[0], elem_gids.size(), 0, comm ));
-
-  int blk=0;
 
   // Now build one level down
   if ( dimension_ == 1 ) {
@@ -123,8 +123,8 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
 
   face_to_elem_ = Kokkos::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
   num_boundary_faces_=0;
-  for (int i=0; i<face_to_elem_.dimension(0); ++i) {
-
+  for (int i(0); i < face_to_elem_.extent_int(0); ++i)
+  {
     std::vector< GlobalOrdinal > indices(2);
     size_t num_ent;
     graph_overlap.getGlobalRowCopy(face_map->getGlobalElement(i), indices, num_ent);
@@ -160,15 +160,16 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const GlobalOrdinal * connectivity = conn_->getConnectivity(ielem);
     for (int iface=0; iface <static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
-      for (int inode=0; inode<face_to_node_.dimension(1); ++inode) {
+      for (int inode(0); inode < face_to_node_.extent_int(1); ++inode)
+      {
         GlobalOrdinal g_face = elem_to_face_[ielem][iface];
         LocalOrdinal l_face = face_map->getLocalElement(g_face);
         face_to_node_(l_face, inode) = connectivity[face_to_node[iface][inode]];
       }
     }
   }
-  for (int i=0; i<face_to_node_.dimension(0); ++i)
-    for (int j=0; j<face_to_node_.dimension(1); ++j)
+  for (int i(0); i < face_to_node_.extent_int(0); ++i)
+    for (int j(0); j < face_to_node_.extent_int(1); ++j)
       TEUCHOS_ASSERT(face_to_node_(i,j) >=0);
 }
 
@@ -260,8 +261,8 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
   }
 }
 void FaceToElems::getNormal(LocalOrdinal ielem, int iface, std::vector<double> &normal){
-  TEUCHOS_ASSERT(ielem < face_normal_.extent(0));
-  TEUCHOS_ASSERT(iface < face_normal_.extent(1));
+  TEUCHOS_ASSERT(ielem < face_normal_.extent_int(0));
+  TEUCHOS_ASSERT(iface < face_normal_.extent_int(1));
   normal.resize(dimension_);
   for (int idim=0;idim<dimension_; ++idim)
     normal[idim] = face_normal_(ielem, iface, idim);

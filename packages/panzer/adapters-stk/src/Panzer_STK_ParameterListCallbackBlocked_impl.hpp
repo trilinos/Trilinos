@@ -111,32 +111,38 @@ bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesReq
    else return false;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest(const Teko::RequestMesg & rm)
+template <typename LocalOrdinalT, typename GlobalOrdinalT, typename Node>
+void ParameterListCallbackBlocked<LocalOrdinalT, GlobalOrdinalT, Node>::
+preRequest(const Teko::RequestMesg & rm)
 {
-   TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
+  TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
-   const std::string & field = getHandledField(*rm.getParameterList());
+  const std::string& field(getHandledField(*rm.getParameterList()));
 
-   // check if the field is in the main ugi, if not assume it's in the auxiliary ugi
-   bool useAux = true;
-   std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int,GlobalOrdinalT> > > fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
-   for(int b = 0; b < fieldDOFMngrs.size(); ++b){
-      for(int f = 0; f < fieldDOFMngrs[b]->getNumFields(); ++f){
-         if(fieldDOFMngrs[b]->getFieldString(f) == field)
-           useAux = false;
-      }
-   }
+  // Check if the field is in the main UGI.  If it's not, assume it's in the
+  // auxiliary UGI.
+  bool useAux(true);
+  std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int, GlobalOrdinalT>>>
+    fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
+  for (int b(0); b < static_cast<int>(fieldDOFMngrs.size()); ++b)
+  {
+    for (int f(0); f < fieldDOFMngrs[b]->getNumFields(); ++f)
+    {
+      if (fieldDOFMngrs[b]->getFieldString(f) == field)
+        useAux = false;
+    }
+  }
 
-   int block = -1;
-   if (useAux)
-     block = aux_blocked_ugi_->getFieldBlock(aux_blocked_ugi_->getFieldNum(field));
-   else
-     block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
+  int block(-1);
+  if (useAux)
+    block =
+      aux_blocked_ugi_->getFieldBlock(aux_blocked_ugi_->getFieldNum(field));
+  else
+    block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
 
-   // empty...nothing to do
-   buildArrayToVector(block,field,useAux);
-   buildCoordinates(field,useAux);
+  // Empty...  Nothing to do.
+  buildArrayToVector(block, field, useAux);
+  buildCoordinates(field, useAux);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>

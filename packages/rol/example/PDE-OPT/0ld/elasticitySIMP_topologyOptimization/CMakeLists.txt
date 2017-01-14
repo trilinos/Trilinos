@@ -24,6 +24,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     example_01
     ARGS PrintItAll
     NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     CATEGORIES HEAVY  # Currently takes 18m to run (see #442)!

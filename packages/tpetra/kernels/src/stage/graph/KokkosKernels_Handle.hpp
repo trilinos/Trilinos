@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -43,7 +43,7 @@
 #include <KokkosKernels_GraphColorHandle.hpp>
 #include <KokkosKernels_GaussSeidelHandle.hpp>
 #include <KokkosKernels_SPGEMMHandle.hpp>
-#include "utils/KokkosKernels_ExecSpaceUtils.hpp"
+#include <KokkosKernels_ExecSpaceUtils.hpp>
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
@@ -125,9 +125,11 @@ private:
   int team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
+
   KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
   bool use_dynamic_scheduling;
   bool KKVERBOSE;
+  int vector_size;
 public:
 
 
@@ -137,7 +139,7 @@ public:
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Experimental::Util::kk_get_exec_space_type<HandleExecSpace>()),
-      use_dynamic_scheduling(true), KKVERBOSE(false){}
+      use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1){}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
@@ -188,15 +190,13 @@ public:
       return this->team_work_size;
     }
     else {
-      return team_size;
-      /*
       if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
         return team_size;
       }
       else {
-        return overall_work_size / (concurrency * team_size) ;
+        return 16;
       }
-      */
+
     }
   }
 
@@ -242,7 +242,16 @@ public:
    * \param nnz: number of nonzeroes, or edges.
    */
   int get_suggested_vector_size(const size_t nr,const size_t nnz){
-    return KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(nr, nnz, my_exec_space);
+    if (vector_size == -1){
+      return KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(nr, nnz, my_exec_space);
+    }
+    else {
+      return vector_size;
+    }
+  }
+
+  int set_suggested_vector_size(int vector_size_){
+    this->vector_size = vector_size_;
   }
 
   /**

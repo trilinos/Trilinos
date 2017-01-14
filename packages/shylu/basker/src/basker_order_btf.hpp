@@ -6,7 +6,7 @@
 
 //Depends on SuiteSparse in Amesos
 #ifdef HAVE_AMESOS
-#include "amesos_btf_decl.h"
+#include "trilinos_btf_decl.h"
 #endif
 
 //#define BASKER_DEBUG_ORDER_BTF

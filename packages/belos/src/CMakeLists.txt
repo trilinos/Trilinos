@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CORE
 APPEND_SET(HEADERS
+  Belos_Details_EBelosSolverType.hpp
   BelosBiCGStabIter.hpp
   BelosBiCGStabSolMgr.hpp
   BelosBlockCGIter.hpp
@@ -104,6 +105,7 @@ APPEND_SET(HEADERS
 
 # UTIL
 APPEND_SET(SOURCES
+  Belos_Details_EBelosSolverType.cpp
   BelosTypes.cpp
   BelosVersion.cpp
   Belos_Details_registerLinearSolverFactory.cpp

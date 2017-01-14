@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -48,6 +48,7 @@
 #include "KokkosKernels_SPGEMM_cuSPARSE_impl.hpp"
 #include "KokkosKernels_SPGEMM_CUSP_impl.hpp"
 #include "KokkosKernels_SPGEMM_mkl_impl.hpp"
+#include "KokkosKernels_SPGEMM_mkl2phase_impl.hpp"
 #include "KokkosKernels_SPGEMM_impl.hpp"
 
 namespace KokkosKernels{
@@ -91,17 +92,27 @@ namespace Graph{
           row_mapB, entriesB, transposeB,
           row_mapC);
       break;
-
     case SPGEMM_CUSP:
+      break;
+
+    case SPGEMM_MKL2PHASE:
+      Impl::mkl2phase_symbolic(
+          sh,
+          m, n, k,
+          row_mapA, entriesA, transposeA,
+          row_mapB, entriesB, transposeB,
+          row_mapC,handle->get_verbose());
       break;
 
     case SPGEMM_DEFAULT:
     case SPGEMM_KK_MEMSPEED:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
+    case SPGEMM_KK_MEMORY2:
     case SPGEMM_KK_COLOR:
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:
+    case SPGEMM_KK_MULTIMEM:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
@@ -170,8 +181,6 @@ namespace Graph{
 
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
-      valuesC = typename cscalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
-
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
           m,n,k,
@@ -204,6 +213,15 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
+    case SPGEMM_MKL2PHASE:
+      Impl::mkl2phase_apply(
+          sh,
+          m,n,k,
+          row_mapA, entriesA, valuesA, transposeA,
+          row_mapB, entriesB, valuesB, transposeB,
+          row_mapC, entriesC, valuesC, handle->get_verbose());
+      break;
+
     case SPGEMM_VIENNA:
       Impl::viennaCL_apply<spgemmHandleType>(
                 sh,
@@ -217,9 +235,11 @@ namespace Graph{
     case SPGEMM_KK_MEMSPEED:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
+    case SPGEMM_KK_MEMORY2:
     case SPGEMM_KK_COLOR:
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:
+    case SPGEMM_KK_MULTIMEM:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,

@@ -84,6 +84,11 @@ namespace MueLu {
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
 
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
     return validParamList;
   }
 
@@ -121,7 +126,10 @@ namespace MueLu {
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
       // Reuse pattern if available (multiple solve)
-      RCP<ParameterList> APparams = rcp(new ParameterList);
+      RCP<ParameterList> APparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else APparams= rcp(new ParameterList);
+
       if (coarseLevel.IsAvailable("AP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
@@ -139,7 +147,10 @@ namespace MueLu {
       }
 
       // Reuse coarse matrix memory if available (multiple solve)
-      RCP<ParameterList> RAPparams = rcp(new ParameterList);
+      RCP<ParameterList> RAPparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else RAPparams= rcp(new ParameterList);
+
       if (coarseLevel.IsAvailable("RAP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
 

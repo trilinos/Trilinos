@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -75,16 +75,17 @@ public:
 
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename HandleType::color_t color_t;
   typedef typename HandleType::color_view_t color_view_t;
 
   typedef typename HandleType::size_type size_type;
+
   typedef typename HandleType::row_lno_host_view_t row_lno_host_view_t; //Host view type
 
 
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
   typedef typename HandleType::nnz_lno_host_view_t nnz_lno_host_view_t; //Host view type
 
-  typedef typename HandleType::color_t color_t;
   typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
@@ -92,7 +93,7 @@ public:
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
   typedef typename HandleType::const_size_type const_size_type;
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
 
   typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
   typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
@@ -145,8 +146,11 @@ public:
 
 
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
-    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_row_view_t::HostMirror h_xadj = Kokkos::create_mirror_view (this->xadj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
+
+    //typename nnz_lno_host_view_t::HostMirror::HostMirror::HostMirror h_adj = tmp;
+
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
 
@@ -212,7 +216,7 @@ public:
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
 
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -296,8 +300,8 @@ public:
 
     num_phases = 1;
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
-    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_row_view_t::HostMirror h_xadj = Kokkos::create_mirror_view (this->xadj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -484,7 +488,7 @@ public:
 
 
 
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
   //typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
 
@@ -533,7 +537,7 @@ public:
     num_phases = 1;
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -765,7 +769,7 @@ public:
 
 
 
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
 
 
   typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
@@ -2381,7 +2385,7 @@ public:
 
 
 
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  typedef typename in_row_index_view_type::const_type const_lno_row_view_t;
   typedef typename in_nonzero_index_view_type::const_type const_nonzero_index_view_type;
 
 public:

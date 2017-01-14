@@ -103,8 +103,6 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
 template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
- 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -116,8 +114,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 
 Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > buildBlockedIndexer(int myRank,int numProc,int numBlocks)
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
-
   std::string names[] = {"U","V","W","X"};
 
   Teuchos::RCP<const FieldPattern> patternC1

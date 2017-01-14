@@ -231,7 +231,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
           if (!side_exists)
             ++num_sides_to_create;
 
-          boundary.insert(std::make_pair(elem,k));;
+          boundary.insert(std::make_pair(elem,k));
         }
       }
     }

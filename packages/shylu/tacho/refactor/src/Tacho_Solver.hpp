@@ -64,7 +64,7 @@ namespace Tacho {
     typedef GraphTools_CAMD<ordinal_type,ordinal_type,HostSpaceType> GraphToolsHostType_CAMD;
     
     // Policy on device
-    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskScheduler<DeviceSpaceType> PolicyType;
     
     // Hierarchical block matrices
     typedef TaskView<CrsMatrixViewHostType> CrsTaskViewHostType;

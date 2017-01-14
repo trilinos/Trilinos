@@ -14,6 +14,8 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp> //TODO
 

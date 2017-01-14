@@ -431,7 +431,7 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
   add_parts.push_back ( &fixture.m_part_B_3 );
   add_parts.push_back ( &fixture.m_part_A_superset );
   add_elem_parts = add_parts;
-  Part &elem_part = fixture.get_elem_part();;
+  Part &elem_part = fixture.get_elem_part();
   add_elem_parts.push_back(&elem_part);
 
   remove_parts.push_back ( &fixture.m_part_A_superset );

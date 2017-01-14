@@ -1,10 +1,9 @@
-
 /*
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -36,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -55,6 +54,8 @@
 
 #include "TpetraKernels_ETIHelperMacros.h"
 #include <cstdlib>
+#include <iostream>
+#include <complex>
 
 //const char *input_filename = "sherman1.mtx";
 //const char *input_filename = "Si2.mtx";
@@ -128,7 +129,7 @@ int run_gauss_seidel_1(
 }
 
 template<typename scalar_view_t>
-scalar_view_t create_x_vector(size_t nv, typename scalar_view_t::value_type max_value = 10.0){
+scalar_view_t create_x_vector(size_t nv, double max_value = 10.0){
   scalar_view_t kok_x ("X", nv);
 
 
@@ -157,7 +158,7 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
 template <typename scalar_t, typename lno_t, typename device>
 void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algorithm) {
   ASSERT_TRUE( (input_filename != NULL));
-  device::execution_space::initialize();
+  //device::execution_space::initialize();
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -186,7 +187,9 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
 
 
   scalar_t dot_product = KokkosBlas::dot( x_vector , x_vector );
-  scalar_t initial_norm_res  = sqrt( dot_product );
+  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  mag_t initial_norm_res = Kokkos::Details::ArithTraits<scalar_t>::abs (dot_product);
+  initial_norm_res  = Kokkos::Details::ArithTraits<mag_t>::sqrt( initial_norm_res );
 
   Kokkos::deep_copy (x_vector , 0);
 
@@ -210,15 +213,16 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
           KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
           //KokkosKernels::Experimental::Util::print_1Dview(x_vector);
           scalar_t result_dot_product = KokkosBlas::dot( x_vector , x_vector );
-          scalar_t result_norm_res  = sqrt( result_dot_product );
-          //std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
+          mag_t result_norm_res  = Kokkos::Details::ArithTraits<scalar_t>::abs( result_dot_product );
+          result_norm_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(result_norm_res);
+          std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
           EXPECT_TRUE( (result_norm_res < initial_norm_res));
         }
       }
     }
   }
 
-  device::execution_space::finalize();
+  //device::execution_space::finalize();
 }
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
@@ -228,9 +232,40 @@ void test_gauss_seidel(KokkosKernels::Experimental::Graph::GSAlgorithm gs_algori
 
 
 TEST (GAUSSSEIDEL_TEST, GS) {
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::initialize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::initialize();
+#endif
+
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::initialize( );
+#endif
+
+
 
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
   TPETRAKERNELS_INSTANTIATE_SLD_NO_ORDINAL_SCALAR(INSTMACRO)
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::finalize( );
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::finalize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::finalize();
+#endif
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::finalize();
+#endif
+
 }
  
 

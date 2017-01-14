@@ -150,7 +150,6 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
   for(int i = 0; i < this->numBlocks_; i++)
   {
-    ArrayView<const local_ordinal_type> localRows = this->getLocalRows(i);
     // Check whether the input set of local row indices is correct.
     const map_type& rowMap = *(matrix->getRowMap());
     const size_type numRows = localRows.size ();

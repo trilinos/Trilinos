@@ -58,6 +58,10 @@ typedef Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node> MapUtils;
 typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 #endif
 
+#ifdef XPETRA_BLOCKEDMAP_SHORT
+typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+#endif
+
 #ifdef XPETRA_CRSGRAPH_SHORT
 typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
 #endif

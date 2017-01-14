@@ -380,12 +380,42 @@ mult_test_results multiply_test_autofc(
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, true);
 
+  if(!C->getDomainMap()->isSameAs(*computedC->getDomainMap())) throw std::runtime_error("Domain map mismatch");
+  if(!C->getRangeMap()->isSameAs(*computedC->getRangeMap())) throw std::runtime_error("Range map mismatch");
+  if(!C->getRowMap()->isSameAs(*computedC->getRowMap())) throw std::runtime_error("Row map mismatch");
+
 #if 0
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
 #endif
+
+#if 0
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  std::cout<<"*** C->colMap() ***"<<std::endl;
+  C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** C->domainMap() ***"<<std::endl;
+  C->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  
+  if(C->getGraph()->getImporter().is_null()) std::cout<<"C->getImporter is null"<<std::endl;
+  else { 
+    std::cout<<"*** C->getImporter()->getTargetMap() ***"<<std::endl;
+    C->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+
+  std::cout<<"*** computedC->colMap() ***"<<std::endl;
+  computedC->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** computedC->domainMap() ***"<<std::endl;
+  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME); 
+ 
+  if(computedC->getGraph()->getImporter().is_null()) std::cout<<"computedC->getImporter is null"<<std::endl;
+  else {
+    std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
+    computedC->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+#endif
+
 
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
@@ -395,6 +425,18 @@ mult_test_results multiply_test_autofc(
   results.cNorm    = C->getFrobeniusNorm ();
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
+
+  if(results.epsilon > 1e-3) {
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", C);
+ 
+#endif
+  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
+
 
   return results;
 }

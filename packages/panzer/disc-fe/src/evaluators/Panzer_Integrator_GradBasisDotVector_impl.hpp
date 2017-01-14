@@ -140,9 +140,9 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
 
 #if PANZER_USE_FAST_QUAD
   // do a scaled copy
-  for (int i=0; i < flux.extent_int(0); ++i)
-    for (int j=0; j < flux.extent_int(1); ++j)
-       for (int k=0; k < num_dim; ++k)
+  for (int i(0); i < flux.extent_int(0); ++i)
+    for (int j(0); j < flux.extent_int(1); ++j)
+       for (int k(0); k < static_cast<int>(num_dim); ++k)
          tmp(i,j,k) = multiplier * flux(i,j,k);
 //Irina modified
 //  for (int i=0; i < flux.size(); ++i)

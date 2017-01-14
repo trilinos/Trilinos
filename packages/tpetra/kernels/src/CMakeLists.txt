@@ -16,9 +16,7 @@ LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
 
 #-----------------------------------------------------------------------------
-#To bind the experimental Kernels Graph subpackage
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-MESSAGE("Adding Experimental KokkosGraph features")
+
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
@@ -30,7 +28,6 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph/utils)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   tpetrakernels

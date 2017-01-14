@@ -11,6 +11,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"

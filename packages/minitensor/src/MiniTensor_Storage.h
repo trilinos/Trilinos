@@ -263,14 +263,18 @@ public:
   operator[](Index const i) const
   {
     assert(i < size());
+#pragma GCC diagnostic ignored "-Warray-bounds"
     return storage_[i];
+#pragma GCC diagnostic pop
   }
 
   T &
   operator[](Index const i)
   {
     assert(i < size());
+#pragma GCC diagnostic ignored "-Warray-bounds"
     return storage_[i];
+#pragma GCC diagnostic pop
   }
 
   Index

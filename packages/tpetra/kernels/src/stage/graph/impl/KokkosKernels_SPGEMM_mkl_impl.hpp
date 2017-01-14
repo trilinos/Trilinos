@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -44,11 +44,12 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
-//#define KERNELS_HAVE_MKL
+//#define HAVE_TPETRAKERNELS_MKL
 
 
 #ifdef HAVE_TPETRAKERNELS_MKL
 #include "mkl_spblas.h"
+#include "mkl.h"
 #endif
 
 #include "KokkosKernels_Utils.hpp"
@@ -156,7 +157,7 @@ namespace Impl{
             MyExecSpace> (m+1, row_mapA, a_xadj_v);
 
         KokkosKernels::Experimental::Util::copy_vector<
-            in_row_index_view_type,
+			bin_row_index_view_type,
             int_temp_work_view_t,
             MyExecSpace> (m+1, row_mapB, b_xadj_v);
 
@@ -300,6 +301,7 @@ namespace Impl{
 
         Kokkos::Impl::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        mkl_free_buffers();
         if (verbose)
         std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;
 
@@ -325,6 +327,7 @@ namespace Impl{
             throw std::runtime_error ("C is not zero based indexed\n");
             return;
           }
+          if (handle->mkl_keep_output)
           {
             Kokkos::Impl::Timer copy_time;
             //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);

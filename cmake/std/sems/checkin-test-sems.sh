@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Test (and push) Trilinos on any machine that has the SEMS Dev Env available
@@ -87,13 +87,17 @@ fi
 
 echo "TRILINOS_DIR = '$TRILINOS_DIR'"
 if [ "$TRILINOS_DIR" == "" ] ; then
-  echo "ERROR: Count not determine TRILINOS_DIR. Please use standard directory structure or set TRILINOS_DIR in env!"
+  echo "ERROR: Cannot determine TRILINOS_DIR (you must be on a non-Linux system or you must have copied the script instead of symlinking it as per instructions). If you want to try to use this script on this system then please use standard directory structure or set TRILINOS_DIR manually in the env!  But this script and build process is currently only set up to support RHEL Linux 6 machines using the SEMS env."
   exit 1
 fi
 
-# Make sure the right env is loaded!
-export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
+  export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
+  source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+else
+  echo "Skipping load of standard SEMS CI env because TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD=$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD!"
+  module list
+fi
 
 #
 # B) Set up the bulid configurations
@@ -206,5 +210,3 @@ fi
 
 $TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
 "$@"
-
-

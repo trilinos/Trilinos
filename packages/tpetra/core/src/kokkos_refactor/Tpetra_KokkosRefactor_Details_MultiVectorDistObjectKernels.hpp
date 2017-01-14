@@ -683,6 +683,15 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   }
 
+  // FIXME (mfh 16 Dec 2016) It looks like these are totally generic
+  // and don't get specialized in Stokhos.  This suggests we can
+  // template them on the execution space, and specialize them for
+  // Kokkos::Serial so they don't do atomic update operations.  It
+  // might be better to make the unpack kernels (the pack kernels
+  // don't use atomic updates) functions that we prebuild, in the
+  // manner of KokkosKernels, or at least handle via ETI.
+
+  template<class ExecutionSpace>
   struct InsertOp {
     template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
@@ -690,6 +699,19 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       Kokkos::atomic_assign(&dest, src);
     }
   };
+
+#ifdef KOKKOS_HAVE_SERIAL
+  template<>
+  struct InsertOp< ::Kokkos::Serial > {
+    template <typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    void operator() (Scalar& dest, const Scalar& src) const {
+      dest = src; // no need for an atomic operation here
+    }
+  };
+#endif // KOKKOS_HAVE_SERIAL
+
+  template<class ExecutionSpace>
   struct AddOp {
     template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
@@ -697,9 +719,26 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       Kokkos::atomic_add(&dest, src);
     }
   };
+
+#ifdef KOKKOS_HAVE_SERIAL
+  template<>
+  struct AddOp< ::Kokkos::Serial > {
+    template <typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    void operator() (Scalar& dest, const Scalar& src) const {
+      dest += src; // no need for an atomic operation here
+    }
+  };
+#endif // KOKKOS_HAVE_SERIAL
+
+  template<class ExecutionSpace>
   struct AbsMaxOp {
     // ETP:  Is this really what we want?  This seems very odd if
     // Scalar != SCT::mag_type (e.g., Scalar == std::complex<T>)
+    //
+    // mfh: I didn't write this code, but note that we don't use T =
+    // Scalar here, we use T = ArithTraits<Scalar>::mag_type.  That
+    // makes this code reasonable.
     template <typename T>
     KOKKOS_INLINE_FUNCTION
     T max(const T& a, const T& b) const { return a > b ? a : b; }
@@ -711,6 +750,29 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       Kokkos::atomic_assign(&dest, Scalar(max(SCT::abs(dest),SCT::abs(src))));
     }
   };
+
+#ifdef KOKKOS_HAVE_SERIAL
+  template<>
+  struct AbsMaxOp< ::Kokkos::Serial > {
+    // ETP:  Is this really what we want?  This seems very odd if
+    // Scalar != SCT::mag_type (e.g., Scalar == std::complex<T>)
+    //
+    // mfh: I didn't write this code, but note that we don't use T =
+    // Scalar here, we use T = ArithTraits<Scalar>::mag_type.  That
+    // makes this code reasonable.
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    T max(const T& a, const T& b) const { return a > b ? a : b; }
+
+    template <typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    void operator() (Scalar& dest, const Scalar& src) const {
+      typedef Kokkos::Details::ArithTraits<Scalar> SCT;
+      // no need for an atomic operation here
+      dest = static_cast<Scalar> (max (SCT::abs (dest), SCT::abs (src)));
+    }
+  };
+#endif // KOKKOS_HAVE_SERIAL
 
   template <typename DstView, typename SrcView, typename IdxView, typename Op>
   struct UnpackArrayMultiColumn {

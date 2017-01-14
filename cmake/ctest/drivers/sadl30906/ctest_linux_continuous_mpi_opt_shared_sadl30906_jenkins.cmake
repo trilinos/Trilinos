@@ -74,30 +74,35 @@ SET(TRIBITS_2ND_CTEST_DROP_SITE
 SET(TRIBITS_2ND_CTEST_DROP_LOCATION
   "/extended/cdash/submit.php?project=Trilinos" )
 
-SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-
 SET(Trilinos_BRANCH develop)
 
 SET(EXTRA_EXCLUDE_PACKAGES Claps Optika)
 
 SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_TEST_CATEGORIES=BASIC"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
+  "-DTrilinos_ENABLE_DEBUG_SYMBOLS=OFF"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
   "-DMPI_BASE_DIR:PATH=/projects/install/rhel6-x86_64/sems/compiler/gcc/4.7.2/openmpi/1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DTPL_ENABLE_BoostLib:BOOL=ON"
-  "-DNetcdf_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_NETCDF_LIBRARY_PATH}"
-  "-DNetcdf_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_NETCDF_INCLUDE_PATH}"
-  "-DHDF5_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_HDF5_INCLUDE_PATH}"
-  "-DHDF5_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_HDF5_LIBRARY_PATH}"
+  "-DTPL_ENABLE_ParMETIS:BOOL=ON"
+  "-DTPL_ENABLE_Zlib:BOOL=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DTPL_ENABLE_Netcdf:BOOL=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 #  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
   "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
   "-DAmesos2_ENABLE_KLU2=ON"
+  "-DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF"
   "-DTrilinos_TRACE_ADD_TEST=ON"
+  "-DPiro_EpetraSolver_MPI_4_DISABLE=ON"
   )
+
+# Previous option to disable long-failing Pir test until it can be fixed (#826)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

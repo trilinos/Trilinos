@@ -48,7 +48,7 @@ namespace Tacho {
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
     std::cout << std::endl;
 
-    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskScheduler<DeviceSpaceType> PolicyType;
 
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseHostType;
     typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
@@ -77,7 +77,7 @@ namespace Tacho {
                        max_task_size*max_concurrency,
                        memory_pool_grain_size );
 
-    typename Kokkos::TaskPolicy<Kokkos::Serial>::member_type serial_member;
+    typename Kokkos::TaskScheduler<Kokkos::Serial>::member_type serial_member;
 
     std::ostringstream os;
     os.precision(3);

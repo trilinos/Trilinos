@@ -76,7 +76,7 @@ namespace Tacho {
     typedef GraphTools_Scotch<OrdinalType,SizeType,HostSpaceType> GraphToolsHostType_Scotch;
     typedef GraphTools_CAMD<OrdinalType,SizeType,HostSpaceType> GraphToolsHostType_CAMD;
 
-    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskScheduler<DeviceSpaceType> PolicyType;
 
     typedef TaskView<CrsMatrixViewHostType> CrsTaskViewHostType;
     typedef CrsMatrixBase<CrsTaskViewHostType,OrdinalType,SizeType,HostSpaceType> CrsHierBaseHostType;

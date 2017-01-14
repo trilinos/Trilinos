@@ -64,8 +64,8 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MapExtractor.hpp>

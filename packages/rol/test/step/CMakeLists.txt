@@ -1,3 +1,5 @@
+ADD_SUBDIRECTORY(interiorpoint)
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LineSearch

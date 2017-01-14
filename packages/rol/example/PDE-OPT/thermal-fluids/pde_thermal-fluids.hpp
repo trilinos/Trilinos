@@ -669,6 +669,20 @@ public:
             }
           }
         }
+        // Pressure pinning
+        if (i==9) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numPBdryDofs = 1;
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numPBdryDofs; ++l) {
+                (*R[d])(cidx,fpidx_[j][l]) = (*U[d])(cidx,fpidx_[j][l]);
+              }
+            }
+          }
+        }
       }
     }
 
@@ -1126,6 +1140,31 @@ public:
             }
           }
         }
+        // Pressure pinning
+        if (i==9) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numPBdryDofs = 1;
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numPBdryDofs; ++l) {
+                for (int m = 0; m < fv; ++m) {
+                  for (int n = 0; n < d; ++n) {
+                    (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                  }
+                }
+                for (int m = 0; m < fp; ++m) {
+                  (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
+                for (int m = 0; m < fh; ++m) {
+                  (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
+                (*J[d][d])(cidx,fpidx_[j][l],fpidx_[j][l]) = static_cast<Real>(1);
+              }
+            }
+          }
+        }
       }
     }
 
@@ -1374,6 +1413,30 @@ public:
             }
           }
         }
+        // Pressure pinning
+        if (i==9) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numPBdryDofs = 1;
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numPBdryDofs; ++l) {
+                for (int m = 0; m < fv; ++m) {
+                  for (int n = 0; n < d; ++n) {
+                    (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                  }
+                }
+                for (int m = 0; m < fp; ++m) {
+                  (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
+                for (int m = 0; m < fh; ++m) {
+                  (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
+              }
+            }
+          }
+        }
       }
     }
 
@@ -1494,6 +1557,20 @@ public:
               }
               for (int l = 0; l < numHBdryDofs; ++l) {
                 (*L[d+1])(cidx,fhidx_[j][l]) = static_cast<Real>(0);
+              }
+            }
+          }
+        }
+        // Pressure pinning
+        if (i==9) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numPBdryDofs = 1;
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numPBdryDofs; ++l) {
+                (*L[d])(cidx,fpidx_[j][l]) = static_cast<Real>(0);
               }
             }
           }

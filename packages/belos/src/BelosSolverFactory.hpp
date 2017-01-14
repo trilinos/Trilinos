@@ -62,7 +62,8 @@
 #include <BelosFixedPointSolMgr.hpp>
 #include <BelosBiCGStabSolMgr.hpp>
 
-#include <Teuchos_Array.hpp>
+#include "Belos_Details_EBelosSolverType.hpp"
+
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -75,46 +76,6 @@
 #include <vector>
 
 namespace Belos {
-
-namespace details {
-
-/// \enum EBelosSolverType
-/// \brief 1-to-1 enumeration of all supported SolverManager subclasses.
-/// \author Mark Hoemmen
-///
-/// This enum is an implementation detail of \c SolverFactory.
-/// Users of \c SolverFactory should not refer to this enum or
-/// rely on the symbols or integer values therein.  We declare
-/// it here for later use by \c SolverFactory.
-///
-/// Belos developers who have implemented a new solver (i.e., a new
-/// subclass of \c SolverManager) and who want to make the solver
-/// available through the \c SolverFactory should first add a new enum
-/// symbol corresponding to their solver to the end of the list.  They
-/// should then follow the instructions provided in the \c
-/// SolverFactory documentation.
-///
-/// \c SolverFactory was written to be independent of the actual enum
-/// values, so Belos developers are allowed to rearrange the symbols.
-enum EBelosSolverType {
-  SOLVER_TYPE_BLOCK_GMRES,
-  SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-  SOLVER_TYPE_BLOCK_CG,
-  SOLVER_TYPE_PSEUDO_BLOCK_CG,
-  SOLVER_TYPE_GCRODR,
-  SOLVER_TYPE_RCG,
-  SOLVER_TYPE_MINRES,
-  SOLVER_TYPE_LSQR,
-  SOLVER_TYPE_STOCHASTIC_CG,
-  SOLVER_TYPE_TFQMR,
-  SOLVER_TYPE_PSEUDO_BLOCK_TFQMR,
-  SOLVER_TYPE_GMRES_POLY,
-  SOLVER_TYPE_PCPG,
-  SOLVER_TYPE_FIXED_POINT,
-  SOLVER_TYPE_BICGSTAB
-};
-
-} // namespace details
 
 /// \class SolverFactory
 /// \brief Factory for all solvers which Belos supports.
@@ -143,21 +104,23 @@ enum EBelosSolverType {
 /// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
 /// parameter to true in the input parameter list.
 ///
-///  Solver name | Aliases | Solver Manager Class
-///  ----------- | ------- | ----------
-///  Pseudoblock GMRES |  GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres | \c PseudoBlockGmresSolMgr
-///  Block GMRES | Flexible GMRES | \c BlockGmresSolMgr
-///  Block CG |  |  \c BlockCGSolMgr
-///  Pseudoblock CG | PseudoBlockCG, Pseudo Block CG | \c PseudoBlockCGSolMgr
-///  Pseudoblock Stochastic CG | Stochastic CG | \c PseudoBlockStochasticCGSolMgr
-///  GCRODR | Recycling GMRES | \c GCRODRSolMgr
-///  RCG | Recycling CG | \c RCGSolMgr
-///  MINRES | | \c MinresSolMgr
-///  LSQR | | \c LSQRSolMgr
-///  TFQMR | Transpose-Free QMR | \c TFQMRSolMgr
-///  Pseudoblock TFQMR | Pseudo Block Transpose-Free QMR | \c PseudoBlockTFQMRSolMgr
-///  Hybrid Block GMRES | GmresPoly, Seed GMRES | \c GmresPolySolMgr
-///  PCPG | CGPoly, Seed CG | \c PCPGSolMgr
+/// <table>
+/// <caption> Mapping of solver names and aliases to Belos classes </caption>
+/// <tr><th> Solver name </th>               <th> Aliases </th>                                                        <th> \c SolverManager subclass </th></tr>
+/// <tr><td> Pseudoblock GMRES </td>         <td> GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres </td>  <td> \c PseudoBlockGmresSolMgr </td></tr>
+/// <tr><td> Block GMRES </td>               <td> Flexible GMRES </td>                                                 <td> \c BlockGmresSolMgr </td></tr>
+/// <tr><td> Block CG </td>                  <td> Block CG </td>                                                       <td> \c BlockCGSolMgr </td></tr>
+/// <tr><td> Pseudoblock CG </td>            <td> PseudoBlockCG, Pseudo Block CG </td>                                 <td> \c PseudoBlockCGSolMgr </td></tr>
+/// <tr><td> Pseudoblock Stochastic CG </td> <td> Stochastic CG </td>                                                  <td> \c PseudoBlockStochasticCGSolMgr </td></tr>
+/// <tr><td> GCRODR </td>                    <td> Recycling GMRES </td>                                                <td> \c GCRODRSolMgr </td></tr>
+/// <tr><td> RCG </td>                       <td> Recycling CG </td>                                                   <td> \c RCGSolMgr </td></tr>
+/// <tr><td> MINRES </td>                    <td> MINRES </td>                                                         <td> \c MinresSolMgr </td></tr>
+/// <tr><td> LSQR </td>                      <td> LSQR </td>                                                           <td> \c LSQRSolMgr </td></tr>
+/// <tr><td> TFQMR </td>                     <td> TFQMR, Transpose-Free QMR </td>                                      <td> \c TFQMRSolMgr </td></tr>
+/// <tr><td> Pseudoblock TFQMR </td>         <td> Pseudoblock TFQMR, Pseudo Block Transpose-Free QMR </td>             <td> \c PseudoBlockTFQMRSolMgr </td></tr>
+/// <tr><td> Hybrid Block GMRES </td>        <td> GmresPoly, Seed GMRES </td>                                          <td> \c GmresPolySolMgr </td></tr>
+/// <tr><td> PCPG </td>                      <td> CGPoly, Seed CG </td>                                                <td> \c PCPGSolMgr </td></tr>
+/// </table>
 ///
 /// This class' template parameters are the same as those of
 /// Belos::SolverManager.  Scalar is the scalar type (of entries in
@@ -229,13 +192,13 @@ enum EBelosSolverType {
 ///
 /// <ol>
 /// <li> Add a new symbol corresponding to their solver to the
-///      details::EBelosSolverType enum. </li>
-/// <li> If necessary, specialize details::makeSolverManagerTmpl for
+///      Details::EBelosSolverType enum. </li>
+/// <li> If necessary, specialize Details::makeSolverManagerTmpl for
 ///      their SolverManager subclass.  In most cases, the default
 ///      implementation suffices. </li>
 /// <li> Add a case for their enum symbol that instantiates their
 ///      solver to the long switch-case statement in
-///      details::makeSolverManagerFromEnum. </li>
+///      Details::makeSolverManagerFromEnum. </li>
 /// <li> In the SolverFactory constructor, define a canonical string
 ///      name for their solver and its mapping to the corresponding
 ///      enum value, following the examples and comments there.  (This
@@ -315,50 +278,6 @@ public:
   //@}
 
 private:
-  /// \brief Map from solver name alias to canonical solver name.
-  ///
-  /// The keys of this map do not necessarily include canonical solver
-  /// names.  If a candidate name isn't a key in this map, then it
-  /// must be a canonical name in order to be valid.  There doesn't
-  /// need to be an alias for each solver.
-  ///
-  /// \note To Belos developers: If you want to add a new alias, first
-  ///   add the mapping from alias to canonical solver name in the
-  ///   SolverFactory constructor.  Then, edit
-  ///   reviseParameterListForAlias() to do any modifications of the
-  ///   input ParameterList associated with that alias.
-  std::map<std::string, std::string> aliasToCanonicalName_;
-
-  /// \brief Map from canonical solver name to solver enum value.
-  ///
-  /// Access the keys to get the list of canonical solver names.
-  ///
-  /// \note To Belos developers: If you add a new solver, start with
-  ///   the documentation of details::EBelosSolverType for
-  ///   instructions.  Each new solver needs a canonical name (a
-  ///   string), which is a key into this map.  The map from canonical
-  ///   name to enum value is set up in the \c SolverFactory
-  ///   constructor.  The details::makeSolverManagerFromEnum()
-  ///   function in turn takes the enum value and parameter list, and
-  ///   returns an instance of the appropriate subclass of
-  ///   SolverManager.
-  std::map<std::string, details::EBelosSolverType> canonicalNameToEnum_;
-
-  /// \brief Modify the input ParameterList appropriately for the given alias.
-  ///
-  /// Some aliases include modifications or special checking of the
-  /// input ParameterList.  All alias-related ParameterList revision
-  /// happens in this method.
-  void
-  reviseParameterListForAlias (const std::string& aliasName,
-                               Teuchos::ParameterList& solverParams);
-
-  //! List of canonical solver names.
-  Teuchos::Array<std::string> canonicalSolverNames () const;
-
-  //! List of supported aliases (to canonical solver names).
-  Teuchos::Array<std::string> solverNameAliases () const;
-
   //! Print the given array of strings, in YAML format, to \c out.
   static void
   printStringArray (std::ostream& out,
@@ -375,10 +294,27 @@ private:
     }
     out << "]";
   }
+
+  //! Print the given array of strings, in YAML format, to \c out.
+  static void
+  printStringArray (std::ostream& out,
+                    const std::vector<std::string>& array)
+  {
+    typedef std::vector<std::string>::const_iterator iter_type;
+
+    out << "[";
+    for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
+      out << "\"" << *iter << "\"";
+      if (iter + 1 != array.end()) {
+        out << ", ";
+      }
+    }
+    out << "]";
+  }
 };
 
 
-namespace details {
+namespace Details {
 
 /// \fn makeSolverManagerTmpl
 /// \brief Return a new instance of the desired SolverManager subclass.
@@ -530,79 +466,12 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
   return solver;
 }
 
-} // namespace details
+} // namespace Details
 
 
 template<class Scalar, class MV, class OP>
 SolverFactory<Scalar, MV, OP>::SolverFactory()
-{
-  aliasToCanonicalName_["GMRES"] = "PSEUDOBLOCK GMRES";
-  // NOTE (mfh 29 Nov 2011) Accessing the flexible capability requires
-  // setting a parameter in the solver's parameter list.  This affects
-  // the SolverFactory's interface, since using the "Flexible GMRES"
-  // alias requires modifying the user's parameter list if necessary.
-  // This is a good idea because users may not know about the
-  // parameter, or may have forgotten.
-  //
-  // NOTE (mfh 12 Aug 2015) The keys and values need to be all uppercase.
-  aliasToCanonicalName_["BLOCK GMRES"] = "BLOCK GMRES";
-  aliasToCanonicalName_["FLEXIBLE GMRES"] = "BLOCK GMRES";
-  aliasToCanonicalName_["CG"] = "PSEUDOBLOCK CG";
-  aliasToCanonicalName_["PSEUDOBLOCKCG"] = "PSEUDOBLOCK CG";
-  aliasToCanonicalName_["STOCHASTIC CG"] = "PSEUDOBLOCK STOCHASTIC CG";
-  aliasToCanonicalName_["RECYCLING CG"] = "RCG";
-  aliasToCanonicalName_["RECYCLING GMRES"] = "GCRODR";
-  // For compatibility with Stratimikos' Belos adapter.
-  aliasToCanonicalName_["PSEUDO BLOCK GMRES"] = "PSEUDOBLOCK GMRES";
-  aliasToCanonicalName_["PSEUDOBLOCKGMRES"] = "PSEUDOBLOCK GMRES";
-  aliasToCanonicalName_["PSEUDO BLOCK CG"] = "PSEUDOBLOCK CG";
-  aliasToCanonicalName_["PSEUDOBLOCKCG"] = "PSEUDOBLOCK CG";
-  aliasToCanonicalName_["TRANSPOSE-FREE QMR"] = "TFQMR";
-  aliasToCanonicalName_["PSEUDO BLOCK TFQMR"] = "PSEUDOBLOCK TFQMR";
-  aliasToCanonicalName_["PSEUDO BLOCK TRANSPOSE-FREE QMR"] = "PSEUDOBLOCK TFQMR";
-  aliasToCanonicalName_["GMRESPOLY"] = "HYBRID BLOCK GMRES";
-  aliasToCanonicalName_["SEED GMRES"] = "HYBRID BLOCK GMRES";
-  aliasToCanonicalName_["CGPOLY"] = "PCPG";
-  aliasToCanonicalName_["SEED CG"] = "PCPG";
-  aliasToCanonicalName_["FIXED POINT"] = "FIXED POINT";
-  aliasToCanonicalName_["BICGSTAB"] = "BICGSTAB";
-
-  // Mapping from canonical solver name (a string) to its
-  // corresponding enum value.  This mapping is one-to-one.
-  //
-  // NOTE (mfh 12 Aug 2015) The keys need to be all uppercase.
-  canonicalNameToEnum_["BLOCK GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
-  canonicalNameToEnum_["PSEUDOBLOCK GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
-  canonicalNameToEnum_["BLOCK CG"] = details::SOLVER_TYPE_BLOCK_CG;
-  canonicalNameToEnum_["PSEUDOBLOCK CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
-  canonicalNameToEnum_["PSEUDOBLOCK STOCHASTIC CG"] = details::SOLVER_TYPE_STOCHASTIC_CG;
-  canonicalNameToEnum_["GCRODR"] = details::SOLVER_TYPE_GCRODR;
-  canonicalNameToEnum_["RCG"] = details::SOLVER_TYPE_RCG;
-  canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
-  canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
-  canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
-  canonicalNameToEnum_["PSEUDOBLOCK TFQMR"] = details::SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
-  canonicalNameToEnum_["HYBRID BLOCK GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
-  canonicalNameToEnum_["PCPG"] = details::SOLVER_TYPE_PCPG;
-  canonicalNameToEnum_["FIXED POINT"] = details::SOLVER_TYPE_FIXED_POINT;
-  canonicalNameToEnum_["BICGSTAB"] = details::SOLVER_TYPE_BICGSTAB;
-}
-
-
-template<class Scalar, class MV, class OP>
-void
-SolverFactory<Scalar, MV, OP>::
-reviseParameterListForAlias (const std::string& aliasName,
-                             Teuchos::ParameterList& solverParams)
-{
-  if (aliasName == "FLEXIBLE GMRES") {
-    // "Gmres" uses title case in this solver's parameter list.  For
-    // our alias, we prefer the all-capitals "GMRES" that the
-    // algorithm's authors (Saad and Schultz) used.
-    solverParams.set ("Flexible Gmres", true);
-  }
-}
-
+{}
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactory<Scalar, MV, OP>::solver_base_type>
@@ -626,16 +495,18 @@ create (const std::string& solverName,
   }
 
   // Check whether the given name is an alias.
-  std::map<std::string, std::string>::const_iterator aliasIter =
-    aliasToCanonicalName_.find (solverNameUC);
-  const bool isAnAlias = (aliasIter != aliasToCanonicalName_.end());
-  const std::string candidateCanonicalName =
-    isAnAlias ? aliasIter->second : solverNameUC;
+  std::pair<std::string, bool> aliasResult =
+    Details::getCanonicalNameFromAlias (solverNameUC);
+  const std::string candidateCanonicalName = aliasResult.first;
+  const bool isAnAlias = aliasResult.second;
 
   // Get the canonical name.
-  std::map<std::string, details::EBelosSolverType>::const_iterator canonicalIter =
-    canonicalNameToEnum_.find (candidateCanonicalName);
-  const bool validCanonicalName = (canonicalIter != canonicalNameToEnum_.end());
+  const Details::EBelosSolverType solverEnum =
+    Details::getEnumFromCanonicalName (isAnAlias ?
+                                       candidateCanonicalName :
+                                       solverNameUC);
+  const bool validCanonicalName =
+    (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
 
   // Check whether we found a canonical name.  If we didn't and the
   // input name is a valid alias, that's a bug.  Otherwise, the input
@@ -658,10 +529,10 @@ create (const std::string& solverName,
 
   // Possibly modify the input parameter list as needed.
   if (isAnAlias) {
-    reviseParameterListForAlias (solverNameUC, *pl);
+    Details::reviseParameterListForAlias (solverNameUC, *pl);
   }
 
-  return details::makeSolverManagerFromEnum<Scalar, MV, OP> (canonicalIter->second, pl);
+  return Details::makeSolverManagerFromEnum<Scalar, MV, OP> (solverEnum, pl);
 }
 
 
@@ -724,11 +595,11 @@ describe (Teuchos::FancyOStream& out,
     out << "Number of solvers: " << numSupportedSolvers ()
         << endl;
     out << "Canonical solver names: ";
-    printStringArray (out, canonicalSolverNames ());
+    printStringArray (out, Details::canonicalSolverNames ());
     out << endl;
 
     out << "Aliases to canonical names: ";
-    printStringArray (out, solverNameAliases ());
+    printStringArray (out, Details::solverNameAliases ());
     out << endl;
   }
 }
@@ -737,54 +608,26 @@ template<class Scalar, class MV, class OP>
 int
 SolverFactory<Scalar, MV, OP>::numSupportedSolvers () const
 {
-  return static_cast<int> (canonicalNameToEnum_.size());
-}
-
-template<class Scalar, class MV, class OP>
-Teuchos::Array<std::string>
-SolverFactory<Scalar, MV, OP>::canonicalSolverNames () const
-{
-  Teuchos::Array<std::string> canonicalNames;
-  typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
-  for (iter_type iter = canonicalNameToEnum_.begin();
-       iter != canonicalNameToEnum_.end(); ++iter) {
-    canonicalNames.push_back (iter->first);
-  }
-  return canonicalNames;
-}
-
-template<class Scalar, class MV, class OP>
-Teuchos::Array<std::string>
-SolverFactory<Scalar, MV, OP>::solverNameAliases () const
-{
-  Teuchos::Array<std::string> names;
-  {
-    typedef std::map<std::string, std::string>::const_iterator iter_type;
-    for (iter_type iter = aliasToCanonicalName_.begin();
-         iter != aliasToCanonicalName_.end(); ++iter) {
-      names.push_back (iter->first);
-    }
-  }
-  return names;
+  return Details::numSupportedSolvers ();
 }
 
 template<class Scalar, class MV, class OP>
 Teuchos::Array<std::string>
 SolverFactory<Scalar, MV, OP>::supportedSolverNames () const
 {
+  typedef std::vector<std::string>::const_iterator iter_type;
   Teuchos::Array<std::string> names;
+
   {
-    typedef std::map<std::string, std::string>::const_iterator iter_type;
-    for (iter_type iter = aliasToCanonicalName_.begin();
-         iter != aliasToCanonicalName_.end(); ++iter) {
-      names.push_back (iter->first);
+    std::vector<std::string> aliases = Details::solverNameAliases ();
+    for (iter_type iter = aliases.begin (); iter != aliases.end (); ++iter) {
+      names.push_back (*iter);
     }
   }
   {
-    typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
-    for (iter_type iter = canonicalNameToEnum_.begin();
-         iter != canonicalNameToEnum_.end(); ++iter) {
-      names.push_back (iter->first);
+    std::vector<std::string> canonicalNames = Details::canonicalSolverNames ();
+    for (iter_type iter = canonicalNames.begin (); iter != canonicalNames.end (); ++iter) {
+      names.push_back (*iter);
     }
   }
   return names;

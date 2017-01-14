@@ -564,7 +564,7 @@ namespace stk_classic {
         assert(block_number <= block_count() && block_number > 0);
 
         if (block_number == 1) {
-          return std::make_pair(std::string("hex8"), 8);;
+          return std::make_pair(std::string("hex8"), 8);
         } else {
           return std::make_pair(std::string("shell4"), 4);
         }

@@ -58,7 +58,8 @@ void EdgeFieldPattern::setCellTopology(const shards::CellTopology & ct)
 
    // allocate the space and setup the indices
    edgeIndices_.clear();
-   edgeIndices_.resize(cellTopo_.getEdgeCount());
+   // edgeIndices_.resize(cellTopo_.getEdgeCount());
+   edgeIndices_.resize(cellTopo_.getSubcellCount(1));
    for(std::size_t n=0;n<edgeIndices_.size();n++)
       edgeIndices_[n].push_back(n);
 }

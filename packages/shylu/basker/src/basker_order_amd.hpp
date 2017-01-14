@@ -7,9 +7,9 @@
 //This can be done to user the smaller domains
 
 #ifdef HAVE_AMESOS
-#include "amesos_amd.h"
-#include "amesos_colamd.h"
-#include "amesos_ccolamd.h"
+#include "trilinos_amd.h"
+#include "trilinos_colamd.h"
+#include "trilinos_ccolamd.h"
 #endif
 
 namespace BaskerNS
@@ -49,16 +49,16 @@ namespace BaskerNS
     int    stats[CCOLAMD_STATS];
 
     //use default knob settings
-    amesos_ccolamd_set_defaults(knobs);
+    trilinos_ccolamd_set_defaults(knobs);
     knobs[0] = 10;
     knobs[1] = 0;
     knobs[2] = 2;
 
-    amesos_csymamd(n, Ai, Ap,  p, knobs, stats, 
+    trilinos_csymamd(n, Ai, Ap,  p, knobs, stats, 
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    //amesos_csymamd_report(stats);
+    //trilinos_csymamd_report(stats);
     
     return 0;
   }
@@ -80,16 +80,16 @@ namespace BaskerNS
     long    stats[CCOLAMD_STATS];
 
     //use default knob settings
-    amesos_ccolamd_l_set_defaults(knobs);
+    trilinos_ccolamd_l_set_defaults(knobs);
     knobs[0] = 10;
     knobs[1] = 0;
     knobs[2] = 2;
 
-    amesos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
+    trilinos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    //amesos_csymamd_l_report(stats);
+    //trilinos_csymamd_l_report(stats);
     
     return 0;
   }
@@ -109,7 +109,7 @@ namespace BaskerNS
   {
 
     double amd_info[AMD_INFO];
-    amesos_amd(M.ncol, &(M.col_ptr(0)), 
+    trilinos_amd(M.ncol, &(M.col_ptr(0)), 
 	       &(M.row_idx(0)), &(p(0)),
 	       NULL, amd_info);
 
@@ -174,7 +174,7 @@ namespace BaskerNS
 
   template <class Int>
   BASKER_FINLINE
-  int amesos_colamd
+  int trilinos_colamd
   (
    Int n_row, 
    Int n_col,
@@ -186,12 +186,12 @@ namespace BaskerNS
    )
   {
     return -1;
-  }//end amesos_colamd()
+  }//end trilinos_colamd()
   
  
   template < >
   BASKER_FINLINE
-  int amesos_colamd<>
+  int trilinos_colamd<>
   (
    int n_row,
    int n_col, 
@@ -202,15 +202,15 @@ namespace BaskerNS
    int *stats
    )
   {
-    amesos_colamd(n_row,n_col,Alen,A,p,knobs,stats);
+    trilinos_colamd(n_row,n_col,Alen,A,p,knobs,stats);
     return 0;
-  }//end amesos_colamd<int>
+  }//end trilinos_colamd<int>
   
 
   //template<class Entry, class Exe_Space>
   template <>
   BASKER_FINLINE
-  int amesos_colamd<>
+  int trilinos_colamd<>
   (
    long n_row,
    long n_col,
@@ -221,7 +221,7 @@ namespace BaskerNS
    long *stats
    )
   {
-    amesos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);
+    trilinos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);
     return 0;
   }
   

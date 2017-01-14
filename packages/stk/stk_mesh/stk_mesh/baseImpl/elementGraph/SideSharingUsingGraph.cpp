@@ -161,7 +161,7 @@ void unpack_data(stk::CommSparse& comm, int my_proc_id, int num_procs, std::vect
             comm.recv_buffer(i).unpack<stk::mesh::EntityId>(chosenId);
             SideSharingData localTemp;
             localTemp.elementAndSide = receivedIdSide;
-            localTemp.owningProc = std::min(my_proc_id, i);;
+            localTemp.owningProc = std::min(my_proc_id, i);
             localTemp.sharingProc = i;
             localTemp.chosenSideId = chosenId;
             unpack_vector(comm.recv_buffer(i), localTemp.partOrdinals);

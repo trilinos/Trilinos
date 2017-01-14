@@ -42,7 +42,8 @@
 // @HEADER
 
 /*! \file  test_01.cpp
-    \brief Unit tests for the mesh manager and the degree-of-freedom manager.
+    \brief Unit test for the mesh manager and the degree-of-freedom manager.
+           Mesh type: RECTANGLE with QUAD CELLS and HGRAD SPACE.
 */
 
 #include "ROL_Algorithm.hpp"
@@ -82,14 +83,13 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    std::string filename = "input.xml";
+    std::string filename = "input_01.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
-    //MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
+    MeshManager_Rectangle<RealT> meshmgr(*parlist);
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
@@ -110,6 +110,14 @@ int main(int argc, char *argv[]) {
                << cellToNodeMap(i,1) << "  "
                << cellToNodeMap(i,2) << "  "
                << cellToNodeMap(i,3) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("edges.txt");
+    for (int i=0; i<cellToEdgeMap.dimension(0); ++i) {
+      meshfile << cellToEdgeMap(i,0) << "  "
+               << cellToEdgeMap(i,1) << "  "
+               << cellToEdgeMap(i,2) << "  "
+               << cellToEdgeMap(i,3) << std::endl;
     }
     meshfile.close();
     meshfile.open("nodes.txt");
@@ -163,6 +171,15 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<dofmgr.getNumFields(); ++i) {
       *outStream << "\nField  " << i << std::endl;
       *outStream << *(dofmgr.getFieldDofs(i));
+    }
+
+    bool correct = true;
+    static const int checkDofs[] = {20, 23, 35, 32, 55, 63, 69, 61, 81};
+    for (int i=0; i<dofmgr.getLocalFieldSize(2); ++i) {
+      correct = correct && ( (*(dofmgr.getFieldDofs(2)))(5,i) == checkDofs[i] );
+    }
+    if (!correct) {
+      errorFlag = -1;
     }
 
   }

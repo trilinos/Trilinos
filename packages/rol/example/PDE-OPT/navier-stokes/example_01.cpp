@@ -114,31 +114,31 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler,*parlist));
     Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = assembler->createStateVector();
     p_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > pp
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler,*parlist));
     // Create control vector and set to ones
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
     z_rcp->randomize();  //putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler,*parlist));
     // Create residual vector and set to zeros
     Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
     // Create state direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
     du_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler,*parlist));
     // Create control direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
     dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler,*parlist));
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -161,8 +161,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
 
-    up->zero();
-    zp->zero();
+    //up->zero();
+    //zp->zero();
     //z_rcp->putScalar(1.e0);
     //dz_rcp->putScalar(0);
 
@@ -171,6 +171,8 @@ int main(int argc, char *argv[]) {
     if ( checkDeriv ) {
       obj->checkGradient(x,d,true,*outStream);
       obj->checkHessVec(x,d,true,*outStream);
+      con->checkApplyJacobian_1(*up,*zp,*dup,*up,true,*outStream);
+      con->checkApplyJacobian_2(*up,*zp,*dzp,*up,true,*outStream);
       con->checkApplyJacobian(x,d,*up,true,*outStream);
       con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
       con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
@@ -181,6 +183,8 @@ int main(int argc, char *argv[]) {
     }
     bool useCompositeStep = parlist->sublist("Problem").get("Full space",false);
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
+    up->zero();
+    zp->zero();
     if ( useCompositeStep ) {
       algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
       algo->run(x,*rp,*obj,*con,true,*outStream);

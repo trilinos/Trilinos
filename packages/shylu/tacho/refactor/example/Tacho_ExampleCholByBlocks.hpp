@@ -61,7 +61,7 @@ namespace Tacho {
 
     typedef IncompleteSymbolicFactorization<CrsMatrixBaseHostType> IncompleteSymbolicFactorizationType;
 
-    typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::Experimental::TaskScheduler<DeviceSpaceType> PolicyType;
 
     typedef TaskView<CrsMatrixViewHostType> CrsTaskViewHostType;
     typedef CrsMatrixBase<CrsTaskViewHostType,ordinal_type,size_type,HostSpaceType> CrsHierBaseHostType;

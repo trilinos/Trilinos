@@ -58,6 +58,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>

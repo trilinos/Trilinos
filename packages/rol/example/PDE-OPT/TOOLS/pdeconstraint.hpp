@@ -733,6 +733,10 @@ public:
     return assembler_;
   }
 
+  const Teuchos::RCP<PDE<Real> > getPDE(void) const {
+    return pde_;
+  }
+
   using ROL::EqualityConstraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
     computeJ1_ = (flag ? true : computeJ1_);
@@ -1041,6 +1045,8 @@ public:
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
+    std::string mapfile = "map_" + filename;
+    vecWriter.writeMapFile(mapfile, *(vec->getMap()));
   }
   /***************************************************************************/
   /* End of output routines.                                                 */

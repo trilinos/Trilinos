@@ -292,23 +292,47 @@ iallreduceRawVoid (const void* sendbuf,
               MPI_Datatype dupDatatype;
               (void) MPI_Type_dup (mpiDatatype, &dupDatatype);
 #if MPI_VERSION >= 3
-              (void) MPI_Allreduce (sendbuf, recvbuf, count, dupDatatype,
-                                    rawOp, comm);
-#else
-              // OpenMPI 1.6.5 insists on void*, not const void*, for sendbuf.
-              (void) MPI_Allreduce (const_cast<void*> (sendbuf), recvbuf,
-                                    count, dupDatatype, rawOp, comm);
+              if (sendbuf == recvbuf) {
+                (void) MPI_Allreduce (MPI_IN_PLACE, recvbuf, count, dupDatatype,
+                                      rawOp, comm);
+              }
+              else {
+                (void) MPI_Allreduce (sendbuf, recvbuf, count, dupDatatype,
+                                      rawOp, comm);
+              }
+#else // MPI_VERSION < 3
+              if (sendbuf == recvbuf) {
+                (void) MPI_Allreduce (MPI_IN_PLACE, recvbuf,
+                                      count, dupDatatype, rawOp, comm);
+              }
+              else {
+                // OpenMPI 1.6.5 insists on void*, not const void*, for sendbuf.
+                (void) MPI_Allreduce (const_cast<void*> (sendbuf), recvbuf,
+                                      count, dupDatatype, rawOp, comm);
+              }
 #endif // MPI_VERSION >= 3
               (void) MPI_Type_free (&dupDatatype);
             }
             else {
 #if MPI_VERSION >= 3
-              (void) MPI_Allreduce (sendbuf, recvbuf, count, mpiDatatype,
-                                    rawOp, comm);
-#else
-              // OpenMPI 1.6.5 insists on void*, not const void*, for sendbuf.
-              (void) MPI_Allreduce (const_cast<void*> (sendbuf), recvbuf,
-                                    count, mpiDatatype, rawOp, comm);
+              if (sendbuf == recvbuf) {
+                (void) MPI_Allreduce (MPI_IN_PLACE, recvbuf, count, mpiDatatype,
+                                      rawOp, comm);
+              }
+              else {
+                (void) MPI_Allreduce (sendbuf, recvbuf, count, mpiDatatype,
+                                      rawOp, comm);
+              }
+#else // MPI_VERSION < 3
+              if (sendbuf == recvbuf) {
+                (void) MPI_Allreduce (MPI_IN_PLACE, recvbuf,
+                                      count, mpiDatatype, rawOp, comm);
+              }
+              else {
+                // OpenMPI 1.6.5 insists on void*, not const void*, for sendbuf.
+                (void) MPI_Allreduce (const_cast<void*> (sendbuf), recvbuf,
+                                      count, mpiDatatype, rawOp, comm);
+              }
 #endif // MPI_VERSION >= 3
             }
           }

@@ -1495,7 +1495,7 @@ private: // data
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
   std::map<int,const SideSet> m_sideSetData;
-  bool m_hasSideSetData = false;;
+  bool m_hasSideSetData = false;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);

@@ -680,8 +680,8 @@ public:
       steps[i] = pow(10,-i);
     }
   
-    return checkHessVec_11(u,z,hv,v,steps,printToStream,outStream,order);
-  } // checkHessVec_11
+    return checkHessVec_12(u,z,hv,v,steps,printToStream,outStream,order);
+  } // checkHessVec_12
 
 
   std::vector<std::vector<Real> > checkHessVec_12( const Vector<Real> &u,

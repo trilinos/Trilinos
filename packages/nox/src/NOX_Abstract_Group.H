@@ -205,7 +205,7 @@ namespace Abstract {
      \f]
 
      \note
-     If this is a <em>shared object</em>, this group should taken
+     If this is a <em>shared object</em>, this group should take
      ownership of the Jacobian before it computes it.
 
      \return

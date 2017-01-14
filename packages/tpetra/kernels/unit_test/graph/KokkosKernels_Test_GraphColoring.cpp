@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -96,7 +96,7 @@ template <typename scalar_t, typename lno_t, typename device>
 void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm coloring_algorithm) {
   ASSERT_TRUE( (input_filename != NULL));
 
-  device::execution_space::initialize();
+  //device::execution_space::initialize();
   //device::execution_space::print_configuration(std::cout);
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device> crsMat_t;
@@ -154,9 +154,10 @@ void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm colorin
 
   EXPECT_TRUE( (num_conflict == 0));
 
-  device::execution_space::finalize();
+  //device::execution_space::finalize();
 
 }
+
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_coloring<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::COLORING_DEFAULT); \
@@ -169,8 +170,36 @@ void test_coloring(KokkosKernels::Experimental::Graph::ColoringAlgorithm colorin
 
 
 TEST (COLORING_TEST, GC) {
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::initialize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::initialize();
+#endif
+
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::initialize( );
+#endif
+
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
   TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::finalize( );
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::finalize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::finalize();
+#endif
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::finalize();
+#endif
 }
  
 

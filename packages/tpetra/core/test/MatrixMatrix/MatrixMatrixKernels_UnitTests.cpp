@@ -60,6 +60,7 @@
 #include <cmath>
 #include "KokkosKernels_SPGEMM.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "Tpetra_Import_Util2.hpp"
 
 namespace {
   static const double defaultEpsilon = 1e-10;
@@ -175,7 +176,9 @@ typedef struct add_test_results_struct{
   double epsilon;
 } add_test_results;
 
-typedef struct mult_test_results_struct{
+typedef struct mult_test_results_struct{  
+  mult_test_results_struct():epsilon(1e10),cNorm(-1.0),compNorm(-1.0){}
+
   double epsilon;
   double cNorm;
   double compNorm;
@@ -334,6 +337,7 @@ mult_test_results multiply_test_kernel(
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
   typedef Map<LO,GO,NO> Map_t;
   RCP<const Map_t> map = C->getRowMap();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
   SC one = Teuchos::ScalarTraits<SC>::one();
   mult_test_results results;
@@ -342,7 +346,7 @@ mult_test_results multiply_test_kernel(
   RCP<Matrix_t> Aeff,  Beff;
   if(AT) {
     transposer_type transposer(A);
-    Aeff = transposer.createTranspose();
+    Aeff = transposer.createTranspose();   
   }
   else
     Aeff=A;
@@ -353,7 +357,51 @@ mult_test_results multiply_test_kernel(
   else
     Beff=B;
 
-  
+
+  // Now let's handle incompatibilities between the cols of Aeff and the rows of Beff, by copying and rearranging Beff if needed
+  if(!Aeff->getGraph()->getColMap()->isSameAs(*Beff->getGraph()->getColMap())) {
+    Teuchos::ArrayRCP<const size_t> Be1_rowptr;
+    Teuchos::ArrayRCP<const LO> Be1_colind;
+    Teuchos::ArrayRCP<const SC> Be1_vals;
+    Beff->getAllValues(Be1_rowptr,Be1_colind,Be1_vals);
+
+    RCP<const Map_t> Be1_rowmap = Beff->getGraph()->getRowMap();
+    RCP<const Map_t> Be2_rowmap = Aeff->getGraph()->getColMap();
+
+    // Do rowptr
+    Teuchos::ArrayRCP<size_t> Be2_rowptr(Be2_rowmap->getNodeNumElements()+1);
+    Be2_rowptr[0]=0;
+    for(size_t i=0; i<Be2_rowmap->getNodeNumElements(); i++) {
+      LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));
+      if(lrid_1 == LO_INVALID)
+	Be2_rowptr[i+1] = Be2_rowptr[i];
+      else {
+	Be2_rowptr[i+1] = Be2_rowptr[i] + Be1_rowptr[lrid_1+1] - Be1_rowptr[lrid_1];
+      }
+    }
+    int nnz_2 =  Be2_rowptr[Be2_rowmap->getNodeNumElements()];
+
+    Teuchos::ArrayRCP<LO> Be2_colind(nnz_2);
+    Teuchos::ArrayRCP<SC> Be2_vals(nnz_2);
+
+    // Copy colind/vals
+    for(size_t i=0; i<Be2_rowmap->getNodeNumElements(); i++) {
+      LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));      
+      // NOTE: Invalid rows will be length zero, so this will always work
+      for(size_t j=Be2_rowptr[i]; j<Be2_rowptr[i+1]; j++) {
+	size_t j1 = j-Be2_rowptr[i] + Be1_rowptr[lrid_1];
+	Be2_colind[j] = Be1_colind[j1];
+	Be2_vals[j]   = Be1_vals[j1];
+      }      
+    }
+
+    // Make new Beff
+    RCP<Matrix_t> Beff2 = rcp(new Matrix_t(Be2_rowmap,Beff->getGraph()->getColMap(),Be2_rowptr,Be2_colind,Be2_vals));
+			      //    Beff2->setAllValues(
+    Beff2->expertStaticFillComplete(Beff->getGraph()->getDomainMap(),Beff->getGraph()->getRangeMap());//Not efficient w.r.t. import, but that's OK
+    Beff=Beff2;
+  }
+
   // Extract Kokkos CrsMatrices
   typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_type KCRS;
   typedef typename KCRS::device_type device_t;
@@ -399,6 +447,9 @@ mult_test_results multiply_test_kernel(
     KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
     
+    // Sort
+    Tpetra::Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+
     // Compare the returned arrays with that of actual C
     Teuchos::ArrayRCP<const size_t> Real_rowptr;
     Teuchos::ArrayRCP<const LO> Real_colind;
@@ -414,7 +465,25 @@ mult_test_results multiply_test_kernel(
       if(Real_rowptr()[i] !=row_mapC[i]) {has_mismatch=true;break;}
     }
     if(has_mismatch) {
-#if 1
+#if 0     
+      if(AT) {
+	std::string fname(name + "_AT.out");
+	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Aeff,"AT","AT");
+      }
+      if(BT) {
+	std::string fname(name + "_BT.out");
+	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Beff,"BT","BT");
+      }
+
+      printf("Real rowgids = ");
+      for(size_t i=0; i<(size_t) C->getGraph()->getRowMap()->getNodeNumElements(); i++) 
+	printf("%d ",(int)C->getGraph()->getRowMap()->getGlobalElement(i));
+      printf("\n");
+      printf("Aeff rowgids = ");
+      for(size_t i=0; i<(size_t) Aeff->getGraph()->getRowMap()->getNodeNumElements(); i++) 
+	printf("%d ",(int)Aeff->getGraph()->getRowMap()->getGlobalElement(i));
+      printf("\n");
+
       printf("Real rowptr = ");
       for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
 	printf("%d ",(int)Real_rowptr()[i]);
@@ -434,7 +503,7 @@ mult_test_results multiply_test_kernel(
       throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
     } 
 
-    // Check graphs & entries (sorted)
+    // Check graphs & entries (sorted by GID)
     results.cNorm=0.0;
     results.compNorm=0.0;
     results.epsilon=0.0;
@@ -443,9 +512,9 @@ mult_test_results multiply_test_kernel(
       if(nnz==0) continue;
       std::vector<std::pair<LO,SC> > R_sorted(nnz), C_sorted(nnz);
       for(size_t j=0; j<nnz; j++)  {
-	R_sorted[j].first  = Real_colind()[Real_rowptr()[i]+j];
+	R_sorted[j].first  = C->getColMap()->getGlobalElement(Real_colind()[Real_rowptr()[i]+j]);
 	R_sorted[j].second = Real_vals()[Real_rowptr()[i]+j];
-	C_sorted[j].first  = entriesC[Real_rowptr()[i]+j];
+	C_sorted[j].first  = Beff->getColMap()->getGlobalElement(entriesC[Real_rowptr()[i]+j]);
 	C_sorted[j].second = valuesC[Real_rowptr()[i]+j];
       }
       std::sort(R_sorted.begin(),R_sorted.end());
@@ -457,8 +526,43 @@ mult_test_results multiply_test_kernel(
 	results.epsilon+=std::abs(C_sorted[j].second-R_sorted[j].second);
       }
     }
-    if(has_mismatch)
-       throw std::runtime_error("mult_test_results multiply_test_kernel: colmap entries mismatch");
+    if(has_mismatch) {
+#if 0     
+      printf("Real colmap = ");
+      for(size_t i=0; i<(size_t) C->getGraph()->getColMap()->getNodeNumElements(); i++) 
+	printf("%d ",(int)C->getGraph()->getColMap()->getGlobalElement(i));
+      printf("\n");
+      printf("   B colmap = ");
+      for(size_t i=0; i<(size_t) Beff->getGraph()->getColMap()->getNodeNumElements(); i++) 
+	printf("%d ",(int)Beff->getGraph()->getColMap()->getGlobalElement(i));
+      printf("\n");
+ 
+      if(AT) {
+	std::string fname(name + "_AT.out");
+	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Aeff,"AT","AT");
+      }
+      if(BT) {
+	std::string fname(name + "_BT.out");
+	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Beff,"BT","BT");
+      }
+      printf("Real rowptr = ");
+      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
+	printf("%d ",(int)Real_rowptr()[i]);
+      printf("\nCalc rowptr = ");
+      for(size_t i=0; i<(size_t) row_mapC.size(); i++) 
+	printf("%d ",(int)row_mapC[i]);
+      printf("\n");
+      
+      printf("Real colind = ");
+      for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
+	printf("%d(%6.1f) ",(int)Real_colind()[i],Real_vals()[i]);
+      printf("\nCalc colind = ");
+      for(size_t i=0; i<(size_t) entriesC.size(); i++) 
+	printf("%d(%6.1f) ",(int)entriesC[i],valuesC[i]);
+      printf("\n");
+#endif
+      throw std::runtime_error("mult_test_results multiply_test_kernel: colmap entries mismatch");
+    } 
     
     if(results.cNorm>1e-10) results.epsilon = results.epsilon / results.cNorm;
 
@@ -717,9 +821,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     if (op == "multiply") {
       if (verbose)
         newOut << "Running multiply test (kernel) for " << currentSystem.name() << endl;
-
-      mult_test_results results = multiply_test_kernel(name, A, B, AT, BT, C, comm, newOut);
-
+      mult_test_results results;	
+      try {
+	results = multiply_test_kernel(name, A, B, AT, BT, C, comm, newOut);
+      }
+      catch(const std::exception & err) {
+	printf("FAILED: %s\n",err.what());
+      }
       if (verbose) {
         newOut << "Results:"     << endl;
         newOut << "\tEpsilon: "  << results.epsilon  << endl;

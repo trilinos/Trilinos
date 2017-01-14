@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -290,14 +290,18 @@ int main (int argc, char ** argv){
     return 0;
   }
 
-  idx nv = 0, ne = 0;
-  idx *xadj, *adj;
-  wt *ew;
+
+
+
 
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
+      idx nv = 0, ne = 0;
+      idx *xadj, *adj;
+      wt *ew;
+
 
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
         Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] ,
@@ -343,6 +347,10 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
+      idx nv = 0, ne = 0;
+      idx *xadj, *adj;
+      wt *ew;
+
 
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
         Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
@@ -391,7 +399,9 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
-
+      idx nv = 0, ne = 0;
+      idx *xadj, *adj;
+      wt *ew;
       Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::print_configuration(std::cout);

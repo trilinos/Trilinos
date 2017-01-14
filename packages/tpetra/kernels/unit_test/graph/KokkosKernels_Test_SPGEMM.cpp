@@ -1,10 +1,9 @@
-
 /*
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -36,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -145,7 +144,6 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosKernels::Experimen
 template <typename crsMat_t, typename device>
 bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
-
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
@@ -205,8 +203,10 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       typename device::execution_space>(h_ent1, h_ent2, 0 );
   if (!is_identical) return false;
 
+
+  typedef typename Kokkos::Details::ArithTraits<typename scalar_view_t::non_const_value_type>::mag_type eps_type;
   is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
-      <scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
+      <scalar_view_t, scalar_view_t, eps_type,
       typename device::execution_space>(h_vals1, h_vals2, 0.000001);
   if (!is_identical) return false;
   return true;
@@ -215,7 +215,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 template <typename scalar_t, typename lno_t, typename device>
 void test_spgemm(KokkosKernels::Experimental::Graph::SPGEMMAlgorithm spgemm_algorithm) {
   ASSERT_TRUE( (input_filename != NULL));
-  device::execution_space::initialize();
+  //device::execution_space::initialize();
   //device::execution_space::print_configuration(std::cout);
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device> crsMat_t;
@@ -288,20 +288,21 @@ void test_spgemm(KokkosKernels::Experimental::Graph::SPGEMMAlgorithm spgemm_algo
     res = run_spgemm<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
   }
   catch (const char *message){
-    EXPECT_TRUE(is_expected_to_fail) << algo;
+	EXPECT_TRUE(is_expected_to_fail) << algo;
     failed = true;
   }
   catch (std::string message){
-    EXPECT_TRUE(is_expected_to_fail)<< algo;
+	EXPECT_TRUE(is_expected_to_fail)<< algo;
     failed = true;
   }
   catch (std::exception& e){
-    EXPECT_TRUE(is_expected_to_fail)<< algo;
+	EXPECT_TRUE(is_expected_to_fail)<< algo;
     failed = true;
   }
   EXPECT_TRUE((failed == is_expected_to_fail));
 
   double spgemm_time = timer1.seconds();
+
   if (!is_expected_to_fail){
 
     EXPECT_TRUE( (res == 0)) << algo;
@@ -316,22 +317,53 @@ void test_spgemm(KokkosKernels::Experimental::Graph::SPGEMMAlgorithm spgemm_algo
 
     //EXPECT_TRUE( equal) << algo;
   }
-  device::execution_space::finalize();
+  //device::execution_space::finalize();
 }
+
+
 
 #define INSTMACRO( SCALAR, LO, DEVICE) \
     test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY); \
     test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED); \
     test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMSPEED); \
-    test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE); \
-    test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
-
+	test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE); \
+	test_spgemm<SCALAR,LO,DEVICE>(KokkosKernels::Experimental::Graph::SPGEMM_MKL); \
 
 
 
 TEST (SPGEMM_TEST, SPGEMM) {
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::initialize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::initialize();
+#endif
+
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::initialize( );
+#endif
+
+
   TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
   TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
+
+#if defined( KOKKOS_HAVE_CUDA )
+  Kokkos::Cuda::finalize( );
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  Kokkos::Threads::finalize();
+#endif
+#if defined( KOKKOS_HAVE_OPENMP )
+  Kokkos::OpenMP::finalize();
+#endif
+#if defined( KOKKOS_HAVE_SERIAL )
+  Kokkos::Serial::finalize();
+#endif
 }
  
 

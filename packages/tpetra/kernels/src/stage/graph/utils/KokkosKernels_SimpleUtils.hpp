@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -44,10 +44,14 @@
 #define _KOKKOSKERNELS_SIMPLEUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
+#include "Kokkos_ArithTraits.hpp"
 #include "impl/Kokkos_Timer.hpp"
+#include <type_traits>
+
 
 #define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define KOKKOSKERNELS_MACRO_ABS(x) ((x) > (0) ? (x): (-x))
+
+#define KOKKOSKERNELS_MACRO_ABS(x)  Kokkos::Details::ArithTraits<typename std::decay<decltype(x)>::type>::abs (x)
 
 namespace KokkosKernels{
 
@@ -115,8 +119,52 @@ void kk_inclusive_parallel_prefix_sum(typename forward_array_type::value_type nu
   Kokkos::parallel_scan( my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
 }
 
+template <typename view_t>
+struct ReductionFunctor{
+  view_t array_sum;
+  ReductionFunctor(view_t arr_): array_sum(arr_){}
 
-template<typename view_type1, typename view_type2, typename eps_type>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, typename view_t::value_type & update) const {
+	  update += array_sum(ii);
+  }
+};
+
+
+template <typename view_t, typename view2_t>
+struct DiffReductionFunctor{
+  view_t array_begins;
+  view2_t array_ends;
+  DiffReductionFunctor(view_t begins, view2_t ends): array_begins(begins), array_ends(ends){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, typename view_t::non_const_value_type & update) const {
+          update += (array_ends(ii) - array_begins(ii));
+  }
+};
+
+template <typename view_t, typename view2_t, typename MyExecSpace>
+inline void kk_reduce_diff_view(size_t num_elements, view_t smaller, view2_t bigger, typename view_t::non_const_value_type & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), DiffReductionFunctor<view_t, view2_t>(smaller, bigger), reduction);
+}
+
+
+
+/***
+ * \brief Function performs the a reduction
+ * until itself.
+ * \param num_elements: size of the array
+ * \param arr: the array for which the prefix sum will be performed.
+ */
+template <typename view_t, typename MyExecSpace>
+inline void kk_reduce_view(size_t num_elements, view_t arr, typename view_t::value_type & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor<view_t>(arr), reduction);
+}
+
+
+template<typename view_type1, typename view_type2, typename eps_type = typename Kokkos::Details::ArithTraits<typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor{
   view_type1 view1;
   view_type2 view2;
@@ -128,9 +176,13 @@ struct IsIdenticalFunctor{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_t &is_equal) const {
-    auto val_diff = view1(i) - view2(i);
+	typedef typename view_type2::non_const_value_type val_type;
+	typedef Kokkos::Details::ArithTraits<val_type> KAT;
+	typedef typename KAT::mag_type mag_type;
+    const mag_type val_diff = KAT::abs (view1(i) - view2(i));
 
-    if (KOKKOSKERNELS_MACRO_ABS (val_diff) > eps) {
+
+    if (val_diff > eps ) {
       is_equal+=1;
     }
   }

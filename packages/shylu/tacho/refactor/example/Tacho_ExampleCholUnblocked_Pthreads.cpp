@@ -1,6 +1,5 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Threads.hpp>
-#include <Threads/Kokkos_Threads_TaskPolicy.hpp>  
 
 #include "Teuchos_CommandLineProcessor.hpp"
 

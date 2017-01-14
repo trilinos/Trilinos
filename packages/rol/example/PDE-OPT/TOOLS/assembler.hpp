@@ -61,6 +61,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 
 #include "fe.hpp"
+#include "fe_curl.hpp"
 #include "pde.hpp"
 #include "qoi.hpp"
 #include "dofmanager.hpp"
@@ -1879,6 +1880,57 @@ public:
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
+  }
+
+  void serialPrintStateEdgeField(const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                                 const std::string &filename,
+                                 const Teuchos::RCP<FE_CURL<Real> > &fe) const {
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+
+    const int p = 1, d = 3;
+    const int c = u_coeff->dimension(0);
+    const int f = basisPtrs_[0]->getCardinality();
+    // Transform cell center to physical
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > rx
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p,d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > px
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d));
+    fe->mapRefPointsToPhysical(px,rx);
+    // Transform reference values into physical space.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > cellJac
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d,d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > cellJacInv
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d,d));
+    Teuchos::RCP<shards::CellTopology> cellTopo
+      = Teuchos::rcp(new shards::CellTopology(basisPtrs_[0]->getBaseCellTopology()));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valReference
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f,p,d));
+    basisPtrs_[0]->getValues(*valReference,*rx,Intrepid::OPERATOR_VALUE);
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysical
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,p,d));
+    Intrepid::CellTools<Real>::setJacobian(*cellJac,*rx,*volCellNodes_,*cellTopo);
+    Intrepid::CellTools<Real>::setJacobianInv(*cellJacInv, *cellJac);
+    Intrepid::FunctionSpaceTools::HCURLtransformVALUE<Real>(*valPhysical,
+                                                            *cellJacInv,
+                                                            *valReference);
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > uval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d));
+    Intrepid::FunctionSpaceTools::evaluate<Real>(*uval, *u_coeff, *valPhysical);
+    // Print
+    std::ofstream file;
+    file.open(filename);
+    for (int i = 0; i < c; ++i) {
+      file << std::scientific << std::setprecision(15);
+      for (int j = 0; j < d; ++j) {
+        file << std::setw(25) << (*px)(i,0,j);
+      }
+      for (int j = 0; j < d; ++j) {
+        file << std::setw(25) << (*uval)(i,0,j);
+      }
+      file << std::endl;
+    }
+    file.close();
   }
 
   /***************************************************************************/

@@ -435,7 +435,7 @@ void NoGhostGameofLife::update_neighbor_values_with_remote_elements()
 {
     stk::CommSparse buffer(m_bulkData.parallel());
     send_num_active_neighbors_of_remote_elem_keys(buffer);
-    recieve_num_active_neighbors_of_local_elements(buffer);;
+    recieve_num_active_neighbors_of_local_elements(buffer);
 }
 void NoGhostGameofLife::send_num_active_neighbors_of_remote_elem_keys(stk::CommSparse& buffer)
 {

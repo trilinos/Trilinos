@@ -123,7 +123,7 @@ public:
 
     using Teuchos::RCP;
  
-    flag = 0; 
+    flag = 0;
 
     Real zero(0), one(1);
 
@@ -135,11 +135,11 @@ public:
       isInitialized_ = true;
     }
 
-    Real itol  = std::sqrt(ROL_EPSILON<Real>()); 
+    Real itol  = std::sqrt(ROL_EPSILON<Real>());
 
     // Compute initial residual
     if(useInitialGuess_) {
-    
+
       A.apply(*r_,x,itol);
       r_->scale(-one);
       r_->plus(b);       // r = b-Ax
@@ -156,12 +156,12 @@ public:
     std::vector<RCP<Vector<Real > > > Z;
 
     (*res_)[0] = r_->norm();
-     
+ 
     Real rtol  = std::min(absTol_,relTol_*(*res_)[0]);
 
     V.push_back(b.clone());
     (V[0])->set(*r_);
-    (V[0])->scale(one/(*res_)[0]);    
+    (V[0])->scale(one/(*res_)[0]);
 
     (*s_)(0) = (*res_)[0];
 
@@ -170,7 +170,7 @@ public:
 //      std::cout << (*res_)[iter] << std::endl;
 
       if( useInexact_ ) {
-        itol = rtol/(maxit_*(*res_)[iter]); 
+        itol = rtol/(maxit_*(*res_)[iter]);
       }
 
       Z.push_back(x.clone());
@@ -185,8 +185,8 @@ public:
       for( int k=0; k<=iter; ++k ) {
         (*H_)(k,iter) = w_->dot(*(V[k]));
         w_->axpy( -(*H_)(k,iter), *(V[k]) );
-      } 
-     
+      }
+
       (*H_)(iter+1,iter) = w_->norm();
 
       V.push_back( b.clone() );
@@ -198,24 +198,24 @@ public:
         temp            =  (*cs_)(k)*(*H_)(k,iter) + (*sn_)(k)*(*H_)(k+1,iter);
         (*H_)(k+1,iter) = -(*sn_)(k)*(*H_)(k,iter) + (*cs_)(k)*(*H_)(k+1,iter); 
         (*H_)(k,iter)   = temp;
-      } 
+      }
 
       // Form i-th rotation matrix
       if( (*H_)(iter+1,iter) == zero ) {
         (*cs_)(iter) = one;
         (*sn_)(iter) = zero;
       }
-      else if ( std::abs((*H_)(iter+1,iter)) > std::abs((*H_)(iter,iter)) ) { 
+      else if ( std::abs((*H_)(iter+1,iter)) > std::abs((*H_)(iter,iter)) ) {
         temp = (*H_)(iter,iter) / (*H_)(iter+1,iter);
         (*sn_)(iter) = one / std::sqrt( one + temp*temp );
-        (*cs_)(iter) = temp*(*sn_)(iter); 
+        (*cs_)(iter) = temp*(*sn_)(iter);
       }
       else {
         temp = (*H_)(iter+1,iter) / (*H_)(iter,iter);
         (*cs_)(iter) = one / std::sqrt( one + temp*temp );
-        (*sn_)(iter) = temp*(*cs_)(iter);  
+        (*sn_)(iter) = temp*(*cs_)(iter);
       }
-     
+
       // Approximate residual norm
       temp               = (*cs_)(iter)*(*s_)(iter);
       (*s_)(iter+1)      = -(*sn_)(iter)*(*s_)(iter);
@@ -223,7 +223,7 @@ public:
       (*H_)(iter,iter)   = (*cs_)(iter)*(*H_)(iter,iter) + (*sn_)(iter)*(*H_)(iter+1,iter);
       (*H_)(iter+1,iter) = zero;
       (*res_)[iter+1]    = std::abs((*s_)(iter+1));
-  
+ 
       // Update solution approximation.
       const char uplo = 'U';
       const char trans = 'N';
@@ -242,7 +242,7 @@ public:
 
       if( (*res_)[iter+1] <= rtol ) {
         // Update solution vector
-        x.plus(*z_);  
+        x.plus(*z_);
         break;
       }
 
@@ -251,7 +251,7 @@ public:
       }
     } // loop over iter
 
-  }  
+  }
 
 
 }; // class GMRES

@@ -888,6 +888,7 @@
   </rebalancing>
 
   <rap>
+
     <parameter>
       <name>rap: fix zero diagonals</name>
       <type>bool</type>
@@ -895,9 +896,19 @@
       <description>Set zero diagonals on coarse grids to one.</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
-    </parameter>    
+    </parameter>
+
   </rap>
 
+  <matrixmatrix>
+    <parameter>
+      <name>matrixmatrix: kernel params</name>
+      <type>parameterlist</type>
+      <description>Controls the kernel algorithms for matrix-matrix operations</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+  </matrixmatrix>
 
   <reuse>
 

@@ -59,83 +59,127 @@
 
 #include "Teuchos_RCP.hpp"
 
-
-
+// Default loading: multiple point loads
 template<class Real>
 class Load {
 private:
-  Real loadMagnitude_;
-  std::vector<Real> loadAngle_;
-  std::vector<Real> loadLocation_;
-  std::vector<Real> loadWidth_;
+  std::vector<Real> loadMagnitude_;
+  std::vector<Real> loadPolar_, loadAzimuth_;
+  std::vector<Real> loadX_, loadY_, loadZ_;
+  std::vector<Real> loadWidthX_, loadWidthY_, loadWidthZ_;
 
+protected:
   Real DegreesToRadians(const Real deg) const {
     return deg * static_cast<Real>(M_PI) / static_cast<Real>(180);
   }
 
 public:
-  Load(Teuchos::ParameterList & parlist) {
-    loadMagnitude_ = parlist.get("Load Magnitude", 1.0);
-    Teuchos::Array<Real> angle
-      = Teuchos::getArrayFromStringParameter<double>(parlist, "Load Angle");
-    loadAngle_ = angle.toVector();
-    Teuchos::Array<Real> location
-      = Teuchos::getArrayFromStringParameter<double>(parlist, "Load Location");
-    loadLocation_ = location.toVector();
-    Teuchos::Array<Real> width
-      = Teuchos::getArrayFromStringParameter<double>(parlist, "Load Width");
-    loadWidth_ = width.toVector();
+  virtual ~Load() {}
 
-    int size = loadAngle_.size();
-    for (int i=0; i<size; ++i) {
-      loadAngle_[i] = DegreesToRadians(loadAngle_[i]);
+  Load(Teuchos::ParameterList & parlist) {
+    // Grab Magnitudes
+    Teuchos::Array<Real> magnitude
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Magnitude");
+    loadMagnitude_ = magnitude.toVector();
+    // Grab Polar Angle
+    Teuchos::Array<Real> polar
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Polar Angle");
+    loadPolar_ = polar.toVector();
+    // Grab Azimuth Angle
+    Teuchos::Array<Real> azimuth
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Azimuth Angle");
+    loadAzimuth_ = azimuth.toVector();
+    // Grab X Location
+    Teuchos::Array<Real> Xlocation
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "X Location");
+    loadX_ = Xlocation.toVector();
+    // Grab Y Location
+    Teuchos::Array<Real> Ylocation
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Y Location");
+    loadY_ = Ylocation.toVector();
+    // Grab Z Location
+    Teuchos::Array<Real> Zlocation
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Z Location");
+    loadZ_ = Zlocation.toVector();
+    // Grab X Width
+    Teuchos::Array<Real> Xwidth
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "X Width");
+    loadWidthX_ = Xwidth.toVector();
+    // Grab Y Width
+    Teuchos::Array<Real> Ywidth
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Y Width");
+    loadWidthY_ = Ywidth.toVector();
+    // Grab Z Width
+    Teuchos::Array<Real> Zwidth
+      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Z Width");
+    loadWidthZ_ = Zwidth.toVector();
+
+    int polarSize = loadPolar_.size();
+    for (int i=0; i<polarSize; ++i) {
+      loadPolar_[i] = DegreesToRadians(loadPolar_[i]);
+    }
+
+    int azimuthSize = loadAzimuth_.size();
+    for (int i=0; i<azimuthSize; ++i) {
+      loadAzimuth_[i] = DegreesToRadians(loadAzimuth_[i]);
     }
   }
 
-  Real loadFunc(const std::vector<Real> & coords, const int dir, const std::vector<Real> & param) const {
-    Real loadMagNoise(0), loadAngNoise0(0), loadAngNoise1(0);
-    if (param.size() > 0) {
-      loadMagNoise  = param[0];
-    }
-    if (param.size() > 1) {
-      loadAngNoise0 = DegreesToRadians(param[1]);
-    }
-    if (param.size() > 2) {
-      loadAngNoise1 = DegreesToRadians(param[2]);
-    }
+  virtual Real loadFunc(const std::vector<Real> &coords,
+                        const int                dir,
+                        const std::vector<Real> &param) const {
+    Real val(0);
     const Real half(0.5);
-    const Real loadMagnitude = loadMagnitude_ + loadMagNoise;
-    const Real loadAngle0    = loadAngle_[0] + loadAngNoise0;
-    const Real Gx = std::exp(-half*std::pow(coords[0]-loadLocation_[0],2)/std::pow(loadWidth_[0],2));
-    const Real Gy = std::exp(-half*std::pow(coords[1]-loadLocation_[1],2)/std::pow(loadWidth_[1],2));
+    const int numLoads  = loadMagnitude_.size();
+    const int paramSize = param.size();
+    const int d         = coords.size();
+    for (int i = 0; i < numLoads; ++i) {
+      Real loadMagNoise(0), loadAngNoise0(0);
+      if (paramSize > 0 + d*i) {
+        loadMagNoise  = param[0 + d*i];
+      }
+      if (paramSize > 1 + d*i) {
+        loadAngNoise0 = DegreesToRadians(param[1 + d*i]);
+      }
+      const Real loadMagnitude = loadMagnitude_[i] + loadMagNoise;
+      const Real loadAngle0    = loadPolar_[i] + loadAngNoise0;
+      const Real Gx = std::exp(-half*std::pow(coords[0]-loadX_[i],2)/std::pow(loadWidthX_[i],2));
+      const Real Gy = std::exp(-half*std::pow(coords[1]-loadY_[i],2)/std::pow(loadWidthY_[i],2));
 
-    Real val=0;
-    int d = coords.size();
-    if (d==2) {
-      if (dir==0) {
-        val = loadMagnitude*std::cos(loadAngle0)*Gx*Gy;
+      if (d==2) {
+        if (dir==0) {
+          val += loadMagnitude*std::cos(loadAngle0)*Gx*Gy;
+        }
+        if (dir==1) {
+          val += loadMagnitude*std::sin(loadAngle0)*Gx*Gy;
+        }
       }
-      if (dir==1) {
-        val = loadMagnitude*std::sin(loadAngle0)*Gx*Gy;
-      }
-    }
-    if (d==3) {
-      const Real loadAngle1 = loadAngle_[1] + loadAngNoise1;
-      const Real Gz = std::exp(-half*std::pow(coords[2]-loadLocation_[2],2)/std::pow(loadWidth_[2],2));
-      if (dir==0) {
-        val = loadMagnitude*std::sin(loadAngle0)*std::cos(loadAngle1)*Gx*Gy*Gz;
-      }
-      if (dir==1) {
-        val = loadMagnitude*std::sin(loadAngle0)*std::sin(loadAngle1)*Gx*Gy*Gz;
-      }
-      if (dir==2) {
-        val = loadMagnitude*std::cos(loadAngle0)*Gx*Gy*Gz;
+      if (d==3) {
+        Real loadAngNoise1(0);
+        if (paramSize > 2 + d*i) {
+          loadAngNoise1 = DegreesToRadians(param[2 + d*i]);
+        }
+        const Real loadAngle1 = loadAzimuth_[i] + loadAngNoise1;
+        const Real Gz = std::exp(-half*std::pow(coords[2]-loadZ_[i],2)/std::pow(loadWidthZ_[i],2));
+
+        if (dir==0) {
+          val += loadMagnitude*std::sin(loadAngle0)*std::cos(loadAngle1)*Gx*Gy*Gz;
+        }
+        if (dir==1) {
+          val += loadMagnitude*std::sin(loadAngle0)*std::sin(loadAngle1)*Gx*Gy*Gz;
+        }
+        if (dir==2) {
+          val += loadMagnitude*std::cos(loadAngle0)*Gx*Gy*Gz;
+        }
       }
     }
     return val;
   }
 
-  void compute(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &load, const Teuchos::RCP<FE<Real> > & fe, const std::vector<Real> & param, const Real scale=1) const {
+  void compute(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &load,
+               const Teuchos::RCP<FE<Real> >                               &fe,
+               const std::vector<Real>                                     &param,
+               const Real                                                   scale = 1) const {
     // Retrieve dimensions.
     int c = fe->gradN()->dimension(0);
     int p = fe->gradN()->dimension(2);

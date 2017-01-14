@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  FE.hpp
+/*! \file  fe.hpp
     \brief Given a set of cells with geometric node information, sets up
-           data structures used in finite element integration.
+           data structures used in finite element integration in HGRAD.
 */
 
 #ifndef PDEOPT_FE_HPP
@@ -62,8 +62,7 @@ class FE {
 private:
 
   const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;                            // coordinates of the cell nodes
-  //const Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;              // Intrepid basis
   const Teuchos::RCP<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > cubature_;  // Intrepid cubature (quadrature, integration) rule
   const int sideId_;                                                                         // local side id for boundary integration
 
@@ -254,14 +253,24 @@ public:
 
     // Compute local degrees of freedom on reference cell sides.
     int numSides = cellTopo_->getSideCount();
-    for (int i=0; i<numSides; ++i) {
-      sideDofs_.push_back(computeBoundaryDofs(i));
+    if (cellTopo_->getDimension() == 1) {
+      numSides = 2;
+    }
+    if ( numSides ) {
+      for (int i=0; i<numSides; ++i) {
+        sideDofs_.push_back(computeBoundaryDofs(i));
+      }
+    }
+    else {
+      sideDofs_.push_back(computeBoundaryDofs(0));
     }
 
     // Get coordinates of DOFs in reference cell.
     Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
       Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
-    coord_iface->getDofCoords(*dofPoints_);
+    if (d_ > 1) {
+      coord_iface->getDofCoords(*dofPoints_);
+    }
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -378,10 +387,10 @@ public:
         for (int p=0; p<p_; ++p) {
           (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
           if (d_ > 1) {
-	        (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+            (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
           }
           if (d_ > 2) {
-	        (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+            (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
           }
         }
       }
@@ -428,7 +437,9 @@ public:
     // Get coordinates of DOFs in reference cell.
     Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
       Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
-    coord_iface->getDofCoords(*dofPoints_);
+    if (d_ > 1) {
+      coord_iface->getDofCoords(*dofPoints_);
+    }
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -606,7 +617,10 @@ public:
     std::vector<int> bdrydofs;
     std::vector<int> nodeids, edgeids, faceids;
 
-    if (cellTopo_->getDimension() == 2) {
+    if (cellTopo_->getDimension() == 1) {
+      nodeids.push_back(locSideId);
+    }
+    else if (cellTopo_->getDimension() == 2) {
       edgeids.push_back(locSideId);
       int numVertices = 2;
       for (int i=0; i<numVertices; ++i) {
@@ -640,10 +654,6 @@ public:
       //for (unsigned i=0; i<faceids.size(); ++i) {
       //  std::cout << "\nfaceid = " << faceids[i];
       //}
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (PDEOPT::FE::getBoundaryDofs): "
-                                                               "Only dimensions 2 and 3 are supported.");
     }
 
     std::vector<std::vector<std::vector<int> > > tagToId = basis_->getDofOrdinalData();

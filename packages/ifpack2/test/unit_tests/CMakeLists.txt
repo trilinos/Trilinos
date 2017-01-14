@@ -132,7 +132,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (Trilinos_ENABLE_ML)
+ASSERT_DEFINED (Trilinos_ENABLE_ML)
+# mfh 01 Jan 2017: 
+# Fix for https://github.com/trilinos/Trilinos/issues/935
+ASSERT_DEFINED (Trilinos_ENABLE_Epetra)
+IF (Trilinos_ENABLE_ML AND Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BlockRelaxationPerformance
     SOURCES
@@ -144,21 +148,16 @@ IF (Trilinos_ENABLE_ML)
     )
 ENDIF()
 
-ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-  # SolverFactory test (doesn't make sense to run unless Trilinos is
-  # doing run-time registration of solver factories).
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SolverFactory
-    SOURCES 
-    Ifpack2_SolverFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF ()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory
+  SOURCES 
+  Ifpack2_SolverFactory.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LocalSparseTriangularSolver

@@ -14,11 +14,26 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     example_02
     SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_01
     ARGS PrintItAll
     NUM_MPI_PROCS 4
+    NUM_TOTAL_CORES_USED 4
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_02
+    ARGS PrintItAll
+    NUM_MPI_PROCS 4
+    NUM_TOTAL_CORES_USED 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
@@ -26,7 +41,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     NavierStokesDataCopy
     SOURCE_FILES
-      input.xml plotresults.m
+      input.xml plotresults.m plotexample02.m process.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

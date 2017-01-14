@@ -402,14 +402,14 @@ if (${PACKAGE_NAME}_ENABLE_Intrepid2)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${BDIR}/)
-APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
-
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   CONFIGURE_FILE(${DIR}/Utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
+
+INCLUDE_DIRECTORIES(${BDIR}/)
+APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical

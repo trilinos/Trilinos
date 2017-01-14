@@ -158,15 +158,15 @@ namespace MueLu {
     //@{
     // NOTE: This is hardwired to double on purpose.
     void GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
-						 const std::vector<bool> & hi_nodeIsOwned,
-						 const SCFieldContainer hi_DofCoords,
-						 const std::vector<size_t> &lo_node_in_hi,
-						 const Basis &lo_Basis,
-						 const std::vector<LocalOrdinal> & hi_to_lo_map,
-						 const Teuchos::RCP<const Map> & lo_colMap, 
-						 const Teuchos::RCP<const Map> & lo_domainMap, 
-						 const Teuchos::RCP<const Map> & hi_map,
-						 Teuchos::RCP<Matrix>& P) const;
+                                                 const std::vector<bool> & hi_nodeIsOwned,
+                                                 const SCFieldContainer hi_DofCoords,
+                                                 const std::vector<size_t> &lo_node_in_hi,
+                                                 const Basis &lo_Basis,
+                                                 const std::vector<LocalOrdinal> & hi_to_lo_map,
+                                                 const Teuchos::RCP<const Map> & lo_colMap, 
+                                                 const Teuchos::RCP<const Map> & lo_domainMap, 
+                                                 const Teuchos::RCP<const Map> & hi_map,
+                                                 Teuchos::RCP<Matrix>& P) const;
     //@}
 
 
@@ -188,25 +188,25 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
     template<class Scalar,class KokkosDeviceType>
     void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &hi_basis,
-			       const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &lo_basis,
-			       std::vector<size_t> & lo_node_in_hi,
-			       Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
+                               const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &lo_basis,
+                               std::vector<size_t> & lo_node_in_hi,
+                               Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
 #else
     template <class Scalar, class ArrayScalar>
     void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
-			       const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
-			       std::vector<size_t> & lo_node_in_hi,
-			       ArrayScalar & hi_DofCoords);
+                               const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
+                               std::vector<size_t> & lo_node_in_hi,
+                               ArrayScalar & hi_DofCoords);
 #endif
 
     template <class LocalOrdinal, class LOFieldContainer>
     void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
-			   const std::vector<bool> & hi_nodeIsOwned,
-			   const std::vector<size_t> & lo_node_in_hi,
-			   LOFieldContainer & lo_elemToNode,
-			   std::vector<bool> & lo_nodeIsOwned,
-			   std::vector<LocalOrdinal> & hi_to_lo_map,
-			   int & lo_numOwnedNodes);
+                           const std::vector<bool> & hi_nodeIsOwned,
+                           const std::vector<size_t> & lo_node_in_hi,
+                           LOFieldContainer & lo_elemToNode,
+                           std::vector<bool> & lo_nodeIsOwned,
+                           std::vector<LocalOrdinal> & hi_to_lo_map,
+                           int & lo_numOwnedNodes);
 
 
     template <class LocalOrdinal, class GlobalOrdinal, class Node> 
