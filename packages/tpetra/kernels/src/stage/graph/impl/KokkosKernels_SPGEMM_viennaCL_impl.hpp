@@ -191,7 +191,7 @@ namespace Impl{
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
 	  MyExecSpace::fence();
-          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
+          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m + 1, rows_start, row_mapC);
           KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (cnnz, columns, entriesC);
           KokkosKernels::Experimental::Util::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (cnnz, values, valuesC);
           MyExecSpace::fence();

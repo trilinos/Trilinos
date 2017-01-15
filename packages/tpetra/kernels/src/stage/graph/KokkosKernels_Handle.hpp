@@ -250,7 +250,7 @@ public:
     }
   }
 
-  int set_suggested_vector_size(int vector_size_){
+  void set_suggested_vector_size(int vector_size_){
     this->vector_size = vector_size_;
   }
 

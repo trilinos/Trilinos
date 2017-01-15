@@ -4223,10 +4223,11 @@ public:
     timer1.reset();
     if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
 #ifndef KOKKOSKERNELSMOREMEM
-      size_type max_row_nnz;
+      size_type max_row_nnz = 0;
       KokkosKernels::Experimental::Util::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
+      MyExecSpace::fence();
       KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::ManyThread2OneChunk;
-
+      
       nnz_lno_t min_hash_size = 1;
       while (max_row_nnz > min_hash_size){
         min_hash_size *= 2;
@@ -4239,7 +4240,12 @@ public:
       sszm_compressMatrix.pow2_hash_func = min_hash_size - 1;
 
       size_t num_chunks = concurrency / suggested_vector_size;
+
       if (KOKKOSKERNELS_VERBOSE){
+
+	std::cout << "\t\tPOOL chunksize:" << chunksize << " num_chunks:" 
+					   << num_chunks << " min_hash_size:" 
+					   << min_hash_size << " max_row_nnz:" << max_row_nnz << std::endl;
         std::cout << "\t\tPool Alloc MB:" << (sizeof(nnz_lno_t) * num_chunks * chunksize) / 1024. / 1024.  << std::endl;
       }
       nnz_lno_t pool_init_val = -1;
