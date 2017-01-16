@@ -41,11 +41,13 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_01.cpp
-    \brief Shows how to solve the stuctural topology optimization problem.
+/*! \file  example_04.cpp
+    \brief Shows how to solve the stuctural topology optimization problem
+           under uncertainty.
 */
 
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
