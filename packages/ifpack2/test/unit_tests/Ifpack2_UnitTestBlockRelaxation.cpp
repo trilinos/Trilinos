@@ -571,16 +571,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
     out << ", " << sbNorms[0];
 #endif
     out << std::endl;
-    //FIXME 4-Jan-2017 JHU This test was disabled in November 2016.  I'm reenabling it,
-    //FIXME but the dense block solve is not converging.  See github issue #972.
-    //FIXME Until that issue is resolved, I'm commenting out the following check that compares
-    //FIXME the dense block solution to the point solution.  The sparse block solution seems
-    //FIXME to be OK.
-    //TEST_EQUALITY( dbNorms[0] < pNorms[0], true);
+    TEST_EQUALITY( dbNorms[0] < pNorms[0], true);
     out << dbNorms[0] << " < " << pNorms[0] << std::endl;
 #if defined(HAVE_IFPACK2_AMESOS2)
     TEST_EQUALITY( sbNorms[0] < pNorms[0], true);
-    //TEST_EQUALITY( dbNorms[0] - sbNorms[0] < 1e-12, true);
+    TEST_EQUALITY( dbNorms[0] - sbNorms[0] < 1e-12, true);
 #endif
   }
 
