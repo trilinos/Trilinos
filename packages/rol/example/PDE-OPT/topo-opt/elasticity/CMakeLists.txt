@@ -32,6 +32,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_05
+    SOURCES example_05.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_ADD_TEST(
     example_01
     ARGS PrintItAll
@@ -62,7 +68,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     TopoOptDataCopy
     SOURCE_FILES
-      input_ex01.xml input_ex02.xml input_ex03.xml input_ex04.xml plotresults.m bwr.m plotdensity.m processpics.m picme
+      input_ex01.xml input_ex02.xml input_ex03.xml input_ex04.xml input_ex05.xml plotresults.m bwr.m plotdensity.m processpics.m picme
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     RealT tol(1e-8), one(1);
 
     /*** Read in XML input ***/
-    std::string filename = "input_ex04.xml";
+    std::string filename = "input_ex05.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
@@ -346,9 +346,10 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> vol;
     std::vector<RealT> var;
 
-    Teuchos::Array<RealT> alpha
+    Teuchos::Array<RealT> alphaArray
       = Teuchos::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"),"Confidence Levels");
-    std::sort<RealT>(alpha.begin(),alpha.end());
+    std::vector<RealT> alpha = alphaArray.toVector();
+    std::sort(alpha.begin(),alpha.end());
     int N = alpha.size();
 
     /*************************************************************************/

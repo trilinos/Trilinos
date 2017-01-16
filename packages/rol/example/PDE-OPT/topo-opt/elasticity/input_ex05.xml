@@ -4,7 +4,7 @@
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"        type="int"     value="400"             />
     <Parameter name="Number of Output Samples" type="int"     value="10000"           />
-    <Parameter name="Confidence Levels"        type="string"  value="{0.0, 0.5, 1.0}" />
+    <Parameter name="Confidence Levels"        type="string"  value="{0.0, 0.5, 0.9}" />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Young's Modulus"          type="double"  value="1.0"   />
     <Parameter name="Poisson Ratio"            type="double"  value="0.3"   />
