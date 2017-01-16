@@ -187,9 +187,15 @@ public:
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__,
-      "invalid weight index",
-      idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerRow_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
+
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -205,8 +211,6 @@ public:
          const PartitioningSolution<Adapter> &solution) const;
 
 private:
-
-  RCP<Environment> env_;    // for error messages, etc.
 
   RCP<const User> matrix_;
   RCP<const Tpetra::Map<lno_t, gno_t, node_t> > rowMap_;
@@ -232,7 +236,6 @@ private:
 template <typename User, typename UserCoord>
   TpetraRowMatrixAdapter<User,UserCoord>::TpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
-      env_(rcp(new Environment)),
       matrix_(inmatrix), rowMap_(), colMap_(), 
       offset_(), columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
@@ -298,9 +301,14 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nvtx = getLocalNumRows();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
@@ -328,9 +336,14 @@ template <typename User, typename UserCoord>
   void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
     int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight index",
-    idx >= 0 && idx < nWeightsPerRow_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerRow_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid row weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
 
   numNzWeight_[idx] = true;
 }

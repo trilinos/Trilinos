@@ -142,8 +142,14 @@ public:
 
   void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < numWeights_, BASIC_ASSERTION);
+    if(idx<0 || idx >= numWeights_)
+    {
+        std::ostringstream emsg;
+        emsg << __FILE__ << ":" << __LINE__
+             << "  Invalid weight index " << idx << std::endl;
+        throw std::runtime_error(emsg.str()); 
+    }
+
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
   }
@@ -169,7 +175,6 @@ private:
   RCP<const User> invector_;
   RCP<const x_mvector_t> vector_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > map_;
-  RCP<Environment> env_;    // for error messages, etc.
 
   int numWeights_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
@@ -184,7 +189,6 @@ template <typename User>
     const RCP<const User> &invector,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
-      env_(rcp(new Environment)),
       numWeights_(weights.size()), weights_(weights.size())
 {
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -217,7 +221,6 @@ template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
       invector_(invector), vector_(), map_(),
-      env_(rcp(new Environment)),
       numWeights_(0), weights_()
 {
   try {
