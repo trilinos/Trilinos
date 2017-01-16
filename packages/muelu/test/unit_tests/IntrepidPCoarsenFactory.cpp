@@ -72,8 +72,9 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+//#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
+//#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
 #else
@@ -783,6 +784,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_SPECTRAL",POINTTYPE_SPECTRAL,10);
     TEST_EQUALITY(rv,true);
   }
+
 
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
