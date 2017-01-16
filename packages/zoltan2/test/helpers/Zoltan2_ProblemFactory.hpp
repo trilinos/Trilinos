@@ -67,7 +67,6 @@ namespace Zoltan2_TestingFramework {
     ///
     /// @param kind A string equal to the type of the problem (paritioning, ordering, coloring)
     /// @param kind A string equal to the type of the adapter
-    /// @param input Input adapter used to construct the problem
     /// @param params Zolta2 parameter list
     /// @param (MPI) MPI world communicator
     ///
@@ -82,12 +81,12 @@ namespace Zoltan2_TestingFramework {
                    ) {
 
       problem_name = problemName;
-      adapterType = adapterFactory->adaptersSet.main.adapterType;
+      adapterType = adapterFactory->getMainAdapterType();
 
       #ifdef HAVE_ZOLTAN2_MPI
         #define CREATE_PRBLM(problemClass, adapterClass)                       \
           adapterClass * pCast = dynamic_cast<adapterClass *>                  \
-            (adapterFactory->adaptersSet.main.adapter);                        \
+            (adapterFactory->getMainAdapter());                                \
           if(!pCast) { throw std::logic_error(                                 \
             "ProblemFactory adapter dynamic_cast failed for problem name "     \
               + problem_name + " and adapterClass " + #adapterClass ); }       \
@@ -95,7 +94,7 @@ namespace Zoltan2_TestingFramework {
       #else
         #define CREATE_PRBLM(problemClass, adapterClass)                       \
           adapterClass * pCast = dynamic_cast<adapterClass *>                  \
-            (adapterFactory->adaptersSet.main.adapter);                        \
+            (adapterFactory->getMainAdapter());                                \
           if(!pCast) { throw std::logic_error(                                 \
             "ProblemFactory adapter dynamic_cast failed for problem name "     \
               + problem_name + " and adapterClass " + #adapterClass ); }       \
@@ -121,37 +120,9 @@ namespace Zoltan2_TestingFramework {
       }
     }
 
-    void solve() {
-      #define SOLVE_PROBLEM(adapterClass)                                      \
-          (rcp_dynamic_cast<Problem<adapterClass>>(problem))->solve();
-      Z2_TEST_UPCAST(adapterType, SOLVE_PROBLEM)
-    }
-
-    // this is not good - forcing the part_t to basic_id_t
-    // to consider... it used to be we forced casted the entire structure
-    // to this adapter so this at least should be safe but won't compile if
-    // someone wants to use this for a different part_t
-    const basic_id_t::part_t * getPartListView() const {
-      if(problem_name != "partitioning") {
-        throw std::logic_error( "getPartListView() called on ProblemFactory "
-          "which is not a partitioning problem." );
-      }
-      #define GET_PROBLEM_PARTS(adapterClass)                                  \
-          return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(problem))\
-            ->getSolution().getPartListView();
-      Z2_TEST_UPCAST(adapterType, GET_PROBLEM_PARTS)
-    }
-
-    // currently exists only to support some BDD test code in test_driver.cpp
-    LocalOrderingSolution<zlno_t> * getLocalOrderingSolution() {
-      #define GET_LOCAL_ORDERING(adapterClass)                                 \
-          return (rcp_dynamic_cast<OrderingProblem<adapterClass>>(problem))    \
-            ->getLocalOrderingSolution();
-      Z2_TEST_UPCAST(adapterType, GET_LOCAL_ORDERING)
-    }
-
     RCP<ProblemRoot> getProblem() { return problem; }
     const std::string & getProblemName() const { return problem_name; }
+    EAdapterType getAdapterType() const { return adapterType; }
 
     private:
       std::string problem_name; // string converts to a problem type

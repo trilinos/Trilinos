@@ -162,6 +162,66 @@ bool getParameterLists(const string &inputFileName,
   return true;
 }
 
+// Utility function for safe type conversion of adapter
+bool analyzeMetrics(RCP<EvaluateFactory> evaluateFactory,
+                    std::ostringstream & msg,
+                    const ParameterList &problem_parameters) {
+  #define ANALYZE_METRICS(adapterClass, metricAnalyzerClass)               \
+    RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+      rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(                   \
+         evaluateFactory->getEvaluateClass());                             \
+    if(pCast == Teuchos::null) throw std::logic_error(                     \
+      "Bad evaluate class cast in analyzeMetrics!"  );                     \
+    metricAnalyzerClass analyzer(pCast);                                   \
+    return analyzer.analyzeMetrics(                                        \
+      problem_parameters.sublist("Metrics"), msg);
+
+  #define ANALYZE_METRICS_PARTITIONING(adapterClass)                       \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluatePartition<adapterClass>)
+
+  #define ANALYZE_METRICS_ORDERING(adapterClass)                           \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+  if(evaluateFactory->getProblemName() == "partitioning") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_PARTITIONING)
+  }
+  else if(evaluateFactory->getProblemName() == "ordering") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_ORDERING)
+  }
+  else {
+    throw std::logic_error(
+      "analyzeMetrics not implemented for this problem type!"  );
+  }
+}
+
+// Utility function for safe type conversion of adapter
+LocalOrderingSolution<zlno_t> * getLocalOrderingSolution(
+  RCP<ProblemFactory> problemFactory) {
+  #define GET_LOCAL_ORDERING(adapterClass)                                 \
+      return (rcp_dynamic_cast<OrderingProblem<adapterClass>>(             \
+        problemFactory->getProblem()))->getLocalOrderingSolution();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_LOCAL_ORDERING)
+}
+
+// Utility function for safe type conversion of adapter
+const zpart_t * getPartListView(RCP<ProblemFactory> problemFactory) {
+  #define GET_PROBLEM_PARTS(adapterClass)                                  \
+      return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(         \
+        problemFactory->getProblem()))->getSolution().getPartListView();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_PROBLEM_PARTS)
+}
+
+// Utility function for safe type conversion of adapter
+void getIDsView(RCP<AdapterFactory> adapterFactory, const zgno_t *&Ids) {
+    #define GET_IDS_VIEW(adapterClass)                                       \
+        return dynamic_cast<adapterClass*>(                                  \
+          adapterFactory->getMainAdapter())->getIDsView(Ids);
+    Z2_TEST_UPCAST(adapterFactory->getMainAdapterType(), GET_IDS_VIEW);
+    throw std::logic_error( "getIDsView() failed to match adapter name" );
+}
+
 bool run(const UserInputForTests &uinput,
         const ParameterList &problem_parameters,
         bool bHasComparisons,
@@ -265,7 +325,7 @@ bool run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   comparison_source->timers["solve time"]->start();
 
-  problemFactory->solve();
+  problemFactory->getProblem()->solve();
 
   comparison_source->timers["solve time"]->stop();
   if (rank == 0) {
@@ -276,12 +336,13 @@ bool run(const UserInputForTests &uinput,
 #ifdef KDDKDD
   if(problem_kind == "partitioning") {
     const base_adapter_t::gno_t *kddIDs = NULL;
-    adapterFactory->getIDsView(kddIDs);
-    for (size_t i = 0; i < adapterFactory->getLocalNumIDs(); i++) {
+    getIDsView(adapterFactory, kddIDs);
+    for (size_t i = 0;
+      i < adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
-                << problemFactory->getPartListView()[i]
+                << getPartListView(problemFactory)[i]
                 << std::endl;
     }
   }
@@ -290,7 +351,7 @@ bool run(const UserInputForTests &uinput,
     typedef xCG_xCG_t::gno_t gno_t;
     typedef xCG_xCG_t::scalar_t scalar_t;
     const xCG_xCG_t * xscrsGraphAdapter =
-      dynamic_cast<const xCG_xCG_t *>(adapterFactory->adaptersSet.main.adapter);
+      dynamic_cast<const xCG_xCG_t *>(adapterFactory->getMainAdapter());
 
     int ewgtDim = xscrsGraphAdapter->getNumWeightsPerEdge();
     lno_t localNumObj = xscrsGraphAdapter->getLocalNumVertices();
@@ -331,14 +392,13 @@ bool run(const UserInputForTests &uinput,
 
     std::ostringstream msgSummary;
 
-    evaluateFactory->printMetrics(msgSummary);
+    evaluateFactory->getEvaluateClass()->printMetrics(msgSummary);
     if(rank == 0) {
       cout << msgSummary.str();
     }
 
     std::ostringstream msgResults;
-
-    if (!evaluateFactory->analyzeMetrics(msgResults, problem_parameters)) {
+    if (!analyzeMetrics(evaluateFactory, msgResults, problem_parameters)) {
       bSuccess = false;
       std::cout << "MetricAnalyzer::analyzeMetrics() "
                 << "returned false and the test is FAILED." << std::endl;
@@ -352,7 +412,7 @@ bool run(const UserInputForTests &uinput,
     if (problem_kind == "ordering") {
       std::cout << "\nLet's examine the solution..." << std::endl;
       LocalOrderingSolution<zlno_t> * localOrderingSolution =
-         problemFactory->getLocalOrderingSolution();
+         getLocalOrderingSolution(problemFactory);
       if (localOrderingSolution->haveSeparators() ) {
         std::cout << "Number of column blocks: "
           << localOrderingSolution->getNumSeparatorBlocks() << std::endl;
@@ -388,18 +448,7 @@ bool run(const UserInputForTests &uinput,
       }
     }
 #endif
-<<<<<<< ccf55beef21d69a42368278b45f8349e7b819108
 
-    ////////////////////////////////////////////////////////////
-    // 5. Add solution to map for possible comparison testing
-    ////////////////////////////////////////////////////////////
-    comparison_source->adapter = iaRCP;
-    comparison_source->coordinateAdapterRCP = coordinateAdapterRCP;
-    comparison_source->problem = problemRCP;
-    comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
-                                       problem_parameters.get<string>("kind") :
-                                       "?");
-    comparison_source->adapter_kind = adapter_name;
     comparison_source->printTimers();
 
     // write mesh solution
@@ -407,8 +456,6 @@ bool run(const UserInputForTests &uinput,
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
     //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
     // }
-=======
->>>>>>> Zoltan2: Reinterpret cast refactor
   }
 
   return bSuccess;

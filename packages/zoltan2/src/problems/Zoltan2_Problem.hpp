@@ -73,6 +73,10 @@ class ProblemRoot {
     // could consider storing comm_ here...
     // this accessor means we can get comm without template upcast first
     virtual RCP<const Comm<int> > getComm() = 0;
+
+   /*! \brief Method that creates a solution.
+    */
+    virtual void solve(bool updateInputData = true) = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -142,10 +146,6 @@ public:
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params);
-
-  /*! \brief Method that creates a solution.
-   */
-  virtual void solve(bool updateInputData = true) = 0;
 
   /*! \brief Return the communicator passed to the problem
    */

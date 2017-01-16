@@ -122,27 +122,25 @@ public:
 
   ~AdapterFactory(); // handles deleting BaseAdapterRoot * data for adapter
 
-  AdapterWithOptionalCoordinateAdapter adaptersSet;
-
-  /*! \brief dynamic_cast adapter and then call getLocalNumIDs
-   */
-  size_t getLocalNumIDs() const {
-      #define GET_LOCAL_NUM_IDS(adapterClass)                                  \
-          return dynamic_cast<adapterClass*>(adaptersSet.main.adapter)->getLocalNumIDs();
-      Z2_TEST_UPCAST(adaptersSet.main.adapterType, GET_LOCAL_NUM_IDS);
-      throw std::logic_error( "getLocalNumIDs() failed to match adapter name" );
+  Zoltan2::BaseAdapterRoot * getMainAdapter() const {
+    return adaptersSet.main.adapter;
   }
 
-  /*! \brief dynamic_cast adapter and then call getIDsView
-   */
-  void getIDsView(const zgno_t *&Ids) const {
-      #define GET_IDS_VIEW(adapterClass)                                       \
-          return dynamic_cast<adapterClass*>(adaptersSet.main.adapter)->getIDsView(Ids);
-      Z2_TEST_UPCAST(adaptersSet.main.adapterType, GET_IDS_VIEW);
-      throw std::logic_error( "getIDsView() failed to match adapter name" );
+  EAdapterType getMainAdapterType() const {
+    return adaptersSet.main.adapterType;
+  }
+
+  Zoltan2::BaseAdapterRoot * getCoordinateAdapter() const {
+    return adaptersSet.coordinate.adapter;
+  }
+
+  EAdapterType getCoordinateAdapterType() const {
+    return adaptersSet.coordinate.adapterType;
   }
 
 private:
+  AdapterWithOptionalCoordinateAdapter adaptersSet;
+
   /*! \brief Method to choose and call the correct constructor
    *   for a BasicIdentifierAdapter from a UserInputForTests input file.
    *   \param[in] uinput is the data source for adapter

@@ -145,8 +145,8 @@ public:
   }
 
   // Ordering method
-  int localOrder(const RCP<GlobalOrderingSolution<lno_t> > &solution_);
-  int globalOrder(const RCP<LocalOrderingSolution<gno_t> > &solution_);
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_);
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////

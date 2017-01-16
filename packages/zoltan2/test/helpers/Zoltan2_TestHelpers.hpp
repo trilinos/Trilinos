@@ -101,6 +101,8 @@ typedef Tpetra::Map<>::node_type znode_t;
 
 #include <TpetraCore_config.h>
 
+    typedef int zpart_t; // added this for consistency but needs further discussion
+
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 # ifdef HAVE_TPETRA_DOUBLE

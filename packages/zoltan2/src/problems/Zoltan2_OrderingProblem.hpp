@@ -296,7 +296,7 @@ void OrderingProblem<Adapter>::solve(bool updateInputData)
   }
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-  else if (method == std::string("nd")) {
+  else if (method.compare("nd") == 0) {
     AlgND<Adapter> alg(this->envConst_, this->comm_, this->graphModel_,
       this->coordinateModel_,this->baseInputAdapter_);
     ZOLTAN2_COMPUTE_ORDERING

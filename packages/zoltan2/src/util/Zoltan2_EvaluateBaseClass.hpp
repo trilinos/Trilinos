@@ -57,13 +57,14 @@ namespace Zoltan2{
 class EvaluateBaseClassRoot{
   public:
     virtual ~EvaluateBaseClassRoot() {} // required virtual declaration
+
+    /*! \brief Print all metrics */
+    virtual void printMetrics(std::ostream &os) const {};
 };
 
 template <typename Adapter>
 class EvaluateBaseClass : public EvaluateBaseClassRoot {
 public:
-  /*! \brief Print all metrics */
-  virtual void printMetrics(std::ostream &os) const {};
 };
 
 }   // namespace Zoltan2

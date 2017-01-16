@@ -134,8 +134,7 @@ public:
   
 private:
   map<const string,RCP<const ComparisonSource> > sources;
-  
-  
+
   /* \brief Method called to compare two solutions
    * \param p1 is the name of problem 1
    * \param p2 is the name of problem 2
@@ -145,6 +144,11 @@ private:
                         const string &p2,
                         const RCP<const Comm<int> > &comm);
   
+  /* \brief Safely get parts list by adapter type
+   * \param problemFactory is the ProblemFactory
+   */
+  const zpart_t * getPartListView(RCP<ProblemFactory> problemFactory) const;
+
   /* \brief Method called to compare two paritioning solutions
    * \param sourceA is a ptr to problem A's comparison source
    * \param sourceB is a ptr to problem B's comparison source
@@ -172,6 +176,15 @@ private:
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
+  /* \brief Safely get metric info by adapter type.
+   * \param problemFactory is the ProblemFactory
+   * \param metricInfo will be filled
+   * \param metricsPlist are the parameters to read
+   */
+  void loadMetricInfo(RCP<EvaluateFactory> problemFactory,
+                 std::vector<MetricAnalyzerInfo> & metricInfo,
+                 const ParameterList &metricsPlist);
+
   /* \brief Method called to compare the metrics/timers of two problems.
    * \param metricsPlist is a parameter list defining the comparison
    * \param comm is the process communicator
@@ -362,6 +375,14 @@ void ComparisonHelper::reduceWithMessage(const RCP<const Comm<int> > &comm,
   }
 }
 
+const zpart_t * ComparisonHelper::getPartListView(
+  RCP<ProblemFactory> problemFactory) const {
+  #define GET_PROBLEM_PARTS(adapterClass)                                  \
+      return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(         \
+        problemFactory->getProblem()))->getSolution().getPartListView();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_PROBLEM_PARTS)
+}
+
 bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * sourceA,
                                                  const ComparisonSource * sourceB,
                                                  const RCP<const Comm<int> > &comm)
@@ -370,8 +391,8 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   ostringstream status;
   int failed = 0;
 
-  if(sourceA->adapterFactory->getLocalNumIDs()
-    != sourceB->adapterFactory->getLocalNumIDs()) {
+  if(sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs()
+    != sourceB->adapterFactory->getMainAdapter()->getLocalNumIDs()) {
       failed = 1;
   }
   
@@ -381,9 +402,10 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
                                   failed, status);
         
   if (!failed) {
-    for(size_t i = 0; i < sourceA->adapterFactory->getLocalNumIDs(); i++) {
-      if(!failed && sourceA->problemFactory->getPartListView()[i] !=
-        sourceB->problemFactory->getPartListView()[i]) {
+    for(size_t i = 0;
+      i < sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
+      if(!failed && getPartListView(sourceA->problemFactory)[i] !=
+        getPartListView(sourceB->problemFactory)[i]) {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
           "Solution sets A and B have different values for getPartListView(). "
@@ -482,6 +504,37 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   return (failed == 0);
 }
 
+// Utility function for safe type conversion of adapter
+void ComparisonHelper::loadMetricInfo(RCP<EvaluateFactory> evaluateFactory,
+  std::vector<MetricAnalyzerInfo> & metricInfo,
+  const ParameterList &metricsPlist) {
+
+  #define LOAD_METRIC_INFO(adapterClass, metricAnalyzerClass)                 \
+    RCP<EvaluateBaseClass<adapterClass>> pCast =                              \
+      rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluateFactory->getEvaluateClass());  \
+    if(pCast == Teuchos::null) throw std::logic_error(                        \
+      "Bad evaluate class cast in loadMetricInfo!"  );                        \
+      metricAnalyzerClass analyzer(pCast);                                    \
+      analyzer.LoadMetricInfo(metricInfo, metricsPlist.sublist("Metrics"));
+
+  #define LOAD_METRIC_INFO_PARTITIONING(adapterClass)                      \
+    LOAD_METRIC_INFO(adapterClass, MetricAnalyzerEvaluatePartition<adapterClass>)
+
+  #define LOAD_METRIC_INFO_ORDERING(adapterClass)                          \
+    LOAD_METRIC_INFO(adapterClass, MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+  if(evaluateFactory->getProblemName() == "partitioning") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), LOAD_METRIC_INFO_PARTITIONING)
+  }
+  else if(evaluateFactory->getProblemName() == "ordering") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), LOAD_METRIC_INFO_ORDERING)
+  }
+  else {
+    throw std::logic_error(
+      "loadMetricInfo not implemented for this problem type!"  );
+  }
+}
+
 // compare metrics
 bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm)
 {
@@ -519,8 +572,8 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
       std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
       std::vector<MetricAnalyzerInfo> metricInfoSetRef;
 
-      sourcePrb.get()->evaluateFactory->loadMetricInfo(metricInfoSetPrb, metricsPlist);
-      sourceRef.get()->evaluateFactory->loadMetricInfo(metricInfoSetRef, metricsPlist);
+      loadMetricInfo(sourcePrb.get()->evaluateFactory, metricInfoSetPrb, metricsPlist);
+      loadMetricInfo(sourceRef.get()->evaluateFactory, metricInfoSetRef, metricsPlist);
 
       // there is some redundancy here because the metric info holds both the questions and the results
       // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
