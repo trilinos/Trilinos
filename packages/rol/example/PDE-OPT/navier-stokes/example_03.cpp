@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman));
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,bounds,bman));
 
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
