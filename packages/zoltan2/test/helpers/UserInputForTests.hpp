@@ -1143,7 +1143,7 @@ void UserInputForTests::readMatrixMarketFile(
   try{
     typedef Tpetra::MatrixMarket::Reader<tcrsMatrix_t> reader_type;
     fromMatrix = reader_type::readSparseFile(fname.str(), tcomm_,
-                                             true, true, false);
+                                             true, false, false);
 #ifdef KDD_NOT_READY_YET
     // See note below about modifying coordinate IDs as well.
     if (makeNonContiguous)
@@ -1170,9 +1170,11 @@ void UserInputForTests::readMatrixMarketFile(
       toMatrix = fromMatrix;
     }
   }catch (std::exception &e) {
-    if (tcomm_->getRank() == 0)
+    if (tcomm_->getRank() == 0) {
       std::cout << "UserInputForTests unable to read matrix market file:"
                 << fname.str() << std::endl;
+      std::cout << e.what() << std::endl;
+    }
     aok = false;
   }
   TEST_FAIL_AND_THROW(*tcomm_, aok,
