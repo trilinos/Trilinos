@@ -213,6 +213,9 @@ namespace MueLu {
     void GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap);
 
 
+    template<class Basis, class SCFieldContainer>
+    void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold, std::vector<std::vector<size_t> > & representative_node_candidates);
+
 
   }//namespace MueLuIntrepid
 } //namespace MueLu

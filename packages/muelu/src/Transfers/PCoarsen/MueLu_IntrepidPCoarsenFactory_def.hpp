@@ -333,11 +333,52 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   
   lo_columnMap = Xpetra::MapFactory<LO,GO,NO>::Build(lo_domainMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),lo_col_data(),lo_domainMap.getIndexBase(),lo_domainMap.getComm());
 }
-                  
+
+/*********************************************************************************************************/
+template<class Basis, class SCFieldContainer>
+void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold,std::vector<std::vector<size_t> > & representative_node_candidates) {
+ typedef SCFieldContainer FC;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+ typedef typename FC::data_type SC;
+#else
+ typedef typename FC::scalar_type SC;
+#endif
+ // Evaluate the linear basis functions at the Pn nodes
+ size_t numFieldsHi = ReferenceNodeLocations.dimension(0);
+ // size_t dim         = ReferenceNodeLocations.dimension(1);
+ size_t numFieldsLo = basis.getCardinality();
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+  FC LoValues("LoValues",numFieldsLo,numFieldsHi);
+#else
+  FC LoValues(numFieldsLo,numFieldsHi);
+#endif
+
+  basis.getValues(LoValues, ReferenceNodeLocations , Intrepid2::OPERATOR_VALUE);
+
+  representative_node_candidates.resize(numFieldsLo);
+  for(size_t i=0; i<numFieldsLo; i++) {
+    // 1st pass: find the max value
+    double vmax = Teuchos::ScalarTraits<SC>::zero();
+    for(size_t j=0; j<numFieldsHi; j++)
+      vmax = std::max(vmax,Teuchos::ScalarTraits<SC>::magnitude(LoValues(i,j)));
+
+    // 2nd pass: Find all values w/i threshhold of target
+    for(size_t j=0; j<numFieldsHi; j++) {
+      if(Teuchos::ScalarTraits<SC>::magnitude(vmax - LoValues(i,j)) < threshold*vmax)
+	representative_node_candidates[i].push_back(j);
+    }
+  }
+}
+
+     
 }//end MueLu::MueLuIntrepid namespace
 
 
 
+
+/*********************************************************************************************************/
+/*********************************************************************************************************/
 /*********************************************************************************************************/
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

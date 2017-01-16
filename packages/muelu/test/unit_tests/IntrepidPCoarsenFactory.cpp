@@ -68,8 +68,11 @@
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_def.hpp"   // Why does ETI suddenly decide to hate right here?
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
 #else
@@ -660,6 +663,180 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef typename Node::device_type::execution_space ES;
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Intrepid2::Basis<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::Basis<MT,FC> Basis;
+
+#endif
+
+    FC hi_DofCoords;
+    int max_degree=10;
+
+    // QUAD
+    for(int i=1; i<max_degree; i++) {
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(i,Intrepid2::POINTTYPE_EQUISPACED));
+      Kokkos::Experimental::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
+      hi->getDofCoords(hi_DofCoords);
+#else
+      RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
+      RCP<Intrepid2::DofCoordsInterface<FC> > hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi);
+      hi_DofCoords.resize(hi->getCardinality(),hi->getBaseCellTopology().getDimension());
+      hi_dci->getDofCoords(hi_DofCoords);
+#endif
+      for(int j=1; j<i; j++) {
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+	RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(j,Intrepid2::POINTTYPE_EQUISPACED));
+#else
+	RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(j,Intrepid2::POINTTYPE_EQUISPACED));
+#endif
+
+	// Get the candidates
+	double threshold = 1e-10;
+	std::vector<std::vector<size_t> > candidates;
+	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
+
+	// Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
+	std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
+	bool no_doubles = true;
+	for(int k=0; no_doubles && k<(int)candidates.size(); k++) {
+	  if(candidates[k].size()==0) no_doubles=false;
+	  for(int l=0; l<(int)candidates[k].size(); l++)	    
+	    if(is_candidate[candidates[k][l]] == false) is_candidate[candidates[k][l]]=true;
+	    else {no_doubles=false;break;}
+	}
+
+#if 1
+	if(!no_doubles) {
+	  printf("*** lo/hi = %d/%d ***\n",j,i);
+	  for(int k=0; k<(int)candidates.size(); k++) {
+	    printf("candidates[%d] = ",k);
+	    for(int l=0; l<(int)candidates[k].size(); l++)
+	      printf("%d ",(int)candidates[k][l]);
+	    printf("\n");
+	  }
+	}
+#endif	  
+
+
+	if(!no_doubles) printf("ERROR: GenerateRepresentativeBasisNodes_QUAD: The 'no duplicates' test fails w/ lo/hi = %d/%d\n",j,i);
+	TEST_EQUALITY(no_doubles,true);
+
+      }
+    }
+
+  }
+
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef typename Node::device_type::execution_space ES;
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Intrepid2::Basis<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::Basis<MT,FC> Basis;
+
+#endif
+
+    FC hi_DofCoords;
+    int max_degree=10;
+
+    // QUAD
+    for(int i=1; i<max_degree; i++) {
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT>(i,Intrepid2::POINTTYPE_EQUISPACED));
+      Kokkos::Experimental::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
+      hi->getDofCoords(hi_DofCoords);
+#else
+      RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
+      RCP<Intrepid2::DofCoordsInterface<FC> > hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar> >(hi);
+      hi_DofCoords.resize(hi->getCardinality(),hi->getBaseCellTopology().getDimension());
+      hi_dci->getDofCoords(hi_DofCoords);
+#endif
+      for(int j=1; j<i; j++) {
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+	RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT>(j,Intrepid2::POINTTYPE_EQUISPACED));
+#else
+	RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
+#endif
+
+	// Get the candidates
+	double threshold = 1e-10;
+	std::vector<std::vector<size_t> > candidates;
+	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
+
+	// Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
+	std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
+	bool no_doubles = true;
+	for(int k=0; no_doubles && k<(int)candidates.size(); k++) {
+	  if(candidates[k].size()==0) no_doubles=false;
+	  for(int l=0; l<(int)candidates[k].size(); l++)	    
+	    if(is_candidate[candidates[k][l]] == false) is_candidate[candidates[k][l]]=true;
+	    else {no_doubles=false;break;}
+	}
+#if 1
+	if(!no_doubles) {
+	  printf("*** lo/hi = %d/%d ***\n",j,i);
+	  printf("* Candidates *\n");
+	  for(int k=0; k<(int)candidates.size(); k++) {
+	    printf("candidates[%d] = ",k);
+	    for(int l=0; l<(int)candidates[k].size(); l++)
+	      printf("%d ",(int)candidates[k][l]);
+	    printf("\n");
+	  }
+	  printf("* Coordinates *");
+	  for(int k=0; k<(int)hi_DofCoords.dimension(0); k++) {
+	    for(int l=0; l<(int)hi_DofCoords.dimension(1); l++)
+	      printf("%6.4e ",hi_DofCoords(k,l));
+	    printf("\n");
+	  }
+
+	}
+#endif	  
+	if(!no_doubles) printf("ERROR: GenerateRepresentativeBasisNodes_HEX: The 'no duplicates' test fails w/ lo/hi = %d/%d\n",j,i);
+	TEST_EQUALITY(no_doubles,true);
+
+      }
+    }
+
+  }
+
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
@@ -672,7 +849,10 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX, Scalar, LO,GO,Node)
+
 
 
 #include <MueLu_ETI_4arg.hpp>
