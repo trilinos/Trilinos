@@ -199,6 +199,11 @@ namespace MueLu {
                                ArrayScalar & hi_DofCoords);
 #endif
 
+    template<class LocalOrdinal, class GlobalOrdinal, class Node, class LOFieldContainer>
+    void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candidates,const LOFieldContainer & hi_elemToNode,
+				   RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & hi_columnMap,
+				   LOFieldContainer & lo_elemToHiRepresentativeNode);
+
     template <class LocalOrdinal, class LOFieldContainer>
     void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                            const std::vector<bool> & hi_nodeIsOwned,
@@ -207,6 +212,15 @@ namespace MueLu {
                            std::vector<bool> & lo_nodeIsOwned,
                            std::vector<LocalOrdinal> & hi_to_lo_map,
                            int & lo_numOwnedNodes);
+
+    template <class LocalOrdinal, class LOFieldContainer>
+    void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
+					     const std::vector<bool> & hi_nodeIsOwned,
+					     const LOFieldContainer & lo_elemToHiRepresentativeNode,		       
+					     LOFieldContainer & lo_elemToNode,
+					     std::vector<bool> & lo_nodeIsOwned,
+					     std::vector<LocalOrdinal> & hi_to_lo_map,
+					     int & lo_numOwnedNodes);
 
 
     template <class LocalOrdinal, class GlobalOrdinal, class Node> 

@@ -263,6 +263,68 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
      }
 
 }
+/*********************************************************************************************************/
+template <class LocalOrdinal, class LOFieldContainer>
+void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
+					 const std::vector<bool> & hi_nodeIsOwned,
+					 const LOFieldContainer & lo_elemToHiRepresentativeNode,		       
+					 LOFieldContainer & lo_elemToNode,
+					 std::vector<bool> & lo_nodeIsOwned,
+					 std::vector<LocalOrdinal> & hi_to_lo_map,
+					 int & lo_numOwnedNodes) {
+  typedef LocalOrdinal LO;
+  using Teuchos::RCP;
+  //  printf("CMS:BuildLoElemToNodeViaRepresentatives: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
+  size_t numElem     = hi_elemToNode.dimension(0);
+  size_t hi_numNodes = hi_nodeIsOwned.size();
+  size_t lo_nperel = lo_elemToHiRepresentativeNode.dimension(1);
+  Kokkos::Experimental::resize(lo_elemToNode,numElem, lo_nperel);
+
+  // Start by flagginc the representative nodes
+  std::vector<bool> is_low_order(hi_numNodes,false);
+  for(size_t i=0; i<numElem; i++)
+    for(size_t j=0; j<lo_nperel; j++) {
+      LO id = lo_elemToHiRepresentativeNode(i,j);
+      is_low_order[hi_elemToNode(i,id)] = true; // This can overwrite and that is OK.
+    }
+
+  // Count the number of lo owned nodes, generating a local index for lo nodes
+  lo_numOwnedNodes=0;
+  size_t lo_numNodes=0;
+  hi_to_lo_map.resize(hi_numNodes,Teuchos::OrdinalTraits<LO>::invalid());
+
+  for(size_t i=0; i<hi_numNodes; i++)
+    if(is_low_order[i]) {
+      hi_to_lo_map[i] = lo_numNodes;
+      lo_numNodes++;
+      if(hi_nodeIsOwned[i]) lo_numOwnedNodes++;
+    }
+
+  // Flag the owned lo nodes
+  lo_nodeIsOwned.resize(lo_numNodes,false);
+  for(size_t i=0; i<hi_numNodes; i++) {
+    if(is_low_order[i] && hi_nodeIsOwned[i])
+      lo_nodeIsOwned[hi_to_lo_map[i]]=true;
+  }  
+
+  // Translate lo_elemToNode to a lo local index
+  for(size_t i=0; i<numElem; i++)
+    for(size_t j=0; j<lo_nperel; j++) 
+      lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToHiRepresentativeNode(i,j)];    
+
+  
+  // Check for the [E|T]petra column map ordering property, namely LIDs for owned nodes should all appear first.  
+  // Since we're injecting from the higher-order mesh, it should be true, but we should add an error check & throw in case.
+  bool map_ordering_test_passed=true;
+  for(size_t i=0; i<lo_numNodes-1; i++)
+    if(!lo_nodeIsOwned[i] && lo_nodeIsOwned[i+1]) 
+      map_ordering_test_passed=false;
+  
+  if(!map_ordering_test_passed)
+    throw std::runtime_error("MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives failed map ordering test");
+
+}
+
 
 /*********************************************************************************************************/
 template <class LocalOrdinal, class LOFieldContainer>
@@ -415,7 +477,6 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
 /*********************************************************************************************************/
 /*********************************************************************************************************/
 /*********************************************************************************************************/
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
                                                                                                                  const std::vector<bool> & hi_nodeIsOwned,

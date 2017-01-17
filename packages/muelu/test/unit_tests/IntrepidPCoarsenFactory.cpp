@@ -832,6 +832,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+
+    // NOTE: We need more tests for this that do pn to pm
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -910,6 +912,112 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 
+
+  /*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+  #   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+    typedef typename Node::device_type::execution_space ES;
+    typedef Intrepid2::Basis<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::FieldContainer<LO> FCi;
+    typedef Intrepid2::Basis<MT,FC> Basis;
+#endif
+    GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+
+    out << "version: " << MueLu::Version() << std::endl;
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int max_degree=10;
+
+    {
+      //QUAD
+      // A one element test with Kirby-numbered nodes where the top edge is not owned      
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
+#else
+      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
+#endif
+
+      for(int degree=2; degree < max_degree; degree++) {
+        int Nn = (degree+1)*(degree+1);
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n("hi_e2n",1,Nn), lo_e2n, lo_e2n_mk2;
+#else
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n(1,Nn), lo_e2n, lo_e2n_mk2;
+#endif
+        std::vector<bool> hi_owned(Nn,false),lo_owned, lo_owned_mk2;
+        std::vector<size_t> lo_node_in_hi;
+        std::vector<LO> hi_to_lo_map,  hi_to_lo_map_mk2;
+        int lo_numOwnedNodes=0, lo_numOwnedNodes_mk2=0;
+        FC hi_dofCoords;
+
+	// El2node / ownership / colmap
+	Teuchos::Array<GO> hi_colids(Nn);
+        for(int i=0; i<Nn; i++) {
+	  hi_colids[i] = i;
+          hi_e2n(0,i)=i;
+          if(i < Nn-(degree+1)) hi_owned[i]=true;
+        }
+
+	/*** Do stuff the injection way ***/
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+#else
+        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+#endif  
+        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
+
+	/*** Do stuff the representative way ***/
+	RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
+	FCi lo_elemToHiRepresentativeNode;
+	double threshold = 1e-10;
+	std::vector<std::vector<size_t> > candidates;
+	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_dofCoords,threshold,candidates);
+	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
+	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
+
+
+	// Compare stuff
+        TEST_EQUALITY(lo_numOwnedNodes,2);
+        TEST_EQUALITY(lo_numOwnedNodes_mk2,2);
+
+
+	size_t num_lo_nodes_located=0;
+        for(size_t i=0;i<hi_to_lo_map.size(); i++) {
+          if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
+            num_lo_nodes_located++;
+        }
+	TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
+	TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
+
+	for(size_t i=0; i<lo_e2n.dimension(0); i++) 
+	  for(size_t j=0; j<lo_e2n.dimension(1); j++) 
+	    TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
+
+	for(size_t i=0; i<(size_t) lo_owned.size(); i++) 
+	  TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);
+
+	TEST_EQUALITY(hi_to_lo_map.size(),hi_to_lo_map_mk2.size());
+	for(size_t i=0; i<(size_t) hi_to_lo_map.size(); i++) 
+	  TEST_EQUALITY(hi_to_lo_map[i],hi_to_lo_map_mk2[i]);
+
+      }
+    }//end QUAD
+
+  }
+
+
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetLoNodeInHi,Scalar,LO,GO,Node)  \
@@ -926,7 +1034,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral,  Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Spectral,   Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LO,GO,Node) 
 
 
 #include <MueLu_ETI_4arg.hpp>
