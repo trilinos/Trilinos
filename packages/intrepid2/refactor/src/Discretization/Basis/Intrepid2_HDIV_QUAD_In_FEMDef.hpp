@@ -262,8 +262,8 @@ namespace Intrepid2 {
       cardLine = lineBasis.getCardinality(),
       cardBubble = bubbleBasis.getCardinality();
 
-    this->vinvLine_   = Kokkos::DynRankView<OT,SpT>("Hdiv::Quad::In::vinvLine", cardLine, cardLine);
-    this->vinvBubble_ = Kokkos::DynRankView<OT,SpT>("Hdiv::Quad::In::vinvBubble", cardBubble, cardBubble);
+    this->vinvLine_   = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hdiv::Quad::In::vinvLine", cardLine, cardLine);
+    this->vinvBubble_ = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hdiv::Quad::In::vinvBubble", cardBubble, cardBubble);
 
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);

@@ -219,7 +219,7 @@ namespace Intrepid2 {
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
-    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2

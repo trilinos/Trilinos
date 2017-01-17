@@ -125,6 +125,7 @@ namespace panzer {
     const std::string basis_type = "Const";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -228,6 +229,7 @@ namespace panzer {
     const std::string basis_type = "Q1";
   
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
     panzer::BasisValues2<double> basis_values("",true,true);
     basis_values.setupArrays(basis);
@@ -341,6 +343,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -461,6 +464,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("",true,true);
 
@@ -676,6 +680,7 @@ namespace panzer {
   
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+    TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
 
     panzer::BasisValues2<double> basis_values("prefix_",true,true);
 

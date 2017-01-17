@@ -217,7 +217,7 @@ namespace Intrepid2 {
     }
 
     void
-    getVandermondeInverse( outputViewType vinv ) const {
+    getVandermondeInverse( scalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);      
     }
@@ -232,7 +232,7 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
                coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2
