@@ -161,12 +161,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
   ParameterList galeriList = galeriParameters.GetParameterList();
 
-  std::string node_name = Node::name();
   // =========================================================================
   // Problem construction
   // =========================================================================
   std::ostringstream galeriStream;
 #ifdef HAVE_MUELU_OPENMP
+  std::string node_name = Node::name();
   if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
     galeriStream<<"OpenMP Max Threads = "<<omp_get_max_threads()<<std::endl;
 #endif
