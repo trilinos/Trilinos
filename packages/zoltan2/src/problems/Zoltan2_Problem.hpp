@@ -77,9 +77,13 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), comm_(), 
+	env_(rcp(new Environment(*params,Teuchos::DefaultComm<int>::getComm()))), 
+	envConst_(rcp_const_cast<const Environment>(env_)), 
+	timer_()
   {
     RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
+
     comm_ = tmp->duplicate();
     setupProblemEnvironment(params);
   }
@@ -93,7 +97,11 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), 
+	comm_(), 
+	env_(rcp(new Environment(*params, comm))),
+	envConst_(rcp_const_cast<const Environment>(env_)), 
+	timer_()
   {
     comm_ = comm->duplicate();
     setupProblemEnvironment(params);
@@ -107,7 +115,10 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), 
+	comm_(), 
+	env_(rcp(new Environment(*params, rcp<const Comm<int> >(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(comm)))))),
+	envConst_(rcp_const_cast<const Environment>(env_)), timer_()
   {
     RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
                                            Teuchos::opaqueWrapper(comm);
@@ -252,13 +263,6 @@ private:
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  try{
-    env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
-  }
-  Z2_FORWARD_EXCEPTIONS
-
-  envConst_ = rcp_const_cast<const Environment>(env_);
-
   ParameterList &processedParameters = env_->getParametersNonConst();
   params_ = rcp<ParameterList>(&processedParameters, false);
 
