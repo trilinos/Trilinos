@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <sstream>
+#include <algorithm>
 
 #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
 
@@ -228,7 +229,43 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScala
 
 
 /*********************************************************************************************************/
-  template <class LocalOrdinal, class LOFieldContainer>
+template<class LocalOrdinal, class GlobalOrdinal, class Node, class LOFieldContainer>
+void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candidates,const LOFieldContainer & hi_elemToNode,
+			       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & hi_columnMap,
+			       LOFieldContainer & lo_elemToHiRepresentativeNode) {
+  typedef GlobalOrdinal GO;
+  
+  // Given: A set of "candidate" hi-DOFs to serve as the "representative" DOF for each lo-DOF on the reference element.
+  // Algorithm:  For each element, we choose the lowest GID of the candidates for each DOF to generate the lo_elemToHiRepresentativeNode map
+
+
+   size_t numElem     = hi_elemToNode.dimension(0);
+   size_t lo_nperel   = candidates.size();
+   Kokkos::Experimental::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
+   
+   
+   for(size_t i=0; i<numElem; i++)
+     for(size_t j=0; j<lo_nperel; j++) {
+       if(candidates[j].size() == 1) 
+	 lo_elemToHiRepresentativeNode(i,j) =  hi_elemToNode(i,candidates[j][0]);
+       else {
+	 // First we get the GIDs for each candidate
+	 std::vector<GO> GID(candidates[j].size());
+	 for(size_t k=0; k<(size_t)candidates[j].size(); k++)
+	   GID[k] = hi_columnMap->getGlobalElement(hi_elemToNode(i,candidates[j][k]));
+
+	 // Find the one with smallest GID
+	 size_t which = std::distance(GID.begin(),std::min_element(GID.begin(),GID.end()));
+	 
+	 // Record this
+	 lo_elemToHiRepresentativeNode(i,j) =  hi_elemToNode(i,candidates[j][which]);
+       }
+     }
+
+}
+
+/*********************************************************************************************************/
+template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                        const std::vector<bool> & hi_nodeIsOwned,
                        const std::vector<size_t> & lo_node_in_hi,
@@ -290,7 +327,6 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
     throw std::runtime_error("MueLu::MueLuIntrepid::BuildLoElemToNode failed map ordering test");
 
 }
-
 
 /*********************************************************************************************************/
   template <class LocalOrdinal, class GlobalOrdinal, class Node> 
@@ -371,10 +407,9 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
   }
 }
 
+
      
 }//end MueLu::MueLuIntrepid namespace
-
-
 
 
 /*********************************************************************************************************/
@@ -439,7 +474,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 }
 
 
-
+/*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -456,6 +491,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     return validParamList;
   }
 
+/*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
@@ -463,11 +499,13 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     Input(fineLevel, "ipc: element to node map");
   }
 
+/*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
+/*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "P Coarsening", coarseLevel);
@@ -482,7 +520,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
     typedef Intrepid2::FieldContainer<double> FC;
 #endif
-
 
     GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
     LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
