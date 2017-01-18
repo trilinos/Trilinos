@@ -59,11 +59,10 @@ namespace Intrepid2 {
   // Orientation
   //
   //
-  template<typename subCellVertType,
-           typename elemNodeViewType>
+  template<typename elemNodeViewType>
   inline
   void
-  Orientation::getElementNodeMap(subCellVertType *subCellVerts,
+  Orientation::getElementNodeMap(typename elemNodeViewType::non_const_value_type *subCellVerts,
                                  ordinal_type &numVerts,
                                  const shards::CellTopology cellTopo,
                                  const elemNodeViewType elemNodes,
@@ -157,7 +156,8 @@ namespace Intrepid2 {
     Orientation ort;
     const ordinal_type nedge = cellTopo.getEdgeCount();
     if (nedge > 0) {
-      ordinal_type orts[12], vertsSubCell[2], nvertSubCell;
+      typename elemNodeViewType::non_const_value_type vertsSubCell[2];
+      ordinal_type orts[12], nvertSubCell;
       for (ordinal_type i=0;i<nedge;++i) {
         Orientation::getElementNodeMap(vertsSubCell,
                                        nvertSubCell,
@@ -170,7 +170,8 @@ namespace Intrepid2 {
     }
     const ordinal_type nface = cellTopo.getFaceCount();
     if (nface > 0) {
-      ordinal_type orts[6], vertsSubCell[4], nvertSubCell;
+      typename elemNodeViewType::non_const_value_type vertsSubCell[4];
+      ordinal_type orts[6], nvertSubCell;
       for (ordinal_type i=0;i<nface;++i) {
         Orientation::getElementNodeMap(vertsSubCell,
                                        nvertSubCell,
