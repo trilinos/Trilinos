@@ -47,7 +47,9 @@
 */
 
 #include "Teuchos_Comm.hpp"
+#ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -118,26 +120,25 @@ void print(ROL::Objective<Real> &obj,
   }
 
   // Send data to root processor
-  try{
-    Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm
-      = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    int nproc = Teuchos::size<int>(*mpicomm);
-    std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
-    MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
-    for (int i = 1; i < nproc; ++i) {
-      sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
-    }
-    MPI_Gatherv(&myvalues[0],nsamp,MPI_DOUBLE,&gvalues[0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
-    for (int j = 0; j < sdim; ++j) {
-      MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
-    }
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+  int nproc = Teuchos::size<int>(*mpicomm);
+  std::vector<int> sampleCounts(nproc, 0), sampleDispls(nproc, 0);
+  MPI_Gather(&nsamp,1,MPI_INT,&sampleCounts[0],1,MPI_INT,0,*(mpicomm->getRawMpiComm())());
+  for (int i = 1; i < nproc; ++i) {
+    sampleDispls[i] = sampleDispls[i-1] + sampleCounts[i-1];
   }
-  catch (std::exception &e) {
-    gvalues.assign(myvalues.begin(),myvalues.end());
-    for (int j = 0; j < sdim; ++j) {
-      gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
-    }
+  MPI_Gatherv(&myvalues[0],nsamp,MPI_DOUBLE,&gvalues[0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
+  for (int j = 0; j < sdim; ++j) {
+    MPI_Gatherv(&mysamples[j][0],nsamp,MPI_DOUBLE,&gsamples[j][0],&sampleCounts[0],&sampleDispls[0],MPI_DOUBLE,0,*(mpicomm->getRawMpiComm())());
   }
+#else
+  gvalues.assign(myvalues.begin(),myvalues.end());
+  for (int j = 0; j < sdim; ++j) {
+    gsamples[j].assign(mysamples[j].begin(),mysamples[j].end());
+  }
+#endif
 
   // Print
   int rank  = Teuchos::rank<int>(*comm);
