@@ -84,8 +84,24 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
 
       ss << condPrefix_ << i;
       std::string cond = pl->get<std::string>(ss.str());
-      matchers_.push_back(buildMatcher(cond));
+
+      std::string matcherType = getMatcherType(cond);
+      if(matcherType == "coord"){
+        matchers_.push_back(buildMatcher(cond));
+      }else if(matcherType == "edge")
+        edgeMatchers_.push_back(buildMatcher(cond));
+      else if(matcherType == "face")
+        faceMatchers_.push_back(buildMatcher(cond));
+      else if(matcherType == "all"){
+        matchers_.push_back(buildMatcher(replaceMatcherType(cond,"coord"))); 
+        edgeMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"edge"))); 
+        faceMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"face"))); 
+      } 
    }
+
+   // Order BCs with all coords first, followed by edges, then faces
+   matchers_.insert(matchers_.end(),edgeMatchers_.begin(),edgeMatchers_.end());
+   matchers_.insert(matchers_.end(),faceMatchers_.begin(),faceMatchers_.end());
 
    storedPL_ = pl;
 }
@@ -162,6 +178,41 @@ static std::string trim(const std::string & s)
 }
 
 /////////////////////////////////////////////////////////////
+
+std::string PeriodicBC_Parser::getMatcherType(const std::string & buildStr) const
+{
+   std::string::size_type endMatch = buildStr.find_first_of(' ');
+
+   std::string matcher = trim(buildStr.substr(0,endMatch));
+
+   std::string::size_type hyphenMatch = matcher.find_last_of('-');
+
+   TEUCHOS_TEST_FOR_EXCEPTION(hyphenMatch==std::string::npos,std::logic_error,
+       "Failed parsing parameter list: could not find periodic boundary "
+       "condition matcher \"" << matcher << "\" "
+       "in string \"" << buildStr << "\n"
+       "Matcher " << matcher << " requires a hyphen, e.g. x-coord, yz-edge\"");
+
+   std::string matcherType = trim(matcher.substr(hyphenMatch+1,matcher.length()));
+
+   TEUCHOS_TEST_FOR_EXCEPTION((matcherType != "coord") && (matcherType != "edge") && (matcherType != "face") && (matcherType != "all"),std::logic_error,
+       "Failed parsing parameter list: could not find periodic boundary "
+       "condition matcher \"" << matcher << "\" "
+       "in string \"" << buildStr << "\n"
+       "Type " << matcherType << " is not a valid boundary condition type. Must be coord, edge, face, or all\"");
+
+   return matcherType;
+}
+
+std::string PeriodicBC_Parser::replaceMatcherType(const std::string & buildStr, const std::string & matcherType) const
+{
+   std::string::size_type allPosition = buildStr.find("all");
+
+   std::string beforeType = trim(buildStr.substr(0,allPosition));
+   std::string afterType = trim(buildStr.substr(allPosition+3,buildStr.length()));
+
+   return beforeType + matcherType + " " + afterType;
+}
 
 void PeriodicBC_Parser::buildMatcher_Tokenize(const std::string & buildStr,
                                              std::string & matcher,

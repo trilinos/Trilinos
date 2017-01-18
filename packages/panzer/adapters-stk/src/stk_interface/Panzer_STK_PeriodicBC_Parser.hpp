@@ -87,12 +87,23 @@ public:
      */
    Teuchos::RCP<Teuchos::ParameterList> getValidParameters(int count) const;
 
-   /** Build a periodic matcher object given a string.
+   /** Build a periodic matcher object given a string
      *
      * \param[in] buildStr String specifying the matcher to build. 
      *                     Format: "MatchCondition bndry1;bndry2"
      */
-   Teuchos::RCP<const PeriodicBC_MatcherBase> buildMatcher(const std::string & buildStr) const;
+   Teuchos::RCP<const PeriodicBC_MatcherBase>
+   buildMatcher(const std::string & buildStr) const;
+
+   /** Return the string for the type of matcher:
+     *    coord, edge, face, or all
+     * */
+   std::string getMatcherType(const std::string & buildStr) const; 
+
+   /** Replace "all" with specific type in matcher string:
+     *    coord, edge, or face
+     * */
+   std::string replaceMatcherType(const std::string & buildStr, const std::string & matcherType) const; 
 
    /** Parse a string describing the periodic boundary condition
      * Format: "MatchCondition bndry1;bndry2"
@@ -119,6 +130,8 @@ private:
 
    //! matchers constructed by "setParameterList"
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > matchers_;
+   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > edgeMatchers_;
+   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > faceMatchers_;
 
    // stored string values
    const std::string countStr_;
