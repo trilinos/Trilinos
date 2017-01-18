@@ -159,7 +159,7 @@ namespace MueLu {
     // NOTE: This is hardwired to double on purpose.
     void GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
                                                  const std::vector<bool> & hi_nodeIsOwned,
-                                                 const SCFieldContainer hi_DofCoords,
+                                                 const SCFieldContainer & hi_DofCoords,
                                                  const std::vector<size_t> &lo_node_in_hi,
                                                  const Basis &lo_Basis,
                                                  const std::vector<LocalOrdinal> & hi_to_lo_map,
@@ -168,6 +168,18 @@ namespace MueLu {
                                                  const Teuchos::RCP<const Map> & hi_map,
                                                  Teuchos::RCP<Matrix>& P) const;
     //@}
+
+    // NOTE: This is hardwired to double on purpose.
+    void GenerateLinearCoarsening_pn_kirby_to_pm(const LOFieldContainer & hi_elemToNode, 
+						 const std::vector<bool> & hi_nodeIsOwned,
+						 const SCFieldContainer & hi_DofCoords,
+						 const LOFieldContainer & lo_elemToHiRepresentativeNode,
+						 const Basis &lo_basis,
+						 const std::vector<LocalOrdinal> & hi_to_lo_map,
+						 const Teuchos::RCP<const Map> & lo_colMap, 
+						 const Teuchos::RCP<const Map> & lo_domainMap, 
+						 const Teuchos::RCP<const Map> & hi_map,
+						 Teuchos::RCP<Matrix>& P) const;
 
 
   }; //class IntrepidPCoarsenFactory
@@ -178,11 +190,11 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     template<class Scalar,class KokkosExecutionSpace>
-    Teuchos::RCP<Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> >  BasisFactory(const std::string & name);
+    Teuchos::RCP<Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> >  BasisFactory(const std::string & name, int & degree);
 #else
     // NOTE: This function will not work with Stokhos scalar types, due to deficiencies upstream.
     template<class Scalar>
-    Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
+    Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name, int & degree);
 #endif
 
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 

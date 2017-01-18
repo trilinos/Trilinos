@@ -147,14 +147,15 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     
     // QUAD
+    int degree;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c1",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c2",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c3",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
 #else
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c1",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c2",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c3",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
 #endif
   }
 
@@ -285,7 +286,7 @@ namespace MueLuTests {
 
  /*********************************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, std::vector<Scalar> &pn_gold_in, std::vector<Scalar> &pn_gold_out,const std::string & hi_basis)
+void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, std::vector<Scalar> &pn_gold_in, std::vector<Scalar> &pn_gold_out,const std::string & hi_basis, const std::string lo_basis = "hgrad_line_c1")
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -332,7 +333,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // ParameterList
     ParameterList Params;
     Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("ipc: lo basis",lo_basis);
 
     // Build P
     RCP<MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO> > IPCFact = rcp(new MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO>());
@@ -737,7 +738,27 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     return true;
   }
  
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef typename Node::device_type::execution_space ES;
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<MT,FC> Basis;
+
+#endif
+
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_LINE_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,10);
+    TEST_EQUALITY(rv,true);
+  }
 
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
@@ -916,6 +937,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+    // NOTE: We need more tests for this that do pn to pm
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -987,11 +1009,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
 	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
 
-
 	// Compare stuff
         TEST_EQUALITY(lo_numOwnedNodes,2);
         TEST_EQUALITY(lo_numOwnedNodes_mk2,2);
-
 
 	size_t num_lo_nodes_located=0;
         for(size_t i=0;i<hi_to_lo_map.size(); i++) {
@@ -1018,6 +1038,80 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 
+/*********************************************************************************************************************/
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    size_t total_num_points=10;
+    int degree=3;
+    std::vector<Scalar> p3_gold_in(total_num_points);
+    std::vector<Scalar> p3_gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points; i++) {
+      p3_gold_in[i] = i;
+      p3_gold_out[i] = i;
+    }
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+        p3_gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
+      }
+    }
+    // FIX ME!!!
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p3_gold_in.size(),3,p3_gold_in,p3_gold_out,std::string("hgrad_line_c3"),std::string("hgrad_line_c2"));
+  }
+
+
+/*********************************************************************************************************************/
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    size_t total_num_points=10;
+    int degree=4;
+    std::vector<Scalar> gold_in(total_num_points);
+    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points; i++) {
+      gold_in[i] = i;
+      gold_out[i] = i;
+    }
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+        gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
+      }
+    }
+    // FIXME!!!
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c3"));
+  }
+
+/*********************************************************************************************************************/
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    size_t total_num_points=10;
+    int degree=4;
+    std::vector<Scalar> gold_in(total_num_points);
+    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points; i++) {
+      gold_in[i] = i;
+      gold_out[i] = i;
+    }
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+        gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
+      }
+    }
+    // FIXME!!!
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c2"));
+  }
+
+
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetLoNodeInHi,Scalar,LO,GO,Node)  \
@@ -1030,12 +1124,16 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced,Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced,Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral,  Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Spectral,   Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LO,GO,Node) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p3_to_p2,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p3,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p2,Scalar,LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>
