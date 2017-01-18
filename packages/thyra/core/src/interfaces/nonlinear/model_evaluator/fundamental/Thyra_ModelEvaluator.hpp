@@ -85,11 +85,11 @@ namespace Thyra {
  *
  * <li><b>State vector function:</b>
  *
- * <tt>(x_dot,x,{p(l)},t,...}) -> f <: f_space</tt>
+ * <tt>(x_dot_dot,x_dot,x,{p(l)},t,...}) -> f <: f_space</tt>
  *
  * <li><b>Auxiliary response vector functions:</b>
  *
- * <tt>(x_dot,x,{p(l)},t,...}) -> g(j) <: g_space(j)</tt>, for <tt>j=0...Ng-1</tt>
+ * <tt>(x_dot_dot,x_dot,x,{p(l)},t,...}) -> g(j) <: g_space(j)</tt>, for <tt>j=0...Ng-1</tt>
  *
  * <li><b>Other outputs:</b>
  *
@@ -108,6 +108,10 @@ namespace Thyra {
  * <li><b>State variables derivative w.r.t. <tt>t</tt> vector:</b>
  *
  * <tt>x_dot <: x_space</tt>
+ *
+ * <li><b>State variables second derivative w.r.t. <tt>t</tt> vector:</b>
+ *
+ * <tt>x_dot_dot <: x_space</tt>
  *
  * <li><b>Auxiliary parameter vectors:</b>
  *
@@ -204,7 +208,7 @@ namespace Thyra {
  * <li> DAE: <tt>D(f)/D(x_dot)</tt> is <em>not</em> full rank
  * </ul>
  *
- * If supported, the nature of <tt>W=alpha*D(f)/D(x_dot)+beta*D(f)/D(x)</tt>
+ * If supported, the nature of <tt>W=W_x_dot_dot_coeff*D(f)/D(x_dot_dot)+alpha*D(f)/D(x_dot)+beta*D(f)/D(x)</tt>
  * may be given by <tt>this->createOutArgs().get_W_properties()</tt>.
  *
  * Here the argument <tt>t</tt> may or may not be accepted by <tt>*this</tt>.
@@ -1034,8 +1038,8 @@ public:
    * and does not have a nominal value
    * (i.e. <tt>this->getNominalValues().get_blah(...)==null</tt>, then the
    * evaluation is undefined and an exception should be thrown by a good
-   * implementation.  The one exception this rule is support for
-   * <tt>x_dot</tt>.  If <tt>x_dot</tt> is supported but not specified in
+   * implementation.  The two exceptions for this rule are support for
+   * <tt>x_dot</tt> and <tt>x_dot_dot</tt>.  If <tt>x_dot</tt> or <tt>x_dot_dot</tt> are supported but not specified in
    * <tt>inArgs</tt>, then it is implicitly assumed to be zero.
    *
    * \param outArgs [out] Gives the objects for the supported functions and
