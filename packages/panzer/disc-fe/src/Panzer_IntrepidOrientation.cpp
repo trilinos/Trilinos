@@ -62,8 +62,15 @@ namespace panzer {
 
       RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
+
       if (ugi!=Teuchos::null) {
-        buildIntrepidOrientation(*orientation, ugi);
+        const auto connMgrBase = ugi->getConnManagerBase();
+        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,GO> >(connMgrBase->noConnectivityClone());
+        
+        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
+                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
+        
+        buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;
       }
     }
@@ -76,7 +83,13 @@ namespace panzer {
       RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
       if (ugi!=Teuchos::null) {
-        buildIntrepidOrientation(*orientation, ugi);
+        const auto connMgrBase = ugi->getConnManagerBase();
+        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,GO> >(connMgrBase->noConnectivityClone());
+        
+        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
+                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
+
+        buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;
       }
     }
@@ -89,7 +102,13 @@ namespace panzer {
       RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
       if(ugi!=Teuchos::null) {
-        buildIntrepidOrientation(*orientation, ugi);
+        const auto connMgrBase = ugi->getConnManagerBase();
+        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,int> >(connMgrBase->noConnectivityClone());
+        
+        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
+                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
+
+        buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;
       }
     }
@@ -102,7 +121,13 @@ namespace panzer {
       RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
       if(ugi!=Teuchos::null) {
-        buildIntrepidOrientation(*orientation, ugi);
+        const auto connMgrBase = ugi->getConnManagerBase();
+        const auto connMgr = rcp_dynamic_cast<ConnManager<LO,Ordinal64> >(connMgrBase->noConnectivityClone());
+        
+        TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
+                                   "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
+
+        buildIntrepidOrientation(*orientation, *connMgr);
         return orientation;
       }
     }

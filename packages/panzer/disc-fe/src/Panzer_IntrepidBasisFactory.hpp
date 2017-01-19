@@ -55,11 +55,11 @@
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
@@ -68,7 +68,7 @@
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
-//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
 
@@ -124,7 +124,7 @@ namespace panzer {
     // high order point distribution type; 
     // for now equispaced only; to get a permutation map with different orientation, 
     // orientation coeff matrix should have the same point distribution.
-    //const Intrepid2::EPointType point_type = Intrepid2::POINTTYPE_EQUISPACED;
+    const Intrepid2::EPointType point_type = Intrepid2::POINTTYPE_EQUISPACED;
 
     if ( (basis_type == "Const") && (basis_order == 0) )
       basis = Teuchos::rcp( new Intrepid2::Basis_Constant_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
@@ -135,8 +135,8 @@ namespace panzer {
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 2) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
-    // else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order > 2) )
-    //   basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+    else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order > 2) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
     
     else if ( (basis_type == "HCurl") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_HEX_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
@@ -168,8 +168,8 @@ namespace panzer {
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 2) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
-    // else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order > 2) )
-    //   basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+    else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order > 2) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     else if ( (basis_type == "HCurl") && (cell_type == "Quadrilateral") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HCURL_QUAD_I1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
@@ -198,8 +198,8 @@ namespace panzer {
     else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );
 
-    // else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order > 2) )
-    //   basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+    else if ( (basis_type == "HGrad") && (cell_type == "Line") && (basis_order > 2) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
                                "Failed to create the requestedbasis with basis_type=\"" << basis_type << 
