@@ -68,10 +68,12 @@ Teuchos::RCP<DummyTestModelEvaluator<Scalar> >
 dummyTestModelEvaluator(
   const Ordinal x_size,
   const ArrayView<const Ordinal> &p_sizes,
-  const ArrayView<const Ordinal> &g_sizes
+  const ArrayView<const Ordinal> &g_sizes,
+  const bool supports_x_dot,
+  const bool supports_x_dot_dot
   )
 {
-  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes));
+  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes, supports_x_dot, supports_x_dot_dot));
 }
 
 
@@ -82,7 +84,9 @@ template<class Scalar>
 DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   const Ordinal x_size,
   const ArrayView<const Ordinal> &p_sizes,
-  const ArrayView<const Ordinal> &g_sizes
+  const ArrayView<const Ordinal> &g_sizes,
+  const bool supports_x_dot,
+  const bool supports_x_dot_dot
   )
 {
   
@@ -109,6 +113,10 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(p_space_.size());
   inArgs.setSupports(MEB::IN_ARG_x);
+  if (supports_x_dot)
+    inArgs.setSupports(MEB::IN_ARG_x_dot);
+  if (supports_x_dot_dot)
+    inArgs.setSupports(MEB::IN_ARG_x_dot_dot);
   inArgs.setSupports(MEB::IN_ARG_step_size);
   inArgs.setSupports(MEB::IN_ARG_stage_number);
   prototypeInArgs_ = inArgs;
@@ -290,7 +298,9 @@ void DummyTestModelEvaluator<Scalar>::evalModelImpl(
   dummyTestModelEvaluator( \
     const Ordinal x_size, \
     const ArrayView<const Ordinal> &p_sizes, \
-    const ArrayView<const Ordinal> &g_sizes \
+    const ArrayView<const Ordinal> &g_sizes, \
+    const bool supports_x_dot, \
+    const bool supports_x_dot_dot \
     ); \
 
 

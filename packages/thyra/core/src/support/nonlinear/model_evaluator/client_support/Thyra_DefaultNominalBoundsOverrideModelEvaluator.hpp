@@ -363,12 +363,17 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModelImpl(
   wrappedInArgs.setArgs(inArgs);
 
   // This is a special exception: see evalModel() in Thyra::ME
-  // documentation.  If inArgs() supports x_dot but the evaluate call
-  // passes in a null value, then we need to make sure the null value
-  // gets passed on instead of the nominal value.
+  // documentation.  If inArgs() supports x_dot (or x_dot_dot) but the
+  // evaluate call passes in a null value, then we need to make sure
+  // the null value gets passed on instead of the nominal value.
   if (wrappedInArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot)) {
     if (is_null(inArgs.get_x_dot())) {
       wrappedInArgs.set_x_dot(Teuchos::null);
+    }
+  }
+  if (wrappedInArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot)) {
+    if (is_null(inArgs.get_x_dot_dot())) {
+      wrappedInArgs.set_x_dot_dot(Teuchos::null);
     }
   }
 
