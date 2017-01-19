@@ -8,45 +8,6 @@
 #include <ctime>
 
 
-namespace {
-
-  //static std::string integratorName_name    = "Integrator Name";
-  //static std::string StepperName_name       = "Stepper Name";
-
-  //static std::string integratorType_name    = "Integrator Type";
-  //static std::string integratorType_default = "Integrator Basic";
-
-  //static std::string initTime_name          = "Initial Time";
-  //static double      initTime_default       = 0.0;
-  //static std::string initTimeIndex_name     = "Initial Time Index";
-  //static int         initTimeIndex_default  = 0;
-  //static std::string initTimeStep_name      = "Initial Time Step";
-  //static double      initTimeStep_default   = std::numeric_limits<double>::epsilon();
-  //static std::string initOrder_name         = "Initial Order";
-  //static int         initOrder_default      = 0;
-  //static std::string finalTime_name         = "Final Time";
-  //static double      finalTime_default      = std::numeric_limits<double>::max();
-  //static std::string finalTimeIndex_name    = "Final Time Index";
-  //static int         finalTimeIndex_default = 1000000;
-
-  //static std::string outputScreenTimeList_name     = "Screen Output Time List";
-  //static std::string outputScreenTimeList_default  = "";
-  //static std::string outputScreenIndexList_name    = "Screen Output Index List";
-  //static std::string outputScreenIndexList_default = "";
-  //static std::string outputScreenTimeInterval_name     =
-  //  "Screen Output Time Interval";
-  ////static double      outputScreenTimeInterval_default  = 100.0;
-  //static std::string outputScreenIndexInterval_name    =
-  //  "Screen Output Index Interval";
-  //static int         outputScreenIndexInterval_default = 1000000;
-
-
-  //static std::string SolutionHistory_name     = "Solution History";
-  //static std::string TimeStepControl_name     = "Time Step Control";
-
-} // namespace
-
-
 namespace Tempus {
 
 template<class Scalar>

@@ -5,17 +5,17 @@
     <Parameter name="Coeff a" type="double" value="0.0"/>
     <Parameter name="Coeff f" type="double" value="1.0"/>
     <Parameter name="Coeff L" type="double" value="1.0"/>
-    <Parameter name="IC x_0"  type="double" value="0.0"/>
-    <Parameter name="IC x_1"  type="double" value="1.0"/>
-    <Parameter name="IC t_0"  type="double" value="0.0"/>
+    <Parameter name="IC x0"   type="double" value="0.0"/>
+    <Parameter name="IC x1"   type="double" value="1.0"/>
+    <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
 
     <ParameterList name="Demo Integrator">
       <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
-      <Parameter name="Screen Output Index List"    type="string" value="1"/>
-      <Parameter name="Screen Output Index Interval" type="int"   value="100"/>
+      <Parameter name="Screen Output Index List"     type="string" value="1"/>
+      <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
       <Parameter name="Stepper Name"       type="string" value="Demo Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Unlimited"/>

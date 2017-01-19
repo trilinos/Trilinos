@@ -48,7 +48,7 @@ public:
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
     const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
-    Status & integratorStatus) const;
+    Status & integratorStatus);
 
   /** \brief Check if time is within minimum and maximum time. */
   virtual bool timeInRange(const Scalar time) const;
@@ -93,6 +93,10 @@ public:
   int nConsecutiveFailuresMax_; ///< Maximum number of consecutive stepper failures
 
   Teuchos::RCP<Teuchos::ParameterList> pList_;
+
+  bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
+  Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
+
 };
 } // namespace Tempus
 

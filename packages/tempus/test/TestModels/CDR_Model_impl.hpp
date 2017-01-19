@@ -166,7 +166,7 @@ CDR_Model<Scalar>::createGraph()
     // Loop over Nodes in Element
     for (int i=0; i< 2; i++) {
       row=x_ghosted_map_->GID(ne+i);
-      
+
       // Loop over Trial Functions
       for(int j=0;j < 2; j++) {
 
@@ -206,7 +206,7 @@ set_W_factory(const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Sca
   W_factory_ = W_factory;
 }
 
-// Public functions overridden from ModelEvaulator
+// Public functions overridden from ModelEvaluator
 
 
 template<class Scalar>
@@ -241,15 +241,15 @@ CDR_Model<Scalar>::create_W() const
     this->get_W_factory();
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(W_factory),std::runtime_error,"W_factory in CDR_Model has a null W_factory!");
-  
+
   Teuchos::RCP<Thyra::LinearOpBase<double> > matrix = this->create_W_op();
 
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > W =
     Thyra::linearOpWithSolve<double>(*W_factory,matrix);
-  
+
   return W;
 }
-  
+
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 CDR_Model<Scalar>::create_W_op() const
@@ -294,7 +294,7 @@ CDR_Model<Scalar>::createInArgs() const
 }
 
 
-// Private functions overridden from ModelEvaulatorDefaultBase
+// Private functions overridden from ModelEvaluatorDefaultBase
 
 
 template<class Scalar>
@@ -383,7 +383,7 @@ void CDR_Model<Scalar>::evalModelImpl(
     Basis basis;
     const auto alpha = inArgs.get_alpha();
     const auto beta = inArgs.get_beta();
-    
+
     // Zero out the objects that will be filled
     if (nonnull(f))
       f->PutScalar(0.0);
@@ -397,65 +397,65 @@ void CDR_Model<Scalar>::evalModelImpl(
 
       // Loop Over Gauss Points
       for(int gp=0; gp < 2; gp++) {
-    // Get the solution and coordinates at the nodes
-    xx[0]=x[ne];
-    xx[1]=x[ne+1];
-    uu[0]=u[ne];
-    uu[1]=u[ne+1];
-    uu_dot[0]=u_dot[ne];
-    uu_dot[1]=u_dot[ne+1];
-    // Calculate the basis function at the gauss point
-    basis.computeBasis(gp, xx, uu, uu_dot);
+        // Get the solution and coordinates at the nodes
+        xx[0]=x[ne];
+        xx[1]=x[ne+1];
+        uu[0]=u[ne];
+        uu[1]=u[ne+1];
+        uu_dot[0]=u_dot[ne];
+        uu_dot[1]=u_dot[ne+1];
+        // Calculate the basis function at the gauss point
+        basis.computeBasis(gp, xx, uu, uu_dot);
 
-    // Loop over Nodes in Element
-    for (int i=0; i< 2; i++) {
-      int row=x_ghosted_map_->GID(ne+i);
-      //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-      //     MyPID, row, ne+i,x_owned_map_.MyGID(row));
-      if (x_owned_map_->MyGID(row)) {
-        if (nonnull(f)) {
-          (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne+i))]+=
-            +basis.wt*basis.dz
-            *( basis.uu_dot*basis.phi[i] //transient
-               +(a_/basis.dz*basis.duu*basis.phi[i] // convection
-               +1.0/(basis.dz*basis.dz))*basis.duu*basis.dphide[i] // diffusion
-               +k_*basis.uu*basis.uu*basis.phi[i] ); // source
-        }
-      }
-      // Loop over Trial Functions
-      if (nonnull(J)) {
-        for(int j=0;j < 2; j++) {
+        // Loop over Nodes in Element
+        for (int i=0; i< 2; i++) {
+          int row=x_ghosted_map_->GID(ne+i);
+          //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+          //     MyPID, row, ne+i,x_owned_map_.MyGID(row));
           if (x_owned_map_->MyGID(row)) {
-            int column=x_ghosted_map_->GID(ne+j);
-            double jac=
-              basis.wt*basis.dz*(
-                                 alpha * basis.phi[i] * basis.phi[j] // transient
-                                 + beta * (
-                                           +a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
-                                           +(1.0/(basis.dz*basis.dz))*basis.dphide[j]*basis.dphide[i] // diffusion
-                                           +2.0*k_*basis.uu*basis.phi[j]*basis.phi[i] // source
-                                           )
-                                 );
-            ierr=J->SumIntoGlobalValues(row, 1, &jac, &column);
+            if (nonnull(f)) {
+              (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne+i))]+=
+                +basis.wt*basis.dz
+                *( basis.uu_dot*basis.phi[i] //transient
+                   +(a_/basis.dz*basis.duu*basis.phi[i] // convection
+                   +1.0/(basis.dz*basis.dz))*basis.duu*basis.dphide[i] // diffusion
+                   +k_*basis.uu*basis.uu*basis.phi[i] ); // source
+            }
+          }
+          // Loop over Trial Functions
+          if (nonnull(J)) {
+            for(int j=0;j < 2; j++) {
+              if (x_owned_map_->MyGID(row)) {
+                int column=x_ghosted_map_->GID(ne+j);
+                double jac=
+                  basis.wt*basis.dz*(
+                                     alpha * basis.phi[i] * basis.phi[j] // transient
+                                     + beta * (
+                                               +a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
+                                               +(1.0/(basis.dz*basis.dz))*basis.dphide[j]*basis.dphide[i] // diffusion
+                                               +2.0*k_*basis.uu*basis.phi[j]*basis.phi[i] // source
+                                               )
+                                     );
+                ierr=J->SumIntoGlobalValues(row, 1, &jac, &column);
+              }
+            }
+          }
+          if (nonnull(M_inv)) {
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"CDR_Model: Preconditioner is NOT implemented for transient term yet!!!");
+            for(int j=0;j < 2; j++) {
+              if (x_owned_map_->MyGID(row)) {
+                int column=x_ghosted_map_->GID(ne+j);
+                if (row == column) {
+                  double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
+                                  basis.dphide[j]*basis.dphide[i]
+                                  +2.0*k_*basis.uu*basis.phi[j]*
+                                 basis.phi[i]);
+                  ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
+                }
+              }
+            }
           }
         }
-      }
-      if (nonnull(M_inv)) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"CDR_Model: Preconditioner is NOT implemented for transient term yet!!!");
-        for(int j=0;j < 2; j++) {
-          if (x_owned_map_->MyGID(row)) {
-        int column=x_ghosted_map_->GID(ne+j);
-        if (row == column) {
-          double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
-                          basis.dphide[j]*basis.dphide[i]
-                          +2.0*k_*basis.uu*basis.phi[j]*
-                         basis.phi[i]);
-          ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
-        }
-          }
-        }
-      }
-    }
       }
     }
 
@@ -463,22 +463,22 @@ void CDR_Model<Scalar>::evalModelImpl(
     // U(0)=1
     if (comm_->MyPID() == 0) {
       if (nonnull(f))
-    (*f)[0]= u[0] - 1.0;
+        (*f)[0]= u[0] - 1.0;
       if (nonnull(J)) {
-    int column=0;
-    double jac=1.0;
-    ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
-    column=1;
-    jac=0.0;
-    ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
+        int column=0;
+        double jac=1.0;
+        ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
+        column=1;
+        jac=0.0;
+        ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
       }
       if (nonnull(M_inv)) {
-    int column=0;
-    double jac=1.0;
-    ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
-    column=1;
-    jac=0.0;
-    ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
+        int column=0;
+        double jac=1.0;
+        ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
+        column=1;
+        jac=0.0;
+        ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
       }
     }
 
@@ -490,7 +490,7 @@ void CDR_Model<Scalar>::evalModelImpl(
       M_inv->ExtractDiagonalCopy(*J_diagonal_);
 
       for (int i=0; i < J_diagonal_->MyLength(); ++i)
-    (*J_diagonal_)[i] = 1.0 / ((*J_diagonal_)[i]);
+        (*J_diagonal_)[i] = 1.0 / ((*J_diagonal_)[i]);
 
       M_inv->PutScalar(0.0);
       M_inv->ReplaceDiagonalValues(*J_diagonal_);
@@ -560,5 +560,5 @@ void Basis::computeBasis(int gp, double *z, double *u, double *u_dot) {
 }
 
 } // namespace Tempus_Test
-  
+
 #endif

@@ -59,7 +59,7 @@ public:
 
   //@}
 
-  /** \name Public functions overridden from ModelEvaulator. */
+  /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
@@ -77,7 +77,7 @@ private:
   /** Allocates and returns the Jacobian matrix graph */
   virtual Teuchos::RCP<Epetra_CrsGraph> createGraph();
 
-  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
 
   /** \brief . */
@@ -153,5 +153,5 @@ class Basis {
 };
 
 } // namespace Tempus_Test
-  
+
 #endif

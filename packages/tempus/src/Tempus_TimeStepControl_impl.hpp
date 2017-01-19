@@ -8,79 +8,12 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 
-namespace {
-
-  //static std::string timeMin_name    = "Minimum Simulation Time";
-  //static double      timeMin_default = 0.0;
-
-  //static std::string timeMax_name    = "Maximum Simulation Time";
-  //static double      timeMax_default = std::numeric_limits<double>::max();
-
-  //static std::string dtMin_name    = "Minimum Time Step";
-  //static double      dtMin_default = std::numeric_limits<double>::epsilon();
-
-  //static std::string dtMax_name    = "Maximum Time Step";
-  //static double      dtMax_default = std::numeric_limits<double>::max();
-
-  //static std::string iStepMin_name    = "Minimum Time Step Index";
-  //static int         iStepMin_default = 0;
-
-  //static std::string iStepMax_name    = "Maximum Time Step Index";
-  //static int         iStepMax_default = 1000000;
-
-  //static std::string errorMaxAbs_name    = "Maximum Absolute Error";
-  //static double      errorMaxAbs_default = 1.0e-08;
-
-  //static std::string errorMaxRel_name    = "Maximum Relative Error";
-  //static double      errorMaxRel_default = 1.0e-08;
-
-  //static std::string orderMin_name    = "Minimum Time Integration Order";
-  //static int         orderMin_default = 1;
-
-  //static std::string orderMax_name    = "Maximum Time Integration Order";
-  //static int         orderMax_default = 4;
-
-  //static std::string Constant_name    = "Constant";
-  //static std::string Variable_name    = "Variable";
-  //static std::string stepType_name    = "Integrator Step Type";
-  //static std::string stepType_default = Variable_name;
-
-  //std::vector<std::string> stepType_names = {Constant_name, Variable_name};
-
-  //const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
-  //  stepTypeValidator = Teuchos::rcp(
-  //      new Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType>(
-  //        stepType_names,
-  //        Teuchos::tuple<Tempus::StepType>(
-  //          Tempus::CONSTANT_STEP_SIZE,
-  //          Tempus::VARIABLE_STEP_SIZE),
-  //        stepType_name));
-
-  //static std::string outputTimeList_name         = "Output Time List";
-  //static std::string outputTimeList_default      = "";
-  //static std::string outputIndexList_name        = "Output Index List";
-  //static std::string outputIndexList_default     = "";
-  //static std::string outputTimeInterval_name     = "Output Time Interval";
-  //static double      outputTimeInterval_default  =
-  //  std::numeric_limits<double>::max();
-  //static std::string outputIndexInterval_name    = "Output Index Interval";
-  //static int         outputIndexInterval_default = 1000000;
-
-  //static std::string nFailuresMax_name    =
-  //  "Maximum Number of Stepper Failures";
-  //static int         nFailuresMax_default = 10.0;
-  //static std::string nConsecutiveFailuresMax_name    =
-  //  "Maximum Number of Consecutive Stepper Failures";
-  //static int         nConsecutiveFailuresMax_default = 5;
-
-} // namespace
-
-
 namespace Tempus {
 
 // TimeStepControl definitions:
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl()
+  : outputAdjustedDt_(false), dtAfterOutput_(0.0)
 {
   pList_->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setParameterList(pList_);
@@ -89,37 +22,40 @@ TimeStepControl<Scalar>::TimeStepControl()
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(
   Teuchos::RCP<Teuchos::ParameterList> pList)
+  : outputAdjustedDt_(false), dtAfterOutput_(0.0)
 {
   this->setParameterList(pList);
 }
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
-  : timeMin_      (tsc_.timeMin_    ),
-    timeMax_      (tsc_.timeMax_    ),
-    dtMin_        (tsc_.dtMin_      ),
-    dtInit_       (tsc_.dtInit_     ),
-    dtMax_        (tsc_.dtMax_      ),
-    iStepMin_     (tsc_.iStepMin_   ),
-    iStepMax_     (tsc_.iStepMax_   ),
-    errorMaxAbs_  (tsc_.errorMaxAbs_),
-    errorMaxRel_  (tsc_.errorMaxRel_),
-    orderMin_     (tsc_.orderMin_   ),
-    orderInit_    (tsc_.orderInit_  ),
-    orderMax_     (tsc_.orderMax_   ),
-    stepType_     (tsc_.stepType_   ),
-    outputIndices_(tsc_.outputIndices_),
-    outputTimes_  (tsc_.outputTimes_),
-    nFailuresMax_ (tsc_.nFailuresMax_),
+  : timeMin_                (tsc_.timeMin_                ),
+    timeMax_                (tsc_.timeMax_                ),
+    dtMin_                  (tsc_.dtMin_                  ),
+    dtInit_                 (tsc_.dtInit_                 ),
+    dtMax_                  (tsc_.dtMax_                  ),
+    iStepMin_               (tsc_.iStepMin_               ),
+    iStepMax_               (tsc_.iStepMax_               ),
+    errorMaxAbs_            (tsc_.errorMaxAbs_            ),
+    errorMaxRel_            (tsc_.errorMaxRel_            ),
+    orderMin_               (tsc_.orderMin_               ),
+    orderInit_              (tsc_.orderInit_              ),
+    orderMax_               (tsc_.orderMax_               ),
+    stepType_               (tsc_.stepType_               ),
+    outputIndices_          (tsc_.outputIndices_          ),
+    outputTimes_            (tsc_.outputTimes_            ),
+    nFailuresMax_           (tsc_.nFailuresMax_           ),
     nConsecutiveFailuresMax_(tsc_.nConsecutiveFailuresMax_),
-    pList_        (tsc_.pList_      )
+    pList_                  (tsc_.pList_                  ),
+    outputAdjustedDt_       (tsc_.outputAdjustedDt_       ),
+    dtAfterOutput_          (tsc_.dtAfterOutput_          )
 {}
 
 
 template<class Scalar>
 void TimeStepControl<Scalar>::getNextTimeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
-  Status & integratorStatus) const
+  Status & integratorStatus)
 {
   using Teuchos::RCP;
 
@@ -139,16 +75,25 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     output = false;
 
+    // If last time step was adjusted for output, reinstate previous dt.
+    if (outputAdjustedDt_ == true) {
+      dt = dtAfterOutput_;
+      outputAdjustedDt_ = false;
+      dtAfterOutput_ = 0.0;
+    }
+
     if (dt < dtMin_) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"getNextTimeStep");
       *out << "Warning - Time step size (=" << dt << ") is less than\n"
-           << "  minimum time step size (=" << dtMin_ << ")\n."
+           << "  minimum time step size (=" << dtMin_ << ").\n"
            << "  Resetting to minimum time step size." << std::endl;
       dt = dtMin_;
     }
 
     if (stepType_ == "Constant") {
+
+      dt = dtInit_;
 
       // Stepper failure
       if (stepperState->stepperStatus_ == Status::FAILED) {
@@ -220,21 +165,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         }
       }
 
-      const Scalar relTol = 1.0e-14;
-      if (time+dt < timeMin_*(1.0-relTol) || time+dt > timeMax_*(1.0+relTol)) {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out <<"Warning - Time step moves time outside desired time range.\n"
-             <<"  [timeMin, timeMax] = [" << timeMin_ <<", "<< timeMax_ << "]\n"
-             <<"  T + dt = "<< time <<" + "<< dt<<" = "<< time + dt <<"\n";
-        output = true;
-      }
-
       // Consistency checks
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (dt != dtInit_), std::out_of_range,
-        "Error - ( dt = "<< dt <<") != ( dtInit = "<< dtInit_ <<" )!\n");
-
       TEUCHOS_TEST_FOR_EXCEPTION(
         (order < orderMin_ || order > orderMax_), std::out_of_range,
         "Error - Solution order is out of range and can not change "
@@ -254,37 +185,56 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
       if (dt < dtMin_) dt = dtMin_;
       if (dt > dtMax_) dt = dtMax_;
-
-      if (time + dt > timeMax_ ) dt = timeMax_ - time;
-
-      // Consistency checks
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (time + dt < timeMin_), std::out_of_range,
-        "Error - Time step does not move time INTO time range.\n"
-        "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
-        "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (time + dt > timeMax_), std::out_of_range,
-        "Error - Time step move time OUT OF time range.\n"
-        "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
-        "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
     }
 
-    // Check if we need to output this step
+    // Adjust time step to hit final time or correct for small
+    // numerical differences.
+    Scalar reltol = 1.0e-6;
+    if ((time + dt > timeMax_ ) ||
+        (std::abs((time+dt-timeMax_)/(time+dt)) < reltol))
+      dt = timeMax_ - time;
+
+    // Check if we need to output this step index
     std::vector<int>::const_iterator it =
       std::find(outputIndices_.begin(), outputIndices_.end(), iStep+1);
     if (it != outputIndices_.end()) output = true;
 
-    if (!output) {
-      for (size_t i=0; i < outputTimes_.size(); ++i) {
-        if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
-          output = true;
-          if (stepType_ == "Variable") dt = outputTimes_[i] - time;
-          break;
+    // Adjust time step to hit output times.
+    for (size_t i=0; i < outputTimes_.size(); ++i) {
+      const Scalar oTime = outputTimes_[i];
+      if (time < oTime && oTime <= time+dt+dtMin_) {
+        output = true;
+        outputAdjustedDt_ = true;
+        dtAfterOutput_ = dt;
+        if (time < oTime && oTime <= time+dt-dtMin_) {
+          // Next output time is not near next time (>dtMin_ away from it).
+          // Take time step to hit output time.
+          dt = oTime - time;
+        } else if (std::abs((time+dt-oTime)/(time+dt)) < reltol) {
+          // Next output time IS VERY near next time (<reltol away from it),
+          // e.g., adjust for numerical roundoff.
+          dt = oTime - time;
+        } else if (time+dt-dtMin_ < oTime && oTime <= time+dt+dtMin_) {
+          // Next output time IS near next time (<dtMin_ away from it).
+          // Take two time steps to get to next output time.
+          dt = (oTime - time)/2.0;
         }
+        break;
       }
     }
+
+    // Time step always needs to keep time within range.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (time + dt < timeMin_), std::out_of_range,
+      "Error - Time step does not move time INTO time range.\n"
+      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (time + dt > timeMax_), std::out_of_range,
+      "Error - Time step move time OUT OF time range.\n"
+      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
 
     metaData_->setOrder(order);
     metaData_->setDt(dt);

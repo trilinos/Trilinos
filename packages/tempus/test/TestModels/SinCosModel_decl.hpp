@@ -97,7 +97,7 @@ class SinCosModel
   // Exact sensitivity solution
   ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
 
-  /** \name Public functions overridden from ModelEvaulator. */
+  /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
@@ -124,7 +124,7 @@ private:
 
   void setupInOutArgs_() const;
 
-  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(

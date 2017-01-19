@@ -1,5 +1,5 @@
-#ifndef TEMPUS_TEST_SINCOS_MODEL_IMPL_HPP
-#define TEMPUS_TEST_SINCOS_MODEL_IMPL_HPP
+#ifndef TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
+#define TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -22,22 +22,20 @@ using Thyra::VectorBase;
 namespace Tempus_Test {
 
 template<class Scalar>
-SinCosModel<Scalar>::
-SinCosModel(RCP<ParameterList> pList_)
+VanDerPolModel<Scalar>::
+VanDerPolModel(RCP<ParameterList> pList_)
 {
   isInitialized_ = false;
   dim_ = 2;
   Np_ = 1; // Number of parameter vectors (1)
-  np_ = 3; // Number of parameters in this vector (3)
-  Ng_ = 1; // Number of observation functions (1)
-  ng_ = 1; // Number of elements in this observation function (1)
+  np_ = 1; // Number of parameters in this vector (1)
+  Ng_ = 0; // Number of observation functions (0)
+  ng_ = 0; // Number of elements in this observation function (0)
   acceptModelParams_ = false;
   haveIC_ = true;
-  a_ = 0.0;
-  f_ = 1.0;
-  L_ = 1.0;
-  x0_ic_ = 0.0;
-  x1_ic_ = 1.0;
+  epsilon_ = 1.0e-06;
+  x0_ic_ = 2.0;
+  x1_ic_ = 0.0;
   t0_ic_ = 0.0;
 
   // Create x_space and f_space
@@ -52,91 +50,27 @@ SinCosModel(RCP<ParameterList> pList_)
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 getExactSolution(double t) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
-      "Error, setupInOutArgs_ must be called first!\n");
-  ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
-  double exact_t = t;
-  inArgs.set_t(exact_t);
-  RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
-  { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    exact_x_view[0] = a_+b_*sin((f_/L_)*t+phi_);
-    exact_x_view[1] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
-  }
-  inArgs.set_x(exact_x);
-  RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
-  { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
-    exact_x_dot_view[0] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
-    exact_x_dot_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t+phi_);
-  }
-  inArgs.set_x_dot(exact_x_dot);
-  return(inArgs);
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      "Error - No exact solution for van der Pol problem!\n");
+  return(inArgs_);
 }
 
-//
-// 06/24/09 tscoffe:
-// These are the exact sensitivities for the problem assuming the initial conditions are specified as:
-//    s(0) = [1;0]    s(1) = [0;b/L]                 s(2) = [0;-b*f/(L*L)]
-// sdot(0) = [0;0] sdot(1) = [0;-3*f*f*b/(L*L*L)] sdot(2) = [0;3*f*f*f*b/(L*L*L*L)]
-//
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 getExactSensSolution(int j, double t) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
-      "Error, setupInOutArgs_ must be called first!\n");
-  ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
-  if (!acceptModelParams_) {
-    return inArgs;
-  }
-  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
-  double exact_t = t;
-  Scalar b = b_;
-  Scalar f = f_;
-  Scalar L = L_;
-  Scalar phi = phi_;
-  inArgs.set_t(exact_t);
-  RCP<VectorBase<Scalar> > exact_s = createMember(x_space_);
-  { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<Scalar> exact_s_view(*exact_s);
-    if (j == 0) { // dx/da
-      exact_s_view[0] = 1.0;
-      exact_s_view[1] = 0.0;
-    } else if (j == 1) { // dx/df
-      exact_s_view[0] = (b/L)*t*cos((f/L)*t+phi);
-      exact_s_view[1] = (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi);
-    } else { // dx/dL
-      exact_s_view[0] = -(b*f*t/(L*L))*cos((f/L)*t+phi);
-      exact_s_view[1] = -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi);
-    }
-  }
-  inArgs.set_x(exact_s);
-  RCP<VectorBase<Scalar> > exact_s_dot = createMember(x_space_);
-  { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<Scalar> exact_s_dot_view(*exact_s_dot);
-    if (j == 0) { // dxdot/da
-      exact_s_dot_view[0] = 0.0;
-      exact_s_dot_view[1] = 0.0;
-    } else if (j == 1) { // dxdot/df
-      exact_s_dot_view[0] = (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi);
-      exact_s_dot_view[1] = -(2.0*b*f/(L*L))*sin((f/L)*t+phi)-(b*f*f*t/(L*L*L))*cos((f/L)*t+phi);
-    } else { // dxdot/dL
-      exact_s_dot_view[0] = -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi);
-      exact_s_dot_view[1] = (2.0*b*f*f/(L*L*L))*sin((f/L)*t+phi)+(b*f*f*f*t/(L*L*L*L))*cos((f/L)*t+phi);
-    }
-  }
-  inArgs.set_x_dot(exact_s_dot);
-  return(inArgs);
+      "Error - No exact sensitivities for van der Pol problem!\n");
+  return(inArgs_);
 }
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_x_space() const
 {
   return x_space_;
@@ -145,7 +79,7 @@ get_x_space() const
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_f_space() const
 {
   return f_space_;
@@ -154,7 +88,7 @@ get_f_space() const
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 getNominalValues() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -165,7 +99,7 @@ getNominalValues() const
 
 template<class Scalar>
 RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 create_W() const
 {
   RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
@@ -194,23 +128,15 @@ create_W() const
     }
   }
   RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
-    Thyra::linearOpWithSolve<Scalar>(
-      *W_factory,
-      matrix
-      );
+    Thyra::linearOpWithSolve<Scalar>(*W_factory, matrix);
+
   return W;
 }
-//RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-//SinCosModel<Scalar>::
-//create_W() const
-//{
-//  return Thyra::multiVectorLinearOpWithSolve<Scalar>();
-//}
 
 
 template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 create_W_op() const
 {
   RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
@@ -220,29 +146,18 @@ create_W_op() const
 
 template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_W_factory() const
 {
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
-//  RCP<const Thyra::LinearOpBase<Scalar> > fwdOp = this->create_W_op();
-//  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
-//    Thyra::linearOpWithSolve<Scalar>(
-//      *W_factory,
-//      fwdOp
-//      );
-//  W_factory->initializeOp(
-//      Thyra::defaultLinearOpSource<Scalar>(fwdOp),
-//      &*W,
-//      Thyra::SUPPORT_SOLVE_UNSPECIFIED
-//      );
 
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 createInArgs() const
 {
   setupInOutArgs_();
@@ -255,7 +170,7 @@ createInArgs() const
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 createOutArgsImpl() const
 {
   setupInOutArgs_();
@@ -265,7 +180,7 @@ createOutArgsImpl() const
 
 template<class Scalar>
 void
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 evalModelImpl(
   const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
@@ -278,16 +193,12 @@ evalModelImpl(
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
-  Scalar a = a_;
-  Scalar f = f_;
-  Scalar L = L_;
+  Scalar epsilon = epsilon_;
   if (acceptModelParams_) {
     const RCP<const VectorBase<Scalar> > p_in =
       inArgs.get_p(0).assert_not_null();
     Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
-    a = p_in_view[0];
-    f = p_in_view[1];
-    L = p_in_view[2];
+    epsilon = p_in_view[0];
   }
 
   Scalar beta = inArgs.get_beta();
@@ -306,26 +217,27 @@ evalModelImpl(
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       f_out_view[0] = x_in_view[1];
-      f_out_view[1] = (f/L)*(f/L)*(a-x_in_view[0]);
+      f_out_view[1] =
+        ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])/epsilon;
     }
     if (!is_null(W_out)) {
       RCP<Thyra::MultiVectorBase<Scalar> > matrix =
         Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
       Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
-      matrix_view(0,0) = 0.0;               // d(f0)/d(x0_n)
-      matrix_view(0,1) = +beta;             // d(f0)/d(x1_n)
-      matrix_view(1,0) = -beta*(f/L)*(f/L); // d(f1)/d(x0_n)
-      matrix_view(1,1) = 0.0;               // d(f1)/d(x1_n)
+      matrix_view(0,0) = 0.0;                              // d(f0)/d(x0_n)
+      matrix_view(0,1) = +beta;                            // d(f0)/d(x1_n)
+      matrix_view(1,0) =
+        -beta*(2.0*x_in_view[0]*x_in_view[1]+1.0)/epsilon; // d(f1)/d(x0_n)
+      matrix_view(1,1) =
+         beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon;   // d(f1)/d(x1_n)
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(0,1) = 0.0;
-      DfDp_out_view(0,2) = 0.0;
-      DfDp_out_view(1,0) = (f/L)*(f/L);
-      DfDp_out_view(1,1) = (2.0*f/(L*L))*(a-x_in_view[0]);
-      DfDp_out_view(1,2) = -(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
+      DfDp_out_view(1,0) =
+        -((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])
+           /(epsilon*epsilon);
     }
   } else {
 
@@ -337,33 +249,34 @@ evalModelImpl(
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in );
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
-      f_out_view[1] = x_dot_in_view[1] - (f/L)*(f/L)*(a-x_in_view[0]);
+      f_out_view[1] = x_dot_in_view[1]
+        - ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])/epsilon;
     }
     if (!is_null(W_out)) {
       RCP<Thyra::MultiVectorBase<Scalar> > matrix =
         Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
       Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
-      matrix_view(0,0) = alpha;             // d(f0)/d(x0_n)
-      matrix_view(0,1) = -beta;             // d(f0)/d(x1_n)
-      matrix_view(1,0) = +beta*(f/L)*(f/L); // d(f1)/d(x0_n)
-      matrix_view(1,1) = alpha;             // d(f1)/d(x1_n)
+      matrix_view(0,0) = alpha;                             // d(f0)/d(x0_n)
+      matrix_view(0,1) = -beta;                             // d(f0)/d(x1_n)
+      matrix_view(1,0) =
+          beta*(2.0*x_in_view[0]*x_in_view[1]+1.0)/epsilon; // d(f1)/d(x0_n)
+      matrix_view(1,1) = alpha
+        - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon;   // d(f1)/d(x1_n)
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(0,1) = 0.0;
-      DfDp_out_view(0,2) = 0.0;
-      DfDp_out_view(1,0) = -(f/L)*(f/L);
-      DfDp_out_view(1,1) = -(2.0*f/(L*L))*(a-x_in_view[0]);
-      DfDp_out_view(1,2) = +(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
+      DfDp_out_view(1,0) =
+        ((1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0])
+          /(epsilon*epsilon);
     }
   }
 }
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_p_space(int l) const
 {
   if (!acceptModelParams_) {
@@ -375,7 +288,7 @@ get_p_space(int l) const
 
 template<class Scalar>
 RCP<const Teuchos::Array<std::string> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_p_names(int l) const
 {
   if (!acceptModelParams_) {
@@ -384,15 +297,13 @@ get_p_names(int l) const
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
   RCP<Teuchos::Array<std::string> > p_strings =
     rcp(new Teuchos::Array<std::string>());
-  p_strings->push_back("Model Coefficient:  a");
-  p_strings->push_back("Model Coefficient:  f");
-  p_strings->push_back("Model Coefficient:  L");
+  p_strings->push_back("Model Coefficient:  epsilon");
   return p_strings;
 }
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 get_g_space(int j) const
 {
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
@@ -403,7 +314,7 @@ get_g_space(int j) const
 
 template<class Scalar>
 void
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 setupInOutArgs_() const
 {
   if (isInitialized_) {
@@ -447,25 +358,23 @@ setupInOutArgs_() const
     const RCP<VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
-      x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
-      x_ic_view[1] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
+      x_ic_view[0] = x0_ic_;
+      x_ic_view[1] = x1_ic_;
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
       const RCP<VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
-        p_ic_view[0] = a_;
-        p_ic_view[1] = f_;
-        p_ic_view[2] = L_;
+        p_ic_view[0] = epsilon_;
       }
       nominalValues_.set_p(0,p_ic);
     }
     const RCP<VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
-      x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
-      x_dot_ic_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t0_ic_+phi_);
+      x_dot_ic_view[0] = x1_ic_;
+      x_dot_ic_view[1] = ((1.0-x0_ic_*x0_ic_)*x1_ic_-x0_ic_)/epsilon_;
     }
     nominalValues_.set_x_dot(x_dot_ic);
   }
@@ -476,11 +385,11 @@ setupInOutArgs_() const
 
 template<class Scalar>
 void
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  RCP<ParameterList> tmpPL = rcp(new ParameterList("SinCosModel"));
+  RCP<ParameterList> tmpPL = rcp(new ParameterList("VanDerPolModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
@@ -494,19 +403,16 @@ setParameterList(RCP<ParameterList> const& paramList)
   }
   acceptModelParams_ = acceptModelParams;
   haveIC_ = haveIC;
-  a_ = get<Scalar>(*pl,"Coeff a");
-  f_ = get<Scalar>(*pl,"Coeff f");
-  L_ = get<Scalar>(*pl,"Coeff L");
+  epsilon_ = get<Scalar>(*pl,"Coeff epsilon");
   x0_ic_ = get<Scalar>(*pl,"IC x0");
   x1_ic_ = get<Scalar>(*pl,"IC x1");
   t0_ic_ = get<Scalar>(*pl,"IC t0");
-  calculateCoeffFromIC_();
   setupInOutArgs_();
 }
 
 template<class Scalar>
 RCP<const ParameterList>
-SinCosModel<Scalar>::
+VanDerPolModel<Scalar>::
 getValidParameters() const
 {
   static RCP<const ParameterList> validPL;
@@ -515,15 +421,11 @@ getValidParameters() const
     pl->set("Accept model parameters", false);
     pl->set("Provide nominal values", true);
     Teuchos::setDoubleParameter(
-        "Coeff a", 0.0, "Coefficient a in model", &*pl);
+        "Coeff epsilon", 1.0e-06, "Coefficient a in model", &*pl);
     Teuchos::setDoubleParameter(
-        "Coeff f", 1.0, "Coefficient f in model", &*pl);
+        "IC x0", 2.0, "Initial Condition for x0", &*pl);
     Teuchos::setDoubleParameter(
-        "Coeff L", 1.0, "Coefficient L in model", &*pl);
-    Teuchos::setDoubleParameter(
-        "IC x0", 0.0, "Initial Condition for x0", &*pl);
-    Teuchos::setDoubleParameter(
-        "IC x1", 1.0, "Initial Condition for x1", &*pl);
+        "IC x1", 0.0, "Initial Condition for x1", &*pl);
     Teuchos::setDoubleParameter(
         "IC t0", 0.0, "Initial time t0", &*pl);
     validPL = pl;
@@ -531,14 +433,5 @@ getValidParameters() const
   return validPL;
 }
 
-template<class Scalar>
-void
-SinCosModel<Scalar>::
-calculateCoeffFromIC_()
-{
-  phi_ = atan(((f_/L_)/x1_ic_)*(x0_ic_-a_))-(f_/L_)*t0_ic_;
-  b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));
-}
-
 } // namespace Tempus_Test
-#endif // TEMPUS_TEST_SINCOS_MODEL_IMPL_HPP
+#endif // TEMPUS_TEST_VANDERPOL_MODEL_IMPL_HPP
