@@ -270,12 +270,12 @@ public:
    * \brief Returns the team size, either set by the user or suggested by the handle.
    * \param vector_size: suggested vector size by the handle.
    */
-  int get_suggested_team_size(const int vector_size){
+  int get_suggested_team_size(const int vector_size_){
     if (this->suggested_team_size != -1){
       return this->suggested_team_size;
     }
     else {
-      return KokkosKernels::Experimental::Util::kk_get_suggested_team_size(vector_size, my_exec_space);
+      return KokkosKernels::Experimental::Util::kk_get_suggested_team_size(vector_size_, my_exec_space);
     }
   }
 
