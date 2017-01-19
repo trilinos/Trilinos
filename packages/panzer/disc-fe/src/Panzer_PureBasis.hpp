@@ -113,7 +113,13 @@ namespace panzer {
     { return element_space_; }
 
     bool requiresOrientations() const
-    { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
+    { 
+#if defined(__KK__)
+      return intrepid_basis_->requireOrientation(); 
+#else 
+      return getElementSpace()==HCURL || getElementSpace()==HDIV; 
+#endif
+    }
 
     bool supportsGrad() const
     { return getElementSpace()==HGRAD; }
