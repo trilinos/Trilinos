@@ -52,8 +52,12 @@
 // Kokkos includes
 #include "Kokkos_DynRankView.hpp"
 
+// Phalanx includes
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 // Panzer includes
 #include "Panzer_ConnManager.hpp"
+#include "Panzer_FieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // Ioss includes
@@ -194,6 +198,19 @@ public:
 
     virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockId) const
     { return *(neighborElementBlocks_.find(blockId)->second); }
+
+    /** Get the coordinates (with local cell ids) for a specified element block and field pattern.
+      *
+      * \param[in] blockId Block containing the cells
+      * \param[in] coordProvider Field pattern that builds the coordinates
+      * \param[out] localCellIds Local cell Ids (indices)
+      * \param[out] Resizable field container that contains the coordinates
+      *             of the points on exit.
+      */
+    virtual void getDofCoords(const std::string & blockId,
+                              const panzer::Intrepid2FieldPattern & coordProvider,
+                              std::vector<LocalOrdinal> & localCellIds,
+                              Kokkos::DynRankView<double,PHX::Device> & points) const;
 
      /** Get IOSS mesh database that this connection manager is built on.
        */

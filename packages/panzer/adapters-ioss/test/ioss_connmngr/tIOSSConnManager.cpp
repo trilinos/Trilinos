@@ -48,27 +48,19 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
-//#include "Teuchos_GlobalMPISession.hpp"
-//#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "PanzerCore_config.hpp"
 #include "PanzerAdaptersIOSS_config.hpp"
 #include "Panzer_IOSSConnManager.hpp"
 
-//#include "Panzer_STK_Version.hpp"
-//#include "PanzerAdaptersSTK_config.hpp"
-//#include "Panzer_STK_Interface.hpp"
-//#include "Panzer_STK_SquareQuadMeshFactory.hpp"
-//#include "Panzer_IntrepidFieldPattern.hpp"
-//#include "Panzer_STKConnManager.hpp"
-//#include "Panzer_Intrepid_ConstBasis.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Shards_BasicTopologies.hpp"
-
-//#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-//#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Ionit_Initializer.h"
 #include "Ioss_DBUsage.h"
@@ -101,21 +93,18 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	//int np = comm.getSize(); // number of processors
 	//int rank = comm.getRank(); // processor rank
 
+	typedef Kokkos::Experimental::DynRankView<double, PHX::Device> FieldContainer;
 
-	std::string filename = "my_ioss_db_test.exo";
+	std::string filename = "rectangle.pg";
 
     //Kokkos::initialize(argc, argv);
 
     Ioss::Init::Initializer();
 
-    Ioss::PropertyManager database_props;
+    Ioss::PropertyManager databaseProps;
 
-    Ioss::Property decomp_prop("DECOMPOSITION_METHOD", "LINEAR");
-    database_props.add(decomp_prop);
-
-    Ioss::DatabaseIO * iossMeshDB = Ioss::IOFactory::create("exodus", filename,
-    		Ioss::READ_MODEL, MPI_COMM_WORLD, database_props);
-
+    Ioss::DatabaseIO * iossMeshDB = Ioss::IOFactory::create("pamgen", filename,
+    		Ioss::READ_MODEL, MPI_COMM_WORLD, databaseProps);
 
     // Create the connectivity manager.
     IOSSConnManager<int> connManager(iossMeshDB);
@@ -130,7 +119,8 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 
     // Build clone
     // Calling noConnectivityClone() causes a runtime error. Still need to fix this.
-    Teuchos::RCP<panzer::ConnManagerBase<int>> clone = connManager.noConnectivityClone();
+    std::string databaseType = "pamgen";
+    Teuchos::RCP<panzer::ConnManagerBase<int>> clone = connManager.noConnectivityClone(databaseType, databaseProps);
 
     // Build connectivity of the clone
     clone->buildConnectivity(*iossNodalFP);
@@ -188,6 +178,32 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
         output << conn[subcell] << ", ";
       }
       output << std::endl;
+    }
+
+    TEST_EQUALITY(elementBlockTopologies[0],shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4>>()));
+    RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device,double,double>);
+    RCP<const panzer::Intrepid2FieldPattern> intrepid2fp = rcp(new panzer::Intrepid2FieldPattern(basis));
+    std::vector<int> localCellIds;
+    FieldContainer points;
+    std::string elementBlockId;
+    int localCellId;
+    for (size_t block = 0; block < connManager.numElementBlocks(); ++block) {
+      elementBlockId = elementBlockIds[block];
+      output << "Coordinates for element block " << elementBlockId << ":" << std::endl;
+      connManager.getDofCoords(elementBlockId, *intrepid2fp, localCellIds, points);
+      for (size_t el = 0; el < localCellIds.size(); ++el) {
+    	localCellId = localCellIds[el];
+        output << "local element " << localCellId << ": " << std::endl;
+        size = connManager.getConnectivitySize(localCellId);
+        conn = connManager.getConnectivity(localCellId);
+        for (size_t node = 0; node < size; ++node) {
+          output << "   node " << conn[node] << ": (";
+          for (size_t k = 0; k < blockTopologies[block].getDimension(); ++k) {
+            output << points(el, node, k) << ", ";
+          }
+          output << ")" << std::endl;
+        }
+      }
     }
 
     //Kokkos::finalize();

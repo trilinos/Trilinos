@@ -46,7 +46,12 @@
 #include <vector>
 #include <algorithm>
 
+// MPI includes
+#include <mpi.h>
+
 // Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_EReductionType.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -57,15 +62,18 @@
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
+// Phalanx includes
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 // Panzer includes
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 //#include "Panzer_STK_PeriodicBC_Matcher.hpp"
 //#include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_FieldPattern.hpp"
-#include "Panzer_NodalFieldPattern.hpp"
 
 // Ioss includes
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_Region.h"
@@ -135,6 +143,71 @@ std::string IOSSConnManager<GO>::getBlockId(LocalOrdinal localElmtId) const {
      "Could not find blockId for local element" << localElmtId
 	 << ", global element " << elmtLidToGid_[localElmtId] << ".");
    return blockId;
+}
+
+template <typename GO>
+void IOSSConnManager<GO>::getDofCoords(const std::string & blockId,
+                                       const panzer::Intrepid2FieldPattern & coordProvider,
+                                       std::vector<LocalOrdinal> & localCellIds,
+                                       Kokkos::DynRankView<double,PHX::Device> & points) const {
+
+  // Note: This method only works when the original FieldPattern used in buildConnectivity()
+  //       was a NodalFieldPattern. When the code is generalized to allow any field pattern,
+  //       this method will need to be rewritten, since only nodal information is obtained
+  //       from IOSS.
+
+  int dim = coordProvider.getDimension();
+  int numIdsPerElement = coordProvider.numberIds();
+
+  // Get the number of topological ids per element
+  int numTopoIdsPerElement = connSize_[0];
+  for (size_t el = 0; el < connSize_.size(); ++el) {
+    TEUCHOS_TEST_FOR_EXCEPTION(connSize_[el] != numTopoIdsPerElement, std::logic_error,
+	     		               "Error, connSize[0] = " << connSize_[0]
+							<< ", but connSize[" << el << "] = " << connSize_[el] << std::endl
+							<< ", but getDofCoords can only be used for constant connSize_.");
+  }
+
+  // Get the local Cell Ids
+  localCellIds = getElementBlock(blockId);
+  int numElements = localCellIds.size();
+
+  // Get the DOF Coordinates
+  std::vector<int> iossNodeBlockNodeIds;
+  std::vector<double> iossNodeBlockCoordinates;
+  std::vector<double> iossNodeCoordinates(dim);
+  static bool createdIossNodeIdToCoordinateMap = false;
+  static std::map<GlobalOrdinal, std::vector<double>> iossNodeIdToCoordinateMap;
+  if (!createdIossNodeIdToCoordinateMap) {
+    for (Ioss::NodeBlock * NodeBlock : iossNodeBlocks_) {
+      NodeBlock->get_field_data("ids", iossNodeBlockNodeIds);
+      NodeBlock->get_field_data("mesh_model_coordinates", iossNodeBlockCoordinates);
+      for (size_t node = 0; node < iossNodeBlockNodeIds.size(); ++node) {
+        for (int k = 0; k < dim; ++k) {
+          iossNodeCoordinates[k] = iossNodeBlockCoordinates[node*dim+k];
+        }
+        iossNodeIdToCoordinateMap[GlobalOrdinal(iossNodeBlockNodeIds[node])] = iossNodeCoordinates;
+      }
+    }
+    createdIossNodeIdToCoordinateMap = true;
+  }
+
+  // Get element vertices
+  Kokkos::DynRankView<double,PHX::Device> vertices("vertices",numElements,numTopoIdsPerElement,dim);
+  LocalOrdinal offset;
+  for (LocalOrdinal element = 0; element < numElements; ++element) {
+	offset = elmtLidToConn_[localCellIds[element]];
+	for (LocalOrdinal id = 0; id < numTopoIdsPerElement; ++id) {
+	  iossNodeCoordinates = iossNodeIdToCoordinateMap[connectivity_[offset+id]];
+	  for (LocalOrdinal k = 0; k < dim; ++k) {
+        vertices(element,id,k) = iossNodeCoordinates[k];
+	  }
+	}
+  }
+
+  // setup output array
+  points = Kokkos::DynRankView<double,PHX::Device>("points",numElements,numIdsPerElement,dim);
+  coordProvider.getInterpolatoryCoordinates(vertices,points);
 }
 
 template <typename GO>
@@ -290,16 +363,19 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
 	}
   }
 
-  // Placeholder code. Need access to global communicator for reduceAll.
-  // Requiring the communicator changes the class's interface.
-  // get the global maximum node, edge, and face numbers
-  //Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &localmaxNodeId, &maxNodeId); // Need to cast to char*
-  //Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &localmaxEdgeId, &maxEdgeId); // Need to cast to char*
-  //Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &localmaxFaceId, &maxFaceId); // Need to cast to char*
-  maxNodeId = localmaxNodeId;
-  maxEdgeId = localmaxEdgeId;
-  maxFaceId = localmaxFaceId;
+#ifdef HAVE_MPI
+  Ioss::ParallelUtils util = iossMeshDB_->util();
+  MPI_Comm communicator = util.communicator();
+  Teuchos::MpiComm<int> comm(communicator);
 
+  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxNodeId, &maxNodeId);
+  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxEdgeId, &maxEdgeId);
+  Teuchos::reduceAll<int, GlobalOrdinal>(comm, Teuchos::REDUCE_MAX, 1, &localmaxFaceId, &maxFaceId);
+#else
+  maxNodeId = localmaxNodeId;
+  maxEdgeEd = localmaxEdgeId;
+  maxFaceId = localmaxFaceId;
+#endif
 
   // compute ID counts for each sub cell type
   int patternDim = fp.getDimension();
