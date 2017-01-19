@@ -284,9 +284,15 @@ namespace MueLuTests {
  
   }
 
- /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
+  /* How this guy works:
+     num_p1_nodes - number of nodes in the p=1 mesh
+     p1_gold_in   - input vector for the lo_basis 
+     p2_gold_in   - output vector of linear interpolation from lo_basis to hi_basis
+     
+  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, std::vector<Scalar> &pn_gold_in, std::vector<Scalar> &pn_gold_out,const std::string & hi_basis, const std::string lo_basis = "hgrad_line_c1")
+void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree, std::vector<Scalar> &lo_gold_in, std::vector<Scalar> &hi_gold_out,const std::string & hi_basis, const std::string lo_basis = "hgrad_line_c1")
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -319,7 +325,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
-    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_p1_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
     fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
 
@@ -350,43 +356,49 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
     if(!MyPID) printf("P size = %d x %d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
 
+    // Sanity
+    if((int)P->getRangeMap()->getGlobalNumElements()!=(int)hi_gold_out.size())
+      throw std::runtime_error("P range size does not match hi_gold_out");
+    if((int)P->getDomainMap()->getGlobalNumElements()!=(int)lo_gold_in.size())
+      throw std::runtime_error("P domain size does not match lo_gold_in");
+
     // Build serial comparison maps
-    GO pn_num_global_dofs = A->getRowMap()->getGlobalNumElements();
-    GO pn_num_serial_elements = !MyPID ? pn_num_global_dofs : 0;
-    RCP<Map> pn_SerialMap = MapFactory::Build(lib,pn_num_global_dofs,pn_num_serial_elements,0,comm);
+    GO hi_num_global_dofs = A->getRowMap()->getGlobalNumElements();
+    GO hi_num_serial_elements = !MyPID ? hi_num_global_dofs : 0;
+    RCP<Map> hi_SerialMap = MapFactory::Build(lib,hi_num_global_dofs,hi_num_serial_elements,0,comm);
 
-    GO p1_num_global_dofs = P->getDomainMap()->getGlobalNumElements();
-    GO p1_num_serial_elements = !MyPID ? p1_num_global_dofs : 0;
-    RCP<Map> p1_SerialMap = MapFactory::Build(lib, p1_num_global_dofs,p1_num_serial_elements,0,comm);
+    GO lo_num_global_dofs = P->getDomainMap()->getGlobalNumElements();
+    GO lo_num_serial_elements = !MyPID ? lo_num_global_dofs : 0;
+    RCP<Map> lo_SerialMap = MapFactory::Build(lib, lo_num_global_dofs,lo_num_serial_elements,0,comm);
 
-    RCP<Export> p1_importer = ExportFactory::Build(p1_SerialMap,P->getDomainMap());
-    RCP<Export> pn_importer = ExportFactory::Build(A->getRowMap(),pn_SerialMap);
+    RCP<Export> lo_importer = ExportFactory::Build(lo_SerialMap,P->getDomainMap());
+    RCP<Export> hi_importer = ExportFactory::Build(A->getRowMap(),hi_SerialMap);
 
     // Allocate some vectors
-    RCP<Vector> s_InVec = VectorFactory::Build(p1_SerialMap);
+    RCP<Vector> s_InVec = VectorFactory::Build(lo_SerialMap);
     RCP<Vector> p_InVec = VectorFactory::Build(P->getDomainMap());
-    RCP<Vector> s_OutVec = VectorFactory::Build(pn_SerialMap);
-    RCP<Vector> s_codeOutput = VectorFactory::Build(pn_SerialMap);
+    RCP<Vector> s_OutVec = VectorFactory::Build(hi_SerialMap);
+    RCP<Vector> s_codeOutput = VectorFactory::Build(hi_SerialMap);
     RCP<Vector> p_codeOutput = VectorFactory::Build(A->getRowMap());
 
 
     // Fill serial GOLD vecs on Proc 0
     if(!MyPID) {
-      for(size_t i=0; i<(size_t)pn_gold_in.size(); i++)
-        s_InVec->replaceLocalValue(i,pn_gold_in[i]);
+      for(size_t i=0; i<(size_t)lo_gold_in.size(); i++)
+        s_InVec->replaceLocalValue(i,lo_gold_in[i]);
 
-      for(size_t i=0; i<(size_t)pn_gold_out.size(); i++)
-        s_OutVec->replaceLocalValue(i,pn_gold_out[i]);
+      for(size_t i=0; i<(size_t)hi_gold_out.size(); i++)
+        s_OutVec->replaceLocalValue(i,hi_gold_out[i]);
     }
 
     // Migrate input data
-    p_InVec->doExport(*s_InVec,*p1_importer,Xpetra::ADD);
+    p_InVec->doExport(*s_InVec,*lo_importer,Xpetra::ADD);
 
     // Apply P
     P->apply(*p_InVec,*p_codeOutput);
 
     // Migrate Output data
-    s_codeOutput->doExport(*p_codeOutput,*pn_importer,Xpetra::ADD);
+    s_codeOutput->doExport(*p_codeOutput,*hi_importer,Xpetra::ADD);
 
     // Compare vs. GOLD
     s_codeOutput->update(-1.0,*s_OutVec,1.0);
@@ -1041,76 +1053,318 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 /*********************************************************************************************************************/
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+    int hi_degree=3;
+    int lo_degree=2;
     // GOLD vector collection
-    size_t total_num_points=10;
-    int degree=3;
-    std::vector<Scalar> p3_gold_in(total_num_points);
-    std::vector<Scalar> p3_gold_out(total_num_points + (total_num_points-1) *(degree-1));
-    for(size_t i=0; i<total_num_points; i++) {
-      p3_gold_in[i] = i;
-      p3_gold_out[i] = i;
+    // Note: Vectors are exodus-ordered, not Kirby-ordered
+    size_t num_p1_points = 10;
+    size_t num_hi_points = num_p1_points + (num_p1_points-1) *(hi_degree-1);
+    size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
+
+    std::vector<Scalar> lo_gold_in(num_lo_points);
+    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    for(size_t i=0; i<num_p1_points; i++) {
+      lo_gold_in[i] = i;
+      hi_gold_out[i] = i;
     }
 
-    size_t idx=total_num_points;
-    for(size_t i=0; i<total_num_points-1; i++) {
-      for(size_t j=0; j<(size_t)degree-1; j++) {
-        p3_gold_out[idx] = i + ((double)j+1)/degree;
+    size_t idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)hi_degree-1; j++) {
+        hi_gold_out[idx] = i + ((double)j+1)/hi_degree;
         idx++;
       }
     }
-    // FIX ME!!!
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p3_gold_in.size(),3,p3_gold_in,p3_gold_out,std::string("hgrad_line_c3"),std::string("hgrad_line_c2"));
-  }
 
+    idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)lo_degree-1; j++) {
+        lo_gold_in[idx] = i + ((double)j+1)/lo_degree;
+        idx++;
+      }
+    }
+
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,num_p1_points,hi_degree,lo_gold_in,hi_gold_out,std::string("hgrad_line_c3"),std::string("hgrad_line_c2"));
+  }
 
 /*********************************************************************************************************************/
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+    int hi_degree=4;
+    int lo_degree=3;
     // GOLD vector collection
-    size_t total_num_points=10;
-    int degree=4;
-    std::vector<Scalar> gold_in(total_num_points);
-    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
-    for(size_t i=0; i<total_num_points; i++) {
-      gold_in[i] = i;
-      gold_out[i] = i;
+    // Note: Vectors are exodus-ordered, not Kirby-ordered
+    size_t num_p1_points = 10;
+    size_t num_hi_points = num_p1_points + (num_p1_points-1) *(hi_degree-1);
+    size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
+
+    std::vector<Scalar> lo_gold_in(num_lo_points);
+    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    for(size_t i=0; i<num_p1_points; i++) {
+      lo_gold_in[i] = i;
+      hi_gold_out[i] = i;
     }
 
-    size_t idx=total_num_points;
-    for(size_t i=0; i<total_num_points-1; i++) {
-      for(size_t j=0; j<(size_t)degree-1; j++) {
-        gold_out[idx] = i + ((double)j+1)/degree;
+    size_t idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)hi_degree-1; j++) {
+        hi_gold_out[idx] = i + ((double)j+1)/hi_degree;
         idx++;
       }
     }
-    // FIXME!!!
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c3"));
+
+    idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)lo_degree-1; j++) {
+        lo_gold_in[idx] = i + ((double)j+1)/lo_degree;
+        idx++;
+      }
+    }
+
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,num_p1_points,hi_degree,lo_gold_in,hi_gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c3"));
   }
 
 /*********************************************************************************************************************/
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+    int hi_degree=4;
+    int lo_degree=2;
     // GOLD vector collection
-    size_t total_num_points=10;
-    int degree=4;
-    std::vector<Scalar> gold_in(total_num_points);
-    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
-    for(size_t i=0; i<total_num_points; i++) {
-      gold_in[i] = i;
-      gold_out[i] = i;
+    // Note: Vectors are exodus-ordered, not Kirby-ordered
+    size_t num_p1_points = 10;
+    size_t num_hi_points = num_p1_points + (num_p1_points-1) *(hi_degree-1);
+    size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
+
+    std::vector<Scalar> lo_gold_in(num_lo_points);
+    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    for(size_t i=0; i<num_p1_points; i++) {
+      lo_gold_in[i] = i;
+      hi_gold_out[i] = i;
     }
 
-    size_t idx=total_num_points;
-    for(size_t i=0; i<total_num_points-1; i++) {
-      for(size_t j=0; j<(size_t)degree-1; j++) {
-        gold_out[idx] = i + ((double)j+1)/degree;
+    size_t idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)hi_degree-1; j++) {
+        hi_gold_out[idx] = i + ((double)j+1)/hi_degree;
         idx++;
       }
     }
-    // FIXME!!!
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c2"));
+
+    idx=num_p1_points;
+    for(size_t i=0; i<num_p1_points-1; i++) {
+      for(size_t j=0; j<(size_t)lo_degree-1; j++) {
+        lo_gold_in[idx] = i + ((double)j+1)/lo_degree;
+        idx++;
+      }
+    }
+
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,num_p1_points,hi_degree,lo_gold_in,hi_gold_out,std::string("hgrad_line_c4"),std::string("hgrad_line_c2"));
   }
 
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    //    Params.set("rap: fix zero diagonals",true);
+    Params.set("ipc: hi basis",hi_basis);
+    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("verbosity","high");
+    Params.set("max levels",2);
+    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    Params.set("coarse: max size",100);
+    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=4;
+    std::string hi_basis("hgrad_line_c4");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    //    Params.set("rap: fix zero diagonals",true);
+    Params.set("ipc: hi basis",hi_basis);
+    Params.set("ipc: lo basis","hgrad_line_c3");
+    Params.set("verbosity","high");
+    Params.set("max levels",2);
+    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    Params.set("coarse: max size",100);
+    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=4;
+    std::string hi_basis("hgrad_line_c4");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    //    Params.set("rap: fix zero diagonals",true);
+    Params.set("ipc: hi basis",hi_basis);
+    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("verbosity","high");
+    Params.set("max levels",2);
+    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    Params.set("coarse: max size",100);
+    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
@@ -1133,7 +1387,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p3_to_p2,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p3,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p2,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p2,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>

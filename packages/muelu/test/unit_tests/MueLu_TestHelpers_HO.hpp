@@ -61,10 +61,11 @@
 namespace MueLuTests {
   namespace TestHelpers {
 
-    //Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    // Here nx is the number of nodes on the underlying (p=1) mesh.
+    // This mesh is then promoted up to degree 
     //Teuchos::RCP<Matrix>
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
 #                                 if defined(HAVE_MUELU_INTREPID2_REFACTOR)
                                     Kokkos::DynRankView<LocalOrdinal,typename Node::device_type>
