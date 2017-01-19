@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 #define __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 
+#include "Kokkos_ViewFactory.hpp"
+
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 
@@ -130,11 +132,13 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
+          typedef typename outputValueViewType::pointer_type outputPointerType;
+
           constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
           outputValueType buf[bufSize];
-
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+            work((outputPointerType)&buf[0], bufSize);
           
           switch (opType) {
           case OPERATOR_VALUE : {
