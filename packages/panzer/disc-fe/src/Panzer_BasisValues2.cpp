@@ -547,24 +547,26 @@ template <typename Scalar>
 void BasisValues2<Scalar>::
 applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(!intrepid_basis->requireOrientation(), 
+                             std::logic_error,
+                             "Basis does not require orientations.");
+
   typedef Intrepid2::OrientationTools<PHX::Device> ots;
   const PureBasis::EElementSpace elmtspace = getElementSpace();
 
   // maybe container dimension is different from num_dim and num_ip
-  const int num_dim  = basis_layout->dimension();
+  const int num_cell  = basis_layout->numCells(); // orientations.size();
+  const int num_basis = basis_layout->cardinality();
   //const int num_ip   = basis_layout->numPoints();
-  const int num_cell = orientations.size();
+  const int num_dim   = basis_layout->dimension();
 
-  Kokkos::DynRankView<Intrepid2::Orientation,Kokkos::DefaultHostExecutionSpace> 
-    drv_orts_host((Intrepid2::Orientation*)orientations.data(), num_cell);
-  
-  auto drv_orts = Kokkos::create_mirror_view(typename PHX::Device::memory_space(), drv_orts_host);  
-  Kokkos::deep_copy(drv_orts, drv_orts_host);
-  
-  TEUCHOS_TEST_FOR_EXCEPTION(!intrepid_basis->requireOrientation(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(num_cell != static_cast<int>(orientations.size()),
                              std::logic_error,
-                             "Basis does not require orientations. This should be filterd out before");
-  
+                             "The number of cells does not match to the dimension of orientation array.");
+
+  Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> 
+    drv_orts((Intrepid2::Orientation*)orientations.data(), num_cell);
+    
   if (elmtspace==PureBasis::HGRAD) {
     {
       auto drv_basis_scalar = basis_scalar.get_view();

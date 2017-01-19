@@ -76,21 +76,23 @@ namespace Intrepid2 {
       const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
 
+      const int fad = (Kokkos::is_view_fad<workViewType>::value ? Kokkos::dimension_scalar(work) : 1);
+
       switch (opType) {
       case OPERATOR_VALUE: {
-        auto ptr = work.data();
+        typename workViewType::pointer_type ptr = work.data();
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> workLine(ptr, cardLine, npts);
-        ptr += (cardLine*npts);
+        ptr += (cardLine*npts*fad);
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> outputLine(ptr, cardLine, npts);
-        ptr += (cardLine*npts);
+        ptr += (cardLine*npts*fad);
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> outputBubble(ptr, cardBubble, npts);
-        ptr += (cardBubble*npts);
+        ptr += (cardBubble*npts*fad);
 
         // tensor product
         ordinal_type idx = 0;
@@ -134,21 +136,21 @@ namespace Intrepid2 {
       case OPERATOR_DIV: {
         ordinal_type idx = 0;
         { // x - component
-          auto ptr = work.data();
+          typename workViewType::pointer_type ptr = work.data();
 
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> workLine(ptr, cardLine, npts);
-          ptr += (cardLine*npts);
+          ptr += (cardLine*npts*fad);
 
           // x bubble value
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_x(ptr, cardBubble, npts);
-          ptr += (cardBubble*npts);
+          ptr += (cardBubble*npts*fad);
 
           // y line grad
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_y(ptr, cardLine, npts, 1);
-          ptr += (cardLine*npts);
+          ptr += (cardLine*npts*fad);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_x, input_x, workLine, vinvBubble);
@@ -163,21 +165,21 @@ namespace Intrepid2 {
                 output(idx,k) = output_x(i,k)*output_y(j,k,0);
         }
         { // y - component
-          auto ptr = work.data();
+          typename workViewType::pointer_type ptr = work.data();
 
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> workLine(ptr, cardLine, npts);
-          ptr += (cardLine*npts);
+          ptr += (cardLine*npts*fad);
 
           // x line grad
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_x(ptr, cardLine, npts, 1);
-          ptr += (cardLine*npts);
+          ptr += (cardLine*npts*fad);
 
           // y bubble value
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_y(ptr, cardBubble, npts);
-          ptr += (cardBubble*npts);
+          ptr += (cardBubble*npts*fad);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_y, input_y, workLine, vinvBubble);
