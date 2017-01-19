@@ -277,6 +277,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
       integratorObserver_->observeNextTimeStep(integratorStatus_);
 
       if (integratorStatus_ == FAILED) break;
+      solutionHistory_->getWorkingState()->metaData_->setSolutionStatus(WORKING);
 
       integratorObserver_->observeBeforeTakeStep();
 
@@ -322,40 +323,65 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   RCP<SolutionStateMetaData<Scalar> > wsmd =
     solutionHistory_->getWorkingState()->metaData_;
 
-       // Stepper failure
-  if ( solutionHistory_->getWorkingState()->getSolutionStatus() == FAILED or
-       solutionHistory_->getWorkingState()->getStepperStatus() == FAILED or
-       // Constant time step failure
-       ((timeStepControl_->stepType_ == "Constant") and
-       (wsmd->getDt() != timeStepControl_->dtInit_))
-     )
-  {
-    wsmd->setNFailures(wsmd->getNFailures()+1);
-    wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
-    wsmd->setSolutionStatus(FAILED);
-  }
-
   // Too many failures
   if (wsmd->getNFailures() >= timeStepControl_->nFailuresMax_) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"continueIntegration");
+    Teuchos::OSTab ostab(out,2,"acceptTimeStep");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
          << "  (nFailures = "<<wsmd->getNFailures()<< ") >= (nFailuresMax = "
-         <<timeStepControl_->nFailuresMax_<<")" << std::endl;
+         << timeStepControl_->nFailuresMax_<<")" << std::endl;
     integratorStatus_ = FAILED;
     return;
   }
   if (wsmd->getNConsecutiveFailures()
       >= timeStepControl_->nConsecutiveFailuresMax_){
     RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"continueIntegration");
+    Teuchos::OSTab ostab(out,1,"acceptTimeStep");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
          << "  (nConsecutiveFailures = "<<wsmd->getNConsecutiveFailures()
          << ") >= (nConsecutiveFailuresMax = "
-         <<timeStepControl_->nConsecutiveFailuresMax_
+         << timeStepControl_->nConsecutiveFailuresMax_
          << ")" << std::endl;
     integratorStatus_ = FAILED;
+    return;
+  }
+
+       // Stepper failure
+  if ( solutionHistory_->getWorkingState()->getSolutionStatus() == FAILED or
+       solutionHistory_->getWorkingState()->getStepperStatus() == FAILED or
+       // Constant time step failure
+       ((timeStepControl_->stepType_ == "Constant") and
+        (wsmd->getDt() != timeStepControl_->dtInit_) and
+        (wsmd->getOutput() != true) and
+        (wsmd->getTime()+wsmd->getDt() != timeStepControl_->timeMax_)
+       )
+     )
+  {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"acceptTimeStep");
+    *out <<std::scientific
+      <<std::setw( 6)<<std::setprecision(3)<<wsmd->getIStep()
+      <<std::setw(11)<<std::setprecision(3)<<wsmd->getTime()
+      <<std::setw(11)<<std::setprecision(3)<<wsmd->getDt()
+      << "  STEP FAILURE!! - ";
+    if ( solutionHistory_->getWorkingState()->getSolutionStatus() == FAILED) {
+      *out << "Solution Status = "
+           << toString(solutionHistory_->getWorkingState()->getSolutionStatus())
+           << std::endl;
+    } else if (solutionHistory_->getWorkingState()->getStepperStatus()==FAILED){
+      *out << "Stepper Status = "
+           << toString(solutionHistory_->getWorkingState()->getStepperStatus())
+           << std::endl;
+    } else if ((timeStepControl_->stepType_ == "Constant") and
+               (wsmd->getDt() != timeStepControl_->dtInit_)) {
+      *out << "dt != Constant dt (="<<timeStepControl_->dtInit_<<")"
+           << std::endl;
+    }
+
+    wsmd->setNFailures(wsmd->getNFailures()+1);
+    wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
+    wsmd->setSolutionStatus(FAILED);
     return;
   }
 
@@ -370,12 +396,9 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   csmd->setNFailures(std::max(csmd->getNFailures()-1,0));
   csmd->setNConsecutiveFailures(0);
 
-  // Output and screen output
-  if (csmd->getOutput() == true) {
-    // Dump solution!
-  }
-
-  if (csmd->getOutputScreen() == true) {
+  if ((csmd->getOutputScreen() == true) or
+      (csmd->getOutput() == true) or
+      (csmd->getTime() == timeStepControl_->timeMax_)) {
     const double steppertime = stepperTimer_->totalElapsedTime();
     stepperTimer_->reset();
     RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -390,6 +413,11 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
                      <<std::setw(11)<<std::setprecision(3)<<steppertime
     <<std::endl;
+  }
+
+  // Output and screen output
+  if (csmd->getOutput() == true) {
+    // Dump solution!
   }
 }
 

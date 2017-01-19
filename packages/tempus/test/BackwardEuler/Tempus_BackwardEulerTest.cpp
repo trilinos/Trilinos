@@ -307,7 +307,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 6;
+  const int nTimeStepSizes = 4;
   double dt = 0.05;
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -389,7 +389,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
   std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.05 );
+  TEST_FLOATING_EQUALITY( slope, order, 0.10 );
   out << "\n\n ** Slope on Backward Euler Method = " << slope
       << "\n" << std::endl;
 
