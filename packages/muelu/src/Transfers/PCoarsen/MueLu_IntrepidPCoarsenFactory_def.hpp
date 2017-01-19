@@ -409,10 +409,12 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   // NOTE: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
   RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
   ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
-  for(size_t i=0; i<lo_domainMap.getNodeNumElements(); i++) {
-    if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = hi_domainMap->getGlobalElement(hi_to_lo_map[i]);
+  for(size_t i=0; i<hi_domainMap->getNodeNumElements(); i++) {
+    if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = lo_domainMap.getGlobalElement(hi_to_lo_map[i]);
     else dvec_data[i] = go_invalid;
   }
+
+
   RCP<GOVector> cvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_columnMap,true);
   cvec->doImport(*dvec,hi_importer,Xpetra::ADD);
 
@@ -426,7 +428,7 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
       idx++;
     }
   }  
-  
+
   lo_columnMap = Xpetra::MapFactory<LO,GO,NO>::Build(lo_domainMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),lo_col_data(),lo_domainMap.getIndexBase(),lo_domainMap.getComm());
 }
 
@@ -767,7 +769,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(*Pn_elemToNode,Pn_nodeIsOwned,lo_elemToHiRepresentativeNode,P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
     }
 
-
     /*******************/    
     // Generate the P1_domainMap
     // HOW: Since we know how many each proc has, we can use the non-uniform contiguous map constructor to do the work for us
@@ -778,7 +779,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<const Map> P1_colMap;
     if(NumProc==1) P1_colMap = P1_domainMap;
     else MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
-
 
     /*******************/    
     // Generate the coarsening
