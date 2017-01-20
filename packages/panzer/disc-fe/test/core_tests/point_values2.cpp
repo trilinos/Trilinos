@@ -70,8 +70,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 20;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 20;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
     unsigned int num_points = 3;
 
@@ -142,8 +142,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
     int num_points = 3;
 
@@ -220,7 +220,7 @@ namespace panzer {
           TEST_EQUALITY(point_values2.coords_ref(p,d).val(),point_coordinates(p,d).val());
 
     // check the shifted values (ensure physical mapping)
-    for(int c=0;c<num_cells;c++) {
+    for(unsigned int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -232,7 +232,7 @@ namespace panzer {
     }
 
     // check the jacobian
-    for(int c=0;c<num_cells;c++) {
+    for(unsigned int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -242,7 +242,7 @@ namespace panzer {
           TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,1).val(),dy/2.0,1e-10);
        }
     }
-    for(int c=0;c<num_cells;c++) {
+    for(unsigned int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -251,7 +251,7 @@ namespace panzer {
     }
 
     // check the inverse jacobian
-    for(int c=0;c<num_cells;c++) {
+    for(unsigned int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {

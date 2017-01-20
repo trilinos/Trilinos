@@ -52,7 +52,7 @@ namespace panzer_test {
   TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   {
     using FadType = Sacado::Fad::DFad<double>;
-    const int derivative_dim_plus_one = 7;
+    const unsigned int derivative_dim_plus_one = 7;
 				  
     // Test a DynRankView from a DynRankView
     {

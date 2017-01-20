@@ -221,11 +221,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
       // scatter test
@@ -247,11 +247,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
 
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
       // scatter dirichlet test
@@ -273,11 +273,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
    }
@@ -300,11 +300,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
       // scatter test
@@ -325,11 +325,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
 
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
       // scatter dirichlet test
@@ -351,11 +351,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
    
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+         TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
       }
 
    }

@@ -100,11 +100,11 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
 
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    }
 
    // test jacobian gather evaluator
@@ -117,11 +117,11 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[0]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+      TEST_EQUALITY(fields[0]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
 
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<int>(numCells));
-      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<int>(4)); // for Q1
+      TEST_EQUALITY(fields[1]->dataLayout().dimension(0),Teuchos::as<unsigned int>(numCells));
+      TEST_EQUALITY(fields[1]->dataLayout().dimension(1),Teuchos::as<unsigned int>(4)); // for Q1
    }
 }
 
