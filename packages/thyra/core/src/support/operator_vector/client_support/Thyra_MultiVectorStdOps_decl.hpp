@@ -377,7 +377,7 @@ inline
 void Thyra::norms_1( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNorm1<Scalar>(), norms);
+  V.norms_1(norms);
 }
 
 
@@ -386,7 +386,7 @@ inline
 void Thyra::norms_2( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNorm2<Scalar>(), norms);
+  V.norms_2(norms);
 }
 
 
@@ -395,7 +395,7 @@ inline
 void Thyra::norms_inf( const MultiVectorBase<Scalar>& V,
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  reductions<Scalar>(V, RTOpPack::ROpNormInf<Scalar>(), norms);
+  V.norms_inf(norms);
 }
 
 
