@@ -90,6 +90,9 @@ public:
 
   //@}
 
+  // Should these Impl functions should alsp be protected???
+//protected:
+
   /** @name Overridden from SpmdMultiVectorBase */
   //@{
   /** \brief . */
@@ -102,6 +105,55 @@ public:
   void getNonconstLocalVectorDataImpl(const Ptr<ArrayRCP<Scalar> > &localValues);
   /** \brief . */
   void getLocalVectorDataImpl(const Ptr<ArrayRCP<const Scalar> > &localValues) const;
+  //@}
+
+protected:
+
+  /** @name Overridden protected functions from VectorBase */
+  //@{
+
+  /** \brief . */
+  virtual void assignVecImpl(const VectorBase<Scalar>& x);
+
+  /** \brief . */
+  virtual void randomizeImpl(Scalar l, Scalar u);
+
+  /** \brief . */
+  virtual void absImpl(const VectorBase<Scalar>& x);
+
+  /** \brief . */
+  virtual void reciprocalImpl(const VectorBase<Scalar>& x);
+
+  /** \brief . */
+  virtual void eleWiseScaleImpl(const VectorBase<Scalar>& x);
+
+  /** \brief . */
+  virtual void updateVecImpl(
+    Scalar alpha,
+    const VectorBase<Scalar>& x);
+
+  /** \brief . */
+  virtual void linearCombinationVecImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta);
+
+  /** \brief . */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm1Impl() const;
+
+  /** \brief . */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2Impl() const;
+
+  /** \brief . */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2WeightedImpl(const VectorBase<Scalar>& x) const;
+
+  /** \brief . */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  normInfImpl() const;
+
   //@}
 
 private:
