@@ -154,14 +154,17 @@ public:
   /** @name Minimal mathematical functions */
   //@{
 
+  // Overloading assign for VectorBase argument
+  using MultiVectorBase<Scalar>::assign;
+
   /** \brief Vector assignment:
    *
    * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
    *
    * NVI function.
    */
-  //void assign(const VectorBase<Scalar>& x)
-  //  { assignImpl(x); }
+  void assign(const VectorBase<Scalar>& x)
+    { assignVecImpl(x); }
 
   /** \brief Random vector generation:
    *
@@ -200,7 +203,11 @@ public:
    * NVI function.
    */
   void ele_wise_scale(const VectorBase<Scalar>& x)
-    { ele_wise_scaleImpl(x); }
+    { eleWiseScaleImpl(x); }
+
+
+  // Overloading update for VectorBase argument.
+  using MultiVectorBase<Scalar>::update;
 
   /** \brief AXPY:
    *
@@ -208,10 +215,13 @@ public:
    *
    * NVI function.
    */
-  /*void update(
+  void update(
     Scalar alpha,
     const VectorBase<Scalar>& x)
-    { updateImpl(alpha, x); }*/
+    { updateVecImpl(alpha, x); }
+
+  // Overloading linear_combination for VectorBase arguments.
+  using MultiVectorBase<Scalar>::linear_combination;
 
   /** \brief Linear combination:
    *
@@ -236,19 +246,19 @@ public:
    *
    * NVI function.
    */
-  /*void linear_combination(
+  void linear_combination(
     const ArrayView<const Scalar>& alpha,
     const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
     const Scalar& beta
     )
-    { linear_combinationImpl(alpha, x, beta); }*/
+    { linearCombinationVecImpl(alpha, x, beta); }
 
   /** \brief  One (1) norm: <tt>result = ||v||1</tt>.
    *
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   norm_1() const
-    { return norm_1Impl(); }
+    { return norm1Impl(); }
 
   /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
    *
@@ -256,7 +266,15 @@ public:
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   norm_2() const
-    { return norm_2Impl(); }
+    { return norm2Impl(); }
+
+  /** \brief Weighted Euclidean (2) norm: <tt>result = ||v||2</tt>.
+   *
+   * NVI function.
+   */
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm_2(const VectorBase<Scalar>& x) const
+    { return norm2WeightedImpl(x); }
 
   /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
    *
@@ -264,7 +282,7 @@ public:
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   norm_inf() const
-    { return norm_infImpl(); }
+    { return normInfImpl(); }
 
   //@}
 
@@ -390,7 +408,7 @@ protected:
   /** \brief Virtual implementation for NVI assign.
    *
    */
-  //virtual void assignImpl(const VectorBase<Scalar>& x) = 0;
+  virtual void assignVecImpl(const VectorBase<Scalar>& x) = 0;
 
   /** \brief Virtual implementation for NVI randomize.
    *
@@ -410,41 +428,47 @@ protected:
   /** \brief Virtual implementation for NVI ele_wise_scale.
    *
    */
-  virtual void ele_wise_scaleImpl(const VectorBase<Scalar>& x) = 0;
+  virtual void eleWiseScaleImpl(const VectorBase<Scalar>& x) = 0;
 
   /** \brief Virtual implementation for NVI update.
    *
    */
-  /*virtual void updateImpl(
+  virtual void updateVecImpl(
     Scalar alpha,
-    const VectorBase<Scalar>& x) = 0;*/
+    const VectorBase<Scalar>& x) = 0;
 
   /** \brief Virtual implementation for NVI linear_combination.
    *
    */
-  /*virtual void linear_combinationImpl(
+  virtual void linearCombinationVecImpl(
     const ArrayView<const Scalar>& alpha,
     const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
     const Scalar& beta
-    ) = 0;*/
+    ) = 0;
 
   /** \brief Virtual implementation for NVI norm_1.
    *
    */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_1Impl() const = 0;
+  norm1Impl() const = 0;
 
   /** \brief Virtual implementation for NVI norm_2.
    *
    */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_2Impl() const = 0;
+  norm2Impl() const = 0;
+
+  /** \brief Virtual implementation for NVI norm_2 (weighted).
+   *
+   */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2WeightedImpl(const VectorBase<Scalar>& x) const = 0;
 
   /** \brief Virtual implementation for NVI norm_inf.
    *
    */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_infImpl() const = 0;
+  normInfImpl() const = 0;
 
   /** \brief Apply a reduction/transformation operator over a set of vectors:
    * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->

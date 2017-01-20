@@ -521,7 +521,7 @@ public:
    * NVI function.
    */
   void assign(const MultiVectorBase<Scalar>& mv)
-    { assignMultiVectorImpl(mv); }
+    { assignMultiVecImpl(mv); }
 
   /** V = alpha*V.
    *
@@ -576,7 +576,7 @@ public:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
     const Scalar& beta
     )
-    { linear_combinationImpl(alpha, mv, beta); }
+    { linearCombinationImpl(alpha, mv, beta); }
 
   /** \brief Column-wise 1-norms
    *
@@ -588,7 +588,7 @@ public:
   void norms_1(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const
-    { norms_1Impl(norms); }
+    { norms1Impl(norms); }
 
   /** \brief Column-wise 2-norms
    *
@@ -600,7 +600,7 @@ public:
   void norms_2(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const
-    { norms_2Impl(norms); }
+    { norms2Impl(norms); }
 
   /** \brief Column-wise infinity-norms
    *
@@ -612,7 +612,7 @@ public:
   void norms_inf(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const
-    { norms_infImpl(norms); }
+    { normsInfImpl(norms); }
 
   //@}
 
@@ -793,7 +793,7 @@ protected:
   /** \brief Virtual implementation for NVI assign(MV).
    *
    */
-  virtual void assignMultiVectorImpl(const MultiVectorBase<Scalar>& mv) = 0;
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv) = 0;
 
   /** \brief Virtual implementation for NVI scale().
    *
@@ -811,7 +811,7 @@ protected:
   /** \brief Virtual implementation for NVI linear_combination().
    *
    */
-  virtual void linear_combinationImpl(
+  virtual void linearCombinationImpl(
     const ArrayView<const Scalar>& alpha,
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
     const Scalar& beta
@@ -820,21 +820,21 @@ protected:
   /** \brief Virtual implementation for NVI norms_1().
    *
    */
-  virtual void norms_1Impl(
+  virtual void norms1Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const = 0;
 
   /** \brief Virtual implementation for NVI norms_2().
    *
    */
-  virtual void norms_2Impl(
+  virtual void norms2Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const = 0;
 
   /** \brief Virtual implementation for NVI norms_inf().
    *
    */
-  virtual void norms_infImpl(
+  virtual void normsInfImpl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const = 0;
 
