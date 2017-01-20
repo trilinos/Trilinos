@@ -331,6 +331,16 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
+
+  RCP<const Comm<int> > tmpComm = env_->getComm();
+  // Recreate environment with new parameters
+  try
+  {
+     env_ = rcp(new Environment(*params, tmpComm));
+  }
+  Z2_FORWARD_EXCEPTIONS
+  envConst_  = rcp_const_cast<const Environment>(env_);
+  
   setupProblemEnvironment(params);
 
   // We assume the timing output parameters have not changed,
