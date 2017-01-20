@@ -147,7 +147,7 @@ protected:
   //@{
 
   /** \brief Default implementation of assign(vector) using RTOps. */
-  //virtual void assignImpl(const VectorBase<Scalar>& x);
+  virtual void assignVecImpl(const VectorBase<Scalar>& x);
 
   /** \brief Default implementation of randomize using RTOps. */
   virtual void randomizeImpl(Scalar l, Scalar u);
@@ -159,31 +159,35 @@ protected:
   virtual void reciprocalImpl(const VectorBase<Scalar>& x);
 
   /** \brief Default implementation of ele_wise_scale using RTOps. */
-  virtual void ele_wise_scaleImpl(const VectorBase<Scalar>& x);
+  virtual void eleWiseScaleImpl(const VectorBase<Scalar>& x);
 
   /** \brief Default implementation of update using RTOps. */
-  /*virtual void updateImpl(
+  virtual void updateVecImpl(
     Scalar alpha,
-    const VectorBase<Scalar>& x);*/
+    const VectorBase<Scalar>& x);
 
   /** \brief Default implementation of linear_combination using RTOps. */
-  /*virtual void linear_combinationImpl(
+  virtual void linearCombinationVecImpl(
     const ArrayView<const Scalar>& alpha,
     const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
     const Scalar& beta
-    );*/
+    );
 
   /** \brief Default implementation of norm_1 using RTOps. */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_1Impl() const;
+  norm1Impl() const;
 
   /** \brief Default implementation of norm_2 using RTOps. */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_2Impl() const;
+  norm2Impl() const;
+
+  /** \brief Default implementation of norm_2 (weighted) using RTOps. */
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  norm2WeightedImpl(const VectorBase<Scalar>& x) const;
 
   /** \brief Default implementation of norm_inf using RTOps. */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_infImpl() const;
+  normInfImpl() const;
 
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);

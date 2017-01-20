@@ -99,7 +99,7 @@ void MultiVectorDefaultBase<Scalar>::assignImpl(Scalar alpha)
 }
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::assignMultiVectorImpl(const MultiVectorBase<Scalar>& mv)
+void MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
@@ -142,7 +142,7 @@ void MultiVectorDefaultBase<Scalar>::updateImpl(
 
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::linear_combinationImpl(
+void MultiVectorDefaultBase<Scalar>::linearCombinationImpl(
   const ArrayView<const Scalar>& alpha,
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
   const Scalar& beta
@@ -168,7 +168,7 @@ void MultiVectorDefaultBase<Scalar>::linear_combinationImpl(
 
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::norms_1Impl(
+void MultiVectorDefaultBase<Scalar>::norms1Impl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
 {
@@ -192,7 +192,7 @@ void MultiVectorDefaultBase<Scalar>::norms_1Impl(
 
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::norms_2Impl(
+void MultiVectorDefaultBase<Scalar>::norms2Impl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
 {
@@ -216,7 +216,7 @@ void MultiVectorDefaultBase<Scalar>::norms_2Impl(
 
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::norms_infImpl(
+void MultiVectorDefaultBase<Scalar>::normsInfImpl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
 {

@@ -97,7 +97,7 @@ protected:
   virtual void assignImpl(Scalar alpha);
 
   /** \brief Default implementation of assign(MV) using RTOps. */
-  virtual void assignMultiVectorImpl(const MultiVectorBase<Scalar>& mv);
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv);
 
   /** \brief Default implementation of scale using RTOps. */
   virtual void scaleImpl(Scalar alpha);
@@ -109,24 +109,24 @@ protected:
     );
 
   /** \brief Default implementation of linear_combination using RTOps. */
-  virtual void linear_combinationImpl(
+  virtual void linearCombinationImpl(
     const ArrayView<const Scalar>& alpha,
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
     const Scalar& beta
     );
 
   /** \brief Default implementation of norms_1 using RTOps. */
-  virtual void norms_1Impl(
+  virtual void norms1Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const;
 
   /** \brief Default implementation of norms_2 using RTOps. */
-  virtual void norms_2Impl(
+  virtual void norms2Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const;
 
   /** \brief Default implementation of norms_inf using RTOps. */
-  virtual void norms_infImpl(
+  virtual void normsInfImpl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const;
 

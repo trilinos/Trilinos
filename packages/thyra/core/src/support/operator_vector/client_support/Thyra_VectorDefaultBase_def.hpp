@@ -59,6 +59,7 @@
 #include "RTOpPack_TOpSetSubVector.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNorm2.hpp"
+#include "RTOpPack_ROpWeightedNorm2.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
 #include "RTOpPack_TOpAbs.hpp"
 #include "RTOpPack_TOpAssignVectors.hpp"
@@ -197,14 +198,14 @@ VectorDefaultBase<Scalar>::clone_v() const
 // protected
 
 
-/*template<class Scalar>
-void VectorDefaultBase<Scalar>::assignImpl(const VectorBase<Scalar>& x)
+template<class Scalar>
+void VectorDefaultBase<Scalar>::assignVecImpl(const VectorBase<Scalar>& x)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
   Thyra::applyOp<Scalar>(assign_vectors_op, tuple(ptrInArg(x)),
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
-}*/
+}
 
 
 template<class Scalar>
@@ -240,7 +241,7 @@ void VectorDefaultBase<Scalar>::reciprocalImpl(const VectorBase<Scalar>& x)
 
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::ele_wise_scaleImpl(const VectorBase<Scalar>& x)
+void VectorDefaultBase<Scalar>::eleWiseScaleImpl(const VectorBase<Scalar>& x)
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpEleWiseScale<Scalar> scale_op;
@@ -249,8 +250,8 @@ void VectorDefaultBase<Scalar>::ele_wise_scaleImpl(const VectorBase<Scalar>& x)
 }
 
 
-/*template<class Scalar>
-void VectorDefaultBase<Scalar>::updateImpl(
+template<class Scalar>
+void VectorDefaultBase<Scalar>::updateVecImpl(
   Scalar alpha,
   const VectorBase<Scalar>& x)
 {
@@ -262,7 +263,7 @@ void VectorDefaultBase<Scalar>::updateImpl(
 
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::linear_combinationImpl(
+void VectorDefaultBase<Scalar>::linearCombinationVecImpl(
   const ArrayView<const Scalar>& alpha,
   const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
   const Scalar& beta
@@ -270,24 +271,27 @@ void VectorDefaultBase<Scalar>::linear_combinationImpl(
 {
   using Teuchos::tuple; using Teuchos::ptr; using Teuchos::ptrInArg;
   using Teuchos::null;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(), x.size());
+#endif
   const int m = x.size();
   if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
-    update(alpha[0], *x[0]);
+    this->update(alpha[0], *x[0]);
     return;
   }
   else if( m == 0 ) {
-    scale(beta);
+    this->scale(beta);
     return;
   }
   RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha,beta);
   applyOp<Scalar>(lin_comb_op, x,
     tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
-}*/
+}
 
 
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-VectorDefaultBase<Scalar>::norm_1Impl() const
+VectorDefaultBase<Scalar>::norm1Impl() const
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNorm1<Scalar> norm_op;
@@ -302,7 +306,7 @@ VectorDefaultBase<Scalar>::norm_1Impl() const
 
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-VectorDefaultBase<Scalar>::norm_2Impl() const
+VectorDefaultBase<Scalar>::norm2Impl() const
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNorm2<Scalar> norm_op;
@@ -317,7 +321,21 @@ VectorDefaultBase<Scalar>::norm_2Impl() const
 
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-VectorDefaultBase<Scalar>::norm_infImpl() const
+VectorDefaultBase<Scalar>::norm2WeightedImpl(const VectorBase<Scalar>& x) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::ROpWeightedNorm2<Scalar> norm_op;
+  Teuchos::RCP<RTOpPack::ReductTarget> norm_targ = norm_op.reduct_obj_create();
+  applyOp<Scalar>(norm_op,
+    tuple(ptrInArg(x), ptrInArg<const VectorBase<Scalar> >(*this)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    norm_targ.ptr());
+  return norm_op(*norm_targ);
+}
+
+template<class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+VectorDefaultBase<Scalar>::normInfImpl() const
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNormInf<Scalar> norm_op;
