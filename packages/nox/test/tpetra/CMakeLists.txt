@@ -15,7 +15,17 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_1DFEM
-    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.C
+    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_VectorOpsTests
+    SOURCES  ${UNIT_TEST_DRIVER} Tpetra_VectorOpsTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_MultiVectorOpsTests
+    SOURCES  ${UNIT_TEST_DRIVER} Tpetra_MultiVectorOpsTests.cpp
     )
 
 ENDIF()
