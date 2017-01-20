@@ -85,7 +85,9 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
       ss << condPrefix_ << i;
       std::string cond = pl->get<std::string>(ss.str());
 
-      std::string matcherType = getMatcherType(cond);
+      std::pair<std::string, unsigned int> matcherPair = getMatcherTypeAndDim(cond);
+      std::string matcherType = matcherPair.first;
+      unsigned int matcherDim = matcherPair.second;
       if(matcherType == "coord"){
         matchers_.push_back(buildMatcher(cond));
       }else if(matcherType == "edge")
@@ -94,8 +96,9 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
         faceMatchers_.push_back(buildMatcher(cond));
       else if(matcherType == "all"){
         matchers_.push_back(buildMatcher(replaceMatcherType(cond,"coord"))); 
-        edgeMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"edge"))); 
-        faceMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"face"))); 
+        edgeMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"edge")));
+        if(matcherDim > 2)
+          faceMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"face"))); 
       } 
    }
 
@@ -179,7 +182,7 @@ static std::string trim(const std::string & s)
 
 /////////////////////////////////////////////////////////////
 
-std::string PeriodicBC_Parser::getMatcherType(const std::string & buildStr) const
+std::pair<std::string, unsigned int> PeriodicBC_Parser::getMatcherTypeAndDim(const std::string & buildStr) const
 {
    std::string::size_type endMatch = buildStr.find_first_of(' ');
 
@@ -201,7 +204,12 @@ std::string PeriodicBC_Parser::getMatcherType(const std::string & buildStr) cons
        "in string \"" << buildStr << "\n"
        "Type " << matcherType << " is not a valid boundary condition type. Must be coord, edge, face, or all\"");
 
-   return matcherType;
+   std::string matcherCoord = trim(matcher.substr(0,hyphenMatch));
+   unsigned int matcherDim = 3;
+   if((matcherCoord == "x") || (matcherCoord == "y") || (matcherCoord == "z"))
+     matcherDim = 2;
+
+   return std::make_pair(matcherType,matcherDim);
 }
 
 std::string PeriodicBC_Parser::replaceMatcherType(const std::string & buildStr, const std::string & matcherType) const

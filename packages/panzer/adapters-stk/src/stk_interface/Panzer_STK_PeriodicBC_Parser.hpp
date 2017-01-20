@@ -95,10 +95,11 @@ public:
    Teuchos::RCP<const PeriodicBC_MatcherBase>
    buildMatcher(const std::string & buildStr) const;
 
-   /** Return the string for the type of matcher:
-     *    coord, edge, face, or all
+   /** Return the string for the type of matcher: coord, edge, face, or all
+     *    and the dimension: 2 or 3
+     *
      * */
-   std::string getMatcherType(const std::string & buildStr) const; 
+   std::pair<std::string, unsigned int> getMatcherTypeAndDim(const std::string & buildStr) const; 
 
    /** Replace "all" with specific type in matcher string:
      *    coord, edge, or face
