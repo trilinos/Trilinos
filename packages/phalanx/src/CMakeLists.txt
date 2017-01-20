@@ -52,6 +52,7 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_Utilities.hpp
   Phalanx_Evaluator_WithBaseImpl_Def.hpp
   Phalanx_Evaluator_WithBaseImpl.hpp
+  Phalanx_Evaluator_AliasField.hpp
   Phalanx_Exceptions.hpp
   Phalanx_Field_Def.hpp
   Phalanx_Field.hpp

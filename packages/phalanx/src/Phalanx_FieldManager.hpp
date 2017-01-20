@@ -110,7 +110,8 @@ namespace PHX {
         types must have the extra dimensions) and make sure that all
         uses of that field in all evaluators are rebound correctly
         using the function callback. They can't store the view off
-        internally since it may change at any time.
+        internally since it may change at any time. Only use this
+        after postRegistrationSetup() has been called.
     */
     template<typename EvalT, typename DataT, 
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
@@ -131,10 +132,54 @@ namespace PHX {
         types must have the extra dimensions) and make sure that all
         uses of that field in all evaluators are rebound correctly
         using the function callback. They can't store the view off
-        internally since it may change at any time.
+        internally since it may change at any time. Only use this
+        after postRegistrationSetup() is called.
     */
     template<typename EvalT, typename DataT> 
     void setUnmanagedField(PHX::MDField<DataT>& f);
+
+    /* \brief Makes two fields point to (alias) the same memory for all evaluation types. 
+
+       WARNING: this is a very dangerous power user capability. This
+       allows users to tell the FieldManager to create a new field
+       that points to the same underlying memory as another field. The
+       user must be sure that the DataLayouts and Scalar types are the
+       same. Only use this BEFORE postRegistrationSetup() is
+       called. This injects extra dependencies that must be accounted
+       for during DAG construction.
+
+       This is intended for the use case where a user wants to reuse
+       an evalautor with hard coded field names but would like to
+       rename the evaluated fields without adding naming logic to the
+       evaluator.
+
+       @param aliasedField Field that is aliased to the target field's memory
+       @param targetField Field whos memory is pointed to by the aliased field 
+     */
+    void aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
+                                         const PHX::FieldTag& targetField);
+
+    /* \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
+
+       WARNING: this is a very dangerous power user capability. This
+       allows users to tell the FieldManager to create a new field
+       that points to the same underlying memory as another field. The
+       user must be sure that the DataLayouts and Scalar types are the
+       same. Only use this BEFORE postRegistrationSetup() is
+       called. This injects extra dependencies that must be accounted
+       for during DAG construction.
+
+       This is intended for the use case where a user wants to reuse
+       an evalautor with hard coded field names but would like to
+       rename the evaluated fields without adding naming logic to the
+       evaluator.
+
+       @param aliasedField Field that is aliased to the target field's memory
+       @param targetField Field whos memory is pointed to by the aliased field 
+     */
+    template<typename EvalT> 
+    void aliasField(const PHX::FieldTag& aliasedField,
+                    const PHX::FieldTag& targetField);
     
     //! Allocates memory for a single evaluation type
     template<typename EvalT>

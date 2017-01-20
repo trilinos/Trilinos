@@ -233,28 +233,26 @@ namespace Intrepid2 {
       */
       template<EPolyType polyType>
       struct Cubature {
-        template<typename ValueType,
-                 typename zViewType,
+        template<typename zViewType,
                  typename wViewType>
         KOKKOS_INLINE_FUNCTION
         static void
         getValues(/**/  zViewType z, 
                   /**/  wViewType w, 
                   const ordinal_type np, 
-                  const ValueType alpha, 
-                  const ValueType beta);
+                  const double alpha, 
+                  const double beta);
       };
 
-      template<typename ValueType,
-               typename zViewType,
+      template<typename zViewType,
                typename wViewType>
       KOKKOS_INLINE_FUNCTION
       static void
       getCubature(/**/  zViewType z, 
                   /**/  wViewType w, 
                   const ordinal_type np, 
-                  const ValueType alpha, 
-                  const ValueType beta,
+                  const double alpha, 
+                  const double beta,
                   const EPolyType poly) {
         switch (poly) {
         case POLYTYPE_GAUSS:             Polylib::Serial::Cubature<POLYTYPE_GAUSS>            ::getValues(z, w, np, alpha, beta); break;
@@ -282,28 +280,26 @@ namespace Intrepid2 {
       */
       template<EPolyType polyType>
       struct Derivative {
-        template<typename ValueType,
-                 typename DViewType,
+        template<typename DViewType,
                  typename zViewType>
         KOKKOS_INLINE_FUNCTION
         static void
         getValues(/**/  DViewType D,  
                   const zViewType z, 
                   const ordinal_type np, 
-                  const ValueType alpha, 
-                  const ValueType beta);
+                  const double alpha, 
+                  const double beta);
       };
 
-      template<typename ValueType,
-               typename DViewType,
+      template<typename DViewType,
                typename zViewType>
       KOKKOS_INLINE_FUNCTION
       static void
       getDerivative(/**/  DViewType D,  
                     const zViewType z, 
                     const ordinal_type np, 
-                    const ValueType alpha, 
-                    const ValueType beta,
+                    const double alpha, 
+                    const double beta,
                     const EPolyType poly) {
         switch (poly) {
         case POLYTYPE_GAUSS:             Polylib::Serial::Derivative<POLYTYPE_GAUSS>            ::getValues(D, z, np, alpha, beta); break;
@@ -382,30 +378,28 @@ namespace Intrepid2 {
       */
       template<EPolyType polyType>
       struct LagrangianInterpolant {
-        template<typename ValueType,
-                 typename zgViewType>
+        template<typename zViewType>
         KOKKOS_INLINE_FUNCTION
-        static ValueType 
+        static typename zViewType::value_type
         getValue(const ordinal_type i, 
-                 const ValueType z, 
-                 const zgViewType zgj,
+                 const typename zViewType::value_type z, 
+                 const zViewType zgj,
                  const ordinal_type np,
-                 const ValueType alpha,
-                 const ValueType beta);
+                 const double alpha,
+                 const double beta);
       };
 
-      template<typename ValueType,
-               typename zgViewType>
+      template<typename zViewType>
       KOKKOS_INLINE_FUNCTION
-      static ValueType 
+      static typename zViewType::value_type
       getLagrangianInterpolant(const ordinal_type i, 
-                               const ValueType z, 
-                               const zgViewType zgj,
+                               const typename zViewType::value_type z, 
+                               const zViewType zgj,
                                const ordinal_type np,
-                               const ValueType alpha,
-                               const ValueType beta,
+                               const double alpha,
+                               const double beta,
                                const EPolyType poly) {
-        ValueType r_val = 0;
+        typename zViewType::value_type r_val = 0;
         switch (poly) {
         case POLYTYPE_GAUSS:             r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS>            ::getValue(i, z, zgj, np, alpha, beta); break;
         case POLYTYPE_GAUSS_RADAU_LEFT:  r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_RADAU_LEFT> ::getValue(i, z, zgj, np, alpha, beta); break;
@@ -435,8 +429,7 @@ namespace Intrepid2 {
       */
       template<EPolyType polyType>
       struct InterpolationOperator {
-        template<typename ValueType,
-                 typename imViewType,
+        template<typename imViewType,
                  typename zgrjViewType,
                  typename zmViewType>
         KOKKOS_INLINE_FUNCTION
@@ -446,12 +439,11 @@ namespace Intrepid2 {
                   const zmViewType zm,
                   const ordinal_type nz,
                   const ordinal_type mz,
-                  const ValueType alpha,
-                  const ValueType beta);
+                  const double alpha,
+                  const double beta);
       };
 
-      template<typename ValueType,
-               typename imViewType,
+      template<typename imViewType,
                typename zgrjViewType,
                typename zmViewType>
       KOKKOS_INLINE_FUNCTION
@@ -461,8 +453,8 @@ namespace Intrepid2 {
                                const zmViewType zm,
                                const ordinal_type nz,
                                const ordinal_type mz,
-                               const ValueType alpha,
-                               const ValueType beta,
+                               const double alpha,
+                               const double beta,
                                const EPolyType poly) {
         switch (poly) {
         case POLYTYPE_GAUSS:             Polylib::Serial::InterpolationOperator<POLYTYPE_GAUSS>            ::getMatrix(im, zgrj, zm, nz, mz, alpha, beta); break;
@@ -520,8 +512,7 @@ namespace Intrepid2 {
 
           - Note the derivative from this routine is only valid for -1 < \a z < 1.
       */
-      template<typename ValueType,
-               typename zViewType,
+      template<typename zViewType,
                typename polyiViewType,
                typename polydViewType>
       KOKKOS_INLINE_FUNCTION
@@ -531,8 +522,8 @@ namespace Intrepid2 {
                        /**/  polyiViewType poly_in, 
                        /**/  polydViewType polyd,
                        const ordinal_type n, 
-                       const ValueType alpha, 
-                       const ValueType beta);
+                       const double alpha, 
+                       const double beta);
 
 
       /** \brief Calculate the  derivative of Jacobi polynomials
@@ -548,8 +539,7 @@ namespace Intrepid2 {
 
           \li This formulation is valid for \f$ -1 \leq z \leq 1 \f$
       */
-      template<typename ValueType,
-               typename zViewType,
+      template<typename zViewType,
                typename polydViewType>
       KOKKOS_INLINE_FUNCTION
       static void 
@@ -557,8 +547,8 @@ namespace Intrepid2 {
                                  const zViewType z, 
                                  /**/  polydViewType polyd, 
                                  const ordinal_type n,
-                                 const ValueType alpha, 
-                                 const ValueType beta);
+                                 const double alpha, 
+                                 const double beta);
 
       // -----------------------------------------------------------------------
       // Helper functions. 
@@ -570,33 +560,30 @@ namespace Intrepid2 {
           This routine is only valid for \f$( \alpha > -1, \beta > -1)\f$
           and uses polynomial deflation in a Newton iteration
       */
-      template<typename ValueType,
-               typename zViewType,
+      template<typename zViewType,
                bool DeflationEnabled = false>
       KOKKOS_INLINE_FUNCTION
       static void   
       JacobiZeros (/**/  zViewType z,
                    const ordinal_type n, 
-                   const ValueType alpha, 
-                   const ValueType beta);
+                   const double alpha, 
+                   const double beta);
 
-      template<typename ValueType,
-               typename zViewType>
+      template<typename zViewType>
       KOKKOS_INLINE_FUNCTION
       static void
       JacobiZerosPolyDeflation(/**/  zViewType z,
                                const ordinal_type n,
-                               const ValueType alpha,
-                               const ValueType beta);
+                               const double alpha,
+                               const double beta);
       
-      template<typename ValueType,
-               typename aViewType>
+      template<typename aViewType>
       KOKKOS_INLINE_FUNCTION
       static void
       JacobiZerosTriDiagonal(/**/  aViewType a,
                              const ordinal_type n,
-                             const ValueType alpha,
-                             const ValueType beta); 
+                             const double alpha,
+                             const double beta); 
 
       /** \brief Zero determination through the eigenvalues of a tridiagonal
           matrix from the three term recursion relationship.
@@ -620,16 +607,15 @@ namespace Intrepid2 {
           matrix is guaranteed to be symmetric. The eigenvalues of this
           matrix are the zeros of the Jacobi polynomial.
       */
-      template<typename ValueType,
-               typename aViewType,
+      template<typename aViewType,
                typename bViewType>
       KOKKOS_INLINE_FUNCTION
       static void   
       JacobiZeros(aViewType a,
                   bViewType b,
                   const ordinal_type n, 
-                  const ValueType alpha, 
-                  const ValueType beta);
+                  const double alpha, 
+                  const double beta);
 
 
       /** \brief QL algorithm for symmetric tridiagonal matrix
@@ -673,10 +659,9 @@ namespace Intrepid2 {
 
           where \f$ \Gamma(1/2) = \sqrt{\pi}\f$
       */
-      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION      
-      static ValueType 
-      GammaFunction(const ValueType x);
+      static double
+      GammaFunction(const double x);
 
     };
 

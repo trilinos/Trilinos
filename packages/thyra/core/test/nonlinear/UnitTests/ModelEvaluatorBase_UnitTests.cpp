@@ -240,5 +240,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Responses, get_g_names, Scalar )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
 
+//
+// MEB::InArgs
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
+{
+  //const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
+  const RCP<const ModelEvaluator<Scalar> > model = 
+    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), true, true);
+
+  auto inArgs = model->createInArgs();
+
+  RCP<VectorBase<Scalar>> x = createMember(model->get_x_space());
+  inArgs.set_x(x);
+
+  RCP<VectorBase<Scalar>> x_dot = createMember(model->get_x_space());
+  inArgs.set_x_dot(x_dot);
+
+  RCP<VectorBase<Scalar>> x_dot_dot = createMember(model->get_x_space());
+  inArgs.set_x_dot_dot(x_dot_dot);
+
+  auto inArgs2 = model->createInArgs();
+  inArgs2.setArgs(inArgs);
+
+  auto x_out = inArgs2.get_x();
+  TEST_EQUALITY(x_out, x);
+
+  auto x_dot_out = inArgs2.get_x_dot();
+  TEST_EQUALITY(x_dot_out, x_dot);
+
+  auto x_dot_dot_out = inArgs2.get_x_dot_dot();
+  TEST_EQUALITY(x_dot_dot_out, x_dot_dot);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( InArgs, setSolutionArgs )
 
 } // namespace Thyra

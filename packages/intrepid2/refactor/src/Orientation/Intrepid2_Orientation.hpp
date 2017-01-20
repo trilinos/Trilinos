@@ -61,9 +61,8 @@ namespace Intrepid2 {
   //   are located on the stack and contiguous.
   class Orientation {
   private:
-    template<typename subCellVertType,
-             typename elemNodeViewType>
-    static void getElementNodeMap(subCellVertType *subCellVerts,
+    template<typename elemNodeViewType>
+    static void getElementNodeMap(typename elemNodeViewType::non_const_value_type *subCellVerts,
                                   ordinal_type &numVerts,
                                   const shards::CellTopology cellTopo,
                                   const elemNodeViewType elemNodes,

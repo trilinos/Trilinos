@@ -140,6 +140,28 @@ setUnmanagedField(PHX::MDField<DataT>& f)
 
 // **************************************************************
 template<typename Traits>
+void PHX::FieldManager<Traits>::
+aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
+                                const PHX::FieldTag& targetField)
+{
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it)
+    it->aliasField(aliasedField,targetField);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT> 
+void PHX::FieldManager<Traits>::
+aliasField(const PHX::FieldTag& aliasedField,
+           const PHX::FieldTag& targetField)
+{
+  m_eval_containers.template getAsObject<EvalT>()->aliasField(aliasedField,targetField);
+}
+
+// **************************************************************
+template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
 requireFieldForAllEvaluationTypes(const PHX::FieldTag& t)

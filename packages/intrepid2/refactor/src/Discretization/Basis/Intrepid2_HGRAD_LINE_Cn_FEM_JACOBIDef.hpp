@@ -78,7 +78,8 @@ namespace Intrepid2 {
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        const Kokkos::View<typename outputViewType::value_type*,
+        typedef typename outputViewType::value_type value_type;
+        const Kokkos::View<value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
         for (ordinal_type p=0;p<card;++p) {
           auto poly = Kokkos::subview( output, p, Kokkos::ALL() );
@@ -116,7 +117,8 @@ namespace Intrepid2 {
                 output(p, i, j) = 0.0;
         }
         {
-          const Kokkos::View<typename outputViewType::value_type*,
+          typedef typename outputViewType::value_type value_type;
+          const Kokkos::View<value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
 
           for (ordinal_type p=opDn;p<card;++p) {

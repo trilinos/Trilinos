@@ -46,8 +46,10 @@
 
 #include "Panzer_CommonArrayFactories.hpp"
 
-#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_Orientation.hpp"
+#include "Intrepid2_OrientationTools.hpp"
 
 
 namespace panzer {
@@ -538,6 +540,151 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
   
   references_evaluated = true;
 }
+
+#if defined(__KK__)
+// method for applying orientations
+template <typename Scalar>
+void BasisValues2<Scalar>::
+applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!intrepid_basis->requireOrientation(), 
+                             std::logic_error,
+                             "Basis does not require orientations.");
+
+  typedef Intrepid2::OrientationTools<PHX::Device> ots;
+  const PureBasis::EElementSpace elmtspace = getElementSpace();
+
+  // maybe container dimension is different from num_dim and num_ip
+  const int num_cell  = basis_layout->numCells(); // orientations.size();
+  const int num_basis = basis_layout->cardinality();
+  //const int num_ip   = basis_layout->numPoints();
+  const int num_dim   = basis_layout->dimension();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(num_cell != static_cast<int>(orientations.size()),
+                             std::logic_error,
+                             "The number of cells does not match to the dimension of orientation array.");
+
+  Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> 
+    drv_orts((Intrepid2::Orientation*)orientations.data(), num_cell);
+    
+  if (elmtspace==PureBasis::HGRAD) {
+    {
+      auto drv_basis_scalar = basis_scalar.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_scalar_tmp("drv_basis_scalar_tmp", 
+                                                                   drv_basis_scalar.dimension(0),  // C
+                                                                   drv_basis_scalar.dimension(1),  // F
+                                                                   drv_basis_scalar.dimension(2)); // P
+      Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
+      ots::modifyBasisByOrientation(drv_basis_scalar, 
+                                    drv_basis_scalar_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    } 
+
+    if (compute_derivatives) {
+      auto drv_grad_basis = grad_basis.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_grad_basis_tmp("drv_grad_basis_tmp", 
+                                                                 drv_grad_basis.dimension(0),  // C
+                                                                 drv_grad_basis.dimension(1),  // F
+                                                                 drv_grad_basis.dimension(2),  // P
+                                                                 drv_grad_basis.dimension(3)); // D
+      Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
+      ots::modifyBasisByOrientation(drv_grad_basis, 
+                                    drv_grad_basis_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    }
+  }
+  else if (elmtspace==PureBasis::HCURL && num_dim==2) {
+    {
+      auto drv_basis_vector = basis_vector.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_vector_tmp("drv_basis_vector_tmp", 
+                                                                   drv_basis_vector.dimension(0),  // C
+                                                                   drv_basis_vector.dimension(1),  // F
+                                                                   drv_basis_vector.dimension(2),  // P
+                                                                   drv_basis_vector.dimension(3)); // D
+      Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
+      ots::modifyBasisByOrientation(drv_basis_vector, 
+                                    drv_basis_vector_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    } 
+
+    if (compute_derivatives) {
+      auto drv_curl_basis_scalar = curl_basis_scalar.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_curl_basis_scalar_tmp("drv_curl_basis_scalar_tmp", 
+                                                                        drv_curl_basis_scalar.dimension(0),  // C
+                                                                        drv_curl_basis_scalar.dimension(1),  // F
+                                                                        drv_curl_basis_scalar.dimension(2));  // P
+      
+      Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
+      ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
+                                    drv_curl_basis_scalar_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    }
+  }
+  else if (elmtspace==PureBasis::HCURL && num_dim==3) {
+    {
+      auto drv_basis_vector = basis_vector.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_vector_tmp("drv_basis_vector_tmp", 
+                                                                   drv_basis_vector.dimension(0),  // C
+                                                                   drv_basis_vector.dimension(1),  // F
+                                                                   drv_basis_vector.dimension(2),  // P
+                                                                   drv_basis_vector.dimension(3)); // D
+      Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
+      ots::modifyBasisByOrientation(drv_basis_vector, 
+                                    drv_basis_vector_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    } 
+    
+    if (compute_derivatives) {
+      auto drv_curl_basis_vector = curl_basis_vector.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_curl_basis_vector_tmp("drv_curl_basis_vector_tmp", 
+                                                                        drv_curl_basis_vector.dimension(0),  // C
+                                                                        drv_curl_basis_vector.dimension(1),  // F
+                                                                        drv_curl_basis_vector.dimension(2),  // P
+                                                                        drv_curl_basis_vector.dimension(3));  // D
+      
+      Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
+      ots::modifyBasisByOrientation(drv_curl_basis_vector, 
+                                    drv_curl_basis_vector_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    }
+  }
+  else if (elmtspace==PureBasis::HDIV) {
+    {
+      auto drv_basis_vector = basis_vector.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_basis_vector_tmp("drv_basis_vector_tmp", 
+                                                                   drv_basis_vector.dimension(0),  // C
+                                                                   drv_basis_vector.dimension(1),  // F
+                                                                   drv_basis_vector.dimension(2),  // P
+                                                                   drv_basis_vector.dimension(3)); // D
+      Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
+      ots::modifyBasisByOrientation(drv_basis_vector, 
+                                    drv_basis_vector_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    } 
+
+    if (compute_derivatives) {
+      auto drv_div_basis = div_basis.get_view();
+      Kokkos::DynRankView<Scalar,PHX::Device> drv_div_basis_tmp("drv_div_basis_tmp", 
+                                                                drv_div_basis.dimension(0),  // C
+                                                                drv_div_basis.dimension(1),  // F
+                                                                drv_div_basis.dimension(2));  // P
+      
+      Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
+      ots::modifyBasisByOrientation(drv_div_basis, 
+                                    drv_div_basis_tmp, 
+                                    drv_orts,
+                                    intrepid_basis);
+    }
+  }
+}
+#endif
 
 // method for applying orientations
 template <typename Scalar>

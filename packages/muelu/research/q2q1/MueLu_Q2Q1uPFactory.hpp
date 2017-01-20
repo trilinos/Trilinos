@@ -545,6 +545,8 @@ namespace MueLu {
     validParamList->set< bool >                  ("phase2",                    false, "Use extra phase to improve pattern");
     validParamList->set< bool >                  ("dump status",               false, "Output status");
 
+    validParamList->set< double >                ("tau_2",              sqrt(0.0015), "tau_2 parameter from the paper (used for mid points)");
+
     return validParamList;
   }
 
@@ -827,6 +829,8 @@ namespace MueLu {
     std::cout << "======================" << std::endl;
   }
 
+  // distance2 returns _squared_ distance
+  // i.e. the final sqrt calculation is not done
   template<class SC>
   SC distance2(const ArrayRCP<ArrayRCP<const SC> >& coords1D, int i, int j) {
     const int NDim = coords1D.size();
@@ -1466,6 +1470,11 @@ namespace MueLu {
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
 
+    const ParameterList& pL = GetParameterList();
+    double tau_2 = pL.get<double>("tau_2");
+    // In calculations, we use tau_2^2
+    tau_2 = tau_2 * tau_2;
+
     const std::vector<short>& numCpts = myCpts.getNumCpts();
 
     ArrayRCP<const size_t> ia;
@@ -1666,7 +1675,7 @@ namespace MueLu {
           }
         }
 
-        if  (close/delta > .0015) {
+        if  (close/delta > tau_2) {
           isMidPoint[smallestIndex] = 'y';
           numMidPoints++;
         }

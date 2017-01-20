@@ -41,32 +41,66 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_ALIASED_FIELDS_TEST_EVALUATORS_HPP
+#define PHX_ALIASED_FIELDS_TEST_EVALUATORS_HPP
 
-#ifndef PHX_FIELD_EVALUATOR_DERIVED_HPP
-#define PHX_FIELD_EVALUATOR_DERIVED_HPP
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_MDField.hpp"
 
-#include <vector>
+template<typename EvalT, typename Traits>
+class EvalA : public PHX::EvaluatorWithBaseImpl<Traits>,
+              public PHX::EvaluatorDerived<EvalT, Traits>  {
 
-#include "Phalanx_Evaluator_Base.hpp"
-#include "Phalanx_Evaluator_Utilities.hpp"
+  typedef typename EvalT::ScalarT ScalarT;
+  PHX::MDField<ScalarT,CELL,BASIS> a;
+  PHX::MDField<const ScalarT,CELL,BASIS> b;
 
-namespace PHX {
+public:
+  EvalA(const Teuchos::RCP<PHX::DataLayout> & data_layout)
+  {
+    this->setName("Eval A");
+    a = PHX::MDField<ScalarT,CELL,BASIS>("a",data_layout);
+    this->addEvaluatedField(a);
+    b = PHX::MDField<const ScalarT,CELL,BASIS>("b",data_layout);
+    this->addDependentField(b);
+  }
 
-  template<typename EvalT, typename Traits>
-  class EvaluatorDerived : public PHX::EvaluatorBase<Traits> {
-    
-  public:
-    
-    EvaluatorDerived() {}
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& vm) override
+  {}
+  
+  void evaluateFields(typename Traits::EvalData ) override
+  {
+    a.deep_copy(b);
+  }
+};
 
-    virtual ~EvaluatorDerived() {}
-    
-  protected:
-    
-    PHX::EvaluatorUtilities<EvalT,Traits> utils;
 
-  };
+template<typename EvalT, typename Traits>
+class EvalC : public PHX::EvaluatorWithBaseImpl<Traits>,
+              public PHX::EvaluatorDerived<EvalT, Traits>  {
 
-}
+  typedef typename EvalT::ScalarT ScalarT;
+  PHX::MDField<ScalarT,CELL,BASIS> c;
+
+public:
+  EvalC(const Teuchos::RCP<PHX::DataLayout> & data_layout)
+  {
+    this->setName("Eval C");
+    c = PHX::MDField<ScalarT,CELL,BASIS>("c",data_layout);
+    this->addEvaluatedField(c);
+  }
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& vm) override
+  {}
+  
+  void evaluateFields(typename Traits::EvalData ) override
+  {
+    c.deep_copy(4.0);
+  }
+};
+
 
 #endif

@@ -47,6 +47,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DAG_Manager.hpp"
+#include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DimTag.hpp"
 
@@ -681,4 +682,71 @@ TEUCHOS_UNIT_TEST(dag, contrib_only_B)
     TEST_EQUALITY(nodes[4].adjacencies().size(),1);
     TEST_ASSERT(nodes[4].adjacencies().find(2) != nodes[4].adjacencies().end());
   }
+}
+
+// *************************************************
+// Test for aliasing a field
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, alias_field)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  DagManager<MyTraits> dag("alias_field");
+
+  // Register evaluators
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_A");
+    m->evaluates("A");
+    m->requires("B");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_C");
+    m->evaluates("C");
+    dag.registerEvaluator(m);
+  }
+
+  // Require fields
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = 
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> taga("A",dl);
+    dag.requireField(taga);
+  }
+
+  // Alias field B to C
+  {
+    RCP<MDALayout<CELL,BASIS>> dl =
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> tag_b("B",dl);
+    Tag<MyTraits::Residual::ScalarT> tag_c("C",dl);
+    RCP<PHX::Evaluator<MyTraits>> e =
+      rcp(new PHX::AliasField<MyTraits::Residual::ScalarT,MyTraits>(tag_b,tag_c));
+    dag.registerEvaluator(e); // b points to c's memory
+  }
+
+  // This will fail if the logic for "B" evaluation is not set properly
+  dag.sortAndOrderEvaluators();
+  
+  //out << dag << std::endl;
+  dag.writeGraphvizFile("alias_field.dot",true,true,true);
+
+  // Check that the out edges are correct.
+  {
+    const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    // A --> B (Alias)
+    TEST_EQUALITY(nodes[0].adjacencies().size(),1);
+    TEST_ASSERT(nodes[0].adjacencies().find(2) != nodes[0].adjacencies().end());
+    // B (Alias) --> C
+    TEST_EQUALITY(nodes[2].adjacencies().size(),1);
+    TEST_ASSERT(nodes[2].adjacencies().find(1) != nodes[2].adjacencies().end());
+    // C
+    TEST_EQUALITY(nodes[1].adjacencies().size(),0);
+  }
+
 }

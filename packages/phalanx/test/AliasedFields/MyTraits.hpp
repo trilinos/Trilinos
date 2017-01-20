@@ -41,32 +41,43 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-#ifndef PHX_FIELD_EVALUATOR_DERIVED_HPP
-#define PHX_FIELD_EVALUATOR_DERIVED_HPP
-
-#include <vector>
-
-#include "Phalanx_Evaluator_Base.hpp"
-#include "Phalanx_Evaluator_Utilities.hpp"
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
+#include "Sacado_mpl_vector.hpp"
 
 namespace PHX {
 
-  template<typename EvalT, typename Traits>
-  class EvaluatorDerived : public PHX::EvaluatorBase<Traits> {
+  /*! \brief Traits class for testing.
     
-  public:
-    
-    EvaluatorDerived() {}
+  */
+  struct MyTraits {
 
-    virtual ~EvaluatorDerived() {}
-    
-  protected:
-    
-    PHX::EvaluatorUtilities<EvalT,Traits> utils;
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
+
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
 
   };
 
+
+}
+
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
 }
 
 #endif

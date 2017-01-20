@@ -221,7 +221,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(1, edgeId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    double temp = 0.0;
+                    inputValueType temp = 0.0;
                     for (ordinal_type l=0;l<ndofEdge;++l) {
                       const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                       temp += mat(i,l)*in(ll, j, k);
@@ -253,7 +253,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(2, faceId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    double temp = 0.0;
+                    inputValueType temp = 0.0;
                     for (ordinal_type l=0;l<ndofFace;++l) {
                       const ordinal_type ll = tagToOrdinal(2, faceId, l);
                       temp += mat(i,l)*in(ll, j, k);
