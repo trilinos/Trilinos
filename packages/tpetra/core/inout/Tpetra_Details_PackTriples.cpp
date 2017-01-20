@@ -41,6 +41,34 @@
 
 #include "Tpetra_Details_PackTriples.hpp"
 
+#ifdef HAVE_TPETRACORE_MPI
+
+namespace { // (anonymous)
+  std::string
+  mpiErrorCodeToString (const int errCode)
+  {
+    if (errCode == MPI_SUCCESS) {
+      return "MPI_SUCCESS";
+    }
+    else {
+      char rawErrString[MPI_MAX_ERROR_STRING];
+      int len = 0;
+      int err = MPI_Error_string (errCode, rawErrString, &len);
+      if (err != MPI_SUCCESS) {
+        // Assume that the string wasn't written.  This means it might
+        // not be null terminated, so make it a valid empty string by
+        // writing the null termination character to it.
+        if (MPI_MAX_ERROR_STRING > 0) {
+          rawErrString[0] = '\0';
+        }
+      }
+      return std::string (rawErrString);
+    }
+  }
+} // namespace (anonymous)
+
+#endif // HAVE_TPETRACORE_MPI
+
 namespace Tpetra {
 namespace Details {
 
@@ -58,7 +86,8 @@ countPackTriplesCountMpi (MPI_Comm comm,
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "countPackTripleMpi: MPI_Pack_size failed on "
-        "MPI_INT call" << endl;
+               << "MPI_INT call.  MPI reports: "
+               << mpiErrorCodeToString (errCode) << endl;
     }
     return errCode;
   }
@@ -86,7 +115,9 @@ packTriplesCountMpi (const int numEnt,
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "packTriplesCountMpi: MPI_Pack failed with outBufSize="
-               << outBufSize << " and outBufCurPos=" << outBufCurPos << endl;
+               << outBufSize << " and outBufCurPos=" << outBufCurPos
+               << ".  MPI reports: " << mpiErrorCodeToString (errCode)
+               << endl;
     }
     return errCode;
   }
@@ -114,7 +145,9 @@ unpackTriplesCountMpi (const char inBuf[],
     if (errStrm != NULL) {
       *errStrm << "unpackTriplesCountMpi: MPI_Unpack failed on gblRowInd: "
                << "inBufSize=" << inBufSize
-               << ", inBufCurPos=" << inBufCurPos << endl;
+               << ", inBufCurPos=" << inBufCurPos
+               << ".  MPI reports: " << mpiErrorCodeToString (errCode)
+               << endl;
     }
     return errCode;
   }
