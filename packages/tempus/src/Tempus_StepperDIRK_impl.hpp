@@ -36,7 +36,7 @@ void StepperDIRK<Scalar>::setModel(
   residualModel_ =
     Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel));
 
-  inArgs_  = residualModel_->getNominalValues();
+  inArgs_  = residualModel_->createInArgs();
   outArgs_ = residualModel_->createOutArgs();
 }
 
@@ -85,9 +85,11 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
 
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
-  stageX_    = Thyra::createMember (residualModel_->get_x_space());
+  stageX_    = residualModel_->getNominalValues().get_x()->clone_v();
   stageXDot_ = Thyra::createMembers(residualModel_->get_x_space(), numStages);
   stageXPartial_ = Thyra::createMember(residualModel_->get_x_space());
+  assign(stageXDot_.ptr(),     Teuchos::ScalarTraits<Scalar>::zero());
+  assign(stageXPartial_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 }
 
 template<class Scalar>

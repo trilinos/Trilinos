@@ -30,3 +30,7 @@ cmake \
     -D Trilinos_TPL_SYSTEM_INCLUDE_DIRS:BOOL=ON \
     -D BUILD_SHARED_LIBS:BOOL=FALSE \
 /Users/ccober/myOffice/Trilinos
+
+# Flags to set for building in debug mode
+#    -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+#    -D CMAKE_CXX_FLAGS:STRING="-g -Wall" \

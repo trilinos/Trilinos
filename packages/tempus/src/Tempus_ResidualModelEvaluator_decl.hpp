@@ -60,17 +60,20 @@ public:
 
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
       { return transientModel_->get_p_names(p); }
+
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
+      { return transientModel_->get_x_space(); }
+
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
+      { return transientModel_->getNominalValues(); }
+
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+
+    void evalModelImpl(
+              const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
+              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
-
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
-    { return transientModel_->get_x_space(); }
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-
-
-  void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-                     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
 private:
   /// Default constructor - not allowed
@@ -82,7 +85,6 @@ private:
   Scalar t_;
   Scalar alpha_;
   Scalar beta_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
 };
 
 } // namespace Tempus
