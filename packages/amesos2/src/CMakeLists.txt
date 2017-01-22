@@ -261,6 +261,24 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
 
 ENDIF()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
+IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
+
+  APPEND_SET(HEADERS
+    Amesos2_Umfpack.hpp
+    Amesos2_Umfpack_decl.hpp
+    Amesos2_Umfpack_def.hpp
+    Amesos2_Umfpack_FunctionMap.hpp
+    Amesos2_Umfpack_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Umfpack_TypeMap.cpp
+    Amesos2_Umfpack.cpp
+    )
+
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 
   APPEND_SET(HEADERS
@@ -384,7 +402,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
         )
 ENDIF()
 ENDIF()
-
 
 
 #

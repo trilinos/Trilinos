@@ -54,6 +54,29 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 ENDIF()
 
 
+##### Umfpack Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
+IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyUmfpackFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES umfpack_test.xml
+    EXEDEPS Solver_Test
+    )
+
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Umfpack_Solver_Test
+    ARGS "--xml-params=umfpack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
+ENDIF()
+
+
 ##### SuperLU_MT Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
