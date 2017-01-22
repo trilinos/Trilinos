@@ -51,21 +51,23 @@ namespace Ioex {
   {
   public:
     SuperElement(std::string filename, const std::string &my_name);
-    ~SuperElement();
+    ~SuperElement() override;
 
-    std::string      type_string() const { return "SuperElement"; }
-    std::string      short_type_string() const { return "superelement"; }
-    Ioss::EntityType type() const { return Ioss::SUPERELEMENT; }
+    std::string      type_string() const override { return "SuperElement"; }
+    std::string      short_type_string() const override { return "superelement"; }
+    Ioss::EntityType type() const override { return Ioss::SUPERELEMENT; }
 
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
-    Ioss::Property get_implicit_property(const std::string &the_name) const;
+    Ioss::Property get_implicit_property(const std::string &the_name) const override;
 
   protected:
-    int64_t internal_get_field_data(const Ioss::Field &field, void *data, size_t data_size) const;
+    int64_t internal_get_field_data(const Ioss::Field &field, void *data,
+                                    size_t data_size) const override;
 
-    int64_t internal_put_field_data(const Ioss::Field &field, void *data, size_t data_size) const;
+    int64_t internal_put_field_data(const Ioss::Field &field, void *data,
+                                    size_t data_size) const override;
 
   private:
     std::string fileName;

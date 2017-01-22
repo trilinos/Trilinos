@@ -120,8 +120,8 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     TEUCHOS_ASSERT(userArray->rank()==2);
     refPointArray = Kokkos::DynRankView<double,PHX::Device>("refPointArray",userArray->dimension(0),userArray->dimension(1));
     // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
-    for(int i=0;i<userArray->dimension(0);i++)
-      for(int j=0;j<userArray->dimension(1);j++)
+    for(int i=0;i<userArray->extent_int(0);i++)
+      for(int j=0;j<userArray->extent_int(1);j++)
         refPointArray(i,j) = (*userArray)(i,j); 
   }
 

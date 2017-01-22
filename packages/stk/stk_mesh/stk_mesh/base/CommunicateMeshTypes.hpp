@@ -54,7 +54,7 @@ CommBuffer & CommBuffer::pack<stk::mesh::PartVector>( const stk::mesh::PartVecto
   }
 
   pack(num_parts);
-  pack(&part_ordinals[0], num_parts);
+  pack(part_ordinals.data(), num_parts);
 
   return *this;
 }
@@ -83,7 +83,7 @@ CommBuffer & CommBuffer::unpack< std::pair<const stk::mesh::MetaData *, stk::mes
   unsigned num_parts;
   unpack(num_parts);
   std::vector<unsigned> part_ordinals(num_parts);
-  unpack(&part_ordinals[0], num_parts);
+  unpack(part_ordinals.data(), num_parts);
 
   for(std::vector<unsigned>::const_iterator it = part_ordinals.begin(); it != part_ordinals.end(); ++it)
   {

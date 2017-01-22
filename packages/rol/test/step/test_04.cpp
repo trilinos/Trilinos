@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_01.cpp
-    \brief Test line search.
+/*! \file  test_04.cpp
+    \brief Test bound constrained trust-region steps.
 */
 
 #define USE_HESSVEC 1
@@ -54,10 +54,12 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 

@@ -47,39 +47,38 @@
 \brief Ifpack2 Unit test for AdditiveSchwarz.
 */
 
-#include <iostream>
-#include <Teuchos_ConfigDefs.hpp>
-
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Ifpack2_Version.hpp>
+#include "Ifpack2_config.h"
+#ifdef HAVE_IFPACK2_AMESOS2
+#  include "Amesos2_config.h"
+#endif // HAVE_IFPACK2_AMESOS2
+#include "Teuchos_UnitTestHarness.hpp"
 
 // Xpetra / Galeri
 #ifdef HAVE_IFPACK2_XPETRA
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_Parameters.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_TpetraMap.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraMatrixTypes.hpp>
-#include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
-#endif
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
+#include "Xpetra_Parameters.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
+#include "Galeri_XpetraParameters.hpp"
+#include "Galeri_XpetraUtils.hpp"
+#include "Galeri_XpetraMaps.hpp"
+#endif // HAVE_IFPACK2_XPETRA
 
-#include <Ifpack2_UnitTestHelpers.hpp>
-#include <Ifpack2_AdditiveSchwarz.hpp>
+#include "Ifpack2_UnitTestHelpers.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
-#include <Ifpack2_Experimental_RBILUK.hpp>
-#include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+namespace { // (anonymous)
 
-namespace {
 using Tpetra::global_size_t;
+using Teuchos::RCP;
+using std::endl;
 typedef tif_utest::Node Node;
 
 //this macro declares the unit-test-class:
@@ -89,8 +88,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
-  using Teuchos::RCP;
-  using std::endl;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
 
@@ -102,15 +99,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   const Scalar one = STS::one ();
   const Scalar two = STS::one () + STS::one ();
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << endl;
+  out << "Ifpack2::AdditiveSchwarz: Test0" << endl;
+  Teuchos::OSTab tab1 (out);
 
   global_size_t num_rows_per_proc = 5;
 
   out << "Creating row Map and CrsMatrix" << endl;
 
-  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
-  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node>(rowmap);
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar, LO, GO, Node> (rowmap);
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
@@ -179,24 +178,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
 
 // ///////////////////////////////////////////////////////////////////// //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LO, GO)
 {
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
-
-  using Teuchos::RCP;
-  using std::endl;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
 
   Teuchos::OSTab tab0 (out);
   out << "AdditiveSchwarz Test1" << endl;
 
   global_size_t num_rows_per_proc = 5;
 
-  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
   // Don't run in serial.
   if(rowmap->getComm()->getSize()==1) {
@@ -204,7 +197,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
     return;
   }
 
-  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node>(rowmap);
 
   out << "Create Ifpack2::AdditiveSchwarz instance" << endl;
   Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
@@ -245,7 +238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
 
   //prec.describe (* Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)), Teuchos::VERB_EXTREME);
 
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,1), y(rowmap,1), z(rowmap,1);
+  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,1), y(rowmap,1), z(rowmap,1);
   x.putScalar(1);
   prec.apply(x, y);
 
@@ -260,13 +253,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   else if (mypid == rowmap->getComm()->getSize()-1) {
-    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
+    for (GO i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
   }
   else {
-    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
+    for (GO i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
-    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
+    for (GO i=0; i<overlapLevel; ++i)
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   zdata = Teuchos::null;
@@ -280,25 +273,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
 
 // ///////////////////////////////////////////////////////////////////// //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LO, GO)
 {
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  out << "Ifpack2::AdditiveSchwarz: Test2" << endl;
+  Teuchos::OSTab tab1 (out);
 
   global_size_t num_rows_per_proc = 5;
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  const RCP<const Tpetra::Map<LO,GO,Node> > rowmap =
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
   // Don't run in serial.
   if(rowmap->getComm()->getSize()==1) {
-    out << std::endl << "This test must be run on more than one process." << std::endl << std::endl;
+    out << endl << "This test must be run on more than one process." << endl << endl;
     return;
   }
 
-  Teuchos::RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix3<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix3<Scalar,LO,GO,Node>(rowmap);
 
   Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
@@ -320,7 +315,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
   prec.compute();
 
 
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,1), y(rowmap,1), z(rowmap,1);
+  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,1), y(rowmap,1), z(rowmap,1);
   x.putScalar(1);
   crsmatrix->apply(x,z);
   prec.apply(z, y);
@@ -336,18 +331,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
 
 // Test RILUK as subdomain solver for AdditiveSchwarz.
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LO, GO)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
-  using Teuchos::RCP;
-  using std::endl;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   Teuchos::OSTab tab0 (out);
@@ -359,9 +352,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LocalOr
   out << "Creating row Map and CrsMatrix" << endl;
 
   RCP<const map_type> rowmap =
-    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
   RCP<const crs_matrix_type> crsmatrix =
-    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+    tif_utest::create_test_matrix<Scalar,LO,GO,Node>(rowmap);
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
@@ -418,132 +411,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LocalOr
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RBILUK, Scalar, LocalOrdinal, GlobalOrdinal)
-{
-  using std::endl;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
-
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
-
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << endl;
-
-  out << "Test purpose: exercise RBILUK as subdomain solver to AdditiveSchwarz" << endl;
-
-
-  out << "Creating row Map and constant block CrsMatrix" << endl;
-
-  const int num_rows_per_proc = 10;
-  const int blockSize = 1;
-
-  const int lof = 0;
-  const size_t rbandwidth = lof+2+2;
-  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_banded_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc, rbandwidth);
-  RCP<block_crs_matrix_type> bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_banded_block_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize, rbandwidth));
-
-  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
-
-  int overlapLimit=1;
-
-  for (int overlapLevel=0; overlapLevel<overlapLimit; ++overlapLevel) {
-
-    out << "overlap = " << overlapLevel << std::endl;
-    out << "Creating AdditiveSchwarz instance" << endl;
-    Ifpack2::AdditiveSchwarz<row_matrix_type> prec(const_bcrsmatrix);
-
-    out << "Filling in ParameterList for AdditiveSchwarz" << endl;
-    Teuchos::ParameterList params;
-    params.set ("inner preconditioner name", "RBILUK");
-    params.set ("schwarz: overlap level", overlapLevel);
-#   if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-    params.set ("schwarz: use reordering", true);
-#   else
-    params.set ("schwarz: use reordering", false);
-#   endif
-
-    out << "Setting AdditiveSchwarz's parameters" << endl;
-    TEST_NOTHROW(prec.setParameters(params));
-
-    out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
-    //trivial tests to insist that the preconditioner's domain/range maps are
-    //identically those of the matrix:
-    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_dom_map_ptr = &*bcrsmatrix->getDomainMap();
-    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_rng_map_ptr = &*bcrsmatrix->getRangeMap();
-    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
-    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
-    TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
-    TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
-
-    out << "Calling AdditiveSchwarz's initialize()" << endl;
-    prec.initialize();
-
-    out << "Calling AdditiveSchwarz's compute()" << endl;
-    prec.compute();
-
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-
-    BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
-    BMV yBlock (*crsgraph->getRowMap (), blockSize, 1);
-    BMV zBlock (*crsgraph->getRowMap (), blockSize, 1);
-    MV x = xBlock.getMultiVectorView ();
-    MV y = yBlock.getMultiVectorView ();
-    //MV z = zBlock.getMultiVectorView ();
-    x.randomize();
-
-    //Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2), z(rowmap,2);
-    //x.putScalar(1);
-
-    out << "Applying AdditiveSchwarz to a multivector" << endl;
-    prec.apply (x, y);
-
-    /*
-    out << "Testing result of AdditiveSchwarz's apply" << endl;
-
-    // The solution should now be full of 1/2s
-    z.putScalar(0.5);
-
-    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
-    Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
-
-    TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
-    */
-
-  }
-}
-
-
-// ///////////////////////////////////////////////////////////////////// //
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LO, GO)
 {
   // Test that AdditiveSchwarz transfer patterns are correct.
   // A vector v such that v(i) = GID(i) is passed in to AS.  Using the IdentitySolver with any amount
   // of overlap, any subdomain reordering, and combine mode Zero, the solution should be v.
 
-  using Teuchos::RCP;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
-  out << "Test purpose: verify that AdditiveSchwarz transfer patterns are correct." << std::endl;
+  out << "Ifpack2::AdditiveSchwarz: TestOverlap" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  out << "Test purpose: verify that AdditiveSchwarz transfer patterns are correct." << endl;
 
   global_size_t num_rows_per_proc = 10;
-  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
   // Don't run in serial.
   if(rowmap->getComm()->getSize()==1) {
-    out << std::endl << "This test must be run on more than one process." << std::endl << std::endl;
+    out << endl << "This test must be run on more than one process." << endl << endl;
     return;
   }
 
-  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix2<Scalar, LO, GO, Node> (rowmap);
 
   for (int i=0; i<2; ++i) {
     bool reorderSubdomains;
@@ -580,12 +474,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
 
       MV x (rowmap, 1), y (rowmap, 1);
       Teuchos::ArrayRCP<Scalar> xData = x.getDataNonConst(0);
-      for (GlobalOrdinal j=0; j<xData.size(); ++j)
+      for (GO j=0; j<xData.size(); ++j)
         xData[j] = rowmap->getGlobalElement(j);
       xData = Teuchos::null;
       prec.apply(x, y);
 
-      out << prec.description() << std::endl;
+      out << prec.description() << endl;
 
       // The solution should now be full of GIDs.
       Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
@@ -598,21 +492,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
       TEST_COMPARE_FLOATING_ARRAYS(xview, yview, 4*Teuchos::ScalarTraits<Scalar>::eps());
     }
   }
-
 }
 
-// ///////////////////////////////////////////////////////////////////// //
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
-// Test SuperLU sparse direct solver as subdomain solver for AdditiveSchwarz.
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_IFPACK2_XPETRA) && (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
+// Test sparse direct solver as subdomain solver for AdditiveSchwarz.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC, LO, GO)
 {
   using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using std::endl;
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
   typedef Node NT;
   typedef typename Tpetra::Vector<SC,LO,GO,NT>::mag_type mag_type;
   typedef Teuchos::ScalarTraits<SC> STS;
@@ -626,7 +513,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   typedef Xpetra::Map<LO,GO,NT>                XMapType;
   typedef Xpetra::MultiVector<SC,LO,GO,NT>     XMVectorType;
 
-  out << "Test SuperLU (from Amesos2) as subdomain solver for AdditiveSchwarz" << endl;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::outArg;
+  using Teuchos::reduceAll;
+  int lclSuccess = 1; // will set again below
+  int gblSuccess = 0; // output argument
+
+
+  out << "Test Amesos2 sparse direct solver"
+#if defined(HAVE_AMESOS2_SUPERLU)
+  << " (SuperLU)"
+#elif defined(HAVE_AMESOS2_KLU2)
+  << " (KLU2)"
+#endif
+  << " as subdomain solver for AdditiveSchwarz" << endl;
 
   // Generate the matrix using Galeri.  Galeri wraps it in an Xpetra
   // matrix, so after it finishes, ask it for the Tpetra matrix.
@@ -658,6 +558,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
+  params.set ("schwarz: overlap level", 0);  //FIXME Note that this test will fail for overlap>0.
+                                       //See github issue #460.
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
 #else
@@ -685,10 +587,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   */
 
   ParameterList &subdomainList = params.sublist("subdomain solver parameters");
+#if defined(HAVE_AMESOS2_SUPERLU)
   subdomainList.set("Amesos2 solver name","superlu");
-  ParameterList &amesos2List = subdomainList.sublist("Amesos2");
+  ParameterList &amesos2List = subdomainList.sublist("Amesos2"); // sublist required by Amesos2
   ParameterList &superluList = amesos2List.sublist("SuperLU");
   superluList.set("ILU_Flag",false);
+#elif defined(HAVE_AMESOS2_KLU2)
+  subdomainList.set("Amesos2 solver name","klu");
+  subdomainList.sublist("Amesos2"); // sublist required by Amesos2
+#else
+#  error "This test requires Amesos2 to have support for either SuperLU or KLU."
+#endif
 
   out << "Setting AdditiveSchwarz's parameters" << endl;
 
@@ -698,6 +607,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   out << ps.str() << endl;
 
   TEST_NOTHROW(prec.setParameters(params));
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    out << "prec.setParameters(params) threw an exception on some process!" << endl;
+    return; // no sense in continuing
+  }
 
   out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
 
@@ -712,15 +629,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
 
   out << endl << "solve using AdditiveSchwarz with sparse direct method as the subdomain solve" << endl;
   out << "Calling AdditiveSchwarz::initialize()" << endl;
-  prec.initialize();
+  TEST_NOTHROW( prec.initialize() );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    out << "prec.initialize() threw an exception on some process!" << endl;
+    return; // no sense in continuing
+  }
 
   out << "Calling AdditiveSchwarz::compute()" << endl;
-  prec.compute();
+  TEST_NOTHROW( prec.compute() );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    out << "prec.compute() threw an exception on some process!" << endl;
+    //return; // no sense in continuing
+  }
 
+  out << "Generating input and output (multi)vectors" << endl;
   MV x(rowmap,2), y(rowmap,2);
   x.randomize();
-  out << "Calling AdditiveSchwarz::apply()" << endl;
-  prec.apply (x, y);
+
+  if (gblSuccess == 1) {
+    out << "Calling AdditiveSchwarz::apply()" << endl;
+    TEST_NOTHROW( prec.apply (x, y) );
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "prec.apply(x,y) threw an exception on some process!" << endl;
+      return; // no sense in continuing
+    }
+  }
 
   // Now switch to dense direct solves on the subdomains.
   out << endl << "solve using AdditiveSchwarz with dense direct method as the subdomain solve" << endl;
@@ -734,25 +679,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   MV z(rowmap,2);
   prec.apply (x, z);
 
-  out << "Comparing results of two solves" << endl;
-  Teuchos::Array<mag_type> ynorms (y.getNumVectors ()), znorms (z.getNumVectors ());
-  y.norm2 (ynorms ());
+  if (gblSuccess == 1) {
+    out << "Comparing results of two solves" << endl;
+  }
+  Teuchos::Array<mag_type> ynorms (y.getNumVectors ());
+  Teuchos::Array<mag_type> znorms (z.getNumVectors ());
+  if (gblSuccess == 1) {
+    y.norm2 (ynorms ());
+  }
   z.norm2 (znorms ());
-  out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << endl;
+  if (gblSuccess == 1) {
+    out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << endl;
+  }
   out << "solution norm,  dense direct solve: " << std::setprecision(7) << znorms[0] << endl;
-  TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10* STS::eps ());
-
+  if (gblSuccess == 1) {
+    TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10* STS::eps ());
+  }
 }
 #endif
 
-// ///////////////////////////////////////////////////////////////////// //
 
 // Test multiple sweeps of additive Schwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   using Teuchos::ArrayRCP;
-  using Teuchos::RCP;
-  using std::endl;
 
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
@@ -764,7 +714,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
   typedef Teuchos::ScalarTraits<Scalar>          STS;
   typedef typename multivector_type::mag_type    mag_type;
 
-  Teuchos::OSTab tab0 (out);
   out << "Test multiple sweeps of AdditiveSchwarz" << endl;
   Teuchos::OSTab tab1 (out);
 
@@ -913,19 +862,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
 # endif
 }
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SparseDirectSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 #else
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal)
-#endif
-
-#if defined(HAVE_IFPACK2_EXPERIMENTAL)
-#  define IFPACK2_RBILUK_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, RBILUK, Scalar, LocalOrdinal, GlobalOrdinal)
-#else
-#  define IFPACK2_RBILUK_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal)
 #endif
 
 #  define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
@@ -935,7 +877,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, RILUK, Scalar, LocalOrdinal,GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar, LocalOrdinal, GlobalOrdinal) \
-     IFPACK2_RBILUK_SCALAR_ORDINAL(Scalar, LocalOrdinal,GlobalOrdinal) \
      IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 
 // mfh 26 Aug 2015: Ifpack2::AdditiveSchwarz was only getting tested

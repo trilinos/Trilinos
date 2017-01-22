@@ -69,28 +69,30 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
       
-      const auto card = vinv.dimension(0);
-      const auto npts = input.dimension(0);
+      const ordinal_type card = vinv.dimension(0);
+      const ordinal_type npts = input.dimension(0);
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      const auto input_x = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(0,1));
-      const auto input_y = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(1,2));
+      const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
+
+      const int fad = (Kokkos::is_view_fad<workViewType>::value ? Kokkos::dimension_scalar(work) : 1);
       
       switch (opType) {
       case OPERATOR_VALUE: {
-        auto ptr = work.data();
-        
+        typename workViewType::pointer_type ptr = work.data();
+
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> work_line(ptr, card, npts);
-        ptr += (card*npts);
+        ptr += (card*npts*fad);
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_x(ptr, card, npts);
-        ptr += (card*npts);
+        ptr += (card*npts*fad);
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_y(ptr, card, npts);
-        ptr += (card*npts);
+        ptr += (card*npts*fad);
         
         Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_x, input_x, work_line, vinv);
@@ -100,19 +102,19 @@ namespace Intrepid2 {
 
         // tensor product
         ordinal_type idx = 0;
-        for (auto j=0;j<card;++j) // y
-          for (auto i=0;i<card;++i,++idx)  // x
-            for (auto k=0;k<npts;++k) 
+        for (ordinal_type j=0;j<card;++j) // y
+          for (ordinal_type i=0;i<card;++i,++idx)  // x
+            for (ordinal_type k=0;k<npts;++k)
               output(idx,k) = output_x(i,k)*output_y(j,k);
         break;
       }
       case OPERATOR_CURL: {
         for (auto l=0;l<2;++l) {
-          auto ptr = work.data();
-          
+          typename workViewType::pointer_type ptr = work.data();
+
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> work_line(ptr, card, npts);
-          ptr += (card*npts);
+          ptr += (card*npts*fad);
           
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space,Kokkos::MemoryUnmanaged> output_x, output_y;
@@ -122,13 +124,13 @@ namespace Intrepid2 {
             // l = 1
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_x, input_x, work_line, vinv, 1);                           
 
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_y, input_y, work_line, vinv);                           
 
@@ -137,13 +139,13 @@ namespace Intrepid2 {
             // l = 0
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_x, input_x, work_line, vinv);                           
 
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_y, input_y, work_line, vinv, 1);                           
 
@@ -152,9 +154,9 @@ namespace Intrepid2 {
 
           // tensor product (extra dimension of ouput x and y are ignored)
           ordinal_type idx = 0;
-          for (auto j=0;j<card;++j) // y
-            for (auto i=0;i<card;++i,++idx)  // x
-              for (auto k=0;k<npts;++k) 
+          for (ordinal_type j=0;j<card;++j) // y
+            for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type k=0;k<npts;++k)
                 output(idx,k,l) = s*output_x(i,k,0)*output_y(j,k,0);
         }
         break;
@@ -174,11 +176,11 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         const auto dkcard = opDn + 1;
         for (auto l=0;l<dkcard;++l) {
-          auto ptr = work.data();
-          
+          typename workViewType::pointer_type ptr = work.data();
+
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> work_line(ptr, card, npts);
-          ptr += (card*npts);
+          ptr += (card*npts*fad);
           
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space,Kokkos::MemoryUnmanaged> output_x, output_y;
@@ -189,13 +191,13 @@ namespace Intrepid2 {
           if (mult_x) {
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_x, input_x, work_line, vinv, mult_x);                           
           } else {
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_x, input_x, work_line, vinv);                           
           }
@@ -203,22 +205,22 @@ namespace Intrepid2 {
           if (mult_y) {
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_y, input_y, work_line, vinv, mult_y);                           
           } else {
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts);
+            ptr += (card*npts*fad);
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_y, input_y, work_line, vinv);                           
           }
 
           // tensor product (extra dimension of ouput x and y are ignored)
           ordinal_type idx = 0;
-          for (auto j=0;j<card;++j) // y
-            for (auto i=0;i<card;++i,++idx)  // x
-              for (auto k=0;k<npts;++k) 
+          for (ordinal_type j=0;j<card;++j) // y
+            for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type k=0;k<npts;++k)
                 output(idx,k,l) = output_x(i,k,0)*output_y(j,k,0);
         }
         break;
@@ -295,11 +297,15 @@ namespace Intrepid2 {
   Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
+    // INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+    //                                 pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+    //                               ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
+
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
     
-    this->vinv_ = Kokkos::DynRankView<OT,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
+    this->vinv_ = Kokkos::DynRankView<typename scalarViewType::value_type,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
     lineBasis.getVandermondeInverse(this->vinv_);
 
     this->basisCardinality_  = cardLine*cardLine;
@@ -321,11 +327,14 @@ namespace Intrepid2 {
       ordinal_type tags[maxCardLine*maxCardLine][4];
 
       const ordinal_type vert[2][2] = { {0,1}, {3,2} }; //[y][x]
+
+      const ordinal_type edge_x[2] = {0,2}; 
+      const ordinal_type edge_y[2] = {3,1}; 
       {
         ordinal_type idx = 0;
-        for (auto j=0;j<cardLine;++j) { // y      
+        for (ordinal_type j=0;j<cardLine;++j) { // y      
           const auto tag_y = lineBasis.getDofTag(j);
-          for (auto i=0;i<cardLine;++i,++idx) { // x
+          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
             const auto tag_x = lineBasis.getDofTag(i);          
             
             if (tag_x(0) == 0 && tag_y(0) == 0) {
@@ -335,15 +344,15 @@ namespace Intrepid2 {
               tags[idx][2] = 0; // local dof id
               tags[idx][3] = 1; // total number of dofs in this vertex
             } else if (tag_x(0) == 1 && tag_y(0) == 0) {
-              // horizontal edge 
+              // edge: x edge, y vert
               tags[idx][0] = 1; // edge dof
-              tags[idx][1] = (tag_y(1) == 0 ? 1 : 3);
+              tags[idx][1] = edge_x[tag_y(1)];
               tags[idx][2] = tag_x(2); // local dof id
               tags[idx][3] = tag_x(3); // total number of dofs in this vertex
             } else if (tag_x(0) == 0 && tag_y(0) == 1) {
-              // vertical edge 
+              // edge: x vert, y edge
               tags[idx][0] = 1; // edge dof
-              tags[idx][1] = (tag_x(1) == 0 ? 4 : 2);
+              tags[idx][1] = edge_y[tag_x(1)];
               tags[idx][2] = tag_y(2); // local dof id
               tags[idx][3] = tag_y(3); // total number of dofs in this vertex
             } else {
@@ -372,10 +381,10 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<PT,SpT>
+    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);
@@ -383,8 +392,8 @@ namespace Intrepid2 {
     Kokkos::deep_copy(dofCoordsLineHost, dofCoordsLine);
     {
       ordinal_type idx = 0;
-      for (auto j=0;j<cardLine;++j) { // y      
-        for (auto i=0;i<cardLine;++i,++idx) { // x
+      for (ordinal_type j=0;j<cardLine;++j) { // y      
+        for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
           dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
           dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
         }

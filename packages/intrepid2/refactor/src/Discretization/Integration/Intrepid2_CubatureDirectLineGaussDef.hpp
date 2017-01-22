@@ -51,7 +51,7 @@ namespace Intrepid2 {
   template <typename SpT, typename PT, typename WT>
   CubatureDirectLineGauss<SpT,PT,WT>::
   CubatureDirectLineGauss(const ordinal_type degree) 
-    : CubatureDirect<SpT>(degree, 1) {
+    : CubatureDirect<SpT,PT,WT>(degree, 1) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 || 
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreeEdge), std::out_of_range,
@@ -65,7 +65,7 @@ namespace Intrepid2 {
     {
       // src
       const pointViewHostType points_host(const_cast<PT*>( &(cubatureDataStatic_[this->degree_].points_[0][0]) ), 
-                                     pointRange.second,
+                                     this->cubatureData_.numPoints_,
                                      Parameters::MaxDimension);
 
       auto points = Kokkos::create_mirror_view(typename SpT::memory_space(), points_host);
@@ -74,7 +74,7 @@ namespace Intrepid2 {
 
       // dst
       this->cubatureData_.points_ = Kokkos::DynRankView<PT,SpT>("CubatureDirectLineGauss::cubatureData_::points_", 
-                                                                pointRange.second, 
+                                                                this->cubatureData_.numPoints_, 
                                                                 Parameters::MaxDimension);
       // copy
       Kokkos::deep_copy(this->cubatureData_.points_ , points );
@@ -82,11 +82,11 @@ namespace Intrepid2 {
     {
       // src
       const weightViewHostType weights(const_cast<PT*>( &(cubatureDataStatic_[this->degree_].weights_[0]) ),
-                                       pointRange.second);
+                                       this->cubatureData_.numPoints_);
       
       // dst
       this->cubatureData_.weights_ = Kokkos::DynRankView<WT,SpT>("CubatureDirectLineGauss::cubatureData_::weights_", 
-                                                                 pointRange.second);
+                                                                 this->cubatureData_.numPoints_);
       // copy
       Kokkos::deep_copy(Kokkos::subdynrankview(this->cubatureData_.weights_, Kokkos::ALL()) , Kokkos::subdynrankview(weights, Kokkos::ALL()));
     }

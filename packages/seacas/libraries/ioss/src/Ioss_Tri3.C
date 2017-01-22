@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tri3 registerThis; }
 
   protected:
-    St_Tri3() : ElementVariableType("tri3", 3) {}
+    St_Tri3() : ElementVariableType(Ioss::Tri3::name, 3) {}
   };
 } // namespace Ioss
 //------------------------------------------------------------------------
@@ -73,15 +73,15 @@ void Ioss::Tri3::factory()
   Ioss::St_Tri3::factory();
 }
 
-Ioss::Tri3::Tri3() : Ioss::ElementTopology("tri3", "Triangle_3")
+Ioss::Tri3::Tri3() : Ioss::ElementTopology(Ioss::Tri3::name, "Triangle_3")
 {
-  Ioss::ElementTopology::alias("tri3", "tri");
-  Ioss::ElementTopology::alias("tri3", "triangle");
-  Ioss::ElementTopology::alias("tri3", "triangle3");
-  Ioss::ElementTopology::alias("tri3", "Solid_Tri_3_2D");
-  Ioss::ElementTopology::alias("tri3", "Face_Tri_3_3D");
-  Ioss::ElementTopology::alias("tri3", "triface3");
-  Ioss::ElementTopology::alias("tri3", "TRIANGLE_3_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "tri");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "triangle");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "triangle3");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "Solid_Tri_3_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "Face_Tri_3_3D");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "triface3");
+  Ioss::ElementTopology::alias(Ioss::Tri3::name, "TRIANGLE_3_2D");
 }
 
 Ioss::Tri3::~Tri3() = default;

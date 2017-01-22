@@ -69,6 +69,7 @@ INCLUDE(ParseVariableArguments)
 #     [XHOST <host0> <host1> ...]
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [DIRECTORY <dir>]
 #     [TESTONLYLIBS <lib0> <lib1> ...]
 #     [IMPORTEDLIBS <lib0> <lib1> ...]
@@ -165,6 +166,11 @@ INCLUDE(ParseVariableArguments)
 #     The list of host types for which **not** to enable the test (see
 #     `TRIBITS_ADD_TEST()`_).
 #
+#   ``EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...``
+#
+#     If specified, gives the names of CMake variables that must evaluate to
+#     true, or the test will not be added (see `TRIBITS_ADD_TEST()`_).
+#
 #   ``TESTONLYLIBS <lib0> <lib1> ...``
 #
 #     Specifies extra test-only libraries defined in this CMake project that
@@ -208,11 +214,25 @@ INCLUDE(ParseVariableArguments)
 #   ``LINKER_LANGUAGE (C|CXX|Fortran)``
 #
 #     If specified, overrides the linker language used by setting the built-in
-#     CMake target property ``LINKER_LANGUAGE``.  By default, CMake chooses the
-#     compiler to be used as the linker based on file extensions.  The most
-#     typical use case for this option is when Fortran-only or C-only sources
-#     are passed in through ``SOURCES`` but a C++ linker is needed because
-#     there are upstream C++ libraries.
+#     CMake target property ``LINKER_LANGUAGE``.  TriBITS sets the default
+#     linker language as follows::
+#
+#       IF (${PROJECT_NAME}_ENABLE_CXX)
+#         SET(LINKER_LANGUAGE CXX)
+#       ELSEIF (${PROJECT_NAME}_ENABLE_C)
+#         SET(LINKER_LANGUAGE C)
+#       ELSE()
+#         # Let CMake set the default linker language it wants based
+#         # on source file extensions passed into ``ADD_EXECUTABLE()``.
+#       ENDIF()
+#
+#     The reason for this logic is that on some platform if you have a Fortran
+#     or C main that links to C++ libraries, then you need the C++ compiler to
+#     do the final linking.  CMake does not seem to automatically know that it
+#     is pulling in C++ libraries and therefore needs to be told use C++ for
+#     linking.  This is the correct default behavior for mixed-language
+#     projects. However, this argument allows the developer to override this
+#     logic and use any linker language desired based on other considerations.
 #
 #   ``TARGET_DEFINES -D<define0> -D<define1> ...``
 #
@@ -320,7 +340,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
     ${ARGN}

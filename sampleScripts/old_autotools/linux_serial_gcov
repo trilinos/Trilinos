@@ -1,2 +1,0 @@
-../configure CXX="g++ -fprofile-arcs -ftest-coverage" \
---with-lapack=/home/joutzen/LAPACK/lapack_LINUX.a

@@ -399,7 +399,7 @@ namespace Xpetra {
       int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
       //! Compute max value of this Vector.
-      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); return vec_->MaxValue(); }
 
 
       //@}
@@ -689,8 +689,20 @@ namespace Xpetra {
       typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
       typename dual_view_type::t_host_um getHostLocalView () const {
-        throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
-        typename dual_view_type::t_host_um ret;
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+
+        // access Epetra vector data
+        int* data = NULL;
+        vec_->ExtractView(&data);
+        int localLength = vec_->MyLength();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength,1);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+
         return ret;
       }
 
@@ -816,8 +828,7 @@ namespace Xpetra {
       int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
       //! Compute max value of this Vector.
-      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
-
+      int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); return Teuchos::as<int>(vec_->MaxValue()); }
 
       //@}
 
@@ -1106,8 +1117,20 @@ namespace Xpetra {
       typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
       typename dual_view_type::t_host_um getHostLocalView () const {
-        throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
-        typename dual_view_type::t_host_um ret;
+        typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
+                      Kokkos::LayoutLeft,
+                      typename dual_view_type::t_host::device_type ,
+                      Kokkos::MemoryUnmanaged> epetra_view_type;
+
+        // access Epetra vector data
+        int* data = NULL;
+        vec_->ExtractView(&data);
+        int localLength = vec_->MyLength();
+
+        // create view
+        epetra_view_type test = epetra_view_type(data, localLength, 1);
+        typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
+
         return ret;
       }
 

@@ -53,7 +53,7 @@ namespace Iotr {
 
   private:
     Scale3D_Factory();
-    Ioss::Transform *make(const std::string & /*unused*/ /*unused*/) const;
+    Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
   class Scale3D : public Ioss::Transform
@@ -61,16 +61,16 @@ namespace Iotr {
     friend class Scale3D_Factory;
 
   public:
-    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-    int output_count(int in) const;
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
+    int output_count(int in) const override;
 
-    void set_properties(const std::string &name, const std::vector<int> &values);
-    void set_properties(const std::string &name, const std::vector<double> &values);
+    void set_properties(const std::string &name, const std::vector<int> &values) override;
+    void set_properties(const std::string &name, const std::vector<double> &values) override;
 
   protected:
     Scale3D();
 
-    bool internal_execute(const Ioss::Field &field, void *data);
+    bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
     int    intScale[3];

@@ -32,7 +32,7 @@
 // 
 
 #include <stk_mesh/base/Bucket.hpp>
-#include <stdlib.h>                     // for NULL
+#include <stdlib.h>                     // for nullptr
 #include <algorithm>                    // for copy, swap, lower_bound, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data, etc
@@ -267,13 +267,13 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_key(arg_key)
   , m_capacity(arg_capacity)
   , m_size(0)
-  , m_bucket(NULL)
+  , m_bucket(nullptr)
   , m_bucket_id(bucket_id)
   , m_nodes_per_entity(0)
 // TODO: Move owner ranks to BulkData
   , m_entities(arg_capacity)
   , m_owner_ranks(arg_capacity)
-  , m_partition(NULL)
+  , m_partition(nullptr)
   , m_node_kind(INVALID_CONNECTIVITY_TYPE)
   , m_edge_kind(INVALID_CONNECTIVITY_TYPE)
   , m_face_kind(INVALID_CONNECTIVITY_TYPE)
@@ -635,7 +635,7 @@ Bucket * Bucket::last_bucket_in_partition() const
 {
   Bucket * last = last_bucket_in_partition_impl();
 
-  ThrowRequireMsg( NULL != last, "Last is NULL");
+  ThrowRequireMsg( nullptr != last, "Last is NULL");
   ThrowRequireMsg( last->size() != 0, "Last bucket is empty");
 
   return last;
@@ -645,7 +645,7 @@ Bucket * Bucket::last_bucket_in_partition_impl() const
 {
   bool this_is_first_bucket_in_partition = (bucket_counter() == 0);
 
-  Bucket * last = NULL;
+  Bucket * last = nullptr;
 
   if (this_is_first_bucket_in_partition) {
     last = m_bucket;
@@ -709,7 +709,7 @@ void Bucket::add_entity(Entity entity)
 {
   ThrowAssert(m_size < m_capacity);
   ThrowAssert(!mesh().is_valid(m_entities[m_size]));
-  ThrowAssert(!mesh().is_valid(entity) || mesh().bucket_ptr(entity) == NULL);
+  ThrowAssert(!mesh().is_valid(entity) || mesh().bucket_ptr(entity) == nullptr);
   ThrowAssert(!mesh().is_valid(entity) || mesh().entity_rank(entity) == m_entity_rank);
 
   initialize_slot(m_size, entity);
@@ -760,7 +760,7 @@ void Bucket::copy_entity(Entity entity)
   ThrowAssert(m_size < m_capacity);
   ThrowAssert(mesh().is_valid(entity));
   ThrowAssert(!mesh().is_valid(m_entities[m_size]));
-  ThrowAssert(mesh().bucket_ptr(entity) != NULL);
+  ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().bucket_ptr(entity) != this);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
@@ -837,7 +837,7 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
 {
   ThrowAssert(to_ordinal < m_capacity);
   ThrowAssert(mesh().is_valid(entity));
-  ThrowAssert(mesh().bucket_ptr(entity) != NULL);
+  ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
   const MeshIndex from_index = m_mesh.mesh_index(entity);

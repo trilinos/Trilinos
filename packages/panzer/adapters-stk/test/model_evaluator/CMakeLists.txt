@@ -50,4 +50,11 @@ IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
      COMM serial mpi
      NUM_MPI_PROCS 4
      )
+
+   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+     model_evaluator_blocked_hessians
+     SOURCES model_evaluator_blocked_hessians.cpp ${UNIT_TEST_DRIVER}
+     COMM serial mpi
+     NUM_MPI_PROCS 4
+     )
 ENDIF()

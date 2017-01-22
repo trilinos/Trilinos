@@ -199,7 +199,6 @@ namespace {
     if (Ioss::Utils::check_set_bool_property(properties, compose_property, compose)) {
       return compose;
     }
-      
 
     Ioss::ParallelUtils util(comm);
     std::string         env_props;

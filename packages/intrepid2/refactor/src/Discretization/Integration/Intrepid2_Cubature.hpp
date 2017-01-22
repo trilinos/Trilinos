@@ -176,6 +176,16 @@ namespace Intrepid2 {
       return 0;
     }
 
+    /** \brief Returns dimension of the integration domain.
+     */
+    virtual
+    ordinal_type
+    getAccuracy() const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+      return 0;
+    }
+
     /** \brief Returns cubature name.
      */
     virtual
@@ -251,8 +261,8 @@ namespace Intrepid2 {
 
   \code
       shards::CellTopology cellType = shards::getCellTopologyData< shards::Tetrahedron<> >(); // cell type: tetrahedron
-      int spaceDim = cellType->getDimension();                                                // retrieve spatial dimension
-      int numNodes = cellType->getNodeCount();                                                // retrieve number of 0-cells (nodes)
+      ordinal_type spaceDim = cellType->getDimension();                                                // retrieve spatial dimension
+      ordinal_type numNodes = cellType->getNodeCount();                                                // retrieve number of 0-cells (nodes)
   \endcode
 
   We additionally set the number of computational cells \c numCells.
@@ -262,9 +272,9 @@ namespace Intrepid2 {
 
   \code
       DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
-      int cubDegree = 2;                                                                      // set cubature degree, e.g. 2
+      ordinal_type cubDegree = 2;                                                                      // set cubature degree, e.g. 2
       Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);         // create default cubature
-      int numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
+      ordinal_type numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
   \endcode
 
 
@@ -272,7 +282,7 @@ namespace Intrepid2 {
 
   \code
       Basis_HGRAD_TET_C1_FEM<double, DynRankView<double> > tetBasis;                       // create tet basis
-      int numFields = tetBasis.getCardinality();                                              // get basis cardinality
+      ordinal_type numFields = tetBasis.getCardinality();                                              // get basis cardinality
   \endcode
 
 

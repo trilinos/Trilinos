@@ -167,7 +167,7 @@ class Scheduler
     mutable bool initialized_; ///<! True if this scheduler has been called.
     std::string name_;
   };
-}
-}
+} // end namespace util
+} // end namespace stk
 
 #endif

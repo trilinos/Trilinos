@@ -44,7 +44,7 @@
 #ifndef ROL_CHEBYSHEVKUSUOKA_HPP
 #define ROL_CHEBYSHEVKUSUOKA_HPP
 
-#include "ROL_SingletonKusuoka.hpp"
+#include "ROL_SpectralRisk.hpp"
 #include "ROL_GaussChebyshev1Quadrature.hpp"
 #include "ROL_GaussChebyshev2Quadrature.hpp"
 #include "ROL_GaussChebyshev3Quadrature.hpp"
@@ -94,7 +94,7 @@
 namespace ROL {
 
 template<class Real>
-class ChebyshevKusuoka : public SingletonKusuoka<Real> {
+class ChebyshevKusuoka : public SpectralRisk<Real> {
 private:
   Teuchos::RCP<PlusFunction<Real> > plusFunction_;
 
@@ -139,7 +139,7 @@ private:
        wts_[i] /= sum;
        pts_[i] = lower_ + (upper_-lower_)*half*(pts_[i] + one);
      }
-     SingletonKusuoka<Real>::buildMixedQuantile(pts_,wts_,plusFunction_);
+     SpectralRisk<Real>::buildMixedQuantile(pts_,wts_,plusFunction_);
   }
 
 public:
@@ -156,7 +156,7 @@ public:
       \li A sublist for plus function information.
   */
   ChebyshevKusuoka( Teuchos::ParameterList &parlist )
-    : SingletonKusuoka<Real>() {
+    : SpectralRisk<Real>() {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka");
     // Grab confidence level and quadrature order

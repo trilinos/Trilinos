@@ -1,3 +1,41 @@
+Release notes for Trilinos v12.8
+
+-  Graph/Matrix ordering:
+   +  Scotch now can be used for graph/matrix ordering.
+   +  The ordering interface Zoltan2::OrderingSolution has been updated
+      to allow users to access separator info, if it is available.
+   +  Zoltan2::OrderingSolution method getPermutation() is now 
+      getPermutationView().
+
+-  Partitioning Metrics:
+   +  Partitioning metrics have been moved out of the PartitioningProblem.
+      They are now accessed through a separate class:  
+      Zoltan2::EvaluatePartition.  
+   +  EvaluatePartition accepts as input a
+      Zoltan2::Adapter and, optionally, a Zoltan2::PartitioningSolution.
+      Thus, it can be used before or after partitioning, and before or
+      after migration.
+   +  Imbalance and graph metrics are available.
+
+-  Task placement:
+   +  A new PartitionMapping class maps parts to processors.  
+   +  The MachineRepresentation has been updated, and specializations using
+      Cray RCA and IBM TopoMgr are provided.
+   +  Geometric task placement using Multijagged partitioning better handles
+      cases where the machine's network dimension is greater than the 
+      dimension of the coordinates.
+
+-  Multijagged partitioning:
+   +  Zoltan2's Multijagged partitioner can now partition wrt the longest
+      coordinate dimension, or in specified x-y-z order.
+
+-  TPLs:
+   +  Conversions between the index types in TPLs (ParMETIS, Scotch, Zoltan)
+      are handled more robustly through the TPL_Traits class.
+   +  Interfaces to ParMETIS' AdaptiveRepart and RefineKway algorithms were
+      added.
+   +  Bugs in the Zoltan interface are fixed.
+
 Release notes for Trilinos v12.6
 
 -  New interface to graph partitioning third-party library PuLP (Partitioning

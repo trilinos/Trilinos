@@ -129,7 +129,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
   }
 
   /* Loop over each command line option */
-  while ((opt_let = getopt(argc, argv, "64a:hm:l:nes:x:w:vyo:cg:fpS")) != EOF) {
+  while ((opt_let = getopt(argc, argv, "3264a:hm:l:nes:x:w:vyo:cg:fpS")) != EOF) {
 
     /* case over the option letter */
     switch (opt_let) {
@@ -612,6 +612,11 @@ value\n");
     case '6':
     case '4':
       /* ignore -- used to parse -64 option */
+      break;
+
+    case '3':
+    case '2':
+      /* ignore -- used to parse -32 option */
       break;
 
     default:
@@ -1656,6 +1661,8 @@ namespace {
     printf("\t -l <load bal description> -s <eigen solver specs>\n");
     printf("\t -w <weighting options> -g <group list> -f]\n");
     printf("\t [-a <ascii file>] exoII_file\n\n");
+    printf(" -32\t\tforce use of 32-bit integers\n");
+    printf(" -64\t\tforce use of 64-bit integers\n");
     printf(" -n\t\tperform a nodal based load balance\n");
     printf(" -e\t\tperform an elemental based load balance\n");
     printf(" -o NemI file\toutput NemesisI load-balance file name\n");
@@ -1667,9 +1674,7 @@ namespace {
     printf(" -f\t\tuse face definition of adjacency\n");
     printf(" -p\t\tuse partial definition of adjacency: \n");
     printf("   \t\trequire only 3 matching quad face nodes\n");
-    printf("\t\t  OR\n");
     printf(" -h\t\tusage information\n");
-    printf("\t\t  OR\n");
     printf(" -a ascii file\tget info from ascii input file name\n");
 
     return;

@@ -1,7 +1,8 @@
 <ParameterList name="Inputs">
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
-    <Parameter name="Variable Objective Function"            type="bool"   value="false" />
+    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
+    <Parameter name="Recompute Objective Function"           type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
@@ -15,8 +16,8 @@
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
       <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximumt Storage"       type="int"    value="10"                  />
-      <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
+      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
+      <Parameter name="Barzilai-Borwein"       type="int"    value="1"                   />
     </ParameterList>
 
     <!-- ===========  KRYLOV INPUTS  =========== -->
@@ -30,7 +31,6 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
-    <Parameter name="Type" type="string" value="Trust Region" />
 
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
@@ -71,6 +71,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+      <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
       <Parameter name="Initial Radius"                       type="double" value="10.0"         />
       <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
@@ -79,7 +80,21 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
+      <Parameter name="Sufficient Decrease Parameter"        type="double" value="1.e-2"        />
       <Parameter name="Safeguard Size"                       type="double" value="1.e2"         />
+
+      <ParameterList name="Post-Smoothing">
+        <Parameter name="Function Evaluation Limit" type="int"    value="20"     />
+        <Parameter name="Initial Step Size"         type="double" value="1.0"    />
+        <Parameter name="Tolerance"                 type="double" value="0.9999" />
+        <Parameter name="Rate"                      type="double" value="0.01"   />
+      </ParameterList>
+
+      <ParameterList name="Coleman-Li">
+        <Parameter name="Maximum Step Back"  type="double" value="0.9999" />
+        <Parameter name="Maximum Step Scale" type="double" value="1.0"    />
+        <Parameter name="Single Reflection"  type="bool"   value="true"   />
+      </ParameterList>
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -135,10 +150,12 @@
       <Parameter name="Initial Penalty Parameter"               type="double" value="1e2"    />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.0"    />
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
-      <Parameter name="Optimality Tolerance"                    type="double" value="1.e-12" />
-      <Parameter name="Feasibility Tolerance"                   type="double" value="1.e-12" />
-      <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"  />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="200"    />
+      <ParameterList name="Subproblem">
+        <Parameter name="Optimality Tolerance"                    type="double" value="1.e-12" />
+        <Parameter name="Feasibility Tolerance"                   type="double" value="1.e-12" />
+        <Parameter name="Print History"                           type="bool"   value="false"  />
+        <Parameter name="Iteration Limit"                         type="int"    value="200"    />
+      </ParameterList>
     </ParameterList>
 
     <!-- ===========  BUNDLE METHOD  =========== -->

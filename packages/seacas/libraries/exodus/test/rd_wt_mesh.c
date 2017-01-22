@@ -535,7 +535,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     err = ex_get_variable_param(exoid, EX_NODAL, &num_vars);
 
     if (err) {
-      printf("after ex_get_var_param, error = %d\n", err);
+      printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
       return (1);
     }
@@ -544,7 +544,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     err = ex_get_variable_param(exoid, EX_GLOBAL, &num_vars);
 
     if (err) {
-      printf("after ex_get_var_param, error = %d\n", err);
+      printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
       return (1);
     }
@@ -557,7 +557,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     err = ex_get_variable_param(exoid, EX_ELEM_BLOCK, &num_vars);
 
     if (err) {
-      printf("after ex_get_var_param, error = %d\n", err);
+      printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
       return (1);
     }
@@ -863,7 +863,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
       }
 
       t_tmp1 = my_timer();
-      err    = ex_put_elem_conn(exoid[npd], EBLK_ID, connect);
+      err    = ex_put_conn(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, connect, NULL, NULL);
       t_tmp2 = my_timer();
 
       raw_write_time += t_tmp2 - t_tmp1;

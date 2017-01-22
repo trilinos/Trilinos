@@ -56,7 +56,7 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
   residual( p.get<std::string>("Residual Name"), 
             p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  vectorField( p.get<std::string>("Value Name"), 
+  vectorField( p.get<std::string>("Value Name"),
                 p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
@@ -94,7 +94,7 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
       PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       Kokkos::fence();
       field_multipliers[i++] = tmp_field;
-      this->addDependentField(tmp_field);
+      this->addDependentField(field_multipliers[i-1]);
     }
   }
 
@@ -109,7 +109,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
   this->utils.setFieldData(vectorField,fm);
   // this->utils.setFieldData(dof_orientation,fm);
   
-  for (int i=0; i<field_multipliers.size(); ++i) {
+  for (std::size_t i=0; i<field_multipliers.size(); ++i) {
     this->utils.setFieldData(field_multipliers[i],fm);
     kokkos_field_multipliers(i) = field_multipliers[i].get_static_view();
   }
@@ -130,35 +130,35 @@ template<typename EvalT, typename TRAITS>
 template<int NUM_FIELD_MULT>
 KOKKOS_INLINE_FUNCTION
 void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<NUM_FIELD_MULT> &, const size_t &cell) const {
-  const std::size_t nqp = vectorField.dimension_1(), ndim = vectorField.dimension_2();
-  const std::size_t nfm = kokkos_field_multipliers.dimension_0();
-  const std::size_t nbf = weighted_basis_vector.dimension_1();
+  const int nqp = vectorField.extent_int(1), ndim = vectorField.extent_int(2);
+  const int nfm = kokkos_field_multipliers.extent_int(0);
+  const int nbf = weighted_basis_vector.extent_int(1);
 
   for (int lbf = 0; lbf < nbf; lbf++)
     residual(cell,lbf) = 0.0;
 
   ScalarT tmp, fmm=1;
   if ( NUM_FIELD_MULT == 0 ){
-    for (std::size_t qp = 0; qp < nqp; ++qp) {
-      for (std::size_t d = 0; d < ndim; ++d) {
+    for (int qp = 0; qp < nqp; ++qp) {
+      for (int d = 0; d < ndim; ++d) {
         tmp = multiplier * vectorField(cell,qp,d);
         for (int lbf = 0; lbf < nbf; lbf++)
           residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
       }
     }
   } else if ( NUM_FIELD_MULT == 1 ){
-    for (std::size_t qp = 0; qp < nqp; ++qp) {
-      for (std::size_t d = 0; d < ndim; ++d) {
+    for (int qp = 0; qp < nqp; ++qp) {
+      for (int d = 0; d < ndim; ++d) {
         tmp = multiplier * vectorField(cell,qp,d)*kokkos_field_multipliers(0)(cell,qp);
         for (int lbf = 0; lbf < nbf; lbf++)
           residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
       }
     }
   } else {
-    for (std::size_t qp = 0; qp < nqp; ++qp) {
-      for (std::size_t i = 0; i < nfm; ++i)
+    for (int qp = 0; qp < nqp; ++qp) {
+      for (int i = 0; i < nfm; ++i)
         fmm *= kokkos_field_multipliers(i)(cell,qp);
-      for (std::size_t d = 0; d < ndim; ++d) {
+      for (int d = 0; d < ndim; ++d) {
         tmp = multiplier * vectorField(cell,qp,d)*fmm;
         for (int lbf = 0; lbf < nbf; lbf++)
           residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;

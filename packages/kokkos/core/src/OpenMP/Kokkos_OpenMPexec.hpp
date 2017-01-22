@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,7 +46,6 @@
 
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_spinwait.hpp>
-#include <impl/Kokkos_AllocationTracker.hpp>
 
 #include <Kokkos_Atomic.hpp>
 #include <iostream>
@@ -63,37 +62,9 @@ public:
 
   enum { MAX_THREAD_COUNT = 4096 };
 
-#if ! KOKKOS_USING_EXP_VIEW
-
-  struct Pool
-  {
-    Pool() : m_trackers() {}
-
-    AllocationTracker m_trackers[ MAX_THREAD_COUNT ];
-
-    OpenMPexec * operator[](int i)
-    {
-      return reinterpret_cast<OpenMPexec *>(m_trackers[i].alloc_ptr());
-    }
-
-    AllocationTracker & at(int i)
-    {
-      return m_trackers[i];
-    }
-  };
-
-
-private:
-
-  static Pool         m_pool; // Indexed by: m_pool_rank_rev
-
-#else
-
 private:
 
   static OpenMPexec * m_pool[ MAX_THREAD_COUNT ]; // Indexed by: m_pool_rank_rev
-
-#endif
 
   static int          m_pool_topo[ 4 ];
   static int          m_map_rank[ MAX_THREAD_COUNT ];
@@ -145,6 +116,12 @@ public:
 
   inline long team_work_index() const { return m_team_work_index ; }
 
+  inline int scratch_reduce_size() const
+    { return m_scratch_reduce_end - m_scratch_exec_end ; }
+
+  inline int scratch_thread_size() const
+    { return m_scratch_thread_end - m_scratch_reduce_end ; }
+
   inline void * scratch_reduce() const { return ((char *) this) + m_scratch_exec_end ; }
   inline void * scratch_thread() const { return ((char *) this) + m_scratch_reduce_end ; }
 
@@ -157,15 +134,15 @@ public:
 
   ~OpenMPexec() {}
 
-  OpenMPexec( const int poolRank
-            , const int scratch_exec_size
-            , const int scratch_reduce_size
-            , const int scratch_thread_size )
-    : m_pool_rank( poolRank )
-    , m_pool_rank_rev( pool_size() - ( poolRank + 1 ) )
-    , m_scratch_exec_end( scratch_exec_size )
-    , m_scratch_reduce_end( m_scratch_exec_end   + scratch_reduce_size )
-    , m_scratch_thread_end( m_scratch_reduce_end + scratch_thread_size )
+  OpenMPexec( const int arg_poolRank
+            , const int arg_scratch_exec_size
+            , const int arg_scratch_reduce_size
+            , const int arg_scratch_thread_size )
+    : m_pool_rank( arg_poolRank )
+    , m_pool_rank_rev( pool_size() - ( arg_poolRank + 1 ) )
+    , m_scratch_exec_end( arg_scratch_exec_size )
+    , m_scratch_reduce_end( m_scratch_exec_end   + arg_scratch_reduce_size )
+    , m_scratch_thread_end( m_scratch_reduce_end + arg_scratch_thread_size )
     , m_barrier_state(0)
     {}
 
@@ -203,7 +180,7 @@ public:
     bool success = false;
     while(!success) {
       work_range_new = Kokkos::atomic_compare_exchange(&m_work_range,work_range_old,work_range_new);
-      success = ( (work_range_new == work_range_old) || 
+      success = ( (work_range_new == work_range_old) ||
                   (work_range_new.first>=work_range_new.second));
       work_range_old = work_range_new;
       work_range_new.first+=1;
@@ -416,12 +393,14 @@ public:
     typedef typename if_c< sizeof(ValueType) < TEAM_REDUCE_SIZE
                          , ValueType , void >::type type ;
 
-    type * const local_value = ((type*) m_exec.scratch_thread());
-    if(team_rank() == thread_id)
-      *local_value = value;
+    type volatile * const shared_value =
+      ((type*) m_exec.pool_rev( m_team_base_rev )->scratch_thread());
+
+    if ( team_rank() == thread_id ) *shared_value = value;
     memory_fence();
-    team_barrier();
-    value = *local_value;
+    team_barrier(); // Wait for 'thread_id' to write
+    value = *shared_value ;
+    team_barrier(); // Wait for team members to read
 #endif
   }
 
@@ -581,7 +560,7 @@ public:
     , m_league_rank(0)
     , m_league_end(0)
     , m_league_size( team.league_size() )
-    , m_chunk_size( team.chunk_size() )
+    , m_chunk_size( team.chunk_size()>0?team.chunk_size():team.team_iter() )
     , m_league_chunk_end(0)
     , m_team_lead_exec( *exec.pool_rev( team.team_alloc() * (m_exec.pool_rank_rev()/team.team_alloc()) ))
     , m_team_alloc( team.team_alloc())
@@ -590,10 +569,9 @@ public:
       const int pool_team_rank_rev   = pool_rank_rev % team.team_alloc();
       const int pool_league_rank_rev = pool_rank_rev / team.team_alloc();
       const int pool_num_teams       = OpenMP::thread_pool_size(0)/team.team_alloc();
-      const int chunk_size           = team.chunk_size()>0?team.chunk_size():team.team_iter();
-      const int chunks_per_team      = ( team.league_size() + chunk_size*pool_num_teams-1 ) / (chunk_size*pool_num_teams);
-            int league_iter_end      = team.league_size() - pool_league_rank_rev * chunks_per_team * chunk_size;
-            int league_iter_begin    = league_iter_end - chunks_per_team * chunk_size;
+      const int chunks_per_team      = ( team.league_size() + m_chunk_size*pool_num_teams-1 ) / (m_chunk_size*pool_num_teams);
+            int league_iter_end      = team.league_size() - pool_league_rank_rev * chunks_per_team * m_chunk_size;
+            int league_iter_begin    = league_iter_end - chunks_per_team * m_chunk_size;
       if (league_iter_begin < 0)     league_iter_begin = 0;
       if (league_iter_end>team.league_size()) league_iter_end = team.league_size();
 
@@ -679,8 +657,6 @@ public:
   static inline int team_reduce_size() { return TEAM_REDUCE_SIZE ; }
 };
 
-
-
 template< class ... Properties >
 class TeamPolicyInternal< Kokkos::OpenMP, Properties ... >: public PolicyTraits<Properties ...>
 {
@@ -764,9 +740,9 @@ public:
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
+
   inline size_t scratch_size(const int& level, int team_size_ = -1) const {
-    if(team_size_ < 0)
-      team_size_ = m_team_size;
+    if(team_size_ < 0) team_size_ = m_team_size;
     return m_team_scratch_size[level] + team_size_*m_thread_scratch_size[level] ;
   }
 
@@ -864,7 +840,6 @@ public:
 };
 } // namespace Impl
 
-
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -888,29 +863,26 @@ int OpenMP::thread_pool_rank()
 #endif
 }
 
-} // namespace Kokkos
-
-
-namespace Kokkos {
-
-template<typename iType>
+template< typename iType >
 KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
-  TeamThreadRange(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
-  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember>(thread,count);
+Impl::TeamThreadRangeBoundariesStruct< iType, Impl::OpenMPexecTeamMember >
+TeamThreadRange( const Impl::OpenMPexecTeamMember& thread, const iType& count ) {
+  return Impl::TeamThreadRangeBoundariesStruct< iType, Impl::OpenMPexecTeamMember >( thread, count );
 }
 
-template<typename iType>
+template< typename iType1, typename iType2 >
 KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
-  TeamThreadRange(const Impl::OpenMPexecTeamMember& thread, const iType& begin, const iType& end) {
-  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember>(thread,begin,end);
+Impl::TeamThreadRangeBoundariesStruct< typename std::common_type< iType1, iType2 >::type,
+                                       Impl::OpenMPexecTeamMember >
+TeamThreadRange( const Impl::OpenMPexecTeamMember& thread, const iType1& begin, const iType2& end ) {
+  typedef typename std::common_type< iType1, iType2 >::type iType;
+  return Impl::TeamThreadRangeBoundariesStruct< iType, Impl::OpenMPexecTeamMember >( thread, iType(begin), iType(end) );
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember >
-  ThreadVectorRange(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
+ThreadVectorRange(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
   return Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::OpenMPexecTeamMember >(thread,count);
 }
 
@@ -923,6 +895,7 @@ KOKKOS_INLINE_FUNCTION
 Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember> PerThread(const Impl::OpenMPexecTeamMember& thread) {
   return Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember>(thread);
 }
+
 } // namespace Kokkos
 
 namespace Kokkos {
@@ -982,7 +955,6 @@ void parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::Ope
 }
 
 } //namespace Kokkos
-
 
 namespace Kokkos {
 /** \brief  Intra-thread vector parallel_for. Executes lambda(iType i) for each i=0..N-1.
@@ -1104,4 +1076,3 @@ void single(const Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>& single_s
 }
 
 #endif /* #ifndef KOKKOS_OPENMPEXEC_HPP */
-

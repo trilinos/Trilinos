@@ -94,7 +94,7 @@ size_t setFieldData(stk::mesh::BulkData& mesh, stk::mesh::Selector select)
 
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::string genMeshSpec = std::string("generated:100x100x100"))
 {
-    std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
       exodusFileName = genMeshSpec;
     }

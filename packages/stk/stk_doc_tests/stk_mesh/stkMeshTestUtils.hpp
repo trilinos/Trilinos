@@ -40,6 +40,19 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_topology/topology.hpp>
 
+namespace testUtils
+{
+
+inline
+int get_other_proc(int myproc)
+{
+    int otherproc = 1;
+    if (myproc == 1)
+        otherproc = 0;
+    return otherproc;
+}
+
+inline
 void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField, double prescribedTemperatureValue, const std::set<stk::mesh::EntityId> &boundaryNodeIds)
 {
     stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
@@ -57,6 +70,7 @@ void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatur
             EXPECT_EQ(0.0, *temperature);
         }
     }
+}
 }
 
 #endif

@@ -113,8 +113,8 @@ class ObjectiveFromBoundConstraint : public Objective<Real> {
 
 
 private:
-  Teuchos::RCP<V> lo_;
-  Teuchos::RCP<V> up_;
+  const Teuchos::RCP<const V> lo_;
+  const Teuchos::RCP<const V> up_;
   Teuchos::RCP<V> a_;     // scratch vector
   Teuchos::RCP<V> b_;     // scratch vector
   EBarrierType    btype_;

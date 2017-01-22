@@ -40,6 +40,12 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
    SOURCES ImportPerformance
    COMM mpi
    )
+
+ TRIBITS_ADD_EXECUTABLE(
+   TAFCPerformance
+   SOURCES TAFCPerformance
+   COMM mpi
+   )
  
 
   IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)

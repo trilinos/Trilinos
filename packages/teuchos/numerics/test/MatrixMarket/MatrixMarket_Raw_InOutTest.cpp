@@ -163,6 +163,83 @@ main (int argc, char *argv[])
     // Test reading in the sparse matrix.  If no filename or an empty
     // filename is specified, the test passes trivially.
     success = true;
+    {
+      // The following tests check reading in different banners. A bug was found
+      // in the banner reader wherein banners with multiple consecutive spaces
+      // were not read correctly. These tests assure that banners with or
+      // without multiple consecutive spaces/tabs are read correctly.
+      bool xs;
+      if (verbose) {
+        cout << "Checking MatrixMarket banner parsing\n";
+      }
+      {
+        // Well formatted banner, passes trivially
+        if (verbose) cout << "Reading first banner\n";
+        typedef Checker<scalar_type, ordinal_type> checker_type;
+        checker_type checker (echo, false, false);
+        RCP<const Comm<int> > comm = rcp (new SerialComm<int>);
+        std::stringstream in;
+        in.str("%%MatrixMarket matrix coordinate real symmetric\n0 0 0\n");
+        RCP<std::istream> inStream = rcpFromRef(in);
+        xs = checker.read (*comm, inStream);
+        if (verbose) {
+          cout << "Banner read " << (!xs ? "un" : "") << "successfully\n";
+        }
+        success = success && xs;
+      }
+
+      {
+        // Banner with multiple adjacent/consecutive spaces/tabs
+        if (verbose) cout << "Reading second banner\n";
+        typedef Checker<scalar_type, ordinal_type> checker_type;
+        checker_type checker (echo, false, false);
+        RCP<const Comm<int> > comm = rcp (new SerialComm<int>);
+        std::stringstream in;
+        in.str("%%MatrixMarket\tmatrix\t\tcoordinate   real  symmetric\n0 0 0\n");
+        RCP<std::istream> inStream = rcpFromRef(in);
+        xs = checker.read (*comm, inStream);
+        if (verbose) {
+          cout << "Banner read " << (!xs ? "un" : "") << "successfully\n";
+        }
+        success = success && xs;
+      }
+
+      {
+        // Bad value in banner.  Should throw std::runtime_error
+        if (verbose) cout << "Reading third banner\n";
+        typedef Checker<scalar_type, ordinal_type> checker_type;
+        checker_type checker (echo, false, false);
+        RCP<const Comm<int> > comm = rcp (new SerialComm<int>);
+        std::stringstream in;
+        try {
+          in.str("%%MatrixMarket matrix coordinate real xyz\n0 0 0\n");
+          RCP<std::istream> inStream = rcpFromRef(in);
+          checker.read (*comm, inStream);
+          // The call to read *should* raise an error and the following line
+          // should not be encountered
+          xs = false;
+        }
+        catch (const std::runtime_error& e) {
+          // The error message will include that "xyz" is a bad value. Check
+          // that the string "xyz" is in the error mesage.
+          std::string es(e.what());
+          xs = es.find("xyz") != std::string::npos;
+        }
+        if (verbose) {
+          cout << "Banner read " << (!xs ? "un" : "") << "successfully\n";
+        }
+        success = success && xs;
+      }
+
+      if (verbose) {
+        if (success) {
+          cout << "Banners parsed successfully\n";
+        } else {
+          cout << "Banners not parsed successfully\n";
+        }
+      }
+    }
+
     if (checkOnly) {
       typedef Checker<scalar_type, ordinal_type> checker_type;
       checker_type checker (echo, tolerant, debug);

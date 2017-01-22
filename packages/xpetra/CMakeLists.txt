@@ -91,23 +91,23 @@ ENDIF()
 ASSERT_DEFINED (Teuchos_ENABLE_LONG_LONG_INT)
 IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
   # If Teuchos doesn't have support for long long, we won't get anywhere.
-  SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+  GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
 ELSE ()
   # Teuchos supports long long.  How about Epetra or Tpetra?
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     # Does Tpetra provide LocalOrdinal = int and GlobalOrdinal = long long?
     ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
-    SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
+    GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
   ELSE () # Tpetra NOT enabled
     IF (${PACKAGE_NAME}_ENABLE_Epetra)
       # Does Epetra provide LocalOrdinal = int and GlobalOrdinal = long long?
       IF (${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
-        SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+        GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
       ELSE ()
-        SET (${PACKAGE_NAME}_INT_LONG_LONG ON)
+        GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ON)
       ENDIF ()
     ELSE () # Neither Epetra nor Tpetra are enabled
-      SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+      GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
     ENDIF ()
   ENDIF ()
 ENDIF ()

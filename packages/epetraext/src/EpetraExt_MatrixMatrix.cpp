@@ -118,7 +118,8 @@ double sparsedot(double* u, int_type* u_ind, int u_len,
 template<typename int_type>
 int mult_A_Btrans(CrsMatrixStruct& Aview,
                   CrsMatrixStruct& Bview,
-                  CrsWrapper& C)
+                  CrsWrapper& C,
+		  bool keep_all_hard_zeros)
 {
   int i, j, k;
   int returnValue = 0;
@@ -281,9 +282,9 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
       double C_ij = sparsedot(avals, Aind, A_len_i,
                               bvals, Bind, Blen);
 
-      if (C_ij == 0.0) {
-        continue;
-      }
+      if (!keep_all_hard_zeros && C_ij == 0.0) 
+	continue;
+
       int_type global_col = (int_type) Bview.rowMap->GID64(j);
 
       int err = C_filled ?
@@ -318,15 +319,16 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 }
 
 int mult_A_Btrans(CrsMatrixStruct& Aview,
-             CrsMatrixStruct& Bview,
-             CrsWrapper& C)
+		  CrsMatrixStruct& Bview,
+		  CrsWrapper& C, 
+		  bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt() &&
      Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt()) {
-    return mult_A_Btrans<int>(Aview, Bview, C);
+    return mult_A_Btrans<int>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -335,7 +337,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
      Aview.colMap->GlobalIndicesLongLong() &&
      Aview.rowMap->GlobalIndicesLongLong() &&
      Aview.colMap->GlobalIndicesLongLong()) {
-    return mult_A_Btrans<long long>(Aview, Bview, C);
+    return mult_A_Btrans<long long>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -349,6 +351,7 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
                   CrsMatrixStruct& Bview,
                   CrsWrapper& C)
 {
+
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
 
@@ -509,10 +512,11 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 template<typename int_type>
 int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
                        CrsMatrixStruct& Bview,
-                       CrsWrapper& C)
+                       CrsWrapper& C,
+		       bool keep_all_hard_zeros)
 {
   int C_firstCol = Aview.rowMap->MinLID();
-  int C_lastCol = Aview.rowMap->MaxLID();
+  int C_lastCol  = Aview.rowMap->MaxLID();
 
   int C_firstCol_import = 0;
   int C_lastCol_import = -1;
@@ -532,13 +536,6 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
   double* C_col_j = dwork;
   int_type* C_inds = iwork;
-
-  //std::cout << "Aview: " << std::endl;
-  //dumpCrsMatrixStruct(Aview);
-
-  //std::cout << "Bview: " << std::endl;
-  //dumpCrsMatrixStruct(Bview);
-
 
   int i, j, k;
 
@@ -619,7 +616,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
       //Now loop across the C_col_j values and put non-zeros into C.
 
       for(i=0; i < C_len ; ++i) {
-        if (C_col_j[i] == 0.0) continue;
+        if (!keep_all_hard_zeros && C_col_j[i] == 0.0) continue;
 
         int_type global_row = C_inds[i];
         if (!Crowmap->MyGID(global_row)) {
@@ -651,15 +648,16 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 }
 
 int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
-             CrsMatrixStruct& Bview,
-             CrsWrapper& C)
+		       CrsMatrixStruct& Bview,
+		       CrsWrapper& C,
+		       bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt() &&
      Aview.rowMap->GlobalIndicesInt() &&
      Aview.colMap->GlobalIndicesInt()) {
-    return mult_Atrans_Btrans<int>(Aview, Bview, C);
+    return mult_Atrans_Btrans<int>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -668,7 +666,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
      Aview.colMap->GlobalIndicesLongLong() &&
      Aview.rowMap->GlobalIndicesLongLong() &&
      Aview.colMap->GlobalIndicesLongLong()) {
-    return mult_Atrans_Btrans<long long>(Aview, Bview, C);
+    return mult_Atrans_Btrans<long long>(Aview, Bview, C, keep_all_hard_zeros);
   }
   else
 #endif
@@ -1086,7 +1084,8 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
                            const Epetra_CrsMatrix& B,
                            bool transposeB,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result)
+			   bool call_FillComplete_on_result,
+			   bool keep_all_hard_zeros)
 {
   // DEBUG
   //  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
@@ -1260,15 +1259,15 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
 
   switch(scenario) {
-  case 1:    EPETRA_CHK_ERR( mult_A_B(A,Aview,B,Bview,C,call_FillComplete_on_result) );
+  case 1:    EPETRA_CHK_ERR( mult_A_B(A,Aview,B,Bview,C,call_FillComplete_on_result, keep_all_hard_zeros) );
     break;
-  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, ecrsmat) );
+  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, ecrsmat, keep_all_hard_zeros) );
     break;
   case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, ecrsmat) );
     break;
-  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat) );
+  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat, keep_all_hard_zeros) );
     break;
-  case 5:    EPETRA_CHK_ERR( mult_AT_B_newmatrix(Atransview, Bview, C) );
+  case 5:    EPETRA_CHK_ERR( mult_AT_B_newmatrix(Atransview, Bview, C, keep_all_hard_zeros) );
     break;
   }
 
@@ -1307,17 +1306,18 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
                            const Epetra_CrsMatrix& B,
                            bool transposeB,
                            Epetra_CrsMatrix& C,
-                           bool call_FillComplete_on_result)
+                           bool call_FillComplete_on_result,
+			   bool keep_all_hard_zeros)
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesInt() && B.RowMap().GlobalIndicesInt()) {
-        return TMultiply<int>(A, transposeA, B, transposeB, C, call_FillComplete_on_result);
+    return TMultiply<int>(A, transposeA, B, transposeB, C, call_FillComplete_on_result,  keep_all_hard_zeros);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(A.RowMap().GlobalIndicesLongLong() && B.RowMap().GlobalIndicesLongLong()) {
-        return TMultiply<long long>(A, transposeA, B, transposeB, C, call_FillComplete_on_result);
+    return TMultiply<long long>(A, transposeA, B, transposeB, C, call_FillComplete_on_result,  keep_all_hard_zeros);
   }
   else
 #endif

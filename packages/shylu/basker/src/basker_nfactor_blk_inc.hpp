@@ -135,7 +135,8 @@ namespace BaskerNS
     Int          uval  = 0;
 
     Int i,j,k;
-    Int top, top1, maxindex, t; 
+//    Int top, top1, maxindex, t;  //NDE - warning: top1 set but not used
+    Int top, maxindex, t; 
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
    
@@ -162,7 +163,7 @@ namespace BaskerNS
     cu_ltop = lval;
     cu_utop = uval;
     top = ws_size;
-    top1 = ws_size;
+//    top1 = ws_size; //NDE - warning: top1 set but not used
     
     lnnz = lval;
     unnz = uval;
@@ -211,13 +212,13 @@ namespace BaskerNS
 	      j = M.row_idx(i);
 	      X(j) = M.val(i);
 	           
-              #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+        #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	      printf("i: %d row: %d  val: %g  top: %d \n", 
 		     i, j ,M.val(i), top);
 	      printf("Nx in Ak %d %g %d color = %d \n",
 		     j, X[j], brow,  
                      color[j] );
-              #endif
+        #endif
 
 	 
 
@@ -364,7 +365,7 @@ namespace BaskerNS
 	    }
           //ucnt = ws_size - top - lcnt +1;
     
-	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+    if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
             {
 	      if(Options.verbose == BASKER_TRUE)
 		{
@@ -395,8 +396,8 @@ namespace BaskerNS
 		{
 	      printf("\n\n");
 	      printf("----------------------\n");
-              printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     b, llnnz, lnnz, lcnt, newsize);
+              printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
 		}
 
 	      if(Options.realloc == BASKER_FALSE)
@@ -426,8 +427,8 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
-                     b, uunnz, newsize);
+              printf("b: %ld Reallocing U oldsize: %ld newsize: %ld \n",
+                     (long)b, (long)uunnz, (long)newsize);
 		}
 
 	       if(Options.realloc == BASKER_FALSE)
@@ -671,7 +672,8 @@ namespace BaskerNS
     
 
     Int i, t, head, i1;
-    Int start, end, done;
+//    Int start, end, done; //NDE - warning: done set but unused
+    Int start, end;
 
 
     Int inc_lvl = 0;
@@ -744,7 +746,7 @@ namespace BaskerNS
 	    BASKER_ASSERT(inc_lvl >= 0, 
 			  "inc_lvl too small 2");
 	  }
-	done = 1;
+//	done = 1; //NDE - warning: set but unused
 	
 
 	if(inc_lvl <= Options.inc_lvl)
@@ -1222,7 +1224,7 @@ namespace BaskerNS
 		BASKER_ASSERT((*top-1) >= 0, "Top pass pattern\n");
 		if((*top-1)<0)
 		  {
-		printf("blk: %d kid: %d \n", b, kid);
+		printf("blk: %ld kid: %ld \n", (long)b, (long)kid);
 		  }
 
 		color[j] = 2;
@@ -1565,7 +1567,7 @@ namespace BaskerNS
 
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
-    Int *stack   = &(pattern[ws_size]);
+//    Int *stack   = &(pattern[ws_size]); //NDE - warning: unused
    
     //Fill Colog with correct index marks from already L
     for(Int i = L.col_ptr(k); i < L.col_ptr(k+1); i++)
@@ -2087,9 +2089,9 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
-	       blkcol, blkrow, kid,
-	       llnnz,lnnz,p_size, newsize  );
+	printf("-Warning, Need to remalloc L: %ld %ld kid: %ld current size: %ld used_size: %ld  addition: %ld newsize: %ld  \n",
+	       (long)blkcol, (long)blkrow, (long)kid,
+	       (long)llnnz, (long)lnnz, (long)p_size, (long)newsize  );
 	  }
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 
@@ -2381,8 +2383,8 @@ namespace BaskerNS
 	      printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *A.nrow + 1;
-              printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     b, llnnz, lnnz, lcnt, newsize);
+              printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
             }
           if(unnz+ucnt > uunnz)
             {
@@ -2391,8 +2393,8 @@ namespace BaskerNS
 	      printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*A.nrow+1;
-              printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
-                     b, uunnz, newsize);
+              printf("b: %ld Reallocing U oldsize: %ld newsize: %ld \n",
+                     (long)b, (long)uunnz, (long)newsize);
             }
 
           L.row_idx[lnnz] = maxindex;
@@ -2758,7 +2760,7 @@ namespace BaskerNS
    
     Int *color =   &(ws(0));
     Int *pattern = &(color[ws_size]);
-    Int *stack   = &(pattern[ws_size]); //Temp store the fill-in
+//    Int *stack   = &(pattern[ws_size]); //Temp store the fill-in //NDE - warning: unused
     
     //For Debug
     /*
@@ -3214,7 +3216,7 @@ namespace BaskerNS
     INT_1DARRAY   ws    = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
     const Int   ws_size = LL(X_col)(X_row).iws_size;
-    const Int   p_size  = LL(X_col)(X_row).p_size;
+    //const Int   p_size  = LL(X_col)(X_row).p_size; //NDE - warning: unused
 
 
    
@@ -3235,9 +3237,10 @@ namespace BaskerNS
     if(L.nrow > (llnnz - lnnz))
       {
 	printf("no enough memory in dense \n");
-	printf("kid: %d llnnz: %d lnnz: %d \n",
-	       kid, lnnz, lnnz);
-	
+//	printf("kid: %ld llnnz: %ld lnnz: %ld \n",kid, llnnz, lnnz);
+  std::cout << "kid: " << kid
+            << " llnz: " << llnnz
+            << " lnz: " << lnnz << std::endl;
 
       }
     
@@ -3248,7 +3251,8 @@ namespace BaskerNS
 	//printf("Consider L-move (%d %d) %f kid: %d inc: %d \n",
 	//   k+L.scol, j+L.srow, X(j), kid, stack[j]);
 
-	if((X(j)!=0))
+	//if((X(j)!=0))
+	if((X(j)!=(Entry)(0)))
 	  {
 
 	    if((stack[j] != BASKER_MAX_IDX)&&
@@ -3467,7 +3471,7 @@ namespace BaskerNS
 	  }
 	*/
 
-	
+	//NDE Unnecessary...
 	if(flvl+1 > Options.inc_lvl)
 	  {
 	    //printf("Continued skip because too large\n");
@@ -3844,11 +3848,11 @@ namespace BaskerNS
 	
 	for(Int blk = l+1; blk < endblk; ++blk)
 	  {
-	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
+//	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews; //NDE - warning: unused
 	    INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws;
 	    //Int      p_sizeL  = LL(leader_idx)(blk).p_size;
 	    Int      ws_sizeL = LL(leader_idx)(blk).iws_size;
-	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
+//	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews; //NDE - warning: unused
 	    INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
 	    const Int ws_size = LL(my_idx)(blk).iws_size;
 	    //Int       p_size  = LL(my_idx)(blk).p_size;
@@ -3961,7 +3965,7 @@ namespace BaskerNS
 	//printf("===========T ADD ORIG FILL CALLED\n");
 	const Int leader_id  = find_leader(kid, l);
 	//const Int lteam_size = pow(2,l+1);
-	const Int L_col      = S(lvl-1)(leader_id);
+//	const Int L_col      = S(lvl-1)(leader_id); //NDE - warning: unused
 	//Int L_row             = 0;
 	//const Int U_col      = S(lvl)(leader_id); 
 	//Int U_row            = LU_size(U_col)-1;

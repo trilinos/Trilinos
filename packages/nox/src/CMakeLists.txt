@@ -125,6 +125,7 @@ APPEND_SET(HEADERS
   NOX_Solver_TensorBased.H
   NOX_Solver_AndersonAcceleration.H
   NOX_Solver_PrePostOperator.H
+  NOX_Solver_SingleStep.H
   )
 APPEND_SET(SOURCES
   NOX_Solver_Factory.C
@@ -135,6 +136,7 @@ APPEND_SET(SOURCES
   NOX_Solver_TensorBased.C
   NOX_Solver_AndersonAcceleration.C
   NOX_Solver_PrePostOperator.C
+  NOX_Solver_SingleStep.C
   )
 
 # Merit Function

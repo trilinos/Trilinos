@@ -126,7 +126,7 @@ int main(int argc, char** argv)
   std::string in_filename = "";
   std::string in_filetype = "exodusii";
   if (vm.count("mesh")) {
-    in_filename = boost::any_cast<std::string>(vm["mesh"].value());;
+    in_filename = boost::any_cast<std::string>(vm["mesh"].value());
 
     if (strncasecmp("gen:", in_filename.c_str(), 4) == 0) {
       // Strip off the 'gen:' prefix and set the type to "generated"

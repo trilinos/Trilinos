@@ -76,7 +76,7 @@ void initializeField(FieldMetaData& field_meta_data, const unsigned char* init_v
         current_field_offset += field_meta_data.m_bytes_per_entity * capacity;
 
         // initialize field data
-        if (init_val != NULL)
+        if (init_val != nullptr)
         {
             for (size_t j = 0; j < capacity; ++j)
             {
@@ -93,7 +93,7 @@ void initializeField(FieldMetaData& field_meta_data, const unsigned char* init_v
 void setInitialValue(unsigned char* data_location, const FieldBase& field, const int numBytesPerEntity)
 {
     const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
-    if (init_val != NULL)
+    if (init_val != nullptr)
     {
         std::memcpy( data_location, init_val, numBytesPerEntity );
     }
@@ -110,7 +110,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
       ThrowRequireMsg(!fields.empty(),"allocate_bucket_field_data ERROR, field-data-manager was constructed with 0 entity-ranks, and there are no fields. Mesh has not been initialized correctly.");
 
       for(size_t i=0; i<fields.size(); ++i) {
-        if (fields[i] != NULL) {
+        if (fields[i] != nullptr) {
           m_field_raw_data.resize(fields[i]->get_mesh().mesh_meta_data().entity_rank_count());
           break;
         }
@@ -128,7 +128,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
 
     for(size_t i = 0; i < num_fields; ++i)
     {
-        FieldMetaData field_meta_data = {NULL, 0};
+        FieldMetaData field_meta_data = {nullptr, 0};
 
         const FieldBase & field = *fields[i];
         if(static_cast<unsigned>(field.entity_rank()) == rank)
@@ -166,7 +166,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
     }
     else
     {
-        m_field_raw_data[rank].push_back(NULL);
+        m_field_raw_data[rank].push_back(nullptr);
     }
 }
 
@@ -176,23 +176,23 @@ void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank
     if(fields.empty())
         return;
 
-    if(m_field_raw_data[rank][bucket_id] != NULL)
+    if(m_field_raw_data[rank][bucket_id] != nullptr)
     {
         size_t bytes_to_delete = 0;
         for(unsigned int i = 0; i < fields.size(); ++i)
         {
-            if(fields[i] == NULL || static_cast<unsigned>(fields[i]->entity_rank()) != rank)
+            if(fields[i] == nullptr || static_cast<unsigned>(fields[i]->entity_rank()) != rank)
                 continue;
             FieldMetaData& field_data = fields[i]->get_meta_data_for_field()[bucket_id];
-            if(field_data.m_data != NULL)
+            if(field_data.m_data != nullptr)
             {
                 bytes_to_delete += field_data.m_bytes_per_entity * capacity;
                 field_data.m_bytes_per_entity = 0;
-                field_data.m_data = NULL;
+                field_data.m_data = nullptr;
             }
         }
         (*field_data_allocator).deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
-        m_field_raw_data[rank][bucket_id] = NULL;
+        m_field_raw_data[rank][bucket_id] = nullptr;
     }
 }
 
@@ -277,7 +277,7 @@ ContiguousFieldDataManager::~ContiguousFieldDataManager()
     for (size_t i=0;i<m_field_raw_data.size();i++)
     {
         (*field_data_allocator).deallocate(m_field_raw_data[i], m_num_bytes_allocated_per_field[i]);
-        m_field_raw_data[i] = NULL;
+        m_field_raw_data[i] = nullptr;
         m_num_bytes_allocated_per_field[i] = 0;
         m_num_bytes_used_per_field[i] = 0;
     }
@@ -292,7 +292,7 @@ void ContiguousFieldDataManager::allocate_bucket_field_data(const EntityRank ran
 {
     if(m_field_raw_data.empty())
     {
-        m_field_raw_data.resize(fields.size(), NULL);
+        m_field_raw_data.resize(fields.size(), nullptr);
         m_num_entities_in_field_for_bucket.resize(fields.size());
         m_num_bytes_allocated_per_field.resize(fields.size(), 0);
         m_num_bytes_used_per_field.resize(fields.size(), 0);
@@ -304,7 +304,7 @@ void ContiguousFieldDataManager::allocate_bucket_field_data(const EntityRank ran
         {
             unsigned field_ordinal = fields[i]->mesh_meta_data_ordinal();
             size_t num_bytes_per_entity = getNumBytesForField(*fields[i], rank, superset_parts);
-            FieldMetaData field_meta_data = {NULL, 0};
+            FieldMetaData field_meta_data = {nullptr, 0};
             if(num_bytes_per_entity > 0)
             {
                 field_meta_data.m_bytes_per_entity = num_bytes_per_entity;
@@ -338,7 +338,7 @@ void ContiguousFieldDataManager::clear_bucket_field_data(const EntityRank rm_ran
                 size_t leftHalf = sizeOfPreviousBuckets;
                 size_t rightHalf = m_num_bytes_used_per_field[field_ordinal] - leftHalf - sizeFieldForRemovedBucket;
 
-                field_meta_data_for_modified_bucket.m_data = NULL;
+                field_meta_data_for_modified_bucket.m_data = nullptr;
 
                 size_t numBucketsOfRank = field_meta_data_vector.size();
                 resetFieldMetaDataPointers(rm_bucket_id+1, numBucketsOfRank, field_meta_data_vector, m_field_raw_data[field_ordinal], new_field_data-sizeFieldForRemovedBucket);
@@ -370,7 +370,7 @@ void ContiguousFieldDataManager::deallocate_bucket_field_data(const EntityRank r
 
             FieldMetaData& field_data = fields[field_index]->get_meta_data_for_field()[bucket_id];
             field_data.m_bytes_per_entity = 0;
-            field_data.m_data = NULL;
+            field_data.m_data = nullptr;
 
             ThrowRequireMsg(m_num_entities_in_field_for_bucket[field_ordinal][bucket_id] == 0, "Bucket not empty!");
         }
@@ -393,7 +393,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
 
             unsigned char* new_field_data = (*field_data_allocator).allocate(newFieldSizeInBytes + m_extra_capacity);
 
-            FieldMetaData fieldMeta = {NULL, 0};
+            FieldMetaData fieldMeta = {nullptr, 0};
             FieldMetaDataVector newMetaData(reorderedBucketIds.size(), fieldMeta);
             std::vector<size_t> size_bucket_in_field(reorderedBucketIds.size(), 0);
             unsigned new_offset = 0;
@@ -465,7 +465,7 @@ void ContiguousFieldDataManager::remove_field_data_for_entity(EntityRank rm_rank
 
 void ContiguousFieldDataManager::allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & fields)
 {
-    m_field_raw_data.resize(fields.size(), NULL);
+    m_field_raw_data.resize(fields.size(), nullptr);
     m_num_entities_in_field_for_bucket.resize(fields.size());
     for (size_t i=0;i<fields.size();i++)
     {
@@ -493,7 +493,7 @@ void ContiguousFieldDataManager::allocate_field_data(EntityRank rank, const std:
                     m_num_entities_in_field_for_bucket[field_ordinal][i] = buckets[i]->size();
                     m_num_bytes_used_per_field[field_ordinal] += stk::adjust_up_to_alignment_boundary(numBytesPerEntity * buckets[i]->size(), alignment_increment_bytes);
                 }
-                FieldMetaData fieldMetaData = {NULL, numBytesPerEntity};
+                FieldMetaData fieldMetaData = {nullptr, numBytesPerEntity};
                 const_cast<FieldBase&>(field).get_meta_data_for_field().push_back(fieldMetaData);
             }
 

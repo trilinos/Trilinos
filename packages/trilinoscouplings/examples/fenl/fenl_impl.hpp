@@ -502,6 +502,10 @@ public:
           perf.cg_total_time   += cgsolve.total_time ;
         }
         perf.cg_iter_count   += cgsolve.iteration ;
+        const int ne = cgsolve.ensemble_its.size();
+        perf.ensemble_cg_iter_count.resize(ne);
+        for (int i=0; i<ne; ++i)
+          perf.ensemble_cg_iter_count[i] += cgsolve.ensemble_its[i];
 
         // Update solution vector
 
@@ -609,6 +613,7 @@ Perf fenl(
   problem.perf.prec_apply_time  = 0;
   problem.perf.cg_total_time = 0;
   problem.perf.cg_iter_count = 0;
+  problem.perf.ensemble_cg_iter_count.clear();
   problem.perf.import_time = 0;
   problem.perf.fill_time = 0;
   problem.perf.bc_time = 0;

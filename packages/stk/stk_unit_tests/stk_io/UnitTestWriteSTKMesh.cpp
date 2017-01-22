@@ -26,7 +26,7 @@
 #include <stk_util/environment/memory_util.hpp>
 
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 
@@ -61,7 +61,7 @@ TEST(StkIo, write_stk_mesh_to_file)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x2|sideset:xX|nodeset:x", bulkData);
+        stk::io::fill_mesh("generated:2x2x2|sideset:xX|nodeset:x", bulkData);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
 
@@ -207,7 +207,7 @@ TEST(StkIo, write_stk_mesh_to_file)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io(file_written, bulkData);
+        stk::io::fill_mesh(file_written, bulkData);
 
         std::vector<size_t> entity_counts;
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
@@ -235,14 +235,9 @@ TEST(StkIo, check_memory)
 
     if(stk::parallel_machine_size(comm) == 1)
     {
-        std::string dimension = unitTestUtils::getOption("--dim", "10");
-        const int dim = std::atoi(dimension.c_str());
-
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        std::ostringstream os;
-        os << "generated:" << dim << "x" << dim << "x" << dim;
-        std::string filename = os.str();
+        std::string filename = stk::unit_test_util::get_mesh_spec("--dim");
 
         size_t current_usage2 = 0, hwm_usage2 = 0;
         {

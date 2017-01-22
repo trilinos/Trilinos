@@ -1,3 +1,45 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
@@ -18,9 +60,15 @@ namespace Experimental{
 
 namespace Graph{
 
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL,
-                     SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2};
+
+//TODO:SPGEMM_KK_MEMORY2 option is for testing in openmp.
+//it wont work on cuda, not bind to a test program.
+//hidden parameter for StringToSPGEMMAlgorithm for now.
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
+                      SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
+                     //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
+					 SPGEMM_KK_MULTIMEM,
+                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
@@ -38,52 +86,58 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type size_type;
+  /*
   typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
   typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
   typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
   typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
+  */
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
   typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
+  /*
   typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
   typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
   typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
   typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
+  */
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
   typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
+  /*
   typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
   typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
   typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
   typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
+  */
 
 
+  /*
   typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
   typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
+  */
 
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
   typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
-
-
-
-
+  /*
   typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
   typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
+  */
   typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
   typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
-
-
+  /*
   typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
   typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
+  */
   typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
   typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
 
 
-  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
-  typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
   typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
@@ -93,6 +147,8 @@ public:
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
+
+
 
 
 #ifdef KERNELS_HAVE_CUSPARSE
@@ -107,7 +163,7 @@ public:
       cusparseStatus_t status;
       status= cusparseCreate(&handle);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreate ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreate ERROR\n");
         return;
       }
       cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
@@ -128,7 +184,8 @@ public:
 
       status = cusparseCreateMatDescr(&a_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << "cusparseCreateMatDescr a_descr ERROR" << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr a_descr ERROR\n");
+
         return;
       }
       cusparseSetMatType(a_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -136,7 +193,8 @@ public:
 
       status = cusparseCreateMatDescr(&b_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreateMatDescr b_descr ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr b_descr ERROR\n");
+
         return;
       }
       cusparseSetMatType(b_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -144,7 +202,7 @@ public:
 
       status = cusparseCreateMatDescr(&c_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreateMatDescr  c_descr ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr  c_descr ERROR\n");
         return;
       }
       cusparseSetMatType(c_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -162,6 +220,7 @@ public:
 #endif
 private:
   SPGEMMAlgorithm algorithm_type;
+  size_type result_nnz_size;
 
   bool called_symbolic;
   bool called_numeric;
@@ -171,10 +230,11 @@ private:
   nnz_lno_t max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
-  row_lno_temp_work_view_t compressed_b_rowmap, compressed_b_set_begins, compressed_b_set_nexts;
+  row_lno_temp_work_view_t compressed_b_rowmap;// compressed_b_set_begins, compressed_b_set_nexts;
   nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
   row_lno_temp_work_view_t compressed_c_rowmap;
 
+  nnz_lno_temp_work_view_t c_column_indices;
 
   row_lno_temp_work_view_t tranpose_a_xadj, tranpose_b_xadj, tranpose_c_xadj;
   nnz_lno_temp_work_view_t tranpose_a_adj, tranpose_b_adj, tranpose_c_adj;
@@ -188,12 +248,30 @@ private:
   nnz_lno_t num_multi_colors, num_used_colors;
 
   double multi_color_scale;
-
-
+  int mkl_sort_option;
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
+
+  typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
+  bool mkl_keep_output;
+  bool mkl_convert_to_1base;
+
+  void set_mkl_sort_option(int mkl_sort_option_){
+    this->mkl_sort_option = mkl_sort_option_;
+  }
+  int get_mkl_sort_option(){
+    return this->mkl_sort_option;
+  }
+  void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_){
+    this->c_column_indices = c_col_indices_;
+  }
+
+  nnz_lno_temp_work_view_t get_c_column_indices(){
+    return this->c_column_indices;
+  }
+
   void set_color_xadj(
       nnz_lno_t num_colors_,
       nnz_lno_persistent_work_host_view_t color_xadj_,
@@ -208,6 +286,20 @@ private:
 
     num_multi_colors = num_multi_colors_;
     num_used_colors = num_used_colors_;
+  }
+
+  /**
+   * \brief sets the result nnz size.
+   * \param result_nnz_size: size of the output matrix.
+   */
+  void set_c_nnz(size_type result_nnz_size_){
+    this->result_nnz_size = result_nnz_size_;
+  }
+  /**
+   * \brief returns the result nnz size.
+   */
+  size_type get_c_nnz(){
+    return this->result_nnz_size;
   }
 
   void set_multi_color_scale(double multi_color_scale_){
@@ -247,18 +339,8 @@ private:
 
 
 
-  void set_compressed_b(
-      row_lno_temp_work_view_t compressed_b_rowmap_,
-      nnz_lno_temp_work_view_t compressed_b_set_indices_,
-      nnz_lno_temp_work_view_t compressed_b_sets_,
-      row_lno_temp_work_view_t compressed_b_set_begins_,
-      row_lno_temp_work_view_t compressed_b_set_nexts_){
-    compressed_b_rowmap = compressed_b_rowmap_;
-    compressed_b_set_indices = compressed_b_set_indices_;
-    compressed_b_sets = compressed_b_sets_;
-    compressed_b_set_begins = compressed_b_set_begins_;
-    compressed_b_set_nexts = compressed_b_set_nexts_;
-  }
+
+
 
   void get_compressed_b(
       row_lno_temp_work_view_t &compressed_b_rowmap_,
@@ -269,22 +351,24 @@ private:
     compressed_b_rowmap_ = compressed_b_rowmap;
     compressed_b_set_indices_ = compressed_b_set_indices;
     compressed_b_sets_ = compressed_b_sets;
-    compressed_b_set_begins_ = compressed_b_set_begins;
-    compressed_b_set_nexts_ = compressed_b_set_nexts;
   }
 
   /**
    * \brief Default constructor.
    */
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
-    algorithm_type(gs),
+    algorithm_type(gs), result_nnz_size(0),
     called_symbolic(false), called_numeric(false),
     suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0),
+    c_column_indices(),
     tranpose_a_xadj(), tranpose_b_xadj(), tranpose_c_xadj(),
     tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
     num_colors(0),
-    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1)
+    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1), mkl_sort_option(7),
+    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
+    mkl_keep_output(true),
+    mkl_convert_to_1base(true)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -371,6 +455,7 @@ private:
 
 
 
+
   //getters
   SPGEMMAlgorithm get_algorithm_type() const {return this->algorithm_type;}
 
@@ -404,7 +489,7 @@ private:
       int max_allowed_team_size,
       int &suggested_vector_size_,
       int &suggested_team_size_,
-      row_lno_t nr, row_lno_t nnz){
+      size_type nr, size_type nnz){
     //suggested_team_size_ =  this->suggested_team_size = 1;
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;
@@ -457,9 +542,7 @@ private:
       else {
         this->suggested_vector_size = 32;
       }
-      if (max_allowed_team_size < 32){
-        std::cerr << "max_allowed_team_size:" << max_allowed_team_size << std::endl;
-      }
+
       suggested_vector_size_ = this->suggested_vector_size;
       this->suggested_team_size= suggested_team_size_ = max_allowed_team_size / this->suggested_vector_size;
     }
@@ -475,6 +558,30 @@ private:
   }
 
 };
+
+
+  inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
+    if(name=="SPGEMM_DEFAULT")             return SPGEMM_DEFAULT;
+    else if(name=="SPGEMM_DEBUG")          return SPGEMM_DEBUG;
+    else if(name=="SPGEMM_SERIAL")         return SPGEMM_SERIAL;
+    else if(name=="SPGEMM_CUSPARSE")       return SPGEMM_CUSPARSE;
+    else if(name=="SPGEMM_CUSP")           return SPGEMM_CUSP;
+    else if(name=="SPGEMM_MKL")            return SPGEMM_MKL;
+    else if(name=="SPGEMM_VIENNA")         return SPGEMM_VIENNA;
+    else if(name=="SPGEMM_KK_SPEED")       return SPGEMM_KK_SPEED;
+    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
+    else if(name=="SPGEMM_KK_COLOR")       return SPGEMM_KK_COLOR;
+    else if(name=="SPGEMM_KK_MULTICOLOR")  return SPGEMM_KK_MULTICOLOR;
+    else if(name=="SPGEMM_KK_MULTICOLOR2") return SPGEMM_KK_MULTICOLOR2;
+    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK_MEMSPEED;
+    else
+      throw std::runtime_error("Invalid SPGEMMAlgorithm name");
+  }
+
+
+
+
+
 }
 }
 }

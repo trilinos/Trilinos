@@ -72,7 +72,7 @@ namespace Intrepid2 {
   private:
 
     // static data initialize upto 21
-    static constexpr int cubatureDataStaticSize=21;
+    static constexpr ordinal_type cubatureDataStaticSize=21;
 
     /** \brief Complete set of data defining default cubature rules on a triangle.
      */
@@ -84,7 +84,7 @@ namespace Intrepid2 {
         \param degree           [in]     - The degree of polynomials that are integrated
         exactly by this cubature rule. Default: 0.
     */
-    CubatureDirectTriDefault(const int degree = 0);
+    CubatureDirectTriDefault(const ordinal_type degree = 0);
 
     /** \brief Returns cubature name.
      */

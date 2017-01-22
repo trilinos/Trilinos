@@ -73,13 +73,13 @@ namespace Ioss {
       static const uint32_t SHIFT = STYLE_SHIFT * ATTRIBUTE;
 
       enum {
-        DEFAULT     = 0x001 << SHIFT,
-        BOLD        = 0x002 << SHIFT,
-        DIM         = 0x004 << SHIFT,
-        UNDERLINED  = 0x010 << SHIFT,
-        BLINK       = 0x020 << SHIFT,
-        REVERSE     = 0x080 << SHIFT,
-        HIDDEN      = 0x100 << SHIFT
+        DEFAULT    = 0x001 << SHIFT,
+        BOLD       = 0x002 << SHIFT,
+        DIM        = 0x004 << SHIFT,
+        UNDERLINED = 0x010 << SHIFT,
+        BLINK      = 0x020 << SHIFT,
+        REVERSE    = 0x080 << SHIFT,
+        HIDDEN     = 0x100 << SHIFT
       };
     };
 
@@ -133,16 +133,16 @@ namespace Ioss {
       };
     };
 
-    Style black(Ioss::trmclr::Foreground::BLACK);
-    Style red(Ioss::trmclr::Foreground::RED);
-    Style green(Ioss::trmclr::Foreground::GREEN);
-    Style yellow(Ioss::trmclr::Foreground::YELLOW);
-    Style blue(Ioss::trmclr::Foreground::BLUE);
-    Style magenta(Ioss::trmclr::Foreground::MAGENTA);
-    Style cyan(Ioss::trmclr::Foreground::CYAN);
-    Style normal(Ioss::trmclr::Attribute::DEFAULT);
-    
-    std::ostream &operator<<(std::ostream &os, const Style &style)
+    static Style black(Ioss::trmclr::Foreground::BLACK);
+    static Style red(Ioss::trmclr::Foreground::RED);
+    static Style green(Ioss::trmclr::Foreground::GREEN);
+    static Style yellow(Ioss::trmclr::Foreground::YELLOW);
+    static Style blue(Ioss::trmclr::Foreground::BLUE);
+    static Style magenta(Ioss::trmclr::Foreground::MAGENTA);
+    static Style cyan(Ioss::trmclr::Foreground::CYAN);
+    static Style normal(Ioss::trmclr::Attribute::DEFAULT);
+
+    inline std::ostream &operator<<(std::ostream &os, const Style &style)
     {
       const uint32_t base    = 1 << STYLE_SHIFT;
       uint32_t       encoded = style / base;

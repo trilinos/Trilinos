@@ -49,6 +49,7 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
+namespace { // (anonymous)
 using Tpetra::global_size_t;
 using Teuchos::Array;
 using Teuchos::ArrayView;
@@ -263,5 +264,4 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   cout << endl; // make TimeMonitor output neat on test line
   Teuchos::TimeMonitor::summarize();
 }
-
-
+} // (anonymous)

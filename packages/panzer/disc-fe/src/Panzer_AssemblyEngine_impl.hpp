@@ -195,8 +195,11 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
       workset.alpha = in.alpha;
       workset.beta = in.beta;
       workset.time = in.time;
+      workset.step_size = in.step_size;
+      workset.stage_number = in.stage_number;
       workset.gather_seeds = in.gather_seeds;
       workset.evaluate_transient_terms = in.evaluate_transient_terms;
+
 
       fm->template evaluateFields<EvalT>(workset);
     }

@@ -45,7 +45,7 @@
 #define ROL_SIMULATED_OBJECTIVE_H
 
 #include "ROL_SimulatedVector.hpp"
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 
 namespace ROL {
 
@@ -53,14 +53,14 @@ template <class Real>
 class SimulatedObjective : public Objective<Real> {
 private:
   const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > pobj_;
+  const Teuchos::RCP<Objective_SimOpt<Real> > pobj_;
 
 public:
 
   virtual ~SimulatedObjective() {}
 
   SimulatedObjective(const Teuchos::RCP<SampleGenerator<Real> > & sampler,
-                     const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > & pobj)
+                     const Teuchos::RCP<Objective_SimOpt<Real> > & pobj)
     : sampler_(sampler), pobj_(pobj) {}
 
   Real value(const Vector<Real> &x,

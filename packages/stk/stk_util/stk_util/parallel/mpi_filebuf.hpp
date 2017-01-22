@@ -79,7 +79,7 @@ public:
 	  MPI_Comm       communicator ,       /* All processors */
     const int            root_processor ,     /* All processors */
     const std::ios_base::openmode file_mode , /* All processors */
-    const char * const   file_name = NULL );  /* Root processor */
+    const char * const   file_name = nullptr );  /* Root processor */
 
   //: GLOBAL: Close the file.
   // If output mode then flush the output.
@@ -147,7 +147,7 @@ private:
 
 /*--------------------------------------------------------------------*/
 
-inline int  mpi_filebuf::is_open() const { return NULL != comm_buffer ; }
+inline int  mpi_filebuf::is_open() const { return nullptr != comm_buffer ; }
 
 /* The SUN has the 'streambuf::pptr()' as a non-const method,
    which violates the ISO/ANSI standard specification.

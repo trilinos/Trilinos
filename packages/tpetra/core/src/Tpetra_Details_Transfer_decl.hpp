@@ -114,14 +114,32 @@ public:
   /// process getExportPiDs()[i].
   virtual Teuchos::ArrayView<const int> getExportPIDs () const = 0;
 
-  //! The source Map used to construct this Export.
+  //! The source Map used to construct this Export or Import.
   virtual Teuchos::RCP<const map_type> getSourceMap () const = 0;
 
-  //! The target Map used to construct this Export.
+  //! The target Map used to construct this Export or Import.
   virtual Teuchos::RCP<const map_type> getTargetMap () const = 0;
 
-  //! The Distributor that this Export object uses to move data.
+  //! The Distributor that this Export or Import object uses to move data.
   virtual ::Tpetra::Distributor& getDistributor () const = 0;
+
+  /// \brief Is this Export or Import locally complete?
+  ///
+  /// If this is an Export, then do all source Map indices on the
+  /// calling process exist on at least one process (not necessarily
+  /// this one) in the target Map?
+  ///
+  /// If this is an Import, then do all target Map indices on the
+  /// calling process exist on at least one process (not necessarily
+  /// this one) in the source Map?
+  ///
+  /// It's not necessarily an error for an Export or Import not to be
+  /// locally complete on one or more processes.  For example, this
+  /// may happen in the common use case of "restriction" -- that is,
+  /// taking a subset of a large object.  Nevertheless, you may find
+  /// this predicate useful for figuring out whether you set up your
+  /// Maps in the way that you expect.
+  virtual bool isLocallyComplete () const = 0;
 
   /// \brief Describe this object in a human-readable way to the given
   ///   output stream.

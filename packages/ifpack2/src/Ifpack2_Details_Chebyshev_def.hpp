@@ -52,15 +52,11 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
-#include <Kokkos_ArithTraits.hpp>
+#include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include <cmath>
-
-// Uncommit the #define line below if you want Chebyshev to do extra
-// debug checking and generate a lot of debugging output to stderr (on
-// all processes in the communicator).  Even if you uncomment this
-// line, the debugging code will only be enabled if the CMake option
-// Teuchos_ENABLE_DEBUG was set to ON when configuring Trilinos.
-//#define IFPACK_DETAILS_CHEBYSHEV_DEBUG 1
+#include <iostream>
 
 namespace Ifpack2 {
 namespace Details {
@@ -92,21 +88,23 @@ struct V_ReciprocalThresholdSelfFunctor
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
-  const value_type m_min_val;
-  const mag_type m_min_val_mag;
+  const value_type minVal_;
+  const mag_type minValMag_;
 
   V_ReciprocalThresholdSelfFunctor (const XV& X,
                                     const value_type& min_val) :
     X_ (X),
-    m_min_val (min_val),
-    m_min_val_mag (KAT::abs (min_val))
+    minVal_ (min_val),
+    minValMag_ (KAT::abs (min_val))
   {}
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-    if (KAT::abs (X_(i)) < m_min_val_mag) {
-      X_[i] = m_min_val;
+    const mag_type X_i_abs = KAT::abs (X_[i]);
+
+    if (X_i_abs < minValMag_) {
+      X_[i] = minVal_;
     }
     else {
       X_[i] = KAT::one () / X_[i];
@@ -185,6 +183,42 @@ reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
   GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
 }
 
+namespace { // (anonymous)
+
+// Functor for making sure the real parts of all entries of a vector
+// are nonnegative.  We use this in computeInitialGuessForPowerMethod
+// below.
+template<class OneDViewType,
+         class LocalOrdinal = typename OneDViewType::size_type>
+class PositivizeVector {
+  static_assert (Kokkos::Impl::is_view<OneDViewType>::value,
+                 "OneDViewType must be a 1-D Kokkos::View.");
+  static_assert (static_cast<int> (OneDViewType::rank) == 1,
+                 "This functor only works with a 1-D View.");
+  static_assert (std::is_integral<LocalOrdinal>::value,
+                 "The second template parameter, LocalOrdinal, "
+                 "must be an integer type.");
+public:
+  PositivizeVector (const OneDViewType& x) : x_ (x) {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const LocalOrdinal& i) const
+  {
+    typedef typename OneDViewType::non_const_value_type IST;
+    typedef Kokkos::Details::ArithTraits<IST> STS;
+    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+    if (STS::real (x_(i)) < STM::zero ()) {
+      x_(i) = -x_(i);
+    }
+  }
+
+private:
+  OneDViewType x_;
+};
+
+} // namespace (anonymous)
+
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const
 {
@@ -195,10 +229,9 @@ void Chebyshev<ScalarType, MV>::checkInputMatrix () const
     "A has " << A_->getGlobalNumRows () << " rows and "
     << A_->getGlobalNumCols () << " columns.");
 
-  // In a debug build, test that the domain and range Maps of the
-  // matrix are the same.
-#ifdef HAVE_TEUCHOS_DEBUG
-  if (! A_.is_null ()) {
+  // In debug mode, test that the domain and range Maps of the matrix
+  // are the same.
+  if (debug_ && ! A_.is_null ()) {
     Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
     Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
 
@@ -209,10 +242,8 @@ void Chebyshev<ScalarType, MV>::checkInputMatrix () const
       ! domainMap->isSameAs (*rangeMap), std::invalid_argument,
       "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
       "the same (in the sense of isSameAs())." << std::endl << "We only check "
-      "for this if Trilinos was built with the CMake configuration option "
-      "Teuchos_ENABLE_DEBUG set to ON.");
+      "for this in debug mode.");
   }
-#endif // HAVE_TEUCHOS_DEBUG
 }
 
 
@@ -221,17 +252,23 @@ void
 Chebyshev<ScalarType, MV>::
 checkConstructorInput () const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
-    "Ifpack2::Chebyshev: This class' implementation of Chebyshev iteration "
-    "only works for real-valued, symmetric positive definite matrices.  "
-    "However, you instantiated this class for ScalarType = "
-    << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a complex-"
-    "valued type.  While this may be algorithmically correct if all of the "
-    "complex numbers in the matrix have zero imaginary part, we forbid using "
-    "complex ScalarType altogether in order to remind you of the limitations "
-    "of our implementation (and of the algorithm itself).");
-
-  checkInputMatrix ();
+  // mfh 12 Aug 2016: The if statement avoids an "unreachable
+  // statement" warning for the checkInputMatrix() call, when
+  // STS::isComplex is false.
+  if (STS::isComplex) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Ifpack2::Chebyshev: This class' implementation "
+       "of Chebyshev iteration only works for real-valued, symmetric positive "
+       "definite matrices.  However, you instantiated this class for ScalarType"
+       " = " << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a "
+       "complex-valued type.  While this may be algorithmically correct if all "
+       "of the complex numbers in the matrix have zero imaginary part, we "
+       "forbid using complex ScalarType altogether in order to remind you of "
+       "the limitations of our implementation (and of the algorithm itself).");
+  }
+  else {
+    checkInputMatrix ();
+  }
 }
 
 template<class ScalarType, class MV>
@@ -253,7 +290,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
-  computeMaxResNorm_ (false)
+  computeMaxResNorm_ (false),
+  debug_ (false)
 {
   checkConstructorInput ();
 }
@@ -266,7 +304,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   computedLambdaMax_ (STS::nan ()),
   computedLambdaMin_ (STS::nan ()),
   lambdaMaxForApply_ (STS::nan ()),
-  boostFactor_(Teuchos::as<ST> (1.1)),
+  boostFactor_ (static_cast<MT> (1.1)),
   lambdaMinForApply_ (STS::nan ()),
   eigRatioForApply_ (STS::nan ()),
   userLambdaMax_ (STS::nan ()),
@@ -278,7 +316,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
-  computeMaxResNorm_ (false)
+  computeMaxResNorm_ (false),
+  debug_ (false)
 {
   checkConstructorInput ();
   setParameters (params);
@@ -312,7 +351,7 @@ setParameters (Teuchos::ParameterList& plist)
   // ML an Epetra matrix, it will use Ifpack for Chebyshev, in which
   // case it would defer to Ifpack's default settings.)
   const ST defaultEigRatio = Teuchos::as<ST> (30);
-  const double defaultBoostFactor = Teuchos::as<double>(1.1);
+  const MT defaultBoostFactor = static_cast<MT> (1.1);
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
@@ -320,6 +359,7 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
+  const bool defaultDebug = false;
 
   // We'll set the instance data transactionally, after all reads
   // from the ParameterList.  That way, if any of the ParameterList
@@ -329,7 +369,7 @@ setParameters (Teuchos::ParameterList& plist)
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
-  double boostFactor = defaultBoostFactor;
+  MT boostFactor = defaultBoostFactor;
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
@@ -337,11 +377,25 @@ setParameters (Teuchos::ParameterList& plist)
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
+  bool debug = defaultDebug;
 
   // Fetch the parameters from the ParameterList.  Defer all
   // externally visible side effects until we have finished all
   // ParameterList interaction.  This makes the method satisfy the
   // strong exception guarantee.
+
+  if (plist.isParameter ("debug")) {
+    try { // a bool
+      debug = plist.get<bool> ("debug");
+    }
+    catch (Teuchos::Exceptions::InvalidParameterType&) {}
+
+    try { // an int instead of a bool
+      int debugInt = plist.get<bool> ("debug");
+      debug = debugInt != 0;
+    }
+    catch (Teuchos::Exceptions::InvalidParameterType&) {}
+  }
 
   // Get the user-supplied inverse diagonal.
   //
@@ -508,12 +562,41 @@ setParameters (Teuchos::ParameterList& plist)
     "parameter (also called \"smoother: Chebyshev alpha\") must be >= 1, "
     "but you supplied the value " << eigRatio << ".");
 
-  boostFactor = plist.get("chebyshev: boost factor", defaultBoostFactor);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    boostFactor < Teuchos::as<double>(1.0),
-    std::invalid_argument,
-    "Ifpack2::Chebyshev::setParameters: \"chebyshev: boost factor\""
-    "parameter must be >= 1, but you supplied the value " << boostFactor << ".");
+  // See Github Issue #234.  This parameter may be either MT
+  // (preferred) or double.  We check both.
+  {
+    const char paramName[] = "chebyshev: boost factor";
+
+    if (plist.isParameter (paramName)) {
+      if (plist.isType<MT> (paramName)) { // MT preferred
+        boostFactor = plist.get<MT> (paramName);
+      }
+      else if (! std::is_same<double, MT>::value &&
+               plist.isType<double> (paramName)) {
+        const double dblBF = plist.get<double> (paramName);
+        boostFactor = static_cast<MT> (dblBF);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument,
+           "Ifpack2::Chebyshev::setParameters: \"chebyshev: boost factor\""
+           "parameter must have type magnitude_type (MT) or double.");
+      }
+    }
+    else { // parameter not in the list
+      // mfh 12 Aug 2016: To preserve current behavior (that fills in
+      // any parameters not in the input ParameterList with their
+      // default values), we call set() here.  I don't actually like
+      // this behavior; I prefer the Belos model, where the input
+      // ParameterList is a delta from current behavior.  However, I
+      // don't want to break things.
+      plist.set (paramName, defaultBoostFactor);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (boostFactor < Teuchos::ScalarTraits<MT>::one (), std::invalid_argument,
+       "Ifpack2::Chebyshev::setParameters: \"" << paramName << "\" parameter "
+       "must be >= 1, but you supplied the value " << boostFactor << ".");
+  }
 
   // Same name in Ifpack2 and Ifpack.
   minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
@@ -606,7 +689,7 @@ setParameters (Teuchos::ParameterList& plist)
   userLambdaMax_ = lambdaMax;
   userLambdaMin_ = lambdaMin;
   userEigRatio_ = eigRatio;
-  boostFactor_ = Teuchos::as<ST>(boostFactor);
+  boostFactor_ = static_cast<MT> (boostFactor);
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
@@ -614,6 +697,32 @@ setParameters (Teuchos::ParameterList& plist)
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
+  debug_ = debug;
+
+  if (debug_) {
+    // Only print if myRank == 0.
+    int myRank = -1;
+    if (A_.is_null () || A_->getComm ().is_null ()) {
+      // We don't have a communicator (yet), so we assume that
+      // everybody can print.  Revise this expectation in setMatrix().
+      myRank = 0;
+    }
+    else {
+      myRank = A_->getComm ()->getRank ();
+    }
+
+    if (myRank == 0) {
+      out_ = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+    }
+    else {
+      Teuchos::RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+      out_ = Teuchos::getFancyOStream (blackHole); // print nothing on other processes
+    }
+  }
+  else { // NOT debug
+    // free the "old" output stream, if there was one
+    out_ = Teuchos::null;
+  }
 }
 
 
@@ -640,6 +749,34 @@ Chebyshev<ScalarType, MV>::setMatrix (const Teuchos::RCP<const row_matrix_type>&
       reset ();
     }
     A_ = A;
+
+    // The communicator may have changed, or we may not have had a
+    // communicator before.  Thus, we may have to reset the debug
+    // output stream.
+    if (debug_) {
+      // Only print if myRank == 0.
+      int myRank = -1;
+      if (A.is_null () || A->getComm ().is_null ()) {
+        // We don't have a communicator (yet), so we assume that
+        // everybody can print.  Revise this expectation in setMatrix().
+        myRank = 0;
+      }
+      else {
+        myRank = A->getComm ()->getRank ();
+      }
+
+      if (myRank == 0) {
+        out_ = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+      }
+      else {
+        Teuchos::RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+        out_ = Teuchos::getFancyOStream (blackHole); // print nothing on other processes
+      }
+    }
+    else { // NOT debug
+      // free the "old" output stream, if there was one
+      out_ = Teuchos::null;
+    }
   }
 }
 
@@ -818,33 +955,38 @@ template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::MT
 Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::apply: The input "
-    "matrix A is null.  Please call setMatrix() with a nonnull input matrix, "
-    "and then call compute(), before calling this method.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMaxForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the max eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMinForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the min eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (eigRatioForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the ratio of the max "
-    "eigenvalue to the min eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    D_.is_null (), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: "
-    "The vector of inverse diagonal entries of the matrix has not yet been "
-    "computed." << std::endl << computeBeforeApplyReminder);
+  const char prefix[] = "Ifpack2::Chebyshev::apply: ";
+
+  if (debug_) {
+    *out_ << "apply: " << std::endl;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The input matrix A is null. "
+     " Please call setMatrix() with a nonnull input matrix, and then call "
+     "compute(), before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (lambdaMaxForApply_), std::runtime_error,
+     prefix << "There is no estimate for the max eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (lambdaMinForApply_), std::runtime_error,
+     prefix << "There is no estimate for the min eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (eigRatioForApply_), std::runtime_error,
+     prefix <<"There is no estimate for the ratio of the max "
+     "eigenvalue to the min eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (D_.is_null (), std::runtime_error, prefix << "The vector of inverse "
+     "diagonal entries of the matrix has not yet been computed."
+     << std::endl << computeBeforeApplyReminder);
 
   if (textbookAlgorithm_) {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
-  } else {
+  }
+  else {
     ifpackApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                      lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -855,7 +997,8 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
     Teuchos::Array<MT> norms (B.getNumVectors ());
     R.norm2 (norms ());
     return *std::max_element (norms.begin (), norms.end ());
-  } else {
+  }
+  else {
     return Teuchos::ScalarTraits<MT>::zero ();
   }
 }
@@ -929,6 +1072,49 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
     A.getLocalDiagCopy (*D_rowMap);
   }
   RCP<V> D_rangeMap = makeRangeMapVector (D_rowMap);
+
+  if (debug_) {
+    // In debug mode, make sure that all diagonal entries are
+    // positive, on all processes.  Note that *out_ only prints on
+    // Process 0 of the matrix's communicator.
+    D_rangeMap->template sync<Kokkos::HostSpace> ();
+    auto D_lcl = D_rangeMap->template getLocalView<Kokkos::HostSpace> ();
+    auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
+
+    typedef typename MV::impl_scalar_type IST;
+    typedef typename MV::local_ordinal_type LO;
+    typedef Kokkos::Details::ArithTraits<IST> STS;
+    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+    const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
+    bool foundNonpositiveValue = false;
+    for (LO i = 0; i < lclNumRows; ++i) {
+      if (STS::real (D_lcl_1d(i)) <= STM::zero ()) {
+        foundNonpositiveValue = true;
+        break;
+      }
+    }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
+    const int lclSuccess = foundNonpositiveValue ? 0 : 1;
+    int gblSuccess = lclSuccess; // to be overwritten
+    if (! D_rangeMap->getMap ().is_null () && D_rangeMap->getMap ()->getComm ().is_null ()) {
+      const Teuchos::Comm<int>& comm = * (D_rangeMap->getMap ()->getComm ());
+      reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    }
+    if (gblSuccess == 1) {
+      *out_ << "makeInverseDiagonal: The matrix's diagonal entries all have "
+        "positive real part (this is good for Chebyshev)." << std::endl;
+    }
+    else {
+      *out_ << "makeInverseDiagonal: The matrix's diagonal has at least one "
+        "entry with nonpositive real part, on at least one process in the "
+        "matrix's communicator.  This is bad for Chebyshev." << std::endl;
+    }
+  }
 
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
@@ -1074,20 +1260,19 @@ ifpackApplyImpl (const op_type& A,
                  const ST eigRatio,
                  const V& D_inv)
 {
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  using std::cerr;
   using std::endl;
-  cerr << "\\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
-  cerr << "\\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  const bool debug = debug_;
+
+  if (debug) {
+    *out_ << " \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
+    *out_ << " \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+  }
 
   if (numIters <= 0) {
     return;
   }
-  const ST one = Teuchos::as<ST> (1);
-  const ST two = Teuchos::as<ST> (2);
+  const ST one = static_cast<ST> (1.0);
+  const ST two = static_cast<ST> (2.0);
 
   // Quick solve when the matrix A is the identity.
   if (lambdaMin == one && lambdaMax == lambdaMin) {
@@ -1102,15 +1287,13 @@ ifpackApplyImpl (const op_type& A,
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "alpha = " << alpha << endl
-       << "beta = " << beta << endl
-       << "delta = " << delta << endl
-       << "theta = " << theta << endl
-       << "s1 = " << s1 << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  if (debug) {
+    *out_ << " alpha = " << alpha << endl
+          << " beta = " << beta << endl
+          << " delta = " << delta << endl
+          << " theta = " << theta << endl
+          << " s1 = " << s1 << endl;
+  }
 
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
@@ -1123,95 +1306,76 @@ ifpackApplyImpl (const op_type& A,
   MV& V1 = *V_ptr;
   MV& W = *W_ptr;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "Iteration " << 1 << ":" << endl
-       << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  if (debug) {
+    *out_ << " Iteration " << 1 << ":" << endl
+          << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+  }
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+    }
 
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+    }
 
     X.update (one, W, one); // X = X + W
-  } else {
-    solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
-
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
-
-    Tpetra::deep_copy(X, W); // X = 0 + W
   }
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  else {
+    solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+    }
+    Tpetra::deep_copy (X, W); // X = 0 + W
+  }
+  if (debug) {
+    *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+  }
 
   // The rest of the iterations.
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "Iteration " << deg+1 << ":" << endl;
-    cerr << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
-    cerr << "- \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
-    cerr << "- \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl;
-    cerr << "- rhok = " << rhok << endl;
-    V1.putScalar (STS::zero ());
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " Iteration " << deg+1 << ":" << endl
+            << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
+            << " - \\|B\\|_{\\infty} = " << maxNormInf (B) << endl
+            << " - \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl
+            << " - rhok = " << rhok << endl;
+      V1.putScalar (STS::zero ()); // ???????
+    }
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+    }
 
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- dtemp1 = " << dtemp1 << endl
-         << "- dtemp2 = " << dtemp2 << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - dtemp1 = " << dtemp1 << endl
+            << " - dtemp2 = " << dtemp2 << endl;
+    }
 
     W.scale (dtemp1);
     W.elementWiseMultiply (dtemp2, D_inv, V1, one);
     X.update (one, W, one);
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-    cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+      *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+    }
   }
 }
 
@@ -1223,42 +1387,84 @@ powerMethodWithInitGuess (const op_type& A,
                           const int numIters,
                           V& x)
 {
-  const ST zero = Teuchos::as<ST> (0);
-  const ST one = Teuchos::as<ST> (1);
+  using std::endl;
+  if (debug_) {
+    *out_ << " powerMethodWithInitGuess:" << endl;
+  }
+
+  const ST zero = static_cast<ST> (0.0);
+  const ST one = static_cast<ST> (1.0);
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
   V y (A.getRangeMap ());
   norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    norm == zero, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (norm == zero, std::runtime_error,
     "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
     "The initial guess has zero norm.  This could be either because Tpetra::"
     "Vector::randomize() filled the vector with zeros (if that was used to "
     "compute the initial guess), or because the norm2 method has a bug.  The "
     "first is not impossible, but unlikely.");
 
-  //std::cerr.precision(15);
-  //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
+  if (debug_) {
+    *out_ << "  Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << endl;
+  }
+
   x.scale (one / norm);
-  //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
+
+  if (debug_) {
+    *out_ << "  norm1(x.scale(one/norm)): " << x.norm1 () << endl;
+  }
+
   for (int iter = 0; iter < numIters; ++iter) {
+    if (debug_) {
+      *out_ << "  Iteration " << iter << endl;
+    }
     A.apply (x, y);
-    //std::cerr << "norm1(y) before: " << y.norm1 ();
     solve (y, D_inv, y);
-    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
-    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
+    if (debug_) {
+      *out_ << "   RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << endl;
+    }
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
+      if (debug_) {
+        *out_ << "   norm is zero; returning zero" << endl;
+      }
       return zero;
     }
     x.update (one / norm, y, zero);
   }
-  //std::cerr << "lambdaMax: " << lambdaMax << std::endl;
+  if (debug_) {
+    *out_ << "  lambdaMax: " << lambdaMax << endl;
+  }
   return lambdaMax;
+}
+
+template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
+computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
+{
+  typedef typename MV::device_type::execution_space dev_execution_space;
+  typedef typename MV::device_type::memory_space dev_memory_space;
+  typedef typename MV::local_ordinal_type LO;
+
+  x.randomize ();
+
+  if (nonnegativeRealParts) {
+    x.template modify<dev_memory_space> ();
+    auto x_lcl = x.template getLocalView<dev_memory_space> ();
+    auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
+
+    const LO lclNumRows = static_cast<LO> (x.getLocalLength ());
+    Kokkos::RangePolicy<dev_execution_space, LO> range (0, lclNumRows);
+    PositivizeVector<decltype (x_lcl_1d), LO> functor (x_lcl_1d);
+    Kokkos::parallel_for (range, functor);
+  }
 }
 
 template<class ScalarType, class MV>
@@ -1266,11 +1472,20 @@ typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
 powerMethod (const op_type& A, const V& D_inv, const int numIters)
 {
-  const ST zero = Teuchos::as<ST> (0);
+  using std::endl;
+  if (debug_) {
+    *out_ << "powerMethod:" << endl;
+  }
+
+  const ST zero = static_cast<ST> (0.0);
   V x (A.getDomainMap ());
-  x.randomize ();
+  // For the first pass, just let the pseudorandom number generator
+  // fill x with whatever values it wants; don't try to make its
+  // entries nonnegative.
+  computeInitialGuessForPowerMethod (x, false);
 
   ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+
   // mfh 07 Jan 2015: Taking the real part here is only a concession
   // to the compiler, so that this class can build with ScalarType =
   // std::complex<T>.  Our Chebyshev implementation only works with
@@ -1279,11 +1494,18 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   // specialization for ScalarType = std::complex<T> with a stub
   // implementation (that builds, but whose constructor throws).
   if (STS::real (lambdaMax) < STS::real (zero)) {
-    // Max eigenvalue estimate is negative.  Perhaps we got unlucky
+    if (debug_) {
+      *out_ << "real(lambdaMax) = " << STS::real (lambdaMax) << " < 0; try "
+        "again with a different random initial guess" << endl;
+    }
+    // Max eigenvalue estimate was negative.  Perhaps we got unlucky
     // with the random initial guess.  Try again with a different (but
     // still random) initial guess.  Only try again once, so that the
     // run time is bounded.
-    x.randomize ();
+
+    // For the second pass, make all the entries of the initial guess
+    // vector have nonnegative real parts.
+    computeInitialGuessForPowerMethod (x, true);
     lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
   return lambdaMax;
@@ -1350,79 +1572,134 @@ describe (Teuchos::FancyOStream& out,
 
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
-  if (vl > Teuchos::VERB_NONE) {
-    if (vl == Teuchos::VERB_LOW) {
-      out << description () << endl;
-    } else { // vl > Teuchos::VERB_LOW
-      // YAML requires quoting the key in this case, to distinguish
-      // key's colons from the colon that separates key from value.
-      out << "\"Ifpack2::Details::Chebyshev\":" << endl;
-      Teuchos::OSTab tab1 (Teuchos::rcpFromRef (out));
-      out << "Template parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        out << "ScalarType: \"" << TypeNameTraits<ScalarType>::name () << "\"" << endl
-            << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl;
-      }
-      // "Computed parameters" literally means "parameters whose
-      // values were computed by compute()."
-      out << endl << "Computed parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        // Users might want to see the values in the computed inverse
-        // diagonal, so we print them out at the highest verbosity.
-        out << "D_: ";
-        if (D_.is_null ()) {
-          out << "unset" << endl;
-        } else if (vl <= Teuchos::VERB_HIGH) {
-          out << "set" << endl;
-        } else { // D_ not null and vl > Teuchos::VERB_HIGH
-          out << endl;
-          {
-            Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
-            D_->describe (out, vl);
-          }
-          out << endl;
-        }
-        // V_ and W_ are scratch space; their values are irrelevant.
-        // All that matters is whether or not they have been set.
-        out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
-            << "W_: " << (W_.is_null () ? "unset" : "set") << endl
-            << "computedLambdaMax_: " << computedLambdaMax_ << endl
-            << "computedLambdaMin_: " << computedLambdaMin_ << endl
-            << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
-            << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
-            << "eigRatioForApply_: " << eigRatioForApply_ << endl;
-      }
-      out << "User parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        out << "userInvDiag_: ";
-        if (userInvDiag_.is_null ()) {
-          out << "unset" << endl;
-        } else if (vl <= Teuchos::VERB_HIGH) {
-          out << "set" << endl;
-        } else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
-          out << endl;
-          {
-            Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
-            userInvDiag_->describe (out, vl);
-          }
-          out << endl;
-        }
-        out << "userLambdaMax_: " << userLambdaMax_ << endl
-            << "userLambdaMin_: " << userLambdaMin_ << endl
-            << "userEigRatio_: " << userEigRatio_ << endl
-            << "numIters_: " << numIters_ << endl
-            << "eigMaxIters_: " << eigMaxIters_ << endl
-            << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
-            << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
-            << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
-            << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
-      }
-      out << endl;
+  if (vl == Teuchos::VERB_NONE) {
+    return; // print NOTHING
+  }
+
+  // By convention, describe() starts with a tab.
+  //
+  // This does affect all processes on which it's valid to print to
+  // 'out'.  However, it does not actually print spaces to 'out'
+  // unless operator<< gets called, so it's safe to use on all
+  // processes.
+  Teuchos::OSTab tab0 (out);
+
+  // We only print on Process 0 of the matrix's communicator.  If
+  // the matrix isn't set, we don't have a communicator, so we have
+  // to assume that every process can print.
+  int myRank = -1;
+  if (A_.is_null () || A_->getComm ().is_null ()) {
+    myRank = 0;
+  }
+  else {
+    myRank = A_->getComm ()->getRank ();
+  }
+  if (myRank == 0) {
+    // YAML requires quoting the key in this case, to distinguish
+    // key's colons from the colon that separates key from value.
+    out << "\"Ifpack2::Details::Chebyshev\":" << endl;
+  }
+  Teuchos::OSTab tab1 (out);
+
+  if (vl == Teuchos::VERB_LOW) {
+    if (myRank == 0) {
+      out << "degree: " << numIters_ << endl
+          << "lambdaMax: " << lambdaMaxForApply_ << endl
+          << "alpha: " << eigRatioForApply_ << endl
+          << "lambdaMin: " << lambdaMinForApply_ << endl
+          << "boost factor: " << boostFactor_ << endl;
+    }
+    return;
+  }
+
+  // vl > Teuchos::VERB_LOW
+
+  if (myRank == 0) {
+    out << "Template parameters:" << endl;
+    {
+      Teuchos::OSTab tab2 (out);
+      out << "ScalarType: " << TypeNameTraits<ScalarType>::name () << endl
+          << "MV: " << TypeNameTraits<MV>::name () << endl;
+    }
+
+    // "Computed parameters" literally means "parameters whose
+    // values were computed by compute()."
+    if (myRank == 0) {
+      out << "Computed parameters:" << endl;
     }
   }
+
+  // Print computed parameters
+  {
+    Teuchos::OSTab tab2 (out);
+    // Users might want to see the values in the computed inverse
+    // diagonal, so we print them out at the highest verbosity.
+    if (myRank == 0) {
+      out << "D_: ";
+    }
+    if (D_.is_null ()) {
+      if (myRank == 0) {
+        out << "unset" << endl;
+      }
+    }
+    else if (vl <= Teuchos::VERB_HIGH) {
+      if (myRank == 0) {
+        out << "set" << endl;
+      }
+    }
+    else { // D_ not null and vl > Teuchos::VERB_HIGH
+      if (myRank == 0) {
+        out << endl;
+      }
+      // By convention, describe() first indents, then prints.
+      // We can rely on other describe() implementations to do that.
+      D_->describe (out, vl);
+    }
+    if (myRank == 0) {
+      // V_ and W_ are scratch space; their values are irrelevant.
+      // All that matters is whether or not they have been set.
+      out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
+          << "W_: " << (W_.is_null () ? "unset" : "set") << endl
+          << "computedLambdaMax_: " << computedLambdaMax_ << endl
+          << "computedLambdaMin_: " << computedLambdaMin_ << endl
+          << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
+          << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
+          << "eigRatioForApply_: " << eigRatioForApply_ << endl;
+    }
+  } // print computed parameters
+
+  if (myRank == 0) {
+    out << "User parameters:" << endl;
+  }
+
+  // Print user parameters
+  {
+    Teuchos::OSTab tab2 (out);
+    out << "userInvDiag_: ";
+    if (userInvDiag_.is_null ()) {
+      out << "unset" << endl;
+    }
+    else if (vl <= Teuchos::VERB_HIGH) {
+      out << "set" << endl;
+    }
+    else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
+      if (myRank == 0) {
+        out << endl;
+      }
+      userInvDiag_->describe (out, vl);
+    }
+    if (myRank == 0) {
+      out << "userLambdaMax_: " << userLambdaMax_ << endl
+          << "userLambdaMin_: " << userLambdaMin_ << endl
+          << "userEigRatio_: " << userEigRatio_ << endl
+          << "numIters_: " << numIters_ << endl
+          << "eigMaxIters_: " << eigMaxIters_ << endl
+          << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
+          << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
+          << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
+          << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
+    }
+  } // print user parameters
 }
 
 } // namespace Details

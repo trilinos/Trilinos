@@ -56,6 +56,8 @@
 #include <stdio.h>
 
 /*!
+\ingroup ResultsData
+
  * writes the name of a particular results variable to the database
  *  \param     exoid                   exodus file id
  *  \param     obj_type                variable type

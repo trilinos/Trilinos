@@ -52,6 +52,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Zoltan2_Environment.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
+#include "Zoltan2_PartitioningSolution.hpp"
 #include <unordered_map>
 
 namespace Zoltan2 {
@@ -60,25 +61,31 @@ namespace Zoltan2 {
 */
 
 template <typename Adapter>
-class MappingSolution : public Solution
+class MappingSolution : public PartitioningSolution<Adapter>
 {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::scalar_t t_scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gno_t gno_t;
 #endif
 
 /*! \brief Constructor 
  */
   MappingSolution(
-      const RCP<const Teuchos::Comm<int> > &comm, 
-      const RCP<Algorithm<Adapter> > &algorithm_ = Teuchos::null) 
-    : nParts(0), nRanks(1), myRank(comm->getRank()), maxPart(0),
-      algorithm(algorithm_) {}
+      const RCP<const Environment> &env,
+      const RCP<const Comm<int> > &comm,
+      const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null)
+    :PartitioningSolution <Adapter> (
+      env, comm, 1, algorithm),
+      nParts(0), nRanks(1), myRank(comm->getRank()), maxPart(0),
+      mapping_algorithm(algorithm) {}
 
-  ~MappingSolution() {}
+  virtual ~MappingSolution() {}
 
-  typedef std::unordered_map<part_t, int> rankmap_t;
+  typedef std::unordered_map<lno_t, int> rankmap_t;
 
   /*! \brief Get the parts belonging to this rank
    *  \param numParts on return, set to the number of parts assigned to rank.
@@ -89,9 +96,9 @@ public:
     bool useAlg = true;
 
     // Check first whether this algorithm answers getMyPartsView.
-    if (algorithm != Teuchos::null) {
+    if (mapping_algorithm != Teuchos::null) {
       try {
-        algorithm->getMyPartsView(numParts, parts);
+        mapping_algorithm->getMyPartsView(numParts, parts);
       }
       catch (NotImplemented &e) {
         // It is OK if the algorithm did not implement this method;
@@ -150,9 +157,9 @@ public:
     // Some algorithms can compute getRankForPart implicitly, without having
     // to store the mapping explicitly.  It is more efficient for them
     // to implement getRankForPart themselves.
-    if (algorithm != Teuchos::null) {
+    if (mapping_algorithm != Teuchos::null) {
       try {
-        r = algorithm->getRankForPart(part);
+        r = mapping_algorithm->getRankForPart(part);
       }
       catch (NotImplemented &e) {
         // It is OK if the algorithm did not implement this method;
@@ -203,8 +210,20 @@ public:
 
     // Parts for this rank are already contiguous in parts arcp.  
     // Keep a view of them.
-    partsForRank = parts->persistingView(idx[myRank],idx[myRank+1]-idx[myRank]);
+    partsForRank = parts.persistingView(idx[myRank],idx[myRank+1]-idx[myRank]);
   }
+
+  /**
+   * This is a mapping from local elements to ranks.
+   * "parts" in the other functions should also mean the local elements,
+   * since we allow the direct mapping call with local elements as well.
+   * ranks[i] hold the mappend rank for local element i.
+   * Function will fail if part_t != int
+   */
+  void setMap_RankForLocalElements(ArrayRCP<int> &ranks) {
+    this->setParts(ranks);
+  }
+
 
   void setMap_RankForPart(ArrayRCP<part_t> &parts, ArrayRCP<int> &ranks) {
     nParts = parts.size();
@@ -248,7 +267,7 @@ private:
   ArrayRCP<part_t> partsForRank;
   RCP<rankmap_t> rankForPart;
 
-  const RCP<Algorithm<Adapter> > algorithm;
+  const RCP<Algorithm<Adapter> > mapping_algorithm;
 
 };
 

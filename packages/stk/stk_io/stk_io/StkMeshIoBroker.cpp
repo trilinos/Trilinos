@@ -73,6 +73,8 @@
 #include "Ioss_VariableType.h"          // for NameList, VariableType
 
 #include "ProcessSetsOrBlocks.hpp"
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 #include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
 #include "boost/any.hpp"                // for any_cast, any
@@ -91,7 +93,7 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "../../stk_util/stk_util/parallel/CommSparse.hpp"
+#include "stk_util/parallel/CommSparse.hpp"
 
 
 namespace stk {
@@ -428,8 +430,6 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
     if (stk::io::include_entity(block)) {
 
       stk::mesh::Part * const sb_part = meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-
       // Get topology of the sides being defined to see if they
       // are 'faces' or 'edges'.  This is needed since for shell-type
       // elements, (and actually all elements) a sideset can specify either a face or an edge...
@@ -450,28 +450,15 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       // mesh file.  The get_entities can give them in different order and will ignore duplicated
       // "sides" that occur in some exodus files.
 
-      std::vector<INT> elem_side ;
-      block->get_field_data("element_side", elem_side);
-      size_t side_count = elem_side.size()/2;
+      std::vector<INT> elemSidePairs;
+      block->get_field_data("element_side", elemSidePairs);
+      size_t side_count = elemSidePairs.size()/2;
 
       std::vector<stk::mesh::Entity> sides;
       sides.reserve(side_count);
 
-      for(size_t is=0; is<side_count; ++is) {
-        stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
-
-        // If NULL, then the element was probably assigned to an
-        // element block that appears in the database, but was
-        // subsetted out of the analysis mesh. Only process if
-        // non-null.
-        if (bulk.is_valid(elem)) {
-          stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
-          stk::mesh::Entity side = bulk.get_entity(side_rank, side_id);
-          sides.push_back(side);
-        } else {
-          sides.push_back(stk::mesh::Entity());
-        }
-      }
+      for(size_t is = 0; is < side_count; ++is)
+          sides.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank));
 
       const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
       if (df_field != NULL) {
@@ -679,11 +666,10 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
       size_t node_count = entity->get_field_data("ids", node_ids);
 
       std::vector<stk::mesh::Entity> nodes(node_count);
-      stk::mesh::EntityRank n_rank = stk::topology::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
-        nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
+        nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, node_ids[i] );
         if (!bulk.is_valid(nodes[i])) {
-          bulk.declare_entity(n_rank, node_ids[i], add_parts );
+          bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
         }
       }
 
@@ -1030,6 +1016,16 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
       {
         validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
+      }
+
+      void StkMeshIoBroker::flush_output() const
+      {
+	for (const auto& out_file : m_output_files) {
+          out_file->flush_output();
+	}
+	for (const auto& hb : m_heartbeat) {
+          hb->flush_output();
+	}
       }
 
       int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
@@ -1408,6 +1404,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           return numTimeSteps;
       }
 
+      double StkMeshIoBroker::get_max_time()
+      {
+          return get_input_io_region()->get_max_time().second;
+      }
+
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
                                                    const Ioss::PropertyManager &properties)
       {
@@ -1575,6 +1576,13 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           }
         }
 
+        void impl::Heartbeat::flush_output() const
+        {
+          if (m_processor == 0) {
+	    m_region->get_database()->flush_database();
+	  }
+        }
+
         void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
         {
           if ( m_mesh_defined == false )
@@ -1605,6 +1613,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               //Attempt to avoid putting state change into the interface.  We'll see . . .
               m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
             }
+        }
+
+        void impl::OutputFile::flush_output() const
+        {
+	    m_region->get_database()->flush_database();
         }
 
         void impl::OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)

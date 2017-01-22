@@ -62,7 +62,7 @@
 template<typename EvalT, typename Traits>
 class FEInterpolation :
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  public PHX_example::TaskBase<Traits,FEInterpolation<EvalT,Traits>>,
+  public PHX::TaskBase<Traits,FEInterpolation<EvalT,Traits>>,
 #else
   public PHX::EvaluatorWithBaseImpl<Traits>,
 #endif
@@ -81,10 +81,10 @@ public:
   void operator () (const int i) const;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
-	       const std::size_t& num_adjacencies,
+  Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
 	       const int& work_size,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d) override;
 #endif
   

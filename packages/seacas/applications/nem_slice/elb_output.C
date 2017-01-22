@@ -529,7 +529,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   std::vector<INT> node_pel_blk(mesh->num_el_blks);
   std::vector<INT> nattr_el_blk(mesh->num_el_blks);
 
-  if (ex_get_elem_blk_ids(exid_inp, TOPTR(el_blk_ids)) < 0) {
+  if (ex_get_ids(exid_inp, EX_ELEM_BLOCK, TOPTR(el_blk_ids)) < 0) {
     Gen_Error(0, "fatal: unable to get element block IDs");
     return 0;
   }
@@ -546,8 +546,8 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
    * nodal/element results will be used.
    */
   for (size_t ecnt = 0; ecnt < mesh->num_el_blks; ecnt++) {
-    if (ex_get_elem_block(exid_inp, el_blk_ids[ecnt], elem_type[ecnt], &el_cnt_blk[ecnt],
-                          &node_pel_blk[ecnt], &nattr_el_blk[ecnt]) < 0) {
+    if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], elem_type[ecnt], &el_cnt_blk[ecnt],
+                     &node_pel_blk[ecnt], NULL, NULL, &nattr_el_blk[ecnt]) < 0) {
       Gen_Error(0, "fatal: unable to get element block parameters");
       return 0;
     }
@@ -648,13 +648,15 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
        * element.
        */
       int ecnt = (vis_el_blk_ptr[bcnt + 1] - vis_el_blk_ptr[bcnt]) / node_pel_blk[0];
-      if (ex_put_elem_block(exid_vis, bcnt + 1, elem_type[0], ecnt, node_pel_blk[0], 0) < 0) {
+      if (ex_put_block(exid_vis, EX_ELEM_BLOCK, bcnt + 1, elem_type[0], ecnt, node_pel_blk[0], 0, 0,
+                       0) < 0) {
         Gen_Error(0, "fatal: unable to output element block params");
         return 0;
       }
 
       /* Output the connectivity */
-      if (ex_put_elem_conn(exid_vis, bcnt + 1, &tmp_connect[vis_el_blk_ptr[bcnt]]) < 0) {
+      if (ex_put_conn(exid_vis, EX_ELEM_BLOCK, bcnt + 1, &tmp_connect[vis_el_blk_ptr[bcnt]], NULL,
+                      NULL) < 0) {
         Gen_Error(0, "fatal: unable to output element connectivity");
         return 0;
       }
@@ -697,7 +699,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       }
 
       /* Output the nodal variables */
-      if (ex_put_nodal_var(exid_vis, 1, 1, mesh->num_nodes, TOPTR(proc_vals)) < 0) {
+      if (ex_put_var(exid_vis, 1, EX_NODAL, 1, 1, mesh->num_nodes, TOPTR(proc_vals)) < 0) {
         Gen_Error(0, "fatal: unable to output nodal variables");
         return 0;
       }

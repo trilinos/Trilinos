@@ -43,13 +43,13 @@ namespace Ioss {
     char        optmarker;   // option marker
 
   private:
-    int setcell(Cell *c, char *valtoken, char *nexttoken, const char *nameame);
+    int setcell(Cell *c, char *valtoken, char *nexttoken, const char *name);
 
   public:
     explicit GetLongOption(const char optmark = '-');
     ~GetLongOption();
 
-    static char *basename(char *const pathnameathname);
+    static char *basename(char *const pathname);
 
     int parse(int argc, char *const *argv);
     int parse(char *const str, char *const p);

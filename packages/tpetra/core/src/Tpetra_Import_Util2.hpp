@@ -64,7 +64,6 @@
 // here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
-
 namespace { // (anonymous)
 
   template<class T, class D>
@@ -204,6 +203,13 @@ sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind,
                 const Teuchos::ArrayView<Scalar>&CRS_vals);
 
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+		const colind_array_type& CRS_colind,
+		const vals_array_type& CRS_vals);
+
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
 ///
@@ -234,7 +240,7 @@ void
 lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
                                       const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                      const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                                       const Teuchos::ArrayView<const int> &owningPids,
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
@@ -855,6 +861,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   using Kokkos::MemoryUnmanaged;
   using Kokkos::subview;
   using Kokkos::View;
+  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_reinterpret_cast;
@@ -1130,6 +1137,55 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   }
 }
 
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+		const colind_array_type& CRS_colind,
+		const vals_array_type& CRS_vals) {
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+  // NOTE: This should not be taken as a particularly efficient way to sort 
+  // rows of matrices in parallel.  But it is correct, so that's something.
+  size_t NumRows = CRS_rowptr.dimension_0()-1;
+  size_t nnz = CRS_colind.dimension_0();
+  typedef typename colind_array_type::traits::non_const_value_type Ordinal;
+  typedef typename vals_array_type::traits::non_const_value_type Scalar;
+
+  Kokkos::parallel_for(NumRows,KOKKOS_LAMBDA(const size_t i) {
+      size_t start=CRS_rowptr(i);
+      if(start < nnz) {
+	size_t NumEntries = CRS_rowptr(i+1) - start;
+	
+	Ordinal n = (Ordinal) NumEntries;
+	Ordinal m = n/2;
+	
+	while(m > 0) {
+	  Ordinal max = n - m;
+	  for(Ordinal j = 0; j < max; j++) {
+	    for(Ordinal k = j; k >= 0; k-=m) {
+	      size_t sk = start+k;
+	      if(CRS_colind(sk+m) >= CRS_colind(sk))
+		break;
+	      Scalar dtemp     = CRS_vals(sk+m);
+	      CRS_vals(sk+m)   = CRS_vals(sk);
+	      CRS_vals(sk)     = dtemp;
+	      Ordinal itemp    = CRS_colind(sk+m);
+	      CRS_colind(sk+m) = CRS_colind(sk);
+	      CRS_colind(sk)   = itemp;
+	    }
+	  }
+	  m = m/2;
+	}
+      }
+    });  
+}
+
+
+
+
+
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
 void
@@ -1147,12 +1203,13 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
 
   for(size_t i = 0; i < NumRows; i++){
-    size_t start=CRS_rowptr[i];
-    if(start >= nnz) continue;
+    size_t old_rowptr_i=CRS_rowptr[i];
+    CRS_rowptr[i] = old_curr;
+    if(old_rowptr_i >= nnz) continue;
 
-    Scalar* locValues   = &CRS_vals[start];
-    size_t NumEntries   = CRS_rowptr[i+1] - start;
-    Ordinal* locIndices = &CRS_colind[start];
+    Scalar* locValues   = &CRS_vals[old_rowptr_i];
+    size_t NumEntries   = CRS_rowptr[i+1] - old_rowptr_i;
+    Ordinal* locIndices = &CRS_colind[old_rowptr_i];
 
     // Sort phase
     Ordinal n = NumEntries;
@@ -1176,8 +1233,8 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     }
 
     // Merge & shrink
-    for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
-      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+    for(size_t j=old_rowptr_i; j < CRS_rowptr[i+1]; j++) {
+      if(j > old_rowptr_i && CRS_colind[j]==CRS_colind[new_curr-1]) {
         CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
@@ -1189,8 +1246,6 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         new_curr++;
       }
     }
-
-    CRS_rowptr[i] = old_curr;
     old_curr=new_curr;
   }
 
@@ -1199,9 +1254,9 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
-                                      const ArrayView<LocalOrdinal> &colind_LID,
-                                      const ArrayView<GlobalOrdinal> &colind_GID,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
+                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
+                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
                                       const Teuchos::ArrayView<const int> &owningPIDs,
                                       Teuchos::Array<int> &remotePIDs,

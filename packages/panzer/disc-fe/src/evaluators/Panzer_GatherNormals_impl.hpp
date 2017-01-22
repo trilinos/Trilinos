@@ -131,7 +131,7 @@ evaluateFields(typename Traits::EvalData workset)
   for(int i=0;i<numFaces;i++) {
     Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",cellDim);
     Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",cellDim);
-    Intrepid2::CellTools<double>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
+    Intrepid2::CellTools<PHX::exec_space>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
     for(int d=0;d<cellDim;d++) {
       refFaceTanU(i,d) = refTanU(d);
       refFaceTanV(i,d) = refTanV(d);
@@ -143,7 +143,7 @@ evaluateFields(typename Traits::EvalData workset)
   // This code duplicates Intrepid2::getPhysicalFaceNormals to avoid converting local
   // data structures to and from Intrepid data structures.
   // Note that the magnitude of the normal is related to the area of the physical face.
-  for(std::size_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
     for(int f = 0; f < numFaces; f++) {
 
       std::vector<double> faceTanU(3);

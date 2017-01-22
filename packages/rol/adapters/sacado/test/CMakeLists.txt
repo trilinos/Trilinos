@@ -1,0 +1,18 @@
+INCLUDE_DIRECTORIES(HS)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  NonlinearProblemTest
+  SOURCES test_01.cpp
+  ARGS PrintItAll
+  COMM serial mpi  
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  testDataCopy
+  SOURCE_FILES
+    hs_parameters.xml
+    test_parameters.xml
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+)

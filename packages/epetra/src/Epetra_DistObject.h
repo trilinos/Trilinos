@@ -195,7 +195,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   const Epetra_Comm& Comm() const {return(*Comm_);};
 
   //! Returns true if this multi-vector is distributed global, i.e., not local replicated.
-  bool DistributedGlobal() const {return(DistributedGlobal_);};
+  bool DistributedGlobal() const {return(Map_.DistributedGlobal());};
   //@}
 
   //! @name Miscellaneous
@@ -269,7 +269,6 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   //@}
   Epetra_BlockMap Map_;
   const Epetra_Comm* Comm_;
-  bool DistributedGlobal_;
   char* Exports_;
   char* Imports_;
   int LenExports_;

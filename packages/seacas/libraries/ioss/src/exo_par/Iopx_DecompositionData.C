@@ -167,7 +167,7 @@ namespace Iopx {
 
     generate_adjacency_list(filePtr, m_decomposition);
 
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << "Processor " << myProcessor << " has " << decomp_elem_count()
               << " elements; offset = " << decomp_elem_offset() << "\n";
     std::cerr << "Processor " << myProcessor << " has " << decomp_node_count()
@@ -245,7 +245,7 @@ namespace Iopx {
     // Get the global element block index list at this time also.
     // The global element at index 'I' (0-based) is on block B
     // if global_block_index[B] <= I && global_block_index[B+1] < I
-    decomposition.fileBlockIndex.resize(block_count + 1);
+    decomposition.m_fileBlockIndex.resize(block_count + 1);
 
     for (size_t b = 0; b < block_count; b++) {
       el_blocks[b].id_ = ids[b];
@@ -265,8 +265,8 @@ namespace Iopx {
 
         sum += overlap * element_nodes;
       }
-      decomposition.fileBlockIndex[b + 1] = decomposition.fileBlockIndex[b] + ebs[b].num_entry;
-      el_blocks[b].topologyType           = ebs[b].topology;
+      decomposition.m_fileBlockIndex[b + 1] = decomposition.m_fileBlockIndex[b] + ebs[b].num_entry;
+      el_blocks[b].topologyType             = ebs[b].topology;
       if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "nullptr") == 0))
         el_blocks[b].topologyType = "sphere";
 
@@ -311,7 +311,7 @@ namespace Iopx {
         // Get the connectivity (raw) for this portion of elements...
         std::vector<INT> connectivity(overlap * element_nodes);
         size_t           blk_start = std::max(b_start, p_start) - b_start + 1;
-#if DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
         std::cerr << "Processor " << myProcessor << " has " << overlap
                   << " elements on element block " << id << "\n";
 #endif
@@ -1061,8 +1061,8 @@ namespace Iopx {
   size_t DecompositionData<INT>::get_block_element_count(size_t blk_seq) const
   {
     // Determine number of file decomp elements are in this block;
-    size_t bbeg = std::max(m_decomposition.fileBlockIndex[blk_seq], decomp_elem_offset());
-    size_t bend = std::min(m_decomposition.fileBlockIndex[blk_seq + 1],
+    size_t bbeg = std::max(m_decomposition.m_fileBlockIndex[blk_seq], decomp_elem_offset());
+    size_t bend = std::min(m_decomposition.m_fileBlockIndex[blk_seq + 1],
                            decomp_elem_offset() + decomp_elem_count());
     size_t count = 0;
     if (bend > bbeg)
@@ -1074,8 +1074,8 @@ namespace Iopx {
   size_t DecompositionData<INT>::get_block_element_offset(size_t blk_seq) const
   {
     size_t offset = 0;
-    if (decomp_elem_offset() > m_decomposition.fileBlockIndex[blk_seq])
-      offset = decomp_elem_offset() - m_decomposition.fileBlockIndex[blk_seq];
+    if (decomp_elem_offset() > m_decomposition.m_fileBlockIndex[blk_seq])
+      offset = decomp_elem_offset() - m_decomposition.m_fileBlockIndex[blk_seq];
     return offset;
   }
 

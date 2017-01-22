@@ -65,7 +65,7 @@ public:
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                                 bool useDiscreteAdjoint=false)
-     : rowIndexers_(rIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
+     : rowIndexers_(rIndexers), colIndexers_(cIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
   
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
@@ -89,12 +89,13 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
   std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
@@ -103,11 +104,11 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   std::string globalDataKey_; // what global data does this fill?
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  bool useDiscreteAdjoint_;
+
+  Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > Jac_;
 
   ScatterResidual_BlockedEpetra();
-
-  bool useDiscreteAdjoint_;
 };
 
 }

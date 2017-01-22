@@ -86,4 +86,16 @@ namespace PHX {
     this->addDependentField(tag);
   }
 
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::contributes(const std::string& n)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+    PHX::Tag<typename EvalT::ScalarT> tag(n,dl);
+    this->addContributedField(tag);
+  }
+
 } 

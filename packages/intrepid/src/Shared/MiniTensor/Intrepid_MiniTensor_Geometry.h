@@ -161,11 +161,11 @@ in_normal_side(
 /// \return vectors that define the bounding box
 ///
 template<typename T, typename I, Index N>
-std::pair< Vector<T, N>, Vector<T, N>>
+std::pair<Vector<T, N>, Vector<T, N>>
 bounding_box(I start, I end);
 
 template<typename T, typename I>
-std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
+std::pair<Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
 bounding_box(I start, I end);
 
 ///
@@ -234,8 +234,8 @@ in_hexahedron(
 /// \return index to closest point
 ///
 template<typename T, Index N>
-typename std::vector< Vector<T, N>>::size_type
-closest_point(Vector<T, N> const & p, std::vector< Vector<T, N>> const & n);
+typename std::vector<Vector<T, N>>::size_type
+closest_point(Vector<T, N> const & p, std::vector<Vector<T, N>> const & n);
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
@@ -326,7 +326,7 @@ Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, M> & xi,
-    std::vector< Vector<T, N>> const & v);
+    std::vector<Vector<T, N>> const & v);
 
 ///
 /// Given a vector of points, determine
@@ -336,7 +336,7 @@ interpolate_element(
 ///
 template<typename T, Index N>
 std::vector< std::vector<T>>
-distance_matrix(std::vector< Vector<T, N>> const & points);
+distance_matrix(std::vector<Vector<T, N>> const & points);
 
 ///
 /// Given a distance matrix, determine the minimum

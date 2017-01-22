@@ -40,7 +40,7 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "../../stk_unit_test_utils/BulkDataTester.hpp"
+#include "stk_unit_test_utils/BulkDataTester.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {

@@ -72,8 +72,7 @@ protected:
     {
         unsigned id = get_bulk().parallel_rank()+1;
         stk::topology side_topology = get_bulk().bucket(element).topology().side_topology();
-        stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().side_rank(),
-                get_meta().get_topology_root_part(side_topology));
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().get_topology_root_part(side_topology));
         EXPECT_TRUE(get_bulk().is_valid(side));
     }
 

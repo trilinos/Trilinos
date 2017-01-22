@@ -13,13 +13,13 @@ IF(Kokkos_ENABLE_OpenMP)
      )
 
      TRIBITS_ADD_EXECUTABLE(
-        amesos2_interface_test
+        basker_amesos2_interface_test
 	NOEXEPREFIX
 	SOURCES amesos2_interface_test.cpp test_util.hpp
      )
      
      TRIBITS_ADD_EXECUTABLE(
-        amesos2_interface_coverage_test
+        basker_amesos2_interface_coverage_test
 	NOEXEPREFIX
 	SOURCES amesos2_interface_coverage_test.cpp test_util.hpp
      )
@@ -37,7 +37,7 @@ IF(Kokkos_ENABLE_OpenMP)
 
      TRIBITS_ADD_ADVANCED_TEST(
           basker_amesos_test_1
-          TEST_0 EXEC amesos2_interface_test
+          TEST_0 EXEC basker_amesos2_interface_test
               NOEXEPREFIX
               ARGS 2 matrix1.mtx
            FAILED_REGULAR_EXPRESSION "FAILED"
@@ -69,7 +69,7 @@ IF(Kokkos_ENABLE_OpenMP)
      ##1-4 Coverage Test
      TRIBITS_ADD_ADVANCED_TEST(
           basker_amesos2_coverage_test_14
-          TEST_0 EXEC basker_amesos2_coverage_test
+          TEST_0 EXEC basker_amesos2_interface_coverage_test
                NOEXEPREFIX
           FAIL_REGULAR_EXPRESSION "FAILED"
           COMM serial mpi

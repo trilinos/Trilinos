@@ -70,15 +70,15 @@
 
 namespace Intrepid2{
 
-template<class Scalar, int dimension_, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+template<class Scalar, ordinal_type dimension_, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
 class CubatureSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
-  int level_;
+  ordinal_type level_;
 
-  int numPoints_;
+  ordinal_type numPoints_;
 
-  const int degree_;
+  const ordinal_type degree_;
 
   
   public:
@@ -86,7 +86,7 @@ class CubatureSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>
   ~CubatureSparse() {}
 
 
-  CubatureSparse(const int degree);
+  CubatureSparse(const ordinal_type degree);
 
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
@@ -110,31 +110,31 @@ class CubatureSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>
 
   /** \brief Returns the number of cubature points.
   */
-  virtual int getNumPoints() const;
+  virtual ordinal_type getNumPoints() const;
 
   /** \brief Returns dimension of the integration domain.
   */
-  virtual int getDimension() const;
+  virtual ordinal_type getDimension() const;
 
   /** \brief Returns algebraic accuracy (e.g. max. degree of polynomial
              that is integrated exactly).
   */
-  virtual void getAccuracy(std::vector<int> & accuracy) const;
+  virtual void getAccuracy(std::vector<ordinal_type> & accuracy) const;
 
 }; // end class CubatureSparse 
 
 // helper functions
 
-template<class Scalar, int DIM>
-void iterateThroughDimensions(int level,
-                              int dims_left,
+template<class Scalar, ordinal_type DIM>
+void iterateThroughDimensions(ordinal_type level,
+                              ordinal_type dims_left,
                               SGNodes<Scalar,DIM> & cubPointsND,
                               Teuchos::Array<Scalar> & partial_node,
                               Scalar partial_weight);
 
-inline int factorial(int num)
+inline ordinal_type factorial(ordinal_type num)
 {
-  int answer = 1;
+  ordinal_type answer = 1;
   if(num >= 1)
   {
     while(num > 0)
@@ -151,26 +151,26 @@ inline int factorial(int num)
   return answer;
 }
 
-inline double combination(int top, int bot)
+inline double combination(ordinal_type top, ordinal_type bot)
 {
   double answer = factorial(top)/(factorial(bot) * factorial(top-bot));
   return answer;
 }
 
-inline int iterateThroughDimensionsForNumCalc(int dims_left,
-                                              int level,
-                                              int levels_left,
-                                              int level_so_far,
-                                              Teuchos::Array<int> & nodes,
-                                              int product,
+inline ordinal_type iterateThroughDimensionsForNumCalc(ordinal_type dims_left,
+                                              ordinal_type level,
+                                              ordinal_type levels_left,
+                                              ordinal_type level_so_far,
+                                              Teuchos::Array<ordinal_type> & nodes,
+                                              ordinal_type product,
                                               bool no_uni_quad)
 {
-  int numNodes = 0;
-  for(int j = 1; j <= levels_left; j++)
+  ordinal_type numNodes = 0;
+  for(ordinal_type j = 1; j <= levels_left; j++)
   {
     bool temp_bool = no_uni_quad;
-    int temp_knots = nodes[j-1]*product;
-    int temp_lsf = level_so_far + j;
+    ordinal_type temp_knots = nodes[j-1]*product;
+    ordinal_type temp_lsf = level_so_far + j;
 
     if(j==1)
       temp_bool = false;
@@ -192,17 +192,17 @@ inline int iterateThroughDimensionsForNumCalc(int dims_left,
   return numNodes;
 }
 
-inline int calculateNumPoints(int dim, int level)
+inline ordinal_type calculateNumPoints(ordinal_type dim, ordinal_type level)
 {
-  //int* uninum = new int[level];
-  Teuchos::Array<int> uninum(level);
+  //ordinal_type* uninum = new ordinal_type[level];
+  Teuchos::Array<ordinal_type> uninum(level);
   uninum[0] = 1;
-  for(int i = 1; i <= level-1; i++)
+  for(ordinal_type i = 1; i <= level-1; i++)
   {
     uninum[i] = 2*i;
   }
 
-  int numOfNodes = iterateThroughDimensionsForNumCalc(dim, level, level, 0, uninum, 1, true);
+  ordinal_type numOfNodes = iterateThroughDimensionsForNumCalc(dim, level, level, 0, uninum, 1, true);
   return numOfNodes;
 }
 

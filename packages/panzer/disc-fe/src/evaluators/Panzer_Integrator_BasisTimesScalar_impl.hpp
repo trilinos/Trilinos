@@ -135,8 +135,8 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
   // Irina modified
   // for (int i=0; i < scalar.size(); ++i)
   //   tmp[i] = multiplier * scalar[i];
-  for (int i=0; i < scalar.dimension(0); ++i)
-    for (int j=0; j < scalar.dimension(1); ++j)
+  for (int i=0; i < scalar.extent_int(0); ++i)
+    for (int j=0; j < scalar.extent_int(1); ++j)
        tmp(i,j) = multiplier * scalar(i,j);
 
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
@@ -146,15 +146,15 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
     //Irina modified
     //for (int i=0; i < field_data.size(); ++i)
     //  tmp[i] *= field_data[i];
-    for (int i=0; i < scalar.dimension(0); ++i)
-       for (int j=0; j < scalar.dimension(1); ++j)
+    for (int i=0; i < scalar.extent_int(0); ++i)
+       for (int j=0; j < scalar.extent_int(1); ++j)
           tmp(i,j) = tmp(i,j) * field_data(i,j);
   }
 
   // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < num_nodes; ++basis) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
         residual(cell,basis) += tmp(cell,qp)*bv.weighted_basis_scalar(cell,basis,qp);
@@ -163,7 +163,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
   }
 
 #else
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();

@@ -39,218 +39,6 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*!
-\fn{int ex_inquire (int exoid, int req_info, void_int *ret_int, float
-*ret_float, char *ret_char)}
-
-The function ex_inquire() is used to inquire values of certain
-data entities in an exodus file. Memory must be allocated for the
-returned values before this function is invoked.query database. \sa
-ex_inquire_int().
-
-\return In case of an error, ex_inquire() returns a negative
-        number; a warning will return a positive number.
-        Possible causes of errors include:
-  -  data file not properly opened with call to ex_create() or ex_open().
-  -  requested information not stored in the file.
-  -  invalid request flag.
-
-\param[in] exoid     exodus file ID returned from a previous call to ex_create()
-or ex_open().
-\param[in] req_info  A flag which designates what information is requested. It
-must be one
-                     of the following constants in the table below.
-
-\param[out]  ret_int   Returned integer, if an integer value is requested
-(according
-                       to \c req_info); otherwise, supply a dummy argument.
-
-\param[out]  ret_float Returned float, if a float value is requested
-                       (according to \c req_info); otherwise, supply a dummy
-                       argument. This argument is always a float even if the
-database IO
-                       and/or CPU word size is a double.
-
-\param[out]  ret_char  Returned character string, if a character value is
-requested (according
-                       to \c req_info); otherwise, supply a dummy argument.
-
-<table>
-<tr><td>\c EX_INQ_API_VERS</td><td> The exodus API version number is returned
- in \c ret_float and an undotted version number is returned in
- \c ret_int. The API version number reflects the release of the
- function library (i.e., function names, argument list, etc.). The API
- and LIB version numbers are synchronized and will always
- match. Initially, it was thought that maintaining the two versions
- separately would be a benefit, but that was more confusing than
- helpful, so the numbers were made the same.</td></tr>
-
- <tr><td> \c EX_INQ_DB_VERS </td><td> The exodus database version number is
- returned in \c ret_float and an ``undotted'' version number is
- returned in \c ret_int. The database version number reflects the
- version of the library that was used to \e write the file pointed to by
- \c exoid. </td></tr>
-
- <tr><td> \c EX_INQ_LIB_VERS  </td><td>The exodus library version number is
- returned in \c ret_float and an undotted version number is
- returned in \c ret_int. The API library version number reflects
- the version number of the exodus library linked with this
- application. </td></tr>
-
- <tr><td> \c EX_INQ_TITLE  </td><td>The title stored in the database is returned
-in \c ret_char. </td></tr>
-
- <tr><td> \c EX_INQ_DIM  </td><td>The dimensionality, or number of coordinates
- per node (1, 2 or 3), of the database is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NODES  </td><td>The number of nodes is returned in \c
-ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELEM  </td><td>The number of elements is returned in \c
-ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELEM_BLK  </td><td>The number of element blocks is returned
-in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NODE_SETS  </td><td>The number of node sets is returned in
-\c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NS_NODE_LEN  </td><td>The length of the concatenated node
- sets node list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NS_DF_LEN  </td><td>The length of the concatenated node
- sets distribution list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_SIDE_SETS  </td><td>The number of side sets is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_SS_ELEM_LEN  </td><td>The length of the concatenated side
- sets element list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_SS_DF_LEN  </td><td>The length of the concatenated side
- sets distribution factor list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_SS_NODE_LEN  </td><td>The aggregate length of all of the
- side sets node lists is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EB_PROP  </td><td>The number of integer properties stored
- for each element block is returned in \c ret_int; this number
- includes the property named \c ID. </td></tr>
-
- <tr><td> \c EX_INQ_NS_PROP  </td><td>The number of integer properties stored
- for each node set is returned in \c ret_int; this number includes
- the property named \c ID. </td></tr>
-
- <tr><td> \c EX_INQ_SS_PROP  </td><td>The number of integer properties stored
- for each side set is returned in \c ret_int; this number includes
- the property named \c ID. </td></tr>
-
- <tr><td> \c EX_INQ_QA  </td><td>The number of QA records is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_INFO  </td><td>The number of information records is returned
- in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_TIME  </td><td>The number of time steps stored in the
- database is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EDGE_BLK   </td><td>The number of edge blocks is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EDGE_MAP   </td><td>The number of edge maps is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EDGE_PROP   </td><td>The number of properties stored per
- edge blockis returned in \c ret_int.  </td></tr>
-
- <tr><td> \c EX_INQ_EDGE_SETS   </td><td>The number of edge sets is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EDGE   </td><td>The number of edges is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FACE   </td><td>The number of faces is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EB_PROP   </td><td>The number of element block properties is
- returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELEM_MAP   </td><td>The number of element maps is returned
- in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELEM_SETS   </td><td>The number of element sets is returned
- in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELS_DF_LEN   </td><td>The length of the concatenated
- element set distribution factor list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELS_LEN   </td><td>The length of the concatenated element
- set element list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ELS_PROP   </td><td>The number of properties stored per elem
- set is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_EM_PROP   </td><td>The number of element map properties is
- returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ES_DF_LEN   </td><td>The length of the concatenated edge
- set distribution factor list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ES_LEN   </td><td>The length of the concatenated edge set
- edge list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_ES_PROP   </td><td>The number of properties stored per edge
- set is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FACE_BLK   </td><td>The number of face blocks is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FACE_MAP   </td><td>The number of face maps is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FACE_PROP   </td><td>The number of properties stored per
- face block is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FACE_SETS   </td><td>The number of face sets is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FS_DF_LEN   </td><td>The length of the concatenated face
- set distribution factor list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FS_LEN   </td><td>The length of the concatenated face set
- face list is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_FS_PROP   </td><td>The number of properties stored per face
- set is returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NM_PROP   </td><td>The number of node map properties is
- returned in \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_NODE_MAP   </td><td>The number of node maps is returned in
- \c ret_int. </td></tr>
-
- <tr><td> \c EX_INQ_COORD_FRAMES </td><td>The number of coordinate frames is
-returned in \c ret_int. </td></tr>
-</table>
-
-As an example, the following will return the number of element
-block properties stored in the exodus file :
-
-\code
-#include "exodusII.h"
-int error, exoid, num_props;
-float fdum;
-char *cdum;
-
-\comment{determine the number of element block properties}
-error = ex_inquire (exoid, EX_INQ_EB_PROP, &num_props,
-                    &fdum, cdum);
-...Another way to get the same information
-num_props = ex_inquire_int(exoid, EX_INQ_EB_PROP);
-\endcode
-
-*/
-
 /*! \cond INTERNAL */
 static int ex_get_dimension_value(int exoid, int64_t *var, int default_value,
                                   const char *dimension_name, int missing_ok)
@@ -402,14 +190,14 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
   case EX_INQ_FILE_TYPE:
 
     /* obsolete call */
-    /*returns "r" for regular EXODUS II file or "h" for history EXODUS file*/
+    /*returns "r" for regular EXODUS file or "h" for history EXODUS file*/
     exerrval = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type inquire is obsolete");
     ex_err("ex_inquire", errmsg, exerrval);
     return (EX_WARN);
 
   case EX_INQ_API_VERS:
-    /* returns the EXODUS II API version number */
+    /* returns the EXODUS API version number */
     if (!ret_float) {
       exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: float argument is NULL for EX_INQ_API_VERS "
@@ -433,7 +221,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     break;
 
   case EX_INQ_DB_VERS:
-    /* returns the EXODUS II database version number */
+    /* returns the EXODUS database version number */
     if (!ret_float) {
       exerrval = EX_BADPARAM;
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: float argument is NULL for EX_INQ_DB_VERS "
@@ -452,7 +240,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     break;
 
   case EX_INQ_LIB_VERS:
-    /* returns the EXODUS II Library version number */
+    /* returns the EXODUS Library version number */
     if (ret_float) {
       flt_cvt(ret_float, EX_API_VERS);
     }
@@ -709,7 +497,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
 
-      if (ex_get_side_set_ids(exoid, ids) == EX_FATAL) {
+      if (ex_get_ids(exoid, EX_SIDE_SET, ids) == EX_FATAL) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get side set ids in file id %d", exoid);
         ex_err("ex_inquire", errmsg, exerrval);
         free(ids);
@@ -1169,13 +957,13 @@ ex_create() or ex_open().
  As an example, the following will return the number of nodes,
  elements, and element blocks stored in the exodus file :
 
-\code
+~~~{.c}
 #include "exodusII.h"
 int exoid;
 int num_nodes = ex_inquire_int(exoid, EX_INQ_NODES);
 int num_elems = ex_inquire_int(exoid, EX_INQ_ELEM);
 int num_block = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
-\endcode
+~~~
 
 */
 int64_t ex_inquire_int(int exoid, int req_info)
@@ -1190,6 +978,211 @@ int64_t ex_inquire_int(int exoid, int req_info)
 
   return ret_val;
 }
+
+/*!
+The function ex_inquire() is used to inquire values of certain
+data entities in an exodus file. Memory must be allocated for the
+returned values before this function is invoked.query database. \sa
+ex_inquire_int().
+
+\return In case of an error, ex_inquire() returns a negative
+        number; a warning will return a positive number.
+        Possible causes of errors include:
+  -  data file not properly opened with call to ex_create() or ex_open().
+  -  requested information not stored in the file.
+  -  invalid request flag.
+
+\param[in] exoid     exodus file ID returned from a previous call to ex_create()
+or ex_open().
+\param[in] req_info  A flag which designates what information is requested. It
+                     must be one of the following constants in the table below.
+
+\param[out]  ret_int   Returned integer, if an integer value is requested
+                       (according to req_info); otherwise, supply a dummy argument.
+
+\param[out]  ret_float Returned float, if a float value is requested
+                       (according to req_info); otherwise, supply a dummy
+                       argument. This argument is always a float even if the
+                       database IO and/or CPU word size is a double.
+
+\param[out]  ret_char  Returned character string, if a character value is
+                       requested (according to req_info);
+                       otherwise, supply a dummy argument.
+
+<table>
+<tr><td>EX_INQ_API_VERS</td><td> The exodus API version number is returned
+ in ret_float and an undotted version number is returned in
+ ret_int. The API version number reflects the release of the
+ function library (i.e., function names, argument list, etc.). The API
+ and LIB version numbers are synchronized and will always
+ match. Initially, it was thought that maintaining the two versions
+ separately would be a benefit, but that was more confusing than
+ helpful, so the numbers were made the same.</td></tr>
+
+ <tr><td> EX_INQ_DB_VERS </td><td> The exodus database version number is
+ returned in ret_float and an ``undotted'' version number is
+ returned in ret_int. The database version number reflects the
+ version of the library that was used to \e write the file pointed to by
+ exoid. </td></tr>
+
+ <tr><td> EX_INQ_LIB_VERS  </td><td>The exodus library version number is
+ returned in ret_float and an undotted version number is
+ returned in ret_int. The API library version number reflects
+ the version number of the exodus library linked with this
+ application. </td></tr>
+
+ <tr><td> EX_INQ_TITLE  </td><td>The title stored in the database is returned
+in ret_char. </td></tr>
+
+ <tr><td> EX_INQ_DIM  </td><td>The dimensionality, or number of coordinates
+ per node (1, 2 or 3), of the database is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NODES  </td><td>The number of nodes is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELEM  </td><td>The number of elements is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELEM_BLK  </td><td>The number of element blocks is returned
+in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NODE_SETS  </td><td>The number of node sets is returned in
+ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NS_NODE_LEN  </td><td>The length of the concatenated node
+ sets node list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NS_DF_LEN  </td><td>The length of the concatenated node
+ sets distribution list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_SIDE_SETS  </td><td>The number of side sets is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_SS_ELEM_LEN  </td><td>The length of the concatenated side
+ sets element list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_SS_DF_LEN  </td><td>The length of the concatenated side
+ sets distribution factor list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_SS_NODE_LEN  </td><td>The aggregate length of all of the
+ side sets node lists is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EB_PROP  </td><td>The number of integer properties stored
+ for each element block is returned in ret_int; this number
+ includes the property named ID. </td></tr>
+
+ <tr><td> EX_INQ_NS_PROP  </td><td>The number of integer properties stored
+ for each node set is returned in ret_int; this number includes
+ the property named ID. </td></tr>
+
+ <tr><td> EX_INQ_SS_PROP  </td><td>The number of integer properties stored
+ for each side set is returned in ret_int; this number includes
+ the property named ID. </td></tr>
+
+ <tr><td> EX_INQ_QA  </td><td>The number of QA records is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_INFO  </td><td>The number of information records is returned
+ in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_TIME  </td><td>The number of time steps stored in the
+ database is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EDGE_BLK   </td><td>The number of edge blocks is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EDGE_MAP   </td><td>The number of edge maps is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EDGE_PROP   </td><td>The number of properties stored per
+ edge blockis returned in ret_int.  </td></tr>
+
+ <tr><td> EX_INQ_EDGE_SETS   </td><td>The number of edge sets is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EDGE   </td><td>The number of edges is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FACE   </td><td>The number of faces is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EB_PROP   </td><td>The number of element block properties is
+ returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELEM_MAP   </td><td>The number of element maps is returned
+ in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELEM_SETS   </td><td>The number of element sets is returned
+ in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELS_DF_LEN   </td><td>The length of the concatenated
+ element set distribution factor list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELS_LEN   </td><td>The length of the concatenated element
+ set element list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ELS_PROP   </td><td>The number of properties stored per elem
+ set is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_EM_PROP   </td><td>The number of element map properties is
+ returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ES_DF_LEN   </td><td>The length of the concatenated edge
+ set distribution factor list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ES_LEN   </td><td>The length of the concatenated edge set
+ edge list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_ES_PROP   </td><td>The number of properties stored per edge
+ set is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FACE_BLK   </td><td>The number of face blocks is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FACE_MAP   </td><td>The number of face maps is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FACE_PROP   </td><td>The number of properties stored per
+ face block is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FACE_SETS   </td><td>The number of face sets is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FS_DF_LEN   </td><td>The length of the concatenated face
+ set distribution factor list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FS_LEN   </td><td>The length of the concatenated face set
+ face list is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_FS_PROP   </td><td>The number of properties stored per face
+ set is returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NM_PROP   </td><td>The number of node map properties is
+ returned in ret_int. </td></tr>
+
+ <tr><td> EX_INQ_NODE_MAP   </td><td>The number of node maps is returned in
+ ret_int. </td></tr>
+
+ <tr><td> EX_INQ_COORD_FRAMES </td><td>The number of coordinate frames is
+returned in ret_int. </td></tr>
+</table>
+
+As an example, the following will return the number of element
+block properties stored in the exodus file :
+
+~~~{.c}
+#include "exodusII.h"
+int error, exoid, num_props;
+float fdum;
+char *cdum;
+
+\comment{determine the number of element block properties}
+error = ex_inquire (exoid, EX_INQ_EB_PROP, &num_props,
+                    &fdum, cdum);
+
+\comment{...Another way to get the same information}
+num_props = ex_inquire_int(exoid, EX_INQ_EB_PROP);
+~~~
+
+*/
 
 int ex_inquire(int exoid, int req_info, void_int *ret_int, float *ret_float, char *ret_char)
 {

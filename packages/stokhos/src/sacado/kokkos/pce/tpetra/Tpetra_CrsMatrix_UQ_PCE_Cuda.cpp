@@ -46,6 +46,8 @@
 
 #include "Tpetra_CrsMatrix_UQ_PCE.hpp"
 #include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
+#include "Kokkos_ArithTraits_MP_Vector.hpp"
+#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
 
 #define TPETRA_LOCAL_INST_N(N)               \
   INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N) \

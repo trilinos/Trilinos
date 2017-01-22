@@ -50,7 +50,6 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -72,9 +71,9 @@ using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildTriMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager<int,int> > buildTriMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -82,18 +81,18 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildTriMesh(stk_classic::ParallelMa
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk_classic::SquareTriMeshFactory meshFact;
+   panzer_stk::SquareTriMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename Intrepid2Type>
 RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::Intrepid2FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -104,19 +103,19 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
@@ -231,19 +230,19 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, field_order)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -318,23 +317,23 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, field_order)
 }
 
 // quad tests
-TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, shared_owned_indices)
+TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, ghosted_owned_indices)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
@@ -346,15 +345,15 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, shared_owned_indices)
    // test UniqueGlobalIndexer
    RCP<panzer::UniqueGlobalIndexer<int,int> > glbNum = dofManager;
 
-   std::vector<int> owned, ownedAndShared;
+   std::vector<int> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);
-   glbNum->getOwnedAndSharedIndices(ownedAndShared);
+   glbNum->getOwnedAndGhostedIndices(ownedAndGhosted);
 
    if(myRank==0 && numProcs==2) {
       TEST_EQUALITY(owned.size(),6);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       for(std::size_t i=0;i<owned.size();i++) {
@@ -362,17 +361,17 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, shared_owned_indices)
       }
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      for(std::size_t i=0;i<ownedAndShared.size();i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) {
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i] == (int) i);
       }
-      TEST_ASSERT(ownedAndSharedCorrect);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else if(myRank==1 && numProcs==2) {
       TEST_EQUALITY(owned.size(),3);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       for(std::size_t i=0;i<owned.size();i++) {
@@ -380,14 +379,14 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, shared_owned_indices)
       }
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
       for(std::size_t i=0;i<3;i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) (2*i+1));
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i] == (int) (2*i+1));
       }
       for(std::size_t i=0;i<3;i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i+3] == (int) i+6);
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i+3] == (int) i+6);
       }
-      TEST_ASSERT(ownedAndSharedCorrect);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else 
       TEUCHOS_ASSERT(false);
@@ -398,21 +397,21 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, multiple_dof_managers)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternC2 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
@@ -464,32 +463,32 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager,getDofCoords)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,2,1);
-   RCP<const panzer_stk_classic::STKConnManager> stkManager = rcp_dynamic_cast<panzer_stk_classic::STKConnManager>(connManager);
-   RCP<panzer_stk_classic::STK_Interface> meshDB = stkManager->getSTKInterface();
+   RCP<const panzer_stk::STKConnManager> stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager>(connManager);
+   RCP<panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
    meshDB->print(out);
 
    // grab elements from mesh
-   std::vector<stk_classic::mesh::Entity*> block00, block01;
+   std::vector<stk::mesh::Entity> block00, block01;
    meshDB->getMyElements("eblock-0_0",block00);
    meshDB->getMyElements("eblock-1_0",block01);
   
    std::vector<std::size_t> localIds_00, localIds_01;
    FieldContainer coords00, coords01;
    RCP<const panzer::Intrepid2FieldPattern> patternC1_00
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::Intrepid2FieldPattern> patternC1_01
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    // get coordinates
    stkManager->getDofCoords("eblock-0_0",*patternC1_00,localIds_00,coords00); 
@@ -510,7 +509,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager,getDofCoords)
       TEST_EQUALITY(localIds_01[i],meshDB->elementLocalId(block01[i]));
 
    // for(std::size_t c=0;c<block00.size();c++) {
-   //    stk_classic::mesh::Entity * element = block00[c];
+   //    stk::mesh::Entity element = block00[c];
    //    for(int i=0;i<4;i++) {
    //    }
    // }

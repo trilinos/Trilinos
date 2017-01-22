@@ -50,7 +50,6 @@
  */
 int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
 {
-  int  status;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
@@ -63,7 +62,7 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
   }
   else if (strchr(group_name, '/') == NULL) {
     /* Local child */
-    status = nc_inq_grp_ncid(parent_id, group_name, group_id);
+    int status = nc_inq_grp_ncid(parent_id, group_name, group_id);
     if (status != NC_NOERR) {
       exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to locate group with name %s as child "
@@ -75,7 +74,7 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
   }
   else {
     /* Full path name */
-    status = nc_inq_grp_full_ncid(parent_id, group_name, group_id);
+    int status = nc_inq_grp_full_ncid(parent_id, group_name, group_id);
     if (status != NC_NOERR) {
       exerrval = status;
       snprintf(errmsg, MAX_ERR_LENGTH,

@@ -1,6 +1,4 @@
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Threads/Kokkos_Threads_TaskPolicy.hpp>  
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -51,6 +49,12 @@ int main (int argc, char *argv[]) {
   int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
+  int memory_pool_grain_size = 16;
+  clp.setOption("memory-pool-grain-size", &memory_pool_grain_size, "Memorypool chunk size (12 - 16)");
+
+  int mkl_nthreads = 1;
+  clp.setOption("mkl-nthreads", &mkl_nthreads, "MKL threads for nested parallelism");
+
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "# of right hand side");
 
@@ -78,13 +82,12 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
     
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
-        || defined(HAVE_SHYLUTACHO_AMESOS)))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleSolver<exec_space>
       (file_input, 
        treecut,
        prunecut, 
-       max_concurrency, 
+       max_concurrency, memory_pool_grain_size, mkl_nthreads,
        nrhs, mb, nb,
        hier_minsize,
        verbose);

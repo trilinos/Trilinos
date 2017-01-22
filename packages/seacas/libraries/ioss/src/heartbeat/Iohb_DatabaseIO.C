@@ -165,12 +165,14 @@ namespace Iohb {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), logStream(nullptr),
-        layout_(nullptr), legend_(nullptr), tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5),
-        fieldWidth_(0), showLabels(false), showLegend(true), appendOutput(false),
-        addTimeField(false), initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), timeLastFlush(0),
+        logStream(nullptr), layout_(nullptr), legend_(nullptr), tsFormat("[%H:%M:%S]"),
+        separator_(", "), precision_(5), fieldWidth_(0), showLabels(false), showLegend(true),
+        appendOutput(false), addTimeField(false), initialized_(false), streamNeedsDelete(false),
+        fileFormat(DEFAULT)
   {
-    dbState = Ioss::STATE_UNKNOWN;
+    timeLastFlush = time(nullptr);
+    dbState       = Ioss::STATE_UNKNOWN;
   }
 
   DatabaseIO::~DatabaseIO()
@@ -303,6 +305,11 @@ namespace Iohb {
     return true;
   }
 
+  void DatabaseIO::flush_database() const
+  {
+    logStream->flush();
+  }
+
   bool DatabaseIO::end_state(Ioss::Region * /* region */, int /* state */, double /* time */)
   {
     if (legend_ != nullptr) {
@@ -320,6 +327,20 @@ namespace Iohb {
     *logStream << *layout_ << '\n';
     delete layout_;
     layout_ = nullptr;
+
+    // Flush the buffer to disk...
+    // flush if there is more than 10 seconds since the last flush to avoid
+    // the flush eating up cpu time for small fast jobs...
+
+    // This code is derived from code in finalize_write() in Ioex_DatabaseIO.C
+    // See other comments there...
+
+    time_t cur_time = time(nullptr);
+    if (cur_time - timeLastFlush >= 10) {
+      timeLastFlush = cur_time;
+      flush_database();
+    }
+
     return true;
   }
 

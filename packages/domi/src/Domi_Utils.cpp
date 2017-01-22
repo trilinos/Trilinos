@@ -47,9 +47,75 @@
 // Domi includes
 #include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
+#include "Domi_getValidParameters.hpp"
 
 namespace Domi
 {
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::Array< int >
+factor(int n)
+{
+  Teuchos::Array< int > factors;
+
+  if (n < 2)
+  {
+    factors.push_back(n);
+    n = 0;
+  }
+
+  int z = 2;
+  while (z*z <= n)
+  {
+    if (n % z == 0)
+    {
+      factors.push_back(z);
+      n /= z;
+    }
+    else
+    {
+      z += 1;
+    }
+  }
+
+  if (n > 1) factors.push_back(n);
+
+  return factors;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+int indexOfMax(const Teuchos::ArrayView< const float > & seq)
+{
+  int result = 0;
+  for (int i = 1; i < seq.size(); ++i)
+    if (seq[i] > seq[result])
+      result = i;
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::Array< int >
+decomposeProcs(int nprocs,
+               const Teuchos::ArrayView< dim_type > & dimensions)
+{
+  // Compute a float version of dimensions
+  Teuchos::Array< float > dims;
+  for (int i = 0; i < dimensions.size(); ++i)
+    dims.push_back(float(dimensions[i]));
+  Teuchos::Array< int > ifact = factor(nprocs);
+  // Compute the result
+  Teuchos::Array< int > result(dimensions.size(), 1);
+  for (int i = ifact.size()-1; i >= 0; --i)
+  {
+    int imax      = indexOfMax(dims);
+    dims[imax]   /= ifact[i];
+    result[imax] *= ifact[i];
+  }
+  return result;
+}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -83,13 +149,15 @@ regularizeCommDims(int numProcs,
       InvalidArgument,
       "Product of axis processor sizes (" << block << ") does not "
       "equal total number of processors (" << numProcs << ")");
+    return result;
   }
   // For underspecified processor partitions, give the remainder to
   // the first unspecified axis and set all the rest to 1
   TEUCHOS_TEST_FOR_EXCEPTION(
     (numProcs % block),
     InvalidArgument,
-    "Number of processors do not divide evenly");
+    "Number of processors (" << numProcs << ") do not divide evenly by "
+    << block);
   int quotient = numProcs / block;
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -100,6 +168,87 @@ regularizeCommDims(int numProcs,
     }
   }
   // Return the result
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::Array< int >
+regularizeCommDims(int numProcs,
+                   Teuchos::ParameterList & plist)
+{
+  // Obtain the commDims and dimensions from the ParameterList, and
+  // determine the number of dimensions
+  Teuchos::Array< int > commDims = plist.get("comm dimensions",
+                                             Teuchos::Array< int >());
+  Teuchos::Array< dim_type > dims = plist.get("dimensions",
+                                              Teuchos::Array< dim_type >());
+  int numDims = dims.size();
+  if (numDims == 0) numDims = commDims.size();
+  if (numDims == 0)
+  {
+    numDims = 1;
+    commDims.push_back(numProcs);
+  }
+  // Allocate the return array, filled with the value -1
+  Teuchos::Array< int > result(numDims, -1);
+  // Copy the candidate array into the return array
+  for (int axis = 0; axis < numDims && axis < commDims.size(); ++axis)
+    result[axis] = commDims[axis];
+  // Compute the block of processors accounted for, and the number of
+  // unspecified axis sizes
+  int block       = 1;
+  int unspecified = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (result[axis] <= 0)
+      ++unspecified;
+    else
+      block *= result[axis];
+  }
+  // If all processor counts are specified, check the processor block
+  // against the total number of processors and return
+  if (unspecified == 0)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (block != numProcs),
+      InvalidArgument,
+      "Product of axis processor sizes (" << block << ") does not "
+      "equal total number of processors (" << numProcs << ")");
+    return result;
+  }
+  // Make sure that the number of processors divides equally into the
+  // product of all of the specified axis processors
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (numProcs % block),
+    InvalidArgument,
+    "Number of processors (" << numProcs << ") do not divide evenly by "
+    << block);
+  // Create an array of dimensions with entries for every commDim that
+  // is not specified
+  Teuchos::Array< dim_type > myDims;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (result[axis] <= 0)
+    {
+      if (axis < dims.size())
+        myDims.push_back(dims[axis]);
+      else
+        // If "dimensions" was not specified, then myDims will be an
+        // array of equal values, namely the value of numProcs
+        myDims.push_back(numProcs);
+    }
+  }
+  // For underspecified processor partitions, we'll use the
+  // decomposeProcs() function
+  Teuchos::Array< int > myCommDims = decomposeProcs(numProcs/block, myDims);
+  // Copy the results into the result array and return
+  int ii = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (result[axis] <= 0)
+      result[axis] = myCommDims[ii++];
+  }
   return result;
 }
 

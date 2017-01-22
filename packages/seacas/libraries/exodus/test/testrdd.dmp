@@ -620,22 +620,22 @@ info records =
  'This is the second information record.'
  'This is the third information record.'
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  1 global variables; their names are :
  'glo_vars'
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  2 nodal variables; their names are :
  'nod_var0'
  'nod_var1'
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  3 element variables; their names are :
  'ele_var0'
  'ele_var1'

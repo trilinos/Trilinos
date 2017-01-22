@@ -80,93 +80,62 @@ namespace Intrepid2 {
 
     template<typename detArrayViewType,
              typename inMatViewType>
-    struct F_det_view {
+    struct F_det {
       detArrayViewType _detArray;
       inMatViewType    _inMats;
       
       KOKKOS_INLINE_FUNCTION
-      F_det_view( detArrayViewType   detArray_,
-                  inMatViewType      inMats_ )
+      F_det( detArrayViewType   detArray_,
+             inMatViewType      inMats_ )
         : _detArray(detArray_), _inMats(inMats_) {}
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
-        ordinal_type i, j;
-        Util::unrollIndex( i, j,
-                           _inMats.dimension(0),
-                           iter );
+        // comapring left and right stride for serial
+        // 15 % difference, right stride access is better (of course)
+
+        // right
+        const auto stride = _inMats.dimension(1);
+        const auto 
+          i = iter / stride, 
+          j = iter % stride;
+
+        // left
+        // const auto stride = _inMats.dimension(0);
+        // const auto 
+        //   i = iter % stride, 
+        //   j = iter / stride;
+
         // current implementation subview overhead exists
-        {
-          auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
-          _detArray(i, j) = Serial::det(mat);
-        }
+        // {
+        //   auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
+        //   _detArray(i, j) = Serial::det(mat);
+        // }
 
         // direct access (base is 8 rank)
-        // {
-        //   const auto dim = _inMats.dimension(2);
-        //   const auto val = ( dim == 3 ? ( _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) * _inMats(i,j,2,2,0,0,0,0) +
-        //                                   _inMats(i,j,1,0,0,0,0,0) * _inMats(i,j,2,1,0,0,0,0) * _inMats(i,j,0,2,0,0,0,0) +
-        //                                   _inMats(i,j,2,0,0,0,0,0) * _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,1,2,0,0,0,0) -
-        //                                   _inMats(i,j,2,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) * _inMats(i,j,0,2,0,0,0,0) -
-        //                                   _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,2,1,0,0,0,0) * _inMats(i,j,1,2,0,0,0,0) -
-        //                                   _inMats(i,j,1,0,0,0,0,0) * _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,2,2,0,0,0,0) ) :
-        //                      dim == 2 ? ( _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) -
-        //                                   _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,1,0,0,0,0,0) ) :
-        //                      /**/       ( _inMats(i,j,0,0,0,0,0,0) ) );
-          
-        //   _detArray(i, j, 0,0, 0,0,0,0) = val;
-        // }
-
-      }
-    };
-
-    template<typename detArrayViewType,
-             typename inMatViewType>
-    struct F_det_dynrankview {
-      detArrayViewType _detArray;
-      inMatViewType    _inMats;
-      
-      KOKKOS_INLINE_FUNCTION
-      F_det_dynrankview( detArrayViewType   detArray_,
-                         inMatViewType      inMats_ )
-        : _detArray(detArray_), _inMats(inMats_) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type iter) const {
-        ordinal_type i, j;
-        Util::unrollIndex( i, j,
-                           _inMats.dimension(0),
-                           iter );
-        // current implementation subview overhead exists
         {
-          auto mat = Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
-          _detArray(i, j) = Serial::det(mat);
-        }
-
-        // direct access overhead with zero dimensions
-        // {
-        //   const auto dim = _inMats.dimension(2);
-        //   const auto val = ( dim == 3 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) * _inMats(i,j,2,2) +
-        //                                   _inMats(i,j,1,0) * _inMats(i,j,2,1) * _inMats(i,j,0,2) +
-        //                                   _inMats(i,j,2,0) * _inMats(i,j,0,1) * _inMats(i,j,1,2) -
-        //                                   _inMats(i,j,2,0) * _inMats(i,j,1,1) * _inMats(i,j,0,2) -
-        //                                   _inMats(i,j,0,0) * _inMats(i,j,2,1) * _inMats(i,j,1,2) -
-        //                                   _inMats(i,j,1,0) * _inMats(i,j,0,1) * _inMats(i,j,2,2) ) :
-        //                      dim == 2 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) -
-        //                                   _inMats(i,j,0,1) * _inMats(i,j,1,0) ) :
-        //                      /       ( _inMats(i,j,0,0) ) );
+          const auto dim = _inMats.dimension(2);
+          const auto val = ( dim == 3 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) * _inMats(i,j,2,2) +
+                                          _inMats(i,j,1,0) * _inMats(i,j,2,1) * _inMats(i,j,0,2) +
+                                          _inMats(i,j,2,0) * _inMats(i,j,0,1) * _inMats(i,j,1,2) -
+                                          _inMats(i,j,2,0) * _inMats(i,j,1,1) * _inMats(i,j,0,2) -
+                                          _inMats(i,j,0,0) * _inMats(i,j,2,1) * _inMats(i,j,1,2) -
+                                          _inMats(i,j,1,0) * _inMats(i,j,0,1) * _inMats(i,j,2,2) ) :
+                             dim == 2 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) -
+                                          _inMats(i,j,0,1) * _inMats(i,j,1,0) ) :
+                             /**/       ( _inMats(i,j,0,0) ) );
           
-        //   _detArray(i, j) = val;
-        // }
+          _detArray(i, j) = val;
+        }
 
       }
     };
 
     template<typename ValueType, typename DeviceSpaceType>
-    int DynRankView_PerfTest01(const size_type nworkset,
-                               const size_type C,
-                               const size_type P, 
-                               const size_type D, 
+    int DynRankView_PerfTest01(const ordinal_type nworkset,
+                               const ordinal_type C,
+                               const ordinal_type P,
+                               const ordinal_type D,
                                const bool verbose) {
 
       Teuchos::RCP<std::ostream> verboseStream;
@@ -212,12 +181,11 @@ namespace Intrepid2 {
           typedef Kokkos::View<ValueType**,  DeviceSpaceType> outViewType;
           //typedef Kokkos::View<ValueType********,DeviceSpaceType> inViewType;
           //typedef Kokkos::View<ValueType********,  DeviceSpaceType> outViewType;
-          typedef F_det_view<outViewType,inViewType>          FunctorType;
+          typedef F_det<outViewType,inViewType> FunctorType;
 
           inViewType  in ("inView",  C,P,D,D);
           outViewType out("outView", C,P);          
-          //inViewType  in ("inView",  C,P,D,D,1,1,1,1);
-          //outViewType out("outView", C,P,1,1,1,1,1,1);          
+
           const auto loopSize = C*P;
           Kokkos::RangePolicy<DeviceSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
@@ -237,7 +205,7 @@ namespace Intrepid2 {
 
         { // Kokkos DynRankView
           typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> ViewType;
-          typedef F_det_dynrankview<ViewType,ViewType>           FunctorType;
+          typedef F_det<ViewType,ViewType> FunctorType;
 
           ViewType in("inDynRankView", C,P,D,D), out("outDynRankView", C,P);          
           const auto loopSize = C*P;
@@ -268,11 +236,19 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       for (auto i=0;i<itest;++i) {
+        const auto ratio = (t_view[i]/t_dynrankview[i]);
         std::cout 
           << "TEST " << i 
           << ":  t_view = " << t_view[i] 
           << ",  t_dynrankview = " << t_dynrankview[i] 
-          << ", ratio (v/drv) = " << (t_view[i]/t_dynrankview[i]) << "\n";
+          << ", ratio (v/drv) = " << ratio << "\n";
+
+        const auto tol = 0.95;
+        if (ratio < tol)  {
+          std::cout << "Performance test failed as view/dynrankview is below " << tol << std::endl;
+          errorFlag = -1;
+        }
+        
       }
       std::cout 
         << "===============================================================================\n";

@@ -175,8 +175,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              LinearObjContainer & ghostedObjs,
                              bool zeroVectorRows, bool adjustX) const
 {
-   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
-
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using Thyra::LinearOpBase;
@@ -896,7 +894,7 @@ buildTpetraGhostedMap(int i) const
    std::vector<GlobalOrdinalT> indices;
 
    // get the global indices
-   getGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
+   getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }

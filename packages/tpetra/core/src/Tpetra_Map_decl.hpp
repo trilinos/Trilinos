@@ -47,25 +47,10 @@
 ///   nonmember constructors.
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_LocalMap.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Tpetra_Details_FixedHashTable_decl.hpp"
-#include "Tpetra_Details_OrdinalTraits.hpp"
-
-// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
-// it is by default), then Map will used the fixed-structure hash
-// table variant for global-to-local index lookups.  Otherwise, it
-// will use the dynamic-structure hash table variant.
-//
-// mfh 23 Mar 2014: I've removed all code in Map that uses the
-// dynamic-structure hash table variant, since it has not been used
-// for at least a year.  However, I am retaining the #define, in case
-// downstream code depends on it.
-
-#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
-#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
 namespace Tpetra {
 
@@ -93,152 +78,6 @@ namespace Tpetra {
              const Teuchos::RCP<out_node_type>& node2);
     };
 
-    /// \class LocalMap
-    /// \brief "Local" part of Map suitable for Kokkos kernels.
-    ///
-    /// \warning This object's interface is not yet fixed.  We provide
-    ///   this object currently only as a service to advanced users.
-    ///
-    /// The "local" Map is suitable for use in Kokkos parallel
-    /// operations in the Map's native execution space, which is
-    /// <tt>Map::device_type::execution_space</tt>.
-    ///
-    /// By "local," we mean that the object performs no MPI
-    /// communication, and can only access information that would
-    /// never need MPI communication, no matter what kind of Map this
-    /// is.
-    template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-    class LocalMap {
-    public:
-      typedef LocalOrdinal local_ordinal_type;
-      typedef GlobalOrdinal global_ordinal_type;
-      typedef DeviceType device_type;
-
-      LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
-                const Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType>& lgMap,
-                const GlobalOrdinal indexBase,
-                const GlobalOrdinal myMinGid,
-                const GlobalOrdinal myMaxGid,
-                const GlobalOrdinal firstContiguousGid,
-                const GlobalOrdinal lastContiguousGid,
-                const LocalOrdinal numLocalElements,
-                const bool contiguous) :
-        glMap_ (glMap),
-        lgMap_ (lgMap),
-        indexBase_ (indexBase),
-        myMinGid_ (myMinGid),
-        myMaxGid_ (myMaxGid),
-        firstContiguousGid_ (firstContiguousGid),
-        lastContiguousGid_ (lastContiguousGid),
-        numLocalElements_ (numLocalElements),
-        contiguous_ (contiguous)
-      {}
-
-      //! The number of indices that live on the calling process.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
-        return numLocalElements_;
-      }
-
-      //! The (global) index base.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getIndexBase () const {
-        return indexBase_;
-      }
-
-      /// \brief Whether the Map is (locally) contiguous.
-      ///
-      /// This is conservative; a Map is "contiguous" if and only if
-      /// it is stored that way.
-      KOKKOS_INLINE_FUNCTION bool isContiguous () const {
-        return contiguous_;
-      }
-
-      //! The minimum local index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal getMinLocalIndex () const {
-        return 0;
-      }
-
-      //! The maximum local index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal
-      getMaxLocalIndex () const
-      {
-        if (numLocalElements_ == 0) {
-          return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
-        } else { // Local indices are always zero-based.
-          return static_cast<LocalOrdinal> (numLocalElements_ - 1);
-        }
-      }
-
-      //! The minimum global index on the calling process.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMinGlobalIndex () const {
-        return myMinGid_;
-      }
-
-      //! The maximum global index on the calling process.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMaxGlobalIndex () const {
-        return myMaxGid_;
-      }
-
-      //! Get the local index corresponding to the given global index.
-      KOKKOS_INLINE_FUNCTION LocalOrdinal
-      getLocalElement (const GlobalOrdinal globalIndex) const
-      {
-        if (contiguous_) {
-          if (globalIndex < myMinGid_ || globalIndex > myMaxGid_) {
-            return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
-          }
-          return static_cast<LocalOrdinal> (globalIndex - myMinGid_);
-        }
-        else if (globalIndex >= firstContiguousGid_ &&
-                 globalIndex <= lastContiguousGid_) {
-          return static_cast<LocalOrdinal> (globalIndex - firstContiguousGid_);
-        }
-        else {
-          // If the given global index is not in the table, this returns
-          // the same value as OrdinalTraits<LocalOrdinal>::invalid().
-          return glMap_.get (globalIndex);
-        }
-      }
-
-      //! Get the global index corresponding to the given local index.
-      KOKKOS_INLINE_FUNCTION GlobalOrdinal
-      getGlobalElement (const LocalOrdinal localIndex) const
-      {
-        if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
-          return Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ();
-        }
-        if (isContiguous ()) {
-          return getMinGlobalIndex () + localIndex;
-        }
-        else {
-          return lgMap_(localIndex);
-        }
-      }
-
-    private:
-      Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
-      /// \brief Mapping from local indices to global indices.
-      ///
-      /// If this is empty, then it could be either that the Map is
-      /// contiguous (meaning that we don't need to store all the
-      /// global indices explicitly), or that the Map really does
-      /// contain zero indices on the calling process.
-      ///
-      /// This has LayoutLeft so that we can call Kokkos::deep_copy to
-      /// copy this between any two Kokkos Devices.  Otherwise, the
-      /// Devices might have different default layouts, thus
-      /// forbidding a deep_copy.  We use LayoutLeft instead of
-      /// LayoutRight because LayoutRight is the default on non-CUDA
-      /// Devices, and we want to make sure we catch assignment or
-      /// copying from the default to the nondefault layout.
-      Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType> lgMap_;
-      GlobalOrdinal indexBase_;
-      GlobalOrdinal myMinGid_;
-      GlobalOrdinal myMaxGid_;
-      GlobalOrdinal firstContiguousGid_;
-      GlobalOrdinal lastContiguousGid_;
-      LocalOrdinal numLocalElements_;
-      bool contiguous_;
-    };
   } // namespace Details
 
   template<class Node>
@@ -415,14 +254,18 @@ namespace Tpetra {
     //! The type of the Kokkos Node.
     typedef Node node_type;
 
+    //! The Kokkos execution space.
+    typedef typename Node::execution_space execution_space;
+    //! The Kokkos memory space.
+    typedef typename Node::memory_space memory_space;
+
     /// \brief The Kokkos device type over which to allocate Views and
     ///   perform work.
     ///
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    typedef typename Kokkos::Device<typename Node::execution_space,
-                                    typename Node::memory_space> device_type;
+    typedef typename Node::device_type device_type;
 
     /// \brief Type of the "local" Map.
     ///
@@ -1068,7 +911,7 @@ namespace Tpetra {
     /// over this Map's communicator.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
-    /// \brief Is the given Map locally the same as the input Map?
+    /// \brief Is this Map locally the same as the input Map?
     ///
     /// "Locally the same" means that on the calling process, the two
     /// Maps' global indices are the same and occur in the same order.
@@ -1123,7 +966,7 @@ namespace Tpetra {
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
-    clone (const RCP<NodeOut>& nodeOut) const;
+    clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1172,7 +1015,7 @@ namespace Tpetra {
     /// intentionally leave some processes with zero rows.  Removing
     /// processes with zero rows makes the all-reduces and other
     /// communication operations cheaper.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     removeEmptyProcesses () const;
 
     /// \brief Replace this Map's communicator with a subset communicator.
@@ -1202,7 +1045,7 @@ namespace Tpetra {
     ///   same graph.  For the latter three Maps, one would in general
     ///   use this method instead of removeEmptyProcesses(), giving
     ///   the new row Map's communicator to this method.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
@@ -1510,7 +1353,7 @@ namespace Tpetra {
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createUniformContigMapWithNode (global_size_t numElements,
+  createUniformContigMapWithNode (const global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                   const Teuchos::RCP<Node>& node = Teuchos::null);
 
@@ -1536,8 +1379,8 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createContigMapWithNode (global_size_t numElements,
-                           size_t localNumElements,
+  createContigMapWithNode (const global_size_t numElements,
+                           const size_t localNumElements,
                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                            const Teuchos::RCP<Node>& node =
                              defaultArgNode<Node> ());
@@ -1699,7 +1542,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {
@@ -1709,6 +1552,31 @@ namespace Tpetra {
     // Copy constructor does a shallow copy.
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
+
+  namespace Details {
+    /// \brief Is map1 locally fitted to map2?
+    ///
+    /// \param map1 [in] The first Map
+    /// \param map2 [in] The second Map
+    ///
+    /// For Map instances map1 and map2, we say that map1 is
+    /// <i>locally fitted</i> to map2 (on the calling process), when
+    /// the initial indices of map1 (on the calling process) are the
+    /// same and in the same order as those of map2.  "Fittedness" is
+    /// entirely a local (per MPI process) property.
+    ///
+    /// The predicate "is map1 fitted to map2 ?" is <i>not</i>
+    /// symmetric.  For example, map2 may have more entries than map1.
+    ///
+    /// Fittedness on a process can let Tpetra avoid deep copies in
+    /// some Export or Import (communication) operations.  Tpetra
+    /// could use this, for example, in optimizing its sparse
+    /// matrix-vector multiply.
+    template <class LocalOrdinal,class GlobalOrdinal, class Node>
+    bool
+    isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map1,
+                     const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map2);
+  } // namespace Details
 
 } // namespace Tpetra
 

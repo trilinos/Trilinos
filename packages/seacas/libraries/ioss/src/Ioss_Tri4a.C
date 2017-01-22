@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tri4a registerThis; }
 
   protected:
-    St_Tri4a() : ElementVariableType("tri4a", 4) {}
+    St_Tri4a() : ElementVariableType(Ioss::Tri4a::name, 4) {}
   };
 } // namespace Ioss
 //------------------------------------------------------------------------
@@ -77,7 +77,7 @@ void Ioss::Tri4a::factory()
   Ioss::St_Tri4a::factory();
 }
 
-Ioss::Tri4a::Tri4a() : Ioss::ElementTopology("tri4a", "Triangle_4a") {}
+Ioss::Tri4a::Tri4a() : Ioss::ElementTopology(Ioss::Tri4a::name, "Triangle_4a") {}
 
 Ioss::Tri4a::~Tri4a() = default;
 
@@ -139,7 +139,6 @@ Ioss::ElementTopology *Ioss::Tri4a::edge_type(int edge_number) const
   if (edge_number == 1) {
     return Ioss::ElementTopology::factory("edge3");
   }
-  else {
-    return Ioss::ElementTopology::factory("edge2");
-  }
+
+  return Ioss::ElementTopology::factory("edge2");
 }

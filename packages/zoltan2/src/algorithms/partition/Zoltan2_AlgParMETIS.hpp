@@ -214,8 +214,8 @@ void AlgParMETIS<Adapter>::partition(
   RCP<Comm<int> > subcomm;
   MPI_Comm mpicomm;  // Note:  mpicomm is valid only while subcomm is in scope
 
+  int nKeep = 0;
   if (np > 1) {
-    int nKeep = 0;
     Array<int> keepRanks(np);
     for (int i = 0; i < np; i++) {
       if ((pm_vtxdist[i+1] - pm_vtxdist[i]) > 0) {
@@ -288,11 +288,14 @@ void AlgParMETIS<Adapter>::partition(
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
       if ((approach == "repartition") || (approach == "maximize_overlap")) {
-        if (np > 1) 
+        if (nKeep > 1) 
           // ParMETIS_V3_AdaptiveRepart requires two or more processors
           parmetis_method = "ADAPTIVE_REPART";
         else
-          parmetis_method = "REFINE_KWAY";
+          // Probably best to do PartKway if nKeep == 1; 
+          // I think REFINE_KWAY won't give a good answer in most use cases
+          // parmetis_method = "REFINE_KWAY";
+          parmetis_method = "PARTKWAY";
       }
     }
 
@@ -333,12 +336,17 @@ void AlgParMETIS<Adapter>::partition(
                                              pm_partList, &mpicomm);
       delete [] pm_vsize;
     }
-    else if (parmetis_method == "REFINE_KWAY") {
-      pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
-                                         pm_vwgts, pm_ewgts, &pm_wgtflag,
-                                         &pm_numflag, &pm_nCon, &pm_nPart,
-                                         pm_partsizes, pm_imbTols, pm_options,
-                                         &pm_edgecut, pm_partList, &mpicomm);
+    // else if (parmetis_method == "REFINE_KWAY") {
+    //   We do not currently have an execution path that calls REFINE_KWAY.
+    //   pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
+    //                                      pm_vwgts, pm_ewgts, &pm_wgtflag,
+    //                                     &pm_numflag, &pm_nCon, &pm_nPart,
+    //                                    pm_partsizes, pm_imbTols, pm_options,
+    //                                      &pm_edgecut, pm_partList, &mpicomm);
+    // }
+    else {
+      // We should not reach this condition.
+      throw std::logic_error("\nInvalid ParMETIS method requested.\n");
     }
 
     // Clean up 

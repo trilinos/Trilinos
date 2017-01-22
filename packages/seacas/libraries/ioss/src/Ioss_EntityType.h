@@ -37,21 +37,22 @@ namespace Ioss {
   /** \brief The particular type of GroupingEntity.
    */
   enum EntityType {
-    NODEBLOCK    = 1,
-    EDGEBLOCK    = 2,
-    FACEBLOCK    = 4,
-    ELEMENTBLOCK = 8,
-    NODESET      = 16,
-    EDGESET      = 32,
-    FACESET      = 64,
-    ELEMENTSET   = 128,
-    SIDESET      = 256,
-    SURFACE      = 256, //: Same as sideset
-    COMMSET      = 512,
-    SIDEBLOCK    = 1024,
-    REGION       = 2048,
-    SUPERELEMENT = 4096,
-    INVALID_TYPE = 8192
+    NODEBLOCK       = 1,
+    EDGEBLOCK       = 2,
+    FACEBLOCK       = 4,
+    ELEMENTBLOCK    = 8,
+    NODESET         = 16,
+    EDGESET         = 32,
+    FACESET         = 64,
+    ELEMENTSET      = 128,
+    SIDESET         = 256,
+    SURFACE         = 256, //: Same as sideset
+    COMMSET         = 512,
+    SIDEBLOCK       = 1024,
+    REGION          = 2048,
+    SUPERELEMENT    = 4096,
+    STRUCTUREDBLOCK = 8192,
+    INVALID_TYPE    = 16384
   };
 }
 #endif

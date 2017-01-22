@@ -54,7 +54,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 
-#include "ROL_ParametrizedObjective.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 
@@ -63,13 +63,13 @@
 typedef double RealT;
 
 template<class Real> 
-class ParametrizedObjectiveEx7 : public ROL::ParametrizedObjective<Real> {
+class ParametrizedObjectiveEx7 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
     Real quad(0), lin(0);
-    std::vector<Real> p = ROL::ParametrizedObjective<Real>::getParameter();
+    std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ex->size());
     for ( unsigned i = 0; i < size; i++ ) {
       quad += (*ex)[i]*(*ex)[i]; 
@@ -83,7 +83,7 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
     Teuchos::RCP<std::vector<Real> > eg
       = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    std::vector<Real> p = ROL::ParametrizedObjective<Real>::getParameter();
+    std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ex->size());
     const Real two(2);
     for ( unsigned i = 0; i < size; i++ ) {
@@ -97,7 +97,7 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
     Teuchos::RCP<std::vector<Real> > ehv
       = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    std::vector<Real> p = ROL::ParametrizedObjective<Real>::getParameter();
+    std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ev->size());
     const Real two(2);
     for ( unsigned i = 0; i < size; i++ ) {
@@ -107,7 +107,7 @@ public:
 };
 
 void setUpAndSolve(Teuchos::ParameterList &list,
-                   Teuchos::RCP<ROL::ParametrizedObjective<RealT> > &pObj,
+                   Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                    Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                    Teuchos::RCP<ROL::Vector<RealT> > &x,
                    Teuchos::RCP<ROL::Vector<RealT> > &d,
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
       Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj =
+    Teuchos::RCP<ROL::Objective<RealT> > pObj =
       Teuchos::rcp(new ParametrizedObjectiveEx7<RealT>);
     // Build bound constraints
     std::vector<RealT> l(dim,zero);

@@ -81,10 +81,10 @@ namespace Intrepid2 {
                                                                    numSideNodeMaps, maxNumNodesPerSide);
 
     const auto sideDim = spaceDim - 1;
-    for (auto i=0;i<numSideNodeMaps;++i) {
+    for (ordinal_type i=0;i<numSideNodeMaps;++i) {
       const auto side = sideOrd[i];
       sideNodeMapHost(i,0) = subcvCellTopo_.getNodeCount(sideDim, side);
-      for (auto j=0;j<sideNodeMapHost(i,0);++j)
+      for (ordinal_type j=0;j<sideNodeMapHost(i,0);++j)
         sideNodeMapHost(i,j+1) = subcvCellTopo_.getNodeMap(sideDim, side, j);
     }
     sideNodeMap_ = Kokkos::create_mirror_view(typename SpT::memory_space(), sideNodeMapHost);
@@ -94,7 +94,7 @@ namespace Intrepid2 {
 
     // map to reference subcell function relies on uvm; some utility functions in cell tools still need uvm
     sidePoints_ = Kokkos::DynRankView<PT,SpT>("CubatureControlVolumeSide::sidePoints", numSideNodeMaps, spaceDim);
-    for (auto i=0;i<numSideNodeMaps;++i) {
+    for (ordinal_type i=0;i<numSideNodeMaps;++i) {
       const auto sideRange = Kokkos::pair<ordinal_type,ordinal_type>(i, i+1);
       auto sidePoint = Kokkos::subdynrankview(sidePoints_, sideRange, Kokkos::ALL());
       CellTools<SpT>::mapToReferenceSubcell(sidePoint,
@@ -125,7 +125,7 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
                                   cubPoints.dimension(2) != cubWeights.dimension(2) ||
-                                  cubPoints.dimension(2) != getDimension(), std::invalid_argument,
+                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeSide): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
@@ -168,7 +168,7 @@ namespace Intrepid2 {
       break;
     }
 
-    for (auto i=0;i<numSideNodeMaps;++i) {
+    for (ordinal_type i=0;i<numSideNodeMaps;++i) {
       const auto numSubcvPoints = 1;
       const auto numNodesPerThisSide = nodeRangePerSide[i].second - nodeRangePerSide[i].first;
       tempPointViewType subcvJacobian("CubatureControlVolume::subcvJacobian",

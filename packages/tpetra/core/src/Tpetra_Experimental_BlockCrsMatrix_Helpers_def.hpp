@@ -192,7 +192,7 @@ namespace Experimental {
 
   template<class Scalar, class LO, class GO, class Node>
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
-
+    using Teuchos::RCP;
     typedef Tpetra::Map<LO, GO, Node>                      map_type;
 
     size_t numRows = A.getGlobalNumRows();
@@ -286,7 +286,7 @@ namespace Experimental {
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  RCP<BlockCrsMatrix<Scalar, LO, GO, Node>>
+  Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >
   convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize)
   {
 
@@ -298,8 +298,9 @@ namespace Experimental {
            3) Point column map and block column map are ordered consistently.
       */
 
-      using Teuchos::ArrayView;
       using Teuchos::Array;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
 
       typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
       typedef Tpetra::Map<LO,GO,Node>                                 map_type;

@@ -150,21 +150,22 @@ TEST( StkMeshIoBroker, testModifyTopology )
 
         {
             stk::mesh::BulkData & mesh = fixture.bulk_data();
+            mesh.initialize_face_adjacent_element_graph();
             mesh.modification_begin();
             stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
             stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
 
-            stk::mesh::PartVector add_parts;
-            add_parts.push_back(&inactive_part);
+            stk::mesh::PartVector add_parts = { &inactive_part };
             mesh.change_entity_parts(element2, add_parts);
 
-            stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, 1, side_set_part);
             const int elem1_side_ordinal = 5;
-            stk::mesh::declare_element_side(mesh, element1, side, elem1_side_ordinal);
+            stk::mesh::Entity side1 = mesh.declare_element_side(element1, elem1_side_ordinal, stk::mesh::PartVector{&side_set_part});
 
             const int elem2_side_ordinal = 4;
-            stk::mesh::declare_element_side(mesh, element2, side, elem2_side_ordinal);
+            stk::mesh::Entity side2 = mesh.declare_element_side(element2, elem2_side_ordinal, stk::mesh::PartVector{&side_set_part});
             mesh.modification_end();
+
+            EXPECT_EQ(side1, side2);
         }
 
         const std::string output_base_filename = "StkMeshIoBroker.testModifyTopology.e";

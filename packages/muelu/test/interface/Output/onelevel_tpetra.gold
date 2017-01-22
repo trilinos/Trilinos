@@ -3,7 +3,7 @@ Level 0
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   relaxation: type = Jacobi   [default]
   relaxation: sweeps = 1   [default]
   relaxation: damping factor = 1   [default]
@@ -15,7 +15,7 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

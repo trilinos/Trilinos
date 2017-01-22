@@ -327,6 +327,8 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
 
   face_is_member.reserve(number_sides);
 
+  const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown");
+
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
 
@@ -390,10 +392,12 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
       topo         = block->topology()->boundary_type(side_id);
     }
 
+    bool face_topo_match  = ftopo == unknown || topo == ftopo;
+    bool block_topo_match = parent_topo == unknown || block_topo == parent_topo;
     // See if the face topology and the parent element topology for
     // the current face match the topology associated with this face block.
-    if (topo == ftopo && block_topo == parent_topo &&
-        (parent_block == nullptr || parent_block == block) && !block_is_omitted(block)) {
+    if (face_topo_match && block_topo_match && (parent_block == nullptr || parent_block == block) &&
+        !block_is_omitted(block)) {
       // This face/edge  belongs in the face/edge block
       face_is_member.push_back(1);
     }
@@ -548,13 +552,14 @@ std::string Ioss::Utils::lowercase(const std::string &name)
  * based on the property value.  Either "TRUE", "YES", "ON", or 1 for true;
  * or "FALSE", "NO", "OFF", or not equal to 1 for false.
  * \param[in] properties the Ioss::PropertyManager containing the properties to be checked.
- * \param[in] prop_name the name of the property to check whether it exists and if so, set its value. 
+ * \param[in] prop_name the name of the property to check whether it exists and if so, set its
+ * value.
  * \param[out] prop_value if prop_name exists and has a valid value, set prop_value accordingly.
  * \returns true/false depending on whether property found and value set.
  */
 
 bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &properties,
-					  const std::string &prop_name, bool &prop_value)
+                                          const std::string &prop_name, bool &prop_value)
 {
   bool found_property = false;
   if (properties.exists(prop_name)) {
@@ -565,18 +570,18 @@ bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &propertie
     else {
       std::string yesno = Ioss::Utils::uppercase(properties.get(prop_name).get_string());
       if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
-	prop_value = true;
+        prop_value = true;
       }
       else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
-	prop_value = false;
+        prop_value = false;
       }
       else {
-	found_property = false;
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
-	       << "       for " << prop_name << ". Found '" << yesno
-	       << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
-	IOSS_ERROR(errmsg);
+        found_property = false;
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
+               << "       for " << prop_name << ". Found '" << yesno
+               << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+        IOSS_ERROR(errmsg);
       }
     }
   }

@@ -76,7 +76,11 @@
 
 SystemInterface interface;
 
+#if 0
 #define DIFF_OUT(buf) std::cout << trmclr::green << buf << '\n' << trmclr::normal
+#else
+#define DIFF_OUT(buf) std::cout << buf << '\n'
+#endif
 
 struct TimeInterp
 {
@@ -225,7 +229,7 @@ void floating_point_exception_handler(int signo)
 {
   if (!checking_invalid) {
     ERROR("caught floating point exception (" << signo << ")"
-	  << " bad data?\n");
+                                              << " bad data?\n");
     exit(1);
   }
   else
@@ -341,7 +345,7 @@ int main(int argc, char *argv[])
 
   if (interface.summary_flag && file1_name == "") {
     ERROR("Summary option specified but an exodus "
-	  "file was not specified.\n");
+          "file was not specified.\n");
     exit(1);
   }
 
@@ -721,7 +725,7 @@ namespace {
         interface.time_step_offset = file1.Num_Times() - file2.Num_Times();
         if (interface.time_step_offset < 0) {
           ERROR("Second database must have less timesteps than "
-		<< "first database.\n");
+                << "first database.\n");
           exit(1);
         }
       }
@@ -732,7 +736,7 @@ namespace {
       if (interface.time_step_offset == -2) {
         if (file1.Num_Times() < file2.Num_Times()) {
           ERROR("Second database must have less timesteps than "
-		<< "first database.\n");
+                << "first database.\n");
           exit(1);
         }
 
@@ -868,13 +872,11 @@ namespace {
             int final2 = file2.Num_Times();
             if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
-              std::cout << trmclr::green
-			<< "\tFinal database times differ by "
-                        << FileDiff(file1.Time(time_step1), file2.Time(final2),
-                                    interface.final_time_tol.type)
-                        << " which is not within specified " << interface.final_time_tol.typestr()
-                        << " tolerance of " << interface.final_time_tol.value << " (FAILED)\n"
-			<< trmclr::normal;
+              DIFF_OUT("\tFinal database times differ by "
+                       << FileDiff(file1.Time(time_step1), file2.Time(final2),
+                                   interface.final_time_tol.type)
+                       << " which is not within specified " << interface.final_time_tol.typestr()
+                       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
             }
           }
         }
@@ -899,9 +901,7 @@ namespace {
            interface.glob_var_names.empty() && interface.node_var_names.empty() &&
            interface.elmt_var_names.empty() && interface.elmt_att_names.empty() &&
            interface.ns_var_names.empty() && interface.ss_var_names.empty())) {
-        std::cout << trmclr::green
-		  << "\nWARNING: No comparisons were performed during this execution.\n"
-		  << trmclr::normal;
+        DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
         diff_flag = true;
       }
     }
@@ -1194,7 +1194,7 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       }
       gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interface.output_type);
     }
-    ex_put_glob_vars(out_file_id, t2.step1, interface.glob_var_names.size(), gvals);
+    ex_put_var(out_file_id, t2.step1, EX_GLOBAL, 1, 0, interface.glob_var_names.size(), gvals);
     return diff_flag;
   }
 
@@ -1487,15 +1487,13 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       eblock1->Load_Results(step1, vidx1);
       const double *vals1 = eblock1->Get_Results(vidx1);
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in block " << eblock1->Id()
-	      << ", file 1\n");
+        ERROR("Could not find variable " << name << " in block " << eblock1->Id() << ", file 1\n");
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        ERROR("NaN found for variable " << name << " in block " << eblock1->Id()
-	      << ", file 1\n");
+        ERROR("NaN found for variable " << name << " in block " << eblock1->Id() << ", file 1\n");
         diff_flag = true;
       }
 
@@ -1514,14 +1512,13 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 
         if (vals2 == nullptr) {
           ERROR("Could not find variable " << name << " in block " << eblock2->Id()
-		<< ", file 2\n");
+                                           << ", file 2\n");
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, eblock2->Size())) {
-          ERROR("NaN found for variable " << name << " in block " << eblock2->Id()
-		<< ", file 2\n");
+          ERROR("NaN found for variable " << name << " in block " << eblock2->Id() << ", file 2\n");
           diff_flag = true;
         }
       }
@@ -1676,15 +1673,13 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       const double *vals1 = nset1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in nodeset " << nset1->Id()
-	      << ", file 1\n");
+        ERROR("Could not find variable " << name << " in nodeset " << nset1->Id() << ", file 1\n");
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, nset1->Size())) {
-        ERROR("NaN found for variable " << name << " in nodeset " << nset1->Id()
-	      << ", file 1\n");
+        ERROR("NaN found for variable " << name << " in nodeset " << nset1->Id() << ", file 1\n");
         diff_flag = true;
       }
 
@@ -1697,14 +1692,13 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 
         if (vals2 == nullptr) {
           ERROR("Could not find variable " << name << " in nodeset " << nset2->Id()
-		<< ", file 2\n");
+                                           << ", file 2\n");
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, nset2->Size())) {
-          ERROR("NaN found for variable " << name << " in nodeset " << nset2->Id()
-		<< ", file 2\n");
+          ERROR("NaN found for variable " << name << " in nodeset " << nset2->Id() << ", file 2\n");
           diff_flag = true;
         }
       }
@@ -1848,15 +1842,13 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       const double *vals1 = sset1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find variable " << name << " in sideset " << sset1->Id()
-	      << ", file 1\n");
+        ERROR("Could not find variable " << name << " in sideset " << sset1->Id() << ", file 1\n");
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, sset1->Size())) {
-        ERROR("NaN found for variable " << name << " in sideset " << sset1->Id()
-	      << ", file 1\n");
+        ERROR("NaN found for variable " << name << " in sideset " << sset1->Id() << ", file 1\n");
         diff_flag = true;
       }
 
@@ -1868,14 +1860,13 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 
         if (vals2 == nullptr) {
           ERROR("Could not find variable " << name << " in sideset " << sset2->Id()
-		<< ", file 2\n");
+                                           << ", file 2\n");
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, sset2->Size())) {
-          ERROR("NaN found for variable " << name << " in sideset " << sset2->Id()
-		<< ", file 2\n");
+          ERROR("NaN found for variable " << name << " in sideset " << sset2->Id() << ", file 2\n");
           diff_flag = true;
         }
       }
@@ -1995,8 +1986,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     const double *vals1 = sset1->Distribution_Factors();
 
     if (vals1 == nullptr) {
-      ERROR("Could not read distribution factors in sideset "
-	    << sset1->Id() << ", file 1\n");
+      ERROR("Could not read distribution factors in sideset " << sset1->Id() << ", file 1\n");
       diff_flag = true;
       continue;
     }
@@ -2011,8 +2001,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     {
       std::pair<INT, INT> range1 = sset1->Distribution_Factor_Range(ecount - 1);
       if (Invalid_Values(vals1, range1.second)) {
-        ERROR("NaN found for distribution factors in sideset " << sset1->Id()
-	      << ", file 1\n");
+        ERROR("NaN found for distribution factors in sideset " << sset1->Id() << ", file 1\n");
         diff_flag = true;
       }
 
@@ -2023,8 +2012,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     double *vals2 = (double *)sset2->Distribution_Factors();
 
     if (vals2 == nullptr) {
-      ERROR("Could not read distribution factors in sideset "
-	    << sset2->Id() << ", file 2\n");
+      ERROR("Could not read distribution factors in sideset " << sset2->Id() << ", file 2\n");
       diff_flag = true;
       continue;
     }
@@ -2032,8 +2020,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     {
       std::pair<INT, INT> range2 = sset2->Distribution_Factor_Range(sset2->Size() - 1);
       if (Invalid_Values(vals2, range2.second)) {
-        ERROR("NaN found for distribution factors in sideset " << sset2->Id()
-	      << ", file 2\n");
+        ERROR("NaN found for distribution factors in sideset " << sset2->Id() << ", file 2\n");
         diff_flag = true;
       }
 
@@ -2161,15 +2148,14 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       const double *vals1 = eblock1->Get_Attributes(idx1);
 
       if (vals1 == nullptr) {
-        ERROR("Could not find element attribute " << name << " in block "
-	      << eblock1->Id() << ", file 1\n");
+        ERROR("Could not find element attribute " << name << " in block " << eblock1->Id()
+                                                  << ", file 1\n");
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        ERROR("NaN found for attribute " << name << " in block " << eblock1->Id()
-	      << ", file 1\n");
+        ERROR("NaN found for attribute " << name << " in block " << eblock1->Id() << ", file 1\n");
         diff_flag = true;
       }
 
@@ -2178,15 +2164,14 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       const double *vals2 = eblock2->Get_Attributes(idx2);
 
       if (vals2 == nullptr) {
-        ERROR("Could not find element attribute " << name << " in block "
-	      << eblock2->Id() << ", file 2\n");
+        ERROR("Could not find element attribute " << name << " in block " << eblock2->Id()
+                                                  << ", file 2\n");
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals2, eblock2->Size())) {
-        ERROR("NaN found for attribute " << name << " in block " << eblock2->Id()
-	      << ", file 2\n");
+        ERROR("NaN found for attribute " << name << " in block " << eblock2->Id() << ", file 2\n");
         diff_flag = true;
       }
 

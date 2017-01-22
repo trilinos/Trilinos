@@ -257,6 +257,16 @@ namespace Iopx {
                 "isParallelConsistent property.";
       IOSS_ERROR(errmsg);
     }
+
+    if (!is_input()) {
+      // Check whether appending to existing file...
+      if (open_create_behavior() == Ioss::DB_APPEND ||
+          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
+        // Append to file if it already exists -- See if the file exists.
+        Ioss::FileInfo file             = Ioss::FileInfo(get_filename());
+        fileExists                      = file.exists();
+      }
+    }
   }
 
   DatabaseIO::~DatabaseIO() = default;
@@ -382,34 +392,32 @@ namespace Iopx {
 
     int par_mode = get_parallel_io_mode(properties);
 
-    MPI_Info info        = MPI_INFO_NULL;
-    int      app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename = get_filename();
-    
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
+    MPI_Info    info        = MPI_INFO_NULL;
+    int         app_opt_val = ex_opts(EX_VERBOSE);
+    std::string filename    = get_filename();
+
     // See bug description in thread at
     // https://www.open-mpi.org/community/lists/users/2015/01/26167.php and
     // https://prod.sandia.gov/sierra-trac/ticket/14679
     // Kluge is to set cwd to pathname, open file, then set cwd back to original.
+    //
+    // Since several different mpi implementations are based on the
+    // mpich code which introduced this bug, it has been difficult to
+    // create an ifdef'd version of the fix which is only applied to the
+    // buggy mpiio code.  Therefore, we always do chdir call.  Maybe in several
+    // years, we can remove this code and everything will work...
     Ioss::FileInfo file(filename);
-    std::string path = file.pathname();
-    filename = file.tailname();
+    std::string    path = file.pathname();
+    filename            = file.tailname();
 
-    char* current_cwd = getcwd(0,0); 
-    chdir(path.c_str()); 
-#endif
-#endif
+    char *current_cwd = getcwd(0, 0);
+    chdir(path.c_str());
 
     exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
                                 &io_word_size, &version, util().communicator(), info);
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     chdir(current_cwd);
     std::free(current_cwd);
-#endif
-#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
@@ -417,9 +425,10 @@ namespace Iopx {
       assert(exodusFilePtr >= 0);
       // Check byte-size of integers stored on the database...
       if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
-	if (myProcessor == 0) {
-	  std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte integers.\n";
-	}
+        if (myProcessor == 0) {
+          std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
+                       "integers.\n";
+        }
         ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
@@ -488,26 +497,20 @@ namespace Iopx {
 
     int par_mode = get_parallel_io_mode(properties);
 
-    MPI_Info info        = MPI_INFO_NULL;
-    int      app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename = get_filename();
+    MPI_Info    info        = MPI_INFO_NULL;
+    int         app_opt_val = ex_opts(EX_VERBOSE);
+    std::string filename    = get_filename();
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     Ioss::FileInfo file(filename);
-    std::string path = file.pathname();
-    filename = file.tailname();
+    std::string    path = file.pathname();
+    filename            = file.tailname();
 
-    char* current_cwd = getcwd(0,0); 
-    chdir(path.c_str()); 
-#endif
-#endif
+    char *current_cwd = getcwd(0, 0);
+    chdir(path.c_str());
 
     if (fileExists) {
-      exodusFilePtr =
-          ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
-                      &io_word_size, &version, util().communicator(), info);
-
+      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
+                                  &io_word_size, &version, util().communicator(), info);
     }
     else {
       // If the first write for this file, create it...
@@ -519,15 +522,10 @@ namespace Iopx {
       }
       exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
                                     &dbRealWordSize, util().communicator(), info);
-
     }
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     chdir(current_cwd);
     std::free(current_cwd);
-#endif
-#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
@@ -1067,6 +1065,13 @@ namespace Iopx {
               std::find(blockOmissions.begin(), blockOmissions.end(), block_name);
           if (I != blockOmissions.end()) {
             io_block->property_add(Ioss::Property(std::string("omitted"), 1));
+          }
+          else {
+            // Try again with the alias...
+            I = std::find(blockOmissions.begin(), blockOmissions.end(), alias);
+            if (I != blockOmissions.end()) {
+              io_block->property_add(Ioss::Property(std::string("omitted"), 1));
+            }
           }
         }
         if (block_name != alias) {
@@ -1879,7 +1884,7 @@ void DatabaseIO::get_commsets()
   // If this is a serial execution, there will be no communication
   // nodesets, just return an empty container.
 
-  if (isParallel || isSerialParallel) {
+  if (isParallel) {
 
     // Create a single node commset
     Ioss::CommSet *commset =
@@ -3489,7 +3494,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
                                      nodeGlobalImplicitMap);
       }
 
-      ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset + 1, file_count, data);
+      ierr = ex_put_partial_conn(get_file_pointer(), EX_ELEM_BLOCK, id, proc_offset + 1, file_count, data, NULL, NULL);
       if (ierr < 0)
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
@@ -3521,7 +3526,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
                                      nodeGlobalImplicitMap);
       }
 
-      ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset + 1, file_count, data);
+      ierr = ex_put_partial_conn(get_file_pointer(), EX_ELEM_BLOCK, id, proc_offset + 1, file_count, data, NULL, NULL);
       if (ierr < 0)
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
@@ -4014,7 +4019,7 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
         std::ostringstream errmsg;
         errmsg << "ERROR: Problem outputting nodal variable '" << var_name
                << "' with index = " << var_index << " to file "
-               << util().decode_filename(get_filename(), isParallel) << "\n"
+               << get_filename() << " on processor " << myProcessor << "\n"
                << "Should have output " << nodeCount << " values, but instead only output "
                << num_out << " values.\n";
         IOSS_ERROR(errmsg);
@@ -4037,7 +4042,7 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
         std::ostringstream errmsg;
         errmsg << "ERROR: Problem outputting nodal variable '" << var_name
                << "' with index = " << var_index << " to file "
-               << util().decode_filename(get_filename(), isParallel) << "\n";
+               << get_filename() << " on processor " << myProcessor << "\n";
         IOSS_ERROR(errmsg);
       }
     }
@@ -4059,7 +4064,7 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
   ssize_t    eb_offset = 0;
   if (ge->type() == Ioss::ELEMENTBLOCK) {
     const Ioss::ElementBlock *elb = dynamic_cast<const Ioss::ElementBlock *>(ge);
-    assert(elb != nullptr);
+    Ioss::Utils::check_dynamic_cast(elb);
     eb_offset = elb->get_offset();
     map       = &elemMap;
   }

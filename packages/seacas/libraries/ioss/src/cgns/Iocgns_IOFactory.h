@@ -54,7 +54,8 @@ namespace Iocgns {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              MPI_Comm                     communicator,
+                              const Ioss::PropertyManager &properties) const override;
   };
 }
 #endif // IOSS_Iocgns_IOFactory_h

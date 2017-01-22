@@ -211,7 +211,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -286,11 +285,7 @@ namespace panzer {
     panzer::registerScalarParameter("DUMMY_B",*ap.gd->pl,5.0);
 
     {
-      typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
-      typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef Thyra::SpmdVectorBase<double> SpmdVector;
       typedef panzer::ModelEvaluator<double> PME;
 
@@ -415,8 +410,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -532,8 +525,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -558,8 +549,6 @@ namespace panzer {
       RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
       RCP<Thyra::VectorBase<double> > fd = Thyra::createMember(me->get_f_space());
       RCP<Thyra::VectorBase<double> > dfdp = Thyra::createMember(me->get_f_space());
-
-      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
 
       // TEST DfDp
       /////////////////////////////////////////////////////
@@ -613,7 +602,6 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
     typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
@@ -757,7 +745,6 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -882,7 +869,6 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -1008,9 +994,7 @@ namespace panzer {
   //    previously set nominal values (like the inital condition)
   TEUCHOS_UNIT_TEST(model_evaluator, nominal_values)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
-    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
 
     using Teuchos::RCP;
@@ -1284,9 +1268,9 @@ namespace panzer {
     pl->set("X Elements",6);
     pl->set("Y Elements",4);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm 
        = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
@@ -1330,8 +1314,8 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
     ap.wkstContainer = wkstContainer;
@@ -1341,7 +1325,7 @@ namespace panzer {
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     // build the state dof manager and LOF
     if(!useBlocking) {
@@ -1372,7 +1356,7 @@ namespace panzer {
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
-          = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
+        = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY",fp);
       dofManager->addField("eblock-1_0","DENSITY",fp);
 

@@ -47,8 +47,8 @@ time steps) can be determined by using the ex_inquire() or
 ex_inquire_int() routines.
 
 Because time values are floating point values, the application code
-must declare the array passed to be the appropriate type (\c float or
-\c double) to match the compute word size passed in ex_create() or
+must declare the array passed to be the appropriate type (float or
+double) to match the compute word size passed in ex_create() or
 ex_open().
 
 \return In case of an error, ex_get_all_times() returns a negative
@@ -65,7 +65,7 @@ all time steps.
 The following code segment will read the time values for all time
 steps stored in the data file:
 
-\code
+~~~{.c}
 int error, exoid, num_time_steps;
 float *time_values;
 
@@ -76,7 +76,7 @@ num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
 time_values = (float *) calloc(num_time_steps, sizeof(float));
 
 error = ex_get_all_times(exoid, time_values);
-\endcode
+~~~
 
 */
 

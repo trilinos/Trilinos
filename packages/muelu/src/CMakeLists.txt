@@ -27,6 +27,7 @@ INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
 INCLUDE_DIRECTORIES(${DIR}/Interface)
+INCLUDE_DIRECTORIES(${DIR}/Interface/FacadeClasses)
 INCLUDE_DIRECTORIES(${DIR}/Misc)
 INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
@@ -56,7 +57,9 @@ if (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 
-
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
+ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
@@ -338,6 +341,7 @@ APPEND_GLOB(HEADERS */*/*/*.hpp)
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(HEADERS_INTERFACE "")
 APPEND_GLOB(HEADERS_INTERFACE Interface//*.hpp)
+APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
 LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
@@ -374,6 +378,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJ
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface/FacadeClasses NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Misc NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/MueCentral NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Rebalancing NOSIERRABJAM)
@@ -393,9 +398,9 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 ENDIF()
-
-INCLUDE_DIRECTORIES(${BDIR}/)
-APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
+ENDIF()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
@@ -403,13 +408,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
+INCLUDE_DIRECTORIES(${BDIR}/)
+APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
+
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(SOURCES_INTERFACE "")
 APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
@@ -438,6 +449,3 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

@@ -51,6 +51,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -148,7 +149,7 @@ namespace Intrepid2 {
         // exception #5
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(0,4,1));
         // exception #6
-        INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(7));
+        INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(numFields));
         // exception #7
         INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(-1));
 
@@ -431,7 +432,7 @@ namespace Intrepid2 {
             }
 
             const ValueType expected_normal = (i == j);
-            if (std::abs(normal - expected_normal) > tol || isnan(normal)) {
+            if (std::abs(normal - expected_normal) > tol || std::isnan(normal)) {
               errorFlag++;
               std::stringstream ss;
               ss << "\nNormal component of basis function " << i << " at (" << cvals_host(j,0) << ", " << cvals_host(j,1)<< ", " << cvals_host(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";

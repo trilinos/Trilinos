@@ -91,7 +91,7 @@ private:
   
   /** \brief Contains points of this cubature rule.
   */
-  std::map<Scalar,int> points_; // keys = nodes, map values = location of weights
+  std::map<Scalar,ordinal_type> points_; // keys = nodes, map values = location of weights
 
   /** \brief Contains points of this cubature rule.
   */
@@ -99,12 +99,12 @@ private:
 
   /** \brief Contains the number of nodes for this cubature rule.
   */
-  int numPoints_; 
+  ordinal_type numPoints_; 
   
   /** \brief The degree of polynomials that are integrated
              exactly by this cubature rule.
   */
-  int degree_;
+  ordinal_type degree_;
 
   /** \brief Type of integration points.
   */
@@ -123,13 +123,13 @@ public:
       \param degree       [in]   - The degree of polynomials that are integrated
                                    exactly by this cubature rule. Default: 0.
   */
-  CubatureLineSorted(int degree = 0, EIntrepidBurkardt rule = BURK_CLENSHAWCURTIS, bool isNormalized = false);
+  CubatureLineSorted(ordinal_type degree = 0, EIntrepidBurkardt rule = BURK_CLENSHAWCURTIS, bool isNormalized = false);
 
   /** \brief Constructor.
 
       \param numPoints    [in]   - The number of cubature points. Default: 0.
   */
-  CubatureLineSorted(EIntrepidBurkardt rule = BURK_CLENSHAWCURTIS, int numPoints = 0, bool isNormalized = false);
+  CubatureLineSorted(EIntrepidBurkardt rule = BURK_CLENSHAWCURTIS, ordinal_type numPoints = 0, bool isNormalized = false);
 
   CubatureLineSorted(std::vector<Scalar> & points, std::vector<Scalar> & weights);
 
@@ -156,16 +156,16 @@ public:
 
   /** \brief Returns the number of cubature points.
   */
-  int getNumPoints() const;
+  ordinal_type getNumPoints() const;
 
   /** \brief Returns max. degree of polynomials that are integrated exactly.
              The return vector has size 1.
   */
-  void getAccuracy(std::vector<int> & accuracy) const;
+  void getAccuracy(std::vector<ordinal_type> & accuracy) const;
 
   /** \brief Returns dimension of domain of integration.
   */  
-  int getDimension() const;
+  ordinal_type getDimension() const;
 
   /** \brief Returns cubature name.
   */
@@ -173,11 +173,11 @@ public:
 
   /** \brief Get a specific node described by the iterator location.
   */
-  Scalar getNode(typename std::map<Scalar,int>::iterator it);
+  Scalar getNode(typename std::map<Scalar,ordinal_type>::iterator it);
 
   /** \brief Get a specific weight described by the integer location.
   */
-  Scalar getWeight(int weight);
+  Scalar getWeight(ordinal_type weight);
 
   /** \brief Get a specific weight described by the corresponding node.
   */
@@ -185,11 +185,11 @@ public:
 
   /** \brief Initiate iterator at the beginning of data.
   */
-  typename std::map<Scalar,int>::iterator begin(void);
+  typename std::map<Scalar,ordinal_type>::iterator begin(void);
 
   /** \brief Initiate iterator at the end of data.
   */
-  typename std::map<Scalar,int>::iterator end(void);
+  typename std::map<Scalar,ordinal_type>::iterator end(void);
 
   /** \brief Replace CubatureLineSorted values with 
              "this = alpha1*this+alpha2*cubRule2".
@@ -197,7 +197,7 @@ public:
   void update(Scalar alpha2, CubatureLineSorted<Scalar> & cubRule2, Scalar alpha1); 
 };
 
-int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule);
+ordinal_type growthRule1D(ordinal_type index, EIntrepidGrowth growth, EIntrepidBurkardt rule);
 
 } // Intrepid Namespace
 

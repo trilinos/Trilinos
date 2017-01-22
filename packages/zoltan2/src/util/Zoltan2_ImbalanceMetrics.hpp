@@ -96,9 +96,6 @@ void setGlobalMin(scalar_t x) { this->setMetricValue("global minimum", x );}
 /*! \brief Set the global maximum across parts.  */
 void setGlobalMax(scalar_t x) { this->setMetricValue("global maximum", x );}
 
-/*! \brief Set the global average (sum / numParts).  */
-void setGlobalAvg(scalar_t x) { this->setMetricValue("global average", x );}
-
 /*! \brief Set the imbalance of the worst imbalanced part. This is what we normally call the imbalance of a partition. */
 void setMaxImbalance(scalar_t x) { this->setMetricValue("maximum imbalance", x);}
 
@@ -116,9 +113,6 @@ scalar_t getGlobalMin() const { return this->getMetricValue("global minimum");}
 
 /*! \brief Get the global maximum across all parts. */
 scalar_t getGlobalMax() const { return this->getMetricValue("global maximum");}
-
-/*! \brief Get the average of the sum over all parts. */
-scalar_t getGlobalAvg() const { return this->getMetricValue("global average");}
 
 /*! \brief Get the imbalance of the most imbalanced part.
      This is what we normally call the imbalance of a partition.
@@ -189,12 +183,16 @@ template <typename scalar_t>
   }
 
   os << std::setw(20) << label;
-  os << std::setw(11) << std::setprecision(4) << this->getMetricValue("global minimum");
-  os << std::setw(11) << std::setprecision(4) << this->getMetricValue("global maximum");
-  os << std::setw(11) << std::setprecision(4) << this->getMetricValue("global average");
+  os << std::setw(11) << std::setprecision(4) 
+     << this->getMetricValue("global minimum");
+  os << std::setw(11) << std::setprecision(4) 
+     << this->getMetricValue("global maximum");
+  os << std::setw(11) << std::setprecision(4) 
+     << this->getMetricValue("global average");
 
   os << std::setw(2) << " ";
-  os << std::setw(10) << std::setprecision(4) << this->getMetricValue("maximum imbalance");
+  os << std::setw(10) << std::setprecision(4) 
+     << this->getMetricValue("maximum imbalance");
 
   os << std::endl;
 }

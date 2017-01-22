@@ -82,13 +82,16 @@ private:
   Teuchos::RCP<const PureBasis> basis;
   int num_pts;
   int num_dim;
+  int quad_degree;
 
   PHX::MDField<ScalarT,Cell,BASIS,Dim> tangents;
-  PHX::MDField<ScalarT,Cell,BASIS,Dim> vector_values;
+  std::vector<PHX::MDField<ScalarT,Cell,BASIS,Dim> > vector_values;
   PHX::MDField<ScalarT,Cell,BASIS> result;
 
   ProjectToEdges();
 
+  PHX::MDField<ScalarT,Cell,NODE> dof_orientation;
+  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldTangents;
 };
 
 }

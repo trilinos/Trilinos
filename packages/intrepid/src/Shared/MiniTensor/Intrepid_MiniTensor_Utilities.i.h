@@ -42,10 +42,49 @@
 #if !defined(Intrepid_MiniTensor_Utilities_i_h)
 #define Intrepid_MiniTensor_Utilities_i_h
 
+#include <cfloat>
 #include <cmath>
 #include <limits>
 
 namespace Intrepid {
+
+//
+//
+//
+template<typename T>
+void
+swap(T & a, T & b)
+{
+  // Guard against the same memory location.
+  if (&a == &b) return;
+
+  // XOR algorithm
+  a ^= b;
+  b ^= a;
+  a ^= b;
+
+  return;
+}
+
+//
+//
+//
+template<typename T>
+T
+max(const T & a, const T & b)
+{
+  return a > b ? a : b;
+}
+
+//
+//
+//
+template<typename T>
+T
+min(const T & a, const T & b)
+{
+  return a < b ? a : b;
+}
 
 //
 // Sign function
@@ -97,6 +136,17 @@ machine_epsilon()
 {
   return
       std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
+}
+
+//
+// Number of digits for integer types.
+//
+
+template<typename T>
+Index
+num_digits()
+{
+  return std::numeric_limits<T>::digits;
 }
 
 //
@@ -156,6 +206,40 @@ random_normal()
 }
 
 //
+// Fill in all levels of AD with specified constant.
+//
+template<typename T>
+void
+fill_AD(
+    typename enable_if<is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c)
+{
+  x = c;
+  return;
+}
+
+template<typename T>
+void
+fill_AD(
+    typename enable_if<!is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c)
+{
+  auto const
+  order = x.size();
+
+  // No AD info. Nothing to do.
+  if (order == 0) return;
+
+  using S = typename Sacado::ValueType<T>::type;
+
+  for (auto i = 0; i < order; ++i) {
+    fill_AD<S>(x.fastAccessDx(i), c);
+  }
+
+  return;
+}
+
+//
 // Compute a non-negative integer power by binary manipulation.
 //
 template<typename T>
@@ -191,7 +275,7 @@ integer_power(T const & X, Index const exponent)
   rightmost_bit = 1;
 
   Index const
-  number_digits = std::numeric_limits<Index>::digits;
+  number_digits = num_digits<Index>();
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);

@@ -102,3 +102,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2-32
   STANDARD_PASS_OUTPUT
   )
+
+# This test only makes sense in an MPI build,
+# with at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PackTriples
+  SOURCES
+    PackTriples.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )

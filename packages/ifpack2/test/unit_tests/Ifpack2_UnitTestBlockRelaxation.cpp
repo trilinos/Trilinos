@@ -468,6 +468,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   out << "#local blocks = " << numLocalBlocks << std::endl;
 
   //out.setOutputToRootOnly(-1);
+  //Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  //const int myRank = comm->getRank ();
   for (int i=0,j=0; i<numLocalBlocks; ++i) {
     ArrayRCP<LocalOrdinal> block(3);
     block[0] = j++;
@@ -572,6 +574,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
     TEST_EQUALITY( dbNorms[0] < pNorms[0], true);
     out << dbNorms[0] << " < " << pNorms[0] << std::endl;
 #if defined(HAVE_IFPACK2_AMESOS2)
+    TEST_EQUALITY( sbNorms[0] < pNorms[0], true);
     TEST_EQUALITY( dbNorms[0] - sbNorms[0] < 1e-12, true);
 #endif
   }
@@ -621,7 +624,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-  typedef Ifpack2::BlockRelaxation<row_matrix_type, Ifpack2::DenseContainer<row_matrix_type,double> > prec_type;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
   int lclSuccess = 1;
   int gblSuccess = 1;
   std::ostringstream errStrm; // for error collection
@@ -654,6 +657,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   Teuchos::ParameterList params;
   params.set ("relaxation: type", "Jacobi");
   params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows());
+  params.set ("relaxation: container", "Dense");
+
   try {
     prec->setParameters (params);
   } catch (std::exception& e) {
@@ -726,7 +731,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-  typedef Ifpack2::BlockRelaxation<row_matrix_type, Ifpack2::DenseContainer<row_matrix_type,double> > prec_type;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> prec_type;
   int lclSuccess = 1;
   int gblSuccess = 1;
   std::ostringstream errStrm; // for error collection
@@ -775,7 +780,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
 
   Teuchos::ParameterList params;
   params.set ("relaxation: type", "Gauss-Seidel");
-  params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows());
+  params.set ("partitioner: local parts", static_cast<LO> (bcrsmatrix->getNodeNumRows ()));
+  params.set ("relaxation: container", "Dense");
+
   try {
     prec->setParameters (params);
   } catch (std::exception& e) {

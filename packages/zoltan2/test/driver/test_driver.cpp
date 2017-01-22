@@ -98,7 +98,8 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
-void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
+void xmlToModelPList(const Teuchos::XMLObject &xml,
+  Teuchos::ParameterList & plist)
 {
   // This method composes a plist for the problem
   Teuchos::XMLParameterListReader reader;
@@ -219,19 +220,22 @@ bool run(const UserInputForTests &uinput,
   comparison_source->timers["adapter construction time"]->start();
 
   // a pointer to a basic type
-  base_adapter_t *ia = AdapterForTests::getAdapterForInput(
+  AdapterWithOptionalCoordinateAdapter adapters = 
+                     AdapterForTests::getAdapterForInput(
                                         const_cast<UserInputForTests*>(&uinput),
                                         adapterPlist,comm); 
   comparison_source->timers["adapter construction time"]->stop();
 
-  if(ia == nullptr)
+  if(adapters.mainAdapter == nullptr)
   {
-    if(rank == 0) {
-      cout << "Get adapter for input failed" << endl;
-    }
+    cout << "Get adapter for input failed on rank " << rank << endl;
     return false;
   }
-  RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>(ia), true);
+  RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>
+    (adapters.mainAdapter), true);
+
+  RCP<Zoltan2::VectorAdapter<tMVector_t>> coordinateAdapterRCP = 
+    rcp(adapters.coordinateAdapter, true);
 
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -241,7 +245,6 @@ bool run(const UserInputForTests &uinput,
   // get Zoltan2 partition parameters
   ParameterList zoltan2_parameters = 
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-  
   if(rank == 0) {
     cout << endl;
   }
@@ -253,22 +256,21 @@ bool run(const UserInputForTests &uinput,
   }
 #ifdef HAVE_ZOLTAN2_MPI
   base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, 
-                                                         adapter_name, ia, 
-                                                         &zoltan2_parameters, 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,
+                                                         adapter_name,
+                                                         adapters.mainAdapter,
+                                                         &zoltan2_parameters,
                                                          MPI_COMM_WORLD);
 #else
   base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, 
-                                                         adapter_name, ia, 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,
+                                                         adapter_name,
+                                                         adapters.mainAdapter,
                                                          &zoltan2_parameters);
 #endif
 
   if (problem == nullptr) {
-    if (rank == 0) {
-      std::cerr << "Input adapter type: " << adapter_name 
-                << ", is unavailable, or misspelled." << std::endl;
-    }
+    std::cerr << "Problem construction failed" << std::endl;
     return false;
   }
   else if(rank == 0) {
@@ -293,12 +295,12 @@ bool run(const UserInputForTests &uinput,
     cout << problem_kind + " problem solved." << endl;
   }
  
-#define KDDKDD
+#undef KDDKDD
 #ifdef KDDKDD
   {
   const base_adapter_t::gno_t *kddIDs = NULL;
-  ia->getIDsView(kddIDs);
-    for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
+  adapters.mainAdapter->getIDsView(kddIDs);
+    for (size_t i = 0; i < adapters.mainAdapter->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
@@ -312,21 +314,23 @@ bool run(const UserInputForTests &uinput,
     typedef xcrsGraph_adapter::gno_t gno_t;
     typedef xcrsGraph_adapter::scalar_t scalar_t;
     int ewgtDim = 
-        reinterpret_cast<const xcrsGraph_adapter *>(ia)->getNumWeightsPerEdge();
+        reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
+          getNumWeightsPerEdge();
     lno_t localNumObj = 
-        reinterpret_cast<const xcrsGraph_adapter *>(ia)->getLocalNumVertices();
+        reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
+          getLocalNumVertices();
     const gno_t *vertexIds;
-    reinterpret_cast<const xcrsGraph_adapter *>(ia)->getVertexIDsView(vertexIds);
+    reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
+      getVertexIDsView(vertexIds);
     const lno_t *offsets;
     const gno_t *adjIds;
-    reinterpret_cast<const xcrsGraph_adapter *>(ia)->getEdgesView(offsets,
-                                                                  adjIds);
+    reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
+      getEdgesView(offsets, adjIds);
     for (int edim = 0; edim < ewgtDim; edim++) {
       const scalar_t *weights;
       int stride=0;
-      reinterpret_cast<xcrsGraph_adapter *>(ia)->getEdgeWeightsView(weights, 
-                                                                    stride,
-                                                                    edim);
+      reinterpret_cast<xcrsGraph_adapter *>(adapters.mainAdapter)->
+        getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
         for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
           std::cout << edim << " " << vertexIds[i] << " " 
@@ -358,7 +362,7 @@ bool run(const UserInputForTests &uinput,
     RCP<EvaluatePartition<basic_id_t> > metricObject = rcp(
        Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(
                reinterpret_cast<partitioning_problem_t*> (problem), 
-               adapter_name, ia, &zoltan2_parameters));
+               adapter_name, adapters.mainAdapter, &zoltan2_parameters));
 
     std::ostringstream msgSummary;
     metricObject->printMetrics(msgSummary, true); //
@@ -374,10 +378,8 @@ bool run(const UserInputForTests &uinput,
      // Note the MetricAnalyzer only cares about the data found in the 
      // "Metrics" sublist
       bSuccess = false;
-      if (rank == 0) {
-	std::cout << "MetricAnalyzer::analyzeMetrics() "
-                  << "returned false and the test is FAILED." << std::endl;
-      }
+      std::cout << "MetricAnalyzer::analyzeMetrics() "
+                << "returned false and the test is FAILED." << std::endl;
     }
     if(rank == 0) {
       cout << msgResults.str();
@@ -437,13 +439,15 @@ bool run(const UserInputForTests &uinput,
     ////////////////////////////////////////////////////////////
 
     comparison_source->adapter = iaRCP;
+    comparison_source->coordinateAdapterRCP = coordinateAdapterRCP;
     comparison_source->problem = problemRCP;
     comparison_source->metricObject = metricObject;
     comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
                                        problem_parameters.get<string>("kind") :
                                        "?");
     comparison_source->adapter_kind = adapter_name;
-  
+    comparison_source->printTimers();
+
     // write mesh solution
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
     //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
@@ -504,6 +508,7 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   
   // get the user input for all tests
   UserInputForTests uinput(inputParameters,comm);
+
   problems.pop();
   comm->barrier();
 
@@ -544,7 +549,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   }
   else {
     if(rank == 0) {
-      cout << "\nFAILED to load input data source. Skipping all tests." << endl;
+      cout << "\nFAILED to load input data source. Skipping "
+        "all tests." << endl;
       return false;
     }
   }

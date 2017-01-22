@@ -32,14 +32,16 @@ unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
         return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 }
 
-void fill_topologies(stk::mesh::BulkData& bulkData,
-                                                             stk::mesh::impl::ElementLocalIdMapper & localMapper,
-                                                             std::vector<stk::topology>& element_topologies)
+void fill_topologies(const stk::mesh::BulkData& bulkData,
+                     const stk::mesh::impl::ElementLocalIdMapper & localMapper,
+                     std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(const stk::mesh::Bucket* bucket : elemBuckets)
-        for(stk::mesh::Entity element : *bucket)
+    for(const stk::mesh::Bucket* bucket : elemBuckets) {
+        for(stk::mesh::Entity element : *bucket) {
             element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
+        }
+    }
 }
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
@@ -75,8 +77,12 @@ void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, 
 {
     stk::topology localElemTopology = bulkData.bucket(element).topology();
     const stk::mesh::Entity* localElemNodes = bulkData.begin_nodes(element);
+
     unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
+    if(num_nodes_this_side == 0) return;
+
     localElemSideNodes.resize(num_nodes_this_side);
+
     localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
 }
 
@@ -184,27 +190,6 @@ bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity el
     return bulkData.is_valid(side);
 }
 
-stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, int side_id)
-{
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-
-    unsigned num_sides = bulkData.num_connectivity(element, side_rank);
-    const stk::mesh::Entity *sides = bulkData.begin(element, side_rank);
-    const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_ordinals(element, side_rank);
-
-    stk::mesh::Entity side;
-
-    for(unsigned ii = 0; ii < num_sides; ++ii)
-    {
-        if(ordinals[ii] == static_cast<stk::mesh::ConnectivityOrdinal>(side_id))
-        {
-            side = sides[ii];
-            break;
-        }
-    }
-    return side;
-}
-
 stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts)
 {
     stk::mesh::PartVector sideParts;
@@ -284,7 +269,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
 
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
     if(!bulkData.is_valid(side))
     {
@@ -313,7 +298,7 @@ bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity 
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id)
 {
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
     if(side_created_during_death(bulkData, side))
     {
         deletedEntities.push_back(side);
@@ -331,7 +316,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 {
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
-    stk::mesh::Entity side = bulkData.declare_entity(side_rank, side_global_id, parts);
+    stk::mesh::Entity side = bulkData.internal_declare_entity(side_rank, side_global_id, parts);
 
     // connect element to side
     bulkData.declare_relation(element, side, side_ordinal, side_permutation);

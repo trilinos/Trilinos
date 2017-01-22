@@ -43,6 +43,8 @@ namespace Ioss {
   {
 
   public:
+    static constexpr auto name = "bar2";
+
     static void factory();
     ~Bar2() override;
 

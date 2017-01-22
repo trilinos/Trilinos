@@ -31,16 +31,20 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-//-BEGIN
+//BEGINTimerTests
 #include <gtest/gtest.h>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
-#include <comparison/stringAndNumberComparisons.h>
+#include <stk_unit_test_utils/comparison/stringAndNumberComparisons.hpp>
 
 namespace
 {
 
-const double tolerance = 5e-2;
+#if defined(NDEBUG)
+  const double tolerance = 5e-2;
+#else
+  const double tolerance = 10e-2;
+#endif
 
 void doWork()
 {
@@ -168,4 +172,4 @@ Took 0.0001 seconds to generate the table above.                                
 }
 
 }
-//-END
+//ENDTimerTests

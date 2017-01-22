@@ -80,8 +80,6 @@ namespace Kokkos {
     }
   };
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
   template<class S, class ... P, class RandomPool>
   void fill_random( const View<Sacado::UQ::PCE<S>**,P...>& a,
                     RandomPool g,
@@ -91,20 +89,6 @@ namespace Kokkos {
     typename Kokkos::FlatArrayType<Vector>::type a_flat = a;
     fill_random( a_flat, g, begin.fastAccessCoeff(0), end.fastAccessCoeff(0) );
   }
-
-#else
-
-  template<class S, class L, class D, class M, class RandomPool>
-  void fill_random( const View<Sacado::UQ::PCE<S>**,L,D,M>& a,
-                    RandomPool g,
-                    const Sacado::UQ::PCE<S>& begin,
-                    const Sacado::UQ::PCE<S>& end ) {
-    typedef View<Sacado::UQ::PCE<S>**,L,D,M> Vector;
-    typename Vector::flat_array_type a_flat = a;
-    fill_random( a_flat, g, begin.fastAccessCoeff(0), end.fastAccessCoeff(0) );
-  }
-
-#endif
 
 }
 

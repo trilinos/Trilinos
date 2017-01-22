@@ -130,11 +130,7 @@ second_to_fourth_dimension(Index const dimension_2nd)
   switch (dimension_2nd) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Invalid dimension for 2nd-order tensor.";
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Invalid dimension for 2nd-order tensor.");
     break;
 
   case 1:

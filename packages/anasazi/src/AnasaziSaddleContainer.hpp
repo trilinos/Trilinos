@@ -40,6 +40,7 @@
 #include "Teuchos_VerboseObject.hpp"
 
 #ifdef HAVE_ANASAZI_BELOS
+#include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #endif
 
@@ -78,7 +79,9 @@ public:
   // Returns a duplicate of the specified vectors
   SaddleContainer<ScalarType, MV> * CloneCopy(const std::vector<int> &index) const;
   SaddleContainer<ScalarType, MV> * CloneViewNonConst(const std::vector<int> &index) const;
+  SaddleContainer<ScalarType, MV> * CloneViewNonConst(const Teuchos::Range1D& index) const;
   const SaddleContainer<ScalarType, MV> * CloneView(const std::vector<int> &index) const;
+  const SaddleContainer<ScalarType, MV> * CloneView(const Teuchos::Range1D& index) const;
   ptrdiff_t GetGlobalLength() const { return MVT::GetGlobalLength(*upper_) + lowerRaw_->numRows(); };
   int GetNumberVecs() const { return MVT::GetNumberVecs(*upper_); };
   // Update *this with alpha * A * B + beta * (*this)
@@ -274,6 +277,25 @@ SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneViewNonC
 }
 
 
+template <class ScalarType, class MV>
+SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneViewNonConst(const Teuchos::Range1D& index) const
+{
+  SaddleContainer<ScalarType, MV> * newSC = new SaddleContainer<ScalarType, MV>();
+
+  newSC->upper_ = MVT::CloneViewNonConst(*upper_,index);
+
+  newSC->lowerRaw_ = lowerRaw_;
+
+  newSC->indices_.resize(index.size());
+  for(unsigned int i=0; i<index.size(); i++)
+  {
+    newSC->indices_[i] = indices_[index.lbound()+i];
+  }
+
+  return newSC;
+}
+
+
 
 // THIS IS NEW!
 template <class ScalarType, class MV>
@@ -296,6 +318,25 @@ const SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneVi
   else
   {
     newSC->indices_ = index;
+  }
+
+  return newSC;
+}
+
+
+template <class ScalarType, class MV>
+const SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneView(const Teuchos::Range1D& index) const
+{
+  SaddleContainer<ScalarType, MV> * newSC = new SaddleContainer<ScalarType, MV>();
+
+  newSC->upper_ = MVT::CloneViewNonConst(*upper_,index);
+
+  newSC->lowerRaw_ = lowerRaw_;
+
+  newSC->indices_.resize(index.size());
+  for(unsigned int i=0; i<index.size(); i++)
+  {
+    newSC->indices_[i] = indices_[index.lbound()+i];
   }
 
   return newSC;
@@ -610,7 +651,13 @@ public:
   static RCP<SC> CloneViewNonConst( SC& mv, const std::vector<int>& index )
     { return rcp( mv.CloneViewNonConst(index) ); }
 
+  static RCP<SC> CloneViewNonConst( SC& mv, const Teuchos::Range1D& index )
+    { return rcp( mv.CloneViewNonConst(index) ); }
+
   static RCP<const SC> CloneView( const SC& mv, const std::vector<int> & index )
+    { return rcp( mv.CloneView(index) ); }
+
+  static RCP<const SC> CloneView( const SC& mv, const Teuchos::Range1D& index )
     { return rcp( mv.CloneView(index) ); }
 
   static ptrdiff_t GetGlobalLength( const SC& mv )
@@ -657,6 +704,22 @@ public:
 
   static void MvPrint( const SC& mv, std::ostream& os )
     { mv.MvPrint(os); }
+
+#ifdef HAVE_BELOS_TSQR
+  /// \typedef tsqr_adaptor_type
+  /// \brief TsqrAdaptor specialization for the multivector type MV.
+  ///
+  /// By default, we provide a "stub" implementation.  It has the
+  /// right methods and typedefs, but its constructors and methods
+  /// all throw std::logic_error.  If you plan to use TSQR in Belos
+  /// (e.g., through TsqrOrthoManager or TsqrMatOrthoManager), and
+  /// if your multivector type MV is neither Epetra_MultiVector nor
+  /// Tpetra::MultiVector, you must implement a functional TSQR
+  /// adapter.  Please refer to Epetra::TsqrAdapter (for
+  /// Epetra_MultiVector) or Tpetra::TsqrAdaptor (for
+  /// Tpetra::MultiVector) for examples.
+  typedef Belos::details::StubTsqrAdapter<SC> tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
 };
 
 } // end namespace Belos

@@ -238,6 +238,9 @@ private:
   /// Persisting 1D store for B
   Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
 
+  /// Transpose flag
+  /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose
+  int transFlag_;
 };                              // End class KLU2
 
 

@@ -12,7 +12,7 @@ TEST(StkMeshHowTo, DestroyElementsInList)
 {
     stk::mesh::MetaData metaData;
     stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+    stk::io::fill_mesh("generated:1x1x4", bulkData);
     EXPECT_GT(stk::mesh::count_selected_entities(metaData.universal_part(), bulkData.buckets(stk::topology::ELEM_RANK)), 0u);
     stk::mesh::EntityVector elementsToDestroy{bulkData.get_entity(stk::topology::ELEMENT_RANK,1)};
     stk::mesh::destroy_elements(bulkData, elementsToDestroy);

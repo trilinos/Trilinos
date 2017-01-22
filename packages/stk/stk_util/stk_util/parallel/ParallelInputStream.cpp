@@ -90,13 +90,13 @@ private:
 };
 
 ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
-  : m_comm( comm ), m_root_fp( NULL )
+  : m_comm( comm ), m_root_fp( nullptr )
 {
   std::memset(m_buffer, BUFFER_LENGTH, sizeof(char));
   int result = 1 ;
 
-  if ( 0 == parallel_machine_rank( comm ) && NULL != file_name ) {
-    result = NULL != ( m_root_fp = std::fopen( file_name , "r" ) );
+  if ( 0 == parallel_machine_rank( comm ) && nullptr != file_name ) {
+    result = nullptr != ( m_root_fp = std::fopen( file_name , "r" ) );
   }
 
   broadcast( m_comm , & result , sizeof(int) );
@@ -104,7 +104,7 @@ ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
   if ( ! result ) {
     std::string msg;
     msg.append("stk::ParallelInputStream( " );
-    if ( 0 == parallel_machine_rank( comm ) && NULL != file_name ) {
+    if ( 0 == parallel_machine_rank( comm ) && nullptr != file_name ) {
       msg.append( file_name );
     }
     else {
@@ -117,8 +117,8 @@ ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
 
 void ParInBuf::close()
 {
-  if ( NULL != m_root_fp ) { std::fclose( m_root_fp ); m_root_fp = NULL ; }
-  setg(NULL,NULL,NULL);
+  if ( nullptr != m_root_fp ) { std::fclose( m_root_fp ); m_root_fp = nullptr ; }
+  setg(nullptr,nullptr,nullptr);
 }
 
 ParInBuf::~ParInBuf()
@@ -138,8 +138,8 @@ int ParInBuf::underflow()
   char * const buf = m_buffer + BUFFER_PUTBACK ;
   int nread = 0 ;
 
-  if ( gptr() == NULL || egptr() <= gptr() ) {
-    if ( NULL != m_root_fp ) { nread = std::fread(buf,1,MAX_READ,m_root_fp); }
+  if ( gptr() == nullptr || egptr() <= gptr() ) {
+    if ( nullptr != m_root_fp ) { nread = std::fread(buf,1,MAX_READ,m_root_fp); }
     broadcast( m_comm , & nread , sizeof(int) );
   }
 

@@ -69,9 +69,9 @@ PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
 
   TEUCHOS_ASSERT(static_cast<std::size_t>(flux.dimension(2)) == values.size());
 
-  for (int cell = 0; cell < flux.dimension(0); ++cell)
-    for (int ip = 0; ip < flux.dimension(1); ++ip)
-      for (int dim = 0; dim < flux.dimension(2); ++dim)
+  for (int cell = 0; cell < flux.extent_int(0); ++cell)
+    for (int ip = 0; ip < flux.extent_int(1); ++ip)
+      for (int dim = 0; dim < flux.extent_int(2); ++dim)
 	flux(cell,ip,dim) = values[dim];
 }
 

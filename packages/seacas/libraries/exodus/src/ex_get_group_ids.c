@@ -46,13 +46,10 @@
  */
 int ex_get_group_ids(int parent_id, int *num_groups, int *group_ids)
 {
-  int  status;
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
-
 #if NC_HAS_HDF5
-  status = nc_inq_grps(parent_id, num_groups, group_ids);
+  int status = nc_inq_grps(parent_id, num_groups, group_ids);
   if (status != NC_NOERR) {
     exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to get child group ids in file id %d",

@@ -51,7 +51,7 @@
 #include <stdio.h>
 
 /*!
- * updates an opened EXODUS II file (or EXODUS II history file)
+ * updates an opened EXODUS file (or EXODUS history file)
  * \param  exoid                   exodus file id
  */
 

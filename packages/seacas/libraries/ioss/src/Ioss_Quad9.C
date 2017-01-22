@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Quad9 registerThis; }
 
   protected:
-    St_Quad9() : ElementVariableType("quad9", 9) {}
+    St_Quad9() : ElementVariableType(Ioss::Quad9::name, 9) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -73,12 +73,12 @@ void Ioss::Quad9::factory()
   Ioss::St_Quad9::factory();
 }
 
-Ioss::Quad9::Quad9() : Ioss::ElementTopology("quad9", "Quadrilateral_9")
+Ioss::Quad9::Quad9() : Ioss::ElementTopology(Ioss::Quad9::name, "Quadrilateral_9")
 {
-  Ioss::ElementTopology::alias("quad9", "Solid_Quad_9_2D");
-  Ioss::ElementTopology::alias("quad9", "QUADRILATERAL_9_2D");
-  Ioss::ElementTopology::alias("quad9", "Face_Quad_9_3D");
-  Ioss::ElementTopology::alias("quad9", "quadface9");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "Solid_Quad_9_2D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "QUADRILATERAL_9_2D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "Face_Quad_9_3D");
+  Ioss::ElementTopology::alias(Ioss::Quad9::name, "quadface9");
 }
 
 Ioss::Quad9::~Quad9() = default;

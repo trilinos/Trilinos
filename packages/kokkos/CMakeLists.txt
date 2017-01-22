@@ -23,7 +23,22 @@ TRIBITS_PACKAGE_DECL(Kokkos) # ENABLE_SHADOWING_WARNINGS)
 # subpackages as well.
 #
 
-TRIBITS_ADD_DEBUG_OPTION()
+
+
+# mfh 01 Aug 2016: See Issue #61:
+#
+# https://github.com/kokkos/kokkos/issues/61
+#
+# Don't use TRIBITS_ADD_DEBUG_OPTION() here, because that defines
+# HAVE_KOKKOS_DEBUG.  We define KOKKOS_HAVE_DEBUG here instead,
+# for compatibility with Kokkos' Makefile build system.
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_DEBUG
+  KOKKOS_HAVE_DEBUG
+  "Enable run-time debug checks.  These checks may be expensive, so they are disabled by default in a release build."
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
+)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_SIERRA_BUILD
@@ -42,7 +57,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Cuda_UVM
   KOKKOS_USE_CUDA_UVM
-  "Enable CUDA Unified Virtual Memory support in Kokkos."
+  "Enable CUDA Unified Virtual Memory as the default in Kokkos."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Cuda_RDC
+  KOKKOS_HAVE_CUDA_RDC
+  "Enable CUDA Relocatable Device Code support in Kokkos."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Cuda_Lambda
+  KOKKOS_HAVE_CUDA_LAMBDA
+  "Enable CUDA LAMBDA support in Kokkos."
   OFF
   )
 
@@ -57,6 +86,9 @@ ASSERT_DEFINED(TPL_ENABLE_Pthread)
 IF (Kokkos_ENABLE_Pthread AND NOT TPL_ENABLE_Pthread)
   MESSAGE(FATAL_ERROR "You set Kokkos_ENABLE_Pthread=ON, but Trilinos' support for Pthread(s) is not enabled (TPL_ENABLE_Pthread=OFF).  This is not allowed.  Please enable Pthreads in Trilinos before attempting to enable Kokkos' support for Pthreads.")
 ENDIF ()
+IF (NOT TPL_ENABLE_Pthread)
+  ADD_DEFINITIONS(-DGTEST_HAS_PTHREAD=0)
+ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_OpenMP
@@ -93,11 +125,33 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "${TPL_ENABLE_MPI}"
   )
 
+# Set default value of Kokkos_ENABLE_Debug_Bounds_Check option
+#
+# CMake is case sensitive.  The Kokkos_ENABLE_Debug_Bounds_Check
+# option (defined below) is annoyingly not all caps, but we need to
+# keep it that way for backwards compatibility.  If users forget and
+# try using an all-caps variable, then make it count by using the
+# all-caps version as the default value of the original, not-all-caps
+# option.  Otherwise, the default value of this option comes from
+# Kokkos_ENABLE_DEBUG (see Issue #367).
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_DEBUG)
+IF(DEFINED Kokkos_ENABLE_DEBUG_BOUNDS_CHECK)
+  IF(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK)
+    SET(Kokkos_ENABLE_Debug_Bounds_Check_DEFAULT ON)
+  ELSE()
+    SET(Kokkos_ENABLE_Debug_Bounds_Check_DEFAULT "${${PACKAGE_NAME}_ENABLE_DEBUG}")
+  ENDIF()
+ELSE()
+  SET(Kokkos_ENABLE_Debug_Bounds_Check_DEFAULT "${${PACKAGE_NAME}_ENABLE_DEBUG}")
+ENDIF()
+ASSERT_DEFINED(Kokkos_ENABLE_Debug_Bounds_Check_DEFAULT)
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Debug_Bounds_Check
   KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK
-  "Enable bounds checking support in Kokkos."
-  OFF
+  "Enable Kokkos::View run-time bounds checking."
+  "${Kokkos_ENABLE_Debug_Bounds_Check_DEFAULT}"
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -125,13 +179,28 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 #------------------------------------------------------------------------------
 #
-# C) Process the subpackages for Kokkos
+# C) Install Kokkos' executable scripts
+#
+
+
+# nvcc_wrapper is Kokkos' wrapper for NVIDIA's NVCC CUDA compiler.
+# Kokkos needs nvcc_wrapper in order to build.  Other libraries and
+# executables also need nvcc_wrapper.  Thus, we need to install it.
+# If the argument of DESTINATION is a relative path, CMake computes it
+# as relative to ${CMAKE_INSTALL_PATH}.
+
+INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/nvcc_wrapper DESTINATION bin)
+
+
+#------------------------------------------------------------------------------
+#
+# D) Process the subpackages for Kokkos
 #
 
 TRIBITS_PROCESS_SUBPACKAGES()
 
 #
-# D) If Kokkos itself is enabled, process the Kokkos package
+# E) If Kokkos itself is enabled, process the Kokkos package
 #
 
 TRIBITS_PACKAGE_DEF()

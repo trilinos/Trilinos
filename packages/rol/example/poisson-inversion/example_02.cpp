@@ -545,6 +545,8 @@ int main(int argc, char *argv[]) {
     // Define step.
     parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
+    parlist.sublist("Step").sublist("Trust Region").set("Initial Radius", 1e3);
+    parlist.sublist("Step").sublist("Trust Region").set("Maximum Radius", 1e8);
     ROL::Algorithm<RealT> algo_tr("Trust Region",parlist);
     // Run Algorithm
     y.zero();

@@ -143,7 +143,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for(std::size_t i=0;i<d.num_cells;i++) {
+  for(index_t i=0;i<d.num_cells;i++) {
     responseObj_->value += cellIntegral_(i);
   }
 }

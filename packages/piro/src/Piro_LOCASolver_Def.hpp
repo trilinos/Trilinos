@@ -51,6 +51,8 @@
 
 #include "NOX_StatusTest_Factory.H"
 
+#include "Piro_MatrixFreeDecorator.hpp" 
+
 #include "Teuchos_as.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
@@ -88,6 +90,7 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   globalData_(LOCA::createGlobalData(piroParams)),
   paramVector_(),
   group_(),
+  model_(model), 
   locaStatusTests_(),
   noxStatusTests_(),
   stepper_()
@@ -98,14 +101,23 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   for (Teuchos_Ordinal k = 0; k < p_entry_count; ++k) {
     (void) paramVector_.addParameter(paramName(k));
   }
+  
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    if (piroParams->isParameter("Matrix-Free Perturbation")) {
+      model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model,
+                           piroParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model_ = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model));
+  }
 
-  const NOX::Thyra::Vector initialGuess(*model->getNominalValues().get_x());
+  const NOX::Thyra::Vector initialGuess(*model_->getNominalValues().get_x());
 
   // Don't set a scaling vector here; it'll make calling LOCA impossible with a
   // Jacobian that is not a Tpetra::RowMatrix (but only a Tpetra::Operator).
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_ = Teuchos::null;
 
-  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model, paramVector_, l, false, scaling_vector_));
+  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model_, paramVector_, l, false, scaling_vector_));
   group_->setSaveDataStrategy(saveDataStrategy_);
 
   // TODO: Create non-trivial stopping criterion for the stepper
@@ -115,6 +127,7 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   const Teuchos::RCP<Teuchos::ParameterList> noxStatusParams =
     Teuchos::sublist(Teuchos::sublist(piroParams_, "NOX"), "Status Tests");
   noxStatusTests_ = NOX::StatusTest::buildStatusTests(*noxStatusParams, *(globalData_->locaUtils));
+  
 
   stepper_ = Teuchos::rcp(new LOCA::Stepper(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_));
   first_ = true;

@@ -141,12 +141,31 @@ public:
   
   void solve(bool updateInputData=true); 
 
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    MachineRepresentation <typename Adapter::scalar_t,typename Adapter::part_t>::getValidParameters(pl);
+    RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "geometric", "default", "block" )));
+    pl.set("mapping_algorithm", "default", "mapping algorithm",
+      mapping_algorithm_Validator);
+
+
+    // bool parameter
+    pl.set("distributed_input_adapter", true,
+        "Whether the input adapter for mapping is distributed over processes or not",
+        Environment::getBoolValidator());
+
+  }
+
   //!  \brief Get the solution to the problem.
   //
   //   \return  the solution to the most recent solve().
 
   mapsoln_t *getSolution() { return soln.getRawPtr(); };
-
+  Teuchos::RCP<MachineRep> getMachine(){return machine; }
 private:
   void createMappingProblem(partsoln_t *partition_, MachineRep *machine_);
 
@@ -205,7 +224,9 @@ void MappingProblem<Adapter, MachineRep>::createMappingProblem(
     machine = Teuchos::rcp(machine_, false);
   else {
     try {
-      machine = Teuchos::rcp(new MachineRep(*(this->comm_)));
+      Teuchos::ParameterList pl = this->env_->getParameters();
+
+      machine = Teuchos::rcp(new MachineRep(*(this->comm_), pl));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -233,7 +254,7 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                    this->comm_, machine,
                                                    this->inputAdapter_,
                                                    partition, this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
 #endif
     }
@@ -242,21 +263,26 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
                                                  this->comm_, machine,
                                                  this->inputAdapter_,
                                                  partition, this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
     }
-#ifdef KDDNOTREADY_NEEDTOMAKE_CTM_ANALGORITHM
     else if (algName == "geometric") {
+
+      bool is_input_distributed = true;
+      const Teuchos::ParameterEntry *pe_input_adapter = pl.getEntryPtr("distributed_input_adapter");
+      if (pe_input_adapter) is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
+
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
                                                          machine, 
                                                          this->inputAdapter_,
                                                          partition,
-                                                         this->envConst_));
-      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+                                                         this->envConst_,
+                                                         is_input_distributed));
+      this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
+
     }
-#endif
     else {
       // Add other mapping methods here
       throw std::logic_error("specified mapping_algorithm not supported");

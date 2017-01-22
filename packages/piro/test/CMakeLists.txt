@@ -183,3 +183,17 @@ IF (Piro_ENABLE_Rythmos)
     STANDARD_PASS_OUTPUT
   )
 ENDIF (Piro_ENABLE_Rythmos)
+
+IF (Piro_ENABLE_Tempus)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_UnitTests
+    SOURCES
+    Piro_TempusSolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF (Piro_ENABLE_Tempus)

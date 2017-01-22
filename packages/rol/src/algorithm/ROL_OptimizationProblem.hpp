@@ -44,6 +44,11 @@
 #ifndef ROL_OPTIMIZATIONPROBLEM_HPP
 #define ROL_OPTIMIZATIONPROBLEM_HPP
 
+#ifdef OPTIMIZATION_PROBLEM_REFACTOR
+#include "ROL_OptimizationProblemRefactor.hpp"
+#else
+
+
 #include "Teuchos_ParameterList.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
@@ -466,4 +471,7 @@ public:
 
 };
 }
-#endif
+
+#endif // OPTIMIZATION_PROBLEM_REFACTOR
+
+#endif // ROL_OPTIMIZATIONPROBLEM_HPP

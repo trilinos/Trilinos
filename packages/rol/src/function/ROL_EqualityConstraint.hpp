@@ -390,6 +390,20 @@ public:
                                                                    const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                                                                    const int order = 1 ) ;
 
+// Definitions for parametrized (stochastic) equality constraints
+private:
+  std::vector<Real> param_;
+
+protected:
+  const std::vector<Real> getParameter(void) const {
+    return param_;
+  }
+
+public:
+  virtual void setParameter(const std::vector<Real> &param) {
+    param_.assign(param.begin(),param.end());
+  }
+
 }; // class EqualityConstraint
 
 } // namespace ROL

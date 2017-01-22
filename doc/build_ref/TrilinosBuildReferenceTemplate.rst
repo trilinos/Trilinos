@@ -31,6 +31,47 @@ Below, configure options specific to Trilinos are given.  The later sections
 give more generic options that are the same for all TriBITS projects.
 
 
+Enabling float and complex Scalar types
+----------------------------------------
+
+Many of the packages in Trilinos are implemented using C++ templates and
+therefore support a variety of data-types.  In addition to the default scalar
+type ``double``, many of the data-structures and solvers are tested with the
+types ``float``, ``std::complex<float>``, and ``std::complex<double>``.  In
+addition, these packages support the explicit template instantiation
+(i.e. ``-DTrilinos_EXPLICIT_TEMPLATE_INSTANTIATION=ON``) of these types as
+well.  However, support and explicit instantiations for these types are off by
+default since most users don't need these extra types and enabling them
+greatly increases the compilation time for Trilinos libraries and tests and
+can consume a great deal more disk space.  But support for these types in the
+various Trilinos packages can be enabled using the following options:
+
+  ``-DTrilinos_ENABLE_FLOAT=ON``
+
+    Enables suppport and explicit instantiations for the ``float`` scalar
+    data-type in all supported Trilinos packages.
+
+  ``-DTrilinos_ENABLE_COMPLEX=ON``
+
+    Enables suppport and explicit instantiations for the ``std::complex<T>``
+    scalar data-type in all supported Trilinos packages.
+
+  ``-DTrilinos_ENABLE_COMPLEX_FLOAT=ON``
+
+    Enables suppport and explicit instantiations for the
+    ``std::complex<float>`` scalar data-type in all supported Trilinos
+    packages.  This is set to ``ON`` by default when
+    ``-DTrilinos_ENABLE_FLOAT=ON`` and ``-DTrilinos_ENABLE_COMPLEX=ON`` are
+    set.
+
+  ``-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON``
+
+    Enables suppport and explicit instantiations for the
+    ``std::complex<double>`` scalar data-type in all supported Trilinos
+    packages.  This is set to ``ON`` by default when
+    ``-DTrilinos_ENABLE_COMPLEX=ON`` is set.
+
+
 Enabling/disabling time monitors
 --------------------------------
 

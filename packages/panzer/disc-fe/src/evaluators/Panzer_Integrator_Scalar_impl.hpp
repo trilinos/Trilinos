@@ -112,11 +112,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
 { 
 /*
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.num_cells; ++cell)
     integral(cell) = 0.0;
 */
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
@@ -146,7 +146,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
 
   int numPoints       = tmp.dimension(1);
  
-  for(int cl = 0; cl < workset.num_cells; cl++) {
+  for(index_t cl = 0; cl < workset.num_cells; cl++) {
     integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);
     for(int qp = 1; qp < numPoints; qp++)
       // integral(cl) += tmp(cl, qp)*rightFields(cl, qp);

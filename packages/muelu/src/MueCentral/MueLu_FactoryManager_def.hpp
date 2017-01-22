@@ -62,6 +62,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -123,6 +124,13 @@ namespace MueLu {
       if (varName == "Importer") {
 #ifdef HAVE_MPI
                                                         return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+#else
+                                                        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+#endif
+      }
+      if (varName == "number of partitions") {
+#ifdef HAVE_MPI
+                                                        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionHeuristicFactory()));
 #else
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif

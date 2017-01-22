@@ -1,14 +1,23 @@
-# FIXME (mfh 27 Sep 2015) The test actually uses GO = int.  We should
-# just make the test independent of the particular GO value -- it
-# shouldn't matter, since the test cases are small.
-IF (Tpetra_INST_INT_LONG AND Tpetra_INST_INT_INT)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES 
-    MatrixMatrix_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  MatrixMatrix_UnitTests.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-)
+  )
+
+IF (TpetraKernels_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MatrixMatrixKernels_UnitTests
+    SOURCES 
+    MatrixMatrixKernels_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS "--matnames-file=\"matrixsystems.xml\" --v"
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
+
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
@@ -42,6 +51,5 @@ matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
 EXEDEPS MatrixMatrix_UnitTests
 )
-ENDIF()
 
 

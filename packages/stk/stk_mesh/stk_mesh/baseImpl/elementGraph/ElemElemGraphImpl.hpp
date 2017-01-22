@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include "../../base/FEMHelpers.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "GraphTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
@@ -350,7 +350,7 @@ typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
-void fill_topologies(stk::mesh::BulkData& bulkData, stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
+void fill_topologies(const stk::mesh::BulkData& bulkData, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
@@ -369,8 +369,6 @@ void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::E
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
 
 stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
-
-stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 
 int get_element_side_multiplier();
 

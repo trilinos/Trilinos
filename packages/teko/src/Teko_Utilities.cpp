@@ -1624,6 +1624,34 @@ const double frobeniusNorm(const LinearOp & op)
   }
 }
 
+const double oneNorm(const LinearOp & op)
+{
+  if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
+    //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+    //const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+    //return crsOp->getOneNorm();
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"One norm not currently implemented for Tpetra matrices");
+  } else {
+    const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
+    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
+    return crsOp->NormOne();
+  }
+}
+
+const double infNorm(const LinearOp & op)
+{
+  if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
+    //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+    //const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+    //return crsOp->getInfNorm();
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Infinity norm not currently implemented for Tpetra matrices");
+  } else {
+    const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
+    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
+    return crsOp->NormInf();
+  }
+}
+
 const LinearOp buildDiagonal(const MultiVector & src,const std::string & lbl)
 {
    RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(src->range()); 

@@ -1532,10 +1532,6 @@ private:
       throw s;
     }
 
-    catch(char const* s){
-      throw s;
-    }
-
   }
 public:
 

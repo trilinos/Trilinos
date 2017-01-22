@@ -93,7 +93,7 @@ PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;
 
   // Loop over cells
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
     // Loop over points
     for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {

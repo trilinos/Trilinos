@@ -176,8 +176,9 @@ LogControl::next()
     }
   }
   else {
-    if (m_logStream.rdbuf() != m_cacheStream.rdbuf())
+    if (m_logStream.rdbuf() != m_cacheStream.rdbuf()) {
       m_logStream.rdbuf(m_cacheStream.rdbuf());
+    }
   }
 }
 

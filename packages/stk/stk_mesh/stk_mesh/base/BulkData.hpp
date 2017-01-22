@@ -65,6 +65,7 @@
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
+#include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
@@ -81,7 +82,6 @@ namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
 namespace stk { class CommSparse; }
-namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
@@ -90,6 +90,7 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
+
 
 namespace stk {
 namespace mesh {
@@ -116,6 +117,12 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                              stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                              const stk::mesh::PartVector& parts_for_creating_side,
                              const stk::mesh::PartVector& boundary_mesh_parts);
+
+namespace impl {
+stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
+                                          stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
+                                          stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
+}
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -160,7 +167,7 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap const* arg_connectivity_map = NULL
+            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated = NULL
             , FieldDataManager *field_dataManager = NULL
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
@@ -343,6 +350,13 @@ public:
    * creates the new entity in the 'universal' part.
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
+
+  Entity declare_solo_side(EntityId ent_id, const PartVector& parts);
+
+  Entity declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts = {});
+
+  Entity declare_element_side(const stk::mesh::EntityId global_side_id, stk::mesh::Entity elem, const unsigned local_side_id,
+                              const stk::mesh::PartVector& parts);
 
   /** \brief Add sharing information about a newly-created node
    *
@@ -715,6 +729,8 @@ public:
   // std::ostringstream oss;
   // oss << "output." << parallel_rank();
   // std::ofstream out(oss.str(), std::ios_base::app);
+  // dump_all_mesh_info(out);
+  // out.close();
   void dump_all_mesh_info(std::ostream& out) const;
 
   // memoized version
@@ -767,6 +783,28 @@ public:
   size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
 
   void destroy_elements_of_topology(stk::topology topologyToDelete);
+
+  bool has_sideset_data() const { return m_hasSideSetData; }
+
+  const SideSet& get_sideset_data(int sideset_id) const
+  {
+      static SideSet empty;
+      auto iter = m_sideSetData.find(sideset_id);
+      if (iter == m_sideSetData.end())
+      {
+          return empty;
+      }
+      return iter->second;
+  }
+
+  void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
+
+protected:
+  void save_sideset_data(int sideset_id, const SideSet& data)
+  {
+      m_hasSideSetData = true;
+      m_sideSetData.insert(std::make_pair(sideset_id, data));
+  }
 
 protected: //functions
 
@@ -826,7 +864,7 @@ protected: //functions
   inline EntitySharing internal_is_entity_marked(Entity entity) const;
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
 
-  void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
+  void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, bool onlyConsiderSoloSides, std::vector<shared_entity_type>& shared_entities);
   virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes);
 
   void gather_shared_nodes(std::vector<Entity> & shared_nodes);
@@ -890,7 +928,6 @@ protected: //functions
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
-                                                                               EntityVector &temp_entities,
                                                                                OrdinalVector &empty,
                                                                                OrdinalVector &to_add);
 
@@ -1094,7 +1131,9 @@ protected: //functions
   virtual void notify_finished_mod_end();
 
   void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
+  void use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides = false);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
+  void update_side_elem_permutations(Entity side);
   void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
@@ -1188,7 +1227,6 @@ private:
   stk::mesh::EntityVector get_lower_ranked_shared_entities(const stk::mesh::EntityVector& created_sides) const;
 
   stk::mesh::EntityVector get_nodes_to_deactivate(const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart) const;
-
 
   inline bool internal_add_node_sharing_called() const;
 
@@ -1296,8 +1334,6 @@ private:
                                const Entity e_from ,
                                const Entity e_to );
 
-  // FIXME: Remove this friend once unit-testing has been refactored
-  friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
@@ -1325,9 +1361,13 @@ private:
                                         const stk::mesh::PartVector& parts_for_creating_side,
                                         const stk::mesh::PartVector* boundary_mesh_parts);
 
+  friend stk::mesh::Entity impl::connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
+                                                   stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
+                                                   stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
+
   bool ordered_comm( const Entity entity );
-  void pack_owned_verify(CommAll & all);
-  bool unpack_not_owned_verify(CommAll & comm_all, std::ostream & error_log);
+  void pack_owned_verify(CommSparse & commSparse);
+  bool unpack_not_owned_verify(CommSparse & commSparse, std::ostream & error_log);
   bool verify_parallel_attributes( std::ostream & error_log );
   bool verify_parallel_attributes_comm_list_info(size_t comm_count, std::ostream & error_log);
   bool verify_parallel_attributes_for_bucket( Bucket const& bucket, std::ostream & error_log, size_t& comm_count );
@@ -1381,6 +1421,13 @@ private:
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
 
   void destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing );
+
+  Entity create_and_connect_side(const stk::mesh::EntityId globalSideId,
+                                 Entity elem,
+                                 const unsigned localSideId,
+                                 const stk::mesh::PartVector& parts);
+
+  stk::mesh::EntityId select_side_id(Entity elem, unsigned sideOrdinal);
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
@@ -1447,6 +1494,8 @@ private: // data
   stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
+  std::map<int,const SideSet> m_sideSetData;
+  bool m_hasSideSetData = false;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
@@ -1455,5 +1504,6 @@ void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVec
 } // namespace stk
 
 #include "BulkDataInlinedMethods.hpp"
+
 
 #endif //  stk_mesh_BulkData_hpp

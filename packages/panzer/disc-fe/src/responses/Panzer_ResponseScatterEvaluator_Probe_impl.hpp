@@ -92,19 +92,8 @@ ResponseScatterEvaluator_ProbeBase(
   using Teuchos::rcp;
 
   // the field manager will allocate all of these fields
-  if (basis_->getElementSpace() == PureBasis::HGRAD ||
-      basis_->getElementSpace() == PureBasis::CONST) {
-
-    scalarField_ =
-      PHX::MDField<const ScalarT,Cell,BASIS>(fieldName,ir.dl_scalar);
-    this->addDependentField(scalarField_);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    vectorField_ =
-      PHX::MDField<const ScalarT,Cell,BASIS,Dim>(fieldName,ir.dl_vector);
-    this->addDependentField(vectorField_);
-  }
+  field_ = PHX::MDField<const ScalarT,Cell,BASIS>(fieldName,basis_->functional);
+  this->addDependentField(field_);
 
   num_basis = basis->cardinality();
   num_dim = basis->dimension();
@@ -141,39 +130,41 @@ void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d,
                       PHX::FieldManager<Traits>& fm)
 {
-  if (basis_->getElementSpace() == PureBasis::HGRAD ||
-      basis_->getElementSpace() == PureBasis::CONST) {
-    this->utils.setFieldData(scalarField_,fm);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    this->utils.setFieldData(vectorField_,fm);
-  }
+  this->utils.setFieldData(field_,fm);
 }
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
 bool ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 computeBasisValues(typename Traits::EvalData d)
 {
-  typedef Intrepid2::CellTools<double> CTD;
-  typedef Intrepid2::FunctionSpaceTools FST;
+  typedef Intrepid2::CellTools<PHX::exec_space> CTD;
+  typedef Intrepid2::FunctionSpaceTools<PHX::exec_space> FST;
 
-  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", 1);
-  Kokkos::DynRankView<double,PHX::Device> physical_points_cell(
-    "physical_points_cell", 1, num_dim);
-  for (size_t i=0; i<num_dim; ++i)
-    physical_points_cell(0,i) = point_[i];
+  const int num_points = 1; // Always a single point in this evaluator!
+  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points);
+  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points, num_dim);
+  for (panzer::index_t cell(0); cell < d.num_cells; ++cell)
+    for (size_t dim=0; dim<num_dim; ++dim)
+      physical_points_cell(cell,0,dim) = point_[dim];
+
+  const double tol = 1.0e-12;
+  CTD::checkPointwiseInclusion(inCell,
+                               physical_points_cell,
+                               this->wda(d).cell_vertex_coordinates.get_view(),
+                               *topology_,
+                               tol);
 
   // Find which cell contains our point
   cellIndex_ = -1;
   bool haveProbe = false;
-  for (int cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
-    CTD::checkPointwiseInclusion(inCell,
-                                 physical_points_cell,
-                                 this->wda(d).cell_vertex_coordinates,
-                                 *topology_,
-                                 cell);
-    if (inCell(0) == 1) {
+  for (index_t cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
+    // CTD::checkPointwiseInclusion(inCell,
+    //                              physical_points_cell,
+    //                              this->wda(d).cell_vertex_coordinates,
+    //                              *topology_,
+    //                              cell);
+
+    if (inCell(cell,0) == 1) {
       cellIndex_ = cell;
       haveProbe = true;
       break;
@@ -284,28 +275,16 @@ evaluateFields(typename Traits::EvalData d)
     return;
 
   // Get field coefficients for cell
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs;
-  if (basis_->getElementSpace() == PureBasis::CONST ||
-      basis_->getElementSpace() == PureBasis::HGRAD) {
-    field_coeffs =
-      Kokkos::createDynRankView(scalarField_.get_static_view(), "field_val",
-                                1, num_basis); // Cell, Basis
-    for (size_t i=0; i<num_basis; ++i)
-      field_coeffs(0,i) = scalarField_(cellIndex_,i);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    field_coeffs =
-      Kokkos::createDynRankView(vectorField_.get_static_view(), "field_val",
-                                1, num_basis); // Cell, Basis
-    for (size_t i=0; i<num_basis; ++i)
-      field_coeffs(0,i) = vectorField_(cellIndex_,i,fieldComponent_);
-  }
+  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs =
+    Kokkos::createDynRankView(field_.get_static_view(), "field_val",
+                              1, num_basis); // Cell, Basis
+  for (size_t i=0; i<num_basis; ++i)
+    field_coeffs(0,i) = field_(cellIndex_,i);
 
   // Evaluate FE interpolant at point
   Kokkos::DynRankView<ScalarT,PHX::Device> field_val =
     Kokkos::createDynRankView(field_coeffs, "field_val", 1, 1); // Cell, Point
-  Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(
+  Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(
     field_val, field_coeffs, basis_values_);
   responseObj_->value = field_val(0,0);
   responseObj_->have_probe = true;

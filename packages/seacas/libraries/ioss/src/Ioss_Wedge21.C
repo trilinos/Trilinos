@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Wedge21() : ElementVariableType("wedge21", 21) {}
+    St_Wedge21() : ElementVariableType(Ioss::Wedge21::name, 21) {}
   };
 } // namespace Ioss
 void Ioss::St_Wedge21::factory() { static Ioss::St_Wedge21 registerThis; }
@@ -95,9 +95,9 @@ void Ioss::Wedge21::factory()
   Ioss::St_Wedge21::factory();
 }
 
-Ioss::Wedge21::Wedge21() : Ioss::ElementTopology("wedge21", "Wedge_21")
+Ioss::Wedge21::Wedge21() : Ioss::ElementTopology(Ioss::Wedge21::name, "Wedge_21")
 {
-  Ioss::ElementTopology::alias("wedge21", "Solid_Wedge_21_3D");
+  Ioss::ElementTopology::alias(Ioss::Wedge21::name, "Solid_Wedge_21_3D");
 }
 
 Ioss::Wedge21::~Wedge21() = default;
@@ -170,9 +170,8 @@ Ioss::ElementTopology *Ioss::Wedge21::face_type(int face_number) const
   if (face_number <= 3) {
     return Ioss::ElementTopology::factory("quad9");
   }
-  else {
-    return Ioss::ElementTopology::factory("tri7");
-  }
+
+  return Ioss::ElementTopology::factory("tri7");
 }
 
 Ioss::ElementTopology *Ioss::Wedge21::edge_type(int edge_number) const

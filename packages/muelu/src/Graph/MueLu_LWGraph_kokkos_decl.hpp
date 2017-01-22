@@ -125,7 +125,12 @@ namespace MueLu {
     }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    KOKKOS_INLINE_FUNCTION row_type getNeighborVertices(LO i) const;
+    KOKKOS_INLINE_FUNCTION row_type getNeighborVertices(LO i) const {
+      auto rowPointers = graph_.row_map;
+      auto colIndices  = graph_.entries;
+
+      return Kokkos::subview(colIndices, Kokkos::make_pair<size_t,size_t>(rowPointers(i), rowPointers(i+1)));
+    }
 
     //! Return true if vertex with local id 'v' is on current process.
     KOKKOS_INLINE_FUNCTION bool isLocalNeighborVertex(LO i) const {
@@ -148,7 +153,7 @@ namespace MueLu {
     }
 
     /// Return a simple one-line description of the Graph.
-    KOKKOS_INLINE_FUNCTION std::string description() const {
+    std::string description() const {
       return "LWGraph (" + objectLabel_ + ")";
     }
 

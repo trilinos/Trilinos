@@ -36,7 +36,7 @@
 #if defined( STK_HAS_MPI)
 #  include <mpi.h>                        // for MPI_COMM_NULL, MPI_Comm, etc
 #endif
-#include <time.h>                       // for time, NULL
+#include <time.h>                       // for time
 #include <iostream>                     // for cout, cerr
 #include <stk_util/environment/OutputLog.hpp>  // for register_ostream, etc
 #include <stk_util/environment/ProgramOptions.hpp>
@@ -59,7 +59,7 @@ namespace stk {
       m_outputNull(&m_nullBuf),
       m_outputP0(&std::cout),
       m_output(),
-      m_startTime((double) ::time(NULL)),
+      m_startTime((double) ::time(nullptr)),
       m_executablePath(),
       m_shutdownRequested(false),
       m_inputFileRequired(true),

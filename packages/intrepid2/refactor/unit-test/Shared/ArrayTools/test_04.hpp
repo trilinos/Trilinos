@@ -1210,11 +1210,11 @@ namespace Intrepid2 {
       outFields = DynRankView("outFields", 3, 3, 2, 3, 3);
       art::outerProductDataField(outFields, ijkData_1a, ijkFields_1a);
 
-      for(size_t cell = 0; cell < ijkData_1a.dimension(0); cell++){
-        for(size_t field = 0; field < ijkFields_1a.dimension(1); field++){
-          for(size_t point = 0; point < ijkData_1a.dimension(1); point++){
-            for(size_t row = 0; row < ijkData_1a.dimension(2); row++){
-              for(size_t col = 0; col < ijkData_1a.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1a.dimension(0); cell++){
+        for(size_type field = 0; field < ijkFields_1a.dimension(1); field++){
+          for(size_type point = 0; point < ijkData_1a.dimension(1); point++){
+            for(size_type row = 0; row < ijkData_1a.dimension(2); row++){
+              for(size_type col = 0; col < ijkData_1a.dimension(2); col++){
 
                 // element with row = cell and col = field should equal 1; all other should equal 0
                 if( (row == cell && col == field) ){
@@ -1254,11 +1254,11 @@ namespace Intrepid2 {
       outFields = DynRankView("outFields", 3, 1, 3, 3, 3);
       art::outerProductDataField(outFields, ijkData_1b, ijkFields_1b);
 
-      for(size_t cell = 0; cell < ijkData_1b.dimension(0); cell++){
-        for(size_t field = 0; field < ijkFields_1b.dimension(0); field++){
-          for(size_t point = 0; point < ijkData_1b.dimension(1); point++){
-            for(size_t row = 0; row < ijkData_1b.dimension(2); row++){
-              for(size_t col = 0; col < ijkData_1b.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1b.dimension(0); cell++){
+        for(size_type field = 0; field < ijkFields_1b.dimension(0); field++){
+          for(size_type point = 0; point < ijkData_1b.dimension(1); point++){
+            for(size_type row = 0; row < ijkData_1b.dimension(2); row++){
+              for(size_type col = 0; col < ijkData_1b.dimension(2); col++){
 
                 // element with row = cell and col = point should equal 1; all other should equal 0
                 if( (row == cell && col == point) ){
@@ -1298,10 +1298,10 @@ namespace Intrepid2 {
       outData = DynRankView("outData", 3, 2, 3, 3);
 
       art::outerProductDataData(outData, ijkData_1a, ijkData_1a);
-      for(size_t cell = 0; cell < ijkData_1a.dimension(0); cell++){
-          for(size_t point = 0; point < ijkData_1a.dimension(1); point++){
-            for(size_t row = 0; row < ijkData_1a.dimension(2); row++){
-              for(size_t col = 0; col < ijkData_1a.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1a.dimension(0); cell++){
+          for(size_type point = 0; point < ijkData_1a.dimension(1); point++){
+            for(size_type row = 0; row < ijkData_1a.dimension(2); row++){
+              for(size_type col = 0; col < ijkData_1a.dimension(2); col++){
 
                 // element with row = cell and col = cell should equal 1; all other should equal 0
                 if( (row == cell && col == cell) ){
@@ -1325,10 +1325,10 @@ namespace Intrepid2 {
 
       deep_copy(outData, 0.0);
       art::outerProductDataData(outData, ijkData_1a, jkiData_2a);
-      for(size_t cell = 0; cell < ijkData_1a.dimension(0); cell++){
-        for(size_t point = 0; point < ijkData_1a.dimension(1); point++){
-          for(size_t row = 0; row < ijkData_1a.dimension(2); row++){
-            for(size_t col = 0; col < ijkData_1a.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1a.dimension(0); cell++){
+        for(size_type point = 0; point < ijkData_1a.dimension(1); point++){
+          for(size_type row = 0; row < ijkData_1a.dimension(2); row++){
+            for(size_type col = 0; col < ijkData_1a.dimension(2); col++){
 
               // element with row = cell and col = cell + 1 (mod 3) should equal 1; all other should equal 0
               if( (row == cell && col == (cell + 1) % 3) ){
@@ -1353,10 +1353,10 @@ namespace Intrepid2 {
 
       deep_copy(outData, 0.0);
       art::outerProductDataData(outData, ijkData_1a, kijData_2a);
-      for(size_t cell = 0; cell < ijkData_1a.dimension(0); cell++){
-        for(size_t point = 0; point < ijkData_1a.dimension(1); point++){
-          for(size_t row = 0; row < ijkData_1a.dimension(2); row++){
-            for(size_t col = 0; col < ijkData_1a.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1a.dimension(0); cell++){
+        for(size_type point = 0; point < ijkData_1a.dimension(1); point++){
+          for(size_type row = 0; row < ijkData_1a.dimension(2); row++){
+            for(size_type col = 0; col < ijkData_1a.dimension(2); col++){
 
               // element with row = cell and col = cell + 2 (mod 3) should equal 1; all other should equal 0
               if( (row == cell && col == (cell + 2) % 3) ){
@@ -1394,10 +1394,10 @@ namespace Intrepid2 {
        */
       outData = DynRankView("outData", 3,3,3,3);
       art::outerProductDataData(outData, ijkData_1b, ijkData_2b);
-      for(size_t cell = 0; cell < ijkData_1b.dimension(0); cell++){
-        for(size_t point = 0; point < ijkData_1b.dimension(1); point++){
-          for(size_t row = 0; row < ijkData_1b.dimension(2); row++){
-            for(size_t col = 0; col < ijkData_1b.dimension(2); col++){
+      for(size_type cell = 0; cell < ijkData_1b.dimension(0); cell++){
+        for(size_type point = 0; point < ijkData_1b.dimension(1); point++){
+          for(size_type row = 0; row < ijkData_1b.dimension(2); row++){
+            for(size_type col = 0; col < ijkData_1b.dimension(2); col++){
 
               // element with row = cell and col = cell + 2 (mod 3) should equal 1; all other should equal 0
               if( (row == cell && col == point) ){
@@ -1465,10 +1465,10 @@ namespace Intrepid2 {
       art::matvecProductDataField(outFields, inputMat, inputVecFields);
 
       // test loop
-      for(size_t cell = 0; cell < outFields.dimension(0); cell++){
-        for(size_t field = 0; field < outFields.dimension(1); field++){
-          for(size_t point = 0; point < outFields.dimension(2); point++){
-            for(size_t row = 0; row < outFields.dimension(3); row++){
+      for(size_type cell = 0; cell < outFields.dimension(0); cell++){
+        for(size_type field = 0; field < outFields.dimension(1); field++){
+          for(size_type point = 0; point < outFields.dimension(2); point++){
+            for(size_type row = 0; row < outFields.dimension(3); row++){
               if(outFields(cell, field, point, row) != outFieldsCorrect(cell, field, point, row)) {
                 *outStream << "\n\nINCORRECT matvecProductDataField (1): \n value at multi-index ("
                 << cell << "," << field << "," << point << "," << row << ") = "
@@ -1520,10 +1520,10 @@ namespace Intrepid2 {
       art::matvecProductDataField(outFields, inputMat, inputVecFields);
 
       // test loop
-      for(size_t cell = 0; cell < outFields.dimension(0); cell++){
-        for(size_t field = 0; field < outFields.dimension(1); field++){
-          for(size_t point = 0; point < outFields.dimension(2); point++){
-            for(size_t row = 0; row < outFields.dimension(3); row++){
+      for(size_type cell = 0; cell < outFields.dimension(0); cell++){
+        for(size_type field = 0; field < outFields.dimension(1); field++){
+          for(size_type point = 0; point < outFields.dimension(2); point++){
+            for(size_type row = 0; row < outFields.dimension(3); row++){
               if(outFields(cell, field, point, row) != outFieldsCorrect(cell, field, point, row)) {
                 *outStream << "\n\nINCORRECT matvecProductDataField (2): \n value at multi-index ("
                 << cell << "," << field << "," << point << "," << row << ") = "
@@ -2001,9 +2001,9 @@ namespace Intrepid2 {
       art::matvecProductDataData(outFields, inputMat, inputVecFields);
 
       // test loop
-      for(size_t cell = 0; cell < outFields.dimension(0); cell++){
-        for(size_t point = 0; point < outFields.dimension(1); point++){
-          for(size_t row = 0; row < outFields.dimension(2); row++){
+      for(size_type cell = 0; cell < outFields.dimension(0); cell++){
+        for(size_type point = 0; point < outFields.dimension(1); point++){
+          for(size_type row = 0; row < outFields.dimension(2); row++){
             if(outFields(cell, point, row) != outFieldsCorrect(cell, point, row)) {
               *outStream << "\n\nINCORRECT matvecProductDataData (1): \n value at multi-index ("
               << cell << "," << point << "," << row << ") = "
@@ -2066,9 +2066,9 @@ namespace Intrepid2 {
       art::matvecProductDataData(outFields, inputMat, inputVecFields);
 
       // test loop
-      for(size_t cell = 0; cell < outFields.dimension(0); cell++){
-        for(size_t point = 0; point < outFields.dimension(1); point++){
-          for(size_t row = 0; row < outFields.dimension(2); row++){
+      for(size_type cell = 0; cell < outFields.dimension(0); cell++){
+        for(size_type point = 0; point < outFields.dimension(1); point++){
+          for(size_type row = 0; row < outFields.dimension(2); row++){
             if(outFields(cell, point, row) != outFieldsCorrect(cell, point, row)) {
               *outStream << "\n\nINCORRECT matvecProductDataData (2): \n value at multi-index ("
               << cell << "," << point << "," << row << ") = "

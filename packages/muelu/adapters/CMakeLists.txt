@@ -12,6 +12,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
 ENDIF()
 
+if (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+ENDIF()
 #
 # Belos
 #
@@ -44,6 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
   APPEND_SET(SOURCES
     epetra/MueLu_EpetraOperator.cpp
+    epetra/MueLu_CreateEpetraPreconditioner.cpp
     )
 
 ENDIF()
@@ -61,7 +65,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
      tpetra/MueLu_TpetraOperator_def.hpp
    )
 
-   IF (${PACKAGE_NAME}_ENABLE_Belos AND Tpetra_INST_INT_INT)
+   IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT)
 
      APPEND_SET(HEADERS
        tpetra/MueLu_RefMaxwell_decl.hpp
@@ -169,7 +173,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
   GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
-  IF (${PACKAGE_NAME}_ENABLE_Belos AND TPETRA_INST_INT_INT)
+  IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT)
     APPEND_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::RefMaxwell
       )

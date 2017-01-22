@@ -54,13 +54,13 @@ include:
 
 \param[in] exoid          exodus file ID returned from a previous call to
 ex_create() or ex_open().
-\param[in] coord_names    Array containing \c num_dim names of length \p
+\param[in] coord_names    Array containing num_dim names of length \p
 ...max_name_length...                         of the nodal coordinate arrays.
 
 The following coding will write the coordinate names to an
 open exodus file :
 
-\code
+~~~{.c}
 int error, exoid;
 
 char *coord_names[3];
@@ -69,7 +69,7 @@ coord_names[1] = "ycoor";
 coord_names[2] = "zcoor";
 
 error = ex_put_coord_names (exoid, coord_names);
-\endcode
+~~~
 
  */
 

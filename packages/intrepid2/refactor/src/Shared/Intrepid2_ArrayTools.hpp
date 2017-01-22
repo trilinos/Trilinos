@@ -53,6 +53,8 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 
+#include "Intrepid2_Kernels.hpp"
+
 #include "Kokkos_Core.hpp"
 
 namespace Intrepid2 {
@@ -782,10 +784,9 @@ namespace Intrepid2 {
     cloneFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                  const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
 
-    /** \brief Multiplies a rank-2, 3, or 4 container with dimensions (F,P),
+    /** \brief Replicates a rank-2, 3, or 4 container with dimensions (F,P),
         (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
-        tensor field, F-componentwise with a scalar container indexed by (C,F),
-        and stores the result in an output value container of size (C,F,P),
+        tensor field, into an output value container of size (C,F,P),
         (C,F,P,D1) or (C,F,P,D1,D2).
 
         \code
@@ -797,37 +798,13 @@ namespace Intrepid2 {
         \endcode
 
         \param  outputFields   [out] - Output fields array.
-        \param  inputFactors    [in] - Input field factors array.
         \param  inputFields     [in] - Input fields array.
     */
-    template<typename outputFieldValueType, class ...outputFieldProperties,
-             typename inputFactorValueType, class ...inputFactorProperties,
-             typename inputFieldValueType,  class ...inputFieldProperties>
+    template<typename outputDataValueType, class ...outputDataProperties,
+             typename inputDataValueType,  class ...inputDataProperties>
     static void
-    cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
-                      const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors,
-                      const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
-
-    /** \brief Multiplies, in place, a rank-2, 3, or 4 container with dimensions (C,F,P),
-        (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a scalar, vector or a
-        tensor field, F-componentwise with a scalar container indexed by (C,F).
-
-        \code
-        C  - num. integration domains
-        F  - num. fields
-        P  - num. integration points
-        D1 - first spatial (tensor) dimension index
-        D2 - second spatial (tensor) dimension index
-        \endcode
-
-        \param  inoutFields    [in/out] - Input / output fields array.
-        \param  inputFactors       [in] - Scaling field factors array.
-    */
-    template<typename inoutFieldValueType,  class ...inoutFieldProperties,
-             typename inputFactorValueType, class ...inputFactorProperties>
-    static void
-    scaleFields( /**/  Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields,
-                 const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors );
+    cloneData( /**/  Kokkos::DynRankView<outputDataValueType,outputDataProperties...> outputData,
+               const Kokkos::DynRankView<inputDataValueType, inputDataProperties...> inputData );
 
     // =====================================================================================
     // Internal universal implementations
@@ -864,16 +841,6 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                         const bool sumInto );
-      
-      template<typename outputValueType,     class ...outputProperties,
-               typename leftInputValueType,  class ...leftInputProperties,
-               typename rightInputValueType, class ...rightInputProperties>
-      static void
-      scalarMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     output,
-                      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  left,
-                      const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput,
-                      const bool hasField,
-                      const bool reciprocal );
       
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,

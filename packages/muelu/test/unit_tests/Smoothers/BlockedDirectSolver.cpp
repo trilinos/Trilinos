@@ -272,6 +272,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#ifdef HAVE_MUELU_TPETRA
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -366,6 +367,7 @@ namespace MueLuTests {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }
     } // end UseTpetra
+#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedI53I42II01II_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -432,9 +434,11 @@ namespace MueLuTests {
 
       // solve system
       solver->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
         if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -542,9 +546,11 @@ namespace MueLuTests {
 
       // solve system
       solver->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
         if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -590,6 +596,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#ifdef HAVE_MUELU_TPETRA
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -657,7 +664,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -709,9 +716,11 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -751,10 +760,12 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
     }// end useTpetra
+#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_Thyra_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#ifdef HAVE_MUELU_TPETRA
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -822,7 +833,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -874,9 +885,11 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(int i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -916,6 +929,7 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
     }// end useTpetra
+#endif
   }
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \

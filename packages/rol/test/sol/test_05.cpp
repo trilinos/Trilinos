@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
     bool hess = true;
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/

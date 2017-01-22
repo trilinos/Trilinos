@@ -483,6 +483,51 @@ int elem_info(int info, int ielem_type, int supp)
     }
     break;
 
+  case PYRAMID14:
+    switch (info) {
+    case NNODES: answer = 14; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 5: answer  = 9; break;
+      default: answer = 6; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case PYRAMID18:
+    switch (info) {
+    case NNODES: answer = 18; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 5: answer  = 9; break;
+      default: answer = 7; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case PYRAMID19:
+    switch (info) {
+    case NNODES: answer = 19; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 5: answer  = 9; break;
+      default: answer = 7; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
   default: fprintf(stderr, "%sERROR: Unimplemented element type.\n", yo); exit(1);
   }
 
@@ -675,6 +720,9 @@ int get_type(char string[], int nodes, int num_dim)
       switch (nodes) {                     /* select number of nodes in this element */
       case 5: answer  = PYRAMID5; break;
       case 13: answer = PYRAMID13; break;
+      case 14: answer = PYRAMID14; break;
+      case 18: answer = PYRAMID18; break;
+      case 19: answer = PYRAMID19; break;
       default:
         fprintf(stderr, "%sERROR: pyramid element with %d nodes not valid.\n", yo, nodes);
         exit(1);

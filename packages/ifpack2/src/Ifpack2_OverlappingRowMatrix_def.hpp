@@ -266,7 +266,15 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getDomainMap () const
 {
-  return A_->getDomainMap();
+  // The original matrix's domain map is irrelevant; we want the map associated
+  // with the overlap. This can then be used by LocalFilter, for example, while
+  // letting LocalFilter still filter based on domain and range maps (instead of
+  // column and row maps).
+  // FIXME Ideally, this would be the same map but restricted to a local
+  // communicator. If replaceCommWithSubset were free, that would be the way to
+  // go. That would require a new Map ctor. For now, we'll stick with ColMap_'s
+  // global communicator.
+  return ColMap_;
 }
 
 
@@ -274,7 +282,7 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getRangeMap () const
 {
-  return A_->getRangeMap ();
+  return RowMap_;
 }
 
 

@@ -92,6 +92,10 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: relative threshold", (double)1.0);
   params.set("fact: relax value", (double)0.0);
 
+  // Ifpack2_LocalSparseTriangularSolver.cpp
+  params.set("trisolver: type", "Internal");
+  params.set("trisolver: block size", (int)1);
+
   // Overlapping partitioner
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
@@ -142,7 +146,6 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_METISPartitioner.hpp
   // ap 25 May 2016: all METIS for backwards compatibility ONLY
   params.set("partitioner: use symmetric graph", true);
-
 
   // Ifpack2_Details_Amesos2Wrapper
   Teuchos::ParameterList dummyList;

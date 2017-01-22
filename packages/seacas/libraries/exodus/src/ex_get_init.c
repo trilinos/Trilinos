@@ -87,7 +87,7 @@ number of coordinates per node.
 The following code segment will read the initialization parameters
 from the open exodus file:
 
-\code
+~~~{.c}
 int num_dim, num_nodes, num_elem, num_elem_blk,
     num_node_sets, num_side_sets, error, exoid;
 
@@ -96,7 +96,7 @@ char title[MAX_LINE_LENGTH+1];
 \comment{read database parameters}
 error = ex_get_init (exoid, title, &num_dim, &num_nodes,
                      &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
-\endcode
+~~~
 
 */
 

@@ -49,6 +49,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <tuple>
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_config.hpp"
@@ -60,8 +61,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #endif
 
 namespace PHX {
@@ -82,7 +82,7 @@ namespace PHX {
     //! Require a variable to be evaluated.
     void requireField(const PHX::FieldTag& v);
     
-    //! Registers a variable provider with the manager.
+    //! Registers an evaluator with the manager.
     void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
     
@@ -101,7 +101,7 @@ namespace PHX {
     */
     void sortAndOrderEvaluators();
     
-    /*! Calls post registration setup on all variable providers.
+    /*! Calls post registration setup on all evaluators.
     */
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& vm);
@@ -112,20 +112,18 @@ namespace PHX {
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
 
-      @param threads_per_task The number of threads used for data parallelism within a single task.
       @param work_Size The number of items to divide the parallel work over.
       @param d User defined data.
      */
-    void evaluateFieldsTaskParallel(const int& threads_per_task,
-				    const int& work_size,
+    void evaluateFieldsTaskParallel(const int& work_size,
 				    typename Traits::EvalData d);
 #endif
 
     /*! \brief This routine is called before each residual/Jacobian fill.
       
-        This routine is called ONCE on the provider before the fill
+        This routine is called ONCE on the evaluator before the fill
         loop over elements is started.  This allows us to reset global
-        objects between each fill.  An example is to reset a provider
+        objects between each fill.  An example is to reset an evaluator
         that monitors the maximum grid peclet number in a cell.  This
         call would zero out the maximum for a new fill.
     */
@@ -133,7 +131,7 @@ namespace PHX {
     
     /*! \brief This routine is called after each residual/Jacobian fill.
       
-        This routine is called ONCE on the provider after the fill
+        This routine is called ONCE on the evaluator after the fill
         loop over elements is completed.  This allows us to evaluate
         any post fill data.  An example is to print out some
         statistics such as the maximum grid peclet number in a cell.
@@ -180,7 +178,8 @@ namespace PHX {
         fields in evalautors. Be careful not to corrupt the actual
         vector.
      */
-    std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& getEvaluatorsBindingField(const PHX::FieldTag& ft);
+    std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
+    getEvaluatorsBindingField(const PHX::FieldTag& ft);
 
   protected:
 
@@ -213,6 +212,10 @@ namespace PHX {
 
     //! Hash map of field key to evaluator index.
     std::unordered_map<std::string,int> field_to_node_index_;
+
+    //! Hash map of contributed field key to evaluator index.
+    std::unordered_map<std::string,std::unordered_set<int>>
+      contributed_field_to_node_index_;
     
     //! All fields that are needed for the evaluation.
     std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
@@ -242,7 +245,7 @@ namespace PHX {
     bool allow_multiple_evaluators_for_same_field_;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    //std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
+    //std::vector<Kokkos::Experimental::Future<void,PHX::exec_space>> node_futures_;
 #endif
 
     //! A map that returns all evalautors that bind the memory of a particular field. Key is unique field identifier.  

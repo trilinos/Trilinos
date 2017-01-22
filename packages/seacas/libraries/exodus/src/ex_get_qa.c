@@ -41,7 +41,7 @@
 
 /*!
 The function ex_get_qa() reads the QA records from the database. Each
-QA record contains four \c MAX_STR_LENGTH-byte character
+QA record contains four MAX_STR_LENGTH-byte character
 strings. The character strings are:
  -  the analysis code name
  -  the analysis code QA descriptor
@@ -65,7 +65,7 @@ ex_create() or ex_open().
 The following will determine the number of QA records and
 read them from the open exodus file:
 
-\code
+~~~{.c}
 int num_qa_rec, error, exoid
 char *qa_record[MAX_QA_REC][4];
 
@@ -77,7 +77,7 @@ for (i=0; i<num_qa_rec; i++) {
     qa_record[i][j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 }
 error = ex_get_qa (exoid, qa_record);
-\endcode
+~~~
 
  */
 

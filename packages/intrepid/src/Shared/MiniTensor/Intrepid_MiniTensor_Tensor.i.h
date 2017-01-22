@@ -708,11 +708,7 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
       break;
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown component order.";
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Unknown component order.");
       break;
 
     }
@@ -1792,6 +1788,13 @@ transpose(Tensor<T, N> const & A)
   Tensor<T, N>
   B = A;
 
+#if defined (__GNUC__) & (__GNUC__ == 4)
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = i + 1; j < dimension; ++j) {
+      std::swap(B(i, j), B(j, i));
+    }
+  }
+#else
   switch (dimension) {
 
   default:
@@ -1816,6 +1819,7 @@ transpose(Tensor<T, N> const & A)
     break;
 
   }
+#endif
 
   return B;
 }
@@ -1976,11 +1980,7 @@ skew(Vector<T, N> const & u)
     break;
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Skew from vector undefined for R^" << N;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Skew from vector defined for 3D only");
     break;
 
   }

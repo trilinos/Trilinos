@@ -103,25 +103,21 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
 template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
- 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
   // build a geometric pattern from a single basis
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+  RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
   return pattern;
 }
 
 Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > buildBlockedIndexer(int myRank,int numProc,int numBlocks)
 {
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
-
   std::string names[] = {"U","V","W","X"};
 
   Teuchos::RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
   Teuchos::RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
   Teuchos::RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
 
@@ -306,8 +302,6 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
  
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    out << "Built indexer = " << blkIndexer << std::endl;
@@ -393,8 +387,6 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
  
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory

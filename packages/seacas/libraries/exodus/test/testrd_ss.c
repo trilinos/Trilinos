@@ -130,12 +130,12 @@ int main(int argc, char **argv)
   num_nodes_per_elem = (int *)calloc(num_elem_blk, sizeof(int));
   num_attr           = (int *)calloc(num_elem_blk, sizeof(int));
 
-  error = ex_get_elem_blk_ids(exoid, ids);
+  error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
   printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
 
   for (i = 0; i < num_elem_blk; i++) {
-    error = ex_get_elem_block(exoid, ids[i], elem_type, &(num_elem_in_block[i]),
-                              &(num_nodes_per_elem[i]), &(num_attr[i]));
+    error = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &(num_elem_in_block[i]),
+                         &(num_nodes_per_elem[i]), NULL, NULL, &(num_attr[i]));
     printf("\nafter ex_get_elem_block, error = %d\n", error);
 
     printf("element block id = %2d\n", ids[i]);
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
   for (i = 0; i < num_elem_blk; i++) {
     connect = (int *)calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
 
-    error = ex_get_elem_conn(exoid, ids[i], connect);
+    error = ex_get_conn(exoid, EX_ELEM_BLOCK, ids[i], connect, NULL, NULL);
     printf("\nafter ex_get_elem_conn, error = %d\n", error);
 
     printf("connect array for elem block %2d\n", ids[i]);
@@ -169,11 +169,11 @@ int main(int argc, char **argv)
 
   ids = (int *)calloc(num_side_sets, sizeof(int));
 
-  error = ex_get_side_set_ids(exoid, ids);
+  error = ex_get_ids(exoid, EX_SIDE_SET, ids);
   printf("\nafter ex_get_side_set_ids, error = %3d\n", error);
 
   for (i = 0; i < num_side_sets; i++) {
-    error = ex_get_side_set_param(exoid, ids[i], &num_sides_in_set, &num_df_in_set);
+    error = ex_get_set_param(exoid, EX_SIDE_SET, ids[i], &num_sides_in_set, &num_df_in_set);
     printf("\nafter ex_get_side_set_param, error = %3d\n", error);
 
     printf("side set %2d parameters:\n", ids[i]);
@@ -188,14 +188,14 @@ int main(int argc, char **argv)
     node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
     dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
 
-    error = ex_get_side_set(exoid, ids[i], elem_list, side_list);
+    error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
     printf("\nafter ex_get_side_set, error = %3d\n", error);
 
     error = ex_get_side_set_node_list(exoid, ids[i], node_ctr_list, node_list);
     printf("\nafter ex_get_side_set_node_list, error = %3d\n", error);
 
     if (num_df_in_set > 0) {
-      error = ex_get_side_set_dist_fact(exoid, ids[i], dist_fact);
+      error = ex_get_set_dist_fact(exoid, EX_SIDE_SET, ids[i], dist_fact);
       printf("\nafter ex_get_side_set_dist_fact, error = %3d\n", error);
     }
 
@@ -263,8 +263,20 @@ int main(int argc, char **argv)
   side_list        = (int *)calloc(elem_list_len, sizeof(int));
   dist_fact        = (float *)calloc(df_list_len, sizeof(float));
 
-  error = ex_get_concat_side_sets(exoid, ids, num_elem_per_set, num_df_per_set, elem_ind, df_ind,
-                                  elem_list, side_list, dist_fact);
+  {
+    struct ex_set_specs set_specs;
+
+    set_specs.sets_ids            = ids;
+    set_specs.num_entries_per_set = num_elem_per_set;
+    set_specs.num_dist_per_set    = num_df_per_set;
+    set_specs.sets_entry_index    = elem_ind;
+    set_specs.sets_dist_index     = df_ind;
+    set_specs.sets_entry_list     = elem_list;
+    set_specs.sets_extra_list     = side_list;
+    set_specs.sets_dist_fact      = dist_fact;
+
+    error = ex_get_concat_sets(exoid, EX_SIDE_SET, &set_specs);
+  }
   printf("\nafter ex_get_concat_side_sets, error = %3d\n", error);
 
   printf("concatenated side set info\n");

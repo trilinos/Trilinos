@@ -6,6 +6,9 @@
 #ifdef HAVE_SHYLUTACHO_VTUNE
 #include "ittnotify.h"
 #endif
+#ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl_service.h"
+#endif
 
 namespace Tacho {
 
@@ -16,6 +19,8 @@ namespace Tacho {
                     const int treecut,
                     const int prunecut,
                     const int max_concurrency,
+                    const int memory_pool_grain_size,
+                    const int mkl_nthreads,
                     const int nrhs,
                     const int mb,
                     const int nb,
@@ -27,6 +32,7 @@ namespace Tacho {
     const bool detail = false;
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
+    std::cout << std::endl;
 
     typedef Solver<value_type,ordinal_type,size_type,DeviceSpaceType> SolverType;
 
@@ -38,7 +44,7 @@ namespace Tacho {
     Kokkos::Impl::Timer timer;
 
     SolverType tacho("Tacho::CholSolver");
-    tacho.setPolicy(max_concurrency);
+    tacho.setPolicy(max_concurrency, memory_pool_grain_size);
     tacho.setBlocksize(mb, nb);
     tacho.setCrossOverSize(hier_minsize);
 
@@ -83,11 +89,10 @@ namespace Tacho {
                 << std::endl;
 
       const ordinal_type m = 12, nnz = 46;
-      
-      data.ap = new size_type[m+1]{
+      const size_type ap[m+1] = {
         0, 3, 7, 11, 15, 20, 23, 26, 31, 35, 39, 43, 46
       };
-      data.aj = new ordinal_type[nnz]{
+      const ordinal_type aj[nnz] = {
         0, 1, 2,
         0, 1, 3, 4,  
         0, 2, 4, 5, 
@@ -101,7 +106,7 @@ namespace Tacho {
         7, 8, 10, 11, 
         9, 10, 11 
       };
-      data.ax = new value_type[nnz]{
+      const value_type ax[nnz] = {
         10,  1,  1, 
         1, 10,  1,  2, 
         1, 10,  1,  1, 
@@ -115,6 +120,18 @@ namespace Tacho {
         1,  1, 10,  1, 
         2, 1, 10 
       };
+
+      data.ap = new size_type[m+1]();
+      data.aj = new ordinal_type[nnz]();
+      data.ax = new value_type[nnz]();
+
+      for (auto i=0;i<(m+1);++i) 
+        data.ap[i] = ap[i];
+
+      for (auto k=0;k<nnz;++k) {
+        data.aj[k] = aj[k];
+        data.ax[k] = ax[k];
+      }
 
       typename SolverType::CrsMatrixBaseHostType AA("AA", m, m, nnz);
 
@@ -173,6 +190,10 @@ namespace Tacho {
     ///
     /// Solver interface
     ///
+#ifdef HAVE_SHYLUTACHO_MKL
+    mkl_set_num_threads(mkl_nthreads);
+#endif
+
     TACHO_SOLVER_RUN(tacho.reorder(treecut, prunecut), t_reorder);
     TACHO_SOLVER_RUN(tacho.analyze(), t_analyze);
 

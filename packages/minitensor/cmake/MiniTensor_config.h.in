@@ -1,0 +1,4 @@
+#if !defined(MINITENSOR_CONFIG_H)
+#define MINITENSOR_CONFIG_H
+
+#endif // MINITENSOR_CONFIG_H

@@ -58,6 +58,8 @@
 #include <Kokkos_Atomic.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
+#if defined( KOKKOS_ENABLE_TASKDAG )
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -120,13 +122,13 @@ Task::~TaskMember()
 }
 
 
-Task::TaskMember( const function_verify_type        arg_verify
-                , const function_dealloc_type       arg_dealloc
-                , const function_apply_single_type  arg_apply_single
-                , const function_apply_team_type    arg_apply_team
-                , volatile int &                    arg_active_count
-                , const unsigned                    arg_sizeof_derived
-                , const unsigned                    arg_dependence_capacity
+Task::TaskMember( const function_verify_type   arg_verify
+                , const function_dealloc_type  arg_dealloc
+                , const function_single_type   arg_apply_single
+                , const function_team_type     arg_apply_team
+                , volatile int &               arg_active_count
+                , const unsigned               arg_sizeof_derived
+                , const unsigned               arg_dependence_capacity
                 )
   : m_dealloc( arg_dealloc )
   , m_verify(  arg_verify )
@@ -144,12 +146,12 @@ Task::TaskMember( const function_verify_type        arg_verify
   for ( unsigned i = 0 ; i < arg_dependence_capacity ; ++i ) m_dep[i] = 0 ;
 }
 
-Task::TaskMember( const function_dealloc_type       arg_dealloc
-                , const function_apply_single_type  arg_apply_single
-                , const function_apply_team_type    arg_apply_team
-                , volatile int &                    arg_active_count
-                , const unsigned                    arg_sizeof_derived
-                , const unsigned                    arg_dependence_capacity
+Task::TaskMember( const function_dealloc_type  arg_dealloc
+                , const function_single_type   arg_apply_single
+                , const function_team_type     arg_apply_team
+                , volatile int &               arg_active_count
+                , const unsigned               arg_sizeof_derived
+                , const unsigned               arg_dependence_capacity
                 )
   : m_dealloc( arg_dealloc )
   , m_verify(  & Task::verify_type<void> )
@@ -194,7 +196,7 @@ void Task::assign( Task ** const lhs , Task * rhs , const bool no_throw )
   static const char msg_error_dependences[] = ": destroy task that has dependences" ;
   static const char msg_error_exception[]   = ": caught internal exception" ;
 
-  if ( rhs ) { Kokkos::atomic_fetch_add( & (*rhs).m_ref_count , 1 ); }
+  if ( rhs ) { Kokkos::atomic_increment( &(*rhs).m_ref_count ); }
 
   Task * const lhs_val = Kokkos::atomic_exchange( lhs , rhs );
 
@@ -316,12 +318,8 @@ aligned_t Task::qthread_func( void * arg )
                                         , int(Kokkos::Experimental::TASK_STATE_EXECUTING)
                                         );
 
-  // It is a single thread's responsibility to close out
-  // this task's execution.
-  bool close_out = false ;
-
   if ( task->m_apply_team && ! task->m_apply_single ) {
-    const Kokkos::Impl::QthreadTeamPolicyMember::TaskTeam task_team_tag ;
+    Kokkos::Impl::QthreadTeamPolicyMember::TaskTeam task_team_tag ;
 
     // Initialize team size and rank with shephered info
     Kokkos::Impl::QthreadTeamPolicyMember member( task_team_tag );
@@ -344,7 +342,7 @@ fflush(stdout);
     if ( member.team_rank() == 0 ) task->closeout();
     member.team_barrier();
   }
-  else if ( task->m_apply_team && task->m_apply_single == reinterpret_cast<function_apply_single_type>(1) ) {
+  else if ( task->m_apply_team && task->m_apply_single == reinterpret_cast<function_single_type>(1) ) {
     // Team hard-wired to one, no cloning
     Kokkos::Impl::QthreadTeamPolicyMember member ;
     (*task->m_apply_team)( task , member );
@@ -488,5 +486,6 @@ void wait( Kokkos::Experimental::TaskPolicy< Kokkos::Qthread > & policy )
 } // namespace Experimental
 } // namespace Kokkos
 
+#endif /* #if defined( KOKKOS_ENABLE_TASKDAG ) */
 #endif /* #if defined( KOKKOS_HAVE_QTHREAD ) */
 

@@ -114,6 +114,7 @@ namespace impl
       }
 
       void write_output_mesh(const stk::mesh::BulkData& bulk_data);
+      void flush_output() const;
       void add_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
       void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
@@ -189,6 +190,7 @@ namespace impl
       void add_global_ref(const std::string &variableName, const boost::any *value,
 			  stk::util::ParameterType::Type type);
       void process_output(int step, double time);
+      void flush_output() const;
 
     private:
       std::vector<GlobalAnyVariable> m_fields;
@@ -550,6 +552,11 @@ namespace impl
       // to "end_output_step"
       int write_defined_output_fields(size_t output_file_index);
 
+      // Force all output databases to "flush" their data to disk (if possible)
+      // Typically called by the application during a planned or unplanned
+      // termination.
+      void flush_output() const; 
+
       // Add a transient step to the mesh database at time 'time' and
       // output the data for all defined fields to the database.
       // Performs the same functions as:
@@ -630,6 +637,7 @@ namespace impl
 
       void set_option_to_not_collapse_sequenced_fields();
       int get_num_time_steps();
+      double get_max_time();
 
       //-END
     protected:

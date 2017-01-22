@@ -18,6 +18,22 @@ namespace Tacho {
   public:
     // data-parallel interface with nested task generation
     // ===================================================
+    template<typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB>
+    inline
+    static Stat stat(const int diagA,
+                     const ScalarType alpha,
+                     ExecViewTypeA &A,
+                     ExecViewTypeB &B) {
+      printf(">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
+
+    // data-parallel interface with nested task generation
+    // ===================================================
     template<typename PolicyType,
              typename MemberType,
              typename ScalarType,
@@ -25,13 +41,13 @@ namespace Tacho {
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const int diagA,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B) {
-      fprintf(stderr, ">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
-              ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
+      printf(">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }
@@ -58,6 +74,9 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() = delete;
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const int diagA,
                   const ScalarType alpha,
@@ -74,14 +93,7 @@ namespace Tacho {
       const char* Label() const { return "Trsm"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_policy, _policy.member_single(),
-                             _diagA, _alpha, _A, _B);
-        _B.setFuture(typename ExecViewTypeB::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Trsm::invoke(_policy, member,
                                       _diagA, _alpha, _A, _B);
         

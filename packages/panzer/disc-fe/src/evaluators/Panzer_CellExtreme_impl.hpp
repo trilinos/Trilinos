@@ -115,7 +115,7 @@ PHX_POST_REGISTRATION_SETUP(CellExtreme,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(CellExtreme,workset)
 { 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       ScalarT current= multiplier * scalar(cell,qp);

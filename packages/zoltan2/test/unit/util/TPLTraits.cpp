@@ -72,31 +72,13 @@ extern "C"{
 
 #ifdef HAVE_ZOLTAN2_PARMETIS
 
-#ifndef HAVE_ZOLTAN2_MPI
-// ParMETIS requires compilation with MPI.  
-// If MPI is not available, make compilation fail.
-#error "TPL ParMETIS requires compilation with MPI.  Configure with -DTPL_ENABLE_MPI:BOOL=ON or -DZoltan2_ENABLE_ParMETIS:BOOL=OFF"
-  
-#else
-
 extern "C"{
 #include "parmetis.h"
 }
 
-#if (PARMETIS_MAJOR_VERSION < 4)
-// Zoltan2 requires ParMETIS v4.x.  
-// Make compilation fail for earlier versions of ParMETIS.
-#error "Specified version of ParMETIS is not compatible with Zoltan2; upgrade to ParMETIS v4 or later, or build Zoltan2 without ParMETIS."
-  
-#else
-
-// MPI and ParMETIS version requirements are met.  Proceed.
 #define PARMETIS_IS_OK 1
 
-#endif  // ParMETIS version check
 #endif  // HAVE_ZOLTAN2_MPI
-#endif  // HAVE_ZOLTAN2_PARMETIS
-
 
 
 #define PRINTMSG(s) \
@@ -524,11 +506,26 @@ int main(int argc, char *argv[])
     }
 
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN(zoltanGID, zgno);
-    if (zoltanGID[0] != 17 || zoltanGID[1] != 4 || 
-        zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+    if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned int)) {
+      if (zoltanGID[0] != 17 || zoltanGID[1] != 4 || 
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned long long)) {
+      if (test_t(zoltanGID[0]) != zgno || zoltanGID[1] != 0 ||
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else {
+      // should never get here 
+      PRINTMSG("FAIL: unknown sizeof(ZOLTAN_ID_TYPE)");
       ierr++;
     }
+
 
     test_t back;
     Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN(back, zoltanGID);
@@ -551,11 +548,27 @@ int main(int argc, char *argv[])
     }
 
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN(zoltanGID, zgno);
-    if (zoltanGID[0] != 25 || zoltanGID[1] != 16 || 
-        zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: unsigned long long to ZOLTAN_ID_PTR");
+    if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned int)) {
+      if (zoltanGID[0] != 25 || zoltanGID[1] != 16 || 
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: unsigned long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned long long)) {
+      if (zoltanGID[0] != zgno || zoltanGID[1] != 0 ||
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else {
+      // should never get here 
+      PRINTMSG("FAIL: unknown sizeof(ZOLTAN_ID_TYPE)");
       ierr++;
     }
+
+
 
     test_t back;
     Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN(back, zoltanGID);

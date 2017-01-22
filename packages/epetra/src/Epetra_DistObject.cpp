@@ -55,7 +55,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map)
   : Epetra_Object("Epetra::DistObject"),
     Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -70,7 +69,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map, const char* con
   : Epetra_Object(label),
     Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -85,7 +83,6 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_DistObject& Source)
   : Epetra_Object(Source),
     Map_(Source.Map_),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(Source.DistributedGlobal_),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -268,7 +265,7 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs,
                  LenExports, Exports, SizeOfPacket, Sizes_, VarSizes, Distor));
 
-  if ((DistributedGlobal_ && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
+  if ((Map_.DistributedGlobal() && DoReverse) || (A.Map().DistributedGlobal() && !DoReverse)) {
     if (DoReverse) {
       // Do the exchange of remote data
       if( VarSizes ) {

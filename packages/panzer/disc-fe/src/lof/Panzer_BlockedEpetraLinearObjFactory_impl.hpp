@@ -1241,7 +1241,7 @@ buildGhostedMap(int i) const
    std::vector<int> indices;
 
    // get the global indices
-   getGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
+   getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
@@ -1257,7 +1257,7 @@ buildColGhostedMap(int i) const
    std::vector<int> indices;
 
    // get the global indices
-   getColGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
+   getColGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
@@ -1376,7 +1376,7 @@ buildFilteredGhostedGraph(int i,int j) const
 
    // get all local indices that are active (i.e. unfiltered)
    std::vector<int> ghostedActive;
-   filtered_ugi->getOwnedAndSharedNotFilteredIndicator(ghostedActive);
+   filtered_ugi->getOwnedAndGhostedNotFilteredIndicator(ghostedActive);
 
    // This will build a new ghosted graph without optimized storage so entries can be removed.
    Teuchos::RCP<Epetra_CrsGraph> filteredGraph = buildGhostedGraph(i,j,false); 

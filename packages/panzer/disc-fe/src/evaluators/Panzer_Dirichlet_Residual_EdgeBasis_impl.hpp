@@ -128,14 +128,14 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   residual.deep_copy(ScalarT(0.0));
 
   if(workset.subcell_dim==1) {
-    Intrepid2::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
-                                            pointValues.jac,
-                                            this->wda(workset).subcell_index, 
-                                           *basis->getCellTopology());
+    Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
+                                                                   pointValues.jac.get_view(),
+                                                                   this->wda(workset).subcell_index, 
+                                                                   *basis->getCellTopology());
 
-    for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.dimension(1);b++) {
-        for(int d=0;d<dof.dimension(2);d++)
+    for(index_t c=0;c<workset.num_cells;c++) {
+      for(int b=0;b<dof.extent_int(1);b++) {
+        for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
       } 
     }
@@ -145,20 +145,20 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     // how do we do this????
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
-    int numEdges = dof.dimension(1);
+    int numEdges = dof.extent_int(1);
 
     refEdgeTan = Kokkos::createDynRankView(residual.get_static_view(),"refEdgeTan",numEdges,cellDim);
 
     for(int i=0;i<numEdges;i++) {
       Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 
         refEdgeTan(i,d) = refEdgeTan_local(d);
     }
 
     // Loop over workset faces and edge points
-    for(std::size_t c=0;c<workset.num_cells;c++) {
+    for(index_t c=0;c<workset.num_cells;c++) {
       for(int pt = 0; pt < numEdges; pt++) {
 
         // Apply parent cell Jacobian to ref. edge tangent
@@ -171,9 +171,9 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
       }// for pt
     }// for pCell
 
-    for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.dimension(1);b++) {
-        for(int d=0;d<dof.dimension(2);d++)
+    for(index_t c=0;c<workset.num_cells;c++) {
+      for(int b=0;b<dof.extent_int(1);b++) {
+        for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
       } 
     }
@@ -187,8 +187,8 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   // loop over residuals scaling by orientation. This gurantees
   // everything is oriented in the "positive" direction, this allows
   // sums acrossed processor to be oriented in the same way (right?)
-  for(std::size_t c=0;c<workset.num_cells;c++) {
-    for(int b=0;b<dof.dimension(1);b++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
+    for(int b=0;b<dof.extent_int(1);b++) {
       residual(c,b) *= dof_orientation(c,b);
     }
   }

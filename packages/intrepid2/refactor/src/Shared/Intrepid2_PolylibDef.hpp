@@ -95,6 +95,8 @@
 #ifndef __INTREPID2_POLYLIB_DEF_HPP__
 #define __INTREPID2_POLYLIB_DEF_HPP__
 
+#include "Kokkos_ViewFactory.hpp"
+
 namespace Intrepid2 {
 
   // -----------------------------------------------------------------------
@@ -102,8 +104,7 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------
 
   template<>
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -111,24 +112,23 @@ namespace Intrepid2 {
   getValues(/**/  zViewType z,
             /**/  wViewType w,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
-    const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
-    ValueType fac;
+            const double alpha,
+            const double beta) {
+    const double one = 1.0, two = 2.0, apb = alpha + beta;
+    double fac;
 
     JacobiZeros(z, np, alpha, beta);
     JacobiPolynomialDerivative(np, z, w, np, alpha, beta);
     
     fac  = pow(two, apb + one)*GammaFunction(alpha + np + one)*GammaFunction(beta + np + one);
-    fac /= GammaFunction((ValueType)(np + one))*GammaFunction(apb + np + one);
+    fac /= GammaFunction((np + one))*GammaFunction(apb + np + one);
 
-    for (auto i = 0; i < np; ++i)
+    for (ordinal_type i = 0; i < np; ++i)
       w(i) = fac/(w(i)*w(i)*(one-z(i)*z(i)));
   }
 
   template<>
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -136,35 +136,34 @@ namespace Intrepid2 {
   getValues(/**/  zViewType z,
             /**/  wViewType w,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np == 1) {
       z(0) = 0.0;
       w(0) = 2.0;
     } else {
-      const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
-      ValueType fac;
+      const double one = 1.0, two = 2.0, apb = alpha + beta;
+      double fac;
 
       z(0) = -one;
 
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
       JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
-      fac /= GammaFunction((ValueType)np)*(beta + np)*GammaFunction(apb + np + 1);
+      fac /= GammaFunction(np)*(beta + np)*GammaFunction(apb + np + 1);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac*(1-z(i))/(w(i)*w(i));
       w(0) *= (beta + one);
     }
   }
 
   template<>
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -172,33 +171,32 @@ namespace Intrepid2 {
   getValues(/**/  zViewType z,
             /**/  wViewType w,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np == 1) {
       z(0) = 0.0;
       w(0) = 2.0;
     } else {
-      const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
-      ValueType fac;
+      const double one = 1.0, two = 2.0, apb = alpha + beta;
+      double fac;
 
       JacobiZeros(z, np-1, alpha+1, beta);
       z(np-1) = one;
 
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
-      fac /= GammaFunction((ValueType)np)*(alpha + np)*GammaFunction(apb + np + 1);
+      fac /= GammaFunction(np)*(alpha + np)*GammaFunction(apb + np + 1);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac*(1+z(i))/(w(i)*w(i));
       w(np-1) *= (alpha + one);
     }
   }
 
   template<>
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -206,14 +204,14 @@ namespace Intrepid2 {
   getValues(/**/  zViewType z,
             /**/  wViewType w,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if ( np == 1 ) {
       z(0) = 0.0;
       w(0) = 2.0;
     } else {
-      const ValueType one = 1.0, apb = alpha + beta, two = 2.0;
-      ValueType fac;
+      const double one = 1.0, apb = alpha + beta, two = 2.0;
+      double fac;
 
       z(0)    = -one;
       z(np-1) =  one;
@@ -221,13 +219,13 @@ namespace Intrepid2 {
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
       JacobiZeros(z_plus_1, np-2, alpha+one, beta+one);
 
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb + 1)*GammaFunction(alpha + np)*GammaFunction(beta + np);
-      fac /= (np-1)*GammaFunction((ValueType)np)*GammaFunction(alpha + beta + np + one);
+      fac /= (np-1)*GammaFunction(np)*GammaFunction(alpha + beta + np + one);
 
-      for (auto i = 0; i < np; ++i)
+      for (ordinal_type i = 0; i < np; ++i)
         w(i) = fac/(w(i)*w(i));
 
       w(0)    *= (beta  + one);
@@ -240,8 +238,7 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------
 
   template<>
-  template<typename ValueType,
-           typename DViewType,
+  template<typename DViewType,
            typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -249,20 +246,22 @@ namespace Intrepid2 {
   getValues(/**/  DViewType D,
             const zViewType z,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np <= 0) {
       D(0,0) = 0.0;
     } else {
-      const ValueType one = 1.0, two = 2.0;
+      const double one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      typename zViewType::value_type pd_buf[MaxPolylibPoint];
+      Kokkos::View<typename zViewType::value_type*,
+        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
 
-      for (auto i = 0; i < np; ++i)
-        for (auto j = 0; j < np; ++j)
+      for (ordinal_type i = 0; i < np; ++i)
+        for (ordinal_type j = 0; j < np; ++j)
           if (i != j)
             //D(i*np+j) = pd(j)/(pd(i)*(z(j)-z(i))); <--- This is either a bug, or the derivative matrix is not defined consistently.
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
@@ -273,8 +272,7 @@ namespace Intrepid2 {
   }
 
   template<>
-  template<typename ValueType,
-           typename DViewType,
+  template<typename DViewType,
            typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -282,28 +280,30 @@ namespace Intrepid2 {
   getValues(/**/  DViewType D,
             const zViewType z,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np <= 0) {
       D(0,0) = 0.0;
     } else {
-      const ValueType one = 1.0, two = 2.0;
+      const double one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
-
-      pd(0) = pow(-one,np-1)*GammaFunction((ValueType)np+beta+one);
-      pd(0) /= GammaFunction((ValueType)np)*GammaFunction(beta+two);
+      typename zViewType::value_type pd_buf[MaxPolylibPoint];
+      Kokkos::View<typename zViewType::value_type*,
+        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
+      
+      pd(0) = pow(-one,np-1)*GammaFunction(np+beta+one);
+      pd(0) /= GammaFunction(np)*GammaFunction(beta+two);
 
       auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.dimension(0)));
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
 
       JacobiPolynomialDerivative(np-1, z_plus_1, pd_plus_1, np-1, alpha, beta+1);
-      for(auto i = 1; i < np; ++i)
+      for(ordinal_type i = 1; i < np; ++i)
         pd(i) *= (1+z(i));
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -317,8 +317,7 @@ namespace Intrepid2 {
   }
 
   template<>
-  template<typename ValueType,
-           typename DViewType,
+  template<typename DViewType,
            typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -326,25 +325,27 @@ namespace Intrepid2 {
   getValues(/**/  DViewType D,
             const zViewType z,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np <= 0) {
       D(0,0) = 0.0;
     } else {
-      const ValueType one = 1.0, two = 2.0;
+      const double one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      typename zViewType::value_type pd_buf[MaxPolylibPoint];
+      Kokkos::View<typename zViewType::value_type*,
+        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
-      for (auto i = 0; i < np-1; ++i)
+      for (ordinal_type i = 0; i < np-1; ++i)
         pd(i) *= (1-z(i));
 
-      pd(np-1) = -GammaFunction((ValueType)np+alpha+one);
-      pd(np-1) /= GammaFunction((ValueType)np)*GammaFunction(alpha+two);
+      pd(np-1) = -GammaFunction(np+alpha+one);
+      pd(np-1) /= GammaFunction(np)*GammaFunction(alpha+two);
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -358,8 +359,7 @@ namespace Intrepid2 {
   }
 
   template<>
-  template<typename ValueType,
-           typename DViewType,
+  template<typename DViewType,
            typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -367,31 +367,33 @@ namespace Intrepid2 {
   getValues(/**/  DViewType D,
             const zViewType z,
             const ordinal_type np,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     if (np <= 0) {
       D(0,0) = 0.0;
     } else {
-      const ValueType one = 1.0, two = 2.0;
+      const double one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      typename zViewType::value_type pd_buf[MaxPolylibPoint];
+      Kokkos::View<typename zViewType::value_type*,
+        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
-      pd(0)  = two*pow(-one,np)*GammaFunction((ValueType)np + beta);
-      pd(0) /= GammaFunction((ValueType)np - one)*GammaFunction(beta + two);
+      pd(0)  = two*pow(-one,np)*GammaFunction(np + beta);
+      pd(0) /= GammaFunction(np - one)*GammaFunction(beta + two);
 
       auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.dimension(0)));
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
 
       JacobiPolynomialDerivative(np-2, z_plus_1, pd_plus_1, np-2, alpha+1, beta+1);
-      for (auto i = 1; i < np-1; ++i) 
+      for (ordinal_type i = 1; i < np-1; ++i) 
         pd(i) *= (one-z(i)*z(i));
 
-      pd(np-1)  = -two*GammaFunction((ValueType)np + alpha);
-      pd(np-1) /= GammaFunction((ValueType)np - one)*GammaFunction(alpha + two);
+      pd(np-1)  = -two*GammaFunction(np + alpha);
+      pd(np-1) /= GammaFunction(np - one)*GammaFunction(alpha + two);
 
-      for (auto i = 0; i < np; ++i) 
-        for (auto j = 0; j < np; ++j) 
+      for (ordinal_type i = 0; i < np; ++i) 
+        for (ordinal_type j = 0; j < np; ++j) 
           if (i != j)
             D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
@@ -410,26 +412,28 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------
 
   template<>
-  template<typename ValueType,
-           typename zgjViewType>
+  template<typename zViewType>
   KOKKOS_INLINE_FUNCTION
-  ValueType
+  typename zViewType::value_type
   Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS>::
   getValue(const ordinal_type i,
-           const ValueType z,
-           const zgjViewType zgj,
+           const typename zViewType::value_type z,
+           const zViewType zgj,
            const ordinal_type np,
-           const ValueType alpha,
-           const ValueType beta) {
-    const ValueType tol = tolerence();
+           const double alpha,
+           const double beta) {
+    const double tol = tolerence();
 
-    ValueType h, p_buf, pd_buf, zi_buf = zgj(i);
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
-      zv(const_cast<ValueType*>(&z), 1), null;
+    typedef typename zViewType::value_type value_type;
+    typedef typename zViewType::pointer_type pointer_type;
 
+    value_type h, p_buf, pd_buf, zi_buf = zgj(i);
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
+      zv(const_cast<pointer_type>(&z), 1), null;
+    
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<value_type>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomialDerivative(1, zi, pd, np, alpha, beta);
@@ -441,26 +445,28 @@ namespace Intrepid2 {
   }
 
   template<>
-  template<typename ValueType,
-           typename zgrjViewType>
+  template<typename zViewType>
   KOKKOS_INLINE_FUNCTION
-  ValueType
+  typename zViewType::value_type
   Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_RADAU_LEFT>::
   getValue(const ordinal_type i,
-           const ValueType z,
-           const zgrjViewType zgrj,
+           const typename zViewType::value_type z,
+           const zViewType zgrj,
            const ordinal_type np,
-           const ValueType alpha,
-           const ValueType beta) {
-    const ValueType tol = tolerence();
+           const double alpha,
+           const double beta) {
+    const double tol = tolerence();
 
-    ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
-      zv(const_cast<ValueType*>(&z), 1), null;
+    typedef typename zViewType::value_type value_type;
+    typedef typename zViewType::pointer_type pointer_type;
+
+    value_type h, p_buf, pd_buf, zi_buf = zgrj(i);
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
+      zv(const_cast<pointer_type>(&z), 1), null;
     
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<value_type>::abs(dz) < tol) 
       return 1.0;
     
     JacobiPolynomial(1, zi, p , null, np-1, alpha, beta + 1);
@@ -477,26 +483,28 @@ namespace Intrepid2 {
 
 
   template<>
-  template<typename ValueType,
-           typename zgrjViewType>
+  template<typename zViewType>
   KOKKOS_INLINE_FUNCTION
-  ValueType
+  typename zViewType::value_type
   Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_RADAU_RIGHT>::
   getValue(const ordinal_type i,
-           const ValueType z,
-           const zgrjViewType zgrj,
+           const typename zViewType::value_type z,
+           const zViewType zgrj,
            const ordinal_type np,
-           const ValueType alpha,
-           const ValueType beta) {
-    const ValueType tol = tolerence();
+           const double alpha,
+           const double beta) {
+    const double tol = tolerence();
 
-    ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
-      zv(const_cast<ValueType*>(&z), 1), null;
+    typedef typename zViewType::value_type value_type;
+    typedef typename zViewType::pointer_type pointer_type;
+
+    value_type h, p_buf, pd_buf, zi_buf = zgrj(i);
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
+      zv(const_cast<pointer_type>(&z), 1), null;
 
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<value_type>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-1, alpha+1, beta);
@@ -513,26 +521,28 @@ namespace Intrepid2 {
 
 
   template<>
-  template<typename ValueType,
-           typename zgljViewType>
+  template<typename zViewType>
   KOKKOS_INLINE_FUNCTION
-  ValueType
+  typename zViewType::value_type
   Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_LOBATTO>::
   getValue(const ordinal_type i,
-           const ValueType z,
-           const zgljViewType zglj,
+           const typename zViewType::value_type z,
+           const zViewType zglj,
            const ordinal_type np,
-           const ValueType alpha,
-           const ValueType beta) {
-    const ValueType one = 1.0, two = 2.0, tol = tolerence();
+           const double alpha,
+           const double beta) {
+    const double one = 1.0, two = 2.0, tol = tolerence();
 
-    ValueType h, p_buf, pd_buf, zi_buf = zglj(i);
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
-      zv(const_cast<ValueType*>(&z), 1), null;
+    typedef typename zViewType::value_type value_type;
+    typedef typename zViewType::pointer_type pointer_type;
+    
+    value_type h, p_buf, pd_buf, zi_buf = zglj(i);
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
+      zv(const_cast<pointer_type>(&z), 1), null;
 
     const auto dz = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<value_type>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-2, alpha + one, beta + one);
@@ -552,8 +562,7 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------
 
   template<EPolyType polyType>
-  template<typename ValueType,
-           typename imViewType,
+  template<typename imViewType,
            typename zgrjViewType,
            typename zmViewType>
   KOKKOS_INLINE_FUNCTION
@@ -564,8 +573,8 @@ namespace Intrepid2 {
             const zmViewType zm,
             const ordinal_type nz,
             const ordinal_type mz,
-            const ValueType alpha,
-            const ValueType beta) {
+            const double alpha,
+            const double beta) {
     for (ordinal_type i = 0; i < mz; ++i) {
       const auto zp = zm(i);
       for (ordinal_type j = 0; j < nz; ++j)
@@ -575,8 +584,7 @@ namespace Intrepid2 {
 
   // -----------------------------------------------------------------------
 
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename polyiViewType,
            typename polydViewType>
   KOKKOS_INLINE_FUNCTION
@@ -587,9 +595,9 @@ namespace Intrepid2 {
                    /**/  polyiViewType polyi,
                    /**/  polydViewType polyd,
                    const ordinal_type n,
-                   const ValueType alpha,
-                   const ValueType beta) {
-    const ValueType zero = 0.0, one = 1.0, two = 2.0;
+                   const double alpha,
+                   const double beta) {
+    const double zero = 0.0, one = 1.0, two = 2.0;
 
     if (! np) {
       return;
@@ -597,28 +605,30 @@ namespace Intrepid2 {
 
     if (n == 0) {
       if (polyi.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyi(i) = one;
       if (polyd.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = zero;
     } else if (n == 1) {
       if (polyi.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyi(i) = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
       if (polyd.data()) 
-        for (auto i = 0; i < np; ++i) 
+        for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
-      ValueType a1, a2, a3, a4;
-      ValueType apb = alpha + beta;
-      ValueType poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
+      double a1, a2, a3, a4;
+      const double apb = alpha + beta;
+
+      typename zViewType::value_type
+        poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
 
       if (polyi.data()) 
-        for (auto i=0;i<np;++i)
+        for (ordinal_type i=0;i<np;++i)
           poly[i] = polyi(i);
 
-      for (auto i = 0; i < np; ++i) {
+      for (ordinal_type i = 0; i < np; ++i) {
         polyn2[i] = one;
         polyn1[i] = 0.5*(alpha - beta + (alpha + beta + two)*z(i));
       }
@@ -633,7 +643,7 @@ namespace Intrepid2 {
         a3 /= a1;
         a4 /= a1;
 
-        for (auto i = 0; i < np; ++i) {
+        for (ordinal_type i = 0; i < np; ++i) {
           poly  [i] = (a2 + a3*z(i))*polyn1[i] - a4*polyn2[i];
           polyn2[i] = polyn1[i];
           polyn1[i] = poly  [i];
@@ -650,20 +660,19 @@ namespace Intrepid2 {
         a3 /= a4;
 
         // note polyn2 points to polyn1 at end of poly iterations
-        for (auto i = 0; i < np; ++i) {
+        for (ordinal_type i = 0; i < np; ++i) {
           polyd(i)  = (a1- a2*z(i))*poly[i] + a3*polyn2[i];
           polyd(i) /= (one - z(i)*z(i));
         }
       }
 
       if (polyi.data()) 
-        for (auto i=0;i<np;++i)
+        for (ordinal_type i=0;i<np;++i)
           polyi(i) = poly[i];
     }
   }
 
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            typename polydViewType>
   KOKKOS_INLINE_FUNCTION
   void
@@ -672,75 +681,76 @@ namespace Intrepid2 {
                              const zViewType z,
                              /**/  polydViewType polyd,
                              const ordinal_type n,
-                             const ValueType alpha,
-                             const ValueType beta) {
-    const ValueType one = 1.0;
+                             const double alpha,
+                             const double beta) {
+    const double one = 1.0;
     if (n == 0)
-      for(auto i = 0; i < np; ++i)
+      for(ordinal_type i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
-      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
-      for(auto i = 0; i < np; ++i)
-        polyd(i) *= 0.5*(alpha + beta + (ValueType)n + one);
+      for(ordinal_type i = 0; i < np; ++i)
+        polyd(i) *= 0.5*(alpha + beta + n + one);
     }
   }
 
   // -----------------------------------------------------------------------
 
-  template<typename ValueType,
-           typename zViewType,
+  template<typename zViewType,
            bool DeflationEnabled>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::
   JacobiZeros(/**/  zViewType z,
               const ordinal_type n,
-              const ValueType alpha,
-              const ValueType beta) {
+              const double alpha,
+              const double beta) {
     if (DeflationEnabled)
       JacobiZerosPolyDeflation(z, n, alpha, beta);
     else
       JacobiZerosTriDiagonal(z, n, alpha, beta);
   }
 
-  template<typename ValueType,
-           typename zViewType>
+  template<typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::
   JacobiZerosPolyDeflation(/**/  zViewType z,
                            const ordinal_type n,
-                           const ValueType alpha,
-                           const ValueType beta) {
+                           const double alpha,
+                           const double beta) {
     if(!n)
       return;
 
-    const ValueType dth = M_PI/(2.0*(ValueType)n);
-    const ValueType one = 1.0, two = 2.0;
-    const ValueType tol = tolerence();
+    const double dth = M_PI/(2.0*n);
+    const double one = 1.0, two = 2.0;
+    const double tol = tolerence();
 
-    ValueType r_buf, poly_buf, pder_buf;
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-      poly(&poly_buf, 1), pder(&pder_buf, 1), r(&r_buf, 1); 
+    typedef typename zViewType::value_type value_type;
+    typedef typename zViewType::pointer_type pointer_type;
 
-    ValueType rlast = 0.0;
+    value_type r_buf, poly_buf, pder_buf;
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      poly((pointer_type)&poly_buf, 1), pder((pointer_type)&pder_buf, 1), r((pointer_type)&r_buf, 1); 
+
+    value_type rlast = 0.0;
     for (auto k = 0; k < n; ++k) {
-      r(0) = -cos((two*(ValueType)k + one) * dth);
+      r(0) = -cos((two*(double)k + one) * dth);
       if (k) 
         r(0) = 0.5*(r(0) + rlast);
 
-      for (auto j = 1; j < MaxPolylibIteration; ++j) {
+      for (ordinal_type j = 1; j < MaxPolylibIteration; ++j) {
         JacobiPolynomial(1, r, poly, pder, n, alpha, beta);
 
-        ValueType sum = 0;
-        for (auto i = 0; i < k; ++i) 
+        value_type sum = 0;
+        for (ordinal_type i = 0; i < k; ++i) 
           sum += one/(r(0) - z(i));
 
-        const ValueType delr = -poly(0) / (pder(0) - sum * poly(0));
+        const value_type delr = -poly(0) / (pder(0) - sum * poly(0));
         r(0) += delr;
 
-        if( Util::abs(delr) < tol ) 
+        if( Util<value_type>::abs(delr) < tol ) 
           break;
       }
       z(k)  = r(0);
@@ -748,31 +758,34 @@ namespace Intrepid2 {
     }
   }
   
-  template<typename ValueType,
-           typename aViewType>
+  template<typename aViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::
   JacobiZerosTriDiagonal(/**/  aViewType a,
                          const ordinal_type n,
-                         const ValueType alpha,
-                         const ValueType beta) {
+                         const double alpha,
+                         const double beta) {
     if(!n)
       return;
 
-    ValueType b_buf[MaxPolylibPoint];
-    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> b(&b_buf[0], MaxPolylibPoint);
+    typedef typename aViewType::value_type value_type;
+    typedef typename aViewType::pointer_type pointer_type;
+
+    value_type b_buf[MaxPolylibPoint];
+    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+      b((pointer_type)&b_buf[0], MaxPolylibPoint);
 
     // generate normalised terms
-    auto apb  = alpha + beta;
-    auto apbi = 2.0 + apb;
+    const double apb  = alpha + beta;
+    double apbi = 2.0 + apb;
 
     b(n-1) = pow(2.0,apb+1.0)*GammaFunction(alpha+1.0)*GammaFunction(beta+1.0)/GammaFunction(apbi);
     a(0)   = (beta-alpha)/apbi;
     b(0)   = sqrt(4.0*(1.0+alpha)*(1.0+beta)/((apbi+1.0)*apbi*apbi));
 
-    auto a2b2 = beta*beta-alpha*alpha;
-    for (auto i = 1; i < n-1; ++i) {
+    const double a2b2 = beta*beta-alpha*alpha;
+    for (ordinal_type i = 1; i < n-1; ++i) {
       apbi = 2.0*(i+1) + apb;
       a(i) = a2b2/((apbi-2.0)*apbi);
       b(i) = sqrt(4.0*(i+1)*(i+1+alpha)*(i+1+beta)*(i+1+apb)/
@@ -797,14 +810,16 @@ namespace Intrepid2 {
         /**/  eViewType e,
         const ordinal_type n) {
     ordinal_type m,l,iter,i,k;
-    typename dViewType::value_type s,r,p,g,f,dd,c,b;
+
+    typedef typename dViewType::value_type value_type;
+    value_type s,r,p,g,f,dd,c,b;
 
     for (l=0; l<n; ++l) {
       iter=0;
       do {
         for (m=l; m<n-1; ++m) {
-          dd=Util::abs(d(m))+Util::abs(d(m+1));
-          if (Util::abs(e(m))+dd == dd) break;
+          dd=Util<value_type>::abs(d(m))+Util<value_type>::abs(d(m+1));
+          if (Util<value_type>::abs(e(m))+dd == dd) break;
         }
         if (m != l) {
           if (iter++ == MaxPolylibIteration) {
@@ -814,13 +829,13 @@ namespace Intrepid2 {
           g=(d(l+1)-d(l))/(2.0*e(l));
           r=sqrt((g*g)+1.0);
           //g=d(m)-d(l)+e(l)/(g+sign(r,g));
-          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util::abs(r) : Util::abs(r)));
+          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util<value_type>::abs(r) : Util<value_type>::abs(r)));
           s=c=1.0;
           p=0.0;
           for (i=m-1; i>=l; i--) {
             f=s*e(i);
             b=c*e(i);
-            if (Util::abs(f) >= Util::abs(g)) {
+            if (Util<value_type>::abs(f) >= Util<value_type>::abs(g)) {
               c=g/f;
               r=sqrt((c*c)+1.0);
               e(i+1)=f*r;
@@ -858,17 +873,16 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename ValueType>
   KOKKOS_INLINE_FUNCTION
-  ValueType
+  double
   Polylib::Serial::
-  GammaFunction(const ValueType x) {
-    ValueType gamma;
+  GammaFunction(const double x) {
+    double gamma(0);
 
     if      (x == -0.5) gamma = -2.0*sqrt(M_PI);
     else if (x ==  0.0) gamma = 1.0;
-    else if ((x-(int)x) == 0.5) {
-      int n = (int) x;
+    else if ((x-(ordinal_type)x) == 0.5) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = sqrt(M_PI);
@@ -876,8 +890,8 @@ namespace Intrepid2 {
         tmp   -= 1.0;
         gamma *= tmp;
       }
-    } else if ((x-(int)x) == 0.0) {
-      int n = (int) x;
+    } else if ((x-(ordinal_type)x) == 0.0) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = 1.0;

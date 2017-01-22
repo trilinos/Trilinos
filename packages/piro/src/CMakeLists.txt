@@ -128,6 +128,15 @@ IF(Piro_ENABLE_Epetra)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 ENDIF()
+IF (Piro_ENABLE_Tempus)
+  APPEND_SET(HEADERS
+    Piro_TempusSolver.hpp
+    Piro_TempusSolver_Def.hpp 
+    Piro_TempusStepperFactory.hpp
+    Piro_TempusStepControlFactory.hpp
+    Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
+    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
+ENDIF()
 
 IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
   APPEND_SET(HEADERS Piro_RythmosNOX_RowSumUpdater.hpp)

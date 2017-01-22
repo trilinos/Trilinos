@@ -59,7 +59,7 @@ Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database, const std::string &my_
                            const std::string &side_type, const std::string &element_type,
                            size_t side_count)
     : Ioss::EntityBlock(io_database, my_name, side_type, side_count), owner_(nullptr),
-      parentTopology_(nullptr), parentElementBlock_(nullptr), consistentSideNumber(-1)
+      parentTopology_(nullptr), parentBlock_(nullptr), consistentSideNumber(-1)
 {
   parentTopology_ = ElementTopology::factory(element_type);
   assert(parentTopology_ != nullptr);
@@ -103,9 +103,8 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
   if (my_name == "parent_topology_type") {
     return Ioss::Property(my_name, parent_element_topology()->name());
   }
-  else {
-    return Ioss::EntityBlock::get_implicit_property(my_name);
-  }
+
+  return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
 void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
@@ -113,7 +112,7 @@ void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
   // Simplest case.  If the surfaces are split by element block, then this will
   // return non-null
   // and we are done.
-  const Ioss::ElementBlock *eb = parent_element_block();
+  const Ioss::EntityBlock *eb = parent_block();
   if (eb != nullptr) {
     block_members.push_back(eb->name());
     return;

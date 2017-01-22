@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     // Initialize equality constraints
     EqualityConstraint_BurgersControl<RealT> con(nx,nu);
     Teuchos::ParameterList list;
-    list.sublist("SimOpt").sublist("Solve").set("Residual Tolerance",1.e2*ROL::ROL_EPSILON<RealT>());
+    list.sublist("SimOpt").sublist("Solve").set("Absolute Residual Tolerance",1.e2*ROL::ROL_EPSILON<RealT>());
     con.setSolveParameters(list);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     robj.checkGradient(z,z,yz,true,*outStream);
     robj.checkHessVec(z,z,yz,true,*outStream);

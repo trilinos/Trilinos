@@ -235,6 +235,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   TEST_EQUALITY( NumGlobalRowsB, NumGlobalRowsC );
   TEST_EQUALITY( NumGlobalNonzerosB, NumGlobalNonzerosC );
 
+  // Test fix to github issue #558. Check that all four maps report the same
+  // number of local elements. This means that LocalFilter can filter based on
+  // getDomainMap () and getRangeMap (), as desired, and see the overlap
+  // pattern.
+  {
+    const auto n = B->getRowMap ()->getNodeNumElements ();
+    TEST_EQUALITY( B->getColMap ()->getNodeNumElements (), n );
+    TEST_EQUALITY( B->getRangeMap ()->getNodeNumElements (), n );
+    TEST_EQUALITY( B->getDomainMap ()->getNodeNumElements (), n );
+  }
+
   try {
     C->apply (X, Z);
   } catch (std::exception& e) {

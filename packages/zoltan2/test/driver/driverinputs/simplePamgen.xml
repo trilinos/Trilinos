@@ -24,7 +24,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
     </ParameterList>
     
     <ParameterList name="Metrics">
@@ -47,7 +47,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
     </ParameterList>
     
     <ParameterList name="Metrics">
@@ -69,7 +69,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
     </ParameterList>
     
     <ParameterList name="Metrics">
@@ -91,7 +91,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
     </ParameterList>
     
     <ParameterList name="Metrics">
@@ -113,7 +113,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="zoltan"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
       <ParameterList name="zoltan_parameters">
         <Parameter name="lb_method" type="string" value="phg"/>
         <Parameter name="lb_approach" type="string" value="partition"/>
@@ -139,7 +139,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="num_global_parts" type="string" value="7"/>
       <Parameter name="algorithm" type="string" value="zoltan"/>
-      <!--<Parameter name="compute_metrics" type="string" value="true"/>-->
+      <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
       <ParameterList name="zoltan_parameters">
         <Parameter name="lb_method" type="string" value="phg"/>
         <Parameter name="lb_approach" type="string" value="partition"/>

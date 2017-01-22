@@ -48,6 +48,8 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_Aggregates_decl.hpp"

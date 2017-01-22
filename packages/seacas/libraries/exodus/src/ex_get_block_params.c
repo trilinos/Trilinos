@@ -40,7 +40,7 @@
  * Reads the parameters describing element/face/edge blocks
  * \param   exoid                   exodus file id
  * \param   block_count             number of blocks being queried
- * \param   block                   array of ex_block structures describing
+ * \param   blocks                  array of ex_block structures describing
  * block counts
  *
  * the id and type fields of the block(s) must be defined to specify which

@@ -57,7 +57,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename GO>
 class STKConnManager : public panzer::ConnManager<int,GO> {
@@ -126,7 +126,16 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { return stkMeshDB_->getElementBlockNames(elementBlockIds); }
-
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+    */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const{
+     std::vector<std::string> elementBlockIds;
+     getElementBlockIds(elementBlockIds);
+     elementBlockTopologies.reserve(elementBlockIds.size());
+     for (unsigned i=0; i<elementBlockIds.size(); ++i) {
+       elementBlockTopologies.push_back(*(stkMeshDB_->getCellTopology(elementBlockIds[i])));
+     }
+   }
    /** Get the local element IDs for a paricular element
      * block. These are only the owned element ids.
      *
@@ -216,15 +225,15 @@ protected:
                                 GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                 GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
-   LocalOrdinal addSubcellConnectivities(stk_classic::mesh::Entity * element,unsigned subcellRank,
+   LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
                                          LocalOrdinal idCnt,GlobalOrdinal offset);
 
-   void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk_classic::mesh::Entity * element,
+   void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                     unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);
 
    Teuchos::RCP<STK_Interface> stkMeshDB_;
 
-   Teuchos::RCP<std::vector<stk_classic::mesh::Entity*> > elements_;
+   Teuchos::RCP<std::vector<stk::mesh::Entity> > elements_;
 
    // element block information
    std::map<std::string,Teuchos::RCP<std::vector<LocalOrdinal> > > elementBlocks_;

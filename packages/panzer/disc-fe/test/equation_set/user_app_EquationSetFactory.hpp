@@ -51,9 +51,9 @@
 
 namespace user_app {
 
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Energy", user_app::EquationSet_Energy,
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(user_app::EquationSet_Energy,
 					EquationSet_Energy)
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("MeshCoords", user_app::EquationSet_MeshCoords,
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(user_app::EquationSet_MeshCoords,
 					EquationSet_MeshCoords)
 
   class MyFactory : public panzer::EquationSetFactory {
@@ -72,10 +72,8 @@ namespace user_app {
       
       bool found = false;
       
-      PANZER_BUILD_EQSET_OBJECTS("Energy", my_app::EquationSet_Energy,
-				 EquationSet_Energy)
-      PANZER_BUILD_EQSET_OBJECTS("MeshCoords", my_app::EquationSet_MeshCoords,
-				 EquationSet_MeshCoords)
+      PANZER_BUILD_EQSET_OBJECTS("Energy",     EquationSet_Energy)
+      PANZER_BUILD_EQSET_OBJECTS("MeshCoords", EquationSet_MeshCoords)
       
       if (!found) {
 	std::string msg = "Error - the \"Equation Set\" with \"Type\" = \"" + params->get<std::string>("Type") +

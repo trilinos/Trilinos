@@ -69,7 +69,7 @@ namespace Intrepid2{
     */
     CubaturePolygon(const shards::CellTopology& cellTopology,
 				 const ArrayPoint& cellVertices,
-				 int degree);
+				 ordinal_type degree);
     
     /** \brief Returns cubature points and weights
 	       (return arrays must be pre-sized/pre-allocated).
@@ -94,16 +94,16 @@ namespace Intrepid2{
     
     /** \brief Returns the number of cubature points.
      */
-    int getNumPoints() const;
+    ordinal_type getNumPoints() const;
     
     /** \brief Returns dimension of integration domain.
      */
-    int getDimension() const;
+    ordinal_type getDimension() const;
     
      /** \brief Returns max. degree of polynomials that are integrated exactly on each triangle.
              The return vector has size 1.
      */
-    void getAccuracy(std::vector<int> & accuracy) const;
+    void getAccuracy(std::vector<ordinal_type> & accuracy) const;
 
     
     virtual ~CubaturePolygon() {}
@@ -121,7 +121,7 @@ namespace Intrepid2{
     
     /** \brief The degree of the polynomials that are integrated exactly on each triangle.
      */
-    int degree_;
+    ordinal_type degree_;
     
     /** \brief Local copy of cubature points.
      */
@@ -133,11 +133,11 @@ namespace Intrepid2{
 
     /** \brief The number of cubature points.
      */
-    int numPoints_;
+    ordinal_type numPoints_;
     
     /** \brief Dimension of integration domain.
      */
-    int cubDimension_;
+    ordinal_type cubDimension_;
     
   }; // end class CubaturePolygon
 

@@ -154,7 +154,6 @@ C   --Set the symbol size, do not exit before resetting
       DO 150 IX = 1, NESSET
          IESS = ISSESS(IX)
          IF (NEESS(IESS) .LE. 0) THEN
-            CALL PRTERR ('ERROR', 'Number of elements per side = 0')
             GOTO 150
          END IF
          NPPSID = NNESS(IESS) / NEESS(IESS)

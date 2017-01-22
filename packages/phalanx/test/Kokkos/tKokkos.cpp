@@ -59,10 +59,7 @@
 #include "Kokkos_DynRankView_Fad.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-#include "Kokkos_TaskPolicy.hpp"
-// amt only works with pthread and qthreads
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #include <type_traits>
 #include <limits>
 #endif
@@ -298,62 +295,59 @@ namespace phalanx_test {
 
   // Experimental asynchronous multi-tasking
   template< class Space >
-  struct TaskDep {
-    
+  struct TaskDep {    
     typedef int value_type ;
-    typedef Kokkos::Experimental::TaskPolicy< Space > policy_type ;
-    const policy_type policy ;
+    typedef Kokkos::TaskScheduler< Space > policy_type;
+    typedef Kokkos::Future<int,Space> future_type;
+    const policy_type policy;
     const value_type value;
+    const future_type dependent_future;
     
-    TaskDep(const policy_type & arg_p, value_type v)
+    TaskDep(const policy_type & arg_p, const value_type& v)
       : policy( arg_p ),value(v) {}
+
+    TaskDep(const policy_type & arg_p, const value_type& v, const future_type& f)
+      : policy( arg_p ),value(v),dependent_future(f) {}
     
-    void apply( int & val )
+    KOKKOS_INLINE_FUNCTION
+    void operator()( typename policy_type::member_type & , value_type & result )
     {
-      if (policy.get_dependence(this)) {
-	Kokkos::Experimental::Future<int,Space> f = policy.get_dependence(this,0);
-	val = value + f.get();
-      } 
+      if (!dependent_future.is_null())
+	result = value + dependent_future.get();
       else
-	val = value;
+	result = value;
     }
   };
 
   // Tests the basic DAG dependency model
   TEUCHOS_UNIT_TEST(kokkos, AMT)
   { 
-    using execution_space = PHX::Device::execution_space;
-    using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
-
-    static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
-		  "ERROR: Kokkos AMT only works for pthread execution space!");
-
-    const unsigned task_max_count = 2;
-    const unsigned task_max_size = sizeof(TaskDep<execution_space>);
-    //const unsigned task_max_size = 128;
-    std::cout << "sizeof = " << task_max_size << std::endl;
-    const unsigned task_max_dependence = 1;
-    policy_type policy(task_max_count,task_max_size,task_max_dependence);
-    
-    auto f1 = policy.task_create(TaskDep<execution_space>(policy,2),1);
-    auto f2 = policy.task_create(TaskDep<execution_space>(policy,3));
-    // f1 depends on f2
-    policy.add_dependence(f1,f2);
-    
-    policy.spawn(f1);
-    policy.spawn(f2);
-    Kokkos::Experimental::wait(policy);
-    TEST_EQUALITY(f1.get(),5);
-    TEST_EQUALITY(f2.get(),3);
+    using execution_space = PHX::exec_space;
+    using memory_space = PHX::Device::memory_space;
+    using policy_type = Kokkos::TaskScheduler<execution_space>;
+    const unsigned memory_capacity = 3 * sizeof(TaskDep<execution_space>);    
+    policy_type policy(memory_space(),memory_capacity);    
+    auto f1 = policy.host_spawn(TaskDep<execution_space>(policy,3),Kokkos::TaskSingle);
+    auto f2 = policy.host_spawn(TaskDep<execution_space>(policy,2,f1),Kokkos::TaskSingle, f1);
+    auto f3 = policy.host_spawn(TaskDep<execution_space>(policy,1,f2),Kokkos::TaskSingle, f2);
+    Kokkos::wait(policy);
+    TEST_EQUALITY(f1.get(),3);
+    TEST_EQUALITY(f2.get(),5);
+    TEST_EQUALITY(f3.get(),6);
   }
 
+  // yes we could do thsi with deep copy, but want to experiment with
+  // wrapping tasks to insert functions into all PHX nodes
   template <typename Scalar,typename Device>
   class InitializeView {
+    typedef void value_type;
     Kokkos::View<Scalar**,Device> view_;
     double k_;
-
+    
   public:
     typedef PHX::Device execution_space;
+
+    struct DataParallelTag {};
     
     InitializeView(Kokkos::View<Scalar**,Device> &v,double k)
       : view_(v), k_(k) {}
@@ -362,39 +356,57 @@ namespace phalanx_test {
     void operator () (const int i) const
     {
       const int ip_size = static_cast<int>(view_.dimension_1());
-      for (int ip = 0; ip < ip_size; ++ip)
+      for (int ip = 0; ip < ip_size; ++ip) {
 	view_(i,ip) = k_;
+      }
     }
+
+    // Test we can reuse same functor for data parallel team (non-task
+    // based) kokkos
+    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::exec_space>::member_type & team) const
+    {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,view_.extent_int(1)), [&] (const int& ip) {
+          view_(cell,ip) = k_;
+        });
+    }
+
   };
 
   // Task wrapper
   template<class Space,class Functor>
   struct TaskWrap {
+
+    struct DataParallelTag {};
     
     typedef void value_type;
-    typedef Kokkos::Experimental::TaskPolicy<Space> policy_type;
+    typedef Kokkos::TaskScheduler<Space> policy_type;
     
     const int work_size;
     const Functor functor;
 
     TaskWrap(const int ws,const Functor& f) : work_size(ws),functor(f) {}
-    
-    void apply(const typename policy_type::member_type & member)
+
+    //! Returns the size of the task functor in bytes
+    unsigned taskSize() const
     {
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,work_size),functor);
+      return sizeof(TaskWrap<Space,Functor>);
+    }
+    
+    void operator() (typename policy_type::member_type & member)
+    {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,work_size),functor);
     }
   };
 
   // Tests hybrid parallelism in that a task is threaded.
   TEUCHOS_UNIT_TEST(kokkos, AMT_TeamHybrid)
   { 
-    using execution_space = PHX::Device::execution_space;
-    using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+    using execution_space = PHX::exec_space;
+    using memory_space = PHX::Device::memory_space;
+    using policy_type = Kokkos::TaskScheduler<execution_space>;
 
-    static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
-		  "ERROR: Kokkos AMT only works for pthread execution space!");
-
-    double k=2.0;  
+    double k=2.0;
     const int num_cells = 10;
     const int num_ip = 4;
  
@@ -405,9 +417,13 @@ namespace phalanx_test {
     Kokkos::deep_copy(P,1.0);
     Kokkos::deep_copy(T,2.0);
     Kokkos::deep_copy(rho,0.0);
+    Kokkos::fence();
 
+    // Initialize: Single level parallel over cells
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
-    Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(T,4.0));
+    // Initialize: Team parallel over cells and qp
+    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
+                         InitializeView<double,execution_space>(T,4.0));
     PHX::Device::fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
     PHX::Device::fence();
@@ -419,31 +435,44 @@ namespace phalanx_test {
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
-	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
-
-    out << "Starting tasking version" << std::endl;
+        TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
+    
+    // ***
+    // Now repeat above with task graph
+    // ***
+    out << "\n*** Starting tasking version ***" << std::endl;
 
     Kokkos::deep_copy(P,1.0);
     Kokkos::deep_copy(T,2.0);
     Kokkos::deep_copy(rho,0.0);
+    Kokkos::fence();
 
-    // Now repeat above with task graph
-    const unsigned task_max_count = 3;
-    const unsigned task_max_size = std::max(sizeof(TaskDep<execution_space>),sizeof(InitializeView<double,execution_space>));
-    const unsigned task_max_dependence = 2;
-    policy_type policy(task_max_count,task_max_size,task_max_dependence);
+    // create dag nodes
+    TaskWrap<execution_space,InitializeView<double,execution_space>> n1(num_cells,InitializeView<double,execution_space>(P,3.0));
+    TaskWrap<execution_space,InitializeView<double,execution_space>> n2(num_cells,InitializeView<double,execution_space>(T,4.0));
+    TaskWrap<execution_space,ComputeRho<double,execution_space>> n3(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
 
-    auto f1 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
-    auto f2 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
-    auto f3 = policy.task_create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
+    // Assign memory pool size
+    //const unsigned memory_capacity = sizeof(n1) + sizeof(n2) + sizeof(n3);
+    //const unsigned memory_capacity = n1.taskSize() + n2.taskSize() + n3.taskSize();
+    const unsigned memory_capacity = 1000000;
+    policy_type policy(memory_space(),memory_capacity);
+
+    // test that dependent_futures can leave scope
+    {
+      auto f1 = policy.host_spawn(n1,Kokkos::TaskTeam);
+      TEST_ASSERT(!f1.is_null());
+      auto f2 = policy.host_spawn(n2,Kokkos::TaskTeam);
+      TEST_ASSERT(!f2.is_null());
+      std::vector<Kokkos::Future<void,execution_space>> dependent_futures(2);
+      dependent_futures[0] = f1;
+      dependent_futures[1] = f2;
+      auto f3_deps = policy.when_all(dependent_futures.size(),dependent_futures.data());
+      auto f3 = policy.host_spawn(n3,Kokkos::TaskTeam,f3_deps);
+      TEST_ASSERT(!f3.is_null());
+    }
     
-    policy.add_dependence(f3,f1);
-    policy.add_dependence(f3,f2);
-
-    policy.spawn(f3); // spawn first to make sure deps enforced
-    policy.spawn(f1);
-    policy.spawn(f2);
-    Kokkos::Experimental::wait(policy);
+    Kokkos::wait(policy);
 
     Kokkos::deep_copy(host_rho,rho);
     PHX::Device::fence();
@@ -452,21 +481,21 @@ namespace phalanx_test {
       for (int j=0; j< num_ip; j++)
 	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
   }
+  
+  // // Tests pthreads functions
+  // TEUCHOS_UNIT_TEST(kokkos, AMT_policy_query)
+  // { 
+  //   //using execution_space = PHX::exec_space;
+  //   //using policy_type = Kokkos::Experimental::TaskScheduler<execution_space>;
 
-  // Tests pthreads functions
-  TEUCHOS_UNIT_TEST(kokkos, AMT_pthread_query)
-  { 
-    //using execution_space = PHX::Device::execution_space;
-    //using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
-
-    out << "num threads total = " 
-	<< Kokkos::Threads::thread_pool_size(0) << std::endl;
-    out << "num threads per numa core = " 
-	<< Kokkos::Threads::thread_pool_size(1) << std::endl;
-    out << "num threads per core = " 
-	<< Kokkos::Threads::thread_pool_size(2) << std::endl;
-  }
-
+  //   out << "num threads total = " 
+  //       << Kokkos::Threads::thread_pool_size(0) << std::endl;
+  //   out << "num threads per numa core = " 
+  //       << Kokkos::Threads::thread_pool_size(1) << std::endl;
+  //   out << "num threads per core = " 
+  //       << Kokkos::Threads::thread_pool_size(2) << std::endl;
+  // }
+  
 #endif // PHX_ENABLE_KOKKOS_AMT
 
   // Test Kokkos::DynRankView
@@ -507,9 +536,9 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   { 
     using array_type = 
-      Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>;
+      Kokkos::Experimental::DynRankView<int, PHX::exec_space>;
 
-    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>::value_type;
+    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::exec_space>::value_type;
 
     array_type a("a",10,4);    
     Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));

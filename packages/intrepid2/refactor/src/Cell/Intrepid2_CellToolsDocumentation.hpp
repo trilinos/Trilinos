@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CellTools.hpp
-    \brief  Header file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDocumentation.hpp
+    \brief  Header file with additional documentation for the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */

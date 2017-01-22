@@ -56,6 +56,8 @@
 #include <Xpetra_DefaultPlatform.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapExtractor.hpp>
+#include <Xpetra_MultiVectorFactory.hpp> // taw: include MultiVectorFactory before VectorFactory for BlockedMultiVector
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -252,7 +254,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
@@ -342,7 +344,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
@@ -1152,7 +1154,7 @@ namespace {
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
@@ -1251,8 +1253,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
     std::cout << "Run ConstructMatrixKokkos test" << std::endl;
-    Kokkos::initialize();
+    //Kokkos::initialize();
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
@@ -1430,7 +1433,8 @@ namespace {
         }
       }
     }
-    Kokkos::finalize();
+    //Kokkos::finalize();
+#endif
 #endif
   }
 

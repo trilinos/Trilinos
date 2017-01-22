@@ -89,7 +89,7 @@ class CubatureCompositeTet : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,
       \param degree           [in]     - The degree of polynomials that are integrated
                                          exactly by this cubature rule. Default: 0.
   */
-  CubatureCompositeTet(const int degree = 0);
+  CubatureCompositeTet(const ordinal_type degree = 0);
 
   /** \brief Returns cubature name.
   */
@@ -101,7 +101,7 @@ class CubatureCompositeTet : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,
 
   /** \brief Returns maximum cubature accuracy.
   */
-  int getMaxAccuracy() const;
+  ordinal_type getMaxAccuracy() const;
 
   /** \brief Exposes cubature data, accessible without construction.
   */

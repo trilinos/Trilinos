@@ -69,6 +69,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -112,10 +113,18 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_INTREPID2
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact) : factFact_(factFact) {
+    if(facadeFact == Teuchos::null)
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+    else
+      facadeFact_ = facadeFact;
 
     if (paramList.isParameter("xml parameter file")) {
       std::string filename = paramList.get("xml parameter file", "");
@@ -136,7 +145,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact) : factFact_(factFact) {
+    if(facadeFact == Teuchos::null)
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+    else
+      facadeFact_ = facadeFact;
+
     ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), comm);
     SetParameterList(paramList);
@@ -150,8 +164,13 @@ namespace MueLu {
 
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
+    } else if (paramList.isParameter("MueLu preconditioner") == true) {
+      this->GetOStream(Runtime0) << "Use facade class: " << paramList.get<std::string>("MueLu preconditioner")  << std::endl;
+      Teuchos::RCP<ParameterList> pp = facadeFact_->SetParameterList(paramList);
 
-    } else {
+      SetFactoryParameterList(*pp);
+
+    }  else {
       // The validator doesn't work correctly for non-serializable data (Hint: template parameters), so strip it out
       ParameterList serialList, nonSerialList;
 
@@ -412,12 +431,17 @@ namespace MueLu {
        Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab",
-        Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab" && multigridAlgo != "pcoarsen",
+                               Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
 #endif
+#ifndef HAVE_MUELU_INTREPID2
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
+#endif
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
 
@@ -590,12 +614,12 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || 
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED_RELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED RELAXATION")
+          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else {
 #ifdef HAVE_MUELU_MATLAB
@@ -757,11 +781,15 @@ namespace MueLu {
     }
 
     // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab",
-                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
+                               && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
+#endif
+#ifndef HAVE_MUELU_INTREPID2
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
     if (have_userP) {
       // User prolongator
@@ -794,7 +822,7 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
       if (reuseType == "tP" && !filteringChangesMatrix)
-        keeps.push_back(keep_pair("AP graph", P.get()));
+        keeps.push_back(keep_pair("AP reuse data", P.get()));
 
     } else if (multigridAlgo == "emin") {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
@@ -846,6 +874,17 @@ namespace MueLu {
       RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
       P->SetParameterList(Pparams);
       P->SetFactory("P",manager.GetFactory("Ptent"));
+      manager.SetFactory("P", P);
+    }
+#endif
+#ifdef HAVE_MUELU_INTREPID2
+    else if(multigridAlgo == "pcoarsen") {
+      // Intrepid P-Coarsening
+      RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+      ParameterList Pparams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: hi basis", std::string, Pparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: lo basis", std::string, Pparams);
+      P->SetParameterList(Pparams);
       manager.SetFactory("P", P);
     }
 #endif
@@ -923,7 +962,11 @@ namespace MueLu {
     } else {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
+      if(paramList.isSublist("matrixmatrix: kernel params"))   RAPparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+      if(defaultList.isSublist("matrixmatrix: kernel params")) RAPparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
+
       try {
         if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
           RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
@@ -938,6 +981,7 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
                                             "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
       }
+
       RAP->SetParameterList(RAPparams);
       RAP->SetFactory("P", manager.GetFactory("P"));
       if (!this->implicitTranspose_)
@@ -960,8 +1004,8 @@ namespace MueLu {
       manager.SetFactory("A", RAP);
 
       if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
-        keeps.push_back(keep_pair("AP graph",  RAP.get()));
-        keeps.push_back(keep_pair("RAP graph", RAP.get()));
+        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
+        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
       }
     }
 
@@ -1041,12 +1085,23 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
                                  "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
-                                 "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
+      //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
+      //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
 
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
+
+      // RepartitionHeuristic
+      RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
+      ParameterList repartheurParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
+      repartheurFactory->SetParameterList(repartheurParams);
+      repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
+      manager.SetFactory("number of partitions", repartheurFactory);
+
       // Partitioner
       RCP<Factory> partitioner;
       if (partName == "zoltan") {
@@ -1068,21 +1123,19 @@ namespace MueLu {
 #endif
       }
       partitioner->SetFactory("A",           manager.GetFactory("A"));
+      partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("Partition", partitioner);
 
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: keep proc 0",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
+      repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
       if (reuseType != "none" && reuseType != "S" && levelID)
@@ -1246,7 +1299,7 @@ namespace MueLu {
     //     <ParameterList name="Matrix">
     //   </ParameterList>
     if (paramList.isSublist("Matrix")) {
-      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
+      blockSize_ = paramList.sublist("Matrix").get<int>("PDE equations", MasterList::getDefault<int>("number of equations"));
       dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
     }
 
@@ -1462,7 +1515,8 @@ namespace MueLu {
       Matrix& A = dynamic_cast<Matrix&>(Op);
       if (A.GetFixedBlockSize() != blockSize_)
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl
+            << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
 

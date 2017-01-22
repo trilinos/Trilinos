@@ -44,14 +44,9 @@ SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
 DIFF="diff -w"
 
-echo "************************************************************************"
-echo "************************************************************************"
 rm -f test.output
 echo "testwt-compress - verify can create compressed netcdf-4 files..."
 echo "begin testwt-compress" >> test.output
 ${PREFIX} ${BINDIR}/testwt-compress${SUFFIX} >> test.output
 echo "end testwt-compress" >> test.output
 ${NCDUMP} -h -s test-compress.exo | grep Deflate | ${DIFF} - ${SRCDIR}/test-compress.dmp | tee test-compress.res
-
-echo "************************************************************************"
-echo "************************************************************************"

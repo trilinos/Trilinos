@@ -1,0 +1,13 @@
+<ParameterList name="MueLu">
+  <Parameter name="coarse: max size" type="int" value="1000"/>
+  <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+    <Parameter name="relaxation: sweeps" type="int" value="5"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+  </ParameterList>
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: drop tol" type="double" value="1e-7"/>
+  <Parameter name="aggregation: export visualization data" type="bool" value="true"/>
+</ParameterList>

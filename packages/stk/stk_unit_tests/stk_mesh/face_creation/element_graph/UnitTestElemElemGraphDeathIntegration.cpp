@@ -143,7 +143,7 @@ public:
         activePart(meta.declare_part("active")),
         boundaryPart(meta.declare_part("boundary"))
     {
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk);
+        stk::io::fill_mesh("generated:1x1x4", bulk);
 
         stk::unit_test_util::put_mesh_into_part(bulk, activePart);
     }

@@ -10,19 +10,22 @@
 
 namespace BaskerNS
 {
+  template <typename iType>
   struct scotch_graph
   {
+    static_assert( std::is_same<iType,int32_t>::value || std::is_same<iType,int64_t>::value
+                 , "ShyLU Basker Error: scotch_graph members must be templated on type int32_t or int64_t only");
     scotch_graph()
     {};    
-    int m;
-    int nz;
-    int *Ap;
-    int *Ai;
-    int cblk;
-    int *permtab;
-    int *peritab;
-    int *rangtab;
-    int *treetab;
+    iType m;
+    iType nz;
+    iType *Ap;
+    iType *Ai;
+    iType cblk;
+    iType *permtab;
+    iType *peritab;
+    iType *rangtab;
+    iType *treetab;
   };
 
   //A+A'
@@ -137,14 +140,19 @@ namespace BaskerNS
     #endif
 
     //----------------------INIT Scotch Graph------------//
-    scotch_graph sg;
+  #if SHYLU_SCOTCH_64
+    using scotch_integral_type = int64_t; //NDE: make this depend on the scotch type
+  #else
+    using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
+  #endif
+    scotch_graph<scotch_integral_type> sg;
     sg.m = M.nrow;
-    sg.Ap = (int *)malloc((sg.m+1)     *sizeof(int));
-    sg.Ai = (int *)malloc((M.nnz)      *sizeof(int));
-    sg.permtab = (int *)malloc((sg.m)  *sizeof(int));
-    sg.peritab = (int *)malloc((sg.m)  *sizeof(int));
-    sg.rangtab = (int *)malloc((sg.m+1)*sizeof(int));
-    sg.treetab = (int *)malloc((sg.m)  *sizeof(int));
+    sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
+    sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
+    sg.permtab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
+    sg.peritab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
+    sg.rangtab = (scotch_integral_type *)malloc((sg.m+1)*sizeof(scotch_integral_type));
+    sg.treetab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
     
     sg.Ap[0] = 0;
     Int sj;
@@ -197,7 +205,7 @@ namespace BaskerNS
     SCOTCH_Strat strdat;
     SCOTCH_Graph cgrafptr;
     int err;
-    int *vwgts; vwgts = NULL;
+    scotch_integral_type *vwgts; vwgts = NULL;
     
     if(SCOTCH_graphInit(&cgrafptr) != 0)
       {
@@ -527,7 +535,7 @@ namespace BaskerNS
     for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
       {
 
-	printf("%d,", otree(t_blk));
+	printf("%ld,", (long)otree(t_blk));
 	/*
 	if(otree(t_blk) == -1)
 	  {
@@ -540,7 +548,7 @@ namespace BaskerNS
 	 */
       }
     printf("\n");
-    printf("nblks %d \n", nblks);
+    printf("nblks %ld \n", (long)nblks);
       }
 
 
@@ -577,20 +585,26 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
       {
-        printf("Domains Found: %d \n", ndomains);
-        printf("Domains Ideal: %d \n", indomains);
+        printf("Domains Found: %ld \n", (long)ndomains);
+        printf("Domains Ideal: %ld \n", (long)indomains);
       }  
 
     if(ndomains != indomains)
       {
         if(Options.verbose == BASKER_TRUE)
           {
-            printf("Domains Found: %d \n", ndomains);
-            printf("Domains Ideal: %d \n", indomains);
+            printf("Domains Found: %ld \n", (long)ndomains);
+            printf("Domains Ideal: %ld \n", (long)indomains);
             printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
             printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
           }
-	exit(EXIT_FAILURE);
+      printf(" ShyLU Basker Error: do_complete_tree routine \n");
+      printf("   num domains != ideal num domains\n");
+      printf("  This error occurs when the matrix to be solved is too small for given number of threads\n \
+            The number of threads must match the number of leaves in the tree\n \
+            To resolve this, rerun with fewer threads\n");
+      // Make this throw exception instead
+    	exit(EXIT_FAILURE);
       }
 
 

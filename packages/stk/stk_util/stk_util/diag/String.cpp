@@ -35,11 +35,9 @@
 
 #include <stk_util/diag/String.hpp>
 #include <cctype>                       // for isspace
-#include <cstddef>                      // for size_t, NULL
+#include <cstddef>                      // for size_t
 #include <iostream>                     // for operator<<
 #include <stdexcept>                    // for runtime_error, logic_error
-
-
 
 //----------------------------------------------------------------------
 
@@ -151,13 +149,15 @@ char * StringData::mem( const char * cs , size_t n )
   if ( to_allocated && ( ! is_allocated || large.siz <= n ) ) {
     const size_t n_total = n + 1 ;
     new_alloc = n_total % inc ? n_total + inc - n_total % inc : n_total ;
+#if defined(SIERRA_DEBUG)
     if ( new_alloc == 0 || new_alloc - 1 < n ) {
       throw std::runtime_error("FAILED MEMORY ALLOCATION SIZING in sierra::String");
     }
+#endif
   }
 
-  char * dst = NULL ;
-  char * del_ptr = NULL ;
+  char * dst = nullptr ;
+  char * del_ptr = nullptr ;
   size_t del_size = 0 ;
 
   if ( is_allocated && ( new_alloc || ! to_allocated ) ) {
@@ -215,9 +215,8 @@ char * StringData::mem( const char * cs , size_t n )
     *d = 0 ;
   }
 
-  if ( del_ptr != NULL ) {
+  if ( del_ptr != nullptr ) {
     try {
-//      std::cout << "String deallocated at " << (void *)del_ptr << " for " << del_size << std::endl;
       a.deallocate( del_ptr , del_size );
     }
     catch (...) {
@@ -227,21 +226,6 @@ char * StringData::mem( const char * cs , size_t n )
 
   return dst ;
 }
-
-StringData::~StringData()
-{ mem(NULL, 0); }
-
-StringData::StringData()
-{ small[ max_len ] = small[ off_len ] = small[ 0 ] = 0 ; }
-
-size_t StringData::len() const
-{ return small[ max_len ] ? large.len : small[ off_len ] ; }
-
-char * StringData::c_str()
-{ return small[ max_len ] ? large.ptr : small ; }
-
-const char * StringData::c_str() const
-{ return small[ max_len ] ? large.ptr : small ; }
 
 } // namespace internal
 

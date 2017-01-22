@@ -41,7 +41,7 @@
 */
 
 /// \file Ifpack2_Krylov_decl.hpp
-/// \brief Declaration of Ifpack2::Krylov class.
+/// \brief Declaration of Ifpack2::DeprecatedAndMayDisappearAtAnyTime::Krylov class.
 /// \author Paul Tsuji
 ///
 /// \warning This file and its contents are DEPRECATED.
@@ -49,6 +49,9 @@
 
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
+
+#include "Ifpack2_ConfigDefs.hpp"
+#ifdef HAVE_IFPACK2_DEPRECATED_CODE
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
@@ -63,6 +66,7 @@ namespace Teuchos {
 }
 
 namespace Ifpack2 {
+namespace DeprecatedAndMayDisappearAtAnyTime {
 
   /// \struct BelosScalarType
   /// \brief Traits class for determining the scalar type to use for Belos
@@ -80,17 +84,19 @@ namespace Ifpack2 {
   };
 
   /// \class Krylov
-  /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
+  /// \brief Wrapper for iterative linear solvers.  DO NOT USE THIS
+  ///   CLASS.  IT IS DEPRECATED AND MAY GO AWAY AT ANY TIME.
   /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
   ///
-  /// \warning This class has been DEPRECATED.  DO NOT USE THIS CLASS.
-  ///   IT MAY GO AWAY AT ANY TIME.
+  /// \warning This class has been DEPRECATED.  IT HAS BEEN DEPRECATED
+  ///   SINCE APRIL 2015 SO PLEASE DON'T USE IT.  IT MAY GO AWAY AT
+  ///   ANY TIME.  IT WON'T EVEN BUILD BY DEFAULT.
   ///
-  /// Krylov computes a few iterations of CG or GMRES with zero
-  /// initial guess as a smoother for a given Tpetra::RowMatrix.
-  ///
-  /// For a list of all run-time parameters that this class accepts,
-  /// see the documentation of setParameters().
+  /// Please do not use this class.  If you insist on enabling this
+  /// long deprecated class, you must first set the CMake option
+  /// Ifpack2_ENABLE_DEPRECATED_CODE:BOOL=ON, then rerun CMake, then
+  /// rebuild and reinstall Trilinos.  Otherwise, this class does not
+  /// exist and cannot be used.
   template<class MatrixType>
   class IFPACK2_DEPRECATED Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -351,6 +357,8 @@ namespace Ifpack2 {
     Teuchos::RCP<prec_type> ifpack2_prec_;
   };
 
+} // namespace DeprecatedAndMayDisappearAtAnyTime
 } // namespace Ifpack2
 
+#endif // HAVE_IFPACK2_DEPRECATED_CODE
 #endif // IFPACK2_KRYLOV_DECL_HPP

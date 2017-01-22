@@ -52,7 +52,7 @@ namespace Iotr {
 
   private:
     VM_Factory();
-    Ioss::Transform *make(const std::string & /*unused*/ /*unused*/) const;
+    Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
   class VectorMagnitude : public Ioss::Transform
@@ -60,13 +60,13 @@ namespace Iotr {
     friend class VM_Factory;
 
   public:
-    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-    int output_count(int in) const;
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
+    int output_count(int in) const override;
 
   protected:
     VectorMagnitude();
 
-    bool internal_execute(const Ioss::Field &field, void *data);
+    bool internal_execute(const Ioss::Field &field, void *data) override;
   };
 }
 

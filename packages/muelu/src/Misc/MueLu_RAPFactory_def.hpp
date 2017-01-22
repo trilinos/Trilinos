@@ -75,6 +75,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: fix zero diagonals");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -82,6 +83,11 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
 
     return validParamList;
   }
@@ -120,24 +126,39 @@ namespace MueLu {
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
       // Reuse pattern if available (multiple solve)
-      if (coarseLevel.IsAvailable("AP graph", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
+      RCP<ParameterList> APparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else APparams= rcp(new ParameterList);
 
-        AP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
+      if (coarseLevel.IsAvailable("AP reuse data", this)) {
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
+
+        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
+        if (APparams->isParameter("graph"))
+          AP = APparams->get< RCP<Matrix> >("graph");
       }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
         AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
-                doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str());
+                doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
       }
 
       // Reuse coarse matrix memory if available (multiple solve)
-      if (coarseLevel.IsAvailable("RAP graph", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP graph" << std::endl;
+      RCP<ParameterList> RAPparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else RAPparams= rcp(new ParameterList);
 
-        Ac = coarseLevel.Get< RCP<Matrix> >("RAP graph", this);
+      if (coarseLevel.IsAvailable("RAP reuse data", this)) {
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
+
+        RAPparams = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", this);
+
+        if (RAPparams->isParameter("graph"))
+          Ac = RAPparams->get< RCP<Matrix> >("graph");
+
         // Some eigenvalue may have been cached with the matrix in the previous run.
         // As the matrix values will be updated, we need to reset the eigenvalue.
         Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
@@ -149,15 +170,17 @@ namespace MueLu {
 
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
+
         Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-               doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
+               doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
 
       } else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
+
         Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
+                doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
       }
 
       CheckRepairMainDiagonal(Ac);
@@ -171,8 +194,10 @@ namespace MueLu {
 
       Set(coarseLevel, "A",         Ac);
 
-      Set(coarseLevel, "AP graph",  AP);
-      Set(coarseLevel, "RAP graph", Ac);
+      APparams->set("graph", AP);
+      Set(coarseLevel, "AP reuse data",  APparams);
+      RAPparams->set("graph", Ac);
+      Set(coarseLevel, "RAP reuse data", RAPparams);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {
@@ -221,8 +246,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
     const Teuchos::ParameterList& pL = GetParameterList();
-    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal");
-    bool checkAc             = pL.get<bool>("CheckMainDiagonal");
+    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+    bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
 
     if (!checkAc && !repairZeroDiagonals)
       return;

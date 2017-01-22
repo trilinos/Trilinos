@@ -123,6 +123,14 @@ To use shared libraries (much smaller executables and faster linking) use::
 
   -DBUILD_SHARED_LIBS=ON
 
+To enable support for the ``float`` scalar type use::
+
+  -DTrilinos_ENABLE_FLOAT=ON
+
+To enable support for ``std::complex<T>`` scalar types use::
+
+  -DTrilinos_ENABLE_COMPLEX=ON
+
 To disable Fortran use the following::
 
   -DTrilinos_ENABLE_FORTRAN=OFF
@@ -134,3 +142,4 @@ To enable a package::
 To enable tests::
 
   -DTrilinos_ENABLE_TESTS=ON
+

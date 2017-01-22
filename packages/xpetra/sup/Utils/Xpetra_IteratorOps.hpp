@@ -73,7 +73,8 @@ namespace Xpetra {
               Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
               bool call_FillComplete_on_result = true,
               bool doOptimizeStorage = true,
-              const std::string & label = std::string()) {
+              const std::string & label = std::string(),
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
     typedef Scalar        SC;
     typedef LocalOrdinal  LO;
     typedef GlobalOrdinal GO;
@@ -100,16 +101,16 @@ namespace Xpetra {
       const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
             Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
       const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
-      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label);
+      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
     }
 
     if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-      params->set("Optimize Storage", doOptimizeStorage);
-      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+      RCP<Teuchos::ParameterList> fillParams = rcp(new Teuchos::ParameterList());
+      fillParams->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), fillParams);
     }
 
     // transfer striding information
@@ -127,7 +128,8 @@ namespace Xpetra {
                                          Xpetra::Matrix<double,int,int,EpetraNode> &C,
                                          bool call_FillComplete_on_result,
                                          bool doOptimizeStorage,
-                                         const std::string & label);
+                                         const std::string & label,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
 
 #if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
@@ -139,7 +141,8 @@ namespace Xpetra {
                                                Xpetra::Matrix<double,int,long long,EpetraNode> &C,
                                                bool call_FillComplete_on_result,
                                                bool doOptimizeStorage,
-                                               const std::string & label);
+                                               const std::string & label,
+                                               const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
 
   /*!
@@ -156,7 +159,7 @@ namespace Xpetra {
   public:
 
     static RCP<Matrix>
-    Jacobi(SC omega, const Vector& Dinv, const Matrix& A, const Matrix& B, RCP<Matrix> C_in, Teuchos::FancyOStream &fos, const std::string& label) {
+    Jacobi(SC omega, const Vector& Dinv, const Matrix& A, const Matrix& B, RCP<Matrix> C_in, Teuchos::FancyOStream &fos, const std::string& label, RCP<ParameterList>& params) {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 

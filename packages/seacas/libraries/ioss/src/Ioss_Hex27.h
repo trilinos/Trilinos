@@ -43,6 +43,8 @@ namespace Ioss {
   {
 
   public:
+    static constexpr auto name = "hex27";
+
     static void factory();
     ~Hex27() override;
 

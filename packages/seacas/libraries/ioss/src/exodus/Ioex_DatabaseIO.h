@@ -66,6 +66,7 @@ namespace Ioss {
   class ElementSet;
   class SideBlock;
   class SideSet;
+  class StructuredBlock;
   class CommSet;
   class ElementTopology;
 }
@@ -168,6 +169,8 @@ namespace Ioex {
                                        void *data, size_t data_size) const override = 0;
     virtual int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
                                        void *data, size_t data_size) const override = 0;
+    virtual int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                       void *data, size_t data_size) const override = 0;
     virtual int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
                                        void *data, size_t data_size) const override = 0;
     virtual int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
@@ -192,6 +195,8 @@ namespace Ioex {
     virtual int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field,
                                        void *data, size_t data_size) const override = 0;
     virtual int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
+                                       void *data, size_t data_size) const override = 0;
+    virtual int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                        void *data, size_t data_size) const override = 0;
     virtual int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
                                        void *data, size_t data_size) const override = 0;
@@ -265,6 +270,7 @@ namespace Ioex {
     // Given the global region step, return the step on the database...
     int get_database_step(int global_step) const;
 
+    void flush_database() const override;
     void finalize_write(double sim_time);
 
     // Private member data...

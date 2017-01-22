@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,52 +35,48 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#include <Kokkos_Blas1_MV_impl_axpby.hpp>
-#include <climits>
+#include "Kokkos_Blas1_MV_impl_axpby.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_SERIAL
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
-
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_OPENMP
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
-
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
-
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // KOKKOS_HAVE_CUDA
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 } // namespace Impl
 } // namespace KokkosBlas

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,6 +50,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_Parallel.hpp>
+#include <Kokkos_TaskScheduler.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_ScratchSpace.hpp>
@@ -57,6 +58,8 @@
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_FunctorAdapter.hpp>
 #include <impl/Kokkos_Profiling_Interface.hpp>
+
+#include <KokkosExp_MDRangePolicy.hpp>
 
 #if defined( KOKKOS_HAVE_SERIAL )
 
@@ -189,6 +192,17 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
+struct MemorySpaceAccess 
+  < Kokkos::Serial::memory_space
+  , Kokkos::Serial::scratch_memory_space
+  >
+{
+  enum { assignable = false };
+  enum { accessible = true };
+  enum { deepcopy   = false };
+};
+
+template<>
 struct VerifyExecutionCanAccessMemorySpace
   < Kokkos::Serial::memory_space
   , Kokkos::Serial::scratch_memory_space
@@ -246,7 +260,6 @@ public:
   const scratch_memory_space & thread_scratch(int) const
     { return m_space ; }
 
-
   KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
   KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
   KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
@@ -302,10 +315,9 @@ public:
 
 } // namespace Impl
 
-
 /*
  * < Kokkos::Serial , WorkArgTag >
- * < WorkArgTag , Impl::enable_if< Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value >::type >
+ * < WorkArgTag , Impl::enable_if< std::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value >::type >
  *
  */
 namespace Impl {
@@ -398,7 +410,6 @@ public:
     , m_chunk_size ( 32 )
     {}
 
-
   inline int chunk_size() const { return m_chunk_size ; }
 
   /** \brief set chunk_size to a discrete value*/
@@ -446,7 +457,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class ... Traits >
-class ParallelFor< FunctorType , 
+class ParallelFor< FunctorType ,
                    Kokkos::RangePolicy< Traits ... > ,
                    Kokkos::Serial
                  >
@@ -520,7 +531,6 @@ private:
   const Policy        m_policy ;
   const ReducerType   m_reducer ;
   const pointer_type  m_result_ptr ;
-
 
   template< class TagType >
   inline
@@ -891,20 +901,22 @@ struct TeamThreadRangeBoundariesStruct<iType,SerialTeamMember> {
 
 } // namespace Impl
 
-template<typename iType>
+template< typename iType >
 KOKKOS_INLINE_FUNCTION
 Impl::TeamThreadRangeBoundariesStruct<iType,Impl::SerialTeamMember>
 TeamThreadRange( const Impl::SerialTeamMember& thread, const iType & count )
 {
-  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
+  return Impl::TeamThreadRangeBoundariesStruct< iType, Impl::SerialTeamMember >( thread, count );
 }
 
-template<typename iType>
+template< typename iType1, typename iType2 >
 KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadRangeBoundariesStruct<iType,Impl::SerialTeamMember>
-TeamThreadRange( const Impl::SerialTeamMember& thread, const iType & begin , const iType & end )
+Impl::TeamThreadRangeBoundariesStruct< typename std::common_type< iType1, iType2 >::type,
+                                       Impl::SerialTeamMember >
+TeamThreadRange( const Impl::SerialTeamMember& thread, const iType1 & begin, const iType2 & end )
 {
-  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::SerialTeamMember>(thread,begin,end);
+  typedef typename std::common_type< iType1, iType2 >::type iType;
+  return Impl::TeamThreadRangeBoundariesStruct< iType, Impl::SerialTeamMember >( thread, iType(begin), iType(end) );
 }
 
 template<typename iType>
@@ -1100,9 +1112,12 @@ void single(const Impl::ThreadSingleStruct<Impl::SerialTeamMember>& , const Func
 }
 }
 
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_Serial_Task.hpp>
+
 #endif // defined( KOKKOS_HAVE_SERIAL )
 #endif /* #define KOKKOS_SERIAL_HPP */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-

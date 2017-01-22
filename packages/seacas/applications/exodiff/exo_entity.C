@@ -55,7 +55,9 @@ namespace {
   size_t get_num_entities(int file_id, EXOTYPE exo_type);
   size_t get_num_variables(int file_id, EXOTYPE exo_type, const char *label);
   size_t get_num_attributes(int file_id, EXOTYPE exo_type, size_t id, const char *label);
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id);
+#endif
 }
 
 Exo_Entity::Exo_Entity()
@@ -159,8 +161,8 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
 
       if (err < 0) {
         ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-	      << " returned error value! " << label() << " id = " << id_ << '\n'
-	      << "Aborting...\n");
+              << " returned error value! " << label() << " id = " << id_ << '\n'
+              << "Aborting...\n");
         exit(1);
       }
       else if (err > 0) {
@@ -212,8 +214,8 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 
       if (err < 0) {
         ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-                  << " returned error value! " << label() << " id = " << id_ << '\n'
-	      << "Aborting...\n");
+              << " returned error value! " << label() << " id = " << id_ << '\n'
+              << "Aborting...\n");
         exit(1);
       }
       else if (err > 0) {
@@ -228,8 +230,8 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 
         if (err < 0) {
           ERROR("Exo_Entity::Load_Results(): Call to exodus routine"
-                    << " returned error value! " << label() << " id = " << id_ << '\n'
-		<< "Aborting...\n");
+                << " returned error value! " << label() << " id = " << id_ << '\n'
+                << "Aborting...\n");
           exit(1);
         }
 
@@ -310,8 +312,8 @@ std::string Exo_Entity::Load_Attributes(int attr_index)
 
     if (err < 0) {
       ERROR("Exo_Entity::Load_Attributes(): Call to exodus routine"
-	    << " returned error value! " << label() << " id = " << id_ << '\n'
-	    << "Aborting...\n");
+            << " returned error value! " << label() << " id = " << id_ << '\n'
+            << "Aborting...\n");
       exit(1);
     }
     else if (err > 0) {
@@ -395,7 +397,7 @@ void Exo_Entity::internal_load_params()
     int    err   = ex_get_attr_names(fileId, exodus_type(), id_, names);
     if (err < 0) {
       ERROR("ExoII_Read::Get_Init_Data(): Failed to get " << label()
-	    << " attribute names!  Aborting...\n");
+                                                          << " attribute names!  Aborting...\n");
       exit(1);
     }
 
@@ -406,16 +408,15 @@ void Exo_Entity::internal_load_params()
         attributeNames.push_back(name);
       }
       else if ((int)std::strlen(names[vg]) > name_size) {
-        std::cerr << trmclr::red
-		  << "exodiff: ERROR: " << label() << " attribute names appear corrupt\n"
+        std::cerr << trmclr::red << "exodiff: ERROR: " << label()
+                  << " attribute names appear corrupt\n"
                   << "                A length is 0 or greater than "
                   << "name_size(" << name_size << ")\n"
                   << "                Here are the names that I received from"
                   << " a call to ex_get_attr_names(...):\n";
         for (int k = 1; k <= numAttr; ++k)
           std::cerr << "\t\t" << k << ") \"" << names[k - 1] << "\"\n";
-        std::cerr << "                 Aborting...\n"
-		  << trmclr::normal;
+        std::cerr << "                 Aborting...\n" << trmclr::normal;
         exit(1);
       }
       else {
@@ -491,5 +492,7 @@ namespace {
     return num_attr;
   }
 
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id) { return ex_inquire_int(file_id, EX_INQ_TIME); }
+#endif
 }

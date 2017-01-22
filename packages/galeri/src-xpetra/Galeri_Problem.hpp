@@ -93,7 +93,7 @@ namespace Galeri {
       Teuchos::RCP<const MultiVector>   getCoords()                                const { return Coords_; }
 
       // Set methods
-      Teuchos::RCP<const Map>           setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
+      void                              setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
 
     protected:
       Teuchos::ParameterList&           list_;

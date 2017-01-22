@@ -26,12 +26,10 @@ public:
     void clear()
     {
         mNumIdsUsed = 0;
-        mNumIdsRequested = 0;
         mSuggestedIds.clear();
     }
 
-protected:
-    const stk::mesh::EntityIdVector &get_all_ids()
+    const stk::mesh::EntityIdVector &get_all_ids() const
     {
         return mSuggestedIds;
     }
@@ -40,7 +38,6 @@ private:
     stk::mesh::BulkData &mBulkData;
     stk::mesh::EntityIdVector mSuggestedIds;
     size_t mNumIdsUsed;
-    size_t mNumIdsRequested;
 };
 
 }}

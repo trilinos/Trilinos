@@ -49,6 +49,7 @@
 #include <vector>
 
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>

@@ -23,6 +23,19 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 
+IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME parmetisSubComm
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS
+    "./driverinputs/parmetisSubComm.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
 TRIBITS_ADD_TEST(
     test_driver
     NAME geometricTest
@@ -33,6 +46,30 @@ TRIBITS_ADD_TEST(
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME test578
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/test578.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+IF (${PACKAGE_NAME}_ENABLE_PuLP)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME pulpTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/pulpTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
 TRIBITS_ADD_TEST(
     test_driver

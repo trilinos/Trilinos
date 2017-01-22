@@ -237,33 +237,50 @@ private:
     return theValue;
   }
 
-  static bool executeMetricCheck(const MetricAnalyzerInfo & metricInfo, std::ostringstream &msg_stream) {
-    bool bDoesThisTestPass = true;	// we will set this false if a specific test fails
+  static bool executeMetricCheck(
+    const MetricAnalyzerInfo & metricInfo, 
+    std::ostringstream &msg_stream) 
+  {
+    bool bDoesThisTestPass = true; // will set this false if a test fails
     if (metricInfo.bFoundUpperBound && metricInfo.bFoundLowerBound) {
-      if (metricInfo.theValue < metricInfo.lowerValue || metricInfo.theValue > metricInfo.upperValue) {
-        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
+      if (metricInfo.theValue < metricInfo.lowerValue || 
+          metricInfo.theValue > metricInfo.upperValue) {
+        msg_stream << "FAILED: " << metricInfo.parameterDescription 
+                   << " value: " << metricInfo.theValue << " is not in range: "                    << metricInfo.lowerValue << " to " 
+                   << metricInfo.upperValue << std::endl;
         bDoesThisTestPass = false;
       }
       else {
-        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
+        msg_stream << "Success: " << metricInfo.parameterDescription  
+                   << " value: " << metricInfo.theValue << " is in range: " 
+                   << metricInfo.lowerValue << " to " 
+                   << metricInfo.upperValue << std::endl;
       }
     }
     else if (metricInfo.bFoundUpperBound) {
       if (metricInfo.theValue > metricInfo.upperValue) {
-        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not below " << metricInfo.upperValue << std::endl;
+        msg_stream << "FAILED: " << metricInfo.parameterDescription 
+                   << " value: " << metricInfo.theValue << " is not below " 
+                   << metricInfo.upperValue << std::endl;
         bDoesThisTestPass = false;
       }
       else {
-        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is below: " << metricInfo.upperValue << std::endl;
+        msg_stream << "Success: " << metricInfo.parameterDescription  
+                   << " value: " << metricInfo.theValue << " is below: " 
+                   << metricInfo.upperValue << std::endl;
       }
     }
-    else {
+    else if (metricInfo.bFoundLowerBound) {
       if (metricInfo.theValue < metricInfo.lowerValue) {
-        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not above " << metricInfo.lowerValue << std::endl;
+        msg_stream << "FAILED: " << metricInfo.parameterDescription 
+                   << " value: " << metricInfo.theValue << " is not above " 
+                   << metricInfo.lowerValue << std::endl;
         bDoesThisTestPass = false;
       }
       else {
-        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is above: " << metricInfo.lowerValue << std::endl;
+        msg_stream << "Success: " << metricInfo.parameterDescription  
+                   << " value: " << metricInfo.theValue << " is above: " 
+                   << metricInfo.lowerValue << std::endl;
       }
     }
     return bDoesThisTestPass;
@@ -317,17 +334,11 @@ private:
       result.bFoundUpperBound = metricCheckParameters.isParameter(UPPER_PARAMETER_NAME);
       result.bFoundLowerBound = metricCheckParameters.isParameter(LOWER_PARAMETER_NAME);
 
-      if (!result.bFoundUpperBound && !result.bFoundLowerBound) {
-        throw std::logic_error( "The parameter list failed to find an entry for '" + std::string(UPPER_PARAMETER_NAME) + "' or '" + std::string(LOWER_PARAMETER_NAME) + "' and at least one is required." );
-      }
-      else if (result.bFoundUpperBound && result.bFoundLowerBound) {
-        result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
+
+      if (result.bFoundUpperBound) {
         result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
       }
-      else if (result.bFoundUpperBound) {
-        result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
-      }
-      else {
+      if (result.bFoundLowerBound) {
         result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
       }
 

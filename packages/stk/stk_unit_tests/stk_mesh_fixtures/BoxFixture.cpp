@@ -60,6 +60,9 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
 
 Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
 {
+  ThrowRequireMsg((2 == spatial_dimension && stk::topology::EDGE_RANK != rank) ||
+                  (3 == spatial_dimension && stk::topology::FACE_RANK != rank), "Must use declare_element_side");
+
   if (rank == spatial_dimension)
   {
     PartVector elem_part;

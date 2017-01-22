@@ -65,6 +65,7 @@ namespace panzer {
     typedef PHX::MDField<Scalar,IP> Array_IP;
     typedef PHX::MDField<Scalar,IP,Dim> Array_IPDim;
 
+    typedef PHX::MDField<Scalar,Point> Array_Point;
     typedef PHX::MDField<Scalar,Cell,IP> Array_CellIP;
     typedef PHX::MDField<Scalar,Cell,IP,Dim> Array_CellIPDim;
     typedef PHX::MDField<Scalar,Cell,IP,Dim,Dim> Array_CellIPDimDim;
@@ -104,7 +105,7 @@ namespace panzer {
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
-    Teuchos::RCP< Intrepid2::Cubature<double,DblArrayDynamic> > intrepid_cubature;
+    Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
 
     // for Shakib stabilization <Cell,IP,Dim,Dim>
     Array_CellIPDimDim covarient; 
@@ -117,6 +118,8 @@ namespace panzer {
 
     DblArrayDynamic dyn_cub_points, dyn_side_cub_points, dyn_cub_weights;
     DblArrayDynamic dyn_phys_cub_points, dyn_phys_cub_weights, dyn_phys_cub_norms, dyn_node_coordinates;
+
+    Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
   private:
     bool alloc_arrays;

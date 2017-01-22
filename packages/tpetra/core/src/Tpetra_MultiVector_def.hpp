@@ -52,7 +52,6 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Details_MultiVectorDistObjectKernels.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
@@ -125,25 +124,58 @@ namespace { // (anonymous)
   /// \param numCols [in] Number of columns in the DualView.
   /// \param zeroOut [in] Whether to initialize all the entries of the
   ///   DualView to zero.  Kokkos does first-touch initialization.
+  /// \param allowPadding [in] Whether to give Kokkos the option to
+  ///   pad Views for alignment.
   ///
   /// \return The allocated Kokkos::DualView.
   template<class ST, class LO, class GO, class NT>
   typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type
-  allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
+  allocDualView (const size_t lclNumRows,
+                 const size_t numCols,
+                 const bool zeroOut = true,
+                 const bool allowPadding = false)
   {
+    using Kokkos::AllowPadding;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
-    const char* label = "MV::DualView";
+    typedef typename dual_view_type::t_dev dev_view_type;
+    // This needs to be a string and not a char*, if given as an
+    // argument to Kokkos::view_alloc.  This is because view_alloc
+    // also allows a raw pointer as its first argument.  See
+    // https://github.com/kokkos/kokkos/issues/434.
+    const std::string label ("MV::DualView");
 
+    // NOTE (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016) Our separate
+    // creation of the DualView's Views works around
+    // Kokkos::DualView's current inability to accept an
+    // AllocationProperties initial argument (as Kokkos::View does).
+    // However, the work-around is harmless, since it does what the
+    // (currently nonexistent) equivalent DualView constructor would
+    // have done anyway.
+
+    dev_view_type d_view;
     if (zeroOut) {
-      return dual_view_type (label, lclNumRows, numCols);
+      if (allowPadding) {
+        d_view = dev_view_type (view_alloc (label, AllowPadding),
+                                lclNumRows, numCols);
+      }
+      else {
+        d_view = dev_view_type (view_alloc (label),
+                                lclNumRows, numCols);
+      }
     }
     else {
-      // FIXME (mfh 18 Feb 2015, 12 Apr 2015) This is just a hack,
-      // until Kokkos::DualView accepts an AllocationProperties
-      // initial argument, just like Kokkos::View.  However, the hack
-      // is harmless, since it does what the (currently nonexistent)
-      // equivalent DualView constructor would have done anyway.
-      typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
+      if (allowPadding) {
+        d_view = dev_view_type (view_alloc (label,
+                                            WithoutInitializing,
+                                            AllowPadding),
+                                lclNumRows, numCols);
+      }
+      else {
+        d_view = dev_view_type (view_alloc (label, WithoutInitializing),
+                                lclNumRows, numCols);
+      }
 #ifdef HAVE_TPETRA_DEBUG
       // Filling with NaN is a cheap and effective way to tell if
       // downstream code is trying to use a MultiVector's data without
@@ -155,16 +187,27 @@ namespace { // (anonymous)
       const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
       KokkosBlas::fill (d_view, nan);
 #endif // HAVE_TPETRA_DEBUG
-      typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
-      // Even though the user doesn't care about the contents of the
-      // MultiVector, the device and host views are still out of sync.
-      // We prefer to work in device memory.  The way to ensure this
-      // happens is to mark the device view as modified.
-      dual_view_type dv (d_view, h_view);
-      dv.template modify<typename dual_view_type::t_dev::memory_space> ();
-
-      return dual_view_type (d_view, h_view);
     }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
+       static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
+       "allocDualView: d_view's dimensions actual dimensions do not match "
+       "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
+       d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
+       << ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
+
+    dual_view_type dv (d_view, h_view);
+    // Whether or not the user cares about the initial contents of the
+    // MultiVector, the device and host views are out of sync.  We
+    // prefer to work in device memory.  The way to ensure this
+    // happens is to mark the device view as modified.
+    dv.template modify<typename dev_view_type::memory_space> ();
+
+    return dv;
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -625,7 +668,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
-               const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
+               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >& ArrayOfPtrs,
                const size_t numVecs) :
     base_type (map)
   {
@@ -1018,8 +1061,18 @@ namespace Tpetra {
     typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
       dev_execution_space;
 
-    const bool debug = false;
-    if (debug) {
+    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
+    // the option to check indices.  We do so in a debug build.  At
+    // some point, it would make sense to shift this to a run-time
+    // option, controlled by environment variable.
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debugCheckIndices = true;
+#else
+    constexpr bool debugCheckIndices = false;
+#endif // HAVE_TPETRA_DEBUG
+
+    const bool printDebugOutput = false;
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
     // We've already called checkSizes(), so this cast must succeed.
@@ -1073,7 +1126,7 @@ namespace Tpetra {
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
     if (exportLIDs.dimension_0 () == 0) {
-      if (debug) {
+      if (printDebugOutput) {
         std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
       }
       return;
@@ -1094,14 +1147,14 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    if (debug) {
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
     }
 
     const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
     if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
-      if (debug) {
+      if (printDebugOutput) {
         std::ostringstream os;
         const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
@@ -1140,63 +1193,69 @@ namespace Tpetra {
       // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_single_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<host_memory_space> (),
                                     create_const_view (src_host),
                                     exportLIDs.template view<host_memory_space> (),
-                                    0);
+                                    0,
+                                    debugCheckIndices);
         }
         else { // pack on device
           pack_array_single_column (exports.template view<dev_memory_space> (),
                                     create_const_view (src_dev),
                                     exportLIDs.template view<dev_memory_space> (),
-                                    0);
+                                    0,
+                                    debugCheckIndices);
         }
       }
       else {
         using KokkosRefactor::Details::pack_array_single_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<host_memory_space> (),
                                     create_const_view (src_host),
                                     exportLIDs.template view<host_memory_space> (),
-                                    sourceMV.whichVectors_[0]);
+                                    sourceMV.whichVectors_[0],
+                                    debugCheckIndices);
         }
         else { // pack on device
           pack_array_single_column (exports.template view<dev_memory_space> (),
                                     create_const_view (src_dev),
                                     exportLIDs.template view<dev_memory_space> (),
-                                    sourceMV.whichVectors_[0]);
+                                    sourceMV.whichVectors_[0],
+                                    debugCheckIndices);
         }
       }
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_multi_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_multi_column (exports.template view<host_memory_space> (),
                                    create_const_view (src_host),
                                    exportLIDs.template view<host_memory_space> (),
-                                   numCols);
+                                   numCols,
+                                   debugCheckIndices);
         }
         else { // pack on device
           pack_array_multi_column (exports.template view<dev_memory_space> (),
                                    create_const_view (src_dev),
                                    exportLIDs.template view<dev_memory_space> (),
-                                   numCols);
+                                   numCols,
+                                   debugCheckIndices);
         }
       }
       else {
         using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
         }
         if (packOnHost) {
@@ -1204,19 +1263,21 @@ namespace Tpetra {
                                                    create_const_view (src_host),
                                                    exportLIDs.template view<host_memory_space> (),
                                                    getKokkosViewDeepCopy<host_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols);
+                                                   numCols,
+                                                   debugCheckIndices);
         }
         else { // pack on device
           pack_array_multi_column_variable_stride (exports.template view<dev_memory_space> (),
                                                    create_const_view (src_dev),
                                                    exportLIDs.template view<dev_memory_space> (),
                                                    getKokkosViewDeepCopy<dev_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols);
+                                                   numCols,
+                                                   debugCheckIndices);
         }
       }
     }
 
-    if (debug) {
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
     }
   }
@@ -1243,6 +1304,16 @@ namespace Tpetra {
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
+    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
+    // the option to check indices.  We do so in a debug build.  At
+    // some point, it would make sense to shift this to a run-time
+    // option, controlled by environment variable.
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debugCheckIndices = true;
+#else
+    constexpr bool debugCheckIndices = false;
+#endif // HAVE_TPETRA_DEBUG
+
     // If we have no imports, there is nothing to do
     if (importLIDs.dimension_0 () == 0) {
       return;
@@ -1259,13 +1330,14 @@ namespace Tpetra {
       << " * " << importLIDs.dimension_0 () << " = "
       << numVecs * importLIDs.dimension_0 () << ".");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      constantNumPackets == static_cast<size_t> (0), std::runtime_error,
-      ": constantNumPackets input argument must be nonzero.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
+       "constantNumPackets input argument must be nonzero.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (numVecs) != static_cast<size_t> (constantNumPackets),
-      std::runtime_error, ": constantNumPackets must equal numVecs.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (numVecs) !=
+       static_cast<size_t> (constantNumPackets),
+       std::runtime_error, "constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
     // mfh 12 Apr 2016: Decide where to unpack based on the memory
@@ -1335,16 +1407,17 @@ namespace Tpetra {
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
-        const auto op = KokkosRefactor::Details::InsertOp ();
+        KokkosRefactor::Details::InsertOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
+
           }
           else { // unpack on device
             unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1352,25 +1425,29 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
       else if (CM == ADD) {
-        const auto op = KokkosRefactor::Details::AddOp ();
+        KokkosRefactor::Details::AddOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
-            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op, numVecs);
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs, debugCheckIndices);
           }
           else { // unpack on device
-            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op, numVecs);
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs, debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1378,27 +1455,29 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
       else if (CM == ABSMAX) {
-        const auto op = KokkosRefactor::Details::AbsMaxOp ();
+        KokkosRefactor::Details::AbsMaxOp<execution_space> op;
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
         }
         else {
@@ -1406,21 +1485,23 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
-          std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
-          "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
+           std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
+           "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
       }
     }
   }
@@ -2263,6 +2344,21 @@ namespace Tpetra {
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
     typedef typename pool_type::generator_type generator_type;
 
+    const IST max = Kokkos::rand<generator_type, IST>::max ();
+    const IST min = ATS::is_signed ? IST (-max) : ATS::zero ();
+
+    this->randomize (static_cast<Scalar> (min), static_cast<Scalar> (max));
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  randomize (const Scalar& minVal, const Scalar& maxVal)
+  {
+    typedef impl_scalar_type IST;
+    typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
+
     // Seed the pseudorandom number generator using the calling
     // process' rank.  This helps decorrelate different process'
     // pseudorandom streams.  It's not perfect but it's effective and
@@ -2278,8 +2374,8 @@ namespace Tpetra {
     unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
 
     pool_type rand_pool (seed);
-    const IST max = Kokkos::rand<generator_type, IST>::max ();
-    const IST min = ATS::is_signed ? IST (-max) : ATS::zero ();
+    const IST max = static_cast<IST> (maxVal);
+    const IST min = static_cast<IST> (minVal);
 
     this->template modify<device_type> ();
     auto thisView = this->getLocalView<device_type> ();
@@ -3177,16 +3273,32 @@ namespace Tpetra {
       X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
 #endif // HAVE_TPETRA_DEBUG
 
+    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.dimension_0 ());
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
-    // FIXME (mfh 10 May 2014) Use of origView_ instead of view_ for
-    // the second argument may be wrong, if view_ resulted from a
-    // previous call to offsetView with offset != 0.
-    dual_view_type newView = subview (X.origView_, rowRng, ALL ());
+
+    dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
+    // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
+    // CrsMatrix's Gauss-Seidel implementation (which assumes the
+    // ability to create domain Map views of column Map MultiVectors,
+    // and then get the original column Map MultiVector out again).
+    // If we just use X.origView_ here, it breaks the fix for #46.
+    // The test for offset == 0 is a hack that makes both tests pass,
+    // but doesn't actually fix the more general issue.  In
+    // particular, the right way to fix Gauss-Seidel would be to fix
+    // #385; that would make "getting the original column Map
+    // MultiVector out again" unnecessary.
+    dual_view_type newView = subview (offset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
+
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some
     // reason, the ([0,0], [0,2]) subview of a 0 x 2 DualView is 0 x
     // 0.  We work around by creating a new empty DualView of the
     // desired (degenerate) dimensions.
+    if (newOrigView.dimension_0 () == 0 &&
+        newOrigView.dimension_1 () != X.origView_.dimension_1 ()) {
+      newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
+                                                         X.getNumVectors ());
+    }
     if (newView.dimension_0 () == 0 &&
         newView.dimension_1 () != X.view_.dimension_1 ()) {
       newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
@@ -3194,8 +3306,8 @@ namespace Tpetra {
     }
 
     MV subViewMV = X.isConstantStride () ?
-      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_) :
-      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_, X.whichVectors_ ());
+      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView) :
+      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView, X.whichVectors_ ());
 
 #ifdef HAVE_TPETRA_DEBUG
     const size_t strideAfter = X.isConstantStride () ?
@@ -3428,7 +3540,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  subViewNonConst (const ArrayView<const size_t> &cols)
+  subViewNonConst (const Teuchos::ArrayView<const size_t> &cols)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     return Teuchos::rcp_const_cast<MV> (this->subView (cols));
@@ -3592,7 +3704,7 @@ namespace Tpetra {
 
       // We've validated the input, so it's safe to start copying.
       for (size_t j = 0; j < numCols; ++j) {
-        RCP<const V> X_j = this->getVector (j);
+        Teuchos::RCP<const V> X_j = this->getVector (j);
         const size_t LDA = static_cast<size_t> (ArrayOfPtrs[j].size ());
         X_j->get1dCopy (ArrayOfPtrs[j], LDA);
       }
@@ -4503,53 +4615,6 @@ namespace Tpetra {
   {
     this->describeImpl (out, "Tpetra::MultiVector", verbLevel);
   }
-
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-#else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption /* rwo */ )
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {}
-
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void

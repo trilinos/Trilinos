@@ -16,6 +16,17 @@ namespace Tacho {
            template<int,int> class ControlType = Control>
   class Chol {
   public:
+    // statistics
+    // ==========
+    template<typename ExecViewTypeA>
+    inline
+    static Stat stat(ExecViewTypeA &A) {
+      printf(">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgAlgo, ArgVariant);           
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
+
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,
@@ -23,10 +34,10 @@ namespace Tacho {
              typename ExecViewTypeA>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       ExecViewTypeA &A) {
-      fprintf(stderr, ">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
-              ArgUplo, ArgAlgo, ArgVariant);           
+      printf(">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }
@@ -47,6 +58,9 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() = delete;
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ExecViewTypeA &A)
         : _A(A),
@@ -57,14 +71,7 @@ namespace Tacho {
       const char* Label() const { return "Chol"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Chol::invoke(_policy, _policy.member_single(),
-                             _A);
-        _A.setFuture(typename ExecViewTypeA::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Chol::invoke(_policy, member,
                                       _A);
         

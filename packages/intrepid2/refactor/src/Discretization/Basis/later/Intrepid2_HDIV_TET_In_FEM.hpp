@@ -107,7 +107,7 @@ public:
   
   /** \brief  Constructor.
    */
-  Basis_HDIV_TET_In_FEM( const int n , const EPointType pointType );    
+  Basis_HDIV_TET_In_FEM( const ordinal_type n , const EPointType pointType );    
   
   /** \brief  Evaluation of a FEM basis on a <strong>reference Tetrahedron</strong> cell. 
   

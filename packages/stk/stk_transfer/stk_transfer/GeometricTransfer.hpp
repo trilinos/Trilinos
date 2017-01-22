@@ -239,14 +239,13 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search(
                 *m_meshb,
                 m_expansion_factor);
 }
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication() {
 
+template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication() {
   ParallelMachine comm = m_mesha->comm();
   const unsigned p_size = parallel_machine_size(comm);
   if (1 < p_size) {
     if (optional_functions<MeshA>::copy_entities) copy_domain_to_range_processors();
-    else ThrowRequireMsg (optional_functions<MeshA>::copy_entities,
-             __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities.");
+    else ThrowRequireMsg (optional_functions<MeshA>::copy_entities, __FILE__<<":"<<__LINE__<<" Still working on communication capabilities.");
   }
 }
 

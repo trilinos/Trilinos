@@ -17,12 +17,14 @@ doxygen_objdb_*.tmp
 # Trilinos extra repos
 /TriBITS/
 /preCopyrightTrilinos/
-/DrekarBase
-/DrekarResearch
+/DrekarBase/
+/DrekarResearch/
+/DrekarSystemTests/
 /LIMEExt/
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
+/tempus/
 /packages/CTrilinos/
 /packages/ForTrilinos/
 /packages/Sundance/
@@ -31,6 +33,8 @@ doxygen_objdb_*.tmp
 /packages/optika/
 /packages/xSDKTrilinos/
 
+# Ignore local gitdist config file (.gitdis.default is in git repo)
+/.gitdist
 
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/

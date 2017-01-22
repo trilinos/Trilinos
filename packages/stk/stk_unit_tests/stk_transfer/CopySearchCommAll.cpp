@@ -33,6 +33,7 @@
 
 #include "CopySearchCommAll.hpp"
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <sstream>
 
@@ -50,7 +51,7 @@ void CopySearchCommAll::do_search(const CopyTransferMeshBase & mesha,
   const ParallelMachine comm = meshb.comm();
   const int my_proc = parallel_machine_rank(comm);
   const int num_proc = parallel_machine_size(comm);
-  stk::CommAll commAll(comm);
+  stk::CommSparse commSparse(comm);
   for (int phase=0;phase<2;++phase)
   {
     for (size_t id_index=0 ; id_index<meshb_ids.size() ; ++id_index)
@@ -65,17 +66,17 @@ void CopySearchCommAll::do_search(const CopyTransferMeshBase & mesha,
       for (int send_proc = 0 ; send_proc < num_proc ; ++send_proc)
       {
         if (my_proc == send_proc) { continue; }
-        commAll.send_buffer(send_proc).pack<Mesh_ID>(key);
+        commSparse.send_buffer(send_proc).pack<Mesh_ID>(key);
       }
     }
 
     if (phase == 0 )
     {
-      commAll.allocate_buffers(num_proc/4);
+      commSparse.allocate_buffers();
     }
     else
     {
-      commAll.communicate();
+      commSparse.communicate();
     }
   }
 
@@ -83,10 +84,10 @@ void CopySearchCommAll::do_search(const CopyTransferMeshBase & mesha,
   {
     if ( my_proc != recv_proc )
     {
-      while(commAll.recv_buffer(recv_proc).remaining())
+      while(commSparse.recv_buffer(recv_proc).remaining())
       {
         Mesh_ID key;
-        commAll.recv_buffer(recv_proc).unpack<Mesh_ID>(key);
+        commSparse.recv_buffer(recv_proc).unpack<Mesh_ID>(key);
         if (mesha.is_locally_owned(key))
         {
           key_to_target_processor[key] = recv_proc;

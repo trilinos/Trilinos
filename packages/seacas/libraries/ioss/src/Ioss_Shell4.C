@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Shell4 registerThis; }
 
   protected:
-    St_Shell4() : ElementVariableType("shell4", 4) {}
+    St_Shell4() : ElementVariableType(Ioss::Shell4::name, 4) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -91,11 +91,11 @@ void Ioss::Shell4::factory()
   Ioss::St_Shell4::factory();
 }
 
-Ioss::Shell4::Shell4() : Ioss::ElementTopology("shell4", "ShellQuadrilateral_4")
+Ioss::Shell4::Shell4() : Ioss::ElementTopology(Ioss::Shell4::name, "ShellQuadrilateral_4")
 {
-  Ioss::ElementTopology::alias("shell4", "shell");
-  Ioss::ElementTopology::alias("shell4", "Shell_Quad_4_3D");
-  Ioss::ElementTopology::alias("shell4", "SHELL_QUADRILATERAL_4");
+  Ioss::ElementTopology::alias(Ioss::Shell4::name, "shell");
+  Ioss::ElementTopology::alias(Ioss::Shell4::name, "Shell_Quad_4_3D");
+  Ioss::ElementTopology::alias(Ioss::Shell4::name, "SHELL_QUADRILATERAL_4");
 }
 
 Ioss::Shell4::~Shell4() = default;

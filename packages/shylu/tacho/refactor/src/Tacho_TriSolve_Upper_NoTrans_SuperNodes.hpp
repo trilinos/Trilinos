@@ -19,18 +19,18 @@ namespace Tacho {
   TriSolve<Uplo::Upper,Trans::NoTranspose,
            AlgoTriSolve::SuperNodes,Variant::One>
     ::invoke(PolicyType &policy,
-             const MemberType &member,
+             MemberType &member,
              const int diagA,
              CrsExecViewTypeA &A,
              DenseExecViewTypeB &B) {
 
-    if (member.team_rank() == 0) {                                                                                    
-      typedef typename CrsExecViewTypeA::flat_mat_base_type flat_mat_base_type;                                       
-      DenseMatrixView<flat_mat_base_type> AA(A.Flat());                                                               
+    if (member.team_rank() == 0) {
+      typedef typename CrsExecViewTypeA::flat_mat_base_type flat_mat_base_type;
+      DenseMatrixView<flat_mat_base_type> AA(A.Flat());
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
       AlgoTrsm::SparseDenseSuperNodes,Variant::One>
       ::invoke(policy, member, diagA, 1.0, AA, B);
-    }   
+    }
     return 0;
   }
 

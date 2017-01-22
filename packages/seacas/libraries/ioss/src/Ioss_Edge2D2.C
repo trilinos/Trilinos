@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Edge2D2 registerThis; }
 
   protected:
-    St_Edge2D2() : ElementVariableType("edge2d2", 2) {}
+    St_Edge2D2() : ElementVariableType(Ioss::Edge2D2::name, 2) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,10 +68,10 @@ void Ioss::Edge2D2::factory()
   Ioss::St_Edge2D2::factory();
 }
 
-Ioss::Edge2D2::Edge2D2() : Ioss::ElementTopology("edge2d2", "Line_2D_2")
+Ioss::Edge2D2::Edge2D2() : Ioss::ElementTopology(Ioss::Edge2D2::name, "Line_2D_2")
 {
-  Ioss::ElementTopology::alias("edge2d2", "Edge_2_2D");
-  //  Ioss::ElementTopology::alias("edge2d2", "LINE_2");
+  Ioss::ElementTopology::alias(Ioss::Edge2D2::name, "Edge_2_2D");
+  //  Ioss::ElementTopology::alias(Ioss::Edge2D2::name, "LINE_2");
 }
 
 Ioss::Edge2D2::~Edge2D2() = default;

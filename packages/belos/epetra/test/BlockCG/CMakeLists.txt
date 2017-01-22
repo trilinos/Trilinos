@@ -29,6 +29,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       "--verbose --filename=bcsstk14.hb"
     STANDARD_PASS_OUTPUT 
     )
+    
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    bl_cg_set_res
+    SOURCES test_bl_cg_set_res.cpp createEpetraProblem.cpp
+    COMM serial mpi
+    ARGS
+      "--verbose --filename=bcsstk14.hb"
+    STANDARD_PASS_OUTPUT 
+    )
 
   ASSERT_DEFINED(Anasazi_SOURCE_DIR)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGFiles
@@ -43,6 +52,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pcg_hb
       SOURCES test_bl_pcg_hb.cpp createEpetraProblem.cpp
+      COMM serial mpi
+      ARGS
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
+      STANDARD_PASS_OUTPUT 
+      )
+      
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      bl_pcg_set_res
+      SOURCES test_bl_pcg_set_res.cpp createEpetraProblem.cpp
       COMM serial mpi
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"

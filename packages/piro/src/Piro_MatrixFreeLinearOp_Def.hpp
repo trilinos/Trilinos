@@ -51,8 +51,10 @@
 
 template <typename Scalar>
 Piro::MatrixFreeLinearOp<Scalar>::MatrixFreeLinearOp(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model) :
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model, 
+    const double lambda) :
   model_(model),
+  lambda_(lambda),
   basePoint_(),
   f_base_(Teuchos::null)
 {
@@ -160,7 +162,9 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMagnitude;
 
-  const RCP<const Thyra::VectorBase<Scalar> > x_dot_base = basePoint_.get_x_dot();
+  RCP<const Thyra::VectorBase<Scalar> > x_dot_base;
+  if (basePoint_.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot)) 
+    x_dot_base = basePoint_.get_x_dot();
 
   RCP<const Thyra::VectorBase<Scalar> > x_base = basePoint_.get_x();
   if (Teuchos::is_null(x_base)) {
@@ -189,7 +193,7 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
       }
     } else {
       // Scalar perturbation
-      const ScalarMagnitude relative_pert_ratio = static_cast<ScalarMagnitude>(1.0e-6);
+      const ScalarMagnitude relative_pert_ratio = static_cast<ScalarMagnitude>(lambda_);
       const ScalarMagnitude eta = (relative_pert_ratio * ((norm_x_base / norm_dx) + relative_pert_ratio));
 
       // Compute perturbed residual

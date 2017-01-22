@@ -111,7 +111,8 @@ namespace NOX {
       Group(const NOX::Thyra::Vector& initial_guess,
         const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
         const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null,
+        const bool rightScalingFirst = false);
 
       /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
 
@@ -136,7 +137,8 @@ namespace NOX {
         const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
         const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
         const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null,
+        const bool rightScalingFirst = false);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -155,6 +157,11 @@ namespace NOX {
 
       Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
       getJacobianOperator() const;
+
+      Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
+      getScaledJacobianOperator() const;
+
+      void unscaleJacobianOperator() const;
 
       Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
       getNonconstJacobian();
@@ -402,6 +409,9 @@ namespace NOX {
 
       //! Scaled solution vector scaled by the 
       mutable Teuchos::RCP<NOX::Thyra::Vector> scaled_x_vec_;
+
+      //! Do right scaling before left scaling?
+      bool rightScalingFirst_;
     };
 
   } // namespace LAPACK

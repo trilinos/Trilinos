@@ -196,7 +196,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->postEvaluate<EvalType>(0);
 
   typedef typename EvalType::ScalarT ScalarT;
-  typedef typename PHX::MDFieldTypeTraits<PHX::MDField<ScalarT,Cell,BASIS> >::return_type  ScalarView;
 
   typename PHX::MDField<ScalarT,Cell,BASIS> s("Pressure",sourceBasis->functional);
   typename PHX::MDField<ScalarT,Cell,BASIS> t("Pressure",targetBasis->functional);

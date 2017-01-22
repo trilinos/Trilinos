@@ -46,7 +46,6 @@
 
 
 #include <Kokkos_HostSpace.hpp>
-#include <impl/Kokkos_HBWAllocators.hpp>
 
 /*--------------------------------------------------------------------------*/
 #ifdef KOKKOS_HAVE_HBWSPACE
@@ -121,21 +120,6 @@ public:
   typedef Kokkos::Device<execution_space,memory_space> device_type;
 
   /*--------------------------------*/
-#if ! KOKKOS_USING_EXP_VIEW
-
-  typedef Impl::HBWMallocAllocator allocator ;
-
-  /** \brief  Allocate a contiguous block of memory.
-   *
-   *  The input label is associated with the block of memory.
-   *  The block of memory is tracked via reference counting where
-   *  allocation gives it a reference count of one.
-   */
-  static Kokkos::Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
-
-#endif /* #if ! KOKKOS_USING_EXP_VIEW */
-
-  /*--------------------------------*/
   /* Functions unique to the HBWSpace */
   static int in_parallel();
 
@@ -163,11 +147,14 @@ public:
   void deallocate( void * const arg_alloc_ptr 
                  , const size_t arg_alloc_size ) const ;
 
+  /**\brief Return Name of the MemorySpace */
+  static constexpr const char* name();
+
 private:
 
   AllocationMechanism  m_alloc_mech ;
-
-  friend class Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void > ;
+  static constexpr const char* m_name = "HBW";
+  friend class Kokkos::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void > ;
 };
 
 } // namespace Experimental
@@ -177,7 +164,6 @@ private:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template<>
@@ -254,8 +240,32 @@ public:
 };
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
+
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+static_assert( Kokkos::Impl::MemorySpaceAccess< Kokkos::Experimental::HBWSpace , Kokkos::Experimental::HBWSpace >::assignable , "" );
+
+template<>
+struct MemorySpaceAccess< Kokkos::HostSpace , Kokkos::Experimental::HBWSpace > {
+  enum { assignable = true };
+  enum { accessible = true };
+  enum { deepcopy   = true };
+};
+
+template<>
+struct MemorySpaceAccess< Kokkos::Experimental::HBWSpace , Kokkos::HostSpace> {
+  enum { assignable = false };
+  enum { accessible = true };
+  enum { deepcopy   = true };
+};
+
+}}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

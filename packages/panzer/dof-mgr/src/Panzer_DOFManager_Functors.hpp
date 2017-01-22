@@ -43,7 +43,6 @@
 #ifndef __Panzer_DOFManager_Functors_hpp__
 #define __Panzer_DOFManager_Functors_hpp__
 
-#include "Phalanx_MDField.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {

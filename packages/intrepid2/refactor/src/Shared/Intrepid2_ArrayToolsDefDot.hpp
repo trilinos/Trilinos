@@ -74,34 +74,36 @@ namespace Intrepid2 {
         size_type leftRank(_leftInput.rank()), rightRank(_rightInput.rank());
 
         if (_hasField) 
-          Util::unrollIndex( cl, bf, pt, 
-                       _output.dimension(0),
-                       _output.dimension(1), 
-                       iter );
+          unrollIndex( cl, bf, pt, 
+                             _output.dimension(0),
+                             _output.dimension(1), 
+                             _output.dimension(2), 
+                             iter );
         else          
-          Util::unrollIndex( cl, pt,
-                       _output.dimension(0),
-                       iter);
+          unrollIndex( cl, pt,
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             iter);
+        
+        auto result = ( _hasField ? Kokkos::subview(_output, cl, bf, pt) :
+                        /**/        Kokkos::subview(_output, cl,     pt));
+        
+        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0, Kokkos::ALL(), Kokkos::ALL()) :
+                            /**/                           Kokkos::subview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt) :
-                        /**/        Kokkos::subdynrankview(_output, cl,     pt));
         
-        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subdynrankview(_leftInput, cl, 0, Kokkos::ALL(), Kokkos::ALL()) :
-                            /**/                           Kokkos::subdynrankview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
-
+        const auto right = (rightRank == leftRank + ordinal_type(_hasField)) ?
+                             ( _hasField ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/          Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
+                             ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/          Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
         
-        const auto right = (rightRank == leftRank + int(_hasField)) ?
-                             ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
-                             ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
-        
-        const size_type iend  = left.dimension(0);
-        const size_type jend  = left.dimension(1);
+        const ordinal_type iend  = left.dimension(0);
+        const ordinal_type jend  = left.dimension(1);
 
         value_type tmp(0);
-        for(size_type i = 0; i < iend; ++i)
-          for(size_type j = 0; j < jend; ++j)
+        for(ordinal_type i = 0; i < iend; ++i)
+          for(ordinal_type j = 0; j < jend; ++j)
             tmp += left(i, j)*right(i, j);
         result() = tmp;
       }
@@ -161,7 +163,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i+1), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i+1) of inputFields");
         }
-        for (size_t i=0;i<outputFields.rank();++i) {
+        for (size_type i=0;i<outputFields.rank();++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataField): inputFields dimension (i) does not match to the dimension (i+1) of outputFields");
         }

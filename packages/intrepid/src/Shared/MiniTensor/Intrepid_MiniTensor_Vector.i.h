@@ -639,11 +639,7 @@ cross(Vector<S, N> const & u, Vector<T, N> const & v)
     break;
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Cross product undefined for R^" << dimension;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Cross product defined for 3D only.");
     break;
 
   }

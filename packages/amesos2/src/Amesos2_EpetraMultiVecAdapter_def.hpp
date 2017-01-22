@@ -222,6 +222,11 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 		      "and number of vectors" );
 #endif
 
+  // Optimization for ROOTED
+  if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
+	  mv_->ExtractCopy(av.getRawPtr(), lda);
+  }
+  else {
   Epetra_Map e_dist_map
     = *Util::tpetra_map_to_epetra_map<local_ordinal_t,
                                       global_ordinal_t,
@@ -234,6 +239,8 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 
   // Finally, do copy
   redist_mv.ExtractCopy(av.getRawPtr(), lda);
+  }
+
 }
 
 
@@ -308,12 +315,22 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
   const size_t num_vecs  = getGlobalNumVectors();
   // TODO: check that the following const_cast is safe
   double* data_ptr = const_cast<double*>(new_data.getRawPtr());
-  const Epetra_BlockMap e_source_map
-    = *Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*source_map);
-  const multivec_t source_mv(Copy, e_source_map, data_ptr, as<int>(lda), as<int>(num_vecs));
-  const Epetra_Import importer(*mv_map_, e_source_map);
+
+  // Optimization for ROOTED
+  // TODO: Element-wise copy rather than using importer
+  if ( num_vecs == 1 && mv_->Comm().MyPID() == 0 && mv_->Comm().NumProc() == 1 ) {
+	  const multivec_t source_mv(Copy, *mv_map_, data_ptr, as<int>(lda), as<int>(num_vecs));
+	  const Epetra_Import importer(*mv_map_, *mv_map_); //trivial - map does not change
+	  mv_->Import(source_mv, importer, Insert);
+  }
+  else {
+    const Epetra_BlockMap e_source_map
+      = *Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*source_map);
+    const multivec_t source_mv(Copy, e_source_map, data_ptr, as<int>(lda), as<int>(num_vecs));
+    const Epetra_Import importer(*mv_map_, e_source_map);
   
-  mv_->Import(source_mv, importer, Insert);
+    mv_->Import(source_mv, importer, Insert);
+  }
 }
 
 

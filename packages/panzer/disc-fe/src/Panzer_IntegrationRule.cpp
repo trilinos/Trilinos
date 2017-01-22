@@ -88,17 +88,17 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   Teuchos::RCP<const shards::CellTopology> topo = cell_data.getCellTopology();
   Teuchos::RCP<shards::CellTopology> sideTopo = getSideTopology(cell_data);
 
-  Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device> > cubature_factory;
-  Teuchos::RCP<Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>  > > intrepid_cubature;
+  Intrepid2::DefaultCubatureFactory cubature_factory;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
 
   // get side topology
   if (Teuchos::is_null(sideTopo)) {
     ss << ",volume)";
-    intrepid_cubature = cubature_factory.create(*topo, cubature_degree);
+    intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*topo, cubature_degree);
   }
   else {
     ss << ",side)";
-    intrepid_cubature = cubature_factory.create(*sideTopo, cubature_degree);
+    intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*sideTopo, cubature_degree);
   }
 
   PointRule::setup(ss.str(),intrepid_cubature->getNumPoints(),cell_data);
@@ -126,23 +126,23 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   Teuchos::RCP<const shards::CellTopology> topo = cell_data.getCellTopology();
 
-  Teuchos::RCP<Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>  > > intrepid_cubature;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
 
   int num_points(0);
   if (cv_type == "volume") {
     ss << ",volume)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(*topo));
     num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "side") {
     ss << ",side)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(*topo));
     num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "boundary") {
     ss << ",boundary)";
     intrepid_cubature  = Teuchos::rcp(new 
-           Intrepid2::CubatureControlVolumeBoundary<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo,cell_data.side()));
+                                      Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(*topo,cell_data.side()));
     num_points = intrepid_cubature->getNumPoints();
   }
 
@@ -167,13 +167,13 @@ void panzer::IntegrationRule::print(std::ostream & os)
 void panzer::IntegrationRule::referenceCoordinates(Kokkos::DynRankView<double,PHX::Device> & cub_points)
 {
     // build an interpid cubature rule
-    Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device> > > intrepid_cubature;
-    Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device> > cubature_factory;
+  Teuchos::RCP< Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
+    Intrepid2::DefaultCubatureFactory cubature_factory;
     
     if (!isSide())
-      intrepid_cubature = cubature_factory.create(*(topology),cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(topology),cubature_degree);
     else
-      intrepid_cubature = cubature_factory.create(*(side_topology),cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(side_topology),cubature_degree);
 
     int num_ip = intrepid_cubature->getNumPoints();
     Kokkos::DynRankView<double,PHX::Device> cub_weights("cub_weights",num_ip);

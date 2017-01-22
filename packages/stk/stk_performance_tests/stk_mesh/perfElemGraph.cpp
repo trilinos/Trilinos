@@ -139,7 +139,7 @@ private:
 
 void declare_animation_field(stk::mesh::MetaData &metaData, std::string &animationFile)
 {
-    animationFile = unitTestUtils::getOption("-animationFile", "");
+    animationFile = stk::unit_test_util::get_option("-animationFile", "");
 
     if("" != animationFile)
     {
@@ -503,7 +503,7 @@ protected:
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
         delete_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
@@ -559,12 +559,12 @@ protected:
         get_perforated_mesh_ids(bulkData, *elemGraph, meshInfo);
 
         delete_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
         add_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterAdd.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterAdd.g", bulkData, bulkData.parallel());
         unsigned finalGraphEdgeCount = elemGraph->num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
 
@@ -603,7 +603,7 @@ protected:
     }
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 
     std::string animationFile = "";
@@ -619,7 +619,7 @@ protected:
     }
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 };
 

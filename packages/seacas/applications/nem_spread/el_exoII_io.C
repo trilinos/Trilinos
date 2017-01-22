@@ -447,7 +447,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_elem_blk_ids(mesh_exoid, max_name_length);
 
-  printf("\tTime to read element block IDs: %.2f\n", second() - start_time);
+  printf("\tTime to read element block IDs: %.4f\n", second() - start_time);
 
   /*
    * Process the Node Set IDs and associated information related to node sets
@@ -458,7 +458,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     start_time = second();
     read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
-    printf("\tTime to read node set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read node set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -468,7 +468,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
-    printf("\tTime to read side set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read side set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -481,7 +481,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   extract_elem_blk();
 
-  printf("\tTime to extract element block information: %.2f\n", second() - start_time);
+  printf("\tTime to extract element block information: %.4f\n", second() - start_time);
 
   /*
    * Read the mesh information from the exodus file and broadcast it to the
@@ -510,7 +510,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_coord(mesh_exoid, max_name_length);
 
-  printf("\tTime to read nodal coordinates: %.2f\n", second() - start_time);
+  printf("\tTime to read nodal coordinates: %.4f\n", second() - start_time);
 
   /*
    * Read the element connectivity and attributes information.  Broadcast it
@@ -518,25 +518,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    */
   start_time = second();
   read_elem_blk(mesh_exoid);
-  printf("\tTime to read element blocks: %.2f\n", second() - start_time);
+  printf("\tTime to read element blocks: %.4f\n", second() - start_time);
 
   /* Read the node sets and sort */
   if (globals.Num_Node_Set > 0) {
     start_time = second();
     read_node_sets(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets);
-    printf("\tTime to read node sets: %.2f\n", second() - start_time);
+    printf("\tTime to read node sets: %.4f\n", second() - start_time);
   }
 
   /* Assign the element types. */
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     create_elem_types(); /* globals.Elem_Type only used in sideset read */
-    printf("\tTime to categorize element types: %.2f\n", second() - start_time);
+    printf("\tTime to categorize element types: %.4f\n", second() - start_time);
 
     /* Read the side sets and sort */
     start_time = second();
     read_side_sets(mesh_exoid, num_elem_in_ssets, num_df_in_ssets);
-    printf("\tTime to read side sets: %.2f\n", second() - start_time);
+    printf("\tTime to read side sets: %.4f\n", second() - start_time);
   }
 
   /* Close the EXODUS  mesh file */
@@ -1330,9 +1330,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         iend_elem = istart_elem + num_to_get;
 
         int el_type;
-        check_exodus_error(ex_get_n_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+        check_exodus_error(ex_get_partial_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
                                          (istart_elem + 1), num_to_get, elem_blk, nullptr, nullptr),
-                           "ex_get_n_conn");
+                           "ex_get_partial_conn");
         if (Debug_Flag >= 2)
           printf("\t\tread connectivity\n");
 
@@ -1396,14 +1396,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           iend_attr = istart_attr + num_attr_left_over;
 
         if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
                                                 num_attr_per_message, elem_attr),
-                             "ex_get_n_elem_attr");
+                             "ex_get_partial_attr");
         }
         else {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
                                                 num_attr_left_over, elem_attr),
-                             "ex_get_n_elem_attr");
+                             "ex_get_partial_attr");
         }
 
         for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
@@ -2111,14 +2111,14 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
         }
 
         /* Read in the part of the node set that will fit in the message */
-        check_exodus_error(ex_get_n_node_set(exoid, Node_Set_Ids[i], (istart_ns + 1),
-                                             num_node_per_message, TOPTR(node_set)),
-                           "ex_get_n_node_set");
+        check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
+					      num_node_per_message, TOPTR(node_set), nullptr),
+                           "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
-          check_exodus_error(ex_get_n_node_set_df(exoid, Node_Set_Ids[i], (istart_ns + 1),
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
                                                   num_node_per_message, TOPTR(node_set_df)),
-                             "ex_get_n_node_set_df");
+                             "ex_get_partial_node_set_df");
         }
 
         /* Renumber nodes to start at node '0' instead of node '1' */
@@ -2507,10 +2507,10 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
         /* Read in the part of the side set that will fit in the message. */
 
-        check_exodus_error(ex_get_n_side_set(exoid, Side_Set_Ids[i], (istart_ss + 1),
+        check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
                                              num_elem_per_message, TOPTR(ss_elem_list),
                                              TOPTR(ss_side_list)),
-                           "ex_get_n_side_set");
+                           "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
         if (imess == 0) {
@@ -2680,9 +2680,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
             num_elem_per_message = num_left_over;
 
           /* Read in the part of the side set df's that will fit in the msg. */
-          check_exodus_error(ex_get_n_side_set_df(exoid, Side_Set_Ids[i], (istart_ss + 1),
-                                                  num_elem_per_message, TOPTR(ss_dist_fact)),
-                             "ex_get_n_side_set_df");
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
+							  num_elem_per_message, TOPTR(ss_dist_fact)),
+                             "ex_get_partial_set_dist_fact");
 
           /*
            * At this point a processor has the list of global element IDs

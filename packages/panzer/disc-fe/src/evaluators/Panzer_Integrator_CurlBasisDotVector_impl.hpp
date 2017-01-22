@@ -230,9 +230,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned cell) const
   {
-    for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+    for (int lbf = 0; lbf < weighted_curl_basis.extent_int(1); lbf++) {
       residual(cell,lbf) = 0.0;
-      for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
+      for (int qp = 0; qp < weighted_curl_basis.extent_int(2); qp++) {
         for (int d = 0; d < spaceDim; d++) {
           residual(cell,lbf) += scratch(cell, qp, d)*weighted_curl_basis(cell, lbf, qp, d);
         } // D-loop
@@ -251,9 +251,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned cell) const
   {
-    for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+    for (int lbf = 0; lbf < weighted_curl_basis.extent_int(1); lbf++) {
       residual(cell,lbf) = 0.0;
-      for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
+      for (int qp = 0; qp < weighted_curl_basis.extent_int(2); qp++) {
           residual(cell,lbf) += scratch(cell,qp)*weighted_curl_basis(cell,lbf,qp);
       } // P-loop
     } // F-loop
@@ -323,7 +323,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 #if 0
   residual.deep_copy(ScalarT(0.0));
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.num_cells; ++cell)
   {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
     {
@@ -349,7 +349,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
   if(!useScalarField) {
     auto weighted_curl_basis_vector = bv.weighted_curl_basis_vector;
 
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+    for (index_t cell = 0; cell < workset.num_cells; ++cell)
       for (std::size_t basis = 0; basis < num_nodes; ++basis) {
         residual(cell,basis) = 0.0;
         for (std::size_t qp = 0; qp < num_qp; ++qp)
@@ -361,7 +361,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
   else { // useScalarField
     auto weighted_curl_basis_scalar = bv.weighted_curl_basis_scalar;
 
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+    for (index_t cell = 0; cell < workset.num_cells; ++cell)
       for (std::size_t basis = 0; basis < num_nodes; ++basis) {
        residual(cell,basis) = 0.0;
         for (std::size_t qp = 0; qp < num_qp; ++qp)

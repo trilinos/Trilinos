@@ -52,7 +52,7 @@ namespace Iotr {
 
   private:
     Offset_Factory();
-    Ioss::Transform *make(const std::string & /*unused*/ /*unused*/) const;
+    Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
   class Offset : public Ioss::Transform
@@ -60,16 +60,16 @@ namespace Iotr {
     friend class Offset_Factory;
 
   public:
-    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-    int output_count(int in) const;
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const override;
+    int output_count(int in) const override;
 
-    void set_property(const std::string &name, int value);
-    void set_property(const std::string &name, double value);
+    void set_property(const std::string &name, int value) override;
+    void set_property(const std::string &name, double value) override;
 
   protected:
     Offset();
 
-    bool internal_execute(const Ioss::Field &field, void *data);
+    bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
     int    intOffset;

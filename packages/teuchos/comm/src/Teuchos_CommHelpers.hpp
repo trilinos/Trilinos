@@ -54,36 +54,31 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_as.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_TEUCHOS_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
-#endif // HAVE_MPI
+#endif // HAVE_TEUCHOS_MPI
 #include "Teuchos_DefaultSerialComm.hpp"
-
+#include "Teuchos_EReductionType.hpp"
 
 namespace Teuchos {
-
 
 //
 // Teuchos::Comm Helper Functions
 //
 
-/** \brief Enumeration for selecting from a set of pre-defined reduction
- * operations.
- *
- * \relates Comm
- */
-enum EReductionType {
-  REDUCE_SUM, ///< Sum
-  REDUCE_MIN, ///< Min
-  REDUCE_MAX, ///< Max
-  REDUCE_AND ///< Logical AND
-};
+#ifdef HAVE_TEUCHOS_MPI
+namespace Details {
 
-/** \brief Convert to std::string representation.
- *
- * \relates EReductionType
- */
-const char* toString (const EReductionType reductType);
+/// \brief MPI's error string corresponding to the given integer error code.
+///
+/// \warning This is an implementation detail and not for public use.
+///   It only exists when Trilinos was built with MPI.
+///
+/// \param errCode [in] Integer error code returned by MPI functions.
+std::string getMpiErrorString (const int errCode);
+
+} // namespace Details
+#endif // HAVE_TEUCHOS_MPI
 
 /** \brief Get the process rank.
  *

@@ -1,5 +1,5 @@
 #
-# Load the standard Trilinos SEMS develoment environment
+# Purge the modules and load the standard Trilinos SEMS develoment environment
 #
 # USAGE:
 #
@@ -20,9 +20,9 @@
 #   e.g. sems-cmake/3.5.2.  To use the default just pass in "default" (see the
 #   default listed below).
 #
-# Once sourced, this module also laods the SEMS modules for all of the TPLs
-# and tools that Trilinos can use (see below for for the list of TPLs that get
-# loaded).
+# Once sourced, this script also laods the SEMS modules for all of the TPLs
+# and tools that Trilinos can use that are provided by SEMS (see below for for
+# the list of TPLs that get loaded).
 #
 # One can use the defaults with just:
 #
@@ -40,8 +40,8 @@
 #
 #   $ source load_sems_dev_env.sh default default sems-cmake/3.3.2
 #
-# If a different Trilinos SEMS Dev Env is alreadey loaded, this script will
-# automatically unload the curent version and load the new reqeusted version.
+# This script will purge the current modules before loading the requested env
+# modules.
 #
 # Set the env var:
 #
@@ -59,31 +59,12 @@
 #   $ source unload_sems_dev_env.sh
 #
 # NOTE: After sourcing this script one can safely unload the current modules
-# and load different modules for Python and CMake since these are just tools
-# that don't depend on the selected compiler or MPI.  Also, one can unload the
-# default Boost module and load a different version since Boost does not
-# depend on the MPI implementation and no other loaded TPLs depend on Boost.
+# and load different modules for CMake, git, and Python since these are just
+# tools that don't depend on the selected compiler or MPI.  Also, one can
+# unload the default Boost module and load a different version since Boost
+# does not depend on the MPI implementation and no other loaded TPLs depend on
+# Boost.
 #
-# NOTE: If the modules don't load correctly because of some conflict or some
-# other issue, then one can clean house by calling:
-#
-#   $ module purge
-#   $ unset TRILINOS_SEMS_DEV_ENV_LOADED
-#
-# Then one can source this script again in order to load the desired Trilinos
-# SEMS Dev Env.
-#
-
-# Module defaults
-sems_compiler_and_version_default=sems-gcc/4.8.4
-sems_mpi_and_version_default=sems-openmpi/1.8.7
-sems_cmake_and_version_default=sems-cmake/3.5.2
-
-# Other defaults
-sems_python_and_version_default=sems-python/2.7.9
-sems_boost_and_version_default=sems-boost/1.55.0/base
-# NOTE: If you change these versions, you also have to update the same list in
-# the unload_sems_dev_env.sh module as well!
 
 # Get the base dir for the sourced script
 called=$_
@@ -91,6 +72,8 @@ called=$_
 #echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
+
+source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 
 #
 # A) Get the SEMS Dev Env to load and set defaults
@@ -117,44 +100,28 @@ fi
 TRILINOS_SEMS_DEV_ENV_TO_LOAD="$sems_compiler_and_version_load $sems_mpi_and_version_load $sems_cmake_and_version_load"
 
 #
-# B) If a SEMS Dev Env is already loaded, then unload the current one and load
-# the new one.
+# B) Purge the current set of modules
 #
 
-if [ "$TRILINOS_SEMS_DEV_ENV_LOADED" != "" ] ; then
-  if [ "$TRILINOS_SEMS_DEV_ENV_LOADED" == "$TRILINOS_SEMS_DEV_ENV_TO_LOAD" ] ; then
-    if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
-      echo "Already loaded the right Trilinos SEMS Dev Env" \
-        "'$TRILINOS_SEMS_DEV_ENV_TO_LOAD' so just return!"
-    fi
-    return 0
-  fi
-  if [ "$TRILINOS_SEMS_DEV_ENV_LOADED" != "$TRILINOS_SEMS_DEV_ENV_TO_LOAD" ] ; then
-    . $_SCRIPT_DIR/unload_sems_dev_env.sh
-  fi
-fi
-
-if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
-  echo "Loading Trilinos SEMS Dev Env =" \
-    "'$TRILINOS_SEMS_DEV_ENV_TO_LOAD'!"
-fi
+module purge
 
 #
 # C) Load the modules (in the correct order)
 #
 
-module load sems-env # In case user did 'module purge'
+module load sems-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
+module load $sems_git_and_version_default
 module load $sems_compiler_and_version_load
 module load $sems_mpi_and_version_load
 module load $sems_boost_and_version_default
-module load sems-zlib/1.2.8/base 
-module load sems-hdf5/1.8.12/parallel 
-module load sems-netcdf/4.3.2/parallel 
-module load sems-parmetis/4.0.3/parallel 
-module load sems-scotch/6.0.3/parallel 
-module load sems-superlu/4.3/base
+module load $sems_zlib_and_version_default
+module load $sems_hdf5_and_version_default
+module load $sems_netcdf_and_version_default
+module load $sems_parmetis_and_version_default
+#module load $sems_scotch_and_version_default
+module load $sems_superlu_and_version_default
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
   module list

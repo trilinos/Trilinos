@@ -124,10 +124,14 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    if (coarseLevel.IsAvailable("AP graph", this)) {
-      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
+    RCP<ParameterList> APparams = rcp(new ParameterList);
+    if (coarseLevel.IsAvailable("AP reuse data", this)) {
+      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-      finalP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
+      APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
+      if (APparams->isParameter("graph"))
+        finalP = APparams->get< RCP<Matrix> >("graph");
     }
 
     const ParameterList& pL = GetParameterList();
@@ -158,7 +162,8 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs);
+        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
+                    GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
       }
 
     } else {
@@ -168,8 +173,10 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
-      Set(coarseLevel, "P",        finalP);
-      Set(coarseLevel, "AP graph", finalP);
+      Set(coarseLevel, "P",             finalP);
+
+      APparams->set("graph", finalP);
+      Set(coarseLevel, "AP reuse data", APparams);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))

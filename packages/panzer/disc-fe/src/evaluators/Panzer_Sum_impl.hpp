@@ -63,7 +63,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
-  TEUCHOS_ASSERT(value_names->size()<MAX_VALUES);
+  TEUCHOS_ASSERT(static_cast<int>(value_names->size()) < MAX_VALUES);
 
   // check if the user wants to scale each term independently
   auto local_scalars = Kokkos::View<double *,PHX::Device>("scalars",value_names->size());
@@ -371,7 +371,7 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 operator()(const ScalarsTag, const unsigned c ) const
 {
   for (int i=0;i<numValues;i++) {
-    for (int j = 0; j < sum.dimension_1(); ++j)
+    for (int j = 0; j < sum.extent_int(1); ++j)
       sum(c,j) += scalars(i)*value_views[i](c,j);
   }
 }
@@ -384,7 +384,7 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 operator()(const NoScalarsTag, const unsigned c ) const
 {
   for (int i=0;i<numValues;i++) {
-    for (int j = 0; j < sum.dimension_1(); ++j)
+    for (int j = 0; j < sum.extent_int(1); ++j)
       sum(c,j) += value_views[i](c,j);
   }
 }

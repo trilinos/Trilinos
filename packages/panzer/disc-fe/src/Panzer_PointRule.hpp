@@ -90,6 +90,12 @@ namespace panzer {
     //! Data layout for rank-2 tensor fields
     Teuchos::RCP<PHX::DataLayout> dl_tensor;
     
+    //! Data layout for vector fields - full (x,y,z)
+    Teuchos::RCP<PHX::DataLayout> dl_vector3;
+
+    //! Data layout for vector fields - full ((xx,xy,xz),(yx,yy,yz),(zx,zy,zz)) (or transpose?)
+    Teuchos::RCP<PHX::DataLayout> dl_tensor3x3;
+
     int spatial_dimension;
     int workset_size;
     int num_points;

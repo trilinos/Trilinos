@@ -118,8 +118,8 @@ void communicate_field_data(
   CommAll sparse ;
 
   {
-    const unsigned * const snd_size = & send_size[0] ;
-    const unsigned * const rcv_size = & recv_size[0] ;
+    const unsigned * const snd_size = send_size.data() ;
+    const unsigned * const rcv_size = recv_size.data() ;
     sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
   }
 
@@ -244,11 +244,11 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     pack_msg(iproc, send_data[i]);
     recv_data[i].resize(send_data[i].size());
 
-    char* recv_buffer = (char*)&recv_data[i][0];
+    char* recv_buffer = (char*)recv_data[i].data();
     int buf_size = recv_data[i].size()*class_size;
     MPI_Irecv(recv_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_requests[i]);
 
-    char* send_buffer = (char*)&send_data[i][0];
+    char* send_buffer = (char*)send_data[i].data();
     MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
   }
 
@@ -259,12 +259,12 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
           MPI_Wait(&recv_requests[i], &status);
       }
       else {
-          MPI_Waitany(num_comm_procs, &recv_requests[0], &idx, &status);
+          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
       }
       unpack_msg(comm_procs[idx], recv_data[idx]);
   }
 
-  MPI_Waitall(num_comm_procs, &send_requests[0], &statuses[0]);
+  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
 #endif
 }
 
@@ -424,57 +424,5 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
   parallel_op<MIN>(mesh, fields, false);
 }
 
-//
-//  Determine the number of items each other process will send to the current processor
-//
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
-  const int msg_tag = 10240;
-  int num_procs = sendSizeArray.size();
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
-  std::vector<int> receiveSizeArray(num_procs, 0);
-  //
-  //  Determine the total number of messages every processor will receive
-  //
-  std::vector<int> local_number_to_receive(num_procs, 0);
-  std::vector<int> global_number_to_receive(num_procs, 0);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(sendSizeArray[iproc] > 0) local_number_to_receive[iproc] = 1;
-  }
-  MPI_Allreduce(&local_number_to_receive[0], &global_number_to_receive[0], num_procs, MPI_INT, MPI_SUM, mpi_communicator);
-  //
-  //  Now each processor knows how many messages it will recive, but does not know the message lengths or where
-  //  the messages will be recived from.  Need to extract this information.
-  //  Post a recieve for each expected message.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  int num_to_recv = global_number_to_receive[my_proc];
-  std::vector<int> recv_size_buffers(num_to_recv);
-  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
-    int *recv_buffer = &(recv_size_buffers[imsg]);
-    MPI_Irecv(recv_buffer, 1, MPI_INT, MPI_ANY_SOURCE,
-              msg_tag, mpi_communicator, &recv_handles[imsg]);
-  }
-  MPI_Barrier(mpi_communicator);
-  //
-  //  Send message lengths
-  //
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(sendSizeArray[iproc] > 0) {
-      int send_length = sendSizeArray[iproc];
-      MPI_Send(&send_length, 1, MPI_INT, iproc, msg_tag, mpi_communicator);
-    }
-  }
-  //
-  //  Get each message and place the length in the proper place in the length array
-  //
-  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
-    MPI_Status status;
-    MPI_Wait(&recv_handles[imsg], &status);
-    receiveSizeArray[status.MPI_SOURCE] = recv_size_buffers[imsg];
-  }
-
-  return receiveSizeArray;
-}
 } // namespace mesh
 } // namespace stk

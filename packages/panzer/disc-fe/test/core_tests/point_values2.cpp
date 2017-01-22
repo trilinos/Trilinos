@@ -152,7 +152,10 @@ namespace panzer {
     TEST_EQUALITY(point_rule->num_points,num_points);
   
     panzer::PointValues2<ScalarType,PHX::MDField > point_values2;
-    panzer::MDFieldArrayFactory af("prefix_");
+
+    const size_type derivative_dim = 4;
+    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
+    panzer::MDFieldArrayFactory af("prefix_",ddims);
 
     point_values2.setupArrays(point_rule,af);
 
@@ -164,9 +167,6 @@ namespace panzer {
     //   |    0  |
     //   |       |
     // 0(0,0)---1(1,0)
-
-    const size_type derivative_dim = 4;
-    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
 
     const int num_vertices = point_rule->topology->getNodeCount();
     ArrayType node_coordinates = af.buildArray<ScalarType,Cell,NODE,Dim>("node_coordinates",num_cells, num_vertices, base_cell_dimension);
@@ -220,7 +220,7 @@ namespace panzer {
           TEST_EQUALITY(point_values2.coords_ref(p,d).val(),point_coordinates(p,d).val());
 
     // check the shifted values (ensure physical mapping)
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -232,7 +232,7 @@ namespace panzer {
     }
 
     // check the jacobian
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -242,7 +242,7 @@ namespace panzer {
           TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,1).val(),dy/2.0,1e-10);
        }
     }
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -251,7 +251,7 @@ namespace panzer {
     }
 
     // check the inverse jacobian
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {

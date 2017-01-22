@@ -7,7 +7,7 @@
 #include "MeshBuilder.hpp"
 #include <stddef.h>                     // for size_t
 #include <vector>                       // for allocator, vector
-#include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
+#include "stk_learning/MeshBuilder/CoordinateSets.hpp"
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/IossBridge.hpp"        // for put_io_part_attribute

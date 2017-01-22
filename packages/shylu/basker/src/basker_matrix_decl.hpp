@@ -43,7 +43,6 @@ namespace BaskerNS
     BaskerMatrix<Int,Entry,Exe_Space>& operator= (const BaskerMatrix<Int,Entry,Exe_Space>&);
     */
 
-
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz);
@@ -169,7 +168,6 @@ namespace BaskerNS
     INT_1DARRAY pend;
     void init_pend();
     void clear_pend();
-    
 
   };//end class BaskerMatrix
 

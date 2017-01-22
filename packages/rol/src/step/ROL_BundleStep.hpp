@@ -367,7 +367,7 @@ public:
   }
 
   std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {
-    Teuchos::RCP<const StepState<Real> > state = Step<Real>::getStepState();
+    const Teuchos::RCP<const StepState<Real> > state = Step<Real>::getStepState();
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 && first_print_ ) {

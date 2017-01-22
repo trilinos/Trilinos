@@ -172,6 +172,27 @@ void EqualityConstraint<Real>::applyAdjointHessian(Vector<Real> &huv,
                                                    const Vector<Real> &v,
                                                    const Vector<Real> &x,
                                                    Real &tol ) {
+
+  // Get step length.
+  Real h = std::max(static_cast<Real>(1),x.norm()/v.norm())*tol;
+
+  // Compute constraint Jacobian at x.
+  Teuchos::RCP<Vector<Real> > aju = huv.clone();
+  applyAdjointJacobian(*aju,u,x,tol);
+
+  // Compute new step x + h*v.
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  xnew->set(x);
+  xnew->axpy(h,v);
+  update(*xnew);
+
+  // Compute constraint Jacobian at x + h*v.
+  huv.zero();
+  applyAdjointJacobian(huv,u,*xnew,tol);
+
+  // Compute Newton quotient.
+  huv.axpy(static_cast<Real>(-1),*aju);
+  huv.scale(static_cast<Real>(1)/h);
 }
 
 

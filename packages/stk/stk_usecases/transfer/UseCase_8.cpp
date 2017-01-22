@@ -99,13 +99,11 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   stk::mesh::Part & domain_block        = domain_meta_data.declare_part("elements", elem_rank);
-  stk::mesh::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<> >());
-  stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<> >());
   const stk::mesh::EntityRank side_rank    = domain_meta_data.side_rank();
   stk::mesh::Part & block_skin       = domain_meta_data.declare_part("skin", side_rank);
 
-  stk::mesh::set_cell_topology( domain_block,  hex_top );
-  stk::mesh::set_cell_topology( block_skin,    quad_top );
+  stk::mesh::set_topology( domain_block,  stk::topology::HEX_8 );
+  stk::mesh::set_topology( block_skin,    stk::topology::QUAD_4 );
 
   ScalarField &domain_coord_sum_field = stk::mesh::put_field(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),

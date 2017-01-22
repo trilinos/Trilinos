@@ -23,18 +23,18 @@ BlockedVector_ReadOnly_GlobalEvaluationData(const BlockedVector_ReadOnly_GlobalE
 
 BlockedVector_ReadOnly_GlobalEvaluationData::
 BlockedVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace,
-                                            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace,
+                                            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ownedSpace,
                                             const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks)
   : isInitialized_(false) 
 { 
-  initialize(ghostedSpace,uniqueSpace,gedBlocks); 
+  initialize(ghostedSpace, ownedSpace, gedBlocks); 
 }
 
 void 
 BlockedVector_ReadOnly_GlobalEvaluationData::
-initialize(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & ghostedSpace,
-           const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & uniqueSpace,
-           const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks)
+initialize(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> >& ghostedSpace,
+           const Teuchos::RCP<const Thyra::VectorSpaceBase<double> >& ownedSpace,
+           const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> >& gedBlocks)
 {
   using Teuchos::rcp_dynamic_cast;
 
@@ -78,24 +78,24 @@ initializeData()
 
 void 
 BlockedVector_ReadOnly_GlobalEvaluationData::
-setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector)
+setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >& ownedVector)
 {
-  uniqueVector_ = uniqueVector;
+  ownedVector_ = ownedVector;
 
-  Teuchos::RCP<const Thyra::ProductVectorBase<double> > blocks = Thyra::castOrCreateProductVectorBase(uniqueVector_);
+  Teuchos::RCP<const Thyra::ProductVectorBase<double> > blocks = Thyra::castOrCreateProductVectorBase(ownedVector_);
 
   TEUCHOS_TEST_FOR_EXCEPTION(blocks->productSpace()->numBlocks()!=Teuchos::as<int>(gedBlocks_.size()),std::logic_error,
-                             "BlockedVector_ReadOnly_GED unique vector as the wrong number of blocks!");
+                             "BlockedVector_ReadOnly_GED owned vector as the wrong number of blocks!");
 
   for(std::size_t i=0;i<gedBlocks_.size();i++)
-    gedBlocks_[i]->setUniqueVector(blocks->getVectorBlock(i));
+    gedBlocks_[i]->setOwnedVector(blocks->getVectorBlock(i));
 }
 
 Teuchos::RCP<const Thyra::VectorBase<double> > 
 BlockedVector_ReadOnly_GlobalEvaluationData::
-getUniqueVector() const
+getOwnedVector() const
 {
-  return uniqueVector_;
+  return ownedVector_;
 }
 
 Teuchos::RCP<Thyra::VectorBase<double> > 

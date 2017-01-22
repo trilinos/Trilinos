@@ -86,26 +86,6 @@ private:
 
 }} //namespace stk::search
 
-namespace boost { namespace geometry { namespace traits {
 
-// traits for stk::search::Sphere<T>
-template <typename T> struct tag< stk::search::Sphere<T> > { typedef box_tag type; };
-template <typename T> struct point_type< stk::search::Sphere<T> > { typedef stk::search::Point<T> type; };
-
-template <typename T, size_t Index>
-struct indexed_access< stk::search::Sphere<T>, min_corner, Index >
-{
-  BOOST_STATIC_ASSERT((Index < 3));
-  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] - s.radius(); }
-};
-
-template <typename T, size_t Index>
-struct indexed_access< stk::search::Sphere<T>, max_corner, Index >
-{
-  BOOST_STATIC_ASSERT((Index < 3));
-  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] + s.radius(); }
-};
-
-}}} // namespace boost::geometry::traits
 
 #endif //STK_SEARCH_SPHERE_HPP

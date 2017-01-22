@@ -134,3 +134,14 @@ IF (Tpetra_INST_INT_INT)
     NUM_MPI_PROCS 4
     )
 ENDIF ()
+
+# mfh 13 Sep 2016: Test for Github Issue #607.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue_607
+  SOURCES
+    Issue_607
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1-4
+  )

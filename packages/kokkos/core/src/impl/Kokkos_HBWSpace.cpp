@@ -56,11 +56,14 @@
 #include <algorithm>
 
 #include <Kokkos_HBWSpace.hpp>
-#include <impl/Kokkos_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <Kokkos_Atomic.hpp>
 #ifdef KOKKOS_HAVE_HBWSPACE
 #include <memkind.h>
+#endif
+
+#if (KOKKOS_ENABLE_PROFILING)
+#include <impl/Kokkos_Profiling_Interface.hpp>
 #endif
 
 //----------------------------------------------------------------------------
@@ -126,23 +129,6 @@ int HBWSpace::in_parallel()
 
 /*--------------------------------------------------------------------------*/
 
-#if ! KOKKOS_USING_EXP_VIEW
-
-namespace Kokkos {
-namespace Experimental {
-
-Kokkos::Impl::AllocationTracker HBWSpace::allocate_and_track( const std::string & label, const size_t size )
-{
-  return Kokkos::Impl::AllocationTracker( allocator(), size, label );
-}
-
-} // namespace Experimental
-} // namespace Kokkos
-
-#endif /* #if ! KOKKOS_USING_EXP_VIEW */
-
-/*--------------------------------------------------------------------------*/
-
 namespace Kokkos {
 namespace Experimental {
 
@@ -152,7 +138,7 @@ HBWSpace::HBWSpace()
      HBWSpace::STD_MALLOC
     )
 {
-printf("Init\n");
+//printf("Init\n");
 setenv("MEMKIND_HBW_NODES", "1", 0);
 }
 
@@ -160,7 +146,7 @@ setenv("MEMKIND_HBW_NODES", "1", 0);
 HBWSpace::HBWSpace( const HBWSpace::AllocationMechanism & arg_alloc_mech )
   : m_alloc_mech( HBWSpace::STD_MALLOC )
 {
-printf("Init2\n");
+//printf("Init2\n");
 setenv("MEMKIND_HBW_NODES", "1", 0);
   if ( arg_alloc_mech == STD_MALLOC ) {
     m_alloc_mech = HBWSpace::STD_MALLOC ;
@@ -237,6 +223,10 @@ void HBWSpace::deallocate( void * const arg_alloc_ptr , const size_t arg_alloc_s
   }
 }
 
+constexpr const char* HBWSpace::name() {
+  return m_name;
+}
+
 } // namespace Experimental
 } // namespace Kokkos
 
@@ -244,7 +234,6 @@ void HBWSpace::deallocate( void * const arg_alloc_ptr , const size_t arg_alloc_s
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 SharedAllocationRecord< void , void >
@@ -260,6 +249,14 @@ deallocate( SharedAllocationRecord< void , void > * arg_rec )
 SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
 ~SharedAllocationRecord()
 {
+  #if (KOKKOS_ENABLE_PROFILING)
+  if(Kokkos::Profiling::profileLibraryLoaded()) {
+    Kokkos::Profiling::deallocateData(
+      Kokkos::Profiling::SpaceHandle(Kokkos::Experimental::HBWSpace::name()),RecordBase::m_alloc_ptr->m_label,
+      data(),size());
+  }
+  #endif
+
   m_space.deallocate( SharedAllocationRecord< void , void >::m_alloc_ptr
                     , SharedAllocationRecord< void , void >::m_alloc_size
                     );
@@ -281,6 +278,12 @@ SharedAllocationRecord( const Kokkos::Experimental::HBWSpace & arg_space
       )
   , m_space( arg_space )
 {
+  #if (KOKKOS_ENABLE_PROFILING)
+  if(Kokkos::Profiling::profileLibraryLoaded()) {
+    Kokkos::Profiling::allocateData(Kokkos::Profiling::SpaceHandle(arg_space.name()),arg_label,data(),arg_alloc_size);
+  }
+  #endif
+
   // Fill in the Header information
   RecordBase::m_alloc_ptr->m_record = static_cast< SharedAllocationRecord< void , void > * >( this );
 
@@ -324,7 +327,7 @@ reallocate_tracked( void * const arg_alloc_ptr
   SharedAllocationRecord * const r_old = get_record( arg_alloc_ptr );
   SharedAllocationRecord * const r_new = allocate( r_old->m_space , r_old->get_label() , arg_alloc_size );
 
-  Kokkos::Impl::DeepCopy<HBWSpace,HBWSpace>( r_new->data() , r_old->data()
+  Kokkos::Impl::DeepCopy<Kokkos::Experimental::HBWSpace,Kokkos::Experimental::HBWSpace>( r_new->data() , r_old->data()
                                              , std::min( r_old->size() , r_new->size() ) );
 
   RecordBase::increment( r_new );
@@ -343,7 +346,7 @@ SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::get_record( voi
   RecordHost                   * const record = head ? static_cast< RecordHost * >( head->m_record ) : (RecordHost *) 0 ;
 
   if ( ! alloc_ptr || record->m_alloc_ptr != head ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::get_record ERROR" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::get_record ERROR" ) );
   }
 
   return record ;
@@ -357,7 +360,6 @@ print_records( std::ostream & s , const Kokkos::Experimental::HBWSpace & space ,
 }
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

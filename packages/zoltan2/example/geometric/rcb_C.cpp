@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
@@ -135,8 +134,6 @@ int main(int argc, char *argv[])
   params.set("imbalance_tolerance", tolerance );
   params.set("num_global_parts", nprocs);
 
-  params.set("bisection_num_test_cuts", 1);
-   
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // A simple problem with no weights.

@@ -32,24 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*****************************************************************************
-*
-* exgset - ex_get_set
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid              exodus file id
-*       int     set_type           the type of set
-*       int     set_id             set id
-*
-* exit conditions -
-*       int*    set_entry_list     array of entries in set
-*       int*    set_extra_list     array of extras in set
-*
-* revision history -
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
@@ -60,6 +42,13 @@
 
 /*!
  * reads the set entry list and set extra list for a single set
+ * \param   exoid                   exodus file id
+ * \param   set_type                set type
+ * \param   set_id                  set id
+ * \param  *set_entry_list          array of entries in set. Set to NULL to not
+ * read.
+ * \param  *set_extra_list          array of extras in set. Set to NULL to not
+ * read.
  */
 
 int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int *set_entry_list,

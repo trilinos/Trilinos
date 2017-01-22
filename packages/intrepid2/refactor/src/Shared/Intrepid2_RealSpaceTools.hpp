@@ -131,6 +131,12 @@ namespace Intrepid2 {
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties>
     static void
+    extractSacadoValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
+                         const Kokkos::DynRankView<inputValueType, inputProperties...>   input );
+      
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties>
+    static void
     clone( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
            const Kokkos::DynRankView<inputValueType,inputProperties...>   input );
 

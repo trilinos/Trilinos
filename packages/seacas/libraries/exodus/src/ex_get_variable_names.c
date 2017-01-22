@@ -39,6 +39,8 @@
 #include <stdio.h>
 
 /*!
+\ingroup ResultsData
+
 The function ex_get_variable_names() reads the names of the results
 variables from the database. Memory must be allocated for the name
 array before this function is invoked. The names are \p
@@ -57,27 +59,27 @@ ex_create() or ex_open().
 \param[in]  obj_type   Variable indicating the type of variable which is
 described. Use one
                        of the options in the table below.
-\param[in]  num_vars   The number of \c var_type variables that will be read
+\param[in]  num_vars   The number of  var_type variables that will be read
                        from the database.
-\param[out] var_names  Returned array of pointers to \c num_vars variable names.
+\param[out] var_names  Returned array of pointers to  num_vars variable names.
 
-<table>
-<tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
-<tr><td> \c EX_NODAL}     </td><td>  Nodal entity type        </td></tr>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-</table>
+| ex_entity_type|  description              |
+|---------------|---------------------------|
+| EX_GLOBAL     |  Global entity type       |
+| EX_NODAL      |  Nodal entity type        |
+| EX_NODE_SET   |  Node Set entity type     |
+| EX_EDGE_BLOCK |  Edge Block entity type   |
+| EX_EDGE_SET   |  Edge Set entity type     |
+| EX_FACE_BLOCK |  Face Block entity type   |
+| EX_FACE_SET   |  Face Set entity type     |
+| EX_ELEM_BLOCK |  Element Block entity type|
+| EX_ELEM_SET   |  Element Set entity type  |
+| EX_SIDE_SET   |  Side Set entity type     |
 
 As an example, the following code segment will read the names of the
 nodal variables stored in the data file:
 
-\code
+~~~{.c}
 int error, exoid, num_nod_vars;
 char *var_names[10];
 
@@ -87,7 +89,7 @@ for (i=0; i < num_nod_vars; i++) {
    var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 }
 error = ex_get_variable_names(exoid, EX_NODAL, num_nod_vars, var_names);
-\endcode
+~~~
 
 */
 

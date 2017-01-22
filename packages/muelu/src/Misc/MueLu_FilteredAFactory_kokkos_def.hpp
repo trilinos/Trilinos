@@ -143,31 +143,43 @@ namespace MueLu {
   // This trick allows us to bypass constructing a new matrix. Instead, we
   // make a deep copy of the original one, and fill it in with zeros, which
   // are ignored during the prolongator smoothing.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void FilteredAFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  BuildReuse(const Matrix& A, const LWGraph_kokkos& graph, const bool lumping, Matrix& filteredA) const {
-    SC zero = Teuchos::ScalarTraits<SC>::zero();
+  template<class MatrixType, class GraphType, class FilterType>
+  class BuildReuseFunctor {
+  private:
+    MatrixType localA, localFA;
+    size_t     blkSize;
+    GraphType  graph;
+    bool       lumping;
+    FilterType filter;
 
-    size_t blkSize = A.GetFixedBlockSize();
+    typedef typename MatrixType::ordinal_type LO;
+    typedef typename MatrixType::value_type   SC;
+    typedef Kokkos::ArithTraits<SC>           ATS;
 
-    auto localA  = A        .getLocalMatrix();
-    auto localFA = filteredA.getLocalMatrix();
+  public:
+    BuildReuseFunctor(MatrixType localA_, MatrixType localFA_, size_t blkSize_, GraphType graph_, bool lumping_, FilterType filter_) :
+      localA(localA_),
+      localFA(localFA_),
+      blkSize(blkSize_),
+      graph(graph_),
+      lumping(lumping_),
+      filter(filter_)
+    { }
 
-    Kokkos::View<char*> filter("filter", blkSize * graph.GetImportMap()->getNodeNumElements(), 0);
-
-    size_t numGRows = graph.GetNodeNumVertices();
-    Kokkos::parallel_for("MueLu:FilteredAF:BuildReuse:for", numGRows, KOKKOS_LAMBDA(const size_t i) {
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_t i) const {
       // Set up filtering array
-      typename LWGraph_kokkos::row_type indsG = graph.getNeighborVertices(i);
+      typename GraphType::row_type indsG = graph.getNeighborVertices(i);
       for (size_t j = 0; j < indsG.size(); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter(indsG(j)*blkSize + k) = 1;
 
+      SC zero = ATS::zero();
       for (size_t k = 0; k < blkSize; k++) {
         LO row = i*blkSize + k;
 
         auto rowA = localA.row (row);
-        auto nnz = rowA.length;
+        auto nnz  = rowA.length;
 
         if (nnz == 0)
           continue;
@@ -195,8 +207,7 @@ namespace MueLu {
               continue;
             }
 
-            // TAW: 3/14/2016: not sure whether this works with CUDA
-            diagExtra += Teuchos::as<SC>(rowFA.value(j));
+            diagExtra += rowFA.value(j);
 
             rowFA.value(j) = zero;
           }
@@ -214,7 +225,25 @@ namespace MueLu {
       for (size_t j = 0; j < indsG.size(); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter(indsG(j)*blkSize + k) = 0;
-    });
+    }
+  };
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void FilteredAFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  BuildReuse(const Matrix& A, const LWGraph_kokkos& graph, const bool lumping, Matrix& filteredA) const {
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
+
+    size_t blkSize = A.GetFixedBlockSize();
+
+    auto localA  = A        .getLocalMatrix();
+    auto localFA = filteredA.getLocalMatrix();
+
+    Kokkos::View<char*> filter("filter", blkSize * graph.GetImportMap()->getNodeNumElements(), 0);
+
+    size_t numGRows = graph.GetNodeNumVertices();
+
+    BuildReuseFunctor<decltype(localA), LWGraph_kokkos, decltype(filter)> functor(localA, localFA, blkSize, graph, lumping, filter);
+    Kokkos::parallel_for("MueLu:FilteredAF:BuildReuse:for", numGRows, functor);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>

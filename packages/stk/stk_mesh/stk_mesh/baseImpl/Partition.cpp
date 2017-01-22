@@ -369,7 +369,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   {
     Bucket &b = **b_i;
     size_t b_size = b.size();
-    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, &entities[0] + new_i);
+    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, entities.data() + new_i);
     new_i += b_size;
   }
 

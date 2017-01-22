@@ -77,7 +77,7 @@ prefix_find(
 {
   for (Trace::TraceList::const_iterator it = trace_list.begin(); it != trace_list.end(); ++it)
     if (prefix_compare((*it), s))
-      return true;;
+      return true;
   return false;
 }
 

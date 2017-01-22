@@ -166,7 +166,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(8)         );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(numFields) );
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1)        );
         }
 

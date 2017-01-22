@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -102,10 +102,11 @@ namespace Tpetra {
     };
 
     template <class TS,class Init>
-    RCP<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
     initStackDB(Teuchos::ParameterList &pl, Init &init)
     {
       using Teuchos::ParameterList;
+      using Teuchos::RCP;
       typedef typename TS::type T;
       RCP<ParameterList> db = init.template initDB<T>(pl);
       if (! TS::bottom) {
@@ -119,7 +120,7 @@ namespace Tpetra {
 } // namespace Tpetra
 
 
-/** 
+/**
   \example TypeStackTest.cpp
   An example for using the Tpetra::Ext::TypeStack class and its associated macros.
  */

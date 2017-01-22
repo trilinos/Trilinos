@@ -67,6 +67,25 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 
+template<class Matrix, class LO, class GO>
+class RowFunctor {
+  public:
+    RowFunctor(Matrix localMatrix_) :
+      localMatrix(localMatrix_)
+    { }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO row, GO& r) const {
+      auto rowView = localMatrix.row (row);
+      auto length  = rowView.length;
+
+      r += length;
+    }
+
+  private:
+    Matrix localMatrix;
+};
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -242,15 +261,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     GO validation = 0;
 
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
-    for (int i = 0; i < loops; i++) {
-      Kokkos::parallel_reduce("Utils::DetectDirichletRows", Kokkos::RangePolicy<typename NO::execution_space>(0, numRows), KOKKOS_LAMBDA(const LO row, GlobalOrdinal& r) {
-        auto rowView = localMatrix.row (row);
-        auto length  = rowView.length;
+    typedef Kokkos::RangePolicy<typename NO::execution_space> RangePolicy;
 
-        r += length;
-      }, validation);
-    }
+    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+    RowFunctor<decltype(localMatrix), LO, GO> functor(localMatrix);
+    for (int i = 0; i < loops; i++)
+      Kokkos::parallel_reduce("Utils::DetectDirichletRows", RangePolicy(0, numRows), functor, validation);
     std::cout << "validation = " << validation << std::endl;
 
     tm = Teuchos::null;
@@ -275,8 +291,7 @@ int main(int argc, char* argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-  // try {
-  {
+  try {
     const bool throwExceptions = false;
 
     Teuchos::CommandLineProcessor clp(throwExceptions);
@@ -388,7 +403,7 @@ int main(int argc, char* argv[]) {
 #endif
     }
   }
-  // TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   Kokkos::finalize();
 

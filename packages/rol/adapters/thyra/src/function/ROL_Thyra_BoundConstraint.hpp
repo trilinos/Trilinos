@@ -77,7 +77,11 @@ public:
 
   virtual ~Thyra_BoundConstraint() {}
 
-  Thyra_BoundConstraint(Teuchos::RCP<Thyra::VectorBase<Real> > p_min, Teuchos::RCP<Thyra::VectorBase<Real> > p_max, Real min_diff) : BoundConstraint<Real>(), thyra_x_lo_(p_min), thyra_x_up_(p_max), min_diff_(min_diff) {};
+  Thyra_BoundConstraint(Teuchos::RCP<Thyra::VectorBase<Real> > p_min, Teuchos::RCP<Thyra::VectorBase<Real> > p_max, Real min_diff) : BoundConstraint<Real>(), thyra_x_lo_(p_min), thyra_x_up_(p_max), min_diff_(min_diff) {
+  // Safety check, in case the user passes empty pointers
+  if (thyra_x_lo_!=Teuchos::null && thyra_x_up_!=Teuchos::null)
+    this->activate();
+};
 
   /** \brief Update bounds.
 

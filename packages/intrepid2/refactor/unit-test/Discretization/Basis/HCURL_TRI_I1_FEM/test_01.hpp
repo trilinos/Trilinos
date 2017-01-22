@@ -52,6 +52,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -137,9 +138,8 @@ namespace Intrepid2 {
     DynRankView ConstructWithLabel(triNodes, 7, 2);
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
-    const auto numFields = triBasis.getCardinality();
-    const auto numPoints = triNodes.dimension(0);
-    const auto spaceDim  = triBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type numPoints = triNodes.dimension(0);
 
     DynRankView vals;
     vals = DynRankView("vals", numFields, numPoints);
@@ -162,7 +162,7 @@ namespace Intrepid2 {
     // exception #5
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(0,4,1) );
     // exception #6
-      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(12) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(numFields) );
     // exception #7
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(-1) );
     }
@@ -230,12 +230,11 @@ namespace Intrepid2 {
   
   // all tags are on host space
   try{
-    const auto numFields = triBasis.getCardinality();
     const auto allTags = triBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const auto dofTagSize = allTags.dimension(0);
-    for (auto i = 0; i < dofTagSize; ++i) {
+    const ordinal_type dofTagSize = allTags.dimension(0);
+    for (ordinal_type i = 0; i < dofTagSize; ++i) {
       const auto bfOrd  = triBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
       const auto myTag = triBasis.getDofTag(bfOrd);
@@ -259,7 +258,7 @@ namespace Intrepid2 {
     }
     
     // Now do the same but loop over basis functions
-    for( auto bfOrd = 0; bfOrd < triBasis.getCardinality(); bfOrd++) {
+    for( ordinal_type bfOrd = 0; bfOrd < triBasis.getCardinality(); bfOrd++) {
       const auto myTag  = triBasis.getDofTag(bfOrd);
       const auto myBfOrd = triBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
@@ -325,9 +324,9 @@ namespace Intrepid2 {
     Kokkos::deep_copy(triNodes, triNodesHost);
 
     // Dimensions for the output arrays:
-    const auto numFields = triBasis.getCardinality();
-    const auto numPoints = triNodes.dimension(0);
-    const auto spaceDim  = triBasis.getBaseCellTopology().getDimension();        
+    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type numPoints = triNodes.dimension(0);
+    const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
     
     {
     // Check VALUE of basis functions: resize vals to rank-3 container:
@@ -335,12 +334,12 @@ namespace Intrepid2 {
     triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           auto l = k + i * spaceDim + j * spaceDim * numFields;
+           ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -362,9 +361,9 @@ namespace Intrepid2 {
     triBasis.getValues(vals, triNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        auto l =  i + j * numFields;
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        ordinal_type l =  i + j * numFields;
         if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -393,8 +392,8 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
   try{
-    const auto numFields = triBasis.getCardinality();
-    const auto spaceDim  = triBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = triBasis.getCardinality();
+    const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
 
     // Check exceptions.
     ordinal_type nthrow = 0, ncatch = 0;
@@ -437,11 +436,12 @@ namespace Intrepid2 {
     tangents(2,0) =  0.0; tangents(2,1) = -1.0;
 
     char buffer[120];
-    for (auto i=0; i<bvals_host.dimension(0); ++i) { 
-      for (auto j=0; j<bvals_host.dimension(1); ++j) {
+    ordinal_type b_dim0(bvals_host.dimension(0)), b_dim1(bvals_host.dimension(1));
+    for (ordinal_type i=0; i<b_dim0; ++i) {
+      for (ordinal_type j=0; j<b_dim1; ++j) {
 
         double tangent = 0.0;
-        for(auto d=0;d<spaceDim;d++)
+        for(ordinal_type d=0;d<spaceDim;d++)
            tangent += bvals_host(i,j,d)*tangents(j,d);
 
         if ((i != j) && (std::abs(tangent - 0.0) > tol )) {

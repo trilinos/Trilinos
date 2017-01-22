@@ -61,7 +61,7 @@ void set_owners(BulkData& mesh)
   const EntityCommListInfoVector& entity_comm = mesh.comm_list();
 
   for ( size_t i=0; i<entity_comm.size(); ++i) {
-    Entity const entity = entity_comm[i].entity;;
+    Entity const entity = entity_comm[i].entity;
 
     const PairIterEntityComm sharing = mesh.entity_comm_map_sharing(entity_comm[i].key);
 

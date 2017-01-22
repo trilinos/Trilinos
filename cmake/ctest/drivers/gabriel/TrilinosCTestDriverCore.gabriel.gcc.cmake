@@ -75,7 +75,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( CTEST_COVERAGE_COMMAND /usr/bin/gcov )
   SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
 
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF )
 
   # The CheckinTest unit test fails for some reason on gabriel in nighlty
   # mode.  However, it passes when I run it it locally and it gets run nightly

@@ -645,8 +645,25 @@ void PREFIX CGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, c
 void PREFIX ZGEBAL_F77(Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, int* ilo, int* ihi, double* scale, int* info);
 void PREFIX ZGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, const double* scale, const int* m, std::complex<double>* V, const int* ldv, int* info);
 
+// Returning the C99 complex type instead of the C++ complex type
+// avoids build warnings of the following form:
+//
+// warning: $FUNCTION_NAME has C-linkage specified, but returns
+// user-defined type 'std::complex<double>' which is incompatible with
+// C [-Wreturn-type-c-linkage]
+//
+// However, we may only use those types if the C++ compiler supports
+// them.  C++11 implies C99 support generally, so asking whether the
+// compiler supports C++11 is a reasonable test.  Unless you're using
+// Visual Studio, which supports subsets of C++11, but not this.
+#if (defined(HAVE_TEUCHOSCORE_CXX11) && !defined(_MSC_VER))
+float _Complex PREFIX CLARND_F77(const int* idist, int* seed);
+double _Complex PREFIX ZLARND_F77(const int* idist, int* seed);
+#else // NOT HAVE_TEUCHOSCORE_CXX11 || _MSC_VER
 std::complex<float> PREFIX CLARND_F77(const int* idist, int* seed);
 std::complex<double> PREFIX ZLARND_F77(const int* idist, int* seed);
+#endif
+
 
 void PREFIX CLARNV_F77(const int* idist, int* seed, const int* n, std::complex<float>* v);
 void PREFIX ZLARNV_F77(const int* idist, int* seed, const int* n, std::complex<double>* v);

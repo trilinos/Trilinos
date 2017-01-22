@@ -528,7 +528,7 @@ namespace BaskerNS
     
     //Get needed variables
     const Int L_col = S(l)(kid);
-    const Int L_row = 0;
+//    const Int L_row = 0; //NDE - warning: unused 
     const Int U_col = S(lvl)(kid);
 
     Int my_row_leader = S(0)(find_leader(kid,lvl-1));
@@ -547,7 +547,7 @@ namespace BaskerNS
     #endif
     //end get needed variables//
 
-    BASKER_MATRIX        &L = LL(L_col)(L_row);
+    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
     
     //Ask C++ guru if this is ok
@@ -729,7 +729,7 @@ namespace BaskerNS
 
 	 if (Options.verbose == BASKER_TRUE)
 	   {
-	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
+	 printf("kid: %ld col: %ld need to realloc, unnz: %ld ucnt: %ld uunnz: %ld U_col: %ld U_row: %ld \n", (long)kid, (long)k, (long)unnz, (long)ucnt, (long)uunnz, (long)U_col, (long)U_row);
 	   }
 	 BASKER_ASSERT(0==1, "USIZE\n");
 	 
@@ -797,9 +797,10 @@ namespace BaskerNS
 
 	 #ifdef BASKER_2DL
 	 //if(X[j-brow] !=0)
-	 if(X(j) !=0)
+	 if(X(j) != (Entry)(0) )
 	 #else
-	 if(X[j] != 0)
+	 if(X[j] != (Entry)(0) )
+	 //if(X[j] != 0)
 	 #endif
 	  {
 
@@ -841,8 +842,8 @@ namespace BaskerNS
               {
 		//ASSERT if 0==1
 		#ifdef BASKER_2DL
-		printf("----Error--- kid: %d extra L[%d]=%f \n",
-		       kid, j, X[j-brow]);
+		printf("----Error--- kid: %ld extra L[%ld]=%f \n",
+		       (long)kid, (long)j, X[j-brow]);
                 #endif
               }//lower
 	  }//end not 0
@@ -1216,7 +1217,8 @@ namespace BaskerNS
     Int *pattern   = &(color[ws_size]);
 
     Int i,j;
-    Int top, top1, maxindex, t;
+//    Int top, top1, maxindex, t; //NDE - warning: top1 set but unused
+    Int top, maxindex, t;
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
 
@@ -1229,7 +1231,7 @@ namespace BaskerNS
     cu_ltop = lval;
     cu_utop = uval;
     top = ws_size;
-    top1 = ws_size;
+//    top1 = ws_size; //NDE - warning: top1 set but unused
     
     lnnz = lval;
     unnz = uval;
@@ -1416,7 +1418,7 @@ namespace BaskerNS
    #endif
 
    //if((maxindex == L.max_idx) || (pivot == 0)
-   if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+   if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
      {
        if(Options.verbose == BASKER_TRUE)
 	 {
@@ -1511,9 +1513,9 @@ namespace BaskerNS
        #ifdef BASKER_2DL
        //if(X[j-brow] !=0)
        //JDB: removed ;
-       if(X(j) != 0)
+       if(X(j) != (Entry)(0) )
        #else
-       if(X[j] != 0)
+       if(X[j] != (Entry)(0) )
        #endif
 	 {
            #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -3057,42 +3059,34 @@ namespace BaskerNS
    const Int l
    )
   {
-    
     //printf("before call. lkid: %d kid: %d task: %d size: %d k: %d \n",
     //	       leader_kid, my_kid, function_n, size, k);
-    
 
     #ifdef HAVE_VTUNE
     //__itt_pause();
     #endif
 
-
-	//if(size < 0)
-     if(size <= thread.team_size())
-      {
-	thread.team_barrier();
-      }
+    //if(size < 0)
+    if(size <= thread.team_size())
+    {
+      thread.team_barrier();
+    }
     else
-      {
-	
-	
-	basker_barrier.BarrierDomain
-	  (
-	   leader_kid,
-	   my_kid, 
-	   function_n,
-	   size, 
-	   k, l
-	   );
-	
-	
-      }
+    {
 
+      basker_barrier.BarrierDomain
+        (
+         leader_kid,
+         my_kid, 
+         function_n,
+         size, 
+         k, l
+        );
+    }
 
     #ifdef HAVE_VTUNE
     //__itt_resume();
     #endif
-
 
   }//end t_basker_barrier
 
@@ -3110,26 +3104,23 @@ namespace BaskerNS
    )
   {
 
-
     if(size <= thread.team_size())
-      {
-	thread.team_barrier();
-      }
+    {
+      thread.team_barrier();
+    }
     else
-      {
+    {
 
-	//basker_barrier.Barrier(leader_kid, 
+      //basker_barrier.Barrier(leader_kid, 
 
-
-	/* Old Atomic Barrier
-	BaskerBarrier<Int,Entry,Exe_Space> BB;
-	BB.Barrier(thread_array[leader_kid].token[sublvl][function_n],
-		   thread_array[leader_kid].token[sublvl][1],
-		   size);
-	*/
-      }
+      /* Old Atomic Barrier
+         BaskerBarrier<Int,Entry,Exe_Space> BB;
+         BB.Barrier(thread_array[leader_kid].token[sublvl][function_n],
+         thread_array[leader_kid].token[sublvl][1],
+         size);
+         */
+    }
   }//end t_basker_barrier()
-  
 
 
 }//end namespace BaskerNS--functions

@@ -924,13 +924,13 @@ public:
   ~FArray()
   {
     unsigned zero = 0;
-    m_ptr = NULL;
+    m_ptr = nullptr;
     ArrayHelper<NumDim>::fill(zero, m_dim);
     ArrayHelper<NumDim+1>::fill(zero, m_stride);
   }
 
   FArray()
-    : m_ptr(NULL)
+    : m_ptr(nullptr)
   {
     unsigned zero = 0;
     ArrayHelper<NumDim>::fill(zero, m_dim);
@@ -1275,7 +1275,7 @@ public:
 		  const unsigned n2, const unsigned n3,
 		  const unsigned n4, const unsigned n5,
 		  const unsigned n6, const unsigned n7)
-    : BaseType(NULL, n0, n1, n2, n3, n4, n5, n6, n7),
+    : BaseType(nullptr, n0, n1, n2, n3, n4, n5, n6, n7),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1286,7 +1286,7 @@ public:
 		  const unsigned n2, const unsigned n3,
 		  const unsigned n4, const unsigned n5,
 		  const unsigned n6)
-    : BaseType(NULL, n0, n1, n2, n3, n4, n5, n6),
+    : BaseType(nullptr, n0, n1, n2, n3, n4, n5, n6),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1297,7 +1297,7 @@ public:
   FArrayContainer(const unsigned n0, const unsigned n1,
 		  const unsigned n2, const unsigned n3,
 		  const unsigned n4, const unsigned n5)
-    : BaseType(NULL, n0, n1, n2, n3, n4, n5),
+    : BaseType(nullptr, n0, n1, n2, n3, n4, n5),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1308,7 +1308,7 @@ public:
   FArrayContainer(const unsigned n0, const unsigned n1,
 		  const unsigned n2, const unsigned n3,
 		  const unsigned n4)
-    : BaseType(NULL, n0, n1, n2, n3, n4),
+    : BaseType(nullptr, n0, n1, n2, n3, n4),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1318,7 +1318,7 @@ public:
 
   FArrayContainer(const unsigned n0, const unsigned n1,
 		  const unsigned n2, const unsigned n3)
-    : BaseType(NULL, n0, n1, n2, n3),
+    : BaseType(nullptr, n0, n1, n2, n3),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1328,7 +1328,7 @@ public:
 
   FArrayContainer(const unsigned n0, const unsigned n1,
 		  const unsigned n2)
-    : BaseType(NULL, n0, n1, n2),
+    : BaseType(nullptr, n0, n1, n2),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1337,7 +1337,7 @@ public:
 
 
   FArrayContainer(const unsigned n0, const unsigned n1)
-    : BaseType(NULL, n0, n1),
+    : BaseType(nullptr, n0, n1),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1346,7 +1346,7 @@ public:
 
 
   FArrayContainer(const unsigned n0)
-    : BaseType(NULL, n0),
+    : BaseType(nullptr, n0),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);
@@ -1355,7 +1355,7 @@ public:
 
 
   FArrayContainer(const unsigned n[])
-    : BaseType(NULL, n),
+    : BaseType(nullptr, n),
       m_capacity(0)
   {
     resize_memory(m_stride[NumDim]);

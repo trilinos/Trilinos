@@ -65,6 +65,8 @@ private:
   int verbosity_;                         ///< Verbosity setting
   const bool computeObj_;
 
+  std::string ncgName_;
+
 public:
 
   using Step<Real>::initialize;
@@ -90,9 +92,14 @@ public:
     // Initialize secant object
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     if ( nlcg == Teuchos::null ) {
+      ncgName_ = Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger");
       enlcg_
-        = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
+        = StringToENonlinearCG(ncgName_);
       nlcg_ = Teuchos::rcp(new NonlinearCG<Real>(enlcg_));
+    }
+    else {
+      ncgName_ = Llist.sublist("Descent Method").get("User Defined Nonlinear CG Name",
+                                                     "Unspecified User Define Nonlinear CG Method");
     }
   }
 
@@ -160,7 +167,7 @@ public:
   }
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << ENonlinearCGToString(enlcg_) << " "
+    hist << "\n" << ncgName_ << " "
          << EDescentToString(DESCENT_NONLINEARCG) << "\n";
     return hist.str();
   }

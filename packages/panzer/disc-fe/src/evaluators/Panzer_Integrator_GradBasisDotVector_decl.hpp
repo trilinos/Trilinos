@@ -57,9 +57,9 @@ PANZER_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
-  PHX::MDField<ScalarT,Cell,IP,Dim> flux;
+  PHX::MDField<const ScalarT,Cell,IP,Dim> flux;
     
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_nodes;
 

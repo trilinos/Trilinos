@@ -134,7 +134,7 @@ private:
   PHX::MDField<ScalarT> dof_coeff;  // coefficient values   
   PHX::MDField<ScalarT> dof_field;  // evaluate field
 
-  Teuchos::RCP<Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepidBasis;
+  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis;
   Kokkos::DynRankView<double,PHX::Device> intrpCoords, basisRef, basis;
 };
 

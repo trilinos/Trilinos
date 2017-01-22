@@ -175,6 +175,7 @@ private:
 
   typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  typedef typename panzer::Traits::RealType RealT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -191,7 +192,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_Tpetra();
 };

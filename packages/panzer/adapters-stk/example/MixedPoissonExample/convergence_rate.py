@@ -3,7 +3,7 @@ import re
 
 try:
   if not len(sys.argv)>3:
-    print 'Expected at least three solution files with the line \"Error = \%f\" in them'
+    print('Expected at least three solution files with the line \"Error = \%f\" in them')
     raise Exception("Failure: Command line - <cmd> [filename-prefix] [coarsest mesh res] [second mesh res] [third mesh res] ...")
 
   file_prefix = sys.argv[1]
@@ -25,7 +25,7 @@ try:
     else:
       filename = '%s%d' % (file_prefix,res)
 
-    print "opening \"" + filename +"\""
+    print("opening \"" + filename +"\"")
     f = open(filename);
 
     # look for the "Error = ..." line
@@ -47,10 +47,10 @@ try:
   if (rate-0.25)/0.25 > 0.05:
     raise 'Convergence rate of %f, is not within 5 percent bounds of 0.25: FAILED' % rate
 
-  print 'Convergence rate of %f is within 5 percent of 0.25: PASSED' % rate 
+  print('Convergence rate of %f is within 5 percent of 0.25: PASSED' % rate)
 
-except Exception, e:
-  print "Test Failed: "
-  print e
+except Exception as e:
+  print("Test Failed: ")
+  print(e)
 else:
-  print "Test Passed"
+  print("Test Passed")

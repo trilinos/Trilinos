@@ -617,32 +617,32 @@ void Internals::get_global_counts(Mesh &mesh)
   std::vector<int64_t> global_counts;
 
   counts.push_back(mesh.nodeblocks[0].localOwnedCount);
-  for (auto & edgeblock : mesh.edgeblocks) {
+  for (auto &edgeblock : mesh.edgeblocks) {
     counts.push_back(edgeblock.entityCount);
   }
-  for (auto & faceblock : mesh.faceblocks) {
+  for (auto &faceblock : mesh.faceblocks) {
     counts.push_back(faceblock.entityCount);
   }
-  for (auto & elemblock : mesh.elemblocks) {
+  for (auto &elemblock : mesh.elemblocks) {
     counts.push_back(elemblock.entityCount);
   }
-  for (auto & nodeset : mesh.nodesets) {
+  for (auto &nodeset : mesh.nodesets) {
     counts.push_back(nodeset.localOwnedCount);
     counts.push_back(nodeset.dfCount);
   }
-  for (auto & edgeset : mesh.edgesets) {
+  for (auto &edgeset : mesh.edgesets) {
     counts.push_back(edgeset.entityCount);
     counts.push_back(edgeset.dfCount);
   }
-  for (auto & faceset : mesh.facesets) {
+  for (auto &faceset : mesh.facesets) {
     counts.push_back(faceset.entityCount);
     counts.push_back(faceset.dfCount);
   }
-  for (auto & elemset : mesh.elemsets) {
+  for (auto &elemset : mesh.elemsets) {
     counts.push_back(elemset.entityCount);
     counts.push_back(elemset.dfCount);
   }
-  for (auto & sideset : mesh.sidesets) {
+  for (auto &sideset : mesh.sidesets) {
     counts.push_back(sideset.entityCount);
     counts.push_back(sideset.dfCount);
   }
@@ -677,19 +677,19 @@ void Internals::get_global_counts(Mesh &mesh)
   mesh.nodeblocks[0].procOffset  = offsets[j];
   mesh.nodeblocks[0].entityCount = global_counts[j++];
 
-  for (auto & edgeblock : mesh.edgeblocks) {
+  for (auto &edgeblock : mesh.edgeblocks) {
     edgeblock.procOffset  = offsets[j];
     edgeblock.entityCount = global_counts[j++];
   }
-  for (auto & faceblock : mesh.faceblocks) {
+  for (auto &faceblock : mesh.faceblocks) {
     faceblock.procOffset  = offsets[j];
     faceblock.entityCount = global_counts[j++];
   }
-  for (auto & elemblock : mesh.elemblocks) {
+  for (auto &elemblock : mesh.elemblocks) {
     elemblock.procOffset  = offsets[j];
     elemblock.entityCount = global_counts[j++];
   }
-  for (auto & nodeset : mesh.nodesets) {
+  for (auto &nodeset : mesh.nodesets) {
     nodeset.procOffset  = offsets[j];
     nodeset.entityCount = global_counts[j++];
     nodeset.dfCount     = global_counts[j++];
@@ -698,22 +698,22 @@ void Internals::get_global_counts(Mesh &mesh)
       nodeset.dfCount = nodeset.entityCount;
     }
   }
-  for (auto & edgeset : mesh.edgesets) {
+  for (auto &edgeset : mesh.edgesets) {
     edgeset.procOffset  = offsets[j];
     edgeset.entityCount = global_counts[j++];
     edgeset.dfCount     = global_counts[j++];
   }
-  for (auto & faceset : mesh.facesets) {
+  for (auto &faceset : mesh.facesets) {
     faceset.procOffset  = offsets[j];
     faceset.entityCount = global_counts[j++];
     faceset.dfCount     = global_counts[j++];
   }
-  for (auto & elemset : mesh.elemsets) {
+  for (auto &elemset : mesh.elemsets) {
     elemset.procOffset  = offsets[j];
     elemset.entityCount = global_counts[j++];
     elemset.dfCount     = global_counts[j++];
   }
-  for (auto & sideset : mesh.sidesets) {
+  for (auto &sideset : mesh.sidesets) {
     sideset.procOffset   = offsets[j];
     sideset.entityCount  = global_counts[j++];
     sideset.dfProcOffset = offsets[j];

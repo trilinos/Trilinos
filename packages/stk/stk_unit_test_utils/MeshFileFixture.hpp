@@ -24,7 +24,7 @@ protected:
     }
     void read_mesh(const std::string &fileToRead)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io_preexisting(stkIo, fileToRead, get_bulk());
+        stk::io::fill_mesh_preexisting(stkIo, fileToRead, get_bulk());
     }
     void TearDown()
     {

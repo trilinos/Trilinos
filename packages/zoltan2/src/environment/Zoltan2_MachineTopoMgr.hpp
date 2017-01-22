@@ -147,6 +147,7 @@ public:
       nxyz[dim++] = tmgr.getDimNE();
     if (dim < transformed_network_dim)
       nxyz[dim++] = tmgr.getDimNT();
+    return true;
 #elif defined (CMK_BLUEGENEP)
     int dim = 0;
     if (dim < transformed_network_dim)
@@ -157,10 +158,10 @@ public:
       nxyz[dim++] = tmgr.getDimNZ();
     if (dim < transformed_network_dim)
       nxyz[dim++] = tmgr.getDimNT();
+    return true;
 #else
     return false;
 #endif
-    return true;
   }
 
   //MD TODO: Not always it has wrap-around links.
@@ -208,15 +209,15 @@ public:
     tmgr.rankToCoordinates(this->myRank, a,b,c,d,e,t);
     xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = d; xyz[4] = e; xyz[5] = t;
     //std::cout << "me:" << this->myRank << " " << a << " " << b << " " << c << " " << d << " " << e << " " << t << std::endl;
+    return true;
 #elif defined (CMK_BLUEGENEP)
     int a,b,c,t;
     tmgr.rankToCoordinates(this->myRank, a,b,c,t);
     xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = t;
+    return true;
 #else
     return false;
 #endif
-
-    return true;
   }
 
   bool getMachineExtentWrapArounds(part_t *wrap_around) const {

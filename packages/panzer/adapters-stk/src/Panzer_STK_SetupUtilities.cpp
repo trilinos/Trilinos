@@ -47,9 +47,9 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-namespace panzer_stk_classic { 
+namespace panzer_stk { 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb)
 {
   using namespace workset_utils;
@@ -69,7 +69,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & eBlock,
               const panzer::WorksetNeeds & needs)
 {
@@ -90,7 +90,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb,
               const std::string & sideset,
               bool useCascade)
@@ -98,7 +98,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk_classic::mesh::Entity*> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities; 
 
   try {
      // grab local entities on this side
@@ -139,7 +139,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   
-  std::vector<stk_classic::mesh::Entity*> elements;
+  std::vector<stk::mesh::Entity> elements;
   std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > local_cell_ids;
   if(!useCascade) {
     unsigned subcell_dim = pb.cellData().baseCellDimension()-1;
@@ -149,7 +149,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk_classic::mesh::Entity * element = elements[elm];
+      stk::mesh::Entity element = elements[elm];
 	
       local_cell_ids[std::make_pair(subcell_dim,local_side_ids[elm])].push_back(mesh.elementLocalId(element));
     }
@@ -161,7 +161,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk_classic::mesh::Entity * element = elements[elm];
+      stk::mesh::Entity element = elements[elm];
 	
       local_cell_ids[std::make_pair(subcell_dim[elm],local_subcell_ids[elm])].push_back(mesh.elementLocalId(element));
     }
@@ -208,7 +208,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::WorksetNeeds & needs,
               const std::string & sideset,
               const std::string & eBlock,
@@ -217,7 +217,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk_classic::mesh::Entity*> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities; 
 
   try {
      // grab local entities on this side
@@ -258,7 +258,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   
-  std::vector<stk_classic::mesh::Entity*> elements;
+  std::vector<stk::mesh::Entity> elements;
   std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > local_cell_ids;
   if(!useCascade) {
     unsigned subcell_dim = needs.cellData.baseCellDimension()-1;
@@ -268,7 +268,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk_classic::mesh::Entity * element = elements[elm];
+      stk::mesh::Entity element = elements[elm];
 	
       local_cell_ids[std::make_pair(subcell_dim,local_side_ids[elm])].push_back(mesh.elementLocalId(element));
     }
@@ -280,7 +280,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
-      stk_classic::mesh::Entity * element = elements[elm];
+      stk::mesh::Entity element = elements[elm];
 	
       local_cell_ids[std::make_pair(subcell_dim[elm],local_subcell_ids[elm])].push_back(mesh.elementLocalId(element));
     }
@@ -327,7 +327,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb_a,
                 const panzer::PhysicsBlock & pb_b,
                 const std::string & sideset)
@@ -335,7 +335,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk_classic::mesh::Entity*> sideEntities; // we will reduce a_ and b_ to this vector
+  std::vector<stk::mesh::Entity> sideEntities; // we will reduce a_ and b_ to this vector
 
   try {
      // grab local entities on this side
@@ -345,15 +345,15 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
      // this gurantees all the sides are extracted (element ownership is considered
      // we we call getSideElements below)
 
-     stk_classic::mesh::Part * sidePart = mesh.getSideset(sideset);
+     stk::mesh::Part * sidePart = mesh.getSideset(sideset);
      TEUCHOS_TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
                         "Unknown side set \"" << sideset << "\"");
 
-     stk_classic::mesh::Selector side = *sidePart;
-     // stk_classic::mesh::Selector ownedBlock = metaData_->locally_owned_part() & side;
+     stk::mesh::Selector side = *sidePart;
+     // stk::mesh::Selector ownedBlock = metaData_->locally_owned_part() & side;
 
      // grab elements
-     stk_classic::mesh::get_selected_entities(side,mesh.getBulkData()->buckets(mesh.getSideRank()),sideEntities);
+     stk::mesh::get_selected_entities(side,mesh.getBulkData()->buckets(mesh.getSideRank()),sideEntities);
   } 
   catch(STK_Interface::ElementBlockException & e) {
      std::stringstream ss;
@@ -374,7 +374,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
 
-  std::vector<stk_classic::mesh::Entity*> elements_a, elements_b;
+  std::vector<stk::mesh::Entity> elements_a, elements_b;
   std::vector<std::size_t> local_cell_ids_a, local_cell_ids_b;
   std::vector<std::size_t> local_side_ids_a, local_side_ids_b;
 
@@ -397,8 +397,8 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
   // are the same size, the ordering is the same because the order of sideEntities is
   // the same
   for(std::size_t elm=0;elm<elements_a.size();++elm) {
-    stk_classic::mesh::Entity * element_a = elements_a[elm];
-    stk_classic::mesh::Entity * element_b = elements_b[elm];
+    stk::mesh::Entity element_a = elements_a[elm];
+    stk::mesh::Entity element_b = elements_b[elm];
 	
     local_cell_ids_a.push_back(mesh.elementLocalId(element_a));
     local_cell_ids_b.push_back(mesh.elementLocalId(element_b));
@@ -414,14 +414,14 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
                 const std::string & sidesetID)
 {
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk_classic::mesh::Entity*> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities; 
 
   try {
      // grab local entities on this side
@@ -459,7 +459,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   
-  std::vector<stk_classic::mesh::Entity*> elements;
+  std::vector<stk::mesh::Entity> elements;
   std::vector<std::size_t> local_cell_ids;
   std::vector<std::size_t> local_side_ids;
   getSideElements(mesh, pb.elementBlockID(),
@@ -467,7 +467,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
   // loop over elements of this block
   for(std::size_t elm=0;elm<elements.size();++elm) {
-	stk_classic::mesh::Entity * element = elements[elm];
+	stk::mesh::Entity element = elements[elm];
 	
 	local_cell_ids.push_back(mesh.elementLocalId(element));
   }
@@ -490,7 +490,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
+buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::WorksetNeeds & needs,
                 const std::string & eblockID,
                 const std::string & sidesetID)
@@ -498,7 +498,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk_classic::mesh::Entity*> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities; 
 
   try {
      // grab local entities on this side
@@ -536,7 +536,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   
-  std::vector<stk_classic::mesh::Entity*> elements;
+  std::vector<stk::mesh::Entity> elements;
   std::vector<std::size_t> local_cell_ids;
   std::vector<std::size_t> local_side_ids;
   getSideElements(mesh, eblockID,
@@ -544,7 +544,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
   // loop over elements of this block
   for(std::size_t elm=0;elm<elements.size();++elm) {
-	stk_classic::mesh::Entity * element = elements[elm];
+	stk::mesh::Entity element = elements[elm];
 	
 	local_cell_ids.push_back(mesh.elementLocalId(element));
   }
@@ -568,32 +568,34 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
 
 namespace workset_utils { 
 
-void getSubcellElements(const panzer_stk_classic::STK_Interface & mesh,
+void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 	 	        const std::string & blockId, 
-		        const std::vector<stk_classic::mesh::Entity*> & entities,
+		        const std::vector<stk::mesh::Entity> & entities,
 		        std::vector<std::size_t> & localEntityIds, 
-		        std::vector<stk_classic::mesh::Entity*> & elements)
+		        std::vector<stk::mesh::Entity> & elements)
 {
   // for verifying that an element is in specified block
-  stk_classic::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
-  stk_classic::mesh::Part * ownedPart = mesh.getOwnedPart();
-  stk_classic::mesh::EntityRank elementRank = mesh.getElementRank();
-  
+  stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::Part * ownedPart = mesh.getOwnedPart();
+  stk::mesh::BulkData& bulkData = *mesh.getBulkData();
+
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
-  std::vector<stk_classic::mesh::Entity*>::const_iterator entityItr;
+  std::vector<stk::mesh::Entity>::const_iterator entityItr;
   for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
-    stk_classic::mesh::Entity * entity = *entityItr;
-    
-    stk_classic::mesh::PairIterRelation relations = entity->relations(elementRank);
+    stk::mesh::Entity entity = *entityItr;
 
-    for(std::size_t e=0;e<relations.size();++e) {
-      stk_classic::mesh::Entity * element = relations[e].entity();
-      std::size_t entityId = relations[e].identifier();
-	
+    const size_t num_rels = bulkData.num_elements(entity);
+    stk::mesh::Entity const* relations = bulkData.begin_elements(entity);
+    stk::mesh::ConnectivityOrdinal const* ordinals = bulkData.begin_element_ordinals(entity);
+    for(std::size_t e=0; e<num_rels; ++e) {
+      stk::mesh::Entity element = relations[e];
+      std::size_t entityId = ordinals[e];
+
       // is this element in requested block
-      bool inBlock = element->bucket().member(*blockPart);
-      bool onProc = element->bucket().member(*ownedPart);
+      stk::mesh::Bucket const& bucket = bulkData.bucket(element);
+      bool inBlock = bucket.member(*blockPart);
+      bool onProc = bucket.member(*ownedPart);
       if(inBlock && onProc) {
         // add element and Side ID to output vectors
         elements.push_back(element);
@@ -603,32 +605,34 @@ void getSubcellElements(const panzer_stk_classic::STK_Interface & mesh,
   }
 }
 
-void getUniversalSubcellElements(const panzer_stk_classic::STK_Interface & mesh,
+void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 				 const std::string & blockId, 
-				 const std::vector<stk_classic::mesh::Entity*> & entities,
+				 const std::vector<stk::mesh::Entity> & entities,
 				 std::vector<std::size_t> & localEntityIds, 
-				 std::vector<stk_classic::mesh::Entity*> & elements)
+				 std::vector<stk::mesh::Entity> & elements)
 {
   // for verifying that an element is in specified block
-  stk_classic::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
-  stk_classic::mesh::Part * universalPart = &mesh.getMetaData()->universal_part();
-  stk_classic::mesh::EntityRank elementRank = mesh.getElementRank();
-  
+  stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::Part * universalPart = &mesh.getMetaData()->universal_part();
+  stk::mesh::BulkData& bulkData = *mesh.getBulkData();
+
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
-  std::vector<stk_classic::mesh::Entity*>::const_iterator entityItr;
+  std::vector<stk::mesh::Entity>::const_iterator entityItr;
   for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
-    stk_classic::mesh::Entity * entity = *entityItr;
-    
-    stk_classic::mesh::PairIterRelation relations = entity->relations(elementRank);
+    stk::mesh::Entity entity = *entityItr;
 
-    for(std::size_t e=0;e<relations.size();++e) {
-      stk_classic::mesh::Entity * element = relations[e].entity();
-      std::size_t entityId = relations[e].identifier();
-	
+    const size_t num_rels = bulkData.num_elements(entity);
+    stk::mesh::Entity const* element_rels = bulkData.begin_elements(entity);
+    stk::mesh::ConnectivityOrdinal const* ordinals = bulkData.begin_element_ordinals(entity);
+    for(std::size_t e=0; e<num_rels; ++e) {
+      stk::mesh::Entity element = element_rels[e];
+      std::size_t entityId = ordinals[e];
+
       // is this element in requested block
-      bool inBlock = element->bucket().member(*blockPart);
-      bool onProc = element->bucket().member(*universalPart);
+      stk::mesh::Bucket const& bucket = bulkData.bucket(element);
+      bool inBlock = bucket.member(*blockPart);
+      bool onProc = bucket.member(*universalPart);
       if(inBlock && onProc) {
         // add element and Side ID to output vectors
         elements.push_back(element);
@@ -638,19 +642,19 @@ void getUniversalSubcellElements(const panzer_stk_classic::STK_Interface & mesh,
   }
 }
 
-void getSideElementCascade(const panzer_stk_classic::STK_Interface & mesh,
+void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
                            const std::string & blockId, 
-                           const std::vector<stk_classic::mesh::Entity*> & sides,
+                           const std::vector<stk::mesh::Entity> & sides,
                            std::vector<std::size_t> & localSubcellDim, 
                            std::vector<std::size_t> & localSubcellIds, 
-                           std::vector<stk_classic::mesh::Entity*> & elements)
+                           std::vector<stk::mesh::Entity> & elements)
 {
   // This is the alogrithm, for computing the side element
   // cascade. The requirements are that for a particular set of sides
   // we compute all elements and subcells where they touch the side. Note
   // that elements can be and will be repeated within this list.
 
-  std::vector<std::vector<stk_classic::mesh::Entity*> > subcells;
+  std::vector<std::vector<stk::mesh::Entity> > subcells;
   getSubcellEntities(mesh,sides,subcells);
   subcells.push_back(sides);
 
@@ -659,7 +663,7 @@ void getSideElementCascade(const panzer_stk_classic::STK_Interface & mesh,
 
   for(std::size_t d=0;d<subcells.size();d++) {
     std::vector<std::size_t> subcellIds;
-    std::vector<stk_classic::mesh::Entity*> subcellElements;
+    std::vector<stk::mesh::Entity> subcellElements;
 
     // find elements connected to the subcells and their local subcell information
     getSubcellElements(mesh,blockId,subcells[d],subcellIds,subcellElements);
@@ -674,66 +678,68 @@ void getSideElementCascade(const panzer_stk_classic::STK_Interface & mesh,
   }
 }
 
-void getSideElements(const panzer_stk_classic::STK_Interface & mesh,
+void getSideElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId, 
-                     const std::vector<stk_classic::mesh::Entity*> & sides,
+                     const std::vector<stk::mesh::Entity> & sides,
                      std::vector<std::size_t> & localSideIds, 
-                     std::vector<stk_classic::mesh::Entity*> & elements)
+                     std::vector<stk::mesh::Entity> & elements)
 {
    getSubcellElements(mesh,blockId,sides,localSideIds,elements);
 }
 
-void getSideElements(const panzer_stk_classic::STK_Interface & mesh,
+void getSideElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId_a, 
                      const std::string & blockId_b, 
-                     const std::vector<stk_classic::mesh::Entity*> & sides,
+                     const std::vector<stk::mesh::Entity> & sides,
                      std::vector<std::size_t> & localSideIds_a, 
-                     std::vector<stk_classic::mesh::Entity*> & elements_a,
+                     std::vector<stk::mesh::Entity> & elements_a,
                      std::vector<std::size_t> & localSideIds_b, 
-                     std::vector<stk_classic::mesh::Entity*> & elements_b)
+                     std::vector<stk::mesh::Entity> & elements_b)
 {
   // for verifying that an element is in specified block
-  stk_classic::mesh::Part * blockPart_a = mesh.getElementBlockPart(blockId_a);
-  stk_classic::mesh::Part * blockPart_b = mesh.getElementBlockPart(blockId_b);
-  stk_classic::mesh::Part * ownedPart = mesh.getOwnedPart();
-  stk_classic::mesh::Part * universalPart = &mesh.getMetaData()->universal_part();
-  stk_classic::mesh::EntityRank elementRank = mesh.getElementRank();
-  
+  stk::mesh::Part * blockPart_a = mesh.getElementBlockPart(blockId_a);
+  stk::mesh::Part * blockPart_b = mesh.getElementBlockPart(blockId_b);
+  stk::mesh::Part * ownedPart = mesh.getOwnedPart();
+  stk::mesh::Part * universalPart = &mesh.getMetaData()->universal_part();
+  stk::mesh::BulkData& bulkData = *mesh.getBulkData();
+
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
-  std::vector<stk_classic::mesh::Entity*>::const_iterator sidesItr;
+  std::vector<stk::mesh::Entity>::const_iterator sidesItr;
   for(sidesItr=sides.begin();sidesItr!=sides.end();++sidesItr) {
-    stk_classic::mesh::Entity * side = *sidesItr;
-    
+    stk::mesh::Entity side = *sidesItr;
+
      // these are used below the loop to insert into the appropriate vectors
-    stk_classic::mesh::Entity * element_a=0,* element_b=0;
+    stk::mesh::Entity element_a = stk::mesh::Entity(), element_b = stk::mesh::Entity();
     std::size_t entityId_a=0, entityId_b=0;
 
-    stk_classic::mesh::PairIterRelation relations = side->relations(elementRank);
-    for(std::size_t e=0;e<relations.size();++e) {
-      stk_classic::mesh::Entity * element = relations[e].entity();
-      std::size_t entityId = relations[e].identifier();
-	
+    const size_t num_rels = bulkData.num_elements(side);
+    stk::mesh::Entity const* element_rels = bulkData.begin_elements(side);
+    stk::mesh::ConnectivityOrdinal const* ordinals = bulkData.begin_element_ordinals(side);
+    for(std::size_t e=0; e<num_rels; ++e) {
+      stk::mesh::Entity element = element_rels[e];
+      std::size_t entityId = ordinals[e];
+
       // is this element in requested block
-      bool inBlock_a = element->bucket().member(*blockPart_a);
-      bool inBlock_b = element->bucket().member(*blockPart_b);
-      bool onProc = element->bucket().member(*ownedPart);
-      bool unProc = element->bucket().member(*universalPart);
+      stk::mesh::Bucket const& bucket = bulkData.bucket(element);
+      bool inBlock_a = bucket.member(*blockPart_a);
+      bool inBlock_b = bucket.member(*blockPart_b);
+      bool onProc = bucket.member(*ownedPart);
+      bool unProc = bucket.member(*universalPart);
 
       if(inBlock_a && onProc) {
-        TEUCHOS_ASSERT(element_a==0); // sanity check
+        TEUCHOS_ASSERT(element_a==stk::mesh::Entity()); // sanity check
         element_a = element;
         entityId_a = entityId;
       }
       if(inBlock_b && unProc) {
-        TEUCHOS_ASSERT(element_b==0); // sanity check
+        TEUCHOS_ASSERT(element_b==stk::mesh::Entity()); // sanity check
         element_b = element;
         entityId_b = entityId;
       }
     }
 
-    if(element_a!=0 && element_b!=0) {
-      // add element and Side ID to output vectors
+    if(element_a!=stk::mesh::Entity() && element_b!=stk::mesh::Entity()) {      // add element and Side ID to output vectors
       elements_a.push_back(element_a);
       localSideIds_a.push_back(entityId_a);
 
@@ -744,71 +750,52 @@ void getSideElements(const panzer_stk_classic::STK_Interface & mesh,
   }
 }
 
-void getNodeElements(const panzer_stk_classic::STK_Interface & mesh,
+void getNodeElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId, 
-                     const std::vector<stk_classic::mesh::Entity*> & nodes,
+                     const std::vector<stk::mesh::Entity> & nodes,
                      std::vector<std::size_t> & localNodeIds, 
-                     std::vector<stk_classic::mesh::Entity*> & elements)
+                     std::vector<stk::mesh::Entity> & elements)
 {
    getSubcellElements(mesh,blockId,nodes,localNodeIds,elements);
 }
 
-void getSubcellEntities(const panzer_stk_classic::STK_Interface & mesh,
-		        const std::vector<stk_classic::mesh::Entity*> & entities,
-	 	        std::vector<std::vector<stk_classic::mesh::Entity*> > & subcells)
+void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
+		        const std::vector<stk::mesh::Entity> & entities,
+	 	        std::vector<std::vector<stk::mesh::Entity> > & subcells)
 {
   // exit if there is no work to do
   if(entities.size()==0) {
     subcells.clear();
     return;
   }
- 
-  int maxRankIndex = mesh.getDimension()-1;
-  stk_classic::mesh::EntityRank master_rank = entities[0]->entity_rank();
-  std::vector<stk_classic::mesh::EntityRank> ranks(mesh.getDimension()+1);
 
-  // build rank array, and compute maximum rank index (within rank array)
-  // for these entities with "master_rank"
-  switch(mesh.getDimension()) {
-  case 3:
-    ranks[2] = mesh.getFaceRank();
-    maxRankIndex = (master_rank==mesh.getFaceRank() ? 1 : maxRankIndex);
-  case 2:
-    ranks[1] = mesh.getEdgeRank();
-    maxRankIndex = (master_rank==mesh.getEdgeRank() ? 0 : maxRankIndex);
-  case 1:
-    ranks[0] = mesh.getNodeRank();
-    maxRankIndex = (master_rank==mesh.getNodeRank() ? -1 : maxRankIndex);
-    break;
-  default:
-    TEUCHOS_ASSERT(false);
-    break;
-  };
-  ranks[mesh.getDimension()] = mesh.getElementRank();
+  stk::mesh::BulkData& bulkData = *mesh.getBulkData();
+  stk::mesh::EntityRank master_rank = bulkData.entity_rank(entities[0]);
 
-  // make sure the rank index is ok
-  TEUCHOS_ASSERT(maxRankIndex>-1);
-
-  std::vector<std::set<stk_classic::mesh::Entity*> > subcells_set(maxRankIndex+1);
+  std::vector<std::set<stk::mesh::Entity> > subcells_set(master_rank);
 
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
-  std::vector<stk_classic::mesh::Entity*>::const_iterator entityItr;
+  std::vector<stk::mesh::Entity>::const_iterator entityItr;
   for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
-    stk_classic::mesh::Entity * entity = *entityItr;
+    stk::mesh::Entity entity = *entityItr;
 
     // sanity check, enforcing that there is only one rank
-    TEUCHOS_ASSERT(entity->entity_rank()==master_rank); 
-    
-    for(int i=0;i<=maxRankIndex;i++) {
-      stk_classic::mesh::PairIterRelation relations = entity->relations(ranks[i]);
+    TEUCHOS_ASSERT(bulkData.entity_rank(entity)==master_rank);
 
-      // for each relation insert the appropriate entity (into the set
-      // which gurantees uniqueness
-      for(std::size_t e=0;e<relations.size();++e) {
-        stk_classic::mesh::Entity * subcell = relations[e].entity();
+    for(int i=0; i<master_rank; i++) {
+      stk::mesh::EntityRank const to_rank = static_cast<stk::mesh::EntityRank>(i);
+      if (bulkData.connectivity_map().valid(master_rank, to_rank)) {
+        const size_t num_rels = bulkData.num_connectivity(entity, to_rank);
+        stk::mesh::Entity const* relations = bulkData.begin(entity, to_rank);
 
-        subcells_set[i].insert(subcell);
+        // for each relation insert the appropriate entity (into the set
+        // which gurantees uniqueness
+        for(std::size_t e=0; e<num_rels; ++e) {
+          stk::mesh::Entity subcell = relations[e];
+
+          subcells_set[i].insert(subcell);
+        }
       }
     }
   }

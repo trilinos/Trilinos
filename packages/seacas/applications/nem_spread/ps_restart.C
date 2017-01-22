@@ -716,7 +716,7 @@ int NemSpread<T, INT>::read_vars(int exoid, int index, INT *eb_ids, INT *eb_cnts
   /* allocate space for the global variables */
   if (Restart_Info.NVar_Glob > 0) {
     /* get the global variables */
-    if (ex_get_glob_vars(exoid, index, Restart_Info.NVar_Glob, TOPTR(Restart_Info.Glob_Vals)) < 0) {
+    if (ex_get_var(exoid, index, EX_GLOBAL, 1, 1, Restart_Info.NVar_Glob, TOPTR(Restart_Info.Glob_Vals)) < 0) {
       fprintf(stderr, "%s: Could not get global variables from file\n", yo);
       return -1;
     }

@@ -128,7 +128,7 @@ void computeBlockOffsets(const std::string & blockId,
 
 /** Print out unique global indexer load balancing information. This includes
   * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
-  * the unknowns for both owned and owned and shared.
+  * the unknowns for both owned and owned and ghosted.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
@@ -141,7 +141,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
 /** Construct a vector that contains a reduced set of field numbers.
-  * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
+  * The ordering is based on the ordering from <code>ugi.getOwnedAndGhostedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the
   * field number for each global number. There are some cases where processors are split
   * across element blocks with differing fields that this is nontrivial. 
@@ -161,7 +161,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
   * vector hence the required node type template parameter.
   *
   * This function returns a vector that serves as a map between Global indices ordered from
-  * <code>ugi.getOwnedAndSharedIndices()</code> and the corresponding field number.
+  * <code>ugi.getOwnedAndGhostedIndices()</code> and the corresponding field number.
   *
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
@@ -184,12 +184,12 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
   * vector hence the required node type template parameter.
   *
   * This function returns a vector that serves as a map between Global indices ordered from
-  * <code>ugi.getOwnedAndSharedIndices()</code> and the corresponding field number.
+  * <code>ugi.getOwnedAndGhostedIndices()</code> and the corresponding field number.
   *
   * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
-  * \param[out] fieldNumbers Field numbers ordered to match up with a call to <code>ugi.getOwnedAndSharedIndices()</code>.
+  * \param[out] fieldNumbers Field numbers ordered to match up with a call to <code>ugi.getOwnedAndGhostedIndices()</code>.
   *                          Meaning that <code>fieldNumbers.size()</code> is the same length as the vector
-  *                          build by a call to <code>getOwnedAndSharedIndices()</code>.
+  *                          build by a call to <code>getOwnedAndGhostedIndices()</code>.
   * \param[in] reducedVec Reduced field vector to use.  If none is passed it is compute by <code>buildGhostedFieldReducedVector</code>
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -323,13 +323,13 @@ public:
    ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
-     * the ordering from <code>UGI::getOwnedAndSharedIndices</code>.
+     * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
      *
      * \param[in] fieldName Name of field this data is from
      * \param[in] data Array of data
      *
      * \returns Returns a vector populated with the data. This vector
-     *          is related to the <code>UGI::getOwnedAndSharedIndices</code>.
+     *          is related to the <code>UGI::getOwnedAndGhostedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
    Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >

@@ -63,6 +63,17 @@
 // Misc
 #include <Teuchos_ParameterList.hpp>
 
+// Special macro for exception testing
+// MUELU_TEST_FOR_EXCEPTION is only active if MueLu is configured with MueLu_ENABLE_DEBUG:BOOL=ON
+// If you want an exception test both in the release and debug version of MueLu you still can use directly
+// TEUCHOS_TEST_FOR_EXCEPTION
+#ifdef HAVE_MUELU_DEBUG
+#define MUELU_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg);
+#else
+#define MUELU_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
+#endif
+
 //! Namespace for MueLu classes and methods
 namespace MueLu {
 

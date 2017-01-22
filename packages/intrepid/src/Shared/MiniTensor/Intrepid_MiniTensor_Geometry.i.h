@@ -116,15 +116,7 @@ find_type(Index const dimension, Index const number_nodes)
   }
 
   if (type == ELEMENT::UNKNOWN) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Unknown element type." << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Spatial dimension: ";
-    std::cerr << dimension << std::endl;
-    std::cerr << "Vertices per element: ";
-    std::cerr << number_nodes << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Unknown element type.");
   }
 
   return type;

@@ -39,7 +39,7 @@
 #include <limits.h>                     // for PATH_MAX
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for getcwd, sleep
-#include <cstdlib>                      // for exit, EXIT_FAILURE, NULL
+#include <cstdlib>                      // for exit, EXIT_FAILURE
 #include <cstring>                      // for strlen, strcpy
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for cerr, cout
@@ -120,8 +120,9 @@ startup_date()
 {
   static std::string startup_date;
 
-  if (startup_date.empty())
+  if (startup_date.empty()) {
     startup_date = format_time(stk::EnvData::instance().m_startTime).c_str();
+  }
 
   return startup_date;
 }
@@ -151,19 +152,11 @@ void get_heap_used(size_t &heap_size)
 # if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
   heap_size = malloc_used();
   
-# elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
+# elif defined(__linux__) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
   heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
 
-# elif defined(__sun)
-  pstatus_t proc_status;
-
-  std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
-  if (proc) {
-    proc.read(reinterpret_cast<char *>(&proc_status), sizeof(proc_status));
-    heap_size = proc_status.pr_brksize;
-  }
 # endif
 #endif // defined(SIERRA_HEAP_INFO)
 }
@@ -209,7 +202,7 @@ const std::string
 working_directory() {
   char cwd[PATH_MAX];
   std::string directory = get_param("directory");
-  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != NULL) {
+  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != nullptr) {
     directory = cwd;
     directory += '/';
   }
@@ -268,15 +261,7 @@ wall_now()
 double
 cpu_now()
 {
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
-
-#elif ! defined(__PGI)
+#if ! defined(__PGI)
   struct rusage my_rusage;
 
   getrusage(RUSAGE_SELF, &my_rusage);
@@ -346,9 +331,8 @@ is_comm_valid()
   stk::EnvData &env_data = stk::EnvData::instance();
   if (env_data.m_parallelComm == MPI_COMM_NULL) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 void
@@ -435,7 +419,6 @@ void
 set_param(
   const char *          option,
   const std::string &   value) {
-
 
   namespace opt = boost::program_options;
 

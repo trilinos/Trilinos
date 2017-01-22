@@ -133,11 +133,13 @@ inline void cuda_intra_block_reduction( ValueType& value,
 template< class FunctorType , class JoinOp , class ArgTag = void >
 __device__
 bool cuda_inter_block_reduction( typename FunctorValueTraits< FunctorType , ArgTag >::reference_type  value,
+                                 typename FunctorValueTraits< FunctorType , ArgTag >::reference_type  neutral,
                                  const JoinOp& join,
                                  Cuda::size_type * const m_scratch_space,
                                  typename FunctorValueTraits< FunctorType , ArgTag >::pointer_type const result,
                                  Cuda::size_type * const m_scratch_flags,
                                  const int max_active_thread = blockDim.y) {
+#ifdef __CUDA_ARCH__
   typedef typename FunctorValueTraits< FunctorType , ArgTag >::pointer_type pointer_type;
   typedef typename FunctorValueTraits< FunctorType , ArgTag >::value_type value_type;
 
@@ -170,7 +172,7 @@ bool cuda_inter_block_reduction( typename FunctorValueTraits< FunctorType , ArgT
       if(id == 0)
         *m_scratch_flags = 0;
       last_block = true;
-      value = value_type();
+      value = neutral;
 
       pointer_type const volatile global = (pointer_type) m_scratch_space ;
 
@@ -212,6 +214,9 @@ bool cuda_inter_block_reduction( typename FunctorValueTraits< FunctorType , ArgT
 
   //The last block has in its thread=0 the global reduction value through "value"
   return last_block;
+#else
+  return true;
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -289,10 +294,10 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
 
         if ( ! ( rtid_inter + n < blockDim.y ) ) n = 0 ;
 
-        BLOCK_SCAN_STEP(tdata_inter,n,8)
-        BLOCK_SCAN_STEP(tdata_inter,n,7)
-        BLOCK_SCAN_STEP(tdata_inter,n,6)
-        BLOCK_SCAN_STEP(tdata_inter,n,5)
+        __threadfence_block(); BLOCK_SCAN_STEP(tdata_inter,n,8)
+        __threadfence_block(); BLOCK_SCAN_STEP(tdata_inter,n,7)
+        __threadfence_block(); BLOCK_SCAN_STEP(tdata_inter,n,6)
+        __threadfence_block(); BLOCK_SCAN_STEP(tdata_inter,n,5)
       }
     }
   }
@@ -307,12 +312,19 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
             ( rtid_intra & 16 ) ? 16 : 0 ))));
 
     if ( ! ( rtid_intra + n < blockDim.y ) ) n = 0 ;
-
+    #ifdef KOKKOS_CUDA_CLANG_WORKAROUND
+    BLOCK_SCAN_STEP(tdata_intra,n,4) __syncthreads();//__threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,3) __syncthreads();//__threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,2) __syncthreads();//__threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,1) __syncthreads();//__threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,0) __syncthreads();
+    #else
     BLOCK_SCAN_STEP(tdata_intra,n,4) __threadfence_block();
     BLOCK_SCAN_STEP(tdata_intra,n,3) __threadfence_block();
     BLOCK_SCAN_STEP(tdata_intra,n,2) __threadfence_block();
     BLOCK_SCAN_STEP(tdata_intra,n,1) __threadfence_block();
-    BLOCK_SCAN_STEP(tdata_intra,n,0)
+    BLOCK_SCAN_STEP(tdata_intra,n,0) __threadfence_block();
+    #endif
   }
 
 #undef BLOCK_SCAN_STEP
@@ -366,7 +378,12 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
     size_type * const shared = shared_data + word_count.value * BlockSizeMask ;
     size_type * const global = global_data + word_count.value * block_id ;
 
+#if (__CUDA_ARCH__ < 500)
     for ( size_type i = threadIdx.y ; i < word_count.value ; i += blockDim.y ) { global[i] = shared[i] ; }
+#else
+    for ( size_type i = 0 ; i < word_count.value ; i += 1 ) { global[i] = shared[i] ; }
+#endif
+
   }
 
   // Contributing blocks note that their contribution has been completed via an atomic-increment flag

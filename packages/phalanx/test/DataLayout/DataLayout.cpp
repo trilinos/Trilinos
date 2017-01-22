@@ -400,6 +400,192 @@ TEUCHOS_UNIT_TEST(DataLayout, basic)
   }
   
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // extent()
+  {
+    TEST_EQUALITY(rank1.extent(0),1);
+    
+    TEST_EQUALITY(rank2.extent(0),1);
+    TEST_EQUALITY(rank2.extent(1),2);
+    
+    TEST_EQUALITY(rank3.extent(0),1);
+    TEST_EQUALITY(rank3.extent(1),2);
+    TEST_EQUALITY(rank3.extent(2),3);
+    
+    TEST_EQUALITY(rank4.extent(0),1);
+    TEST_EQUALITY(rank4.extent(1),2);
+    TEST_EQUALITY(rank4.extent(2),3);
+    TEST_EQUALITY(rank4.extent(3),4);
+    
+    TEST_EQUALITY(rank5.extent(0),1);
+    TEST_EQUALITY(rank5.extent(1),2);
+    TEST_EQUALITY(rank5.extent(2),3);
+    TEST_EQUALITY(rank5.extent(3),4);
+    TEST_EQUALITY(rank5.extent(4),5);
+    
+    TEST_EQUALITY(rank6.extent(0),1);
+    TEST_EQUALITY(rank6.extent(1),2);
+    TEST_EQUALITY(rank6.extent(2),3);
+    TEST_EQUALITY(rank6.extent(3),4);
+    TEST_EQUALITY(rank6.extent(4),5);
+    TEST_EQUALITY(rank6.extent(5),6);
+    
+    TEST_EQUALITY(rank7.extent(0),1);
+    TEST_EQUALITY(rank7.extent(1),2);
+    TEST_EQUALITY(rank7.extent(2),3);
+    TEST_EQUALITY(rank7.extent(3),4);
+    TEST_EQUALITY(rank7.extent(4),5);
+    TEST_EQUALITY(rank7.extent(5),6);
+    TEST_EQUALITY(rank7.extent(6),7);
+    
+    TEST_EQUALITY(rank8.extent(0),1);
+    TEST_EQUALITY(rank8.extent(1),2);
+    TEST_EQUALITY(rank8.extent(2),3);
+    TEST_EQUALITY(rank8.extent(3),4);
+    TEST_EQUALITY(rank8.extent(4),5);
+    TEST_EQUALITY(rank8.extent(5),6);
+    TEST_EQUALITY(rank8.extent(6),7);
+    TEST_EQUALITY(rank8.extent(7),8);
+
+    TEST_EQUALITY(prank1.extent(0),1);
+    
+    TEST_EQUALITY(prank2.extent(0),1);
+    TEST_EQUALITY(prank2.extent(1),2);
+    
+    TEST_EQUALITY(prank3.extent(0),1);
+    TEST_EQUALITY(prank3.extent(1),2);
+    TEST_EQUALITY(prank3.extent(2),3);
+    
+    TEST_EQUALITY(prank4.extent(0),1);
+    TEST_EQUALITY(prank4.extent(1),2);
+    TEST_EQUALITY(prank4.extent(2),3);
+    TEST_EQUALITY(prank4.extent(3),4);
+    
+    TEST_EQUALITY(prank5.extent(0),1);
+    TEST_EQUALITY(prank5.extent(1),2);
+    TEST_EQUALITY(prank5.extent(2),3);
+    TEST_EQUALITY(prank5.extent(3),4);
+    TEST_EQUALITY(prank5.extent(4),5);
+    
+    TEST_EQUALITY(prank6.extent(0),1);
+    TEST_EQUALITY(prank6.extent(1),2);
+    TEST_EQUALITY(prank6.extent(2),3);
+    TEST_EQUALITY(prank6.extent(3),4);
+    TEST_EQUALITY(prank6.extent(4),5);
+    TEST_EQUALITY(prank6.extent(5),6);
+    
+    TEST_EQUALITY(prank7.extent(0),1);
+    TEST_EQUALITY(prank7.extent(1),2);
+    TEST_EQUALITY(prank7.extent(2),3);
+    TEST_EQUALITY(prank7.extent(3),4);
+    TEST_EQUALITY(prank7.extent(4),5);
+    TEST_EQUALITY(prank7.extent(5),6);
+    TEST_EQUALITY(prank7.extent(6),7);
+    
+    TEST_EQUALITY(prank8.extent(0),1);
+    TEST_EQUALITY(prank8.extent(1),2);
+    TEST_EQUALITY(prank8.extent(2),3);
+    TEST_EQUALITY(prank8.extent(3),4);
+    TEST_EQUALITY(prank8.extent(4),5);
+    TEST_EQUALITY(prank8.extent(5),6);
+    TEST_EQUALITY(prank8.extent(6),7);
+    TEST_EQUALITY(prank8.extent(7),8);
+
+  }
+  
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // extent_int()
+  {
+    TEST_EQUALITY(rank1.extent_int(0),1);
+    
+    TEST_EQUALITY(rank2.extent_int(0),1);
+    TEST_EQUALITY(rank2.extent_int(1),2);
+    
+    TEST_EQUALITY(rank3.extent_int(0),1);
+    TEST_EQUALITY(rank3.extent_int(1),2);
+    TEST_EQUALITY(rank3.extent_int(2),3);
+    
+    TEST_EQUALITY(rank4.extent_int(0),1);
+    TEST_EQUALITY(rank4.extent_int(1),2);
+    TEST_EQUALITY(rank4.extent_int(2),3);
+    TEST_EQUALITY(rank4.extent_int(3),4);
+    
+    TEST_EQUALITY(rank5.extent_int(0),1);
+    TEST_EQUALITY(rank5.extent_int(1),2);
+    TEST_EQUALITY(rank5.extent_int(2),3);
+    TEST_EQUALITY(rank5.extent_int(3),4);
+    TEST_EQUALITY(rank5.extent_int(4),5);
+    
+    TEST_EQUALITY(rank6.extent_int(0),1);
+    TEST_EQUALITY(rank6.extent_int(1),2);
+    TEST_EQUALITY(rank6.extent_int(2),3);
+    TEST_EQUALITY(rank6.extent_int(3),4);
+    TEST_EQUALITY(rank6.extent_int(4),5);
+    TEST_EQUALITY(rank6.extent_int(5),6);
+    
+    TEST_EQUALITY(rank7.extent_int(0),1);
+    TEST_EQUALITY(rank7.extent_int(1),2);
+    TEST_EQUALITY(rank7.extent_int(2),3);
+    TEST_EQUALITY(rank7.extent_int(3),4);
+    TEST_EQUALITY(rank7.extent_int(4),5);
+    TEST_EQUALITY(rank7.extent_int(5),6);
+    TEST_EQUALITY(rank7.extent_int(6),7);
+    
+    TEST_EQUALITY(rank8.extent_int(0),1);
+    TEST_EQUALITY(rank8.extent_int(1),2);
+    TEST_EQUALITY(rank8.extent_int(2),3);
+    TEST_EQUALITY(rank8.extent_int(3),4);
+    TEST_EQUALITY(rank8.extent_int(4),5);
+    TEST_EQUALITY(rank8.extent_int(5),6);
+    TEST_EQUALITY(rank8.extent_int(6),7);
+    TEST_EQUALITY(rank8.extent_int(7),8);
+
+    TEST_EQUALITY(prank1.extent_int(0),1);
+    
+    TEST_EQUALITY(prank2.extent_int(0),1);
+    TEST_EQUALITY(prank2.extent_int(1),2);
+    
+    TEST_EQUALITY(prank3.extent_int(0),1);
+    TEST_EQUALITY(prank3.extent_int(1),2);
+    TEST_EQUALITY(prank3.extent_int(2),3);
+    
+    TEST_EQUALITY(prank4.extent_int(0),1);
+    TEST_EQUALITY(prank4.extent_int(1),2);
+    TEST_EQUALITY(prank4.extent_int(2),3);
+    TEST_EQUALITY(prank4.extent_int(3),4);
+    
+    TEST_EQUALITY(prank5.extent_int(0),1);
+    TEST_EQUALITY(prank5.extent_int(1),2);
+    TEST_EQUALITY(prank5.extent_int(2),3);
+    TEST_EQUALITY(prank5.extent_int(3),4);
+    TEST_EQUALITY(prank5.extent_int(4),5);
+    
+    TEST_EQUALITY(prank6.extent_int(0),1);
+    TEST_EQUALITY(prank6.extent_int(1),2);
+    TEST_EQUALITY(prank6.extent_int(2),3);
+    TEST_EQUALITY(prank6.extent_int(3),4);
+    TEST_EQUALITY(prank6.extent_int(4),5);
+    TEST_EQUALITY(prank6.extent_int(5),6);
+    
+    TEST_EQUALITY(prank7.extent_int(0),1);
+    TEST_EQUALITY(prank7.extent_int(1),2);
+    TEST_EQUALITY(prank7.extent_int(2),3);
+    TEST_EQUALITY(prank7.extent_int(3),4);
+    TEST_EQUALITY(prank7.extent_int(4),5);
+    TEST_EQUALITY(prank7.extent_int(5),6);
+    TEST_EQUALITY(prank7.extent_int(6),7);
+    
+    TEST_EQUALITY(prank8.extent_int(0),1);
+    TEST_EQUALITY(prank8.extent_int(1),2);
+    TEST_EQUALITY(prank8.extent_int(2),3);
+    TEST_EQUALITY(prank8.extent_int(3),4);
+    TEST_EQUALITY(prank8.extent_int(4),5);
+    TEST_EQUALITY(prank8.extent_int(5),6);
+    TEST_EQUALITY(prank8.extent_int(6),7);
+    TEST_EQUALITY(prank8.extent_int(7),8);
+
+  }
+  
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // name() 
   {
     cout << "\n" << rank1.name(0) << std::endl;

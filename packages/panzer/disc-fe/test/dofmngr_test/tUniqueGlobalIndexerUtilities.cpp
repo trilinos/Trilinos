@@ -94,17 +94,17 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
-   std::vector<int> sharedIndices;
-   globalIndexer->getOwnedAndSharedIndices(sharedIndices);
+   std::vector<int> ghostedIndices;
+   globalIndexer->getOwnedAndGhostedIndices(ghostedIndices);
    panzer::buildGhostedFieldVector(*globalIndexer,ghostedFields);
 
-   TEST_EQUALITY(ghostedFields.size(),sharedIndices.size());
+   TEST_EQUALITY(ghostedFields.size(),ghostedIndices.size());
    TEST_COMPARE(*std::min_element(ghostedFields.begin(),ghostedFields.end()),>,-1);
 
    std::stringstream ss;
    ss << "Field Numbers = ";
    for(std::size_t i=0;i<ghostedFields.size();i++) 
-      ss << sharedIndices[i] << ":" << ghostedFields[i] << " ";
+      ss << ghostedIndices[i] << ":" << ghostedFields[i] << " ";
    out << std::endl;
    out << ss.str() << std::endl;
 

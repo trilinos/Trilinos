@@ -46,6 +46,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_Orientation.hpp"
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_ArrayTraits.hpp"
@@ -100,6 +101,10 @@ namespace panzer {
     //! Method to apply orientations to a basis values container.
     void applyOrientations(const PHX::MDField<Scalar,Cell,BASIS> & orientations);
 
+#if defined(__KK__)
+    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations);
+#endif
+
     void setExtendedDimensions(const std::vector<PHX::index_size_type> & ddims)
     { ddims_ = ddims; }
 
@@ -146,7 +151,7 @@ namespace panzer {
 
     Teuchos::RCP<const panzer::BasisIRLayout> basis_layout;
     
-    Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayDynamic> > intrepid_basis;
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar> > intrepid_basis;
 
     bool compute_derivatives;
     bool build_weighted;

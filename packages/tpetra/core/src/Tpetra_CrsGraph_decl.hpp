@@ -414,7 +414,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
               const ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -438,7 +438,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
     ///   in each row (legacy KokkosClassic version).
@@ -463,7 +463,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -488,7 +488,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const typename local_graph_type::row_map_type& rowPointers,
               const typename local_graph_type::entries_type::non_const_type& columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -513,7 +513,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<size_t> & rowPointers,
               const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
     ///   graph, which the resulting CrsGraph views.
@@ -587,7 +587,7 @@ namespace Tpetra {
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Default parameter list suitable for validation.
-    Teuchos::RCP<const ParameterList> getValidParameters () const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
     //@}
     //! @name Insertion/Removal Methods
@@ -697,35 +697,71 @@ namespace Tpetra {
     */
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
-
-      Off-process indices are distributed (via globalAssemble()),
-      indices are sorted, redundant indices are eliminated, and
-      global indices are transformed to local indices.
-
-      \pre <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-
-      Parameters:
-      - "Optimize Storage" (\c bool): Default is false.  If true,
-        then isStorageOptimized() returns true after fillComplete
-        finishes.  See isStorageOptimized() for consequences.
-    */
+    /// \brief Tell the graph that you are done changing its structure.
+    ///
+    /// This tells the graph to optimize its data structures for
+    /// computational kernels, and to prepare (MPI) communication
+    /// patterns.
+    ///
+    /// Off-process indices are distributed (via globalAssemble()),
+    /// indices are sorted, redundant indices are eliminated, and
+    /// global indices are transformed to local indices.
+    ///
+    /// \warning The domain Map and row Map arguments to this method
+    ///   MUST be one to one!  If you have Maps that are not one to
+    ///   one, and you do not know how to make a Map that covers the
+    ///   same global indices but <i>is</i> one to one, then you may
+    ///   call Tpetra::createOneToOne() (see Map's header file) to
+    ///   make a one-to-one version of your Map.
+    ///
+    /// \pre  <tt>   isFillActive() && ! isFillComplete() </tt>
+    /// \post <tt> ! isFillActive() &&   isFillComplete() </tt>
+    ///
+    /// \param domainMap [in] The graph's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See below for valid parameters.
+    ///
+    /// List of valid parameters in <tt>params</tt>:
+    /// <ul>
+    /// <li> "Optimize Storage" (\c bool): Default is false.  If true,
+    ///      then isStorageOptimized() returns true after this method
+    ///      finishes.  See isStorageOptimized() for consequences.
+    /// </li>
+    /// </ul>
     void
     fillComplete (const Teuchos::RCP<const map_type> &domainMap,
                   const Teuchos::RCP<const map_type> &rangeMap,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete.
-
-      Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
-
-      \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
-    */
-    void fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    /// \brief Tell the graph that you are done changing its
+    ///   structure; set default domain and range Maps.
+    ///
+    /// See above three-argument version of fillComplete for full
+    /// documentation.  If the graph does not yet have domain and
+    /// range Maps (i.e., if fillComplete has not yet been called on
+    /// this graph at least once), then this method uses the graph's
+    /// row Map (result of this->getRowMap()) as both the domain Map
+    /// and the range Map.  Otherwise, this method uses the graph's
+    /// existing domain and range Maps.
+    ///
+    /// \warning It is only valid to call this overload of
+    ///   fillComplete if the row Map is one to one!  If the row Map
+    ///   is NOT one to one, you must call the above three-argument
+    ///   version of fillComplete, and supply one-to-one domain and
+    ///   range Maps.  If you have Maps that are not one to one, and
+    ///   you do not know how to make a Map that covers the same
+    ///   global indices but <i>is</i> one to one, then you may call
+    ///   Tpetra::createOneToOne() (see Map's header file) to make a
+    ///   one-to-one version of your Map.
+    ///
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See documentation of the three-argument
+    ///   version of fillComplete (above) for valid parameters.
+    void
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Perform a fillComplete on a graph that already has
     ///   data, via setAllIndices().
@@ -737,6 +773,21 @@ namespace Tpetra {
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
+    ///
+    /// \param domainMap [in] The graph's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param importer [in] Import from the graph's domain Map to its
+    ///   column Map.  If no Import is necessary (i.e., if the domain
+    ///   and column Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param exporter [in] Export from the graph's row Map to its
+    ///   range Map.  If no Export is necessary (i.e., if the row and
+    ///   range Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.
     void
     expertStaticFillComplete (const Teuchos::RCP<const map_type> & domainMap,
                               const Teuchos::RCP<const map_type> & rangeMap,
@@ -748,7 +799,7 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    Teuchos::RCP<const Comm<int> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     Teuchos::RCP<node_type> getNode() const;
@@ -1280,6 +1331,7 @@ namespace Tpetra {
       using Teuchos::arcp;
       using Teuchos::Array;
       using Teuchos::ArrayRCP;
+      using Teuchos::null;
       const char tfecfFuncName[] = "allocateValues2D: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3117,6 +3169,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
       {
         using Teuchos::arcp;
+        using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
         using Teuchos::null;

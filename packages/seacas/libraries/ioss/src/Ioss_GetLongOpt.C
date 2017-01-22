@@ -69,7 +69,7 @@ namespace Ioss {
       return 0;
     }
 
-    Cell *c        = new Cell;
+    auto *c        = new Cell;
     c->option      = opt;
     c->type        = t;
     c->description = desc != nullptr ? desc : "no description available";
@@ -159,7 +159,7 @@ namespace Ioss {
             if (stat == -1) {
               return -1;
             }
-            else if (stat == 1) {
+            if (stat == 1) {
               ++argv;
               --argc;
               ++my_optind;
@@ -194,7 +194,7 @@ namespace Ioss {
         if (stat == -1) {
           return -1;
         }
-        else if (stat == 1) {
+        if (stat == 1) {
           ++argv;
           --argc;
           ++my_optind;
@@ -256,7 +256,7 @@ namespace Ioss {
             if (stat == -1) {
               return -1;
             }
-            else if (stat == 1) {
+            if (stat == 1) {
               ladtoken = nullptr;
             }
             matchStatus = ExactMatch;
@@ -276,7 +276,7 @@ namespace Ioss {
         if (stat == -1) {
           return -1;
         }
-        else if (stat == 1) {
+        if (stat == 1) {
           ladtoken = nullptr;
         }
       }

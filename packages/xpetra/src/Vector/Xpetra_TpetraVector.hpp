@@ -253,13 +253,13 @@ namespace Xpetra {
     //! Sets all vector entries to zero.
     TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,int>", "TpetraVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,int>", "TpetraVector<int,int>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -323,7 +323,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) { }
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const { return Teuchos::null; }
@@ -409,13 +411,13 @@ namespace Xpetra {
     //! Sets all vector entries to zero.
     TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,long long,EpetraNode>", "TpetraVector<int,long long,EpetraNode>", "long long");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,long long,EpetraNode>", "TpetraVector<int,long long,EpetraNode>", "long long");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -479,7 +481,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) { }
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the underlying Tpetra multivector
     RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const { return Teuchos::null; }

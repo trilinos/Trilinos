@@ -4,7 +4,7 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
 #include <stk_util/parallel/CommSparse.hpp>
-#include "../EquivalentEntityBlocks.hpp"
+#include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
 
 namespace stk
 {

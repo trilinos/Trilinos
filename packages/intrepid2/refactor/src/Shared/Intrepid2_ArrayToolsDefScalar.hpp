@@ -51,97 +51,80 @@
 
 namespace Intrepid2 {
 
-    namespace FunctorArrayTools {
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
-    struct F_scalarMultiply{
-      outputViewType _output;
-      leftInputViewType _leftInput;
-      rightInputViewType _rightInput;
-      const bool _hasField, _reciprocal;
+  namespace FunctorArrayTools {
+    template<typename outputViewType,
+             typename inputLeftViewType,
+             typename inputRightViewType,
+             bool equalRank,
+             bool reciprocal>
+    struct F_scalarMultiply {
+      /**/  outputViewType _output;
+      const inputLeftViewType _inputLeft;
+      const inputRightViewType _inputRight;
 
       KOKKOS_INLINE_FUNCTION
       F_scalarMultiply(outputViewType output_,
-              leftInputViewType leftInput_,
-              rightInputViewType rightInput_,
-              const bool hasField_,
-              const bool reciprocal_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), 
-          _hasField(hasField_), _reciprocal(reciprocal_) {}
-
+                       inputLeftViewType inputLeft_,
+                       inputRightViewType inputRight_)
+        : _output(output_),
+          _inputLeft(inputLeft_),
+          _inputRight(inputRight_) {}
+      
+      // DataData
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl = 0, bf = 0, pt = 0;
-        size_type outputRank(_output.rank()), rightRank(_rightInput.rank());
-
-        if (_hasField) 
-          Util::unrollIndex( cl, bf, pt, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
-        else          
-          Util::unrollIndex( cl, pt,
-                       _output.dimension(0),
-                       iter );
-
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
+      void operator()(const ordinal_type cl,
+                      const ordinal_type pt) const {
+        const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
         
-        const auto right = ( outputRank == rightRank ? ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()) ) : 
-                             /**/                      ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()) ) );
-                                                                
-        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subdynrankview(_leftInput, cl, 0) :
-                            /**/                           Kokkos::subdynrankview(_leftInput, cl, pt);
+        //const ordinal_type cp[2] = { cl, pt };
+        //ViewAdapter<2,outputViewType> out(cp, _output);
+        auto out = Kokkos::subview(_output, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        if (equalRank) {
+          //const ViewAdapter<2,inputRightViewType> right(cp, _inputRight);
+          const auto right = Kokkos::subview(_inputRight, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+          if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
+          else            Kernels::    scalar_mult_mat(out, val, right);
+        } else {
+          //const ordinal_type p[1] = { pt };
+          //const ViewAdapter<1,inputRightViewType> right(p, _inputRight);
+          const auto right = Kokkos::subview(_inputRight, pt, Kokkos::ALL(), Kokkos::ALL());
+          if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
+          else            Kernels::    scalar_mult_mat(out, val, right);
+        } 
+      }
+      
+      // DataField
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
 
-        const size_type iend  = result.dimension(0);
-        const size_type jend  = result.dimension(1);
-
-        const auto val = left();
-        if (_reciprocal)
-          for(size_type i = 0; i < iend; ++i)
-            for(size_type j = 0; j < jend; ++j)
-              result(i, j) = right(i, j)/val;
-        else
-          for(size_type i = 0; i < iend; ++i)
-            for(size_type j = 0; j < jend; ++j)
-              result(i, j) = right(i, j)*val;
+        //const ordinal_type cfp[3] = { cl, bf, pt };
+        //ViewAdapter<3,outputViewType> out(cfp, _output);
+        auto out = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
+        if (equalRank) {
+          //const ViewAdapter<3,inputRightViewType> right(cfp, _inputRight);          
+          auto right = Kokkos::subview(_inputRight, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
+          if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
+          else            Kernels::    scalar_mult_mat(out, val, right);          
+        } else {
+          //const ordinal_type fp[2] = { bf, pt };
+          //const ViewAdapter<2,inputRightViewType> right(fp, _inputRight);          
+          auto right = Kokkos::subview(_inputRight, bf, pt, Kokkos::ALL(), Kokkos::ALL());
+          if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
+          else            Kernels::    scalar_mult_mat(out, val, right);
+        } 
       }
     };
-    } // namespace
+  } 
 
   template<typename SpT>
-  template<typename outputValueType,     class ...outputProperties,
-           typename leftInputValueType,  class ...leftInputProperties,
-           typename rightInputValueType, class ...rightInputProperties>
-  void
-  ArrayTools<SpT>::Internal::
-  scalarMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     output,
-                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput,
-                  const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput,
-                  const bool hasField,
-                  const bool reciprocal ) {
-
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>     outputViewType;
-    typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInputViewType;
-    typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInputViewType;
-    typedef FunctorArrayTools::F_scalarMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
-    typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
-
-    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
-                                 /**/       output.dimension(0)*output.dimension(1) );
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField, reciprocal) );
-  }
-
-
-
-  template<typename ExecSpaceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
-  ArrayTools<ExecSpaceType>::
+  ArrayTools<SpT>::
   scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
@@ -162,7 +145,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(2) &&
                                   inputData.dimension(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree, or first data dimension must be 1!");
-        for (size_t i=0;i<inputFields.rank();++i) {
+        for (size_type i=0;i<inputFields.rank();++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataField): inputFields dimension (i) does not match to the dimension (i) of outputFields");
         }
@@ -184,22 +167,49 @@ namespace Intrepid2 {
       }
     }
 #endif
-    // body
-    ArrayTools<ExecSpaceType>::Internal::scalarMultiply( outputFields,
-                                                         inputData,
-                                                         inputFields,
-                                                         true,
-                                                         reciprocal );
+
+    typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFieldViewType;
+    typedef Kokkos::DynRankView<inputDataValueType,inputDataProperties...> inputDataViewType;
+    typedef Kokkos::DynRankView<inputFieldValueType,inputFieldProperties...> inputFieldViewType;
+
+    typedef typename ExecSpace< typename inputDataViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+
+    const ordinal_type
+      C = outputFields.dimension(0),
+      F = outputFields.dimension(1),
+      P = outputFields.dimension(2);
+    
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    const range_policy_type policy( { 0, 0, 0 },
+                                    { C, F, P } );
+    
+    const bool equalRank = ( outputFields.rank() == inputFields.rank() );
+    if (equalRank) 
+      if (reciprocal) {
+        typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,true> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+      } else {
+        typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,false> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+      }
+    else 
+      if (reciprocal) {
+        typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,true> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+      } else {
+        typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,false> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+      }
   }
 
 
-
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
-  ArrayTools<ExecSpaceType>::
+  ArrayTools<SpT>::
   scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
@@ -241,14 +251,41 @@ namespace Intrepid2 {
       }
     }
 #endif
-    // body
-    ArrayTools<ExecSpaceType>::Internal::scalarMultiply( outputData,
-                                                         inputDataLeft,
-                                                         inputDataRight,
-                                                         false,
-                                                         reciprocal );
-  }
 
+    typedef Kokkos::DynRankView<outputDataValueType,outputDataProperties...> outputDataViewType;
+    typedef Kokkos::DynRankView<inputDataLeftValueType,inputDataLeftProperties...> inputDataLeftViewType;
+    typedef Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRightViewType;
+
+    typedef typename ExecSpace< typename inputDataLeftViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+
+    const ordinal_type
+      C = outputData.dimension(0),
+      P = outputData.dimension(1);
+    
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    const range_policy_type policy( { 0, 0 },
+                                    { C, P } );
+
+    const bool equalRank = ( outputData.rank() == inputDataRight.rank() );    
+    if (equalRank) 
+      if (reciprocal) {
+        typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,true> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+      } else {
+        typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,false> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+      }
+    else 
+      if (reciprocal) {
+        typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,true> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+      } else {
+        typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,false> FunctorType;
+        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+      }
+  }
+  
 } // end namespace Intrepid2
 
 #endif

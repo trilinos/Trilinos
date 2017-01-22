@@ -50,7 +50,6 @@
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -73,9 +72,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -83,18 +82,18 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelM
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk_classic::SquareQuadMeshFactory meshFact;
+   panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -106,23 +105,23 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
@@ -136,25 +135,25 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   std::vector<int> owned,ownedAndShared;
+   std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+   dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
   
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
-      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndGhosted.size());
 
       // test indices
       for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
-      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndGhosted[i]));
    }
 
    // test ograph
    {
       TEST_ASSERT(gGraph->Filled());
 
-      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndGhosted.size());
       TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
 
       std::vector<int> indices(10);
@@ -217,23 +216,23 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -247,25 +246,25 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   std::vector<int> owned,ownedAndShared;
+   std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+   dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
   
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
-      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndGhosted.size());
 
       // test indices
       for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
-      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndGhosted[i]));
    }
 
    // test ograph
    {
       TEST_ASSERT(gGraph->Filled());
 
-      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndGhosted.size());
       TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
 
       std::vector<int> indices(10);

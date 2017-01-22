@@ -123,7 +123,7 @@ exe stk_util_doc_test
     stk_util_parallel
     stk_util_util
     stk_util_environment
-    /sierra/unitTestUtils//comparisonUtils
+    /sierra/stk_unit_test_utils//comparisonUtils
     stk_util_use_case
     stk_util_diag
     /tpl/boost-program-options//boost_program_options
@@ -144,7 +144,7 @@ exe stk_util_utest
     stk_util_parallel
     stk_util_util
     stk_util_environment
-    /sierra/unitTestUtils//comparisonUtils
+    /sierra/stk_unit_test_utils//comparisonUtils
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_use_case
     stk_util_diag
@@ -162,7 +162,7 @@ exe stk_util_parallel_utest
     [ glob $(stk_util-root)/unit_tests/parallel/*.cpp ]
     stk_util_parallel
     stk_util_use_case
-    /sierra/unitTestUtils//comparisonUtils
+    /sierra/stk_unit_test_utils//comparisonUtils
     stk_util_util
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/gtest//gtest

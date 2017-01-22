@@ -1,14 +1,18 @@
 
+# This test compares Zoltan with Tpetra and Epetra.  Thus, it should run
+# only Tpetra and Zoltan with LO=GO=int, as Epetra does.
 IF (${PROJECT_NAME}_ENABLE_Epetra)
   IF (Tpetra_INST_INT_INT)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      multivectorTest
-      SOURCES multivectorTest.cpp
-      ARGS
-      "401"
-      NUM_MPI_PROCS 4
-      COMM mpi serial
-    )
+    IF (NOT Zoltan_ENABLE_ULONG_IDS AND NOT Zoltan_ENABLE_ULLONG_IDS)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        multivectorTest
+        SOURCES multivectorTest.cpp
+        ARGS
+        "401"
+        NUM_MPI_PROCS 4
+        COMM mpi serial
+      )
+    ENDIF()
   ENDIF()
 ENDIF()
 

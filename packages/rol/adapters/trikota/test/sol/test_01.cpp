@@ -97,6 +97,7 @@ int main(int argc, char* argv[]) {
       (*x_rcp)[i] = random<RealT>(comm);
       (*d_rcp)[i] = random<RealT>(comm);
     }
+    Teuchos::RCP<ROL::Vector<RealT> > xp = Teuchos::rcp(&x,false);
     // Build state and adjoint vectors
     Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
     ROL::StdVector<RealT> u(u_rcp);
@@ -154,12 +155,12 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > pobjSimOpt
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pconSimOpt
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pconSimOpt
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
+    Teuchos::RCP<ROL::Objective<RealT> > pObj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,xp,pp));
     Teuchos::RCP<ROL::Objective<RealT> > obj;
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
@@ -175,7 +176,6 @@ int main(int argc, char* argv[]) {
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
     list.sublist("SOL").set("Store Sampled Value and Gradient",true);
     // Build stochastic problem
-    Teuchos::RCP<ROL::Vector<RealT> > xp = Teuchos::rcp(&x,false);
     ROL::StochasticProblem<RealT> optProb(list,pObj,sampler,xp);
     optProb.checkObjectiveGradient(d,true,*outStream);
     optProb.checkObjectiveHessVec(d,true,*outStream);

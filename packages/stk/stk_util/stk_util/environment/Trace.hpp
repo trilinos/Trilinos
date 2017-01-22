@@ -97,13 +97,6 @@ public:
    *
    * @return      a <b>char</b> const pointer to the function's name.
    */
-  std::string getFunctionShortName() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
   std::string getFunctionClass() const;
 
   /**
@@ -112,13 +105,6 @@ public:
    * @return      a <b>char</b> const pointer to the function's name.
    */
   std::string getFunctionNamespace() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionShortClass() const;
 
 protected:
   const char *      m_functionSpec;    ///< The member function specification
@@ -204,7 +190,7 @@ public:
   explicit Traceback(const char *function_spec)
     : Tracespec(function_spec)
   {
-    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == 0)
+    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == nullptr)
       s_top = s_stack;
     *s_top++ = function_spec;
 
@@ -470,8 +456,9 @@ public:
    *
    */
   inline static void clearTraceFunctions() {
-    for (std::vector<const char *>::iterator it = s_traceList.begin(); it != s_traceList.end(); ++it)
+    for (auto it = s_traceList.begin(); it != s_traceList.end(); ++it) {
       delete[] (*it);
+    }
 
     s_traceList.clear();
   }
@@ -541,8 +528,8 @@ typedef stk::diag::Tracespec Tracespec;
 typedef stk::diag::Traceback Traceback;
 typedef stk::diag::Trace Trace;
 
-} // namespace sierra 
 } // namespace Diag 
+} // namespace sierra 
 
 
 ///

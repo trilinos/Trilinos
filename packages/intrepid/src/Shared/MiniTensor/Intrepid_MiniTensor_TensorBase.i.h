@@ -288,7 +288,7 @@ inline
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  dimension_ = dimension == DYNAMIC ? 0 : dimension;
+  dimension_ = dimension == DYNAMIC ? DYNAMIC : dimension;
 
   Index const
   number_components = integer_power(dimension, order);
@@ -336,7 +336,32 @@ inline
 void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
+  using S = typename Sacado::ScalarType<T>::type;
+
+  Index const
+  old_size = get_number_components();
+
+  Index const
+  new_size = number_components;
+
+  if (new_size < old_size) {
+    for (auto i = new_size; i < old_size; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
+    }
+  }
+
   components_.resize(number_components);
+
+  if (new_size > old_size) {
+    for (auto i = old_size; i < new_size; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
+    }
+  }
+
   return;
 }
 
@@ -348,6 +373,8 @@ inline
 void
 TensorBase<T, ST>::fill(ComponentValue const value)
 {
+  using S = typename Sacado::ScalarType<T>::type;
+
   Index const
   number_components = get_number_components();
 
@@ -355,46 +382,54 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   case ZEROS:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = Teuchos::ScalarTraits<T>::zero();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = Teuchos::ScalarTraits<T>::zero();
     }
     break;
 
   case ONES:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = Teuchos::ScalarTraits<T>::one();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = Teuchos::ScalarTraits<T>::one();
     }
     break;
 
   case SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = static_cast<T>(i);
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = static_cast<T>(i);
     }
     break;
 
   case RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = random_uniform<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = random_uniform<T>();
     }
     break;
 
   case RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = random_normal<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = random_normal<T>();
     }
     break;
 
   case NANS:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = not_a_number<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
     }
     break;
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Unknown specification of value for filling components.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Unknown specification of value for filling components.");
     break;
   }
 
@@ -409,14 +444,17 @@ inline
 void
 TensorBase<T, ST>::fill(T const & s)
 {
+  using S = typename Sacado::ScalarType<T>::type;
+
   Index const
   number_components = get_number_components();
 
   for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = s;
+    auto & entry = (*this)[i];
+    fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+    entry = s;
   }
 
-  return;
 }
 
 //
@@ -439,11 +477,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -488,11 +522,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -545,11 +575,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -617,11 +643,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -703,11 +725,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -805,11 +823,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:

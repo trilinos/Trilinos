@@ -172,12 +172,12 @@ int main(int argc, char **argv)
   ebids[1] = 20;
   ebids[2] = 30;
 
-  EXCHECK(
-      ex_put_elem_block(exoid, ebids[0], "line", num_elem_in_block[0], num_nodes_per_elem[0], 1));
-  EXCHECK(
-      ex_put_elem_block(exoid, ebids[1], "line", num_elem_in_block[1], num_nodes_per_elem[1], 1));
-  EXCHECK(
-      ex_put_elem_block(exoid, ebids[2], "point", num_elem_in_block[2], num_nodes_per_elem[2], 0));
+  EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "line", num_elem_in_block[0],
+                       num_nodes_per_elem[0], 1));
+  EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "line", num_elem_in_block[1],
+                       num_nodes_per_elem[1], 1));
+  EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[2], "point", num_elem_in_block[2],
+                       num_nodes_per_elem[2], 0));
 
   /* Write element block names */
   EXCHECK(ex_put_names(exoid, EX_ELEM_BLOCK, block_names));
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
   nsids[0] = 20;
   nsids[1] = 21;
 
-  EXCHECK(ex_put_node_set_param(exoid, nsids[0], 5, 5));
+  EXCHECK(ex_put_set_param(exoid, EX_NODE_SET, nsids[0], 5, 5));
 
   node_list[0] = 1;
   node_list[1] = 3;
@@ -236,10 +236,10 @@ int main(int argc, char **argv)
   dist_fact[3] = 4.0;
   dist_fact[4] = 5.0;
 
-  EXCHECK(ex_put_node_set(exoid, nsids[0], node_list));
-  EXCHECK(ex_put_node_set_dist_fact(exoid, nsids[0], dist_fact));
+  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[0], node_list));
+  EXCHECK(ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[0], dist_fact));
 
-  EXCHECK(ex_put_node_set_param(exoid, nsids[1], 3, 3));
+  EXCHECK(ex_put_set_param(exoid, EX_NODE_SET, nsids[1], 3, 3));
 
   node_list[0] = 2;
   node_list[1] = 4;
@@ -249,8 +249,8 @@ int main(int argc, char **argv)
   dist_fact[1] = 2.0;
   dist_fact[2] = 3.0;
 
-  EXCHECK(ex_put_node_set(exoid, nsids[1], node_list));
-  EXCHECK(ex_put_node_set_dist_fact(exoid, nsids[1], dist_fact));
+  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[1], node_list));
+  EXCHECK(ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[1], dist_fact));
 
   /* Write node set names */
   nset_names[0] = "all_odd_nodes";

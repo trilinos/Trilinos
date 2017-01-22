@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Tpetra::Comm<int> > comm = platform.getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -106,10 +106,10 @@ int main(int argc, char *argv[]) {
     ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x(x_rcp,W_rcp);
     ROL::DualScaledTpetraMultiVector<RealT,LO,GO,Node>   y(y_rcp,W_rcp);
 
-    const ROL::Vector<RealT> &g = x.dual();
-    const ROL::Vector<RealT> &h = x.dual();
-    RealT hnorm = h.norm();
-    RealT gnorm = g.norm();
+//    const ROL::Vector<RealT> &g = x.dual();
+//    const ROL::Vector<RealT> &h = x.dual();
+//    RealT hnorm = h.norm();
+//    RealT gnorm = g.norm();
 
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());

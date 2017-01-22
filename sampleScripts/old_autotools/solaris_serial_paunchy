@@ -1,7 +1,0 @@
-../configure \
-LDFLAGS="-xlic_lib=sunperf" \
-CXXFLAGS="-O2 -pto" CFLAGS=-O FFLAGS=-O2 \
---enable-nox-epetra \
---enable-loca \
---enable-nox-epetra-examples --enable-nox-lapack \
---enable-nox-lapack-examples

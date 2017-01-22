@@ -112,8 +112,14 @@ void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
                   Tag5,Tag6,Tag7>& f)
 {
+#ifdef PHX_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !(m_eval_containers.template getAsObject<EvalT>()->setupCalled()),
+                              std::logic_error,
+                              "You must call postRegistrationSetup() before binding unmanaged fields!");
+#endif
+
   PHX::any any_f(f.get_static_view());
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f);
+  m_eval_containers.template getAsObject<EvalT>()->bindField(f.fieldTag(),any_f);
 }
 
 // **************************************************************
@@ -123,7 +129,35 @@ inline
 void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::MDField<DataT>& f)
 {
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_any_view());
+#ifdef PHX_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !(m_eval_containers.template getAsObject<EvalT>()->setupCalled()),
+                              std::logic_error,
+                              "You must call postRegistrationSetup() before binding unmanaged fields!");
+#endif
+
+  m_eval_containers.template getAsObject<EvalT>()->bindField(f.fieldTag(),f.get_static_any_view());
+}
+
+// **************************************************************
+template<typename Traits>
+void PHX::FieldManager<Traits>::
+aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
+                                const PHX::FieldTag& targetField)
+{
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it)
+    it->aliasField(aliasedField,targetField);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT> 
+void PHX::FieldManager<Traits>::
+aliasField(const PHX::FieldTag& aliasedField,
+           const PHX::FieldTag& targetField)
+{
+  m_eval_containers.template getAsObject<EvalT>()->aliasField(aliasedField,targetField);
 }
 
 // **************************************************************
@@ -223,11 +257,10 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-evaluateFieldsTaskParallel(const int& threads_per_task,
-			   const int& work_size,
+evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(threads_per_task,work_size,d);
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(work_size,d);
 }
 #endif
 

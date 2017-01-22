@@ -50,7 +50,7 @@
 #include <stdlib.h> // for NULL
 
 /*!
- * reads the EXODUS II specified variable truth vector from the database
+ * reads the EXODUS specified variable truth vector from the database
  */
 
 int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,

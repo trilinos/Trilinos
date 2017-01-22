@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
       for (ROL::ELineSearch ls = ROL::LINESEARCH_BACKTRACKING; ls < ROL::LINESEARCH_USERDEFINED; ls++) {
         // Define Step
         parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type",ROL::ELineSearchToString(ls));
-      
         // Define Algorithm
         ROL::Algorithm<RealT> algo("Line Search",*parlist,false);
 

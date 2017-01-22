@@ -54,8 +54,9 @@ template<typename Int, typename Size, typename Sclr> struct util {
   };
 
   struct TestOptions {
-    enum MatrixType { diag, dense, sparse, missing_diag, not_tri, block_sparse,
-                      not_tri_almost_diag };
+    enum MatrixType { diag, dense, sparse, block_sparse, implicit_unit_diag,
+                      block_sparse_implicit_unit_diag, missing_some_diag,
+                      not_tri, not_tri_almost_diag };
     enum SolveType { hybrid = 0, ls_only, rb_only, n_solve_types };
 
     int n, nthreads, block_size, nrhs;
@@ -76,6 +77,11 @@ template<typename Int, typename Size, typename Sclr> struct util {
          << " matrix_type " << matrix_type << " transpose " << transpose
          << " conjugate " << conjugate << " solve_type " << solve_type
          << " nrhs " << nrhs << " nthreads " << nthreads << "]";
+    }
+
+    bool has_unit_diag () const {
+      return (matrix_type == implicit_unit_diag ||
+              matrix_type == block_sparse_implicit_unit_diag);
     }
   };
 
@@ -191,7 +197,7 @@ template<typename Int, typename Size, typename Sclr> struct util {
   // the shape-detection code.
   static void
   test_shape_checking (const TestOptions& to, Data& d, const int r) {
-    if (to.matrix_type == TestOptions::missing_diag && r == to.n/2) {
+    if (to.matrix_type == TestOptions::missing_some_diag && r == to.n/2) {
       // Remove the previous diagonal entry.
       --d.ir[r+1];
       d.jc.pop_back();
@@ -246,7 +252,7 @@ template<typename Int, typename Size, typename Sclr> struct util {
         ++d.ir[r+1];
         d.jc.push_back(r);
         d.v.push_back(diag);
-        if (to.matrix_type == TestOptions::missing_diag)
+        if (to.matrix_type == TestOptions::missing_some_diag)
           test_shape_checking(to, d, r);
         d.ir[r+1] += static_cast<Int>(row_val.size());
         d.jc.insert(d.jc.end(), row_col.begin(), row_col.end());
@@ -317,6 +323,29 @@ template<typename Int, typename Size, typename Sclr> struct util {
     assert(dk == nnz);
   }
 
+  static void gen_implicit_unit_diag_from_tri_matrix (
+    const bool upper, const Data& src, Data& dst)
+  {
+    dst.m = src.m;
+    dst.ir = src.ir;
+    dst.jc.resize(src.jc.size() - dst.m);
+    dst.v.resize(dst.jc.size());
+    dst.ir[0] = 0;
+    Size z = 0;
+    for (Int r = 0; r < dst.m; ++r) {
+      dst.ir[r+1] = src.ir[r+1] - (r + 1);
+      const Sclr diag = upper ? src.v[src.ir[r]] : src.v[src.ir[r+1] - 1];
+      Size
+        K_beg = src.ir[r]   + (upper ? 1 : 0),
+        K_end = src.ir[r+1] - (upper ? 0 : 1);
+      for (Size K = K_beg; K < K_end; ++K) {
+        dst.jc[z] = src.jc[K];
+        dst.v[z] = src.v[K] / diag;
+        ++z;
+      }
+    }
+  }
+
   // Make a random triangular matrix according to the TestOptions.
   static void gen_tri_matrix (const TestOptions& to, Data& d) {
     d.clear();
@@ -326,10 +355,12 @@ template<typename Int, typename Size, typename Sclr> struct util {
     case TestOptions::diag: gen_diag_matrix(to, d); break;
     case TestOptions::dense: gen_tri_dense_matrix(to, d); break;
     case TestOptions::sparse:
-    case TestOptions::missing_diag:
+    case TestOptions::implicit_unit_diag:
+    case TestOptions::missing_some_diag:
     case TestOptions::not_tri:
       gen_tri_sparse_matrix(to, d, to.density); break;
-    case TestOptions::block_sparse: {
+    case TestOptions::block_sparse:
+    case TestOptions::block_sparse_implicit_unit_diag: {
       Data point_sparse(d);
       gen_tri_sparse_matrix(to, point_sparse, to.density);
       gen_tri_block_matrix_from_tri_matrix(point_sparse, to.block_size,
@@ -337,6 +368,11 @@ template<typename Int, typename Size, typename Sclr> struct util {
     } break;
     case TestOptions::not_tri_almost_diag:
       gen_tri_sparse_matrix(to, d, 0); break;
+    }
+    if (to.has_unit_diag()) {
+      Data src(d);
+      d.clear();
+      gen_implicit_unit_diag_from_tri_matrix(to.upper, src, d);
     }
     assert((std::size_t) d.ir.back() == d.v.size());
     assert((std::size_t) d.ir.back() == d.jc.size());

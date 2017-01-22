@@ -243,13 +243,15 @@ namespace BaskerNS
 	  }//for -j = col_ptr
       }//for - k...ncol
  
+    //NDE: compiler error in debug mode; no op* for int and complex<double>
     LM.nnz = nnz_low *
-      (((Entry)BASKER_FILL_LESTIMATE+Options.user_fill)*
-       (Options.inc_lvl+1));
+      (((double)BASKER_FILL_LESTIMATE+(double)Options.user_fill)* 
+       (double)(Options.inc_lvl+1));
     global_nnz += LM.nnz;
     UM.nnz = nnz_top *
-      (((Entry)BASKER_FILL_UESTIMATE+Options.user_fill)*
-       (Options.inc_lvl+1));
+      //(((Entry)BASKER_FILL_UESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_UESTIMATE+(double)Options.user_fill)*
+       (double)(Options.inc_lvl+1));
     global_nnz += UM.nnz;
     //printf("DOM ESTIMATE: %d %d %d \n", M.nnz, LM.nnz, UM.nnz);
     
@@ -266,8 +268,9 @@ namespace BaskerNS
     //LM.nnz = 0;
     
     LM.nnz = M.nnz *
-      (((Entry)BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
-       (Options.inc_lvl+1));
+      //(((Entry)BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_LLOWERESTIMATE+(double)Options.user_fill)*
+       (double)(Options.inc_lvl+1));
     
     //printf("lower size: %d %d \n", M.nnz, LM.nnz);
     global_nnz += LM.nnz;
@@ -284,8 +287,9 @@ namespace BaskerNS
     //UM.nnz = 0;
     
     UM.nnz = M.nnz * 
-      (((Entry)BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
-       (Options.inc_lvl+1));
+      //(((Entry)BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_UUPPERESTIMATE+(double)Options.user_fill)*
+       (double)(Options.inc_lvl+1));
     
     global_nnz += UM.nnz;
   }//end sfactor_nd_upper_estimate()
@@ -344,11 +348,13 @@ namespace BaskerNS
       }//for - k...ncol
 
     LM.nnz = nnz_top * 
-      (((Entry)BASKER_FILL_LSEPESTIMATE+Options.user_fill)*
+      //(((Entry)BASKER_FILL_LSEPESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_LSEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     global_nnz += LM.nnz;
     UM.nnz = nnz_low * 
-      (((Entry)BASKER_FILL_USEPESTIMATE+Options.user_fill)*
+      //(((Entry)BASKER_FILL_USEPESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_USEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
 
     LM.nnz = M.nrow*M.nrow;

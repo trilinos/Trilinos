@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
   // 6. ???
 }
 
-#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
+#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8) && !(__GNUC__ == 5 && __GNUC_MINOR__ == 3) && !(__GNUC__ == 6 && __GNUC_MINOR__ == 2)
 
 // There are many places that the parameter list is validated to ensure that we
 // catch invalid parameter lists before we use them.  This is particularly
@@ -385,12 +385,12 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 #endif // TEUCHOS_DEBUG
 }
 
-#endif // GCC 4.8
-// For Some reason, with GCC 4.8.3, the catch() satement refuses to catch the
-// exception being thrown inside of the destructor.  This use case is a very
-// unusal use case and likley will not happen in real programs.  This test
-// passes with ever other compiler (including GCC 4.9.x) so I am pretty sure
-// this is a defect in GCC 4.8.x.
+#endif // GCC 4.8, 5.3, 6.2
+// For Some reason, with GCC 4.8.3, 5.3.0, 6.2 the catch() statement refuses to
+// catch the exception being thrown inside of the destructor.  This use case
+// is a very unusal use case and likley will not happen in real programs.
+// This test passes with ever other compiler (including GCC 4.9.x) so I am
+// pretty sure this is a defect in GCC 4.8.x., 5.3, 6.2
 
 
 // Here we test
@@ -426,7 +426,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getNonconstParameterList) {
   }
 }
 
-#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
+#if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8) && !(__GNUC__ == 5 && __GNUC_MINOR__ == 3) && !(__GNUC__ == 6 && __GNUC_MINOR__ == 2)
 
 // Here we're checking:
 // 1.  That we can set a parameter list on it and it uses it and then we can
@@ -461,7 +461,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 #endif // TEUCHOS_DEBUG
 }
 
-#endif // GCC 4.8
+#endif // GCC 4.8, 5.3, 6.2
 
 // This function does several things.
 // 1.  It creates the validParameterList whenever it is deleted [already tested in setObjectFactory]
@@ -649,6 +649,3 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withoutPL ) {
 }
 
 } // namespace Teuchos
-
-
-

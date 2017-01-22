@@ -45,7 +45,7 @@
 // @HEADER
 #ifndef MUELU_TEST_HELPERS_H
 #define MUELU_TEST_HELPERS_H
-
+#include <stdio.h> //DEBUG
 #include <string>
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -741,7 +741,7 @@ namespace MueLuTests {
 
 
 
-} // namespace MueLu
+} // namespace MueLuTests
 
 
 // Macro to skip a test when UnderlyingLib==Epetra or Tpetra

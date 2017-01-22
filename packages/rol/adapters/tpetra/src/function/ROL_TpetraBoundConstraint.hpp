@@ -345,7 +345,7 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            Teuchos::RCP<const Tpetra::Comm<int> > comm_; 
+            Teuchos::RCP<const Teuchos::Comm<int> > comm_; 
 
         public:
 

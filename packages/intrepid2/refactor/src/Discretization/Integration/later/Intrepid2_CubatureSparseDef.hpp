@@ -52,8 +52,8 @@ namespace Intrepid2 {
 **  Function Definitions for Class CubatureSparse
 ***************************************************************************/
 
-template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
-CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::CubatureSparse(const int degree) :
+template <class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
+CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::CubatureSparse(const ordinal_type degree) :
   degree_(degree) {
 
   if(dimension_ == 2)
@@ -132,7 +132,7 @@ CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::CubatureSparse(const i
 
 
 
-template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+template <class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
 void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
                                                                            ArrayWeight & cubWeights) const{
   Teuchos::Array<Scalar> dummy_point(1);
@@ -145,7 +145,7 @@ void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getCubature(Array
   grid.copyToArrays(cubPoints, cubWeights);
 } // end getCubature
 
-template<class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+template<class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
 void CubatureSparse<Scalar, dimension_, ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
                                                                              ArrayWeight& cubWeights,
                                                                              ArrayPoint& cellCoords) const
@@ -155,22 +155,22 @@ void CubatureSparse<Scalar, dimension_, ArrayPoint,ArrayWeight>::getCubature(Arr
 }
 
 
-template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
-int CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getNumPoints() const {
+template <class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
+ordinal_type CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getNumPoints() const {
   return numPoints_;
 } // end getNumPoints
 
 
 
-template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
-int CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getDimension() const {
+template <class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
+ordinal_type CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
-void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
+template <class Scalar, ordinal_type dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<ordinal_type> & accuracy) const {
   accuracy.assign(1, degree_);
 } //end getAccuracy
 
@@ -181,43 +181,43 @@ void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getAccuracy(std::
 **                 and its helper functions
 *************************************************************************/
 
-template< class Scalar, int DIM>
-void iterateThroughDimensions(int level,
-                              int dims_left,
+template< class Scalar, ordinal_type DIM>
+void iterateThroughDimensions(ordinal_type level,
+                              ordinal_type dims_left,
                               SGNodes<Scalar,DIM> & cubPointsND,
                               Teuchos::Array<Scalar> & partial_node,
                               Scalar partial_weight)
 {
-  int l = level;
-  int d = DIM;
-  int add_on = d - dims_left;
-  int start = dims_left > 1 ? 1 : (int)std::max(1, l);
-  int end = l + add_on;
+  ordinal_type l = level;
+  ordinal_type d = DIM;
+  ordinal_type add_on = d - dims_left;
+  ordinal_type start = dims_left > 1 ? 1 : (ordinal_type)std::max(1, l);
+  ordinal_type end = l + add_on;
 
-  for(int k_i = start; k_i <= end; k_i++)
+  for(ordinal_type k_i = start; k_i <= end; k_i++)
   {
     /*******************
     **  Slow-Gauss
     ********************/
-    int order1D = 2*k_i-1;
+    ordinal_type order1D = 2*k_i-1;
 
     /*******************
     **  Fast-Gauss
     ********************/
-    //int order1D = (int)pow(2,k_i) - 1;
+    //ordinal_type order1D = (ordinal_type)pow(2,k_i) - 1;
 
-    int cubDegree1D = 2*order1D - 1;
+    ordinal_type cubDegree1D = 2*order1D - 1;
     CubatureDirectLineGauss<Scalar> Cub1D(cubDegree1D);
     FieldContainer<Scalar> cubPoints1D(order1D, 1);
     FieldContainer<Scalar> cubWeights1D(order1D);
 
     Cub1D.getCubature(cubPoints1D, cubWeights1D);
 
-    for(int node1D = 0; node1D < order1D; node1D++)
+    for(ordinal_type node1D = 0; node1D < order1D; node1D++)
     {
       Teuchos::Array<Scalar> node(d-dims_left+1);
       node[d-dims_left] = cubPoints1D(node1D,0);
-      for(int m = 0; m < d-dims_left; m++)
+      for(ordinal_type m = 0; m < d-dims_left; m++)
         node[m] = partial_node[m];
 
       Scalar weight = cubWeights1D(node1D)*partial_weight;

@@ -72,10 +72,6 @@
 ///   that reveals itself when the random sequence is seeded.  Define this to disable the
 ///   seeding of the random number generator.
 ///
-/// @def SIERRA_MPI_ALLREDUCE_USER_FUNCTION_BUG
-/// SIERRA_MPI_ALLREDUCE_USER_FUNCTION_BUG -- The platforms MPI_Allreduce function does
-///   not behave properly when using a user defined function.
-///
 /// @def SIERRA_SETVBUF_OUTPUT
 /// SIERRA_SETVBUF_OUTPUT -- The output buffering on Redstorm significantly degrades
 ///   performance due to buffering issues.  This macro causes the opening of log files to
@@ -143,12 +139,6 @@
 #  define SIERRA_SHUTDOWN_SIGNAL SIGTERM
 #  define SIERRA_USER_SHUTDOWN_SIGNAL SIGURG
 
-#elif defined(__sun)				// sass8000/sass9000
-#  define SIERRA_HEAP_INFO
-#  define SIERRA_MEMORY_INFO
-#  define SIERRA_MPI_ABORT_SIGNAL SIGTERM
-#  define SIERRA_USER_SHUTDOWN_SIGNAL SIGHUP
-
 #elif defined(__linux__)	// Generic linux
 #  define SIERRA_USE_PLATFORM_DEMANGLER
 #  define SIERRA_HEAP_INFO
@@ -176,9 +166,6 @@
 #  endif
 #  define SIERRA_TYPE_INFO_BEFORE_EQUALITY_BUG
 #  define SIERRA_AUTO_PTR_ASSIGNMENT_BUG
-
-#elif defined(__sun) || defined(__SUNPRO_CC)	// Sun spro compiler
-#  define SIERRA_MPI_ALLREDUCE_USER_FUNCTION_BUG
 
 #elif defined(__INTEL_COMPILER)			// Intel compiler
 #  if __INTEL_COMPILER/100 == 10 && defined(__ia64) // Version 10 Intel compiler on ia64

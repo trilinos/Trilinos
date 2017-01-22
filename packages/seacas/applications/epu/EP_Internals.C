@@ -257,7 +257,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
   // For now, put entity names using the ExodusII api...
   {
-    size_t max_entity = mesh.blockCount;
+    int max_entity = mesh.blockCount;
     if (mesh.nodesetCount > max_entity)
       max_entity = mesh.nodesetCount;
     if (mesh.sidesetCount > max_entity)
@@ -271,7 +271,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
     size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     auto   names     = new char *[max_entity];
-    for (size_t i = 0; i < max_entity; i++) {
+    for (int i = 0; i < max_entity; i++) {
       names[i] = new char[name_size + 1];
     }
 
@@ -314,7 +314,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
 
-    for (size_t i = 0; i < max_entity; i++) {
+    for (int i = 0; i < max_entity; i++) {
       delete[] names[i];
     }
     delete[] names;

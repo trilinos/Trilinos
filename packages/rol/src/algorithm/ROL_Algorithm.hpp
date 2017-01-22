@@ -52,8 +52,8 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
-
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_ValidParameters.hpp"
 
 /** \class ROL::Algorithm
     \brief Provides an interface to run optimization algorithms.
@@ -112,6 +112,11 @@ public:
   Algorithm( const std::string &stepname,
              Teuchos::ParameterList &parlist,
              bool printHeader = false) {
+
+// Uncomment to test for parameter inconsistencies
+//    Teuchos::RCP<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    parlist.validateParametersAndSetDefaults(*validParlist);
+
     EStep els = StringToEStep(stepname);
     TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
@@ -369,6 +374,7 @@ public:
     Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
     Teuchos::RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
     Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+
     // Call appropriate run function
     if ( con == Teuchos::null ) {
       if ( bnd == Teuchos::null ) {

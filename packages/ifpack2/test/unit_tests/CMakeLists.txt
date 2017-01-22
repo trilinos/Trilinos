@@ -11,6 +11,24 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../kokkos/src)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../tpetra/src)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../tpetra/src)
 
+IF(Trilinos_ENABLE_ML)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Include)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Coarsen)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Comm)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/FEGrid)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Krylov)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/LevelWrap)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Main)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/MatrixFree)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/MLAPI)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Operator)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/RefMaxwell)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Smoother)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ml/src/Utils)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../ml/src)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../epetra/src)
+ENDIF()
+
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
@@ -19,14 +37,12 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 Ifpack2_UnitTestMain.cpp
-Ifpack2_UnitTestTemplate.cpp
-Ifpack2_UnitTestAdditiveSchwarz.cpp
+Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
-Ifpack2_UnitTestTriDiSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestFiltering.cpp
@@ -38,9 +54,9 @@ Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
-Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestRILUK.cpp
-Ifpack2_UnitTestRBILUK.cpp
+Ifpack2_UnitTestTemplate.cpp
+Ifpack2_UnitTestTriDiSolver.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
@@ -51,10 +67,29 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}
+    ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+    COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AdditiveSchwarz
+    SOURCES Ifpack2_UnitTestAdditiveSchwarz.cpp Ifpack2_UnitTestMain.cpp
     ARGS ""
     COMM serial mpi
   )
 
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RBILUK
+    SOURCES 
+      Ifpack2_UnitTestRBILUK.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
@@ -97,18 +132,109 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
-  # SolverFactory test (doesn't make sense to run unless Trilinos is
-  # doing run-time registration of solver factories).
+ASSERT_DEFINED (Trilinos_ENABLE_ML)
+# mfh 01 Jan 2017: 
+# Fix for https://github.com/trilinos/Trilinos/issues/935
+ASSERT_DEFINED (Trilinos_ENABLE_Epetra)
+IF (Trilinos_ENABLE_ML AND Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SolverFactory
-    SOURCES 
-    Ifpack2_SolverFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    BlockRelaxationPerformance
+    SOURCES
+      Ifpack2_UnitTestBlockRelaxationPerf.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory
+  SOURCES 
+  Ifpack2_SolverFactory.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LocalSparseTriangularSolver
+  SOURCES 
+    Ifpack2_UnitTestLocalSparseTriangularSolver.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only needs to run on 1 process.  We should already have
+# separate tests for the different Container types.  (If we don't,
+# that's a bug!)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ContainerFactory
+  SOURCES 
+    Ifpack2_UnitTestContainerFactory.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only needs to run on 1 process, since it just tests
+# whether Chebyshev accepts a certain parameter of a certain type.
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue234
+  SOURCES 
+    Ifpack2_UnitTest234.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue762
+  SOURCES 
+    762.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+  SET(SGSMT_MATRIX_FILE sherman1.mtx)
+
+  TRIBITS_ADD_EXECUTABLE(
+    SGSMT
+    SOURCES 
+      Ifpack2_UnitTestSGSMT.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2_UnitTest_SGSMT_CopyFile
+    DEST_FILES ${SGSMT_MATRIX_FILE}
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    EXEDEPS SGSMT
+  )
+
+  TRIBITS_ADD_TEST(
+    SGSMT Ifpack2_UnitTest_SGSMT_CopyFile
+    NAME SGSMT_compare_with_Jacobi
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()

@@ -160,10 +160,10 @@ public:
      */
    virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and shared by this processor.
+   /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -285,10 +285,10 @@ public:
      */
    virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and shared by this processor.
+   /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
@@ -406,10 +406,10 @@ public:
    virtual void getOwnedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
    { TEUCHOS_ASSERT(false); }
 
-   /** Get set of indices owned and shared by this processor.
+   /** Get set of indices owned and ghosted by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
+   virtual void getOwnedAndGhostedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get a yes/no on ownership for each index in a vector

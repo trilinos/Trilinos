@@ -41,13 +41,13 @@
 
 /*!
 The function ex_get_coord() reads the nodal coordinates of the
-nodes. Memory must be allocated for the coordinate arrays (\c x_coor,
-\c y_coor, and \c z_coor) before this call is made. The length of each
+nodes. Memory must be allocated for the coordinate arrays (x_coor,
+y_coor, and z_coor) before this call is made. The length of each
 of these arrays is the number of nodes in the mesh.
 
 Because the coordinates are floating point values, the application
 code must declare the arrays passed to be the appropriate type
-(\c float or \c double) to match the compute word size passed in
+(float or double) to match the compute word size passed in
 ex_create() or ex_open().
 
 \return
@@ -59,22 +59,22 @@ include:
 
 \param[in]   exoid    exodus file ID returned from a previous call to
 ex_create() or ex_open().
-\param[out]  x_coor   Returned X coordinates of the nodes. If this is \c NULL,
+\param[out]  x_coor   Returned X coordinates of the nodes. If this is NULL,
 the
                       X-coordinates will not be read.
 \param[out]  y_coor   Returned Y coordinates of the nodes. These are returned
 only if
-                      \c num_dim > 1; otherwise, pass in \c NULL. If this
-                      is \c NULL, the Y-coordinates will not be read.
+                      num_dim > 1; otherwise, pass in NULL. If this
+                      is NULL, the Y-coordinates will not be read.
 \param[out]  z_coor   Returned Z coordinates of the nodes. These are returned
 only if
-                      \c num_dim > 2; otherwise, pass in \c NULL. If this
-                      is \c NULL, the Z-coordinates will not be read.
+                      num_dim > 2; otherwise, pass in NULL. If this
+                      is NULL, the Z-coordinates will not be read.
 
 The following code segment will read the nodal coordinates
 from an open exodus file :
 
-\code
+~~~{.c}
 int error, exoid;
 
 double *x, *y, *z;
@@ -94,7 +94,7 @@ error = ex_get_coord(exoid, x,    NULL, NULL);
 error = ex_get_coord(exoid, NULL, y,    NULL);
 if (num_dim >= 3)
    error = ex_get_coord(exoid, NULL, NULL, z);
-\endcode
+~~~
 
 */
 

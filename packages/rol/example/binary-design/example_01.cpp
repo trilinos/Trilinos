@@ -59,17 +59,18 @@ typedef double RealT;
 template<class Real>
 class BinaryDesignObjective : public ROL::Objective<Real> {
 private:
-  int nvars_;
-  Real alpha_;
+  const int nvars_;
+  const Real alpha_;
 
 public:
-  BinaryDesignObjective(int nvars, Real alpha) : nvars_(nvars), alpha_(alpha) {}
+  BinaryDesignObjective(const int nvars, const Real alpha)
+    : nvars_(nvars), alpha_(alpha) {}
 
   RealT value(const ROL::Vector<Real> &x, Real &tol) {
     Teuchos::RCP<const std::vector<Real> > ex
         = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
 
-    RealT val(0);
+    Real val(0);
     for (int i=0; i<nvars_; ++i) {
       val += (*ex)[i] + alpha_ * (*ex)[i] * (*ex)[i];
     }
@@ -82,9 +83,9 @@ public:
     Teuchos::RCP<std::vector<Real> > eg
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
 
-    Real two(2);
+    const Real one(1), two(2);
     for (int i=0; i<nvars_; ++i) {
-      (*eg)[i] = 1 + alpha_*two*(*ex)[i];
+      (*eg)[i] = one + alpha_*two*(*ex)[i];
     }
   }
 
@@ -96,7 +97,7 @@ public:
     Teuchos::RCP<std::vector<Real> > ehv
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
 
-    Real two(2);
+    const Real two(2);
     for (int i=0; i<nvars_; ++i) {
       (*ehv)[i] = alpha_*two*(*ev)[i];
     }
@@ -107,11 +108,12 @@ public:
 template<class Real>
 class BinaryDesignEqualityConstraint : public ROL::EqualityConstraint<Real> {
 private:
-  int nvars_;
-  Real vol_;
+  const int nvars_;
+  const Real vol_;
 
 public:
-  BinaryDesignEqualityConstraint(const int &nvars, const Real &vol) : nvars_(nvars), vol_(vol) {}
+  BinaryDesignEqualityConstraint(const int &nvars, const Real &vol)
+    : nvars_(nvars), vol_(vol) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &x, Real &tol) {
     Teuchos::RCP<const std::vector<Real> > ex
@@ -119,7 +121,7 @@ public:
     Teuchos::RCP<std::vector<Real> > ec
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(c).getVector();
 
-    Real one(1);
+    const Real one(1);
     for (int i=0; i<nvars_; ++i) {
       (*ec)[i] = (*ex)[i] * ((*ex)[i] - one);
     }
@@ -137,11 +139,11 @@ public:
     Teuchos::RCP<std::vector<Real> > ejv
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(jv).getVector();
 
-    Real one(1), two(2);
+    const Real zero(0), one(1), two(2);
     for (int i=0; i<nvars_; ++i) {
       (*ejv)[i] = (two*(*ex)[i]-one) * (*ev)[i];
     }
-    (*ejv)[nvars_] = 0;
+    (*ejv)[nvars_] = zero;
     for (int i=0; i<nvars_; ++i) {
       (*ejv)[nvars_] += (*ev)[i];
     }
@@ -155,7 +157,7 @@ public:
     Teuchos::RCP<std::vector<Real> > eajv
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(ajv).getVector();
 
-    Real one(1), two(2);
+    const Real one(1), two(2);
     for (int i=0; i<nvars_; ++i) {
       (*eajv)[i] = (two*(*ex)[i]-one) * (*ev)[i] + (*ev)[nvars_];
     }
@@ -171,7 +173,7 @@ public:
     Teuchos::RCP<std::vector<Real> > eahuv
         = Teuchos::dyn_cast<ROL::StdVector<Real> >(ahuv).getVector();
 
-    Real two(2);
+    const Real two(2);
     for (int i=0; i<nvars_; ++i) {
       (*eahuv)[i] = two * (*eu)[i] * (*ev)[i];
     }
@@ -276,4 +278,5 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
+
 

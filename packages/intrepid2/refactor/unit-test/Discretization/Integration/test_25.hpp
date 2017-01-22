@@ -95,21 +95,21 @@ namespace Intrepid2 {
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
+      //typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
       
       const auto tol = tolerence();
 
       int errorFlag = 0;
       try {
-        const auto numCells = cellCoords.dimension(0);
+        const ordinal_type numCells = cellCoords.dimension(0);
         //const auto numVerts = cellCoords.dimension(1);
-        const auto spaceDim = cellCoords.dimension(2);
+        const ordinal_type spaceDim = cellCoords.dimension(2);
         
         const bool isCubatureSide = std::string(cubature.getName()) == std::string("CubatureControlVolumeSide");
 
         *outStream << " --- Testing cubature values and weights: " << cubature.getName() << "\n";
         
-        const auto numPoints = cubature.getNumPoints();
+        const ordinal_type numPoints = cubature.getNumPoints();
         if (exactNumPoints > 0) {
           if (numPoints != exactNumPoints) {
             errorFlag++;
@@ -200,7 +200,7 @@ namespace Intrepid2 {
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
+      //typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
       
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
@@ -210,14 +210,14 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       try {
-        const auto numCells = cellCoords.dimension(0);
-        //const auto numVerts = cellCoords.dimension(1);
-        const auto spaceDim = cellCoords.dimension(2);
+        const ordinal_type numCells = cellCoords.dimension(0);
+        //const ordinal_type numVerts = cellCoords.dimension(1);
+        const ordinal_type spaceDim = cellCoords.dimension(2);
         
         CubatureControlVolumeType CubatureControlVolume(cellTopo);
         *outStream << " --- Testing sum of subcontrol volumes: " << CubatureControlVolume.getName() << "\n";
         
-        const auto numPoints = CubatureControlVolume.getNumPoints();
+        const ordinal_type numPoints = CubatureControlVolume.getNumPoints();
 
         // get cubature points and weights for volume integration over control volume
         DynRankView cubPoints, cubWeights;
@@ -382,8 +382,8 @@ namespace Intrepid2 {
                                           outStream);
           }
           {
-            const auto side = 2;
-            const auto numBoundary = 2;
+            const ordinal_type side = 2;
+            const ordinal_type numBoundary = 2;
             CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
             errorFlag += Integration_Test25_CompareExactValues
               <ValueType,DeviceSpaceType>(cubature,
@@ -472,8 +472,8 @@ namespace Intrepid2 {
                                           outStream);
           }
           {
-            const auto side = 1;
-            const auto numBoundary = 2;
+            const ordinal_type side = 1;
+            const ordinal_type numBoundary = 2;
             CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
             errorFlag += Integration_Test25_CompareExactValues
               <ValueType,DeviceSpaceType>(cubature,
@@ -567,8 +567,8 @@ namespace Intrepid2 {
                                           outStream);
           }
           {
-            const auto side = 0;
-            const auto numBoundary = 3;
+            const ordinal_type side = 0;
+            const ordinal_type numBoundary = 3;
             CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
             errorFlag += Integration_Test25_CompareExactValues
               <ValueType,DeviceSpaceType>(cubature,
@@ -666,8 +666,8 @@ namespace Intrepid2 {
                                           outStream);
           }
           {
-            const auto side = 0;
-            const auto numBoundary = 4;
+            const ordinal_type side = 0;
+            const ordinal_type numBoundary = 4;
             CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
             errorFlag += Integration_Test25_CompareExactValues
               <ValueType,DeviceSpaceType>(cubature,
@@ -842,8 +842,8 @@ namespace Intrepid2 {
                      << CubatureControlVolume.getName() << ", " 
                      << CubatureControlVolumeSide.getName() << "\n";
           
-          const auto numPointsVolume = CubatureControlVolume.getNumPoints();
-          const auto numPointsSide   = CubatureControlVolumeSide.getNumPoints();
+          const ordinal_type numPointsVolume = CubatureControlVolume.getNumPoints();
+          const ordinal_type numPointsSide   = CubatureControlVolumeSide.getNumPoints();
           
           // get cubature points and weights for volume integration over control volume
           DynRankView cubPointsVolume, cubWeightsVolume, cubPointsSide, cubWeightsSide;
@@ -871,8 +871,8 @@ namespace Intrepid2 {
           // first evaluate F at all control volume side points
           const ValueType a = 2.1, b = 1.4;
           DynRankViewHost F("Integration::Test25::F", numCells, numPointsSide, spaceDim);
-          for (auto i=0;i<numCells;++i) 
-            for (auto j=0;j<numPointsSide;++j) {
+          for (ordinal_type i=0;i<numCells;++i)
+            for (ordinal_type j=0;j<numPointsSide;++j) {
               F(i,j,0) = a*cubPointsSide(i,j,0);
               F(i,j,1) = b*cubPointsSide(i,j,1);
             }
@@ -950,8 +950,8 @@ namespace Intrepid2 {
                      << CubatureControlVolume.getName() << ", " 
                      << CubatureControlVolumeSide.getName() << "\n";
           
-          const auto numPointsVolume = CubatureControlVolume.getNumPoints();
-          const auto numPointsSide   = CubatureControlVolumeSide.getNumPoints();
+          const ordinal_type numPointsVolume = CubatureControlVolume.getNumPoints();
+          const ordinal_type numPointsSide   = CubatureControlVolumeSide.getNumPoints();
           
           // get cubature points and weights for volume integration over control volume
           DynRankView cubPointsVolume, cubWeightsVolume, cubPointsSide, cubWeightsSide;
@@ -979,8 +979,8 @@ namespace Intrepid2 {
           // first evaluate F at all control volume side points
           const ValueType a = 2.1, b = 1.4;
           DynRankViewHost F("Integration::Test25::F", numCells, numPointsSide, spaceDim);
-          for (auto i=0;i<numCells;++i) 
-            for (auto j=0;j<numPointsSide;++j) {
+          for (ordinal_type i=0;i<numCells;++i)
+            for (ordinal_type j=0;j<numPointsSide;++j) {
               F(i,j,0) = a*cubPointsSide(i,j,0);
               F(i,j,1) = b*cubPointsSide(i,j,1);
             }

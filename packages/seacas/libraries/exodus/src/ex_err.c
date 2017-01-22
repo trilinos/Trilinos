@@ -42,7 +42,7 @@
 /*!
 \fn{void ex_err(const char *module_name, const char *message, int err_num)}
 
-The function ex_err() logs an error to \c stderr. It is intended
+The function ex_err() logs an error to stderr. It is intended
 to provide explanatory messages for error codes returned from other
 exodus routines.
 
@@ -50,21 +50,21 @@ The passed in error codes and corresponding messages are listed in
 ???. The programmer may supplement the error message printed
 for standard errors by providing an error message. If the error code
 is provided with no error message, the predefined message will be
-used. The error code \c EX_MSG is available to log application
+used. The error code EX_MSG is available to log application
 specific messages.
 
 \param[in]  module_name  This is a string containing the name of the calling
 function.
 \param[in]  message      This is a string containing a message explaining the
 error
-                         or problem. If \c EX_VERBOSE (see ex_opts()) is true,
-                         this message will be printed to \c stderr. Otherwise,
+                         or problem. If EX_VERBOSE (see ex_opts()) is true,
+                         this message will be printed to stderr. Otherwise,
                          nothing will be printed. Maximum length is \c
 MAX_ERR_LENGTH.
 
 \param[in] err_num       This is an integer code identifying the error. exodus C
 functions
-                         place an error code value in \c exerrval, an external
+                         place an error code value in exerrval, an external
 int. Negative
                          values are considered fatal errors while positive
 values are
@@ -78,7 +78,7 @@ of the setting
 
 The following is an example of the use of this function:
 
-\code
+~~~{.c}
 int exoid, CPU_word_size, IO_word_size, errval;
 float version;
 char errmsg[MAX_ERR_LENGTH];
@@ -93,7 +93,7 @@ if (exoid = ex_open ("test.exo", EX_READ, &CPU_word_size,
    snprintf(errmsg, MAX_ERR_LENGTH,"ERROR: cannot open file test.exo");
    ex_err("prog_name", errmsg, errval);
 }
-\endcode
+~~~
 
 */
 

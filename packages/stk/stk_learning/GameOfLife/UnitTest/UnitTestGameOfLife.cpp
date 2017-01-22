@@ -12,7 +12,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "../../../stk_unit_test_utils/getOption.h"
+#include "stk_unit_test_utils/getOption.h"
 
 
 
@@ -1286,7 +1286,7 @@ TEST(TOSDTWD, quad_mesh_from_png)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        std::string fileName = stk::unit_test_util::get_option("-i", "Tiny.png");
         SimpleColoredPng image(fileName);
         unsigned width = image.get_image_width();
         unsigned height = image.get_image_height();
@@ -1313,7 +1313,7 @@ TEST(TOSDTWD, hex_mesh_from_png)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        std::string fileName = stk::unit_test_util::get_option("-i", "Tiny.png");
         SimpleColoredPng image(fileName);
         unsigned width = image.get_image_width();
         unsigned height = image.get_image_height();

@@ -1,5 +1,3 @@
-************************************************************************
-************************************************************************
 testwt - single precision write test...
 Exodus Library Warning/Error: [ex_put_name]
 	ERROR: element block id 10 not found in file id 65536
@@ -53,5 +51,3 @@ test-empty - read an empty (only ex_create called) exodus file...
 Exodus Library Warning/Error: [ex_get_init_ext]
 	Warning: no title in file id 65536
 	NetCDF: Attribute not found
-************************************************************************
-************************************************************************

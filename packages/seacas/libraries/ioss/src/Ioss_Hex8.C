@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Hex8 registerThis; }
 
   protected:
-    St_Hex8() : ElementVariableType("hex8", 8) {}
+    St_Hex8() : ElementVariableType(Ioss::Hex8::name, 8) {}
   };
 } // namespace Ioss
 
@@ -93,10 +93,10 @@ void Ioss::Hex8::factory()
   Ioss::St_Hex8::factory();
 }
 
-Ioss::Hex8::Hex8() : Ioss::ElementTopology("hex8", "Hexahedron_8")
+Ioss::Hex8::Hex8() : Ioss::ElementTopology(Ioss::Hex8::name, "Hexahedron_8")
 {
-  Ioss::ElementTopology::alias("hex8", "hex");
-  Ioss::ElementTopology::alias("hex8", "Solid_Hex_8_3D");
+  Ioss::ElementTopology::alias(Ioss::Hex8::name, "hex");
+  Ioss::ElementTopology::alias(Ioss::Hex8::name, "Solid_Hex_8_3D");
 }
 
 Ioss::Hex8::~Hex8() = default;

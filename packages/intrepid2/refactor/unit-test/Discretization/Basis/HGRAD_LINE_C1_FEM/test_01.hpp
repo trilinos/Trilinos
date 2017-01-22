@@ -51,6 +51,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -155,7 +156,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0) );  // #1
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1) );  // #2
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0) );  // #3
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5)         );  // #4
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(numFields) );  // #4
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1)        );  // #5
         }
 

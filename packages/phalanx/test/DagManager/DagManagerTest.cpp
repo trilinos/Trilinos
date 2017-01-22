@@ -47,6 +47,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DAG_Manager.hpp"
+#include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DimTag.hpp"
 
@@ -69,6 +70,9 @@ PHX_DIM_TAG_IMPLEMENTATION(BASIS)
 
 #include "Evaluator_MockDAG.hpp"
 
+// *************************************************
+// functions for testing
+// *************************************************
 void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
 		      bool addCircularDependency,
 		      bool buildDuplicateEvaluator,
@@ -126,6 +130,9 @@ void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
   }
 }
 
+// *************************************************
+// Successful DAG
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, basic_dag)
 {
   using namespace std;
@@ -196,7 +203,9 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
 
 }
 
+// *************************************************
 // Catch cyclic dependencies (not a true DAG)
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, cyclic)
 {
   using namespace std;
@@ -217,7 +226,9 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::circular_dag_exception);
 }
 
+// *************************************************
 // Catch multiple evaluators that evaluate the same field
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
 {
   using namespace std;
@@ -237,7 +248,9 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
 
 }
 
+// *************************************************
 // Catch missing required field 
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, missing_req_field)
 {
   using namespace std;
@@ -258,7 +271,9 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
 }
 
+// *************************************************
 // Catch missing evalautor in subtree 
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, missing_evaluator)
 {
   using namespace std;
@@ -279,7 +294,9 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
 }
 
+// *************************************************
 // Test the analyzeGraph computation for speedup and parallelization
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, analyze_graph)
 {
   using namespace std;
@@ -347,7 +364,9 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph)
   TEST_FLOATING_EQUALITY(parallelizability,1.0,tol);
 }
 
+// *************************************************
 // Test the analyzeGraph computation for speedup and parallelization
+// *************************************************
 TEUCHOS_UNIT_TEST(dag, analyze_graph2)
 {
   using namespace std;
@@ -468,4 +487,266 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   TEST_FLOATING_EQUALITY(speedup,s_gold,tol);
   p_gold = (1. - 1./s_gold)/(1. - 1./4.);
   TEST_FLOATING_EQUALITY(parallelizability,p_gold,tol);
+}
+
+// *************************************************
+// Test for a field that has both an "evaluated" evaluator and
+// "contributed" evalautors.
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, contrib_and_eval_B)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+
+  // Perfectly parallel test
+  DagManager<MyTraits> dag("analyze_graph2");
+
+  // Register evaluators
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_A");
+    m->evaluates("A");
+    m->requires("B");
+    m->requires("C");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_B");
+    m->evaluates("B");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_C");
+    m->evaluates("C");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_D");
+    m->evaluates("D");
+    dag.registerEvaluator(m);
+  }
+  { // Contributes to B
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_B+");
+    m->contributes("B");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+  { // Contributes to B also
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_B++");
+    m->contributes("B");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+
+  // Require fields
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = 
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> taga("A",dl);
+    dag.requireField(taga);
+  }
+
+  dag.sortAndOrderEvaluators();
+  out << dag << std::endl;
+  dag.writeGraphvizFile("contrib_and_eval_B.dot",true,true,true);
+
+  // Check the ordering
+  {
+    const auto& order_new = dag.getEvaluatorInternalOrdering();
+    //const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    TEST_EQUALITY(order_new[0],3);
+    TEST_EQUALITY(order_new[1],2);
+    TEST_EQUALITY(order_new[2],1);
+    TEST_EQUALITY(order_new[3],4);
+    TEST_EQUALITY(order_new[4],5);
+    TEST_EQUALITY(order_new[5],0);
+  }
+  
+  // Check that the out edges are correct.
+  {
+    const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    // A
+    TEST_EQUALITY(nodes[0].adjacencies().size(),4);
+    TEST_ASSERT(nodes[0].adjacencies().find(1) != nodes[0].adjacencies().end());
+    TEST_ASSERT(nodes[0].adjacencies().find(2) != nodes[0].adjacencies().end());
+    TEST_ASSERT(nodes[0].adjacencies().find(4) != nodes[0].adjacencies().end());
+    TEST_ASSERT(nodes[0].adjacencies().find(5) != nodes[0].adjacencies().end());
+    // B
+    TEST_EQUALITY(nodes[1].adjacencies().size(),0);
+    // B+
+    TEST_EQUALITY(nodes[4].adjacencies().size(),2);
+    TEST_ASSERT(nodes[4].adjacencies().find(1) != nodes[4].adjacencies().end());
+    TEST_ASSERT(nodes[4].adjacencies().find(3) != nodes[4].adjacencies().end());
+    // B++
+    TEST_EQUALITY(nodes[5].adjacencies().size(),2);
+    TEST_ASSERT(nodes[5].adjacencies().find(1) != nodes[5].adjacencies().end());
+    TEST_ASSERT(nodes[5].adjacencies().find(3) != nodes[5].adjacencies().end());
+  }
+}
+
+// *************************************************
+// Test for a field that is only evaluated by contributed fields
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, contrib_only_B)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+
+  // Perfectly parallel test
+  DagManager<MyTraits> dag("analyze_graph2");
+
+  // Register evaluators
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_A");
+    m->evaluates("A");
+    m->requires("B");
+    m->requires("C");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_C");
+    m->evaluates("C");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_D");
+    m->evaluates("D");
+    dag.registerEvaluator(m);
+  }
+  { // Contributes to B
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_B+");
+    m->contributes("B");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+  { // Contributes to B also
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_B++");
+    m->contributes("B");
+    m->requires("D");
+    dag.registerEvaluator(m);
+  }
+
+  // Require fields
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = 
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> taga("A",dl);
+    dag.requireField(taga);
+  }
+
+  dag.sortAndOrderEvaluators();
+  //out << dag << std::endl;
+  dag.writeGraphvizFile("contrib_only_B.dot",true,true,true);
+
+  // Check the ordering
+  {
+    const auto& order_new = dag.getEvaluatorInternalOrdering();
+    //const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    TEST_EQUALITY(order_new[0],2);
+    TEST_EQUALITY(order_new[1],1);
+    TEST_EQUALITY(order_new[2],3);
+    TEST_EQUALITY(order_new[3],4);
+    TEST_EQUALITY(order_new[4],0);
+  }
+
+  // Check that the out edges are correct.
+  {
+    const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    // A
+    TEST_EQUALITY(nodes[0].adjacencies().size(),3);
+    TEST_ASSERT(nodes[0].adjacencies().find(1) != nodes[0].adjacencies().end());
+    TEST_ASSERT(nodes[0].adjacencies().find(3) != nodes[0].adjacencies().end());
+    TEST_ASSERT(nodes[0].adjacencies().find(4) != nodes[0].adjacencies().end());
+    // B+
+    TEST_EQUALITY(nodes[3].adjacencies().size(),1);
+    TEST_ASSERT(nodes[3].adjacencies().find(2) != nodes[3].adjacencies().end());
+    // B++
+    TEST_EQUALITY(nodes[4].adjacencies().size(),1);
+    TEST_ASSERT(nodes[4].adjacencies().find(2) != nodes[4].adjacencies().end());
+  }
+}
+
+// *************************************************
+// Test for aliasing a field
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, alias_field)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  DagManager<MyTraits> dag("alias_field");
+
+  // Register evaluators
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_A");
+    m->evaluates("A");
+    m->requires("B");
+    dag.registerEvaluator(m);
+  }
+  {
+    RCP<Mock> m = rcp(new Mock);
+    m->setName("Eval_C");
+    m->evaluates("C");
+    dag.registerEvaluator(m);
+  }
+
+  // Require fields
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = 
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> taga("A",dl);
+    dag.requireField(taga);
+  }
+
+  // Alias field B to C
+  {
+    RCP<MDALayout<CELL,BASIS>> dl =
+      rcp(new MDALayout<CELL,BASIS>("H-Grad",100,4));
+    Tag<MyTraits::Residual::ScalarT> tag_b("B",dl);
+    Tag<MyTraits::Residual::ScalarT> tag_c("C",dl);
+    RCP<PHX::Evaluator<MyTraits>> e =
+      rcp(new PHX::AliasField<MyTraits::Residual::ScalarT,MyTraits>(tag_b,tag_c));
+    dag.registerEvaluator(e); // b points to c's memory
+  }
+
+  // This will fail if the logic for "B" evaluation is not set properly
+  dag.sortAndOrderEvaluators();
+  
+  //out << dag << std::endl;
+  dag.writeGraphvizFile("alias_field.dot",true,true,true);
+
+  // Check that the out edges are correct.
+  {
+    const std::vector<PHX::DagNode<MyTraits>>& nodes = dag.getDagNodes();
+    // A --> B (Alias)
+    TEST_EQUALITY(nodes[0].adjacencies().size(),1);
+    TEST_ASSERT(nodes[0].adjacencies().find(2) != nodes[0].adjacencies().end());
+    // B (Alias) --> C
+    TEST_EQUALITY(nodes[2].adjacencies().size(),1);
+    TEST_ASSERT(nodes[2].adjacencies().find(1) != nodes[2].adjacencies().end());
+    // C
+    TEST_EQUALITY(nodes[1].adjacencies().size(),0);
+  }
+
 }

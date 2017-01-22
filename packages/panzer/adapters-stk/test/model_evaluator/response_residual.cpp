@@ -223,7 +223,7 @@ namespace panzer {
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
     Teuchos::RCP<panzer::ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildDomainContainer();
-    resp_param_ged->setUniqueVector(param_density);
+    resp_param_ged->setOwnedVector(param_density);
 
     // evaluate residual responses
     {
@@ -234,8 +234,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_residual->setResidual(response_residual->allocateResidualVector());
@@ -271,8 +271,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -379,7 +379,7 @@ namespace panzer {
 
     RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
     Thyra::assign(param_density.ptr(),3.7);
-    resp_param_ged->setUniqueVector(param_density);
+    resp_param_ged->setOwnedVector(param_density);
 
     // evaluate residual responses
     {
@@ -390,8 +390,8 @@ namespace panzer {
       RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
       RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
 
-      xContainer->setUniqueVector(x);
-      xdotContainer->setUniqueVector(x_dot);
+      xContainer->setOwnedVector(x);
+      xdotContainer->setOwnedVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -505,7 +505,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -655,7 +654,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -928,9 +926,9 @@ namespace panzer {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk_classic::SquareQuadMeshFactory factory;
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
 
@@ -973,8 +971,8 @@ namespace panzer {
     // build worksets
     //////////////////////////////////////////////////////////////
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
     ap.wkstContainer = wkstContainer;
@@ -984,7 +982,7 @@ namespace panzer {
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     // build the state dof manager and LOF
     if(!useBlocking) {
@@ -1015,7 +1013,7 @@ namespace panzer {
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
-          = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
+        = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY",fp);
       dofManager->addField("eblock-1_0","DENSITY",fp);
 

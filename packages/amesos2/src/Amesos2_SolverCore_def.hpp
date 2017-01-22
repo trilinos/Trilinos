@@ -184,10 +184,13 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
 
 #ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
-  TEUCHOS_TEST_FOR_EXCEPTION(x->getGlobalLength() != matrixA_->getGlobalNumCols(),
-                     std::invalid_argument,
-                     "MultiVector X must have length equal to the number of "
-                     "global columns in A");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (x->getGlobalLength() != matrixA_->getGlobalNumCols(),
+     std::invalid_argument,
+     "MultiVector X must have length equal to the number of "
+     "global columns in A.  X->getGlobalLength() = "
+     << x->getGlobalLength() << " != A->getGlobalNumCols() = "
+     << matrixA_->getGlobalNumCols() << ".");
 
   TEUCHOS_TEST_FOR_EXCEPTION(b->getGlobalLength() != matrixA_->getGlobalNumRows(),
                      std::invalid_argument,
@@ -325,8 +328,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
     solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
   // inject the "Transpose" parameter into the solver's valid parameters
   Teuchos::rcp_const_cast<ParameterList>(solver_params)->set("Transpose", false,
-							     "Whether to solve with the "
-							     "matrix transpose");
+                                                             "Whether to solve with the "
+                                                             "matrix transpose");
 
   RCP<ParameterList> amesos2_params = rcp(new ParameterList("Amesos2"));
   amesos2_params->setParameters(*control_params);

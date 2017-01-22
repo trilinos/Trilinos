@@ -38,12 +38,14 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::ptrFromRef;
 
+/*
   typedef UniqueGlobalIndexer<int,int>       EpetraUGI;
   typedef UniqueGlobalIndexer<int,Ordinal64> TpetraUGI;
   typedef BlockedDOFManager<int,int>         BlockedEpetraUGI;
   typedef BlockedDOFManager<int,Ordinal64>   BlockedTpetraUGI;
 
   typedef EpetraLinearObjFactory<panzer::Traits,int>                         EpetraLOF;
+*/
   typedef TpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64>        TpetraLOF;
   typedef BlockedEpetraLinearObjFactory<panzer::Traits,int>                  BlockedEpetraLOF;
   typedef BlockedTpetraLinearObjFactory<panzer::Traits,double,int,Ordinal64> BlockedTpetraLOF;

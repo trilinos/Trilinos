@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -190,6 +190,17 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
+struct MemorySpaceAccess 
+  < Kokkos::Threads::memory_space
+  , Kokkos::Threads::scratch_memory_space
+  >
+{
+  enum { assignable = false };
+  enum { accessible = true };
+  enum { deepcopy   = false };
+};
+
+template<>
 struct VerifyExecutionCanAccessMemorySpace
   < Kokkos::Threads::memory_space
   , Kokkos::Threads::scratch_memory_space
@@ -210,6 +221,8 @@ struct VerifyExecutionCanAccessMemorySpace
 #include <Threads/Kokkos_ThreadsExec.hpp>
 #include <Threads/Kokkos_ThreadsTeam.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
+
+#include <KokkosExp_MDRangePolicy.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

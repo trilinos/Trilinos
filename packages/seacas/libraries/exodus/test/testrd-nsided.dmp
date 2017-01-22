@@ -220,7 +220,7 @@ after ex_get_prop_names, error = 0
 
 after ex_get_entity_count_per_polyhedra, error = 0
 
-after ex_get_elem_conn, error = 0
+after ex_get_conn, error = 0
 connect array for elem block 10
 Element 1, 4 nodes:	  1   2   3   4 
 Element 2, 4 nodes:	  5   6   7   8 
@@ -607,22 +607,22 @@ info records =
  ''
  ''
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  1 global variables; their names are :
  'glo_vars'
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  2 nodal variables; their names are :
  'node_variable_a_very_long_name_0'
  'nod_var1'
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  3 element variables; their names are :
  'ele_var0'
  'ele_var1'
@@ -634,9 +634,9 @@ This is the element variable truth table:
  1
  1
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  3 nodeset variables; their names are :
  'ns_var0'
  'ns_var1'
@@ -651,9 +651,9 @@ This is the nodeset variable truth table:
  1
  1
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  3 sideset variables; their names are :
  'ss_var0'
  'ss_var1'
@@ -762,7 +762,7 @@ nodal variable  1 values for node  1 through time:
 1.090
 1.100
 
- after ex_get_elem_blk_ids, error =   0
+ after ex_get_ids, error =   0
 
 after ex_get_elem_var, error =   0
 element variable  1 values of element block 10 at time step  3

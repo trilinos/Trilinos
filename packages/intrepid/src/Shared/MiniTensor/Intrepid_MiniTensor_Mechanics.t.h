@@ -67,11 +67,7 @@ push_forward_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -120,11 +116,7 @@ pull_back_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -163,11 +155,7 @@ push_forward_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -211,11 +199,7 @@ pull_back_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -269,11 +253,7 @@ push_forward_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -350,11 +330,7 @@ pull_back_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -402,11 +378,7 @@ piola(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -460,11 +432,7 @@ piola_inverse(Tensor<T, N> const & F, Vector<T, N> const & u)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -504,11 +472,7 @@ piola(Tensor<T, N> const & F, Tensor<T, N> const & sigma)
   switch (dimension) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -658,9 +622,10 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
   T
   error = 1.0;
 
+  using S = typename Sacado::ScalarType<T>::type;
+
   T
-  prev_eigenvalue =
-      std::numeric_limits<typename Sacado::ScalarType<T>::type>::max();
+  prev_eigenvalue = std::numeric_limits<S>::max();
 
   T
   curr_eigenvalue = prev_eigenvalue;

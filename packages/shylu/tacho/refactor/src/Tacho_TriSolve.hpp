@@ -12,6 +12,19 @@ namespace Tacho {
            template<int,int> class ControlType = Control>
   class TriSolve {
   public:
+    // statistics
+    // ==========
+    template<typename ExecViewTypeA,
+             typename ExecViewTypeB>
+    inline
+    static Stat stat(const int diagA,
+                     ExecViewTypeA &A,
+                     ExecViewTypeB &B) {
+      printf(">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n",
+             ArgUplo, ArgTrans, ArgAlgo, ArgVariant);
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
 
     // data-parallel interface
     // =======================
@@ -21,16 +34,16 @@ namespace Tacho {
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const int diagA,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B) {
-      fprintf(stderr, ">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n",
-              ArgUplo, ArgTrans, ArgAlgo, ArgVariant);
+      printf(">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n",
+             ArgUplo, ArgTrans, ArgAlgo, ArgVariant);
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }
-
+    
     // task-data parallel interface
     // ============================
     template<typename PolicyType,
@@ -50,6 +63,9 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() = delete;
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const int diagA,
                   const ExecViewTypeA &A,
@@ -64,14 +80,7 @@ namespace Tacho {
       const char* Label() const { return "TriSolve"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = TriSolve::invoke(_policy, _policy.member_single(), 
-                                 _diagA, _A, _B);
-        _B.setFuture(typename ExecViewTypeB::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = TriSolve::invoke(_policy, member, 
                                           _diagA, _A, _B);
         

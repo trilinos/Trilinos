@@ -105,6 +105,26 @@ public:
 };
 
 
+template<class Real>
+class Min : public BinaryFunction<Real> {
+public:
+  Min() {}
+  Real apply(const Real &x, const Real &y) const {
+    return std::min(x,y);
+  }
+};
+
+
+template<class Real>
+class Max : public BinaryFunction<Real> {
+public:
+  Max() {}
+  Real apply(const Real &x, const Real &y) const {
+    return std::max(x,y);
+  }
+};
+
+
 template<class Real> 
 class Set : public BinaryFunction<Real> {
 public:
@@ -126,6 +146,33 @@ class Greater : public BinaryFunction<Real> {
 public:
   Real apply( const Real &x, const Real &y ) const {
     return (x>y) ? x : y;
+  }
+};
+
+// Set x to one of two values based on whether y satisfies
+// a comparative condition
+template<class Real>
+class ValueSet : public BinaryFunction<Real> {
+private:
+  const Real threshold_;
+  const int option_;
+  const Real c1_;
+  const Real c2_;
+public:
+  static const int LESS_THAN    = 0;
+  static const int EQUAL_TO     = 1;
+  static const int GREATER_THAN = 2;
+  ValueSet( const Real& threshold, const int option, const Real &c1=Real(1), const Real &c2=Real(0) ) :
+    threshold_(threshold), option_(option), c1_(c1), c2_(c2) {}
+ 
+  Real apply(const Real &x, const Real &y ) const {
+    Real result(c2_);
+    switch( option_ ) {
+      case LESS_THAN:    { result = y <  threshold_ ? c1_ : c2_; break; }
+      case EQUAL_TO:     { result = y == threshold_ ? c1_ : c2_; break; }
+      case GREATER_THAN: { result = y >  threshold_ ? c1_ : c2_; break; }
+    }
+    return result;
   }
 };
 

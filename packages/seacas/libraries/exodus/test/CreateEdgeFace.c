@@ -478,27 +478,34 @@ int cCreateEdgeFace(int argc, char *argv[])
             "Unable to write result variable parameter information.\n");
   }
   else {
-    EXCHECK(ex_put_var_param(exoid, "G", 2),
+    EXCHECK(ex_put_variable_param(exoid, EX_GLOBAL, 2),
             "Unable to write global result variable parameters.\n");
-    EXCHECK(ex_put_var_param(exoid, "N", 1), "Unable to write nodal result variable parameters.\n");
-    EXCHECK(ex_put_var_param(exoid, "E", 1),
+    EXCHECK(ex_put_variable_param(exoid, EX_NODAL, 1),
+            "Unable to write nodal result variable parameters.\n");
+    EXCHECK(ex_put_variable_param(exoid, EX_ELEM_BLOCK, 1),
             "Unable to write element result variable parameters.\n");
-    EXCHECK(ex_put_var_param(exoid, "L", 2), "Unable to write edge result variable parameters.\n");
-    EXCHECK(ex_put_var_param(exoid, "F", 1), "Unable to write face result variable parameters.\n");
-    EXCHECK(ex_put_var_param(exoid, "A", 1),
+    EXCHECK(ex_put_variable_param(exoid, EX_EDGE_BLOCK, 2),
+            "Unable to write edge result variable parameters.\n");
+    EXCHECK(ex_put_variable_param(exoid, EX_FACE_BLOCK, 1),
+            "Unable to write face result variable parameters.\n");
+    EXCHECK(ex_put_variable_param(exoid, EX_FACE_SET, 1),
             "Unable to write faceset result variable parameters.\n");
   }
 
   /*                  =============== Result variable names ========== */
   /* *** NEW API *** */
-  EXCHECK(ex_put_var_name(exoid, "G", 1, "CALIBER"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "g", 2, "GUNPOWDER"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "N", 1, "RHO"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "l", 1, "GAMMA1"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "L", 2, "GAMMA2"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "f", 1, "PHI"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "E", 1, "EPSTRN"), "Unable to write variable name.\n");
-  EXCHECK(ex_put_var_name(exoid, "A", 1, "PHI0"), "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_GLOBAL, 1, "CALIBER"), "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_GLOBAL, 2, "GUNPOWDER"),
+          "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_NODAL, 1, "RHO"), "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_EDGE_BLOCK, 1, "GAMMA1"),
+          "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_EDGE_BLOCK, 2, "GAMMA2"),
+          "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_FACE_BLOCK, 1, "PHI"), "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_ELEM_BLOCK, 1, "EPSTRN"),
+          "Unable to write variable name.\n");
+  EXCHECK(ex_put_variable_name(exoid, EX_FACE_SET, 1, "PHI0"), "Unable to write variable name.\n");
 
   /*                  =============== Result variable values ========= */
   t = 1.;
@@ -536,8 +543,10 @@ int cCreateEdgeFace(int argc, char *argv[])
   EXCHECK(ex_put_var(exoid, 2, EX_FACE_SET, 1, 1400, 2, vals_fset_var1fs1[1]),
           "Unable to write face set 1 var 1.\n");
 
-  EXCHECK(ex_put_nodal_var(exoid, 1, 1, 12, vals_nod_var[0]), "Unable to write nodal var 1.\n");
-  EXCHECK(ex_put_nodal_var(exoid, 2, 1, 12, vals_nod_var[1]), "Unable to write nodal var 1.\n");
+  EXCHECK(ex_put_var(exoid, 1, EX_NODAL, 1, 1, 12, vals_nod_var[0]),
+          "Unable to write nodal var 1.\n");
+  EXCHECK(ex_put_var(exoid, 2, EX_NODAL, 1, 1, 12, vals_nod_var[1]),
+          "Unable to write nodal var 1.\n");
 
   EXCHECK(ex_close(exoid), "Unable to close database.\n");
 

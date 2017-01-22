@@ -354,94 +354,21 @@ setFieldData(const PHX::any& a)
 
   using NonConstDataT = typename std::remove_const<DataT>::type;
 
-  //typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
   try {
-    //m_field_data = PHX::any_cast<non_const_view>(a);
-
-    if (m_tag.dataLayout().rank() == 1) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar > 0)
-        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-		  								      tmp.extent(0),
-										      Kokkos::dimension_scalar(tmp));
-      else
-        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-                                                                                      tmp.extent(0));
-
-    }
-    else if (m_tag.dataLayout().rank() == 2) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 3) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-      										    tmp.extent(0),
-      										    tmp.extent(1),
-      										    tmp.extent(2),
-      										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 4) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 5) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 6) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    tmp.extent(5),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 7) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    tmp.extent(5),
-										    tmp.extent(6),
-										    dim_scalar);
-    }
+    if (m_tag.dataLayout().rank() == 1)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 2)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 3)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 4)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 5)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 6)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 7)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
     else {
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
     }
@@ -497,48 +424,50 @@ template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
 KOKKOS_INLINE_FUNCTION
 void
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind1) const
+V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const PHX::index_t & ind1) const
 {
+  using idx_t = PHX::index_t;
+
   if (RANK == 1){
     base_.m_field_data(ind1) = base_.m_field_data(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
       base_.m_field_data(ind1,ind2) = base_.m_field_data(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
          base_.m_field_data(ind1,ind2,ind3) = base_.m_field_data(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
            base_.m_field_data(ind1,ind2,ind3,ind4) = base_.m_field_data(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
              base_.m_field_data(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data.dimension(5); ind6++)
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
                base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data.dimension(5); ind6++)
-               for (int ind7=0; ind7<base_.m_field_data.dimension(6); ind7++)
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
+               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.dimension(6)); ind7++)
                  base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }

@@ -1,6 +1,0 @@
-../configure \
---prefix=/home/mheroux/Trilinos6.0_CVS/EMU_SERIAL_DEBUG -C \
-CXX=pgCC CC=pgcc F77=pgf77 \
-CXXFLAGS="-O0 -g" CFLAGS="-O0 -g" FFLAGS="-O0 -g" \
---disable-default-packages --enable-epetra --enable-epetraext \
---enable-aztecoo --enable-ifpack --enable-ml --enable-teuchos

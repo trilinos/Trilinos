@@ -365,6 +365,7 @@ namespace Tpetra {
       Directory<LocalOrdinal,GlobalOrdinal,Node2>*
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
+        using Teuchos::RCP;
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         typedef ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2> output_map_type;
         Dir2* dir = new Dir2 (cloneMap);

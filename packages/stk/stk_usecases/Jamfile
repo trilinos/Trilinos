@@ -141,7 +141,6 @@ exe stk_usecases_app
     /sierra/seacas//ioss
     /sierra/seacas//ioinit
     /sierra/framework//etet
-    /sierra/geometry_toolkit//geometry_toolkit
     /tpl/trilinos//shards
     /tpl/boost-program-options//boost_program_options
   : <tag>@sierra-exec-tag

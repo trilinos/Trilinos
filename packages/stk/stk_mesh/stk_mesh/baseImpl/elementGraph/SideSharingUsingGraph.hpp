@@ -16,7 +16,6 @@ struct SideSharingData
     int sharingProc;
     int owningProc;
     stk::mesh::EntityId chosenSideId;
-    std::vector<stk::mesh::EntityId> sideNodes;
     stk::mesh::OrdinalVector partOrdinals;
     SideSharingData() : elementAndSide({0,-1}), side(stk::mesh::Entity()), sharingProc(-1), owningProc(-1), chosenSideId(stk::mesh::InvalidEntityId) {}
     SideSharingData(const stk::mesh::impl::IdViaSidePair& sidePair, stk::mesh::Entity sideIn, int sharing_proc, int owning_proc, stk::mesh::EntityId chosen_id)

@@ -1,0 +1,81 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// README file written by Massimiliano Lupo Pasini (contact: mlupopa@emory.edu)////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+In this file I provide a brief description about the use of each file included in this directory.
+
+----------------------------------------------------------------------------------------------------------------------------
+
+MAIN files:
+           - MultiplicativeStride.cpp: main file solve an ADR peoblem using an multiplicative two-level multigrid where a subdomain coincide with a stride
+           - MultiplicativeBricks.cpp: main file solve an ADR peoblem using an multiplicative two-level multigrid where a subdomain coincide with a brick
+           - SmoothedAdditiveStride.cpp: main file solve an ADR peoblem using an additive two-level multigrid where a subdomain coincide with a stride
+           - SmoothedAdditiveBricks.cpp: main file solve an ADR peoblem using an additive two-level multigrid where a subdomain coincide with a brick
+           - tentative.cpp: main file solve an ADR peoblem using an additive two-level multigrid where a subdomain coincide with a brick (USED FOR EASY DEBUGGING)
+
+Parser files:
+           - final_parser.xml (currently is the only .xml file used in the code)
+           - dd.xml (currently NOT used but I keep it to have some parameters options handy withou necessarily consulti the user guid of MueLu)
+           - jacobi.xml (currently NOT used but I keep it to have some parameters options handy withou necessarily consulti the user guid of MueLu)
+           - chebyshev.xml (currently NOT used but I keep it to have some parameters options handy withou necessarily consulti the user guid of MueLu)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+ADR_Problem.hpp: this file is used to define an abstract class for the PDE problem to consider. 
+                 Different features are included (e.g. boundary conditions, methods to construct the stiffness matrix).
+                 This file mimics what already implelemted in the file named "Galeri_Problem.hpp" located in the folder 
+                 "/Trilinos/packages/galeri/src-xpetra". It would be ideal to actually get rid of "ADR_Problem.hpp" by 
+                 enabling Galeri to construct advection-diffusion-reaction problem. Currently Galeri does not do it.
+                 P.S. For now just Dirichlet and Neumann boundary conditionas are implemented.
+
+ADR_XpetraParameters.hpp: this file mimics "Galeri_XpetraParameters.hpp" in the directory "/Trilinos/packages/galeri/src-xpetra".
+                          The goal is to set up parameters to be hanlded for the generation of the 
+                          advection-diffusion-reaction problem. 
+
+CreateADRMatrix.hpp: this file constructs and populates the stiffness matrix associated with one-dimensional, two-dimensional
+                     and three-dimensional problems discretized with five-point stencil centered finite differences.
+                     This file mimics "Galeri_StencilProblems.hpp" in the directory "/Trilinos/packages/galeri/src-xpetra". 
+                     The difference consists in the fact that the file in Galeri can construct just the stiffness matrix of 
+                     the discretized Laplacian operator, whereas the new file can build the stiffness matrix of an ADR problem with 
+                     spatial-variable coefficients. It would be useful to actually combine "CreateADRMatrix.hpp and 
+                     "Galeri_StencilProblems.hpp" together and make an only fiel out this two.
+                     Whenever the coefficients of the PDE equation must be changed, the analytica expression of the coefficients 
+                     must be changed in this file, forcing the code to be recompiled. It would be useful to change this file 
+                     so that one can shove the parameters of the equation thorugh a parsing file and avoid recompiling the 
+                     code every time.
+
+ADRProblemFactory.hpp: factory to build the advection-diffusion-reaction problem. This file mimics "Galeri_XpetraProblemFactory.hpp"
+                       in the directory "/Trilinos/packages/galeri/src-xpetra".
+                       Also in this case, it would be nice to glue these two files altogether ina single ".hpp". 
+
+coloring.hpp: this file is used to attribute a color to a specific domain, according to its MPI id. The routines are provided
+              just for two-dimensional and three-dimensional meshes and they work just assuming no overlap between the subdomains.
+              In case overlap is included, the routines in this file mu st be changed because the nubmer of colors
+              to use has to increase. 
+
+CreateBrickMap.hpp: this file generates the RowMap of the stiffness matrix following the brick aggregation reasoning. 
+                    This partitioning of the rows works under the assumption that each d-dimensional brick is treated as a subdomain
+                    in the domain-decomposition setting. 
+
+neighbours.hpp: in this file there are routines to find the neighbour of an MPI processor (=subdomain) through its MPI id. 
+                All the neighbours confining with the current processor are identitied and their index is stored in a vector.
+
+BAP.hpp: this file is used to uncompress the shrunk version of BAP that is built applying domain decomposition with multicoloring.
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+MatrixMarket_routines: directory containing routines to read and write MatrixMarket format files in Matlab.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+Files NOT used but that I would like to keep for likely future consultations:
+           - Smooth_Prolongation.hpp
+           - Smooth_Prolongation.cpp
+           - Repartition_ADR.cpp
+           - Test.cpp
+           
+
+

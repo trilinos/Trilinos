@@ -58,6 +58,15 @@ FUNCTION(PRINT_UPTIME  PREFIX_STR)
 ENDFUNCTION()
 
 
+FUNCTION(PRINT_SINGLE_CHECK_RESULT  MSG_BEGIN  TEST_CASE_PASSED)
+  IF (TEST_CASE_PASSED)
+    MESSAGE("${MSG_BEGIN} [PASSED]")
+  ELSE()
+    MESSAGE("${MSG_BEGIN} [FAILED]")
+  ENDIF()
+ENDFUNCTION()
+
+
 FUNCTION(DELETE_CREATE_WORKING_DIRECTORY  WORKING_DIR_IN   SKIP_CLEAN)
   IF (EXISTS "${WORKING_DIR_IN}" AND NOT SKIP_CLEAN)
     MESSAGE("Removing existing working directory"
@@ -238,43 +247,89 @@ FUNCTION(DRIVE_ADVANCED_TEST)
 
       MESSAGE("TEST_${CMND_IDX}: Return code = ${EXEC_RESULT}")
 
-      SET(TEST_PASSED FALSE)
+      # A) Apply first set of pass/fail logic
+      SET(TEST_CASE_PASSED FALSE)
       IF (TEST_${CMND_IDX}_PASS_ANY)
-        MESSAGE("TEST_${CMND_IDX}: Pass criteria = Pass Any")
-        SET(TEST_PASSED TRUE)
+        SET(TEST_CASE_PASSED TRUE)
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = Pass Any"
+          ${TEST_CASE_PASSED} )
       ELSEIF (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION)
-        MESSAGE("TEST_${CMND_IDX}: Pass criteria ="
-          " Match REGEX {${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}}")
         STRING(REGEX MATCH "${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}"
           MATCH_STR "${TEST_CMND_OUT}" )
         IF (MATCH_STR)
-          SET(TEST_PASSED TRUE)
+          SET(TEST_CASE_PASSED TRUE)
         ELSE()
-          SET(TEST_PASSED FALSE)
+          SET(TEST_CASE_PASSED FALSE)
         ENDIF()
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}}"
+          ${TEST_CASE_PASSED})
       ELSEIF (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL)
-        SET(TEST_PASSED TRUE)
+        SET(TEST_CASE_PASSED TRUE)
         FOREACH(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL})
           STRING(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}" )
-          SET(MSG_BEGIN "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${REGEX_STR}}")
-          IF (MATCH_STR)
-            MESSAGE("${MSG_BEGIN} [PASSED]")
+          IF (NOT "${MATCH_STR}" STREQUAL "")
+            SET(THIS_REGEX_MATCHED  TRUE)
           ELSE()
-            MESSAGE("${MSG_BEGIN} [FAILED]")
-            SET(TEST_PASSED FALSE)
+            SET(THIS_REGEX_MATCHED  FALSE)
           ENDIF()
+          IF (NOT  THIS_REGEX_MATCHED)
+            SET(TEST_CASE_PASSED FALSE)
+          ENDIF()
+          PRINT_SINGLE_CHECK_RESULT(
+            "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${REGEX_STR}}"
+            ${THIS_REGEX_MATCHED} )
         ENDFOREACH()
       ELSE()
-        MESSAGE("TEST_${CMND_IDX}: Pass criteria = Return code")
         IF (EXEC_RESULT EQUAL 0)
-          SET(TEST_PASSED TRUE)
+          SET(TEST_CASE_PASSED TRUE)
         ELSE()
-          SET(TEST_PASSED FALSE)
+          SET(TEST_CASE_PASSED FALSE)
         ENDIF()
-
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = Zero return code"
+          ${TEST_CASE_PASSED} )
       ENDIF()
 
-      IF (TEST_PASSED)
+      # B) Check for failing regex matching?
+      IF (TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION)
+        STRING(REGEX MATCH "${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}"
+          MATCH_STR "${TEST_CMND_OUT}" )
+        IF (MATCH_STR)
+          SET(TEST_CASE_PASSED FALSE)
+        ENDIF()
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}}"
+         ${TEST_CASE_PASSED} )
+      ENDIF()
+
+      # C) Check for return code always 0?
+      IF (TEST_${CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN)
+        IF (NOT EXEC_RESULT EQUAL 0)
+          SET(ALWAYS_FAIL_ON_NONZERO_RETURN_RESULT PASSED)
+          SET(TEST_CASE_PASSED FALSE)
+        ELSE()
+          SET(ALWAYS_FAIL_ON_NONZERO_RETURN_RESULT FAILED)
+        ENDIF()
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = ALWAYS_FAIL_ON_NONZERO_RETURN"
+          ${ALWAYS_FAIL_ON_NONZERO_RETURN_RESULT} )
+      ENDIF()
+
+      # D) Invert pass/fail result?
+      IF (TEST_${CMND_IDX}_WILL_FAIL)
+        IF (TEST_CASE_PASSED)
+          SET(TEST_CASE_PASSED FALSE)
+        ELSE()
+          SET(TEST_CASE_PASSED TRUE)
+        ENDIF()
+        PRINT_SINGLE_CHECK_RESULT(
+          "TEST_${CMND_IDX}: Pass criteria = WILL_FAIL (invert the above 'Pass critera')"
+          ${TEST_CASE_PASSED} )
+      ENDIF()
+
+      IF (TEST_CASE_PASSED)
         MESSAGE("TEST_${CMND_IDX}: Result = PASSED")
       ELSE()
         MESSAGE("TEST_${CMND_IDX}: Result = FAILED")

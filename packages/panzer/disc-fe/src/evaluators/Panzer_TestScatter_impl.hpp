@@ -82,7 +82,7 @@ PHX_EVALUATE_FIELDS(TestScatter,workset)
  //   scatter_value[i] = 0.0;
   Kokkos::deep_copy(scatter_value.get_static_view(), ScalarT(0.0));
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     ScalarT sum = 0.0;
     for (std::size_t node = 0; node < num_nodes; ++node) 
        sum += value(cell,node);

@@ -59,11 +59,11 @@ The function ex_opts() is used to set message reporting options.
 table below.
 
 <table>
-<tr><td> \c EX_ABORT  </td><td> Causes fatal errors to force program
+<tr><td> EX_ABORT  </td><td> Causes fatal errors to force program
                                 exit. (Default is false.) </td></tr>
-<tr><td> \c EX_DEBUG  </td><td> Causes certain messages to print
+<tr><td> EX_DEBUG  </td><td> Causes certain messages to print
                                 for debug use. (Default is false.)</td></tr>
-<tr><td> \c EX_VERBOSE</td><td> Causes all error messages to print when true,
+<tr><td> EX_VERBOSE</td><td> Causes all error messages to print when true,
                                 otherwise no error messages will print. (Default
 is false.)</td></tr>
 </table>
@@ -74,10 +74,10 @@ is false.)</td></tr>
 For example, the following will cause all messages to print
 and will cause the program to exit upon receipt of fatal error:
 
-\code
+~~~{.c}
 #include "exodusII.h"
 ex_opts(EX_ABORT|EX_VERBOSE);
-\endcode
+~~~
 
 */
 int ex_opts(int options)

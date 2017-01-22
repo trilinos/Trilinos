@@ -161,8 +161,7 @@ main (int argc, char *argv[])
 
   // Ifpack2 stuff
   typedef Ifpack2::Preconditioner< ST, LO, GO, Node > PrecType;
-  typedef Ifpack2::DenseContainer< row_matrix_type, ST > ContainerType;
-  typedef Ifpack2::BlockRelaxation< row_matrix_type, ContainerType > BlockRelax;
+  typedef Ifpack2::BlockRelaxation<row_matrix_type> BlockRelax;
   typedef Ifpack2::AdditiveSchwarz< row_matrix_type > TheSchwarz;
 
   // using stuff
@@ -314,7 +313,17 @@ main (int argc, char *argv[])
 
   RCP<PrecType> innerPrec = rcp(new BlockRelax(A));
 
+  // FIXME (mfh 11 Aug 2016) It's not a good idea to give two
+  // different preconditioners the same ParameterList.  We should copy
+  // the list instead.  First, ParameterList has flags to show whether
+  // a parameter was read.  Reusing the same ParameterList twice for
+  // different preconditioners makes those flags useless.  Second,
+  // it's confusing for preconditioners to take fields that they don't
+  // use.  Ifpack2 has allowed it because Ifpack(1) did, but this was
+  // never really a good idea.
+
   // Set the BlockRelaxation parameters
+  MyList.set ("relaxation: container", "Dense");
   innerPrec->setParameters(MyList);
 
   // Set BlockRelaxation as the inner preconditioner for Additive Schwarz

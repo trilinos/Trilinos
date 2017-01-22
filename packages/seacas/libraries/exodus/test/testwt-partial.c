@@ -237,7 +237,7 @@ int main(int argc, char **argv)
   z[32] = 10.0;
 
   for (i = 0; i < num_nodes; i += 11) {
-    error = ex_put_n_coord(exoid, i + 1, 11, &x[i], &y[i], &z[i]);
+    error = ex_put_partial_coord(exoid, i + 1, 11, &x[i], &y[i], &z[i]);
     printf("after ex_put_coord, error = %d\n", error);
   }
 
@@ -268,13 +268,13 @@ int main(int argc, char **argv)
   }
 
   for (i = 0; i < num_nodes; i += 11) {
-    error = ex_put_n_one_attr(exoid, EX_NODAL, 0, i + 1, 11, 1, &x[i]);
+    error = ex_put_partial_one_attr(exoid, EX_NODAL, 0, i + 1, 11, 1, &x[i]);
     if (error) {
       ex_close(exoid);
       exit(-1);
     }
 
-    error = ex_put_n_one_attr(exoid, EX_NODAL, 0, i + 1, 11, 2, &y[i]);
+    error = ex_put_partial_one_attr(exoid, EX_NODAL, 0, i + 1, 11, 2, &y[i]);
     if (error) {
       ex_close(exoid);
       exit(-1);
@@ -344,8 +344,8 @@ int main(int argc, char **argv)
   ebids[5] = 15;
   ebids[6] = 16;
 
-  error =
-      ex_put_elem_block(exoid, ebids[0], "quad", num_elem_in_block[0], num_nodes_per_elem[0], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "quad", num_elem_in_block[0],
+                       num_nodes_per_elem[0], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -353,8 +353,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error =
-      ex_put_elem_block(exoid, ebids[1], "quad", num_elem_in_block[1], num_nodes_per_elem[1], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "quad", num_elem_in_block[1],
+                       num_nodes_per_elem[1], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -362,7 +362,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_block(exoid, ebids[2], "hex", num_elem_in_block[2], num_nodes_per_elem[2], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[2], "hex", num_elem_in_block[2],
+                       num_nodes_per_elem[2], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -370,8 +371,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error =
-      ex_put_elem_block(exoid, ebids[3], "tetra", num_elem_in_block[3], num_nodes_per_elem[3], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[3], "tetra", num_elem_in_block[3],
+                       num_nodes_per_elem[3], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -379,8 +380,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error =
-      ex_put_elem_block(exoid, ebids[4], "wedge", num_elem_in_block[4], num_nodes_per_elem[4], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[4], "wedge", num_elem_in_block[4],
+                       num_nodes_per_elem[4], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -388,8 +389,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error =
-      ex_put_elem_block(exoid, ebids[5], "tetra", num_elem_in_block[5], num_nodes_per_elem[5], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[5], "tetra", num_elem_in_block[5],
+                       num_nodes_per_elem[5], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -397,7 +398,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_block(exoid, ebids[6], "tri", num_elem_in_block[6], num_nodes_per_elem[6], 1);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[6], "tri", num_elem_in_block[6],
+                       num_nodes_per_elem[6], 0, 0, 1);
   printf("after ex_put_elem_block, error = %d\n", error);
 
   if (error) {
@@ -484,7 +486,7 @@ int main(int argc, char **argv)
   connect[2] = 3;
   connect[3] = 4;
 
-  error = ex_put_elem_conn(exoid, ebids[0], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[0], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
   if (error) {
     ex_close(exoid);
@@ -496,7 +498,7 @@ int main(int argc, char **argv)
   connect[2] = 7;
   connect[3] = 8;
 
-  error = ex_put_elem_conn(exoid, ebids[1], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[1], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -513,7 +515,7 @@ int main(int argc, char **argv)
   connect[6] = 15;
   connect[7] = 16;
 
-  error = ex_put_elem_conn(exoid, ebids[2], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[2], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -526,7 +528,7 @@ int main(int argc, char **argv)
   connect[2] = 19;
   connect[3] = 20;
 
-  error = ex_put_elem_conn(exoid, ebids[3], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[3], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -541,7 +543,7 @@ int main(int argc, char **argv)
   connect[4] = 25;
   connect[5] = 26;
 
-  error = ex_put_elem_conn(exoid, ebids[4], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[4], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -558,7 +560,7 @@ int main(int argc, char **argv)
   connect[6] = 30;
   connect[7] = 29;
 
-  error = ex_put_elem_conn(exoid, ebids[5], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[5], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -570,7 +572,7 @@ int main(int argc, char **argv)
   connect[1] = 32;
   connect[2] = 33;
 
-  error = ex_put_elem_conn(exoid, ebids[6], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[6], connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
 
   if (error) {
@@ -583,14 +585,14 @@ int main(int argc, char **argv)
   /* write element block attributes */
 
   attrib[0] = 3.14159;
-  error     = ex_put_elem_attr(exoid, ebids[0], attrib);
+  error     = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[0], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[0], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[0], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
   if (error) {
     ex_close(exoid);
@@ -598,7 +600,7 @@ int main(int argc, char **argv)
   }
 
   attrib[0] = 6.14159;
-  error     = ex_put_elem_attr(exoid, ebids[1], attrib);
+  error     = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[1], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -606,7 +608,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[2], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[2], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -614,7 +616,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[3], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[3], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -622,7 +624,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[4], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[4], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -630,7 +632,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[5], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[5], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -638,7 +640,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_elem_attr(exoid, ebids[6], attrib);
+  error = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[6], attrib);
   printf("after ex_put_elem_attr, error = %d\n", error);
 
   if (error) {
@@ -648,7 +650,7 @@ int main(int argc, char **argv)
 
   attrib_names[0] = "THICKNESS";
   for (i = 0; i < 7; i++) {
-    error = ex_put_elem_attr_names(exoid, ebids[i], attrib_names);
+    error = ex_put_attr_names(exoid, EX_ELEM_BLOCK, ebids[i], attrib_names);
     printf("after ex_put_elem_attr_names, error = %d\n", error);
     if (error) {
       ex_close(exoid);
@@ -664,7 +666,7 @@ int main(int argc, char **argv)
   nsids[0] = 20;
   nsids[1] = 21;
 
-  error = ex_put_node_set_param(exoid, nsids[0], 5, 5);
+  error = ex_put_set_param(exoid, EX_NODE_SET, nsids[0], 5, 5);
   printf("after ex_put_node_set_param, error = %d\n", error);
 
   if (error) {
@@ -684,21 +686,21 @@ int main(int argc, char **argv)
   dist_fact[3] = 4.0;
   dist_fact[4] = 5.0;
 
-  error = ex_put_node_set(exoid, nsids[0], node_list);
+  error = ex_put_set(exoid, EX_NODE_SET, nsids[0], node_list, NULL);
   printf("after ex_put_node_set, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
   }
 
-  error = ex_put_node_set_dist_fact(exoid, nsids[0], dist_fact);
+  error = ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[0], dist_fact);
   printf("after ex_put_node_set_dist_fact, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
   }
 
-  error = ex_put_node_set_param(exoid, nsids[1], 3, 3);
+  error = ex_put_set_param(exoid, EX_NODE_SET, nsids[1], 3, 3);
   printf("after ex_put_node_set_param, error = %d\n", error);
 
   if (error) {
@@ -714,14 +716,14 @@ int main(int argc, char **argv)
   dist_fact[1] = 2.1;
   dist_fact[2] = 3.1;
 
-  error = ex_put_node_set(exoid, nsids[1], node_list);
+  error = ex_put_set(exoid, EX_NODE_SET, nsids[1], node_list, NULL);
   printf("after ex_put_node_set, error = %d\n", error);
   if (error) {
     ex_close(exoid);
     exit(-1);
   }
 
-  error = ex_put_node_set_dist_fact(exoid, nsids[1], dist_fact);
+  error = ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[1], dist_fact);
   printf("after ex_put_node_set_dist_fact, error = %d\n", error);
   if (error) {
     ex_close(exoid);
@@ -804,7 +806,7 @@ int main(int argc, char **argv)
 
   /* side set #1  - quad */
 
-  error = ex_put_side_set_param(exoid, ssids[0], 2, 4);
+  error = ex_put_set_param(exoid, EX_SIDE_SET, ssids[0], 2, 4);
   printf("after ex_put_side_set_param, error = %d\n", error);
 
   if (error) {
@@ -823,7 +825,7 @@ int main(int argc, char **argv)
   dist_fact[2] = 30.2;
   dist_fact[3] = 30.3;
 
-  error = ex_put_side_set(exoid, 30, elem_list, side_list);
+  error = ex_put_set(exoid, EX_SIDE_SET, 30, elem_list, side_list);
   printf("after ex_put_side_set, error = %d\n", error);
 
   if (error) {
@@ -831,7 +833,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_side_set_dist_fact(exoid, 30, dist_fact);
+  error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, 30, dist_fact);
   printf("after ex_put_side_set_dist_fact, error = %d\n", error);
 
   if (error) {
@@ -841,7 +843,7 @@ int main(int argc, char **argv)
 
   /* side set #2  - quad, spanning 2 elements  */
 
-  error = ex_put_side_set_param(exoid, 31, 2, 4);
+  error = ex_put_set_param(exoid, EX_SIDE_SET, 31, 2, 4);
   printf("after ex_put_side_set_param, error = %d\n", error);
 
   if (error) {
@@ -860,7 +862,7 @@ int main(int argc, char **argv)
   dist_fact[2] = 31.2;
   dist_fact[3] = 31.3;
 
-  error = ex_put_side_set(exoid, 31, elem_list, side_list);
+  error = ex_put_set(exoid, EX_SIDE_SET, 31, elem_list, side_list);
   printf("after ex_put_side_set, error = %d\n", error);
 
   if (error) {
@@ -868,7 +870,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  error = ex_put_side_set_dist_fact(exoid, 31, dist_fact);
+  error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, 31, dist_fact);
   printf("after ex_put_side_set_dist_fact, error = %d\n", error);
 
   if (error) {
@@ -878,7 +880,7 @@ int main(int argc, char **argv)
 
   /* side set #3  - hex */
 
-  error = ex_put_side_set_param(exoid, 32, 7, 0);
+  error = ex_put_set_param(exoid, EX_SIDE_SET, 32, 7, 0);
   printf("after ex_put_side_set_param, error = %d\n", error);
 
   if (error) {
@@ -902,7 +904,7 @@ int main(int argc, char **argv)
   side_list[5] = 1;
   side_list[6] = 6;
 
-  error = ex_put_side_set(exoid, 32, elem_list, side_list);
+  error = ex_put_set(exoid, EX_SIDE_SET, 32, elem_list, side_list);
   printf("after ex_put_side_set, error = %d\n", error);
 
   if (error) {
@@ -912,7 +914,7 @@ int main(int argc, char **argv)
 
   /* side set #4  - tetras */
 
-  error = ex_put_side_set_param(exoid, 33, 8, 0);
+  error = ex_put_set_param(exoid, EX_SIDE_SET, 33, 8, 0);
   printf("after ex_put_side_set_param, error = %d\n", error);
 
   if (error) {
@@ -938,7 +940,7 @@ int main(int argc, char **argv)
   side_list[6] = 3;
   side_list[7] = 4;
 
-  error = ex_put_side_set(exoid, 33, elem_list, side_list);
+  error = ex_put_set(exoid, EX_SIDE_SET, 33, elem_list, side_list);
   printf("after ex_put_side_set, error = %d\n", error);
 
   if (error) {
@@ -948,7 +950,7 @@ int main(int argc, char **argv)
 
   /* side set #5  - wedges and tris */
 
-  error = ex_put_side_set_param(exoid, 34, 10, 0);
+  error = ex_put_set_param(exoid, EX_SIDE_SET, 34, 10, 0);
   printf("after ex_put_side_set_param, error = %d\n", error);
 
   if (error) {
@@ -978,7 +980,7 @@ int main(int argc, char **argv)
   side_list[8] = 4;
   side_list[9] = 5;
 
-  error = ex_put_side_set(exoid, 34, elem_list, side_list);
+  error = ex_put_set(exoid, EX_SIDE_SET, 34, elem_list, side_list);
   printf("after ex_put_side_set, error = %d\n", error);
 
   if (error) {
@@ -1168,7 +1170,7 @@ int main(int argc, char **argv)
     }
   }
 
-  error = ex_put_elem_var_tab(exoid, num_elem_blk, num_ele_vars, truth_tab);
+  error = ex_put_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_ele_vars, truth_tab);
   printf("after ex_put_elem_var_tab, error = %d\n", error);
 
   if (error) {
@@ -1212,7 +1214,7 @@ int main(int argc, char **argv)
       glob_var_vals[j] = (float)(j + 2) * time_value;
     }
 
-    error = ex_put_glob_vars(exoid, whole_time_step, num_glo_vars, glob_var_vals);
+    error = ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, glob_var_vals);
     printf("after ex_put_glob_vars, error = %d\n", error);
 
     if (error) {

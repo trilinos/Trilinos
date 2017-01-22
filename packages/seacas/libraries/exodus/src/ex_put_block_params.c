@@ -46,7 +46,7 @@
  * writes the parameters used to describe an element/face/edge block
  * \param   exoid                   exodus file id
  * \param   block_count             number of blocks being defined
- * \param   block                   array of ex_block structures describing
+ * \param   blocks                  array of ex_block structures describing
  * block counts
  */
 

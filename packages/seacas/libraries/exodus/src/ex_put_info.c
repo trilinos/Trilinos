@@ -42,7 +42,7 @@
 
 /*!
 The function ex_put_info() writes information records to the
-database. The records are \c MAX_LINE_LENGTH-character strings.
+database. The records are MAX_LINE_LENGTH-character strings.
 
 In case of an error, ex_put_info() returns a negative number;
 a warning will return a positive number. Possible causes of errors
@@ -63,7 +63,7 @@ ex_create() or ex_open().
 The following code will write out three information records
 to an open exodus file -
 
-\code
+~~~{.c}
 int error, exoid, num_info;
 char *info[3];
 
@@ -75,12 +75,12 @@ info[1] = "This is the second information record.";
 info[2] = "This is the third information record.";
 
 error = ex_put_info(exoid, num_info, info);
-\endcode
+~~~
 
 The following code will first tell the database that there are three
 information records, and then later actually output those records.
 
-\code
+~~~{.c}
 int error, exoid, num_info;
 char *info[3];
 
@@ -97,7 +97,7 @@ info[1] = "This is the second information record.";
 info[2] = "This is the third information record.";
 error = ex_put_info(exoid, num_info, info);
 
-\endcode
+~~~
 
  */
 

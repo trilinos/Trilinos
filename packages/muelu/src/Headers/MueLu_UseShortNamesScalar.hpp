@@ -41,6 +41,9 @@ typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Bra
 #ifdef MUELU_CGSOLVER_SHORT
 typedef MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> CGSolver;
 #endif
+#ifdef MUELU_CLONEREPARTITIONINTERFACE_SHORT
+typedef MueLu::CloneRepartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> CloneRepartitionInterface;
+#endif
 #ifdef MUELU_COALESCEDROPFACTORY_SHORT
 typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoalesceDropFactory;
 #endif
@@ -83,6 +86,9 @@ typedef MueLu::DropNegativeEntriesFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> EminPFactory;
 #endif
+#ifdef MUELU_FACADECLASSFACTORY_SHORT
+typedef MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FacadeClassFactory;
+#endif
 #ifdef MUELU_FACTORYMANAGER_SHORT
 typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> FactoryManager;
 #endif
@@ -118,6 +124,9 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Sm
 #endif
 #ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
+#endif
+#ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
+typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
@@ -199,6 +208,9 @@ typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Reor
 #endif
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
+#endif
+#ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
+typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
 #endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
 typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RigidBodyModeFactory;

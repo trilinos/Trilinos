@@ -74,9 +74,9 @@ PHX_POST_REGISTRATION_SETUP(ConstantVector,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(ConstantVector,d)
 { 
-  for(int c=0;c<vector.dimension(0);c++)
-    for(int p=0;p<vector.dimension(1);p++)
-      for(int d=0;d<vector.dimension(2);d++)
+  for(int c=0;c<vector.extent_int(0);c++)
+    for(int p=0;p<vector.extent_int(1);p++)
+      for(int d=0;d<vector.extent_int(2);d++)
         vector(c,p,d) = vals[d];
 }
 

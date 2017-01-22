@@ -47,6 +47,27 @@
 
 namespace Intrepid {
 
+//
+//swap function
+//
+template<typename T>
+void
+swap(T & a, T & b);
+
+//
+// max function
+//
+template<typename T>
+T
+max(const T & a,const  T & b);
+
+//
+// max function
+//
+template<typename T>
+T
+min(const T & a,const  T & b);
+
 ///
 /// Sign function
 ///
@@ -82,6 +103,14 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
 ///
+/// Number of digits for integer types.
+///
+
+template<typename T>
+Index
+num_digits();
+
+///
 /// The circle constant
 ///
 template<typename T>
@@ -109,6 +138,25 @@ random_uniform();
 template<typename T>
 typename Sacado::ScalarType<T>::type
 random_normal();
+
+///
+/// Fill all levels of AD to specified constant.
+///
+using Kokkos::Impl::enable_if;
+using Kokkos::Impl::is_same;
+using Sacado::ScalarType;
+
+template<typename T>
+void
+fill_AD(
+    typename enable_if<is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c);
+
+template<typename T>
+void
+fill_AD(
+    typename enable_if<!is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c);
 
 ///
 /// Compute a non-negative integer power by binary manipulation.

@@ -1,16 +1,16 @@
 /*
  * Copyright(C) 2009-2010 Sandia Corporation.
- * 
+ *
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- *         
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
@@ -18,7 +18,7 @@
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,15 +33,15 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/utsname.h>
 #include <time.h>
+#include <unistd.h>
 
 #if defined(__LIBCATAMOUNT__)
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #else
 #include <sys/times.h>
 #endif
@@ -57,12 +57,12 @@ void add_to_log(const char *my_name, double elapsed)
   char time_string[LEN];
   char log_string[LEN];
 
-  double u_time, s_time;
+  double         u_time, s_time;
   struct utsname sys_info;
-  
-  int minutes;
+
+  int    minutes;
   double seconds;
-  
+
   char *access_dir = NULL;
 
   /* Don't log information if this environment variable is set */
@@ -70,7 +70,7 @@ void add_to_log(const char *my_name, double elapsed)
     fprintf(stderr, "SEACAS Audit logging disabled via SEACAS_NO_LOGGING setting.\n");
     return;
   }
-  
+
   /* Now try to find the $ACCESS/etc/audit.log file */
   /* Don't need to try too hard since information is not critical; just useful */
   access_dir = getenv("ACCESS");
@@ -80,60 +80,60 @@ void add_to_log(const char *my_name, double elapsed)
     if (0 == access(filename, W_OK)) {
       FILE *audit = fopen(filename, "a");
       if (audit != NULL) {
-	const char *codename = strrchr (my_name, '/');
-	
-	const char *username = getlogin();
-	if (username == NULL) {
-	  username = getenv("LOGNAME");
-	}
-	if (username == NULL) {
-	  username = "UNKNOWN";
-	}
+        const char *codename = strrchr(my_name, '/');
 
-	if (codename == NULL)
-	  codename = my_name;
-	else
-	  codename++;
+        const char *username = getlogin();
+        if (username == NULL) {
+          username = getenv("LOGNAME");
+        }
+        if (username == NULL) {
+          username = "UNKNOWN";
+        }
 
-	{
-	  time_t calendar_time = time(NULL);
-	  struct tm *local_time = localtime(&calendar_time);
-	  strftime(time_string, LEN, "%a %b %d %H:%M:%S %Z %Y", local_time);
-	}
+        if (codename == NULL)
+          codename = my_name;
+        else
+          codename++;
 
-	{
+        {
+          time_t     calendar_time = time(NULL);
+          struct tm *local_time    = localtime(&calendar_time);
+          strftime(time_string, LEN, "%a %b %d %H:%M:%S %Z %Y", local_time);
+        }
+
+        {
 #if defined(__LIBCATAMOUNT__)
-	  struct rusage rusage;
-    
-	  getrusage(RUSAGE_SELF,&rusage);
-	  /*pp
-	   * NOTE: Catamount seems to return the same values for user and system.
-	   *       To avoid double-counting cpu time, I only use the user time.
-	   *       and set the system time to 0.
-	   */
-	  u_time = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec/1.e6;
-	  s_time = 0.0;
+          struct rusage rusage;
+
+          getrusage(RUSAGE_SELF, &rusage);
+          /*pp
+           * NOTE: Catamount seems to return the same values for user and system.
+           *       To avoid double-counting cpu time, I only use the user time.
+           *       and set the system time to 0.
+           */
+          u_time = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1.e6;
+          s_time = 0.0;
 #else
-	  int ticks_per_second;
-	  struct tms time_buf;
-	  times(&time_buf);
-	  ticks_per_second = sysconf(_SC_CLK_TCK);
-	  u_time = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
-	  s_time = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
+          int        ticks_per_second;
+          struct tms time_buf;
+          times(&time_buf);
+          ticks_per_second = sysconf(_SC_CLK_TCK);
+          u_time           = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
+          s_time           = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
 #endif
-	}
-  
-	uname(&sys_info);
+        }
 
-	minutes = elapsed / 60;
-	seconds = elapsed - minutes * 60.0;
-	
-	snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
-		 codename, username, time_string, u_time, s_time,
-		 minutes, seconds, sys_info.nodename);
+        uname(&sys_info);
 
-	fprintf(audit, "%s", log_string);
-	fclose(audit);
+        minutes = elapsed / 60;
+        seconds = elapsed - minutes * 60.0;
+
+        snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
+                 codename, username, time_string, u_time, s_time, minutes, seconds,
+                 sys_info.nodename);
+
+        fprintf(audit, "%s", log_string);
+        fclose(audit);
       }
     }
   }

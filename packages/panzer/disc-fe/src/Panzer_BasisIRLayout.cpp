@@ -173,7 +173,7 @@ std::string panzer::BasisIRLayout::fieldNameD2() const
   return basis_data_->fieldNameD2();
 }    
 
-Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
 panzer::BasisIRLayout::getIntrepid2Basis() const
 {
    return basis_data_->getIntrepid2Basis();

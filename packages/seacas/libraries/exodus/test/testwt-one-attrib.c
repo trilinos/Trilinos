@@ -165,8 +165,8 @@ int main(int argc, char **argv)
   ebids[0]              = 10;
   num_attr[0]           = 3;
 
-  error = ex_put_elem_block(exoid, ebids[0], "quad", num_elem_in_block[0], num_nodes_per_elem[0],
-                            num_attr[0]);
+  error = ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "quad", num_elem_in_block[0],
+                       num_nodes_per_elem[0], 0, 0, num_attr[0]);
   assert(error == 0);
 
   /* write element connectivity */
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
   connect[46] = 10;
   connect[47] = 11;
 
-  error = ex_put_elem_conn(exoid, ebids[0], connect);
+  error = ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[0], connect, NULL, NULL);
   assert(error == 0);
   free(connect);
 
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
     }
   }
 
-  error = ex_put_elem_attr (exoid, ebids[0], &attrib[0]);
+  error = ex_put_attr (exoid, EX_ELEM_BLOCK, ebids[0], &attrib[0]);
   assert(error == 0);
 #else
   {
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
       for (i = 0; i < num_elem_in_block[0]; i++) {
         attrib[i] = 10 * (i + 1) + j + 1;
       }
-      error = ex_put_one_elem_attr(exoid, ebids[0], j + 1, &attrib[0]);
+      error = ex_put_one_attr(exoid, EX_ELEM_BLOCK, ebids[0], j + 1, &attrib[0]);
       assert(error == 0);
     }
   }
@@ -286,12 +286,12 @@ int main(int argc, char **argv)
   assert(error == 0);
 
   if (num_elem_blk > 0) {
-    error = ex_get_elem_blk_ids(exoid, ids);
+    error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
     assert(error == 0);
 
     for (i = 0; i < num_elem_blk; i++) {
-      error = ex_get_elem_block(exoid, ids[i], elem_type, &(num_elem_in_block[i]),
-                                &(num_nodes_per_elem[i]), &(num_attr[i]));
+      error = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &(num_elem_in_block[i]),
+                           &(num_nodes_per_elem[i]), NULL, NULL, &(num_attr[i]));
       assert(error == 0);
     }
 
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 
     attrib = (float *)calloc(num_elem_in_block[0], sizeof(float));
     for (j = 0; j < num_attr[0]; j++) {
-      error = ex_get_one_elem_attr(exoid, ids[0], j + 1, &attrib[0]);
+      error = ex_get_one_attr(exoid, EX_ELEM_BLOCK, ids[0], j + 1, &attrib[0]);
       assert(error == 0);
 
       if (error == 0) {

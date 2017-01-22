@@ -46,7 +46,7 @@
 #include "CartesianConnManager.hpp"
 
 #include "Panzer_FieldPattern.hpp"
-
+#include "Shards_CellTopology.hpp"
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
@@ -256,7 +256,26 @@ getElementBlockIds(std::vector<std::string> & elementBlockIds) const
     }
   }
 }
+template <typename LocalOrdinal,typename GlobalOrdinal>
+void
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const
+{
 
+  if ( dim_ == 2 ) {
+    int nblocks = blocks_.x*blocks_.y;
+    const CellTopologyData & myCellData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
+    struct shards::CellTopology my_topo(&myCellData);
+    elementBlockTopologies = std::vector<shards::CellTopology>(nblocks, my_topo);
+  }
+  if ( dim_ == 3 ) {
+    int nblocks = blocks_.x*blocks_.y*blocks_.z;
+    const CellTopologyData & myCellData = *shards::getCellTopologyData<shards::Hexahedron<8> >();
+    struct shards::CellTopology my_topo(&myCellData);
+    elementBlockTopologies = std::vector<shards::CellTopology>(nblocks, my_topo);
+  }
+
+}
 template <typename LocalOrdinal,typename GlobalOrdinal>
 const std::vector<LocalOrdinal> & 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::

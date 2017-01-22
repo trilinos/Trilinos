@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     *outStream << "Derivatives of reduced objective" << std::endl;
     robj.checkGradient(z,z,yz,true,*outStream);

@@ -26,8 +26,8 @@ struct NotTriangularException : public Exception {
 };
 /*! \brief The matrix lacks a full diagonal.
  */
-struct NotFullDiagonal : public Exception {
-  NotFullDiagonal () : Exception("Lacks a full diagonal.") {}
+struct NotFullDiagonalException : public Exception {
+  NotFullDiagonalException () : Exception("Lacks a full diagonal.") {}
 };
 
 template <typename T> struct ScalarTraits { typedef typename T::value_type Real; };
@@ -111,7 +111,7 @@ struct HTS {
   typedef typename hts::ScalarTraits<Sclr>::Real Real;
   typedef hts::Exception Exception;
   typedef hts::NotTriangularException NotTriangularException;
-  typedef hts::NotFullDiagonal NotFullDiagonal;
+  typedef hts::NotFullDiagonalException NotFullDiagonalException;
 
   //! \brief Opaque CRS type to interact with the solver.
   class CrsMatrix;
@@ -120,10 +120,18 @@ struct HTS {
 
   /*! \brief Construct a shallow wrapper to the user's C[R|S]S matrix.
    *
-   * The data passed in must persist at least as long as the CrsMatrix. This
-   * interface is written in terms of a CrsMatrix; use make_transpose in this
-   * function and is_lo in the solve functions to solve the various combinations
-   * of upper/lower triangles stored in CRS/CCS format.
+   * The data passed in must persist at least as long as the CrsMatrix.
+   * 
+   * This interface is written in terms of a CrsMatrix; use make_transpose in
+   * this function and is_lo in the solve functions to solve the various
+   * combinations of upper/lower triangles stored in CRS/CCS format.
+   *
+   * An implicit unit diagonal is permitted. If there are no diagonal elements,
+   * a unit diagonal is assumed. If only some diagonal elements are missing,
+   * preprocess will throw the exception NotFullDiagonalException.
+   *
+   * If the matrix is not triangular, preprocess will throw
+   * NotTriangularException.
    *
    * \param n [in] Dimension of the matrix.
    *
@@ -221,6 +229,9 @@ struct HTS {
   //! \brief Ask whether T is lower or upper triangular.
   static bool is_lower_tri(const Impl* impl);
 
+  //! \brief Ask whether T has an implicit unit diagonal.
+  static bool has_implicit_unit_diag(const Impl* impl);
+
   //! \brief Delete the Impl after the solves are completed.
   static void delete_Impl(Impl* impl);
 
@@ -234,10 +245,10 @@ struct HTS {
     // Number of r.h.s.
     const Int nrhs,
     const Int ldxb=0);
-  // x = T \ b.
+  // x = T \ b. b and x can be the same.
   static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
                         const Int ldb=0, const Int ldx=0);
-  // x = alpha x + beta (T \ b).
+  // x = alpha x + beta (T \ b). b and x can be the same.
   static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
                         const Sclr alpha, const Sclr beta,
                         const Int ldb=0, const Int ldx=0);
@@ -287,6 +298,8 @@ struct HTS {
     const CrsMatrix* T,
     // Is lower triangular? If not, then it's upper triangular.
     const bool is_lo,
+    // Has an implicit unit diagonal?
+    const bool implicit_unit_diag,
     // On input, the r.h.s. b; on output, the solution x in T x = b.
     Sclr* xb,
     // Number of r.h.s.

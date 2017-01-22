@@ -239,7 +239,7 @@ extern "C" {
   }
 
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
-  double randomize() {
+  double randomize_based_on_time() {
     std::srand(::time(nullptr));
     return 0.0;
   }
@@ -459,7 +459,7 @@ CFunctionMap::CFunctionMap()
   /// the ANSI C random number generator.
   (*this).insert(std::make_pair("rand",         new CFunction0(real_rand)));
   (*this).insert(std::make_pair("srand",        new CFunction1(real_srand)));
-  (*this).insert(std::make_pair("randomize",    new CFunction0(randomize)));
+  (*this).insert(std::make_pair("randomize",    new CFunction0(randomize_based_on_time)));
 
   /// These random number functions support a non-platform
   /// specific random number function.

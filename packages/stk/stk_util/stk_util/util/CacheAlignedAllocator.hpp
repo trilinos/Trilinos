@@ -90,7 +90,7 @@ public:
   {
     size_t size = num * sizeof(T);
 
-    pointer ptr = NULL;
+    pointer ptr = nullptr;
 #if defined( __INTEL_COMPILER )
     ptr = static_cast<pointer>(_mm_malloc(size, CacheSize));
 #else

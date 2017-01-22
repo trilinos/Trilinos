@@ -99,7 +99,7 @@ Superlu<Matrix,Vector>::Superlu(
   data_.U.Store = NULL;
   data_.X.Store = NULL;
   data_.B.Store = NULL;
-  
+
   ILU_Flag_=false; // default: turn off ILU
 }
 
@@ -120,7 +120,7 @@ Superlu<Matrix,Vector>::~Superlu( )
   }
 
   // only root allocated these SuperMatrices.
-  if ( data_.L.Store != NULL ){	// will only be true for this->root_
+  if ( data_.L.Store != NULL ){ // will only be true for this->root_
     SLU::Destroy_SuperNode_Matrix( &(data_.L) );
     SLU::Destroy_CompCol_Matrix( &(data_.U) );
   }
@@ -265,9 +265,33 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
                           data_.C.getRawPtr(), &rowcnd, &colcnd,
                           &amax, &info2);
-      TEUCHOS_TEST_FOR_EXCEPTION( info2 != 0,
-                          std::runtime_error,
-                          "SuperLU gsequ returned with status " << info2 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info2 < 0, std::runtime_error,
+         "SuperLU's gsequ function returned with status " << info2 << " < 0."
+         "  This means that argument " << (-info2) << " given to the function"
+         " had an illegal value.");
+      if (info2 > 0) {
+        if (info2 <= data_.A.nrow) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned with "
+             "info = " << info2 << " > 0, and info <= A.nrow = " << data_.A.nrow
+             << ".  This means that row " << info2 << " of A is exactly zero.");
+        }
+        else if (info2 > data_.A.ncol) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned with "
+             "info = " << info2 << " > 0, and info > A.ncol = " << data_.A.ncol
+             << ".  This means that column " << (info2 - data_.A.nrow) << " of "
+             "A is exactly zero.");
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::runtime_error, "SuperLU's gsequ function returned "
+             "with info = " << info2 << " > 0, but its value is not in the "
+             "range permitted by the documentation.  This should never happen "
+             "(it appears to be SuperLU's fault).");
+        }
+      }
 
       // apply row and column scalings if necessary
       function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
@@ -730,7 +754,7 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template<class Matrix, class Vector>
 const char* Superlu<Matrix,Vector>::name = "SuperLU";
-  
+
 
 } // end namespace Amesos2
 

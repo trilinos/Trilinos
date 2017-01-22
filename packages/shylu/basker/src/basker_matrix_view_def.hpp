@@ -288,43 +288,4 @@ namespace BaskerNS
 
 }//end namespace Basker
 
-
-
-#ifndef KOKKOS_USING_EXPERIMENTAL_VIEW
-
-namespace Kokkos
-{
-namespace Impl
-{
-
-//-------------------------------Specialization for BaskerMatrixView------------------//
-  template <class ExecSpace, class Int, class Entry>
-  struct ViewDefaultConstruct<ExecSpace, BaskerNS::BaskerMatrixView<Int,Entry,ExecSpace>, true>
-  {
-    typedef BaskerNS::BaskerMatrixView<Int,Entry,ExecSpace> type;
-    type * const m_ptr;
- 
-    
-    KOKKOS_FORCEINLINE_FUNCTION
-    void operator()(const typename ExecSpace::size_type& i) const
-    {
-      new(m_ptr+i) type();
-    }
-
-    ViewDefaultConstruct( type * pointer, size_t capacity )
-      :m_ptr( pointer )
-    {
-
-      Kokkos::RangePolicy<ExecSpace> range(0, capacity);
-      parallel_for(range, *this);
-      ExecSpace::fence();
-
-    }//end constructor 
-  };//end ViewDefault Construct BaskerMatrixView
-
-}//end namespace imp
-}//end namepace kokkos
-
-#endif //end ifndef Kokkos_Using_Experimental_View
-
 #endif //end of ifndef basker_matrix_view_def

@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tri6 registerThis; }
 
   protected:
-    St_Tri6() : ElementVariableType("tri6", 6) {}
+    St_Tri6() : ElementVariableType(Ioss::Tri6::name, 6) {}
   };
 } // namespace Ioss
 //------------------------------------------------------------------------
@@ -73,13 +73,13 @@ void Ioss::Tri6::factory()
   Ioss::St_Tri6::factory();
 }
 
-Ioss::Tri6::Tri6() : Ioss::ElementTopology("tri6", "Triangle_6")
+Ioss::Tri6::Tri6() : Ioss::ElementTopology(Ioss::Tri6::name, "Triangle_6")
 {
-  Ioss::ElementTopology::alias("tri6", "triangle6");
-  Ioss::ElementTopology::alias("tri6", "Solid_Tri_6_2D");
-  Ioss::ElementTopology::alias("tri6", "Face_Tri_6_3D");
-  Ioss::ElementTopology::alias("tri6", "TRIANGLE_6_2D");
-  Ioss::ElementTopology::alias("tri6", "triface6");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "triangle6");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "Solid_Tri_6_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "Face_Tri_6_3D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "TRIANGLE_6_2D");
+  Ioss::ElementTopology::alias(Ioss::Tri6::name, "triface6");
 }
 
 Ioss::Tri6::~Tri6() = default;

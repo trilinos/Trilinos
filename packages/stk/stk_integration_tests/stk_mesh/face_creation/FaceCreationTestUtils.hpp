@@ -15,7 +15,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-#include "penso/penso.hpp"
+#include <stk_balance/balance.hpp>
 #include "stk_mesh/base/MeshDiagnostics.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 
@@ -161,7 +161,7 @@ protected:
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
-        penso::make_mesh_consistent_with_parallel_mesh_rule1(bulkData);
+        stk::balance::make_mesh_consistent_with_parallel_mesh_rule1(bulkData);
 
         stk::mesh::SplitCoincidentInfo splitCoincidentElementsAfter = stk::mesh::get_split_coincident_elements(bulkData);
         bool allOkAfterThisProc = splitCoincidentElementsAfter.size()==0;

@@ -248,7 +248,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
    }
 }
 
-void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
 {
    indices.resize(8);
    switch(procRank_) {

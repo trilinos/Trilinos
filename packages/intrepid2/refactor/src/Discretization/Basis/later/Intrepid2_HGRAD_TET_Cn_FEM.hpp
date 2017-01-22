@@ -109,7 +109,7 @@ public:
   
   /** \brief  Constructor.
    */
-  Basis_HGRAD_TET_Cn_FEM( const int n , const EPointType pointType );    
+  Basis_HGRAD_TET_Cn_FEM( const ordinal_type n , const EPointType pointType );    
   
   /** \brief  Evaluation of a FEM basis on a <strong>reference Triangle</strong> cell. 
   

@@ -29,67 +29,60 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for NULL, FILE, feof, fgetc, etc
-#include <stdlib.h>                     // for malloc, realloc
-#include <unistd.h>                     // for ssize_t
+#include <stddef.h> // for size_t
+#include <stdio.h>  // for NULL, FILE, feof, fgetc, etc
+#include <stdlib.h> // for malloc, realloc
+#include <unistd.h> // for ssize_t
 
-ssize_t
-getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
+ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {
-	char *ptr, *eptr;
+  char *ptr, *eptr;
 
+  if (*buf == NULL || *bufsiz == 0) {
+    *bufsiz = BUFSIZ;
+    if ((*buf = malloc(*bufsiz)) == NULL)
+      return -1;
+  }
 
-	if (*buf == NULL || *bufsiz == 0) {
-		*bufsiz = BUFSIZ;
-		if ((*buf = malloc(*bufsiz)) == NULL)
-			return -1;
-	}
-
-	for (ptr = *buf, eptr = *buf + *bufsiz;;) {
-		int c = fgetc(fp);
-		if (c == -1) {
-			if (feof(fp))
-				return ptr == *buf ? -1 : ptr - *buf;
-			else
-				return -1;
-		}
-		*ptr++ = c;
-		if (c == delimiter) {
-			*ptr = '\0';
-			return ptr - *buf;
-		}
-		if (ptr + 2 >= eptr) {
-			char *nbuf;
-			size_t nbufsiz = *bufsiz * 2;
-			ssize_t d = ptr - *buf;
-			if ((nbuf = realloc(*buf, nbufsiz)) == NULL)
-				return -1;
-			*buf = nbuf;
-			*bufsiz = nbufsiz;
-			eptr = nbuf + nbufsiz;
-			ptr = nbuf + d;
-		}
-	}
+  for (ptr = *buf, eptr = *buf + *bufsiz;;) {
+    int c = fgetc(fp);
+    if (c == -1) {
+      if (feof(fp))
+        return ptr == *buf ? -1 : ptr - *buf;
+      else
+        return -1;
+    }
+    *ptr++ = c;
+    if (c == delimiter) {
+      *ptr = '\0';
+      return ptr - *buf;
+    }
+    if (ptr + 2 >= eptr) {
+      char *  nbuf;
+      size_t  nbufsiz = *bufsiz * 2;
+      ssize_t d       = ptr - *buf;
+      if ((nbuf = realloc(*buf, nbufsiz)) == NULL)
+        return -1;
+      *buf    = nbuf;
+      *bufsiz = nbufsiz;
+      eptr    = nbuf + nbufsiz;
+      ptr     = nbuf + d;
+    }
+  }
 }
 
-ssize_t
-getline(char **buf, size_t *bufsiz, FILE *fp)
-{
-	return getdelim(buf, bufsiz, '\n', fp);
-}
+ssize_t getline(char **buf, size_t *bufsiz, FILE *fp) { return getdelim(buf, bufsiz, '\n', fp); }
 
 #ifdef TEST
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	char *p = NULL;
-	ssize_t len;
-	size_t n = 0;
+  char *  p = NULL;
+  ssize_t len;
+  size_t  n = 0;
 
-	while ((len = getline(&p, &n, stdin)) != -1)
-		(void)printf("%zd %s", len, p);
-	free(p);
-	return 0;
+  while ((len = getline(&p, &n, stdin)) != -1)
+    (void)printf("%zd %s", len, p);
+  free(p);
+  return 0;
 }
 #endif

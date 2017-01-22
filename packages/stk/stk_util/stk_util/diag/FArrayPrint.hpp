@@ -134,22 +134,6 @@ public:
   static std::ostream &dump(std::ostream &os, const unsigned * const dim,
                             const T *a_ptr, const unsigned * const a_inc)
   {
-//       if (a_inc[3] < 50) {
-// 	const unsigned ia = a_inc[2] ;
-// 	unsigned index = 0;
-// 	const T * ptr = a_ptr;
-// 	const T * const end = ptr + a_inc[3];
-// 	while ( ptr != end ) {
-// 	  if (ptr != a_ptr)
-// 	    os << ",";
-// 	  os << "(";
-// 	  ArrayVerbosePrint<2>::dump(os, dim, ptr, a_inc );
-// 	  os << ")";
-// 	  ptr += ia ;
-// 	  ++index;
-// 	}
-//       }
-//       else {
     const unsigned ia = a_inc[2] ;
     unsigned index = 0;
     const T * const a_end = a_ptr + a_inc[3];
@@ -163,8 +147,6 @@ public:
       a_ptr += ia ;
       ++index;
     }
-//       }
-
     return os;
   }
 };

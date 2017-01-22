@@ -23,7 +23,7 @@ namespace Tacho {
   Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
        AlgoTrsm::SparseDenseSuperNodes,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const int diagA,
            const ScalarType alpha,
            CrsExecViewTypeA &A,

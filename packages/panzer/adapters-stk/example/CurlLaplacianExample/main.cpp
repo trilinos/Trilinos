@@ -197,9 +197,9 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////////
 
    std::string eBlockName = "";
-   RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory;
+   RCP<panzer_stk::STK_MeshFactory> mesh_factory;
    if(threeD) {
-     mesh_factory = rcp(new panzer_stk_classic::CubeHexMeshFactory);
+     mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory);
 
      // set mesh factory parameters
      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -217,7 +217,7 @@ int main(int argc,char * argv[])
      eBlockName = "eblock-0_0_0";
    }
    else {
-     mesh_factory = rcp(new panzer_stk_classic::SquareQuadMeshFactory);
+     mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory);
 
      // set mesh factory parameters
      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -232,7 +232,7 @@ int main(int argc,char * argv[])
      eBlockName = "eblock-0_0";
    }
 
-   RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
    // other declarations
    const std::size_t workset_size = 2*2;
@@ -308,7 +308,7 @@ int main(int argc,char * argv[])
 
    // build the connection manager 
    if(!useTpetra) {
-     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
@@ -320,7 +320,7 @@ int main(int argc,char * argv[])
    }
    else {
      const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager           
-         = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
+         = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
      panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
@@ -334,8 +334,8 @@ int main(int argc,char * argv[])
    // build worksets
    ////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
    wkstContainer->setGlobalIndexer(dofManager);
@@ -356,7 +356,7 @@ int main(int argc,char * argv[])
             eBlocks.push_back(eBlockNames[i]);
       }
       
-      panzer_stk_classic::RespFactorySolnWriter_Builder builder;
+      panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }

@@ -66,8 +66,8 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 
 // Galeri
@@ -301,7 +301,7 @@ int main(int argc, char* argv[]) {
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
 #  else
 #    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)
         return main_<double,int,int,Node> (clp, lib, argc, argv);
@@ -321,7 +321,7 @@ int main(int argc, char* argv[]) {
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-        return main_<double,int,long,Node>(clp, argc, argv);
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
 #  else
 #    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_INT)
         return main_<double,int,int,Node> (clp, lib, argc, argv);

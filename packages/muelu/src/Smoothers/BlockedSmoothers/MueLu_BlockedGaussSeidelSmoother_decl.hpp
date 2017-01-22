@@ -57,6 +57,10 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
 
 #include "MueLu_BlockedGaussSeidelSmoother_fwd.hpp"

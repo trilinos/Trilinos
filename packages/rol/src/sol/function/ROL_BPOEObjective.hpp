@@ -47,7 +47,6 @@
 #include "Teuchos_RCP.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
@@ -55,7 +54,7 @@ namespace ROL {
 template<class Real>
 class BPOEObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_;
+  Teuchos::RCP<Objective<Real> > ParametrizedObjective_;
 
   Real order_;
   Real threshold_;
@@ -98,11 +97,8 @@ private:
 
   void unwrap_const_CVaR_vector(Teuchos::RCP<Vector<Real> > &xvec, Real &xvar,
                           const Vector<Real> &x) {
-    xvec = Teuchos::rcp_const_cast<Vector<Real> >(
-      Teuchos::dyn_cast<const RiskVector<Real> >(
-        Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
-    xvar = Teuchos::dyn_cast<const RiskVector<Real> >(
-        Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic();
+    xvec = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector());
+    xvar = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0);
     if ( !initialized_ ) {
       initialize(*xvec);
     }
@@ -147,7 +143,7 @@ private:
 public:
   virtual ~BPOEObjective() {}
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
                  const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
@@ -160,7 +156,7 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
                  const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
@@ -172,7 +168,7 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &sampler,
                  const bool storage = true )
@@ -228,8 +224,7 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
-    RiskVector<Real> &gc = Teuchos::dyn_cast<RiskVector<Real> >(
-      Teuchos::dyn_cast<Vector<Real> >(g));
+    RiskVector<Real> &gc = Teuchos::dyn_cast<RiskVector<Real> >(g);
     // Initialize storage
     g.zero(); sumGrad0_->zero(); pointGrad_->zero();
     std::vector<Real> point, val(2,0.0), myval(2,0.0);
@@ -269,7 +264,7 @@ public:
     }
     // Set gradient components of CVaR vector
     gc.setStatistic(gvar);
-    gc.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(gradient0_)));
+    gc.setVector(*gradient0_);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v,
@@ -278,8 +273,7 @@ public:
     unwrap_const_CVaR_vector(xvec,xvar,x);
     Teuchos::RCP<Vector<Real> > vvec; Real vvar = 0.0;
     unwrap_const_CVaR_vector(vvec,vvar,v);
-    RiskVector<Real> &hvc = Teuchos::dyn_cast<RiskVector<Real> >(
-      Teuchos::dyn_cast<Vector<Real> >(hv));
+    RiskVector<Real> &hvc = Teuchos::dyn_cast<RiskVector<Real> >(hv);
     // Initialize storage
     hv.zero(); sumHess_->zero(); hessvec_->zero();
     sumGrad0_->zero(); sumGrad1_->zero(); sumGrad2_->zero();
@@ -350,7 +344,7 @@ public:
     }
     // Set gradient components of CVaR vector
     hvc.setStatistic(hvar);
-    hvc.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(hessvec_)));
+    hvc.setVector(*hessvec_);
   }
 
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v,

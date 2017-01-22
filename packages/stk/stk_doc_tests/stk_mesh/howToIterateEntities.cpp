@@ -88,7 +88,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
         }
     }
 
-    testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
+    testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
 }
 
 TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
@@ -125,7 +125,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
         *temperatureValues = prescribedTemperatureValue;
     }
 
-    testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
+    testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
 }
 //-END
 }

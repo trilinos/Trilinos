@@ -61,8 +61,7 @@ void vector3d::set(double location[3])
   z = location[2];
 }
 
-vector3d &vector3d::operator=(const vector3d &from)
-= default;
+vector3d &vector3d::operator=(const vector3d &from) = default;
 
 vector3d &vector3d::reverse()
 {

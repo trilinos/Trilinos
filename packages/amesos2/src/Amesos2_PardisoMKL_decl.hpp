@@ -195,6 +195,7 @@ namespace Amesos2 {
      *  <li> \c "IPARM(4)"</li>
      *  <li> \c "IPARM(8)"</li>
      *  <li> \c "IPARM(10)"</li>
+     *  <li> \c "IPARM(12)"</li>
      *  <li> \c "IPARM(18)"</li>
      *  <li> \c "IPARM(24)"</li>
      *  <li> \c "IPARM(25)"</li>
@@ -306,8 +307,6 @@ namespace Amesos2 {
     static const bool complex_
     = Meta::or_<Meta::is_same<solver_scalar_type, PMKL::_MKL_Complex8>::value,
                 Meta::is_same<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>::value>::value;
-
-    mutable std::map<int,Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > > validators;
 
 };                              // End class PardisoMKL
 

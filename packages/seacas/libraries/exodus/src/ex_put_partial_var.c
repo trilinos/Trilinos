@@ -43,6 +43,7 @@
 #include <sys/types.h> // for int64_t
 
 /*!
+\ingroup ResultsData
  * writes the values of a single variable for a partial block at one time
  * step to the database; assume the first time step and variable index
  * are 1
@@ -220,8 +221,8 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     }
     break;
   case EX_NODAL:
-    return ex_put_partial_nodal_var(exoid, time_step, var_index, start_index, num_entities,
-                                    var_vals);
+    return ex_put_partial_nodal_var_int(exoid, time_step, var_index, start_index, num_entities,
+                                        var_vals);
     break;
   case EX_EDGE_BLOCK:
     EX_LOOK_UP_VAR(VAR_ID_ED_BLK, VAR_EDGE_VAR, VAR_EBLK_TAB, DIM_NUM_ED_BLK, DIM_NUM_EDG_VAR);

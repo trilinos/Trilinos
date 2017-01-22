@@ -600,7 +600,7 @@ TEST( UnitTestPartition, Partition_testAdd)
   {
     size_t dst_partition_idx = (i + 1) % num_partitions;
     stk::mesh::impl::Partition &dst_partition = *partitions[dst_partition_idx];
-    stk::mesh::Entity entity = first_entities[i];;
+    stk::mesh::Entity entity = first_entities[i];
     dst_partition.add(entity);
     stk::mesh::Bucket &bkt = mesh.bucket(entity);
     double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);

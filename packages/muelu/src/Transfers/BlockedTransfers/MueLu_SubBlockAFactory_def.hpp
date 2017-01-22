@@ -89,6 +89,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+    FactoryMonitor m(*this, "Build", currentLevel);
+
     const ParameterList& pL = GetParameterList();
     size_t row = Teuchos::as<size_t>(pL.get<int>("block row"));
     size_t col = Teuchos::as<size_t>(pL.get<int>("block col"));

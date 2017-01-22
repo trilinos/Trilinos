@@ -278,19 +278,6 @@ all_reduce(
   // MPI_Allreduce with a user defined operator,
   // use reduce/broadcast instead.
 
-#ifdef SIERRA_MPI_ALLREDUCE_USER_FUNCTION_BUG
-  const int result_reduce = MPI_Reduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,0,arg_comm);
-  const int result_bcast = MPI_Bcast(arg_out,arg_len,MPI_BYTE,0,arg_comm);
-
-  MPI_Op_free(& mpi_op);
-
-  if (MPI_SUCCESS != result_reduce || MPI_SUCCESS != result_bcast) {
-    std::ostringstream msg ;
-    msg << "sierra::MPI::all_reduce FAILED: MPI_Reduce = " << result_reduce
-	<< " MPI_Bcast = " << result_bcast ;
-    throw std::runtime_error(msg.str());
-  }
-#else
   const int result = MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
 
   MPI_Op_free(& mpi_op);
@@ -300,7 +287,6 @@ all_reduce(
     msg << "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result;
     throw std::runtime_error(msg.str());
   }
-#endif
 }
 
 struct ReduceCheck : public ReduceInterface
@@ -356,20 +342,20 @@ ReduceSet::ReduceSet()
   add(new ReduceCheck);
 }
 
-
 ReduceSet::~ReduceSet()
 {
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    delete (*it);
+  for (auto& it : m_reduceVector) {
+    delete it;
+  }
 }
-
 
 size_t
 ReduceSet::size() const {
   void *buffer_end = 0;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->size(buffer_end);
+  for (auto& it : m_reduceVector) {
+    it->size(buffer_end);
+  }
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
   reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
@@ -381,16 +367,18 @@ void
 ReduceSet::copyin(void * const buffer_in) const {
   void *inbuf = buffer_in;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->copyin(inbuf);
+  for (const auto& it : m_reduceVector) {
+    it->copyin(inbuf);
+  }
 }
 
 void
 ReduceSet::copyout(void * const buffer_out) const {
   void *outbuf = buffer_out;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->copyout(outbuf);
+  for (const auto& it : m_reduceVector) {
+    it->copyout(outbuf);
+  }
 }
 
 void
@@ -398,8 +386,9 @@ ReduceSet::op(void * const buffer_in, void * const buffer_out) const {
   void *inbuf = buffer_in;
   void *outbuf = buffer_out;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->op(inbuf, outbuf);
+  for (const auto& it : m_reduceVector) {
+    it->op(inbuf, outbuf);
+  }
 }
 
 void ReduceSet::void_op(void * inv, void * outv, int *, MPI_Datatype *) {

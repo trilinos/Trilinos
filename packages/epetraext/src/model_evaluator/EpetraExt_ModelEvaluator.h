@@ -107,6 +107,8 @@ public:
     ,IN_ARG_t
     ,IN_ARG_alpha
     ,IN_ARG_beta
+    ,IN_ARG_step_size
+    ,IN_ARG_stage_number
     ,IN_ARG_x_dotdot
     ,IN_ARG_x_dotdot_poly ///< Time second derivative vector Taylor polynomial
     ,IN_ARG_x_dotdot_sg  ///< Stochastic Galerkin time second derivative vector polynomial
@@ -116,7 +118,7 @@ public:
     ,IN_ARG_sg_quadrature ///< Stochastic Galerkin quadrature
     ,IN_ARG_sg_expansion ///< Stochastic Galerkin expansion
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=19;
+  static const int NUM_E_IN_ARGS_MEMBERS=21;
 
   /** \brief . */
   enum EInArgs_p_sg {
@@ -216,6 +218,10 @@ public:
     void set_beta( double beta );
     /** \brief. */
     double get_t() const;
+    double get_step_size() const;
+    void set_step_size(double step_size);
+    int get_stage_number() const;
+    void set_stage_number(int stage_number);
     /** \brief. */
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > get_sg_basis() const;
     /** \brief. */
@@ -272,6 +278,8 @@ public:
     double                                     alpha_;
     double                                     omega_;
     double                                     beta_;
+    double                                     step_size_;
+    int                                        stage_number_;
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis_;
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad_;
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > > sg_exp_;
@@ -1626,6 +1634,22 @@ double ModelEvaluator::InArgs::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
 inline
+void ModelEvaluator::InArgs::set_step_size( double step_size)
+{ assert_supports(IN_ARG_step_size); step_size_ = step_size; }
+
+inline
+double ModelEvaluator::InArgs::get_step_size() const
+{ assert_supports(IN_ARG_step_size); return step_size_; }
+
+inline
+void ModelEvaluator::InArgs::set_stage_number( int stage_number)
+{ assert_supports(IN_ARG_stage_number); stage_number_ = stage_number; }
+
+inline
+int ModelEvaluator::InArgs::get_stage_number() const
+{ assert_supports(IN_ARG_stage_number); return stage_number_; }
+
+    inline
 void ModelEvaluator::InArgs::set_sg_basis( const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis )
 { assert_supports(IN_ARG_sg_basis); sg_basis_ = basis; }
 

@@ -56,7 +56,7 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename EvalT,typename TraitsT>
 ScatterFields<EvalT,TraitsT>::
@@ -97,7 +97,7 @@ initialize(const std::string & scatterName,
 
   bool correctScaling = (names.size()==scaling.size()) || (scaling.size()==0);
   TEUCHOS_TEST_FOR_EXCEPTION(!correctScaling,std::invalid_argument,
-     "panzer_stk_classic::ScatterFields evaluator requites a consistent number of scaling parameters (equal to the number of field names) "
+     "panzer_stk::ScatterFields evaluator requites a consistent number of scaling parameters (equal to the number of field names) "
      "or an empty \"Field Scaling\" vector");
 
   // build dependent fields

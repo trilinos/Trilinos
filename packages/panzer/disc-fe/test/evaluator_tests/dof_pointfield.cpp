@@ -108,8 +108,8 @@ PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator,sd,fm)
 PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 { 
   int i = 0;
-  for(int cell=0;cell<fieldValue.dimension_0();cell++) {
-    for(int pt=0;pt<fieldValue.dimension_1();pt++) {
+  for(int cell=0;cell<fieldValue.extent_int(0);cell++) {
+    for(int pt=0;pt<fieldValue.extent_int(1);pt++) {
       fieldValue(cell,pt) = 1.0+i;
       ++i;
     }
@@ -142,8 +142,8 @@ PHX_POST_REGISTRATION_SETUP(RefCoordEvaluator,sd,fm)
 { this->utils.setFieldData(fieldValue,fm); }
 PHX_EVALUATE_FIELDS(RefCoordEvaluator,workset)
 { 
-  for(int cell=0;cell<fieldValue.dimension_0();cell++)
-    for(int pt=0;pt<fieldValue.dimension_1();pt++)
+  for(int cell=0;cell<fieldValue.extent_int(0);cell++)
+    for(int pt=0;pt<fieldValue.extent_int(1);pt++)
       fieldValue(cell,pt) = quadValues->cub_points(cell,pt);
 }
 //**********************************************************************
@@ -340,8 +340,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   TEST_EQUALITY(refField.size(),dofPointField1.size());
 
   // check the results
-  for(int cell=0;cell<refField.dimension_0();cell++) {
-    for(int pt=0;pt<refField.dimension_1();pt++) {
+  for(int cell=0;cell<refField.extent_int(0);cell++) {
+    for(int pt=0;pt<refField.extent_int(1);pt++) {
       TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField0(cell,pt)),1e-15);
       TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField1(cell,pt)),1e-15);
       // TEST_EQUALITY(refField(cell,pt),dofPointField0(cell,pt));

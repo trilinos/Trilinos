@@ -3,8 +3,8 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
-#include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 
 namespace
 {
@@ -171,7 +171,7 @@ protected:
     {
         get_bulk().modification_begin();
         if(get_bulk().parallel_rank() == 0)
-            stk::mesh::declare_element_side(get_bulk(), get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
+            get_bulk().declare_element_side(get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
         get_bulk().modification_end();
     }
     void create_adjacent_hex_on_last_proc()

@@ -200,6 +200,11 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                   << std::setw(20) << "grad'*dir"
                   << std::setw(20) << "FD approx"
                   << std::setw(20) << "abs error"
+                  << "\n"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
+                  << std::setw(20) << "---------"
                   << "\n";
       }
       outStream << std::scientific << std::setprecision(11) << std::right
@@ -325,6 +330,11 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                 << std::setw(20) << "norm(Hess*vec)"
                 << std::setw(20) << "norm(FD approx)"
                 << std::setw(20) << "norm(abs error)"
+                << "\n"
+                << std::setw(20) << "---------"
+                << std::setw(20) << "--------------"
+                << std::setw(20) << "---------------"
+                << std::setw(20) << "---------------"
                 << "\n";
       }
       outStream << std::scientific << std::setprecision(11) << std::right

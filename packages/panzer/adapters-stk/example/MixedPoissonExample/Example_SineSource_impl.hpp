@@ -84,8 +84,9 @@ void SineSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData 
 template <typename EvalT,typename Traits>
 void SineSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.dimension(1); ++point) {
+  using panzer::index_t;
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int point = 0; point < source.extent_int(1); ++point) {
 
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);

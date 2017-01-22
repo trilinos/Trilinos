@@ -131,7 +131,7 @@ Quadrature<Real>::Quadrature(const int dimension,
                              const std::vector<EQuadrature> &rule1D, 
                              const std::vector<EGrowth> &growth1D,
                              const bool isNormalized,
-                             const bool adaptive = false)
+                             const bool adaptive)
   : dimension_(dimension) {
   TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,

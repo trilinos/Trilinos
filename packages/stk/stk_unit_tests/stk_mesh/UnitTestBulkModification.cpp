@@ -81,7 +81,6 @@ class UnitTestStkMeshBulkModification {
   { }
 
   void test_bulkdata_not_synchronized();
-  void test_closure_of_non_locally_used_entities();
   void test_all_local_nodes();
   void test_all_local_elements();
   void test_parallel_consistency();
@@ -116,12 +115,6 @@ TEST( UnitTestBulkDataNotSynchronized , testUnit )
   unit.test_bulkdata_not_synchronized();
 }
 
-TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
-{
-  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
-  unit.test_closure_of_non_locally_used_entities();
-}
-
 TEST( UnitTestAllLocalNodes , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
@@ -150,27 +143,7 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_synchronized()
 
   std::vector< Entity> entities;
   std::vector< Entity> entities_closure;
-  ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
-}
-
-void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
-{
-  BulkData& bulk_data = initialize_ring_fixture();
-
-  const stk::mesh::Ghosting & ghost = bulk_data.aura_ghosting();
-
-  std::vector<stk::mesh::EntityKey> ghost_receive ;
-
-  ghost.receive_list( ghost_receive );
-
-  if (!ghost_receive.empty()) {
-    std::vector< Entity> entities;
-    std::vector< Entity> entities_closure;
-
-    entities.push_back(bulk_data.get_entity(ghost_receive.front()));
-
-    ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
-  }
+  ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::logic_error);
 }
 
 void UnitTestStkMeshBulkModification::test_all_local_nodes()

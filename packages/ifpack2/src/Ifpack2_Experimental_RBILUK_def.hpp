@@ -474,6 +474,7 @@ void RBILUK<MatrixType>::compute ()
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
 
     // MinMachNum should be officially defined, for now pick something a little
@@ -599,7 +600,7 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
               little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
@@ -612,12 +613,12 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+              Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
@@ -759,9 +760,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
         // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
+        // as D.  We have to use a temp multivector, since our
+        // implementation of triangular solves does not allow its
+        // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         const local_ordinal_type numVectors = xBlock.getNumVectors();

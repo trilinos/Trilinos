@@ -23,7 +23,7 @@ public:
     Vector(size_t s) : Vector(get_default_name(), s)
     {
     }
-    Vector(const std::string &n, size_t s, Datatype init) : mSize(s), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
+    Vector(const std::string &n, size_t s, Datatype init) : Vector(n, s)
     {
         Kokkos::deep_copy(hostVals, init);
     }
@@ -90,9 +90,9 @@ protected:
     typedef Kokkos::View<Datatype*> DeviceType;
     typedef typename DeviceType::HostMirror HostType;
 
-    virtual HostType get_new_vals_of_size(size_t s)
+    virtual DeviceType get_new_vals_of_size(size_t s)
     {
-        return HostType(hostVals.label(), s);
+        return DeviceType(deviceVals.label(), s);
     }
 
 private:
@@ -111,10 +111,10 @@ private:
 
     void grow_to_size(size_t s)
     {
-        HostType tmp = get_new_vals_of_size(s);
+        deviceVals = get_new_vals_of_size(s);
+        HostType tmp = Kokkos::create_mirror_view(deviceVals);
         copy_into_bigger(tmp, hostVals);
         hostVals = tmp;
-        hostVals = Kokkos::create_mirror_view(hostVals);
     }
 
     void copy_into_bigger(HostType& dst, HostType& src)

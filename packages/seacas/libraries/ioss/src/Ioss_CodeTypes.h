@@ -33,7 +33,8 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#include <stdint.h>
+#include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -41,6 +42,7 @@ namespace Ioss {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;
   using NameList    = std::vector<std::string>;
+  using IJK_t       = std::array<int, 3>;
 }
 
 #if defined(PARALLEL_AWARE_EXODUS)
@@ -62,8 +64,12 @@ namespace Ioss {
 #else
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
-using MPI_Comm = int;
+using MPI_Comm       = int;
 #endif
+#endif
+
+#ifdef SEACAS_HAVE_KOKKOS
+#include <Kokkos_Core.hpp> // for Kokkos::complex
 #endif
 
 #include <complex>
@@ -73,7 +79,13 @@ using MPI_Comm = int;
 // If FOUR_BYTE_REAL is defined then we know we need float, otherwise
 // stick with double.
 using Complex = std::complex<float>;
+#ifdef SEACAS_HAVE_KOKKOS
+using Kokkos_Complex = Kokkos::complex<float>;
+#endif
 #else
-using Complex  = std::complex<double>;
+using Complex        = std::complex<double>;
+#ifdef SEACAS_HAVE_KOKKOS
+using Kokkos_Complex = Kokkos::complex<double>;
+#endif
 #endif
 #endif

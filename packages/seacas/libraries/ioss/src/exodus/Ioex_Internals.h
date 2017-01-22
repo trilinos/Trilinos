@@ -127,7 +127,7 @@ namespace Ioex {
 
     NodeBlock &operator=(const NodeBlock &other);
 
-    ~NodeBlock() {}
+    ~NodeBlock() = default;
 
     bool operator==(const NodeBlock &) const;
     bool operator!=(const NodeBlock &other) const { return !(*this == other); }
@@ -162,7 +162,7 @@ namespace Ioex {
 
     EdgeBlock &operator=(const EdgeBlock &other);
 
-    ~EdgeBlock() {}
+    ~EdgeBlock() = default;
 
     bool operator==(const EdgeBlock & /*other*/) const;
     bool operator!=(const EdgeBlock &other) const { return !(*this == other); }
@@ -199,7 +199,7 @@ namespace Ioex {
 
     FaceBlock &operator=(const FaceBlock &other);
 
-    ~FaceBlock() {}
+    ~FaceBlock() = default;
 
     bool operator==(const FaceBlock & /*other*/) const;
     bool operator!=(const FaceBlock &other) const { return !(*this == other); }
@@ -238,7 +238,7 @@ namespace Ioex {
 
     ElemBlock &operator=(const ElemBlock &other);
 
-    ~ElemBlock() {}
+    ~ElemBlock() = default;
 
     bool operator==(const ElemBlock & /*other*/) const;
     bool operator!=(const ElemBlock &other) const { return !(*this == other); }

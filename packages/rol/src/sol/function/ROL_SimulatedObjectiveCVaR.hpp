@@ -47,7 +47,7 @@
 #include "ROL_SimulatedVector.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskVector.hpp"
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 
 namespace ROL {
 
@@ -55,7 +55,7 @@ template <class Real>
 class SimulatedObjectiveCVaR : public Objective<Real> {
 private:
   const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > pobj_;
+  const Teuchos::RCP<Objective_SimOpt<Real> > pobj_;
   const Teuchos::RCP<PlusFunction<Real> > pfunc_;
   const Real alpha_;
 
@@ -64,7 +64,7 @@ public:
   virtual ~SimulatedObjectiveCVaR() {}
 
   SimulatedObjectiveCVaR(const Teuchos::RCP<SampleGenerator<Real> > & sampler,
-                         const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > & pobj,
+                         const Teuchos::RCP<Objective_SimOpt<Real> > & pobj,
                          const Teuchos::RCP<PlusFunction<Real> > & pfunc,
                          const Real & alpha)
     : sampler_(sampler), pobj_(pobj), pfunc_(pfunc), alpha_(alpha) {}
@@ -76,7 +76,7 @@ public:
     Teuchos::RCP<const Vector<Real> > zptr = uz.get_2();
     const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*uptr);
     const RiskVector<Real> &rz = Teuchos::dyn_cast<const RiskVector<Real> >(*zptr);
-    Real t = rz.getStatistic();
+    Real t = rz.getStatistic(0);
     Teuchos::RCP<const Vector<Real> > z = rz.getVector();
 
     std::vector<Real> param;
@@ -110,7 +110,7 @@ public:
     Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
     const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
     const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
-    Real xt = rxz.getStatistic();
+    Real xt = rxz.getStatistic(0);
     Teuchos::RCP<const Vector<Real> > xz = rxz.getVector();
     // split g
     Vector_SimOpt<Real> &guz = Teuchos::dyn_cast<Vector_SimOpt<Real> >(g);

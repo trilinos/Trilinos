@@ -151,6 +151,8 @@ struct ML_Operator_Struct {
                                     /*  1: vertical      */
                                     /*  2: horizontal    */
    char          coarsencoord;    /* x,y,z for semicoarsening/line smoothing */
+   int           sortColumnsAfterRAP; /* just for Paul Lin and a bit of an */
+                                       /* ugly hack                        */
 
    ML_Operator_Subspace *subspace;
                 /* This is just a hook into modes that we want to project out

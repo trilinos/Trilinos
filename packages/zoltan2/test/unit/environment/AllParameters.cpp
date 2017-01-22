@@ -70,51 +70,44 @@ static string fnParams[NUMFN][3]={
   {"memory_output_file", "memory.txt", "3.33"}
 };
 
-// Value value is any integer - a string is invalid
-
-#define NUMANYINT 2 
-static string anyIntParams[NUMANYINT][3]={
-  {"bisection_num_test_cuts", "3", "dont_know"},
-  {"parallel_part_calculation_count", "2", "dont_know"}
-};
-
-// Value value is a particular string
-
-#define NUMSTR 31
+// Value is a particular string
+#define NUMSTR 34
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
-  {"debug_level", "basic_status", "bogus_status"},
+  {"debug_level", "basic_status", "invalid_status"},
   {"timer_type", "no_timers", "invalid_timers"},
   {"debug_output_stream", "cout", "invalid_stream"},
   {"timer_output_stream", "/dev/null", "invalid_stream"},
   {"memory_output_stream", "cerr", "invalid_stream"},
   {"debug_procs", "all", "not_a_valid_list_of_any_type"},
-  {"pqParts", "2,3,4", "not_a_valid_list_of_any_type"},
+  {"mj_parts", "2,3,4", "not_a_valid_list_of_any_type"},
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
-  {"speed_versus_quality", "balance", "amazing_performance"},
-  {"memory_versus_speed", "memory", "impossible_performance"},
-  {"random_seed", "9.999", "xxx"},
-  {"order_method", "rcm", "rcmNew"},
-  {"order_package", "amd", "amdNew"},
-  {"compute_metrics", "yes", "maybe"},
-  {"topology", "2,3,6", "I_don't_know"},
-  {"randomize_input", "1", "22"},
-  {"partitioning_objective", "balance_object_weight", "get_curry"},
-  {"imbalance_tolerance", "1.1", "intolerant"},
-  {"num_global_parts", "12", "xxx"},
-  {"num_local_parts", "1", "no_idea"},
-  {"partitioning_approach", "repartition", "cut_it_up"},
-  {"objects_to_partition", "graph_vertices", "nothing"},
-  {"model", "graph", "manifold"},
-  {"algorithm", "rcb", "xyz"},
-  {"rectilinear", "yes", "dont_know"},
-  {"average_cuts", "false", "dont_know"},
-  {"symmetrize_input", "transpose", "dont_know"},
-  {"subset_graph", "1", "dont_know"},
-  {"force_binary_search", "true", "dont_know"},
-  {"force_linear_search", "yes", "dont_know"} 
+  {"order_method", "rcm", "invalid_method"},
+  {"order_package", "amd", "invalid_package"},
+  {"partitioning_objective", "balance_object_weight", "invalid_objective"},
+  {"partitioning_approach", "repartition", "invalid_approach"},
+  {"objects_to_partition", "graph_vertices", "invalid_objects"},
+  {"model", "graph", "invalid_model"},
+  {"algorithm", "rcb", "invalid_algorithm"},
+  {"symmetrize_input", "transpose", "invalid_option"},
+  {"symmetrize_input", "transpose", "invalid_option"},
+  {"mj_concurrent_part_count", "0", "invalid_value"},          // AnyNumberParameterEntryValidator
+  {"mj_recursion_depth", "0", "invalid_value"},                // AnyNumberParameterEntryValidator
+  {"mapping_type", "0", "invalid_value"},                      // AnyNumberParameterEntryValidator
+  {"imbalance_tolerance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"mj_minimum_migration_imbalance", "1.1", "invalid_option"}, // AnyNumberParameterEntryValidator
+  {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
+  {"compute_metrics", "false", "invalid_bool_setting"},        // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"rectilinear", "false", "invalid_bool_setting"},            // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"subset_graph", "false", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"mj_enable_rcb", "true", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"mj_keep_part_boxes", "true", "invalid_bool_setting"},      // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"num_global_parts", "1", "invalid_value"},                  // EnhancedNumberValidator
+  {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
+  {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
 };
-
 
 template <typename T>
 int testInvalidValue( Teuchos::ParameterList &pl, 
@@ -137,9 +130,106 @@ int testInvalidValue( Teuchos::ParameterList &pl,
   }
 
   if (!failed){
-    cerr << "Bad parameter was not detected in parameter list." << endl;
+    cerr << "Bad parameter value was not detected in parameter list." << endl;
     return 1;
   }
+  return 0;
+}
+
+// this we can remove later
+// kept here temporarily for reference
+int testForIssue612()
+{
+  // Testing AnyNumberParameterEntryValidator
+
+  // Create a parameter list
+  Teuchos::ParameterList valid("valid parameter list");
+
+  // Create parameter using validator
+  typedef Teuchos::AnyNumberParameterEntryValidator validator_t;
+  Teuchos::RCP<const validator_t> anyNumVal = Teuchos::rcp(new validator_t);
+
+  ///////////////////////////////////////////////////////////////////
+  // Initial test:  set parameter to 0.5 in valid parameter list.
+  // Need to use the *expected* data type here.
+  std::cout << "set good default value" << std::endl;
+
+  std::string parameterName("parameterName");
+  try {
+    valid.set(parameterName, 5.0, "parameterDoc", anyNumVal);
+  }
+  catch (std::exception &e) {
+    std::cout << "FAIL  error setting good default value "
+              << e.what() << std::endl;
+    return -1;
+  }
+
+  double dd = valid.getEntry(parameterName).getValue<double>(&dd);
+  std::cout << "good default value <double> = " << dd << std::endl;
+
+  // User creates his own parameter list and passes things of various types.
+  // The user list must be validated against the valid list.
+  Teuchos::ParameterList user("user");
+
+  // This one should work
+  std::cout << "test good user value" << std::endl;
+  user.set(parameterName, "0.123");
+  try {
+    user.validateParametersAndSetDefaults(valid);
+  }
+  catch (std::exception &e) {
+    std::cout << "FAIL  " << e.what() << std::endl;
+    return -1;
+  }
+
+  dd = user.getEntry(parameterName).getValue<double>(&dd);
+  std::cout << "good user value <double> = " << dd << std::endl;
+
+  // This one should not work; the user's string is not a number
+  std::cout << "test bogus user value" << std::endl;
+  bool aok = false;
+
+  // MDM note - the fail point will now be on user.set
+  // std::stod will throw on this since we have added the validator
+  try {
+    user.set(parameterName, "bogus");
+  }
+  catch(std::exception &e) {
+    // correct behavior
+    std::cout << "Parameter list correctly rejected bogus user value."
+              << std::endl;
+    aok = true;
+  }
+
+  if (!aok) {
+    std::cout << "FAIL  parameter list accepted a bogus user value"
+              << std::endl;
+    return -1;
+  }
+
+  // Test the valid with a bogus default value.  This operation should also
+  // not work.  The validator should catch the bogus input.
+  std::cout << "set bogus default value" << std::endl;
+
+  std::string parameterNameToo("parameterNameToo");
+  aok = false;
+  try {
+    valid.set(parameterNameToo, "bogus", "parameterDoc", anyNumVal);
+  }
+  catch (std::exception &e) {
+    // correct behavior
+    std::cout << "Parameter list correctly rejected bogus default value."
+              << std::endl;
+    aok = true;
+  }
+
+  if (!aok) {
+    std::cout << "FAIL  parameter list accepted a bogus default value"
+              << std::endl;
+    return -1;
+  }
+
+  std::cout << "PASS" << std::endl;
   return 0;
 }
 
@@ -156,6 +246,14 @@ int main(int argc, char *argv[])
   if (rank > 0)
     return 0;
 
+  // short term reference - to delete later
+  // this was an example proposed for issue #612
+  // just keeping it here as a reference point to be deleted in the future
+  int tempTest = testForIssue612();
+  if( tempTest != 0 ) {
+    return tempTest;
+  }
+
   // Create a valid parameter list.
 
   Teuchos::ParameterList validParameters;
@@ -163,13 +261,6 @@ int main(int argc, char *argv[])
 
   for (int i=0; i < NUMSTR; i++){
     myParams.set(strParams[i][0], strParams[i][1]);
-  }
-
-  for (int i=0; i < NUMANYINT; i++){
-    istringstream iss(anyIntParams[i][1]);
-    int paramValue;
-    iss >> paramValue;
-    myParams.set(anyIntParams[i][0], paramValue);
   }
 
   for (int i=0; i < NUMFN; i++){
@@ -198,21 +289,10 @@ int main(int argc, char *argv[])
   cout << myParams << endl;
 
   // Try invalid parameter values
-
   for (int i=0; i < NUMSTR; i++){
     Teuchos::ParameterList badParams(origParams);
     int fail = 
       testInvalidValue<string>(badParams, strParams[i][0], strParams[i][2]);
-    if (fail){
-      cout << "FAIL" << endl;
-      return 1;
-    }
-  }
-
-  for (int i=0; i < NUMANYINT; i++){
-    Teuchos::ParameterList badParams(origParams);
-    int fail = 
-       testInvalidValue<string>(badParams, anyIntParams[i][0], anyIntParams[i][2]);
     if (fail){
       cout << "FAIL" << endl;
       return 1;

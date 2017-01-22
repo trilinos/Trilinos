@@ -201,10 +201,10 @@ void add_side_to_shared_entities(stk::mesh::Entity side, std::vector<stk::mesh::
     shared_entities_this_proc.push_back(sentity);
 }
 
-stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity element, stk::mesh::EntityRank side_rank, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
+stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity element, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
         stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id, stk::mesh::Part& root_topo_part)
 {
-    stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), side_rank, root_topo_part);
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), root_topo_part);
     ThrowRequireWithSierraHelpMsg(bulkData.is_valid(side));
     add_side_to_shared_entities(side, shared_entities_this_proc, shared_entity_other_proc, other_proc_id);
     return side;
@@ -215,7 +215,7 @@ void BulkDataFaceSharingTester::connect_side_from_other_proc_to_local_elements(c
 {
     for(stk::mesh::Entity element : elements)
     {
-        stk::mesh::Entity side = create_side_and_add_to_shared_entity_list(element, side_rank(), nodes, shared_entity_other_proc, *this,
+        stk::mesh::Entity side = create_side_and_add_to_shared_entity_list(element, nodes, shared_entity_other_proc, *this,
                 shared_entities_this_proc, other_proc_id, get_topology_root_part(shared_entity_other_proc.topology));
         this->internal_mark_entity(side, BulkData::IS_SHARED);
     }

@@ -89,6 +89,34 @@ struct TestTeamPolicy {
       }
     }
 
+  // included for test_small_league_size
+  TestTeamPolicy()
+    : m_flags()
+  {}
+
+  // included for test_small_league_size
+  struct NoOpTag {} ;
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const NoOpTag & , const team_member & member ) const
+    {}
+
+
+  static void test_small_league_size() {
+
+    int bs = 8; // batch size (number of elements per batch)
+    int ns = 16; // total number of "problems" to process
+
+    // calculate total scratch memory space size
+    const int level = 0;
+    int mem_size = 960;
+    const int num_teams = ns/bs;
+    const Kokkos::TeamPolicy< ExecSpace, NoOpTag > policy(num_teams, Kokkos::AUTO());
+
+    Kokkos::parallel_for ( policy.set_scratch_size(level, Kokkos::PerTeam(mem_size), Kokkos::PerThread(0))
+                         , TestTeamPolicy()
+                         );
+  }
+
   static void test_for( const size_t league_size )
     {
       TestTeamPolicy functor( league_size );
@@ -97,6 +125,8 @@ struct TestTeamPolicy {
 
       Kokkos::parallel_for( Kokkos::TeamPolicy< ScheduleType,  ExecSpace >( league_size , team_size ) , functor );
       Kokkos::parallel_for( Kokkos::TeamPolicy< ScheduleType,  ExecSpace , VerifyInitTag >( league_size , team_size ) , functor );
+
+      test_small_league_size();
     }
 
   struct ReduceTag {};
@@ -346,9 +376,14 @@ public:
   void run_test( const size_t nteam )
   {
     typedef Kokkos::View< long int , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
-
     const unsigned REPEAT = 100000 ;
-    const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
+    unsigned Repeat;
+    if ( nteam == 0 )
+    {
+      Repeat = 1;
+    } else {
+      Repeat = ( REPEAT + nteam - 1 ) / nteam ; //error here
+    }
 
     functor_type functor ;
 
@@ -551,7 +586,7 @@ struct ScratchTeamFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()( const typename policy_type::member_type & ind , value_type & update ) const
   {
-    const shared_int_array_type scratch_ptr( ind.team_scratch(1) , 2*ind.team_size() );
+    const shared_int_array_type scratch_ptr( ind.team_scratch(1) , 3*ind.team_size() );
     const shared_int_array_type scratch_A( ind.team_scratch(1) , SHARED_TEAM_COUNT );
     const shared_int_array_type scratch_B( ind.thread_scratch(1) , SHARED_THREAD_COUNT );
 
@@ -615,7 +650,7 @@ struct TestScratchTeam {
     typename Functor::value_type error_count = 0 ;
 
     int team_scratch_size   = Functor::shared_int_array_type::shmem_size(Functor::SHARED_TEAM_COUNT) +
-                              Functor::shared_int_array_type::shmem_size(2*team_size);
+                              Functor::shared_int_array_type::shmem_size(3*team_size);
     int thread_scratch_size = Functor::shared_int_array_type::shmem_size(Functor::SHARED_THREAD_COUNT);
     Kokkos::parallel_reduce( team_exec.set_scratch_size(0,Kokkos::PerTeam(team_scratch_size),
                                                           Kokkos::PerThread(thread_scratch_size)) ,
@@ -630,75 +665,83 @@ namespace Test {
 template< class ExecSpace>
 KOKKOS_INLINE_FUNCTION
 int test_team_mulit_level_scratch_loop_body(const typename Kokkos::TeamPolicy<ExecSpace>::member_type& team) {
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team1(team.team_scratch(0),128);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread1(team.thread_scratch(0),16);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team2(team.team_scratch(0),128);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread2(team.thread_scratch(0),16);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team1(team.team_scratch(0),128);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread1(team.thread_scratch(0),16);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team2(team.team_scratch(0),128);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread2(team.thread_scratch(0),16);
 
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team1(team.team_scratch(1),128000);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread1(team.thread_scratch(1),16000);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team2(team.team_scratch(1),128000);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread2(team.thread_scratch(1),16000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team1(team.team_scratch(1),128000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread1(team.thread_scratch(1),16000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team2(team.team_scratch(1),128000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread2(team.thread_scratch(1),16000);
 
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team3(team.team_scratch(0),128);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread3(team.thread_scratch(0),16);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team3(team.team_scratch(1),128000);
-      Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread3(team.thread_scratch(1),16000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_team3(team.team_scratch(0),128);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> a_thread3(team.thread_scratch(0),16);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_team3(team.team_scratch(1),128000);
+  Kokkos::View<double*,ExecSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> b_thread3(team.thread_scratch(1),16000);
 
+  // The explicit types for 0 and 128 are here to test TeamThreadRange accepting different
+  // types for begin and end.
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,int(0),unsigned(128)), [&] (const int& i)
+  {
+    a_team1(i) = 1000000 + i;
+    a_team2(i) = 2000000 + i;
+    a_team3(i) = 3000000 + i;
+  });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16), [&] (const int& i)
+  {
+    a_thread1(i) = 1000000 + 100000*team.team_rank() + 16-i;
+    a_thread2(i) = 2000000 + 100000*team.team_rank() + 16-i;
+    a_thread3(i) = 3000000 + 100000*team.team_rank() + 16-i;
+  });
 
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128), [&] (const int& i) {
-        a_team1(i) = 1000000 + i;
-        a_team2(i) = 2000000 + i;
-        a_team3(i) = 3000000 + i;
-      });
-      team.team_barrier();
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16), [&] (const int& i){
-        a_thread1(i) = 1000000 + 100000*team.team_rank() + 16-i;
-        a_thread2(i) = 2000000 + 100000*team.team_rank() + 16-i;
-        a_thread3(i) = 3000000 + 100000*team.team_rank() + 16-i;
-      });
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128000), [&] (const int& i)
+  {
+    b_team1(i) = 1000000 + i;
+    b_team2(i) = 2000000 + i;
+    b_team3(i) = 3000000 + i;
+  });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16000), [&] (const int& i)
+  {
+    b_thread1(i) = 1000000 + 100000*team.team_rank() + 16-i;
+    b_thread2(i) = 2000000 + 100000*team.team_rank() + 16-i;
+    b_thread3(i) = 3000000 + 100000*team.team_rank() + 16-i;
+  });
 
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128000), [&] (const int& i) {
-        b_team1(i) = 1000000 + i;
-        b_team2(i) = 2000000 + i;
-        b_team3(i) = 3000000 + i;
-      });
-      team.team_barrier();
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16000), [&] (const int& i){
-        b_thread1(i) = 1000000 + 100000*team.team_rank() + 16-i;
-        b_thread2(i) = 2000000 + 100000*team.team_rank() + 16-i;
-        b_thread3(i) = 3000000 + 100000*team.team_rank() + 16-i;
-      });
+  team.team_barrier();
+  int error = 0;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128), [&] (const int& i)
+  {
+    if(a_team1(i) != 1000000 + i) error++;
+    if(a_team2(i) != 2000000 + i) error++;
+    if(a_team3(i) != 3000000 + i) error++;
+  });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16), [&] (const int& i)
+  {
+    if(a_thread1(i) != 1000000 + 100000*team.team_rank() + 16-i) error++;
+    if(a_thread2(i) != 2000000 + 100000*team.team_rank() + 16-i) error++;
+    if(a_thread3(i) != 3000000 + 100000*team.team_rank() + 16-i) error++;
+  });
 
-      team.team_barrier();
-      int error = 0;
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128), [&] (const int& i) {
-        if(a_team1(i) != 1000000 + i) error++;
-        if(a_team2(i) != 2000000 + i) error++;
-        if(a_team3(i) != 3000000 + i) error++;
-      });
-      team.team_barrier();
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16), [&] (const int& i){
-        if(a_thread1(i) != 1000000 + 100000*team.team_rank() + 16-i) error++;
-        if(a_thread2(i) != 2000000 + 100000*team.team_rank() + 16-i) error++;
-        if(a_thread3(i) != 3000000 + 100000*team.team_rank() + 16-i) error++;
-      });
-
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128000), [&] (const int& i) {
-        if(b_team1(i) != 1000000 + i) error++;
-        if(b_team2(i) != 2000000 + i) error++;
-        if(b_team3(i) != 3000000 + i) error++;
-      });
-      team.team_barrier();
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16000), [&] (const int& i){
-        if(b_thread1(i) != 1000000 + 100000*team.team_rank() + 16-i) error++;
-        if(b_thread2(i) != 2000000 + 100000*team.team_rank() + 16-i) error++;
-        if( b_thread3(i) != 3000000 + 100000*team.team_rank() + 16-i) error++;
-      });
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,128000), [&] (const int& i)
+  {
+    if(b_team1(i) != 1000000 + i) error++;
+    if(b_team2(i) != 2000000 + i) error++;
+    if(b_team3(i) != 3000000 + i) error++;
+  });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,16000), [&] (const int& i)
+  {
+    if(b_thread1(i) != 1000000 + 100000*team.team_rank() + 16-i) error++;
+    if(b_thread2(i) != 2000000 + 100000*team.team_rank() + 16-i) error++;
+    if( b_thread3(i) != 3000000 + 100000*team.team_rank() + 16-i) error++;
+  });
 
   return error;
 }
-
 
 struct TagReduce {};
 struct TagFor {};

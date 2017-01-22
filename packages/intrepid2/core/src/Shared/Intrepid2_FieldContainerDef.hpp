@@ -204,19 +204,19 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
 
 
 template<class Scalar, int ArrayTypeId>
-FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& dimensions) {
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& indimensions) {
 
 #ifdef HAVE_INTREPID2_DEBUG
 // srkenno@sandia.gov 6/12/10: changed unsigned int to int - this was causing a warning on compilers that
 //   signed & unsigned int's were being comparied.
-  for( int dim = 0; dim < dimensions.size(); dim++) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (0 > dimensions[dim] ), std::invalid_argument,
+  for( int dim = 0; dim < indimensions.size(); dim++) {
+    TEUCHOS_TEST_FOR_EXCEPTION( (0 > indimensions[dim] ), std::invalid_argument,
                         ">>> ERROR (FieldContainer): One or more negative dimensions");
   }
 #endif
 
   // Copy dimensions and resize container storage to match them
-  dimensions_.assign(dimensions.begin(),dimensions.end());
+  dimensions_.assign(indimensions.begin(),indimensions.end());
 
   // Copy first 5 dimensions to optimize class for low rank containers
   unsigned int theRank = dimensions_.size();
@@ -271,11 +271,11 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& d
 
 
 template<class Scalar, int ArrayTypeId>
-FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&         dimensions,
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&         indimensions,
                                        const Teuchos::ArrayView<Scalar>&  data) {
 
   // Copy all dimensions
-  dimensions_.assign(dimensions.begin(),dimensions.end());
+  dimensions_.assign(indimensions.begin(),indimensions.end());
 
   // Copy first 5 dimensions to optimize class for low rank containers
   unsigned int theRank = dimensions_.size();
@@ -344,11 +344,11 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
 
 
 template<class Scalar, int ArrayTypeId>
-FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&        dimensions,
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&        indimensions,
                                        const Teuchos::ArrayRCP<Scalar>&  data) {
 
   // Copy all dimensions
-  dimensions_.assign(dimensions.begin(),dimensions.end());
+  dimensions_.assign(indimensions.begin(),indimensions.end());
 
   // Copy first 5 dimensions to optimize class for low rank containers
   unsigned int theRank = dimensions_.size();
@@ -417,13 +417,13 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
 
 
 template<class Scalar, int ArrayTypeId>
-FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&    dimensions,
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&    indimensions,
                                        Scalar*                       data,
                                        const bool                    deep_copy,
                                        const bool                    owns_mem) {
 
   // Copy all dimensions
-  dimensions_.assign(dimensions.begin(),dimensions.end());
+  dimensions_.assign(indimensions.begin(),indimensions.end());
 
   // Copy first 5 dimensions to optimize class for low rank containers
   unsigned int theRank = dimensions_.size();
@@ -647,8 +647,8 @@ int FieldContainer<Scalar, ArrayTypeId>::size() const {
 
 template<class Scalar, int ArrayTypeId>
 template<class Vector>
-inline void FieldContainer<Scalar, ArrayTypeId>::dimensions(Vector& dimensions) const {
-  dimensions.assign(dimensions_.begin(),dimensions_.end());
+inline void FieldContainer<Scalar, ArrayTypeId>::dimensions(Vector& outdimensions) const {
+  outdimensions.assign(dimensions_.begin(),dimensions_.end());
 }
 
 

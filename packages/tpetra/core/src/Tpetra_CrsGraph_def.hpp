@@ -50,104 +50,110 @@
 /// want the declaration of Tpetra::CrsGraph, include
 /// "Tpetra_CrsGraph_decl.hpp".
 
-#include "Tpetra_Distributor.hpp"
-#include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_getGraphDiagOffsets.hpp"
+#include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <utility>
 
 namespace Tpetra {
-
   namespace Details {
+    namespace Impl {
 
-    // Implementation of Tpetra::CrsGraph::getLocalDiagOffsets, for
-    // the fillComplete case.
-    //
-    // FIXME (mfh 12 Mar 2016) There's currently no way to make a
-    // MemoryUnmanaged Kokkos::StaticCrsGraph.  Thus, we have to do
-    // this separately for its column indices.  We want the column
-    // indices to be unmanaged because we need to take subviews in
-    // this kernel.  Taking a subview of a managed View updates the
-    // reference count, which is a thread scalability bottleneck.
-    template<class LO, class GO, class Node>
-    class GetLocalDiagOffsets {
-    public:
-      typedef typename Node::device_type device_type;
-      // mfh 12 Mar 2016: getLocalDiagOffsets returns offsets as
-      // size_t.  However, see Github Issue #213.
-      typedef size_t diag_offset_type;
-      typedef Kokkos::View<diag_offset_type*, device_type,
-                           Kokkos::MemoryUnmanaged> diag_offsets_type;
-      typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
-      typedef typename global_graph_type::local_graph_type local_graph_type;
-      typedef typename global_graph_type::map_type::local_map_type local_map_type;
-      typedef Kokkos::View<const typename local_graph_type::size_type*,
-                           Kokkos::LayoutLeft, device_type> row_offsets_type;
-      // This is unmanaged for performance, because we need to take
-      // subviews inside the functor.
-      typedef Kokkos::View<const LO*, Kokkos::LayoutLeft, device_type,
-                           Kokkos::MemoryUnmanaged> lcl_col_inds_type;
+      template<class LO, class GO, class DT, class OffsetType, class NumEntType>
+      class ConvertColumnIndicesFromGlobalToLocal {
+      public:
+        ConvertColumnIndicesFromGlobalToLocal (const ::Kokkos::View<LO*, DT>& lclColInds,
+                                               const ::Kokkos::View<const GO*, DT>& gblColInds,
+                                               const ::Kokkos::View<const OffsetType*, DT>& ptr,
+                                               const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap,
+                                               const ::Kokkos::View<const NumEntType*, DT>& numRowEnt) :
+          lclColInds_ (lclColInds),
+          gblColInds_ (gblColInds),
+          ptr_ (ptr),
+          lclColMap_ (lclColMap),
+          numRowEnt_ (numRowEnt)
+        {}
 
-      GetLocalDiagOffsets (const diag_offsets_type& diagOffsets,
-                           const local_map_type& lclRowMap,
-                           const local_map_type& lclColMap,
-                           const row_offsets_type& ptr,
-                           const lcl_col_inds_type& ind,
-                           const bool isSorted) :
-        diagOffsets_ (diagOffsets),
-        lclRowMap_ (lclRowMap),
-        lclColMap_ (lclColMap),
-        ptr_ (ptr),
-        ind_ (ind),
-        isSorted_ (isSorted)
-      {
-        typedef typename device_type::execution_space execution_space;
-        typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
-
-        const LO lclNumRows = lclRowMap.getNodeNumElements ();
-        policy_type range (0, lclNumRows);
-        Kokkos::parallel_for (range, *this);
-      }
-
-      KOKKOS_INLINE_FUNCTION void
-      operator() (const LO& lclRowInd) const
-      {
-        const size_t STINV =
-          Tpetra::Details::OrdinalTraits<diag_offset_type>::invalid ();
-        const GO gblRowInd = lclRowMap_.getGlobalElement (lclRowInd);
-        const GO gblColInd = gblRowInd;
-        const LO lclColInd = lclColMap_.getLocalElement (gblColInd);
-
-        if (lclColInd == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-          diagOffsets_[lclRowInd] = STINV;
+        KOKKOS_FUNCTION void
+        operator () (const LO& lclRow, OffsetType& curNumBad) const
+        {
+          const OffsetType offset = ptr_(lclRow);
+          // NOTE (mfh 26 Jun 2016) It's always legal to cast the number
+          // of entries in a row to LO, as long as the row doesn't have
+          // too many duplicate entries.
+          const LO numEnt = static_cast<LO> (numRowEnt_(lclRow));
+          for (LO j = 0; j < numEnt; ++j) {
+            const GO gid = gblColInds_(offset + j);
+            const LO lid = lclColMap_.getLocalElement (gid);
+            lclColInds_(offset + j) = lid;
+            if (lid == ::Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+              ++curNumBad;
+            }
+          }
         }
-        else {
-          // Could be empty, but that's OK.
-          const LO numEnt = ptr_[lclRowInd+1] - ptr_[lclRowInd];
-          // std::pair doesn't have its methods marked as device
-          // functions, so we have to use Kokkos::pair.
-          auto lclColInds =
-            Kokkos::subview (ind_, Kokkos::make_pair (ptr_[lclRowInd],
-                                                      ptr_[lclRowInd+1]));
-          using ::KokkosSparse::findRelOffset;
-          const LO diagOffset =
-            findRelOffset<LO, lcl_col_inds_type> (lclColInds, numEnt,
-                                                  lclColInd, 0, isSorted_);
-          diagOffsets_[lclRowInd] = (diagOffset == numEnt) ? STINV :
-            static_cast<diag_offset_type> (diagOffset);
-        }
-      }
 
-    private:
-      diag_offsets_type diagOffsets_;
-      local_map_type lclRowMap_;
-      local_map_type lclColMap_;
-      row_offsets_type ptr_;
-      lcl_col_inds_type ind_;
-      bool isSorted_;
-    };
+        static OffsetType
+        run (const ::Kokkos::View<LO*, DT>& lclColInds,
+             const ::Kokkos::View<const GO*, DT>& gblColInds,
+             const ::Kokkos::View<const OffsetType*, DT>& ptr,
+             const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap,
+             const ::Kokkos::View<const NumEntType*, DT>& numRowEnt)
+        {
+          typedef ::Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
+          typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> functor_type;
+
+          const LO lclNumRows = ptr.dimension_0 () == 0 ?
+            static_cast<LO> (0) : static_cast<LO> (ptr.dimension_0 () - 1);
+          OffsetType numBad = 0;
+          // Count of "bad" column indices is a reduction over rows.
+          ::Kokkos::parallel_reduce (range_type (0, lclNumRows),
+                                     functor_type (lclColInds, gblColInds, ptr,
+                                                   lclColMap, numRowEnt),
+                                     numBad);
+          return numBad;
+        }
+
+      private:
+        ::Kokkos::View<LO*, DT> lclColInds_;
+        ::Kokkos::View<const GO*, DT> gblColInds_;
+        ::Kokkos::View<const OffsetType*, DT> ptr_;
+        ::Tpetra::Details::LocalMap<LO, GO, DT> lclColMap_;
+        ::Kokkos::View<const NumEntType*, DT> numRowEnt_;
+      };
+
+    } // namespace Impl
+
+    /// \brief Convert a (StaticProfile) CrsGraph's global column
+    ///   indices into local column indices.
+    ///
+    /// \param lclColInds [out] On output: The graph's local column
+    ///   indices.  This may alias gblColInds, if LO == GO.
+    /// \param gblColInds [in] On input: The graph's global column
+    ///   indices.  This may alias lclColInds, if LO == GO.
+    /// \param ptr [in] The graph's row offsets.
+    /// \param lclColMap [in] "Local" (threaded-kernel-worthy) version
+    ///   of the column Map.
+    /// \param numRowEnt [in] Array with number of entries in each row.
+    ///
+    /// \return the number of "bad" global column indices (that don't
+    ///   live in the column Map on the calling process).
+    template<class LO, class GO, class DT, class OffsetType, class NumEntType>
+    OffsetType
+    convertColumnIndicesFromGlobalToLocal (const Kokkos::View<LO*, DT>& lclColInds,
+                                           const Kokkos::View<const GO*, DT>& gblColInds,
+                                           const Kokkos::View<const OffsetType*, DT>& ptr,
+                                           const LocalMap<LO, GO, DT>& lclColMap,
+                                           const Kokkos::View<const NumEntType*, DT>& numRowEnt)
+    {
+      using Impl::ConvertColumnIndicesFromGlobalToLocal;
+      typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> impl_type;
+      return impl_type::run (lclColInds, gblColInds, ptr, lclColMap, numRowEnt);
+    }
 
   } // namespace Details
 
@@ -481,7 +487,7 @@ namespace Tpetra {
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , nodeNumEntries_(0)
-    , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
+    , nodeNumAllocated_(Teuchos::OrdinalTraits<size_t>::invalid())
     , pftype_(StaticProfile)
     , numAllocForAllRows_(0)
     , storageStatus_ (Details::STORAGE_1D_PACKED)
@@ -1718,16 +1724,16 @@ namespace Tpetra {
     const char msg[] = "Tpetra::CrsGraph: Object cannot be created with the "
       "given template arguments: size assumptions are not valid.";
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (OrdinalTraits<LO>::max ()) > OrdinalTraits<size_t>::max (),
+      static_cast<size_t> (Teuchos::OrdinalTraits<LO>::max ()) > Teuchos::OrdinalTraits<size_t>::max (),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<GST> (OrdinalTraits<LO>::max ()) > static_cast<GST> (OrdinalTraits<GO>::max ()),
+      static_cast<GST> (Teuchos::OrdinalTraits<LO>::max ()) > static_cast<GST> (Teuchos::OrdinalTraits<GO>::max ()),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (OrdinalTraits<GO>::max ()) > OrdinalTraits<GST>::max(),
+      static_cast<size_t> (Teuchos::OrdinalTraits<GO>::max ()) > Teuchos::OrdinalTraits<GST>::max(),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      OrdinalTraits<size_t>::max () > OrdinalTraits<GST>::max (),
+      Teuchos::OrdinalTraits<size_t>::max () > Teuchos::OrdinalTraits<GST>::max (),
       std::runtime_error, msg);
   }
 
@@ -1795,23 +1801,204 @@ namespace Tpetra {
   insertGlobalIndicesImpl (const LocalOrdinal myRow,
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices)
   {
-    const char tfecfFuncName[] = "insertGlobalIndicesImpl";
+    using Kokkos::subview;
+    typedef Kokkos::pair<size_t, size_t> range_type;
+    const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
 
     RowInfo rowInfo = getRowInfo(myRow);
-    const size_t numNewInds = indices.size();
-    const size_t newNumEntries = rowInfo.numEntries + numNewInds;
-    if (newNumEntries > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        getProfileType() == StaticProfile, std::runtime_error,
-        ": new indices exceed statically allocated graph structure.");
+    size_t numNewInds = indices.size();
+    size_t newNumEntries = rowInfo.numEntries + numNewInds;
 
-      // update allocation, doubling size to reduce # reallocations
-      size_t newAllocSize = 2*rowInfo.allocSize;
-      if (newAllocSize < newNumEntries) {
-        newAllocSize = newNumEntries;
+    if (newNumEntries > rowInfo.allocSize) {
+      if (getProfileType () == StaticProfile) {
+
+        // Count how many new indices are just duplicates of the old
+        // ones.  If enough are duplicates, then we're safe.
+        //
+        // TODO (09 Sep 2016) CrsGraph never supported this use case
+        // before.  Thus, we're justified in not optimizing it.  We
+        // could use binary search if the graph's current entries are
+        // sorted, for example, but we just use linear search for now.
+
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (rowInfo.numEntries > rowInfo.allocSize, std::logic_error,
+           "For local row " << myRow << ", rowInfo.numEntries = "
+           << rowInfo.numEntries << " > rowInfo.allocSize = "
+           << rowInfo.allocSize
+           << ".  Please report this bug to the Tpetra developers.");
+
+        size_t dupCount = 0;
+        if (k_gblInds1D_.dimension_0 () != 0) {
+          const size_t curOffset = rowInfo.offset1D;
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (static_cast<size_t> (k_gblInds1D_.dimension_0 ()) < curOffset,
+             std::logic_error, "k_gblInds1D_.dimension_0() = " <<
+             k_gblInds1D_.dimension_0 () << " < offset1D = " << curOffset
+             << ".  Please report this bug to the Tpetra developers.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (static_cast<size_t> (k_gblInds1D_.dimension_0 ()) <
+             curOffset + rowInfo.numEntries,
+             std::logic_error, "k_gblInds1D_.dimension_0() = " <<
+             k_gblInds1D_.dimension_0 () << " < offset1D (= " << curOffset <<
+             ") + rowInfo.numEntries (= " << rowInfo.numEntries << ").  Please "
+             "report this bug to the Tpetra developers.");
+          const Kokkos::pair<size_t, size_t>
+            range (curOffset, curOffset + rowInfo.numEntries);
+
+          auto gblIndsCur = subview (k_gblInds1D_, range);
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (static_cast<size_t> (gblIndsCur.dimension_0 ()) != rowInfo.numEntries,
+             std::logic_error, "gblIndsCur.dimension_0() = " <<
+             gblIndsCur.dimension_0 () << " != rowInfo.numEntries = " <<
+             rowInfo.numEntries << ".  Please report this bug to the Tpetra "
+             "developers.");
+
+          const size_t numInput = static_cast<size_t> (indices.size ());
+          for (size_t k_new = 0; k_new < numInput; ++k_new) {
+            const GlobalOrdinal gblIndToInsert = indices[k_new];
+            for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
+              if (gblIndsCur[k_old] == gblIndToInsert) {
+                // Input could itself have duplicates.  Input is
+                // const, so we can't remove duplicates.  That's OK
+                // here, though, because dupCount just refers to the
+                // number of input entries that actually need to be
+                // inserted.
+                ++dupCount;
+              }
+            }
+          }
+        }
+        else {
+          Teuchos::ArrayView<GlobalOrdinal> gblInds = (gblInds2D_[myRow]) ();
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (rowInfo.allocSize != static_cast<size_t> (gblInds.size ()),
+             std::logic_error, "rowInfo.allocSize = " << rowInfo.allocSize
+             << " != gblInds.size() = " << gblInds.size ()
+             << ".  Please report this bug to the Tpetra developers.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (rowInfo.numEntries > static_cast<size_t> (gblInds.size ()),
+             std::logic_error, "rowInfo.numEntries = " << rowInfo.numEntries
+             << " > gblInds.size() = " << gblInds.size ()
+             << ".  Please report this bug to the Tpetra developers.");
+          auto gblIndsCur = gblInds (0, rowInfo.numEntries);
+
+          const size_t numInput = static_cast<size_t> (indices.size ());
+          for (size_t k_new = 0; k_new < numInput; ++k_new) {
+            const GlobalOrdinal gblIndToInsert = indices[k_new];
+            for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
+              if (gblIndsCur[k_old] == gblIndToInsert) {
+                // Input could itself have duplicates.  Input is
+                // const, so we can't remove duplicates.  That's OK
+                // here, though, because dupCount just refers to the
+                // number of input entries that actually need to be
+                // inserted.
+                ++dupCount;
+              }
+            }
+          }
+        }
+
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (indices.size ()) < dupCount, std::logic_error,
+           "indices.size() = " << indices.size () << " < dupCount = " <<
+           dupCount << ".  Please report this bug to the Tpetra developers.");
+        const size_t numNewToInsert =
+          static_cast<size_t> (indices.size ()) - dupCount;
+
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (rowInfo.numEntries + numNewToInsert > rowInfo.allocSize,
+           std::runtime_error, "For local row " << myRow << " on Process " <<
+           this->getComm ()->getRank () << ", even after excluding " << dupCount
+           << " duplicate(s) in input, the new number of entries " <<
+           (rowInfo.numEntries + numNewToInsert) << " still exceeds this row's "
+           "static allocation size " << rowInfo.allocSize << ".  You must "
+           "either fix the upper bound on the number of entries in this row, "
+           "or switch from StaticProfile to DynamicProfile.");
+
+        if (k_gblInds1D_.dimension_0 () != 0) {
+          const size_t curOffset = rowInfo.offset1D;
+          auto gblIndsCur =
+            subview (k_gblInds1D_, range_type (curOffset,
+                                               curOffset + rowInfo.numEntries));
+          auto gblIndsNew =
+            subview (k_gblInds1D_, range_type (curOffset + rowInfo.numEntries,
+                                               curOffset + rowInfo.allocSize));
+
+          size_t curPos = 0;
+          for (size_t k_new = 0; k_new < numNewInds; ++k_new) {
+            const GlobalOrdinal gblIndToInsert = indices[k_new];
+
+            bool isAlreadyInOld = false;
+            for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
+              if (gblIndsCur[k_old] == gblIndToInsert) {
+                isAlreadyInOld = true;
+                break;
+              }
+            }
+            if (! isAlreadyInOld) {
+              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+                (curPos >= numNewToInsert, std::logic_error, "curPos = " <<
+                 curPos << " >= numNewToInsert = " << numNewToInsert << ".  "
+                 "Please report this bug to the Tpetra developers.");
+              gblIndsNew[curPos] = gblIndToInsert;
+              ++curPos;
+            }
+          } // for each input column index
+        }
+        else {
+          Teuchos::ArrayView<GlobalOrdinal> gblInds = (gblInds2D_[myRow]) ();
+          // Teuchos::ArrayView::operator() takes (offset, size).
+          auto gblIndsCur = gblInds (0, rowInfo.numEntries);
+          auto gblIndsNew = gblInds (rowInfo.numEntries,
+                                     rowInfo.allocSize - rowInfo.numEntries);
+
+          size_t curPos = 0;
+          for (size_t k_new = 0; k_new < numNewInds; ++k_new) {
+            const GlobalOrdinal gblIndToInsert = indices[k_new];
+
+            bool isAlreadyInOld = false;
+            for (size_t k_old = 0; k_old < rowInfo.numEntries; ++k_old) {
+              if (gblIndsCur[k_old] == gblIndToInsert) {
+                isAlreadyInOld = true;
+                break;
+              }
+            }
+            if (! isAlreadyInOld) {
+              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+                (curPos >= numNewToInsert, std::logic_error, "curPos = " <<
+                 curPos << " >= numNewToInsert = " << numNewToInsert << ".  "
+                 "Please report this bug to the Tpetra developers.");
+              gblIndsNew[curPos] = gblIndToInsert;
+              ++curPos;
+            }
+          } // for each input column index
+        }
+
+        k_numRowEntries_(myRow) = rowInfo.numEntries + numNewToInsert;
+        nodeNumEntries_ += numNewToInsert;
+        setLocallyModified ();
+
+#ifdef HAVE_TPETRA_DEBUG
+        newNumEntries = rowInfo.numEntries + numNewToInsert;
+        const size_t chkNewNumEntries = getNumEntriesInLocalRow (myRow);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (chkNewNumEntries != newNumEntries, std::logic_error,
+           "After inserting new entries, getNumEntriesInLocalRow(" << myRow <<
+           ") = " << chkNewNumEntries << " != newNumEntries = " << newNumEntries
+           << ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+        return; // all done!
       }
-      gblInds2D_[myRow].resize(newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+      else {
+        // update allocation, doubling size to reduce # reallocations
+        size_t newAllocSize = 2*rowInfo.allocSize;
+        if (newAllocSize < newNumEntries) {
+          newAllocSize = newNumEntries;
+        }
+        gblInds2D_[myRow].resize(newAllocSize);
+        nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+      }
     }
 
     // Copy new indices at end of global index array
@@ -1955,11 +2142,11 @@ namespace Tpetra {
     // simple pointer comparison for equality
     if (domainMap_ != domainMap) {
       domainMap_ = domainMap;
-      importer_ = null;
+      importer_ = Teuchos::null;
     }
     if (rangeMap_ != rangeMap) {
       rangeMap_  = rangeMap;
-      exporter_ = null;
+      exporter_ = Teuchos::null;
     }
   }
 
@@ -1990,11 +2177,11 @@ namespace Tpetra {
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object
     // always remains in a valid state
     // the graph should have been allocated with a row map
-    TEUCHOS_TEST_FOR_EXCEPTION( rowMap_ == null,                     std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION( rowMap_ == Teuchos::null,                     std::logic_error, err );
     // am either complete or active
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() == isFillComplete(),  std::logic_error, err );
     // if the graph has been fill completed, then all maps should be present
-    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == null || rangeMap_ == null || domainMap_ == null), std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == Teuchos::null || rangeMap_ == Teuchos::null || domainMap_ == Teuchos::null), std::logic_error, err );
     // if storage has been optimized, then indices should have been allocated (even if trivially so)
     TEUCHOS_TEST_FOR_EXCEPTION( isStorageOptimized() == true && indicesAreAllocated() == false, std::logic_error, err );
     // if storage has been optimized, then number of allocated is now the number of entries
@@ -2074,15 +2261,15 @@ namespace Tpetra {
       std::logic_error, err);
     // if profile is static, then 2D allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pftype_ == StaticProfile && (lclInds2D_ != null || gblInds2D_ != null),
+      pftype_ == StaticProfile && (lclInds2D_ != Teuchos::null || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
 
     // if indices are not allocated, then none of the buffers should be.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! indicesAreAllocated () &&
       ((k_rowPtrs_.dimension_0 () != 0 || k_numRowEntries_.dimension_0 () != 0) ||
-       k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != null ||
-       k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != null),
+       k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != Teuchos::null ||
+       k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
 
     // indices may be local or global only if they are allocated
@@ -2093,11 +2280,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( indicesAreLocal_ == true && indicesAreGlobal_ == true,                                                  std::logic_error, err );
     // if indices are local, then global allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      indicesAreLocal_ && (k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != null),
+      indicesAreLocal_ && (k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
     // if indices are global, then local allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      indicesAreGlobal_ && (k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != null),
+      indicesAreGlobal_ && (k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != Teuchos::null),
       std::logic_error, err );
     // if indices are local, then local allocations should be present
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2119,12 +2306,12 @@ namespace Tpetra {
     if (indicesAreAllocated()) {
       size_t actualNumAllocated = 0;
       if (pftype_ == DynamicProfile) {
-        if (isGloballyIndexed() && gblInds2D_ != null) {
+        if (isGloballyIndexed() && gblInds2D_ != Teuchos::null) {
           for (size_t r = 0; r < getNodeNumRows(); ++r) {
             actualNumAllocated += gblInds2D_[r].size();
           }
         }
-        else if (isLocallyIndexed() && lclInds2D_ != null) {
+        else if (isLocallyIndexed() && lclInds2D_ != Teuchos::null) {
           for (size_t r = 0; r < getNodeNumRows(); ++r) {
             actualNumAllocated += lclInds2D_[r].size();
           }
@@ -2619,6 +2806,7 @@ namespace Tpetra {
   insertGlobalIndices (const GlobalOrdinal grow,
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices)
   {
+    using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -3033,291 +3221,163 @@ namespace Tpetra {
   }
 
 
-  // TODO: in the future, globalAssemble() should use import/export functionality
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   globalAssemble ()
   {
-    using Teuchos::Array;
     using Teuchos::Comm;
-    using Teuchos::gatherAll;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
     using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    using Teuchos::toString;
-    using Teuchos::waitAll;
-    using std::endl;
-    using std::make_pair;
-    using std::pair;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic> crs_graph_type;
+    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename std::map<GO, std::vector<GO> >::const_iterator NLITER;
-    typedef typename Array<GO>::size_type size_type;
+    typedef typename Teuchos::Array<GO>::size_type size_type;
+    const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
 
-    const char tfecfFuncName[] = "globalAssemble"; // for exception macro
-    RCP<const Comm<int> > comm = getComm();
+    RCP<const Comm<int> > comm = getComm ();
 
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-#ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier (*comm);
-#endif // HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillActive (), std::runtime_error, "Fill must be active before "
+       "you may call this method.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive(), std::runtime_error,
-      ": requires that fill is active.");
-    // Determine if any nodes have global entries to share
+    const size_t myNumNonlocalRows = nonlocals_.size ();
+
+    // If no processes have nonlocal rows, then we don't have to do
+    // anything.  Checking this is probably cheaper than constructing
+    // the Map of nonlocal rows (see below) and noticing that it has
+    // zero global entries.
     {
-      size_t MyNonlocals = nonlocals_.size(), MaxGlobalNonlocals;
-      reduceAll (*comm, REDUCE_MAX, MyNonlocals, outArg (MaxGlobalNonlocals));
-      if (MaxGlobalNonlocals == 0) {
-        return;  // no entries to share
+      const int iHaveNonlocalRows = (myNumNonlocalRows == 0) ? 0 : 1;
+      int someoneHasNonlocalRows = 0;
+      reduceAll<int, int> (*comm, REDUCE_MAX, iHaveNonlocalRows,
+                           outArg (someoneHasNonlocalRows));
+      if (someoneHasNonlocalRows == 0) {
+        return; // no process has nonlocal rows, so nothing to do
       }
     }
 
-    // compute a list of NLRs from nonlocals_ and use it to compute:
-    //      IdsAndRows: a vector of (id,row) pairs
-    //          NLR2Id: a map from NLR to the Id that owns it
-    // globalNeighbors: a global graph of connectivity between images:
-    //   globalNeighbors(i,j) indicates that j sends to i
-    //         sendIDs: a list of all images I send to
-    //         recvIDs: a list of all images I receive from (constructed later)
-    Array<pair<int, GO> > IdsAndRows;
-    std::map<GO, int> NLR2Id;
-    Teuchos::SerialDenseMatrix<int, char> globalNeighbors;
-    Array<int> sendIDs, recvIDs;
-    {
-      // nonlocals_ contains the entries we are holding for all
-      // nonowned rows.  Compute list of rows for which we have data.
-      Array<GO> NLRs;
-      std::set<GO> setOfRows;
-      for (NLITER iter = nonlocals_.begin (); iter != nonlocals_.end (); ++iter) {
-        setOfRows.insert (iter->first);
-      }
-      // copy the elements in the set into an Array
-      NLRs.resize (setOfRows.size ());
-      std::copy (setOfRows.begin (), setOfRows.end (), NLRs.begin ());
+    // 1. Create a list of the "nonlocal" rows on each process.  this
+    //    requires iterating over nonlocals_, so while we do this,
+    //    deduplicate the entries and get a count for each nonlocal
+    //    row on this process.
+    // 2. Construct a new row Map corresponding to those rows.  This
+    //    Map is likely overlapping.  We know that the Map is not
+    //    empty on all processes, because the above all-reduce and
+    //    return exclude that case.
 
-      // get a list of ImageIDs for the non-local rows (NLRs)
-      Array<int> NLRIds(NLRs.size());
+    RCP<const map_type> nonlocalRowMap;
+    // Keep this for CrsGraph's constructor, so we can use StaticProfile.
+    Teuchos::ArrayRCP<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
+    {
+      Teuchos::Array<GO> myNonlocalGblRows (myNumNonlocalRows);
+      size_type curPos = 0;
+      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+           ++mapIter, ++curPos) {
+        myNonlocalGblRows[curPos] = mapIter->first;
+        std::vector<GO>& gblCols = mapIter->second; // by ref; change in place
+        std::sort (gblCols.begin (), gblCols.end ());
+        auto vecLast = std::unique (gblCols.begin (), gblCols.end ());
+        gblCols.erase (vecLast, gblCols.end ());
+        numEntPerNonlocalRow[curPos] = gblCols.size ();
+      }
+
+      // Currently, Map requires that its indexBase be the global min
+      // of all its global indices.  Map won't compute this for us, so
+      // we must do it.  If our process has no nonlocal rows, set the
+      // "min" to the max possible GO value.  This ensures that if
+      // some process has at least one nonlocal row, then it will pick
+      // that up as the min.  We know that at least one process has a
+      // nonlocal row, since the all-reduce and return at the top of
+      // this method excluded that case.
+      GO myMinNonlocalGblRow = std::numeric_limits<GO>::max ();
       {
-        const LookupStatus stat =
-          rowMap_->getRemoteIndexList (NLRs (), NLRIds ());
-        int lclerror = ( stat == IDNotPresent ? 1 : 0 );
-        int gblerror;
-        reduceAll<int, int> (*comm, REDUCE_MAX, lclerror, outArg (gblerror));
-        if (gblerror != 0) {
-          const int myRank = comm->getRank ();
-          std::ostringstream os;
-          os << "On one or more processes in the communicator, "
-             << "there were insertions into rows of the graph that do not "
-             << "exist in the row Map on any process in the communicator."
-             << endl << "This process " << myRank << " is "
-             << (lclerror == 0 ? "not " : "") << "one of those offending "
-             << "processes." << endl;
-          if (lclerror != 0) {
-            // If NLRIds[k] is -1, then NLRs[k] is a row index not in
-            // the row Map.  Collect this list of invalid row indices
-            // for display in the exception message.
-            Array<GO> invalidNonlocalRows;
-            for (size_type k = 0; k < NLRs.size (); ++k) {
-              if (NLRIds[k] == -1) {
-                invalidNonlocalRows.push_back (NLRs[k]);
-              }
-            }
-            const size_type numInvalid = invalidNonlocalRows.size ();
-            os << "On this process, " << numInvalid << " nonlocal row"
-               << (numInvalid != 1 ? "s " : " ") << " were inserted that are "
-               << "not in the row Map on any process." << endl;
-            // Don't print _too_ many nonlocal rows.
-            if (numInvalid <= 100) {
-              os << "Offending row indices: "
-                 << toString (invalidNonlocalRows ()) << endl;
-            }
-          }
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            gblerror != 0, std::runtime_error,
-            ": nonlocal entries correspond to invalid rows."
-            << endl << os.str ());
+        auto iter = std::min_element (myNonlocalGblRows.begin (),
+                                      myNonlocalGblRows.end ());
+        if (iter != myNonlocalGblRows.end ()) {
+          myMinNonlocalGblRow = *iter;
         }
       }
-
-      // build up a list of neighbors, as well as a map between NLRs and Ids
-      // localNeighbors[i] != 0 iff I have data to send to image i
-      // put NLRs,Ids into an array of pairs
-      IdsAndRows.reserve(NLRs.size());
-      Array<char> localNeighbors(numImages, 0);
-      typename Array<GO>::const_iterator nlr;
-      typename Array<int>::const_iterator id;
-      for (nlr = NLRs.begin(), id = NLRIds.begin();
-           nlr != NLRs.end(); ++nlr, ++id) {
-        NLR2Id[*nlr] = *id;
-        localNeighbors[*id] = 1;
-        // IdsAndRows.push_back(make_pair<int,GlobalOrdinal>(*id,*nlr));
-        IdsAndRows.push_back(make_pair(*id,*nlr));
-      }
-      for (int j=0; j<numImages; ++j) {
-        if (localNeighbors[j]) {
-          sendIDs.push_back(j);
-        }
-      }
-      // sort IdsAndRows, by Ids first, then rows
-      std::sort(IdsAndRows.begin(),IdsAndRows.end());
-      // gather from other nodes to form the full graph
-      globalNeighbors.shapeUninitialized(numImages,numImages);
-      gatherAll (*getComm(), numImages, localNeighbors.getRawPtr(),
-                 numImages * numImages, globalNeighbors.values());
-      // globalNeighbors at this point contains (on all images) the
-      // connectivity between the images.
-      // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j
+      GO gblMinNonlocalGblRow = 0;
+      reduceAll<int, GO> (*comm, REDUCE_MIN, myMinNonlocalGblRow,
+                          outArg (gblMinNonlocalGblRow));
+      const GO indexBase = gblMinNonlocalGblRow;
+      const global_size_t INV = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+      nonlocalRowMap = rcp (new map_type (INV, myNonlocalGblRows (), indexBase, comm));
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    // FIGURE OUT WHO IS SENDING TO WHOM AND HOW MUCH
-    // DO THIS IN THE PROCESS OF PACKING ALL OUTGOING DATA ACCORDING TO DESTINATION ID
-    //////////////////////////////////////////////////////////////////////////////////////
+    // 3. Use the column indices for each nonlocal row, as stored in
+    //    nonlocals_, to construct a CrsGraph corresponding to
+    //    nonlocal rows.  We may use StaticProfile, since we have
+    //    exact counts of the number of entries in each nonlocal row.
 
-    // loop over all columns to know from which images I can expect to receive something
-    for (int j=0; j<numImages; ++j) {
-      if (globalNeighbors(myImageID,j)) {
-        recvIDs.push_back(j);
-      }
-    }
-    const size_t numRecvs = recvIDs.size();
-
-    // we know how many we're sending to already
-    // form a contiguous list of all data to be sent
-    // track the number of entries for each ID
-    Array<pair<GO, GO> > IJSendBuffer;
-    Array<size_t> sendSizes(sendIDs.size(), 0);
-    size_t numSends = 0;
-    for (typename Array<pair<int, GO> >::const_iterator IdAndRow = IdsAndRows.begin();
-         IdAndRow != IdsAndRows.end(); ++IdAndRow) {
-      int id = IdAndRow->first;
-      GO row = IdAndRow->second;
-      // have we advanced to a new send?
-      if (sendIDs[numSends] != id) {
-        numSends++;
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(sendIDs[numSends] != id,
-          std::logic_error, ": internal logic error. Contact Tpetra team.");
-      }
-      // copy data for row into contiguous storage
-      for (typename std::vector<GO>::const_iterator j = nonlocals_[row].begin ();
-           j != nonlocals_[row].end (); ++j) {
-        IJSendBuffer.push_back (pair<GlobalOrdinal, GlobalOrdinal> (row, *j));
-        sendSizes[numSends]++;
-      }
-    }
-    if (IdsAndRows.size() > 0) {
-      numSends++; // one last increment, to make it a count instead of an index
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<typename Array<int>::size_type> (numSends) != sendIDs.size (),
-      std::logic_error, ": internal logic error. Contact Tpetra team.");
-
-    // don't need this data anymore
-    nonlocals_.clear();
-
-    //////////////////////////////////////////////////////////////////////////////////////
-    // TRANSMIT SIZE INFO BETWEEN SENDERS AND RECEIVERS
-    //////////////////////////////////////////////////////////////////////////////////////
-
-    // Array of pending nonblocking communication requests.  It's OK
-    // to mix nonblocking send and receive requests in the same
-    // waitAll() call.
-    Array<RCP<Teuchos::CommRequest<int> > > requests;
-
-    // perform non-blocking sends: send sizes to our recipients
-    for (size_t s = 0; s < numSends ; ++s) {
-      // We're using a nonowning RCP because all communication
-      // will be local to this method and the scope of our data
-      requests.push_back (isend<int, size_t> (*comm,
-                                              rcp (&sendSizes[s], false),
-                                              sendIDs[s]));
-    }
-    // perform non-blocking receives: receive sizes from our senders
-    Array<size_t> recvSizes (numRecvs);
-    for (size_t r = 0; r < numRecvs; ++r) {
-      // We're using a nonowning RCP because all communication
-      // will be local to this method and the scope of our data
-      requests.push_back (ireceive (*comm, rcp (&recvSizes[r], false), recvIDs[r]));
-    }
-    // Wait on all the nonblocking sends and receives.
-    if (! requests.empty()) {
-      waitAll (*comm, requests());
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier (*comm);
-#endif // HAVE_TPETRA_DEBUG
-
-    // This doesn't necessarily deallocate the array.
-    requests.resize (0);
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // NOW SEND/RECEIVE ALL ROW DATA
-    ////////////////////////////////////////////////////////////////////////////////////
-    // from the size info, build the ArrayViews into IJSendBuffer
-    Array<ArrayView<pair<GO,GO> > > sendBuffers(numSends,null);
+    RCP<crs_graph_type> nonlocalGraph =
+      rcp (new crs_graph_type (nonlocalRowMap, numEntPerNonlocalRow,
+                               StaticProfile));
     {
-      size_t cur = 0;
-      for (size_t s=0; s<numSends; ++s) {
-        sendBuffers[s] = IJSendBuffer(cur,sendSizes[s]);
-        cur += sendSizes[s];
+      size_type curPos = 0;
+      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+           ++mapIter, ++curPos) {
+        const GO gblRow = mapIter->first;
+        std::vector<GO>& gblCols = mapIter->second; // by ref just to avoid copy
+        const LO numEnt = static_cast<LO> (numEntPerNonlocalRow[curPos]);
+        nonlocalGraph->insertGlobalIndices (gblRow, numEnt, gblCols.data ());
       }
     }
-    // perform non-blocking sends
-    for (size_t s=0; s < numSends ; ++s)
-    {
-      // We're using a nonowning RCP because all communication
-      // will be local to this method and the scope of our data
-      ArrayRCP<pair<GO,GO> > tmpSendBuf =
-        arcp (sendBuffers[s].getRawPtr(), 0, sendBuffers[s].size(), false);
-      requests.push_back (isend<int, pair<GO,GO> > (*comm, tmpSendBuf, sendIDs[s]));
-    }
-    // calculate amount of storage needed for receives
-    // setup pointers for the receives as well
-    size_t totalRecvSize = std::accumulate (recvSizes.begin(), recvSizes.end(), 0);
-    Array<pair<GO,GO> > IJRecvBuffer (totalRecvSize);
-    // from the size info, build the ArrayViews into IJRecvBuffer
-    Array<ArrayView<pair<GO,GO> > > recvBuffers (numRecvs, null);
-    {
-      size_t cur = 0;
-      for (size_t r=0; r<numRecvs; ++r) {
-        recvBuffers[r] = IJRecvBuffer(cur,recvSizes[r]);
-        cur += recvSizes[r];
-      }
-    }
-    // perform non-blocking recvs
-    for (size_t r = 0; r < numRecvs; ++r) {
-      // We're using a nonowning RCP because all communication
-      // will be local to this method and the scope of our data
-      ArrayRCP<pair<GO,GO> > tmpRecvBuf =
-        arcp (recvBuffers[r].getRawPtr(), 0, recvBuffers[r].size(), false);
-      requests.push_back (ireceive (*comm, tmpRecvBuf, recvIDs[r]));
-    }
-    // perform waits
-    if (! requests.empty()) {
-      waitAll (*comm, requests());
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier (*comm);
-#endif // HAVE_TPETRA_DEBUG
+    // There's no need to fill-complete the nonlocals graph.
+    // We just use it as a temporary container for the Export.
 
-    ////////////////////////////////////////////////////////////////////////////////////
-    // NOW PROCESS THE RECEIVED ROW DATA
-    ////////////////////////////////////////////////////////////////////////////////////
-    // TODO: instead of adding one entry at a time, add one row at a time.
-    //       this requires resorting; they arrived sorted by sending node,
-    //       so that entries could be non-contiguous if we received
-    //       multiple entries for a particular row from different processors.
-    //       it also requires restoring the data, which may make it not worth the trouble.
-    for (typename Array<pair<GO,GO> >::const_iterator ij = IJRecvBuffer.begin();
-         ij != IJRecvBuffer.end(); ++ij)
-    {
-      insertGlobalIndicesFiltered (ij->first, tuple<GO> (ij->second));
+    // 4. If the original row Map is one to one, then we can Export
+    //    directly from nonlocalGraph into this.  Otherwise, we have
+    //    to create a temporary graph with a one-to-one row Map,
+    //    Export into that, then Import from the temporary graph into
+    //    *this.
+
+    auto origRowMap = this->getRowMap ();
+    const bool origRowMapIsOneToOne = origRowMap->isOneToOne ();
+
+    if (origRowMapIsOneToOne) {
+      export_type exportToOrig (nonlocalRowMap, origRowMap);
+      this->doExport (*nonlocalGraph, exportToOrig, Tpetra::INSERT);
+      // We're done at this point!
     }
-    checkInternalState();
+    else {
+      // If you ask a Map whether it is one to one, it does some
+      // communication and stashes intermediate results for later use
+      // by createOneToOne.  Thus, calling createOneToOne doesn't cost
+      // much more then the original cost of calling isOneToOne.
+      auto oneToOneRowMap = Tpetra::createOneToOne (origRowMap);
+      export_type exportToOneToOne (nonlocalRowMap, oneToOneRowMap);
+
+      // Create a temporary graph with the one-to-one row Map.
+      //
+      // TODO (mfh 09 Sep 2016) Estimate the number of entries in each
+      // row, to avoid reallocation during the Export operation.
+      crs_graph_type oneToOneGraph (oneToOneRowMap, 0);
+      // Export from graph of nonlocals into the temp one-to-one graph.
+      oneToOneGraph.doExport (*nonlocalGraph, exportToOneToOne, Tpetra::INSERT);
+
+      // We don't need the graph of nonlocals anymore, so get rid of
+      // it, to keep the memory high-water mark down.
+      nonlocalGraph = Teuchos::null;
+
+      // Import from the one-to-one graph to the original graph.
+      import_type importToOrig (oneToOneRowMap, origRowMap);
+      this->doImport (oneToOneGraph, importToOrig, Tpetra::INSERT);
+    }
+
+    // It's safe now to clear out nonlocals_, since we've already
+    // committed side effects to *this.  The standard idiom for
+    // clearing a Container like std::map, is to swap it with an empty
+    // Container and let the swapped Container fall out of scope.
+    decltype (nonlocals_) newNonlocals;
+    std::swap (nonlocals_, newNonlocals);
+
+    checkInternalState ();
   }
 
 
@@ -3335,7 +3395,7 @@ namespace Tpetra {
     Teuchos::barrier( *rowMap_->getComm() );
 #endif // HAVE_TPETRA_DEBUG
     clearGlobalConstants();
-    if (params != null) this->setParameterList (params);
+    if (params != Teuchos::null) this->setParameterList (params);
     lowerTriangular_  = false;
     upperTriangular_  = false;
     // either still sorted/merged or initially sorted/merged
@@ -4339,6 +4399,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeGlobalConstants ()
   {
+    using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
@@ -4469,11 +4530,15 @@ namespace Tpetra {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef device_type DT;
+    typedef typename local_graph_type::row_map_type::non_const_value_type offset_type;
+    typedef decltype (k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::non_const_value_type num_ent_type;
     typedef typename local_graph_type::entries_type::non_const_type
       lcl_col_inds_type;
     typedef Kokkos::View<GO*, typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
-    typedef decltype (k_numRowEntries_) row_entries_type;
+
     const char tfecfFuncName[] = "makeIndicesLocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4500,6 +4565,9 @@ namespace Tpetra {
         // GO to LO.  Otherwise, we'll just allocate a new buffer.
         constexpr bool LO_GO_same = std::is_same<LO, GO>::value;
         if (nodeNumAllocated_ && LO_GO_same) {
+          // This prevents a build error (illegal assignment) if
+          // LO_GO_same is _not_ true.  Only the first branch
+          // (returning k_gblInds1D_) should ever get taken.
           k_lclInds1D_ = Kokkos::Impl::if_c<LO_GO_same,
             t_GlobalOrdinal_1D,
             lcl_col_inds_type>::select (k_gblInds1D_, k_lclInds1D_);
@@ -4510,36 +4578,66 @@ namespace Tpetra {
              "k_rowPtrs_.dimension_0() == 0.  This should never happen at this "
              "point.  Please report this bug to the Tpetra developers.");
 
-          // FIXME (mfh 26 Jun 2016) This assumes UVM.
-          const size_t numEnt = k_rowPtrs_[lclNumRows];
-          k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::lclind", numEnt);
+          // FIXME (mfh 17 Dec 2016) If we can assume UVM, or if we
+          // can otherwise access the memory space directly, don't
+          // bother with create_mirror_view and deep_copy; just read
+          // the last entry.
+          //
+          // Don't assume UVM.  Get a ("0-D") View of the last entry
+          // of k_rowPtrs_, get its host mirror View, and use that to
+          // get the number of entries.
+          auto lastEnt_d = Kokkos::subview (k_rowPtrs_, lclNumRows);
+          auto lastEnt_h = Kokkos::create_mirror_view (lastEnt_d);
+          Kokkos::deep_copy (lastEnt_h, lastEnt_d);
+          const auto numEnt = lastEnt_h ();
+
+          // mfh 17 Dec 2016: We don't need initial zero-fill of
+          // k_lclInds1D_, because we will fill it below anyway.
+          // AllowPadding would only help for aligned access (e.g.,
+          // for vectorization) if we also were to pad each row to the
+          // same alignment, so we'll skip AllowPadding for now.
+
+          // using Kokkos::AllowPadding;
+          using Kokkos::view_alloc;
+          using Kokkos::WithoutInitializing;
+
+          // When giving the label as an argument to
+          // Kokkos::view_alloc, the label must be a string and not a
+          // char*, else the code won't compile.  This is because
+          // view_alloc also allows a raw pointer as its first
+          // argument.  See
+          // https://github.com/kokkos/kokkos/issues/434.  This is a
+          // large allocation typically, so the overhead of creating
+          // an std::string is minor.
+          const std::string label ("Tpetra::CrsGraph::lclind");
+          k_lclInds1D_ =
+            lcl_col_inds_type (view_alloc (label, WithoutInitializing), numEnt);
         }
 
-        // FIXME (mfh 26 Jun 2016) Convert to a Kokkos parallel_reduce
-        // functor (reduce over error code).  Use LocalMap for
-        // global-to-local index conversions in the parallel loop.
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_rowPtrs_).
-          const size_t offset = k_rowPtrs_(lclRow);
-          // NOTE (mfh 26 Jun 2016) It's always legal to cast the
-          // number of entries in a row to LO, as long as the row
-          // doesn't have too many duplicate entries.
-          const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
-          for (LO j = 0; j < numEnt; ++j) {
-            // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_gblInds1D_).
-            const GO gid = k_gblInds1D_(offset + j);
-            const LO lid = colMap.getLocalElement (gid);
-            // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_lclInds1D_).
-            k_lclInds1D_(offset + j) = lid;
-#ifdef HAVE_TPETRA_DEBUG
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-              (lid == Teuchos::OrdinalTraits<LO>::invalid(), std::logic_error,
-               "In local row " << lclRow << ", global column " << gid << " is "
-               "not in the column Map.  This should never happen.  Please "
-               "report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-          }
-        }
+        auto lclColMap = colMap.getLocalMap ();
+        // This is a "device mirror" of the host View h_numRowEnt.
+        //
+        // NOTE (mfh 27 Sep 2016) Currently, the right way to get a
+        // Device instance is to use its default constructor.  See the
+        // following Kokkos issue:
+        //
+        // https://github.com/kokkos/kokkos/issues/442
+        auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
+
+        using Details::convertColumnIndicesFromGlobalToLocal;
+        const size_t numBad =
+          convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
+                                                                                        k_gblInds1D_,
+                                                                                        k_rowPtrs_,
+                                                                                        lclColMap,
+                                                                                        k_numRowEnt);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numBad != 0, std::runtime_error, "When converting column indices "
+           "from global to local, we encountered " << numBad
+           << "ind" << (numBad != static_cast<size_t> (1) ? "ices" : "ex")
+           << " that do" << (numBad != static_cast<size_t> (1) ? "es" : "")
+           << " not live in the column Map on this process.");
+
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
@@ -4613,6 +4711,7 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
+    using Teuchos::outArg;
     using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
@@ -5038,14 +5137,18 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     const char tfecfFuncName[] = "describe()";
-    using std::endl;
-    using std::setw;
+    using Teuchos::ArrayView;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
+    using std::endl;
+    using std::setw;
+
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
     RCP<const Comm<int> > comm = this->getComm();
@@ -5075,15 +5178,15 @@ namespace Tpetra {
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         if (myImageID == 0) out << "\nRow map: " << std::endl;
         rowMap_->describe(out,vl);
-        if (colMap_ != null) {
+        if (colMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nColumn map: " << std::endl;
           colMap_->describe(out,vl);
         }
-        if (domainMap_ != null) {
+        if (domainMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nDomain map: " << std::endl;
           domainMap_->describe(out,vl);
         }
-        if (rangeMap_ != null) {
+        if (rangeMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nRange map: " << std::endl;
           rangeMap_->describe(out,vl);
         }
@@ -5562,13 +5665,9 @@ namespace Tpetra {
     const bool sorted = this->isSorted ();
     if (isFillComplete ()) {
       auto lclGraph = this->getLocalGraph ();
-      // This actually invokes the parallel kernel to do the work.
-      Details::GetLocalDiagOffsets<LO, GO, Node> doIt (offsets,
-                                                       lclRowMap,
-                                                       lclColMap,
-                                                       lclGraph.row_map,
-                                                       lclGraph.entries,
-                                                       sorted);
+      Details::getGraphDiagOffsets (offsets, lclRowMap, lclColMap,
+                                    lclGraph.row_map, lclGraph.entries,
+                                    sorted);
     }
     else {
       for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {

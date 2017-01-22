@@ -159,7 +159,13 @@ void ConnManager<GO>::getElementBlockIds(std::vector<std::string> & elementBlock
    elementBlockIds.push_back("block_1");
    elementBlockIds.push_back("block_2");
 }
-
+template <typename GO>
+void ConnManager<GO>::getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const
+{
+  const CellTopologyData & myCellData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
+  struct shards::CellTopology my_topo(&myCellData);
+  elementBlockTopologies = std::vector<shards::CellTopology>(3,my_topo);
+}
 template <typename GO>
 const std::vector<typename ConnManager<GO>::LocalOrdinal> & ConnManager<GO>::getElementBlock(const std::string & blockID) const
 {

@@ -505,7 +505,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
 {
   std::vector<T> source(src_dest, src_dest + size);
 
-  if (MPI_Allreduce(&source[0], &src_dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(source.data(), &src_dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -526,7 +526,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
 {
   std::vector<T> source(dest);
 
-  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(source.data(), dest.data(), dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -551,7 +551,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &
   if (source.size() != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(source.data(), dest.data(), dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -565,8 +565,8 @@ AllGather(MPI_Comm mpi_comm, std::vector<T> &source, std::vector<T> &dest)
   if (source.size()*nproc != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allgather(&source[0], source.size(), Datatype<T>::type(),
-                    &dest[0],   source.size(), Datatype<T>::type(),
+  if (MPI_Allgather(source.data(), source.size(), Datatype<T>::type(),
+                    dest.data(),   source.size(), Datatype<T>::type(),
                     mpi_comm) != MPI_SUCCESS ){
     throw std::runtime_error("MPI_Allreduce failed");
   }
@@ -1132,12 +1132,11 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
   MPI_Comm_size(mpi_comm, &num_proc);
   MPI_Comm_rank(mpi_comm, &my_proc);
 
-
   std::vector<int> local_array_len(num_proc, 0);
   local_array_len[my_proc] = size;
   std::vector<int> global_array_len(num_proc, 0);
 
-  MPI_Allreduce(&local_array_len[0], &global_array_len[0], num_proc, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(local_array_len.data(), global_array_len.data(), num_proc, MPI_INT, MPI_SUM, mpi_comm);
 
   for(unsigned i = 0; i < num_proc; ++i) {
     if(global_array_len[i] != size) {
@@ -1149,7 +1148,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
   if (source.empty()) return;
   std::vector<T> dest(size);
 
-  if (MPI_Allreduce(&source[0], &dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(source.data(), dest.data(), size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 
   typename std::vector<T>::iterator dest_getter = dest.begin();

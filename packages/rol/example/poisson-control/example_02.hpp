@@ -7,8 +7,8 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
 
 
 template<class Real>
@@ -400,7 +400,7 @@ public:
 };
 
 template<class Real>
-class DiffusionEqualityConstraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
+class DiffusionEqualityConstraint : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<FEM<Real> > FEM_;
   bool num_solves_;
@@ -544,7 +544,7 @@ public:
 // Class BurgersObjective contains the necessary information
 // to compute the value and gradient of the objective function.
 template<class Real>
-class DiffusionObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
+class DiffusionObjective : public ROL::Objective_SimOpt<Real> {
 private:
   const Teuchos::RCP<FEM<Real> > FEM_;
   const Real alpha_;

@@ -101,7 +101,6 @@ Ioss::Property Ioss::EntityBlock::get_implicit_property(const std::string &my_na
   if (my_name == "topology_type") {
     return Ioss::Property(my_name, topology()->name());
   }
-  else {
-    return Ioss::GroupingEntity::get_implicit_property(my_name);
-  }
+
+  return Ioss::GroupingEntity::get_implicit_property(my_name);
 }

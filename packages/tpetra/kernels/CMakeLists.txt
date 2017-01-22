@@ -41,6 +41,36 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental TpetraKernels features."
   NO )
 
+
+ASSERT_DEFINED (Tpetra_INST_CUDA)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
+  TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+  "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Tpetra_INST_CUDA=${Tpetra_INST_CUDA} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_CUDA is enabled will make Tpetra build times longer."
+  ${Tpetra_INST_CUDA}
+  )
+ASSERT_DEFINED (Tpetra_INST_OPENMP)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
+  TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+  "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Tpetra_INST_OPENMP=${Tpetra_INST_OPENMP} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_OPENMP is enabled will make Tpetra build times longer."
+  ${Tpetra_INST_OPENMP}
+  )
+ASSERT_DEFINED (Tpetra_INST_PTHREAD)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
+  TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+  "Whether to build kernels for the execution space Kokkos::Threads.  This option is Tpetra_INST_PTHREAD=${Tpetra_INST_PTHREAD} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_PTHREAD is enabled will make Tpetra build times longer."
+  ${Tpetra_INST_PTHREAD}
+  )
+ASSERT_DEFINED (Tpetra_INST_SERIAL)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
+  TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+  "Whether to build kernels for the execution space Kokkos::Serial.  This option is Tpetra_INST_SERIAL=${Tpetra_INST_SERIAL} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_SERIAL is enabled will make Tpetra build times longer."
+  ${Tpetra_INST_SERIAL}
+  )
+
 # ==================================================================
 # Explicit template instantiation (ETI) and test instantiation logic
 # ==================================================================
@@ -52,14 +82,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Whether or not ETI is defined, the variables govern the set of
 # template parameter combinations over which Tpetra runs tests.
 
-ASSERT_DEFINED (Tpetra_ETI_SCALARS)
-ASSERT_DEFINED (Tpetra_ETI_SCALARS_NO_ORDS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS_ORDS)
 ASSERT_DEFINED (Tpetra_ETI_LORDS)
 ASSERT_DEFINED (Tpetra_ETI_DEVICES)
 
-SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS}")
+# mfh 11 Oct 2016: Use Kokkos versions of Scalar types for ETI.
+# In particular, use Kokkos::complex<T> in place of std::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS_KOKKOS}")
 # Exclude all ordinal types (GlobalOrdinal and int).
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_NO_ORDS}")
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS}")
+# Include ONLY ordinal types (GlobalOrdinal and int).
+SET(${PACKAGE_NAME}_ETI_SCALARS_ORDS "${Tpetra_ETI_SCALARS_KOKKOS_ORDS}")
 SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}")
 SET(${PACKAGE_NAME}_ETI_DEVICES "${Tpetra_ETI_DEVICES}")
 
@@ -68,6 +103,7 @@ SET(${PACKAGE_NAME}_ETI_DEVICES "${Tpetra_ETI_DEVICES}")
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})

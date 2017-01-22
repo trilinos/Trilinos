@@ -59,6 +59,7 @@
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_RepartitionHeuristicFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"

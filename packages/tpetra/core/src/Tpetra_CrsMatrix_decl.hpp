@@ -418,7 +418,7 @@ namespace Tpetra {
                const typename local_matrix_type::row_map_type& rowPointers,
                const typename local_graph_type::entries_type::non_const_type& columnIndices,
                const typename local_matrix_type::values_type& values,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
     ///   the matrix in sorted, local ids.
@@ -448,7 +448,7 @@ namespace Tpetra {
                const Teuchos::ArrayRCP<size_t>& rowPointers,
                const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
                const Teuchos::ArrayRCP<Scalar>& values,
-               const Teuchos::RCP<ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
@@ -473,7 +473,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const local_matrix_type& lclMatrix,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2, const bool isClassic>
@@ -506,9 +506,11 @@ namespace Tpetra {
     template <class Node2>
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
     clone (const Teuchos::RCP<Node2>& node2,
-           const Teuchos::RCP<Teuchos::ParameterList>& params = null) const
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
+      using Teuchos::Array;
       using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
       using Teuchos::null;
       using Teuchos::ParameterList;
       using Teuchos::RCP;
@@ -1680,59 +1682,98 @@ namespace Tpetra {
     /// resumeFill calls as many times as you wish.
     ///
     /// \post <tt>isFillActive() && ! isFillComplete()</tt>
-    void resumeFill (const RCP<ParameterList>& params = null);
+    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
-
-      Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-
-      Parameters:
-
-      - "No Nonlocal Changes" (\c bool): Default is false.  If true,
-        the caller promises that no modifications to nonowned rows
-        have happened on any process since the last call to
-        fillComplete.  This saves a global all-reduce to check whether
-        any process did a nonlocal insert.  Nonlocal changes include
-        any sumIntoGlobalValues or insertGlobalValues call with a row
-        index that is not in the row Map of the calling process.
-
-      - "Sort column Map ghost GIDs" (\c bool): Default is true.
-        makeColMap() (which fillComplete may call) always groups
-        remote GIDs by process rank, so that all remote GIDs with the
-        same owning rank occur contiguously.  By default, it always
-        sorts remote GIDs in increasing order within those groups.
-        This behavior differs from Epetra, which does not sort remote
-        GIDs with the same owning process.  If you don't want to sort
-        (for compatibility with Epetra), set this parameter to \c
-        false.  This parameter only takes effect if the matrix owns
-        the graph.  This is an expert mode parameter ONLY.  We make no
-        promises about backwards compatibility of this parameter.  It
-        may change or disappear at any time.
-    */
+    /// \brief Tell the matrix that you are done changing its
+    ///   structure or values, and that you are ready to do
+    ///   computational kernels (e.g., sparse matrix-vector multiply)
+    ///   with it.
+    ///
+    /// This tells the graph to optimize its data structures for
+    /// computational kernels, and to prepare (MPI) communication
+    /// patterns.
+    ///
+    /// Off-process indices are distributed (via globalAssemble()),
+    /// indices are sorted, redundant indices are fused, and global
+    /// indices are transformed to local indices.
+    ///
+    /// \warning The domain Map and row Map arguments to this method
+    ///   MUST be one to one!  If you have Maps that are not one to
+    ///   one, and you do not know how to make a Map that covers the
+    ///   same global indices but <i>is</i> one to one, then you may
+    ///   call Tpetra::createOneToOne() (see Map's header file) to
+    ///   make a one-to-one version of your Map.
+    ///
+    /// \pre  <tt>   isFillActive() && ! isFillComplete() </tt>
+    /// \post <tt> ! isFillActive() &&   isFillComplete() </tt>
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See below for valid parameters.
+    ///
+    /// List of valid parameters in <tt>params</tt>:
+    /// <ul>
+    /// <li> "No Nonlocal Changes" (\c bool): Default is false.  If
+    ///      true, the caller promises that no modifications to
+    ///      nonowned rows have happened on any process since the last
+    ///      call to fillComplete.  This saves a global all-reduce to
+    ///      check whether any process did a nonlocal insert.
+    ///      Nonlocal changes include any sumIntoGlobalValues or
+    ///      insertGlobalValues call with a row index that is not in
+    ///      the row Map of the calling process.
+    /// </li>
+    ///
+    /// <li> "Sort column Map ghost GIDs" (\c bool): Default is true.
+    ///      makeColMap() (which fillComplete may call) always groups
+    ///      remote GIDs by process rank, so that all remote GIDs with
+    ///      the same owning rank occur contiguously.  By default, it
+    ///      always sorts remote GIDs in increasing order within those
+    ///      groups.  This behavior differs from Epetra, which does
+    ///      not sort remote GIDs with the same owning process.  If
+    ///      you don't want to sort (for compatibility with Epetra),
+    ///      set this parameter to \c false.  This parameter only
+    ///      takes effect if the matrix owns the graph.  This is an
+    ///      expert mode parameter ONLY.  We make no promises about
+    ///      backwards compatibility of this parameter.  It may change
+    ///      or disappear at any time.
+    /// </li>
+    /// </ul>
     void
-    fillComplete (const RCP<const map_type>& domainMap,
-                  const RCP<const map_type>& rangeMap,
-                  const RCP<ParameterList>& params = null);
+    fillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
+                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /*! \brief Signal that data entry is complete.
-
-      Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
-
-      \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-    */
-    void fillComplete (const RCP<ParameterList>& params = null);
+    /// \brief Tell the matrix that you are done changing its
+    ///   structure or values, and that you are ready to do
+    ///   computational kernels (e.g., sparse matrix-vector multiply)
+    ///   with it.  Set default domain and range Maps.
+    ///
+    /// See above three-argument version of fillComplete for full
+    /// documentation.  If the matrix does not yet have domain and
+    /// range Maps (i.e., if fillComplete has not yet been called on
+    /// this matrix at least once), then this method uses the matrix's
+    /// row Map (result of this->getRowMap()) as both the domain Map
+    /// and the range Map.  Otherwise, this method uses the matrix's
+    /// existing domain and range Maps.
+    ///
+    /// \warning It is only valid to call this overload of
+    ///   fillComplete if the row Map is one to one!  If the row Map
+    ///   is NOT one to one, you must call the above three-argument
+    ///   version of fillComplete, and supply one-to-one domain and
+    ///   range Maps.  If you have Maps that are not one to one, and
+    ///   you do not know how to make a Map that covers the same
+    ///   global indices but <i>is</i> one to one, then you may call
+    ///   Tpetra::createOneToOne() (see Map's header file) to make a
+    ///   one-to-one version of your Map.
+    ///
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.  See documentation of the three-argument
+    ///   version of fillComplete (above) for valid parameters.
+    void
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
@@ -1745,12 +1786,27 @@ namespace Tpetra {
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param importer [in] Import from the matrix's domain Map to
+    ///   its column Map.  If no Import is necessary (i.e., if the
+    ///   domain and column Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param exporter [in] Export from the matrix's row Map to its
+    ///   range Map.  If no Export is necessary (i.e., if the row and
+    ///   range Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    /// \param params [in/out] List of parameters controlling this
+    ///   method's behavior.
     void
-    expertStaticFillComplete (const RCP<const map_type>& domainMap,
-                              const RCP<const map_type>& rangeMap,
-                              const RCP<const import_type>& importer = Teuchos::null,
-                              const RCP<const export_type>& exporter = Teuchos::null,
-                              const RCP<ParameterList>& params = Teuchos::null);
+    expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                              const Teuchos::RCP<const map_type>& rangeMap,
+                              const Teuchos::RCP<const import_type>& importer = Teuchos::null,
+                              const Teuchos::RCP<const export_type>& exporter = Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Replace the matrix's column Map with the given Map.
     ///
@@ -2233,6 +2289,38 @@ namespace Tpetra {
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const;
+
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the matrix, using "raw" pointers instead of
+    ///   Teuchos::ArrayView.
+    ///
+    /// The returned views of the column indices and values are not
+    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
+    /// Furthermore, any changes to the indices or values, or any
+    /// intervening calls to fillComplete() or resumeFill(), may
+    /// invalidate the returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the matrix has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param numEnt [out] Number of entries in the row that are
+    ///   stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns
+    ///   corresponding to values.
+    /// \param vals [out] Matrix values.
+    ///
+    /// \return Error code; zero on no error.
+    LocalOrdinal
+    getLocalRowViewRaw (const LocalOrdinal lclRow,
+                        LocalOrdinal& numEnt,
+                        const LocalOrdinal*& lclColInds,
+                        const Scalar*& vals) const;
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
@@ -2758,12 +2846,14 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
          "X and Y must be constant stride.");
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+        ( getNodeNumRows()>0 && ! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
          "The matrix is neither upper triangular or lower triangular.  "
          "You may only call this method if the matrix is triangular.  "
          "Remember that this is a local (per MPI process) property, and that "
          "Tpetra only knows how to do a local (per process) triangular solve.");
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
          "not currently support non-conjugated transposed solve (mode == "
@@ -2842,8 +2932,8 @@ namespace Tpetra {
     apply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
            MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-           Scalar alpha = ScalarTraits<Scalar>::one(),
-           Scalar beta = ScalarTraits<Scalar>::zero()) const;
+           Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     //! Whether apply() allows applying the transpose or conjugate transpose.
     bool hasTransposeApply () const;
@@ -3392,10 +3482,47 @@ namespace Tpetra {
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType>
+    importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                    const Import<typename CrsMatrixType::local_ordinal_type,
+                                                 typename CrsMatrixType::global_ordinal_type,
+                                                 typename CrsMatrixType::node_type>& rowImporter,
+                                   const Import<typename CrsMatrixType::local_ordinal_type,
+                                                typename CrsMatrixType::global_ordinal_type,
+                                                typename CrsMatrixType::node_type>& domainImporter,
+                                    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                                 typename CrsMatrixType::global_ordinal_type,
+                                                                 typename CrsMatrixType::node_type> >& domainMap,
+                                    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                                 typename CrsMatrixType::global_ordinal_type,
+                                                                 typename CrsMatrixType::node_type> >& rangeMap,
+                                    const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+
+    // Friend declaration for nonmember function.
+    template<class CrsMatrixType>
+    friend Teuchos::RCP<CrsMatrixType>
     exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
                                     const Export<typename CrsMatrixType::local_ordinal_type,
                                                  typename CrsMatrixType::global_ordinal_type,
                                                  typename CrsMatrixType::node_type>& exporter,
+                                    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                                 typename CrsMatrixType::global_ordinal_type,
+                                                                 typename CrsMatrixType::node_type> >& domainMap,
+                                    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                                 typename CrsMatrixType::global_ordinal_type,
+                                                                 typename CrsMatrixType::node_type> >& rangeMap,
+                                    const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    // Friend declaration for nonmember function.
+    template<class CrsMatrixType>
+    friend Teuchos::RCP<CrsMatrixType>
+    exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                    const Export<typename CrsMatrixType::local_ordinal_type,
+                                                 typename CrsMatrixType::global_ordinal_type,
+                                                 typename CrsMatrixType::node_type>& rowExporter,
+                                    const Export<typename CrsMatrixType::local_ordinal_type,
+                                                 typename CrsMatrixType::global_ordinal_type,
+                                                 typename CrsMatrixType::node_type>& domainExporter,
                                     const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                  typename CrsMatrixType::global_ordinal_type,
                                                                  typename CrsMatrixType::node_type> >& domainMap,
@@ -3427,6 +3554,30 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
+    /// \brief Import from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
+    ///
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >& destMatrix,
+                           const import_type& rowImporter,
+                           const import_type& domainImporter,
+                           const Teuchos::RCP<const map_type>& domainMap,
+                           const Teuchos::RCP<const map_type>& rangeMap,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+
+
     /// \brief Export from <tt>this</tt> to the given destination
     ///   matrix, and make the result fill complete.
     ///
@@ -3449,6 +3600,28 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
+    /// \brief Export from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
+    ///
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >& destMatrix,
+                           const export_type& rowExporter,
+                           const export_type& domainExporter,
+                           const Teuchos::RCP<const map_type>& domainMap,
+                           const Teuchos::RCP<const map_type>& rangeMap,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params) const;
 
 
   private:
@@ -3475,6 +3648,7 @@ namespace Tpetra {
     void
     transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >& destMatrix,
                              const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer,
+                             const Teuchos::RCP<const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node> > & domainTransfer,
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
@@ -4066,7 +4240,82 @@ namespace Tpetra {
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->importAndFillComplete (destMatrix,importer, domainMap, rangeMap, params);
+    sourceMatrix->importAndFillComplete (destMatrix,importer,domainMap, rangeMap, params);
+    return destMatrix;
+  }
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// A common use case is to create an empty destination CrsMatrix,
+  /// redistribute from a source CrsMatrix (by an Import or Export
+  /// operation), then call fillComplete() on the destination
+  /// CrsMatrix.  This constructor fuses these three cases, for an
+  /// Import redistribution.
+  ///
+  /// Fusing redistribution and fillComplete() exposes potential
+  /// optimizations.  For example, it may make constructing the column
+  /// Map faster, and it may avoid intermediate unoptimized storage in
+  /// the destination CrsMatrix.  These optimizations may improve
+  /// performance for specialized kernels like sparse matrix-matrix
+  /// multiply, as well as for redistributing data after doing load
+  /// balancing.
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \warning If the target Map of the Import is a subset of the
+  ///   source Map of the Import, then you cannot use the default
+  ///   range Map.  You should instead construct a nonoverlapping
+  ///   version of the target Map and supply that as the nondefault
+  ///   value of the range Map.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   import.  The source of an Import must have a nonoverlapping
+  ///   distribution.
+  ///
+  /// \param rowImporter [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the rowMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the rowMap of the sourceMatrix
+  ///
+  /// \param domainImporter [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the domainMap of sourceMatrix unless
+  ///   the "Reverse Mode" option on the params list, in which case
+  ///   the targetMap of Import must match the domainMap of the sourceMatrix
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Import<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& rowImporter,
+                                  const Import<typename CrsMatrixType::local_ordinal_type,
+                                              typename CrsMatrixType::global_ordinal_type,
+                                              typename CrsMatrixType::node_type>& domainImporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  {
+    Teuchos::RCP<CrsMatrixType> destMatrix;
+    sourceMatrix->importAndFillComplete (destMatrix,rowImporter,domainImporter, domainMap, rangeMap, params);
     return destMatrix;
   }
 
@@ -4118,7 +4367,62 @@ namespace Tpetra {
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
-    sourceMatrix->exportAndFillComplete (destMatrix,exporter, domainMap, rangeMap, params);
+    sourceMatrix->exportAndFillComplete (destMatrix,exporter,domainMap, rangeMap, params);
+    return destMatrix;
+  }
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// For justification, see the documentation of
+  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
+  /// this function).
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
+  /// the source matrix.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   export.  Its row Map may be overlapping, since the source of
+  ///   an Export may be overlapping.
+  ///
+  /// \param rowExporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param domainExporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the domain Map of sourceMatrix.
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+                                  const Export<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& rowExporter,
+                                  const Export<typename CrsMatrixType::local_ordinal_type,
+                                               typename CrsMatrixType::global_ordinal_type,
+                                               typename CrsMatrixType::node_type>& domainExporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+                                                               typename CrsMatrixType::global_ordinal_type,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  {
+    Teuchos::RCP<CrsMatrixType> destMatrix;
+    sourceMatrix->exportAndFillComplete (destMatrix,rowExporter,domainExporter,domainMap, rangeMap, params);
     return destMatrix;
   }
 } // namespace Tpetra

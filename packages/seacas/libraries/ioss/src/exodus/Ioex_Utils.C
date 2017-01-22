@@ -996,7 +996,7 @@ namespace Ioex {
       }
     }
     nodes.resize(active);
-    std::vector<int64_t>(nodes).swap(nodes); // shrink to fit
+    nodes.shrink_to_fit(); // shrink to fit
     return (active != orig_size);
   }
 

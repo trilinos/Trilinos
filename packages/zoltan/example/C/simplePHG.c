@@ -71,9 +71,11 @@ typedef struct{
 
            /* Zoltan will partition vertices, while minimizing edge cuts */
 
+  int numGlobalVertices;  /* number of vertices in global hypergraph */
   int numMyVertices;  /* number of vertices that I own initially */
   ZOLTAN_ID_TYPE *vtxGID;        /* global ID of these vertices */
 
+  int numGlobalEdges;  /* number of edges in global hypergraph */
   int numMyHEdges;    /* number of my hyperedges */
   int numAllNbors; /* number of vertices in my hyperedges */
   ZOLTAN_ID_TYPE *edgeGID;       /* global ID of each of my hyperedges */
@@ -444,8 +446,8 @@ ZOLTAN_ID_TYPE edgeID, vtxID;
 int cutn, cutl;
 float imbal, localImbal;
 
-  numVtx = 25;
-  numEdges = 25;
+  numVtx = global_hg.numGlobalVertices;
+  numEdges = global_hg.numGlobalEdges;
 
   partAssign = (int *)calloc(sizeof(int), numVtx);
   allPartAssign = (int *)calloc(sizeof(int), numVtx);
@@ -622,6 +624,7 @@ HGRAPH_DATA *send_hg;
     num = sscanf(buf, "%d", &numGlobalVertices);
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
+    global_hg.numGlobalVertices = numGlobalVertices;
     global_hg.numMyVertices = numGlobalVertices;
     global_hg.vtxGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalVertices);
 
@@ -644,6 +647,7 @@ HGRAPH_DATA *send_hg;
     num = sscanf(buf, "%d", &numGlobalEdges);
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
+    global_hg.numGlobalEdges = numGlobalEdges;
     global_hg.numMyHEdges = numGlobalEdges;
     global_hg.edgeGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalEdges);
     global_hg.nborIndex = (int *)malloc(sizeof(int) * (numGlobalEdges + 1));
@@ -861,4 +865,6 @@ HGRAPH_DATA *send_hg;
       exit(1);
     }
   }
+  MPI_Bcast(&(global_hg.numGlobalVertices), 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&(global_hg.numGlobalEdges), 1, MPI_INT, 0, MPI_COMM_WORLD);
 }

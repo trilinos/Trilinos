@@ -1,0 +1,78 @@
+<ParameterList name="Setting">
+        <ParameterList name="Problem">
+	  <Parameter        name="problem type"                   type="string"      value="ADR3D"/>
+	  <Parameter        name="domain size in x-direction"     type="double"      value="6.0"/>
+	  <Parameter        name="domain size in y-direction"     type="double"      value="6.0"/>
+	  <Parameter        name="domain size in z-direction"     type="double"      value="6.0"/>
+	  <Parameter        name="nodes in x-direction"           type="int"         value="60"/>
+	  <Parameter        name="nodes in y-direction"           type="int"         value="60"/>
+	  <Parameter        name="nodes in z-direction"           type="int"         value="60"/>
+	  <Parameter        name="number of runs"                 type="int"         value="1"/>
+        </ParameterList>
+        <ParameterList name="MueLu">
+	  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+	  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+	  <Parameter        name="max levels"                           type="int"      value="2"/>
+
+	  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+
+	  <!-- ===========  AGGREGATION  =========== -->
+	  <Parameter        name="aggregation: type"                    type="string"   value="brick"/>
+	  <Parameter        name="aggregation: brick x size"            type="int"      value="20"/>
+	  <Parameter        name="aggregation: brick y size"            type="int"      value="20"/>
+	  <Parameter        name="aggregation: brick z size"            type="int"      value="20"/>
+	  <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+	  <Parameter        name="smoother: pre or post"                type="string"   value="post"/>
+	  <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.1"/> -->
+
+	  <!-- ===========  REPARTITIONING  =========== -->
+	  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver SuperLU sparse direct solve -->
+	  
+	  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+	  <ParameterList    name="smoother: params">
+	    <Parameter name="schwarz: overlap level"            type="int"    value="0"/>
+	    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+	    <Parameter name="subdomain solver name"             type="string" value="RILUK"/>
+	    <ParameterList name="subdomain solver parameters">
+	      <Parameter name= "fact: iluk level-of-fill"         type="int"    value="3"/>
+	      <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
+	      <Parameter name= "fact: relative threshold"         type="double" value="1."/>
+	      <Parameter name= "fact: relax value"                type="double" value="0."/>
+	    </ParameterList>
+	  </ParameterList>
+	  <Parameter name="coarse: type" type="string" value="SCHWARZ"/>
+	  <ParameterList    name="coarse: params">
+	    <Parameter name="schwarz: overlap level"            type="int"    value="0"/>
+	    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+	    <Parameter name="subdomain solver name"             type="string" value="RILUK"/>
+	    <ParameterList name="subdomain solver parameters">
+	      <Parameter name= "fact: iluk level-of-fill"         type="int"    value="3"/>
+	      <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
+	      <Parameter name= "fact: relative threshold"         type="double" value="1."/>
+	      <Parameter name= "fact: relax value"                type="double" value="0."/>
+	    </ParameterList>
+	  </ParameterList>
+	   <!-- 
+	   <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
+	   -->
+	  <!-- ===========  REPARTITIONING  =========== -->
+	  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+	  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan"/>
+	  <Parameter        name="repartition: start level"             type="int"      value="1"/>
+	  <Parameter        name="repartition: min rows per proc"       type="int"      value="10000000"/>
+	  <Parameter        name="repartition: max imbalance"           type="double"   value="1.2"/>
+	  <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+	  <Parameter        name="repartition: rebalance P and R"       type="bool"     value="false"/>
+	  <!-- ===========  EXPORT DATA  =========== -->
+	  <!--
+	  <ParameterList name="export data">
+	    <Parameter        name="A"                  type="string"     value="{0,1}"/>
+	    <Parameter        name="P"                  type="string"     value="{0,1}"/>
+	    <Parameter        name="R"                  type="string"     value="{0}"/>
+	  </ParameterList>
+	  -->
+	</ParameterList>
+</ParameterList>
+

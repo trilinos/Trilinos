@@ -76,7 +76,7 @@
 
 #define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
 
-#define XPETRA_TPETRA_ETI_EXCEPTION(cl,obj,go) TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Problem in " #cl "! Cannot create new object " #obj " with GO=" #go ". Xpetra has been compiled with Tpetra enabled but GO!=" #go ". Please add TPETRA_INST_INT_INT to your configuration.");
+#define XPETRA_TPETRA_ETI_EXCEPTION(cl,obj,go,node) TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Problem in " #cl "! Cannot create new object " #obj " with GO=" #go " and NO=" #node ". Xpetra has been compiled with Tpetra enabled but GO=" #go " disabled and/or NO=" #node " disabled. Please check your Trilinos configuration.");
 
 namespace Xpetra {
   namespace Exceptions {

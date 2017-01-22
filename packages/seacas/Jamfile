@@ -96,6 +96,7 @@ alias install-targets
     io_info
     shell_to_hex
     cth_pressure_map
+    struc_to_unstruc
     Utst_ioel
     Utst_superelement
     Utst_database_io
@@ -154,6 +155,7 @@ alias install-targets
     io_info
     shell_to_hex
     cth_pressure_map
+    struc_to_unstruc
     Utst_ioel
     Utst_superelement
     Utst_database_io
@@ -177,7 +179,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -202,6 +204,13 @@ install install-user-include2
   : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
   : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/include
+  ;
+
+explicit install-user-include2b ;
+install install-user-include2b
+  : [ path.glob-tree $(seacas-root)/libraries/exodus/sierra : *.h ]
+  : <location>$(install-root)/seacas/include/exodus
+    <install-source-root>$(seacas-root)/libraries/exodus/sierra
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -251,6 +260,7 @@ install install-user-lib
     exodus
     nemesis
     exodus_for
+    exoIIv2for32
     mapvarlib
     aprepro_lib
     ioex
@@ -279,6 +289,7 @@ install install-user-lib
     exodus
     nemesis
     exodus_for
+    exoIIv2for32
     blotlib
     fastqlib
     mapvarlib
@@ -333,6 +344,7 @@ install install-user-bin
     io_info
     shell_to_hex
     cth_pressure_map
+    struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
@@ -344,7 +356,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <target-os>bgq <location>$(install-root)/bin
+  : <target-os>bgq <location>$(install-bin-dir)
   ;
 
 install install-user-bin
@@ -387,6 +399,7 @@ install install-user-bin
     io_info
     shell_to_hex
     cth_pressure_map
+    struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
@@ -398,7 +411,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <location>$(install-root)/bin
+  : <location>$(install-bin-dir)
   ;
 
 explicit install-exe-targets ;
@@ -723,6 +736,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/exodus/src/*.c ]
+        [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf//netcdf
   :
@@ -730,6 +744,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
+        <include>$(seacas-root)/libraries/exodus/sierra
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -743,6 +758,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
+        <include>$(seacas-root)/libraries/exodus/sierra
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -821,6 +837,44 @@ lib exodus_for
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
+  ;
+
+
+lib exoIIv2for32
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        $(seacas-root)/libraries/exoIIv2for32/src/exo_jack_32.c
+    ]
+    exodus
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root)/libraries/exodus_for/include
+	<define>DEFAULT_REAL_INT
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(sierra-root)/seacas/lib/libexoIIv2for32.a
+    ]
+    <define>DEFAULT_REAL_INT
+  :
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root)/libraries/exodus_for/include
+	<define>DEFAULT_REAL_INT
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <include>$(sierra-root)/seacas/include/exodus
+    ]
+    <define>DEFAULT_REAL_INT
   ;
 
 
@@ -1810,6 +1864,17 @@ exe cth_pressure_map
   :
     $(seacas-root)/libraries/ioss/src/main/cth_pressure_map.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
+    ioinit
+    ioss
+    iotr
+    ioxf
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe struc_to_unstruc
+  :
+    $(seacas-root)/libraries/ioss/src/main/struc_to_unstruc.C
     ioinit
     ioss
     iotr

@@ -10,6 +10,25 @@ namespace Tacho {
   template<typename MT>
   class DenseMatrixView;
 
+
+  /// Supernodal Cholesky
+  /// ===================
+  template<>
+  template<typename CrsExecViewTypeA>
+  inline
+  Stat
+  Chol<Uplo::Upper,
+       AlgoChol::SuperNodes,Variant::One>
+  ::stat(CrsExecViewTypeA &A) {
+
+    DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA(A.Flat());
+    
+    // all diagonal blocks are supposed and assumed to be full matrix
+    return Chol<Uplo::Upper,
+      AlgoChol::ExternalLapack,Variant::One>
+      ::stat(AA);
+  }
+
   /// Supernodal Cholesky
   /// ===================
   template<>
@@ -21,7 +40,7 @@ namespace Tacho {
   Chol<Uplo::Upper,
        AlgoChol::SuperNodes,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            CrsExecViewTypeA &A) {
 
     int r_val = 0;

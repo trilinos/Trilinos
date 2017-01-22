@@ -937,6 +937,11 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
   if( inArgs.supports(IN_ARG_beta) )
     epetraInArgs->set_beta(inArgs.get_beta());
 
+  if( inArgs.supports(IN_ARG_step_size) )
+    epetraInArgs->set_step_size(inArgs.get_step_size());
+
+  if( inArgs.supports(IN_ARG_stage_number) )
+    epetraInArgs->set_stage_number(inArgs.get_stage_number());
 }
 
 
@@ -1189,6 +1194,10 @@ void EpetraModelEvaluator::preEvalScalingSetup(
       epetraInArgs.set_beta(1.0);
     if( epetraInArgs.supports(EME::IN_ARG_alpha) )
       epetraInArgs.set_alpha(0.0);
+    if( epetraInArgs.supports(EME::IN_ARG_step_size) )
+      epetraInArgs.set_step_size(0.0);
+    if( epetraInArgs.supports(EME::IN_ARG_stage_number) )
+      epetraInArgs.set_stage_number(1.0);
   }
 
 }
@@ -1393,6 +1402,8 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   inArgs.setSupports(IN_ARG_t, epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, epetraInArgs.supports(EME::IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, epetraInArgs.supports(EME::IN_ARG_beta));
+  inArgs.setSupports(IN_ARG_step_size, epetraInArgs.supports(EME::IN_ARG_step_size));
+  inArgs.setSupports(IN_ARG_stage_number, epetraInArgs.supports(EME::IN_ARG_stage_number));
   for(int l=0; l<l_Np; ++l) {
     inArgs.setSupports(IN_ARG_p_mp, l, epetraInArgs.supports(EME::IN_ARG_p_mp, l));
   }

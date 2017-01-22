@@ -74,10 +74,10 @@ protected:
   void setBases( Array< Array< RCP< Basis< Scalar , ArrayScalar > > > > & bases )
   {
     bases_.resize( bases.size() );
-    for (int i=0;i<bases.size();i++)
+    for (ordinal_type i=0;i<bases.size();i++)
       {
 	bases_[i].resize( bases[i].size() );
-	for (int j=0;j<bases[i].size();j++)
+	for (ordinal_type j=0;j<bases[i].size();j++)
 	  {
 	    bases_[i][j] = bases[i][j];
 	  }

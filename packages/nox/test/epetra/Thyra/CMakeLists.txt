@@ -82,6 +82,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_1DPoisson
+    SOURCES  ${UNIT_TEST_DRIVER} ModelEvaluator1DPoisson.hpp ModelEvaluator1DPoisson_def.hpp Thyra_SingleStepSolver_1D.C
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_Rosenbrock_SafeguardedStepLineSearch
     SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
     Thyra_Rosenbrock_SafeguardedStepLineSearch.cpp

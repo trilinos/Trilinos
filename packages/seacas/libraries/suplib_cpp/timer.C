@@ -33,8 +33,8 @@
 #include <chrono>
 double seacas_timer()
 {
-  static auto start = std::chrono::high_resolution_clock::now();
-  auto now = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> diff = now-start;
+  static auto                   start = std::chrono::high_resolution_clock::now();
+  auto                          now   = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> diff  = now - start;
   return diff.count();
 }

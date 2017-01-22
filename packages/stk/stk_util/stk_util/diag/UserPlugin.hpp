@@ -34,11 +34,11 @@
 #ifndef STK_UTIL_DIAG_UserPlugin_h
 #define STK_UTIL_DIAG_UserPlugin_h
 
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for 
 #include <functional>                   // for binary_function
 #include <iosfwd>                       // for ostream
 #include <map>                          // for map, map<>::value_compare
-#include <stk_util/diag/StringUtil.hpp>  // for less_nocase
+#include <stk_util/diag/StringUtil.hpp> // for less_nocase
 #include <stk_util/util/Fortran.hpp>    // for SIERRA_FORTRAN
 #include <string>                       // for string
 #include <typeinfo>                     // for type_info
@@ -453,7 +453,7 @@ public:
    * @return			a <b>bool</b> of true if class of the type specified by derived_name exists in BaseClass.
    */
   static bool exists(const std::string &derived_name) {
-    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != NULL;
+    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != nullptr;
   }
 
   static std::vector<std::string> getDerivedNames() {
@@ -643,7 +643,7 @@ public:
    *				signature and <it>function_name</it> exists in BaseClass.
    */
   static bool exists(const std::string &derived_name) {
-    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != NULL;
+    return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != nullptr;
   }
 
   /**

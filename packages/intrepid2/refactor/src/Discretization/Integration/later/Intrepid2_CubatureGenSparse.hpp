@@ -64,13 +64,13 @@
 namespace Intrepid2{
 
 
-template<class Scalar, int dimension_, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+template<class Scalar, ordinal_type dimension_, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
 class CubatureGenSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
-  int numPoints_;
+  ordinal_type numPoints_;
 
-  const int degree_;
+  const ordinal_type degree_;
 
   SGNodes<Scalar, dimension_> grid;
 
@@ -80,7 +80,7 @@ class CubatureGenSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeig
   ~CubatureGenSparse() {}
 
 
-  CubatureGenSparse(const int degree);
+  CubatureGenSparse(const ordinal_type degree);
 
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
@@ -104,25 +104,25 @@ class CubatureGenSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeig
 
   /** \brief Returns the number of cubature points.
   */
-  virtual int getNumPoints() const;
+  virtual ordinal_type getNumPoints() const;
 
   /** \brief Returns dimension of the integration domain.
   */
-  virtual int getDimension() const;
+  virtual ordinal_type getDimension() const;
 
   /** \brief Returns algebraic accuracy (e.g. max. degree of polynomial
              that is integrated exactly).
   */
-  virtual void getAccuracy(std::vector<int> & accuracy) const;
+  virtual void getAccuracy(std::vector<ordinal_type> & accuracy) const;
 
 }; // end class CubatureGenSparse
 
 // helper functions
 template<class Scalar>
-inline Scalar Sum(Scalar* list, int first, int last)
+inline Scalar Sum(Scalar* list, ordinal_type first, ordinal_type last)
 {
   Scalar sum = 0;
-  for(int i = first; i <= last; i++)
+  for(ordinal_type i = first; i <= last; i++)
     sum += list[i];
   return sum;
 }

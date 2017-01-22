@@ -16,6 +16,10 @@ SET(HAVE_BLAS ON)
 SET(HAVE_LAPACK ON)
 SET(HAVE_MPI ${Epetra_ENABLE_MPI})
 
+INCLUDE(CheckHaveEpetraLapackGSSVD3)
+CHECK_HAVE_EPETRA_LAPACK_GSSVD3(HAVE_EPETRA_LAPACK_GSSVD3)
+
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 # Set the base Trilinos directory in order to find Trilinos_version.h

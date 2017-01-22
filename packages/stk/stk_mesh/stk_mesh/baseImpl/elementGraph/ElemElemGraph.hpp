@@ -16,8 +16,8 @@
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 #include "SideConnector.hpp"
-#include "../MeshImplUtils.hpp"
-#include "../../../../stk_util/stk_util/util/SortAndUnique.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
 #include "BulkDataIdMapper.hpp"
 
 namespace stk { class CommBuffer; }
@@ -114,7 +114,7 @@ public:
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
-    size_t size() {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
+    size_t size() const {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
@@ -122,6 +122,8 @@ public:
     stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
+    stk::mesh::SideNodeConnector get_side_node_connector();
+    stk::mesh::SideIdChooser get_side_id_chooser();
 
     const stk::mesh::BulkData& get_mesh() const;
 
@@ -168,6 +170,9 @@ public:
     {
         return m_idMapper.local_to_entity(localId);
     }
+
+    const SideIdPool& get_side_id_pool() const { return m_sideIdPool; }
+
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
@@ -254,7 +259,7 @@ protected:
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
 private:
-    stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
+    void add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,

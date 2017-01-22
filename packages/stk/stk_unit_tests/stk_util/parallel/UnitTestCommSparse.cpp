@@ -101,9 +101,9 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
     else {
       unsigned expected = p+1;
       if (recv_bufs[p].size() != expected) {
-std::ostringstream msg;
-msg<<"proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl;
-std::cout<<msg.str()<<std::endl;
+        std::ostringstream msg;
+        msg<<"proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl;
+        std::cout<<msg.str()<<std::endl;
       }
       EXPECT_EQ(expected, recv_bufs[p].size());
     }

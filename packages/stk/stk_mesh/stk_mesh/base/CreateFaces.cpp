@@ -57,7 +57,6 @@
 #include "stk_topology/topology.tcc"    // for topology::num_nodes
 #include "stk_topology/topology_type.tcc"  // for topology::topology_type
 
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
 
@@ -79,9 +78,9 @@ struct shared_face_type
   EntityKey                 global_key;
 
   shared_face_type(stk::topology my_topology) :
-    topology(my_topology.value())
+    topology(my_topology.value()),
+    nodes(my_topology.num_nodes())
   {
-    nodes.resize(my_topology.num_nodes());
   }
 
   shared_face_type(const shared_face_type & a) :
@@ -172,7 +171,7 @@ struct create_face_impl
                       PartVector add_parts;
                       add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
 
-                      face = mesh.declare_entity( stk::topology::FACE_RANK, face_id, add_parts);
+                      face = mesh.declare_solo_side(face_id, add_parts);
                       m_face_map[permuted_face_nodes] = face;
 
                       const int num_face_nodes = faceTopology.num_nodes();
@@ -225,9 +224,15 @@ void create_faces( BulkData & mesh )
     stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector)
+void create_faces( BulkData & mesh, const Selector & element_selector )
 {
     stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
+}
+
+void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
+{
+    stk::mesh::PartVector parts = {part_to_insert_new_faces};
+    stk::mesh::create_all_sides(mesh, element_selector, parts, false);
 }
 
 void create_faces( BulkData & mesh, bool connect_faces_to_edges)

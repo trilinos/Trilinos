@@ -49,7 +49,7 @@ namespace stk {
 namespace diag {
 
 Trace::ExtraFuncPtr
-Trace::s_extra = 0;
+Trace::s_extra = nullptr;
 
 Trace::TraceList
 Trace::s_traceList;
@@ -103,8 +103,10 @@ prefix_find(
   const char *    s)
 {
   for (Trace::TraceList::const_iterator it = trace_list.begin(); it != trace_list.end(); ++it)
+  {
     if (prefix_compare((*it), s))
-      return true;;
+      return true;
+  }
   return false;
 }
 
@@ -259,20 +261,6 @@ Tracespec::getFunctionClass() const
 
 
 std::string
-Tracespec::getFunctionShortClass() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return class_name;
-}
-
-
-std::string
 Tracespec::getFunctionName() const
 {
   std::string namespace_name;
@@ -283,20 +271,6 @@ Tracespec::getFunctionName() const
   get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
 
   return namespace_name + "::" + class_name + "::" + function_name;
-}
-
-
-std::string
-Tracespec::getFunctionShortName() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return function_name;
 }
 
 

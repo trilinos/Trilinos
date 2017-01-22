@@ -436,7 +436,7 @@ namespace Intrepid2 {
                 DynRankView ConstructWithLabel(cub_points_side_refcell, numCubPointsSide, cellDim);
                 DynRankView ConstructWithLabel(cub_points_side_physical, 1, numCubPointsSide, cellDim);
                 DynRankView ConstructWithLabel(jacobian_side_refcell, 1, numCubPointsSide, cellDim, cellDim);
-                DynRankView ConstructWithLabel(scratch_side, numCubPointsSide*cellDim);
+                DynRankView ConstructWithLabel(scratch_side, numCubPointsSide*cellDim*cellDim);
                 DynRankView ConstructWithLabel(jacobian_det_side_refcell, 1, numCubPointsSide);
                 DynRankView ConstructWithLabel(weighted_measure_side_refcell, 1, numCubPointsSide);
 
@@ -616,7 +616,7 @@ namespace Intrepid2 {
                            << ") and finite element interpolant of order " << basis_order << ": "
                            << relNorm << "\n";
 
-                if (isnan(relNorm) || (relNorm > zero)) {
+                if (std::isnan(relNorm) || (relNorm > zero)) {
                   *outStream << "\n\nPatch test failed for solution polynomial order ("
                              << x_order << ", " << y_order << ", " << z_order << ") and basis order " << basis_order << "\n\n";
                   errorFlag++;

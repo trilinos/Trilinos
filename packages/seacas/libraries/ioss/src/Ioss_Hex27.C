@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Hex27 registerThis; }
 
   protected:
-    St_Hex27() : ElementVariableType("hex27", 27) {}
+    St_Hex27() : ElementVariableType(Ioss::Hex27::name, 27) {}
   };
 } // namespace Ioss
 
@@ -95,9 +95,9 @@ void Ioss::Hex27::factory()
   Ioss::St_Hex27::factory();
 }
 
-Ioss::Hex27::Hex27() : Ioss::ElementTopology("hex27", "Hexahedron_27")
+Ioss::Hex27::Hex27() : Ioss::ElementTopology(Ioss::Hex27::name, "Hexahedron_27")
 {
-  Ioss::ElementTopology::alias("hex27", "Solid_Hex_27_3D");
+  Ioss::ElementTopology::alias(Ioss::Hex27::name, "Solid_Hex_27_3D");
 }
 
 Ioss::Hex27::~Hex27() = default;

@@ -68,7 +68,7 @@ SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/li
 SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
 SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance Zoltan2 Panzer PyTrilinos STK)

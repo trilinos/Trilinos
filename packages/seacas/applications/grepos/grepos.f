@@ -224,6 +224,7 @@ C     --Reserve memory for the input information
       CALL MDRSRV ('LINK',   KLINK,  0)
 
       CALL MDRSRV ('IDELB',  KIDELB, NELBLK)
+      CALL MDRSRV ('IDELB2', KIDELB2,NELBLK)
       CALL MDRSRV ('NUMELB', KNELB,  NELBLK)
       CALL MDRSRV ('NUMLNK', KNLNK,  NELBLK)
       CALL MDRSRV ('NUMATR', KNATR,  NELBLK)
@@ -271,6 +272,12 @@ C     --Read information from the database and close file
       
       call CHKTOP(NELBLK, C(KBKTYP), COMTOP)
       call getnam(NDBIN, 1, nelblk, C(KNAMEB))
+
+C ... Save original element block ids in case the user changes them
+C     Needed when reading/writing element variables.
+      do i=1,nelblk
+        ia(kidelb2-1+i) = ia(kidelb-1+i)
+      end do
 
 C ... Attribute names...
       call mcrsrv('NAMATT', KNAMATT, maxnam*NUMATT)
@@ -647,7 +654,7 @@ C     ... Save old counts that are needed for writing timesteps
       numnp0  = numnp
       
 C     --location of original numelb, isevok arrays
-      kidelb0 = kidelb
+      kidelb0 = kidelb2
       knelb0  = knelb
       kievok0 = kievok
       
@@ -671,7 +678,7 @@ C     old array contents into new (Only needed if EXODUS)
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 40
             CALL CPYINT (NELBLK0, IA(KNELB),  IA(KNELB0))
-            CALL CPYINT (NELBLK0, IA(KIDELB), IA(KIDELB0))
+            CALL CPYINT (NELBLK0, IA(KIDELB2), IA(KIDELB0))
             CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
 
 C     ... Map from new var to old for mapping variables.
@@ -1162,7 +1169,7 @@ C     ... Truth Table.
         time = 0.0
         CALL DBOSTE (NDBOUT, ISTEP,
      &    NVARGL, NVARNP, NUMNP, NVAREL, 0, NELBLK,
-     &    IA(KNELB), LA(KIEVOK), IA(KIDELB),
+     &    IA(KNELB), LA(KIEVOK), IA(KIDELB), 
      *    NVARNS, NUMNPS, IA(KNNNS), IA(KNSVOK), IA(KIDNS),
      *    NVARSS, NUMESS, IA(KNESS), IA(KSSVOK), IA(KIDSS),
      *    TIME, A(KVARGL), A(KVARNP), A(KCENT), A(KVARNS), A(KVARSS),

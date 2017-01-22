@@ -80,7 +80,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
 
@@ -296,7 +296,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -319,15 +319,15 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    TEST_ASSERT(dofManager.getGeometricFieldPattern()!=Teuchos::null);
 
-   std::vector<BlockedDOFManager<int,int>::GlobalOrdinal> ownedAndShared, owned;
-   std::vector<bool> ownedAndShared_bool, owned_bool;
-   dofManager.getOwnedAndSharedIndices(ownedAndShared);
+   std::vector<BlockedDOFManager<int,int>::GlobalOrdinal> ownedAndGhosted, owned;
+   std::vector<bool> ownedAndGhosted_bool, owned_bool;
+   dofManager.getOwnedAndGhostedIndices(ownedAndGhosted);
    dofManager.getOwnedIndices(owned);
 /*
    if(myRank==0)
-   { TEST_EQUALITY(ownedAndShared.size(),39); }
+   { TEST_EQUALITY(ownedAndGhosted.size(),39); }
    else
-   { TEST_EQUALITY(ownedAndShared.size(),30); }
+   { TEST_EQUALITY(ownedAndGhosted.size(),30); }
 */
 
    int sum = 0;
@@ -337,9 +337,9 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    // give it a shuffle to make it interesting
    std::random_shuffle(owned.begin(),owned.end());
-   std::random_shuffle(ownedAndShared.begin(),ownedAndShared.end());
+   std::random_shuffle(ownedAndGhosted.begin(),ownedAndGhosted.end());
    dofManager.ownedIndices(owned,owned_bool);
-   dofManager.ownedIndices(ownedAndShared,ownedAndShared_bool);
+   dofManager.ownedIndices(ownedAndGhosted,ownedAndGhosted_bool);
 
    bool ownedCheck = true;
    for(std::size_t i=0;i<owned_bool.size();i++) 
@@ -347,10 +347,10 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    TEST_ASSERT(ownedCheck);
 
    ownedCheck = true;
-   for(std::size_t i=0;i<ownedAndShared_bool.size();i++) {
-      bool isOwned = std::find(owned.begin(),owned.end(),ownedAndShared[i])!=owned.end();
+   for(std::size_t i=0;i<ownedAndGhosted_bool.size();i++) {
+      bool isOwned = std::find(owned.begin(),owned.end(),ownedAndGhosted[i])!=owned.end();
 
-      ownedCheck &= (isOwned==ownedAndShared_bool[i]);
+      ownedCheck &= (isOwned==ownedAndGhosted_bool[i]);
    }
    TEST_ASSERT(ownedCheck);
 
@@ -413,7 +413,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -678,7 +678,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    // Setup two DOF managers that will correspond to the blocks of the 
    // system.

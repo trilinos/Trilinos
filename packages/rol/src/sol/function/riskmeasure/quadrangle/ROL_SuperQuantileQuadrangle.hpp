@@ -44,7 +44,7 @@
 #ifndef ROL_SUPERQUANTILEQUADRANGLE_HPP
 #define ROL_SUPERQUANTILEQUADRANGLE_HPP
 
-#include "ROL_SingletonKusuoka.hpp"
+#include "ROL_SpectralRisk.hpp"
 #include "ROL_GaussLegendreQuadrature.hpp"
 #include "ROL_Fejer2Quadrature.hpp"
 
@@ -82,7 +82,7 @@
 namespace ROL {
 
 template<class Real>
-class SuperQuantileQuadrangle : public SingletonKusuoka<Real> {
+class SuperQuantileQuadrangle : public SpectralRisk<Real> {
 private:
   Teuchos::RCP<PlusFunction<Real> > plusFunction_;
 
@@ -118,13 +118,13 @@ private:
       wts_[i] /= sum;
       pts_[i] = one - alpha_*(half*(pts_[i] + one));
     }
-    SingletonKusuoka<Real>::buildMixedQuantile(pts_,wts_,plusFunction_);
+    SpectralRisk<Real>::buildMixedQuantile(pts_,wts_,plusFunction_);
   }
 
 public:
 
   SuperQuantileQuadrangle( Teuchos::ParameterList &parlist )
-    : SingletonKusuoka<Real>() {
+    : SpectralRisk<Real>() {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Super Quantile Quadrangle");
     // Grab confidence level and quadrature order
@@ -141,7 +141,7 @@ public:
                           const int nQuad,
                           const Teuchos::RCP<PlusFunction<Real> > &pf,
                           const bool useGauss = true)
-    : SingletonKusuoka<Real>(), plusFunction_(pf),
+    : SpectralRisk<Real>(), plusFunction_(pf),
       alpha_(alpha), nQuad_(nQuad), useGauss_(useGauss) {
     // Check inputs
     checkInputs();

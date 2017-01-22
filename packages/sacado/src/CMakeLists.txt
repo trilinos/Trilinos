@@ -161,6 +161,9 @@ SET(HEADERS ${HEADERS}
   Sacado_StaticArrayTraits.hpp
   Sacado_Handle.hpp
   )
+SET(SOURCES ${SOURCES}
+  Sacado_DynamicArrayTraits.cpp
+  )
 
 # TEMPLATE
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/template)
@@ -263,9 +266,11 @@ SET(HEADERS ${HEADERS}
   Sacado_No_Kokkos.hpp
   Kokkos_View_Fad.hpp
   Kokkos_DynRankView_Fad.hpp
-  Kokkos_AnalyzeSacadoShape.hpp
+  Kokkos_DynRankView_Fad_Contiguous.hpp
   Kokkos_LayoutContiguous.hpp
+  Kokkos_LayoutNatural.hpp
   KokkosExp_View_Fad.hpp
+  KokkosExp_View_Fad_Contiguous.hpp
   Kokkos_ViewFactory.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp

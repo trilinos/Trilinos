@@ -33,55 +33,35 @@
 #ifndef IOSS_Ioss_Region_h
 #define IOSS_Ioss_Region_h
 
-#include "Ioss_CoordinateFrame.h" // for CoordinateFrame
-#include "Ioss_Property.h"        // for Property
+#include <Ioss_CoordinateFrame.h> // for CoordinateFrame
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
 #include <Ioss_EntityType.h>      // for EntityType, etc
 #include <Ioss_GroupingEntity.h>  // for GroupingEntity
-#include <Ioss_State.h>           // for State
-#include <functional>             // for less
-#include <iosfwd>                 // for ostream
-#include <map>                    // for map, map<>::value_compare
-#include <stddef.h>               // for size_t, nullptr
-#include <stdint.h>               // for int64_t
-#include <string>                 // for string, operator<
-#include <utility>                // for pair
-#include <vector>                 // for vector
+#include <Ioss_MeshType.h>
+#include <Ioss_Property.h> // for Property
+#include <Ioss_State.h>    // for State
+#include <functional>      // for less
+#include <iosfwd>          // for ostream
+#include <map>             // for map, map<>::value_compare
+#include <stddef.h>        // for size_t, nullptr
+#include <stdint.h>        // for int64_t
+#include <string>          // for string, operator<
+#include <utility>         // for pair
+#include <vector>          // for vector
 namespace Ioss {
   class CommSet;
-}
-namespace Ioss {
   class EdgeBlock;
-}
-namespace Ioss {
   class EdgeSet;
-}
-namespace Ioss {
   class ElementBlock;
-}
-namespace Ioss {
   class ElementSet;
-}
-namespace Ioss {
   class FaceBlock;
-}
-namespace Ioss {
   class FaceSet;
-}
-namespace Ioss {
   class Field;
-}
-namespace Ioss {
   class NodeBlock;
-}
-namespace Ioss {
   class NodeSet;
-}
-namespace Ioss {
   class SideBlock;
-}
-namespace Ioss {
   class SideSet;
+  class StructuredBlock;
 }
 // Needed for node_global_to_local inline function.
 
@@ -99,9 +79,10 @@ namespace Ioss {
   using FaceSetContainer    = std::vector<FaceSet *>;
   using ElementSetContainer = std::vector<ElementSet *>;
 
-  using SideSetContainer   = std::vector<SideSet *>;
-  using CommSetContainer   = std::vector<CommSet *>;
-  using StateTimeContainer = std::vector<double>;
+  using SideSetContainer         = std::vector<SideSet *>;
+  using StructuredBlockContainer = std::vector<StructuredBlock *>;
+  using CommSetContainer         = std::vector<CommSet *>;
+  using StateTimeContainer       = std::vector<double>;
 
   using CoordinateFrameContainer = std::vector<CoordinateFrame>;
 
@@ -124,6 +105,9 @@ namespace Ioss {
     std::string type_string() const override { return "Region"; }
     std::string short_type_string() const override { return "region"; }
     EntityType  type() const override { return REGION; }
+
+    MeshType          mesh_type() const;
+    const std::string mesh_type_string() const;
 
     void output_summary(std::ostream &strm, bool do_transient = true);
 
@@ -182,6 +166,7 @@ namespace Ioss {
     bool add(FaceSet *faceset);
     bool add(ElementSet *elementset);
     bool add(CommSet *commset);
+    bool add(StructuredBlock *structured_block);
     bool add(const CoordinateFrame &frame);
 
     const NodeBlockContainer &      get_node_blocks() const;
@@ -194,6 +179,7 @@ namespace Ioss {
     const FaceSetContainer &        get_facesets() const;
     const ElementSetContainer &     get_elementsets() const;
     const CommSetContainer &        get_commsets() const;
+    const StructuredBlockContainer &get_structured_blocks() const;
     const CoordinateFrameContainer &get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
@@ -211,6 +197,7 @@ namespace Ioss {
     FaceSet *get_faceset(const std::string &my_name) const;
     ElementSet *get_elementset(const std::string &my_name) const;
     CommSet *get_commset(const std::string &my_name) const;
+    StructuredBlock *get_structured_block(const std::string &my_name) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
@@ -249,6 +236,12 @@ namespace Ioss {
     // or greater than number of elements in database)
     ElementBlock *get_element_block(size_t local_id) const;
 
+    // Retrieve the structured block that contains the specified node
+    // The 'global_offset' is the global offset (0-based)
+    // returns nullptr if no structured block contains this node (local_id <= 0
+    // or greater than number of cell-nodes in database)
+    StructuredBlock *get_structured_block(size_t global_offset) const;
+
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
@@ -285,10 +278,10 @@ namespace Ioss {
     FaceSetContainer    faceSets;
     ElementSetContainer elementSets;
 
-    SideSetContainer         sideSets;
-    CommSetContainer         commSets;
-    CoordinateFrameContainer coordinateFrames;
-
+    SideSetContainer           sideSets;
+    CommSetContainer           commSets;
+    CoordinateFrameContainer   coordinateFrames;
+    StructuredBlockContainer   structuredBlocks;
     mutable StateTimeContainer stateTimes;
 
     int         currentState;

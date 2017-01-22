@@ -68,13 +68,13 @@ template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::initializeTags() {
   
   // Basis-dependent intializations
-  int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+  ordinal_type tagSize  = 4;        // size of DoF tag
+  ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+  ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+  ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
   // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-  int tags[]  = { 0, 0, 0, 1,
+  ordinal_type tags[]  = { 0, 0, 0, 1,
                   0, 1, 0, 1,
                   0, 2, 0, 1,
                   0, 3, 0, 1,
@@ -117,7 +117,7 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
 #endif
   
   // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);  
+  ordinal_type dim0 = inputPoints.dimension(0);  
   
   // Temporaries: (x,y,z) coordinates of the evaluation point
   Scalar x = 0.0;                                    
@@ -128,7 +128,7 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
   switch (operatorType) {
     
     case OPERATOR_VALUE:
-      for (int i0 = 0; i0 < dim0; i0++) {
+      for (ordinal_type i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
         y = inputPoints(i0, 1);
         z = inputPoints(i0, 2);
@@ -165,7 +165,7 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
       
     case OPERATOR_GRAD:
     case OPERATOR_D1:
-      for (int i0 = 0; i0 < dim0; i0++) {
+      for (ordinal_type i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
@@ -246,7 +246,7 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
       break;
       
     case OPERATOR_D2:
-      for (int i0 = 0; i0 < dim0; i0++) {
+      for (ordinal_type i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
@@ -352,7 +352,7 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
       break;
       
     case OPERATOR_D3:
-      for (int i0 = 0; i0 < dim0; i0++) {
+      for (ordinal_type i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
@@ -519,11 +519,11 @@ void Basis_HGRAD_PYR_I2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    out
     case OPERATOR_D10:
       {
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, DkCardinality)
-        int DkCardinality = Intrepid2::getDkCardinality(operatorType, 
+        ordinal_type DkCardinality = Intrepid2::getDkCardinality(operatorType, 
                                                        this -> basisCellTopology_.getDimension() );
-        for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
-          for (int i0 = 0; i0 < dim0; i0++) {
-            for(int dkOrd = 0; dkOrd < DkCardinality; dkOrd++){
+        for(ordinal_type dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
+          for (ordinal_type i0 = 0; i0 < dim0; i0++) {
+            for(ordinal_type dkOrd = 0; dkOrd < DkCardinality; dkOrd++){
               outputValues(dofOrd, i0, dkOrd) = 0.0;
             }
           }

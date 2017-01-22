@@ -129,6 +129,31 @@ public:
   void barrier(void) const {
     bman_->barrier();
   }
+
+  void print(const std::string &filename = "samples",
+             const int prec = 12) const {
+    int width = prec + 5 + 4;
+    std::stringstream name;
+    name << filename << "_" << batchID() << ".txt";
+    std::ofstream file(name.str().c_str());
+    if (file.is_open()) {
+      file << std::scientific << std::setprecision(prec);
+      for (int i = 0; i < numMySamples(); ++i) {
+        std::vector<Real> pt = getMyPoint(i);
+        Real wt = getMyWeight(i);
+        for (int j = 0; j < static_cast<int>(pt.size()); ++j) {
+          file << std::setw(width) << std::left << pt[j];
+        }
+        file << std::setw(width) << std::left << wt << std::endl;
+      }
+      file.close();
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::SampleGenerator::print): Unable to open file!");
+    }
+  }
+
 };
 
 }

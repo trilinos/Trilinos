@@ -63,6 +63,35 @@ namespace Tacho {
             for (auto i=0;i<iend;++i)
               B.Value(i,j) += alpha*A.Value(i,j);
         }
+
+        template<typename DenseMatrixHierType,
+                 typename DenseMatrixFlatType,
+                 typename OrdinalType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getHierMatrix(DenseMatrixHierType &hier,
+                      const DenseMatrixFlatType &flat,
+                      const OrdinalType mb,
+                      const OrdinalType nb) {
+          const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
+          const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
+          
+          typedef typename DenseMatrixHierType::ordinal_type ordinal_type;
+          
+          for (auto j=0;j<hn;++j) {
+            const OrdinalType offn = nb*j;
+            const OrdinalType ntmp = offn + nb; 
+            const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
+            
+            for (auto i=0;i<hm;++i) {
+              const OrdinalType offm = mb*i;
+              const OrdinalType mtmp = offm + mb; 
+              const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
+              hier.Value(i, j).setView(flat, offm, m,
+                                       /**/  offn, n);
+            }
+          }
+        }
       };
 
     };
@@ -77,7 +106,7 @@ namespace Tacho {
     /// \brief elementwise copy 
     template<typename DenseMatrixTypeA, 
              typename DenseMatrixTypeB>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static void
     copy(DenseMatrixTypeA &A,
          const DenseMatrixTypeB &B) {
@@ -94,7 +123,7 @@ namespace Tacho {
       space_type::execution_space::fence();      
 
       Kokkos::parallel_for( range_policy(0, B.NumCols()), 
-                            [&](const ordinal_type j) 
+                            KOKKOS_LAMBDA(const ordinal_type j) 
                             {
                               //#pragma unroll
                               for (auto i=0;i<B.NumRows();++i)
@@ -126,7 +155,7 @@ namespace Tacho {
       space_type::execution_space::fence();      
       
       Kokkos::parallel_for( range_policy(0, B.NumCols()), 
-                            [&](const ordinal_type j) 
+                            KOKKOS_LAMBDA(const ordinal_type j) 
                             {
                               //#pragma unroll
                               for (auto i=0;i<B.NumRows();++i)
@@ -161,7 +190,7 @@ namespace Tacho {
       switch (uplo) {
       case Uplo::Lower: {
         Kokkos::parallel_for( range_policy(0, B.NumCols()),
-                              [&](const ordinal_type j)
+                              KOKKOS_LAMBDA(const ordinal_type j)
                               {
                                 //#pragma unroll
                                 for (ordinal_type i=(j+offset);i<B.NumRows();++i)
@@ -171,7 +200,7 @@ namespace Tacho {
       }
       case Uplo::Upper: {
         Kokkos::parallel_for( range_policy(0, B.NumCols()),
-                              [&](const ordinal_type j)
+                              KOKKOS_LAMBDA(const ordinal_type j)
                               {
                                 //#pragma unroll
                                 for (ordinal_type i=0;i<=(j-offset);++i)
@@ -226,7 +255,7 @@ namespace Tacho {
     template<typename DenseMatrixHierType,
              typename DenseMatrixFlatType,
              typename OrdinalType>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static void
     getHierMatrix(DenseMatrixHierType &hier,
                   const DenseMatrixFlatType &flat,
@@ -241,7 +270,15 @@ namespace Tacho {
       const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
       const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
       
-      for (auto j=0;j<hn;++j) {
+      typedef typename DenseMatrixHierType::space_type space_type;
+      typedef typename DenseMatrixHierType::ordinal_type ordinal_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
+
+      space_type::fence();
+      
+      Kokkos::parallel_for( range_policy(0, hn),
+                            KOKKOS_LAMBDA(const ordinal_type j) 
+        {
         const OrdinalType offn = nb*j;
         const OrdinalType ntmp = offn + nb; 
         const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
@@ -254,8 +291,9 @@ namespace Tacho {
           hier.Value(i, j).setView(flat, offm, m,
                                    /**/  offn, n);
         }
-      }
+      });
     
+      space_type::fence();
     }
 
 
@@ -329,7 +367,7 @@ namespace Tacho {
       space_type::execution_space::fence();
 
       Kokkos::parallel_for( range_policy(0, hn),
-                            [&](const ordinal_type j)
+                            KOKKOS_LAMBDA(const ordinal_type j)
                             {
                               const OrdinalType offn = nb*j;
                               const OrdinalType ntmp = offn + nb; 
@@ -351,7 +389,7 @@ namespace Tacho {
     template<typename DenseMatrixHierType,
              typename DenseMatrixFlatType,
              typename OrdinalType>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static void
     createHierMatrix(DenseMatrixHierType &hier,
                      const DenseMatrixFlatType &flat,
@@ -372,7 +410,7 @@ namespace Tacho {
              typename DenseMatrixFlatType,
              typename OrdinalType,
              typename OrdinalTypeArray>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static void
     createHierMatrix(DenseMatrixHierType &hier,
                      const DenseMatrixFlatType &flat,

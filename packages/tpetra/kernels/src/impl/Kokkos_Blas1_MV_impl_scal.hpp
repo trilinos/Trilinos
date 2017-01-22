@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//               KokkosKernels: Linear Algebra and Graph Kernels
+//                 Copyright 2016 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -1022,37 +1022,37 @@ struct Scal<Kokkos::View<SCALAR*, \
 // file(s) in this source directory.
 //
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_SERIAL
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_OPENMP
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // KOKKOS_HAVE_CUDA
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 //
 // Declarations of full specializations of Impl::Scal for rank == 1
@@ -1060,29 +1060,29 @@ KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokko
 // file(s) in this source directory.
 //
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_SERIAL
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_OPENMP
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // KOKKOS_HAVE_CUDA
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 //
 // Macro for definition of full specialization of

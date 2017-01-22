@@ -162,7 +162,7 @@ int main(int argc, char **argv)
       block_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
 
-    error = ex_get_elem_blk_ids(exoid, ids);
+    error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
     printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
 
     error = ex_get_names(exoid, EX_ELEM_BLOCK, block_names);
@@ -272,8 +272,8 @@ int main(int argc, char **argv)
       }
       else {
         connect = (int *)calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
-        error   = ex_get_elem_conn(exoid, ids[i], connect);
-        printf("\nafter ex_get_elem_conn, error = %d\n", error);
+        error   = ex_get_conn(exoid, EX_ELEM_BLOCK, ids[i], connect, NULL, NULL);
+        printf("\nafter ex_get_conn, error = %d\n", error);
 
         printf("connect array for elem block %2d\n", ids[i]);
 

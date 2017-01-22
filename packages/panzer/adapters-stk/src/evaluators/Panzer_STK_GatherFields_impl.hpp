@@ -55,7 +55,7 @@
 // **********************************************************************
 
 template<typename EvalT, typename Traits> 
-panzer_stk_classic::GatherFields<EvalT, Traits>::
+panzer_stk::GatherFields<EvalT, Traits>::
   GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p)
 { 
   using panzer::Cell;
@@ -83,20 +83,20 @@ panzer_stk_classic::GatherFields<EvalT, Traits>::
 
 // **********************************************************************
 template<typename EvalT, typename Traits> 
-void panzer_stk_classic::GatherFields<EvalT, Traits>::
+void panzer_stk::GatherFields<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     std::string fieldName = gatherFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, fieldName);
 
     if(stkFields_[fd]==0) {
       std::stringstream ss; 
       mesh_->printMetaData(ss);
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                 "panzer_stk_classic::GatherFields: STK field " << "\"" << fieldName << "\" " 
+                                 "panzer_stk::GatherFields: STK field " << "\"" << fieldName << "\" " 
                                  "not found.\n STK meta data follows: \n\n" << ss.str());
     }
      
@@ -108,10 +108,10 @@ postRegistrationSetup(typename Traits::SetupData d,
 
 // **********************************************************************
 template<typename EvalT, typename Traits> 
-void panzer_stk_classic::GatherFields<EvalT, Traits>::
+void panzer_stk::GatherFields<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   const std::vector<stk_classic::mesh::Entity*> & localElements = *mesh_->getElementsOrderedByLID();
+   const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
  
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -119,8 +119,8 @@ evaluateFields(typename Traits::EvalData workset)
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
-      stk_classic::mesh::PairIterRelation relations = localElements[cellLocalId]->relations(mesh_->getNodeRank());
- 
+      stk::mesh::Entity const* relations = mesh_->getBulkData()->begin_nodes(localElements[cellLocalId]);
+
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          VariableField * field = stkFields_[fieldIndex];
@@ -129,15 +129,13 @@ evaluateFields(typename Traits::EvalData workset)
 
          if(isConstant_) {
            // loop over basis functions and fill the fields
-           stk_classic::mesh::EntityArray<VariableField> fieldData(*field,*localElements[cellLocalId]);
-           (gatherFields_[fieldIndex])(worksetCellIndex,0) = fieldData(); // from STK
+           (gatherFields_[fieldIndex])(worksetCellIndex,0) = *stk::mesh::field_data(*field, localElements[cellLocalId]);
          }
          else {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<basisCnt;basis++) {
-              stk_classic::mesh::Entity * node = relations[basis].entity();
-              stk_classic::mesh::EntityArray<VariableField> fieldData(*field,*node);
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = fieldData(); // from STK
+              stk::mesh::Entity node = relations[basis];
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = *stk::mesh::field_data(*field, node);
            }
          }
       }

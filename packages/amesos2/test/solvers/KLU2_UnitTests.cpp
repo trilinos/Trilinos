@@ -323,13 +323,13 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
- /* TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveTrans, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveTrans, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
+    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -353,29 +353,28 @@ namespace {
     A->apply(*X,*B,Teuchos::TRANS);
 
     Xhat->randomize();
+    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
     // Solve A*Xhat = B for Xhat using the KLU2 solver
-    cout <<"I am in solvetrans create" << endl;
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("KLU2", A, Xhat, B );
 
     Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.sublist("KLU2").set("Trans","TRANS","Solve with transpose");
 
-    cout <<"Setting parameters" << amesos2_params << endl;
     solver->setParameters( rcpFromRef(amesos2_params) );
-    cout <<"Calling everything up to solve" << endl;
     solver->symbolicFactorization().numericFactorization().solve();
 
-    Xhat->describe(out, Teuchos::VERB_EXTREME);
-    X->describe(out, Teuchos::VERB_EXTREME);
+    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
     // Check result of solve
     Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
     Xhat->norm2(xhatnorms());
     X->norm2(xnorms());
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
-  }*/
+  }
 
   /*
    * Unit Tests for Complex data types
@@ -563,6 +562,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorization, Complex##SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, ComplexSolve, SCALAR, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, ComplexSolve2, SCALAR, LO, GO)
+  //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, ComplexSolve2Trans, SCALAR, LO, GO)
 
 #  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
@@ -599,14 +599,13 @@ namespace {
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-  //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorization, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO )
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )

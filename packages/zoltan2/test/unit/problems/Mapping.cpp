@@ -370,8 +370,9 @@ bool runTest(
       std::cout << hi << " FAILED: invalid mapping solution" << std::endl;
   }
 
+
   // Test mapping explicitly using default machine
-  typedef Zoltan2::MachineRepresentation<int, part_t> machine_t;
+  typedef Zoltan2::MachineRepresentation<scalar_t, part_t> machine_t;
   machine_t defMachine(*comm);
 
 #ifdef KDD
@@ -430,8 +431,8 @@ int main(int argc, char *argv[])
   bool allgood = true;
 
   typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
-  typedef vecAdapter_t::part_t part_t;
-  typedef vecAdapter_t::scalar_t scalar_t;
+  //typedef vecAdapter_t::part_t part_t;
+  //typedef vecAdapter_t::scalar_t scalar_t;
 
   // TEST 1
   {

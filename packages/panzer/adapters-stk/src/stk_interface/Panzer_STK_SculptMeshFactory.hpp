@@ -47,7 +47,7 @@
 #include <Panzer_STK_Interface.hpp>
 
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 class STK_Interface;
 
@@ -66,9 +66,9 @@ public:
    ~SculptMeshFactory();
 
    //! Build the mesh object
-   Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
+   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
@@ -82,13 +82,13 @@ public:
 protected: 
    void initializeWithDefaults();
 
-   int callSculptor(stk_classic::ParallelMachine parallelMach, char *diatom_file  )const ;
+   int callSculptor(stk::ParallelMachine parallelMach, char *diatom_file  )const ;
    int writeDiatomFile( std::string stl_path, std::string stl_filename, char *diatom_file ) const;
 
-   void buildNodes(stk_classic::ParallelMachine parallelMach, STK_Interface &mesh ) const;
-   void buildMetaData(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const;
-   void buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const;
-   void buildBlock(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh, int block_index, int *block_id, int elem_start, int *elements, int *nodes_per_elem, int *elem_attributes, int **elm_node_linkage ) const;
+   void buildNodes(stk::ParallelMachine parallelMach, STK_Interface &mesh ) const;
+   void buildMetaData(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
+   void buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
+   void buildBlock(stk::ParallelMachine parallelMach,STK_Interface & mesh, int block_index, int *block_id, int elem_start, int *elements, int *nodes_per_elem, int *elem_attributes, int **elm_node_linkage ) const;
 
    std::pair<int,int> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
 
@@ -96,7 +96,7 @@ protected:
    void addNodeSets(STK_Interface & mesh) const;
 
    // search through relations for the one matching the ID
-   const stk_classic::mesh::Relation * getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation edges) const;
+   const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation edges) const;
 
    std::string stlFileName_, stlFileDir_;
    int xInterval_, yInterval_, zInterval_;

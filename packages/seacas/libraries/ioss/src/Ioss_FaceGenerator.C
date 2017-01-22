@@ -351,8 +351,6 @@ namespace Ioss {
 
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    auto diffp = endp - endf;
-
     std::cout << "Node ID hash time:   \t"
               << std::chrono::duration<double, std::milli>(diffh).count() << " ms\t"
               << hash_ids.size() / std::chrono::duration<double>(diffh).count()
@@ -361,6 +359,7 @@ namespace Ioss {
               << std::chrono::duration<double, std::milli>(difff).count() << " ms\t"
               << faces_.size() / std::chrono::duration<double>(difff).count() << " faces/second.\n";
 #ifdef HAVE_MPI
+    auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {

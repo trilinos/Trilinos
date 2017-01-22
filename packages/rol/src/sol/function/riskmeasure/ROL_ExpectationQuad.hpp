@@ -222,7 +222,7 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     xstat_ = Teuchos::dyn_cast<const RiskVector<Real> >(
-               Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic();
+               Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic(0);
     if (firstReset_) {
       dualVector_            = (x0->dual()).clone();
       firstReset_ = false;
@@ -236,7 +236,7 @@ public:
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
            Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
     vstat_ = Teuchos::dyn_cast<const RiskVector<Real> >(
-               Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic();
+               Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic(0);
   }
 
   void update(const Real val, const Real weight) {

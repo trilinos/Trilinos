@@ -63,18 +63,17 @@ namespace {
     if (the_map[0] == 1) {
       return false;
     }
-    else {
-      Ioss::MapContainer &new_map = const_cast<Ioss::MapContainer &>(the_map);
-      size_t              size    = the_map.size();
-      for (size_t i = 1; i < size; i++) {
-        if (the_map[i] != static_cast<int64_t>(i)) {
-          new_map[0] = 1;
-          return false;
-        }
+
+    Ioss::MapContainer &new_map = const_cast<Ioss::MapContainer &>(the_map);
+    size_t              size    = the_map.size();
+    for (size_t i = 1; i < size; i++) {
+      if (the_map[i] != static_cast<int64_t>(i)) {
+        new_map[0] = 1;
+        return false;
       }
-      new_map[0] = -1;
-      return true;
     }
+    new_map[0] = -1;
+    return true;
   }
 
   // map global to local ids

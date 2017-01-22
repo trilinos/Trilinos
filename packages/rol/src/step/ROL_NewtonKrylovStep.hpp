@@ -81,6 +81,10 @@ private:
  
   bool useSecantPrecond_; ///< Whether or not a secant approximation is used for preconditioning inexact Newton
 
+  std::string krylovName_;
+  std::string secantName_;
+
+
   class HessianNK : public LinearOperator<Real> {
   private:
     const Teuchos::RCP<Objective<Real> > obj_;
@@ -130,10 +134,12 @@ public:
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     verbosity_ = Glist.get("Print Verbosity",0);
     // Initialize Krylov object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
+    krylovName_ = Glist.sublist("Krylov").get("Type","Conjugate Gradients");
+    ekv_ = StringToEKrylov(krylovName_);
     krylov_ = KrylovFactory<Real>(parlist);
     // Initialize secant object
-    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    secantName_ = Glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantName_);
     if ( useSecantPrecond_ ) {
       secant_ = SecantFactory<Real>(parlist);
     }
@@ -162,14 +168,26 @@ public:
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     verbosity_ = Glist.get("Print Verbosity",0);
     // Initialize secant object
-    if ( useSecantPrecond_ && secant_ == Teuchos::null ) {
-      esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-      secant_ = SecantFactory<Real>(parlist);
+    if ( useSecantPrecond_ ) {
+      if(secant_ == Teuchos::null ) {
+        secantName_ = Glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+        esec_ = StringToESecant(secantName_);
+        secant_ = SecantFactory<Real>(parlist);
+      }
+      else {
+      secantName_ = Glist.sublist("Secant").get("User Defined Secant Name",
+                                                "Unspecified User Defined Secant Method");         
+      }
     }
     // Initialize Krylov object
     if ( krylov_ == Teuchos::null ) {
-      ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
+      krylovName_ = Glist.sublist("Krylov").get("Type","Conjugate Gradients");
+      ekv_ = StringToEKrylov(krylovName_);
       krylov_ = KrylovFactory<Real>(parlist);
+    }
+    else {
+      krylovName_ =  Glist.sublist("Krylov").get("User Defined Krylov Name",
+                                                 "Unspecified User Defined Krylov Method");
     }
   }
 
@@ -278,7 +296,7 @@ public:
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << EDescentToString(DESCENT_NEWTONKRYLOV);
-    hist << " using " << EKrylovToString(ekv_);
+    hist << " using " << krylovName_;
     if ( useSecantPrecond_ ) { 
       hist << " with " << ESecantToString(esec_) << " preconditioning";
     } 

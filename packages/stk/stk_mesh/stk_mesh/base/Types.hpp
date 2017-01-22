@@ -186,7 +186,6 @@ typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
 
 typedef Ordinal PartOrdinal;
-typedef Ordinal FieldOrdinal;
 typedef Ordinal RelationIdentifier;
 typedef Ordinal FieldArrayRank;
 
@@ -195,10 +194,6 @@ static const EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>
 
 typedef std::vector<EntityId> EntityIdVector;
 
-// Base Entity Rank
-// Note:  This BaseEntityRank can be considered the leaf of a tree and it
-// represents the furthest out you can go in downward relations.
-static const EntityRank BaseEntityRank = stk::topology::BEGIN_RANK;
 static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
 static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
 static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
