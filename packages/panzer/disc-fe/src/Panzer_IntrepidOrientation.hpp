@@ -78,10 +78,10 @@ namespace panzer {
     
     connMgr.getElementBlockIds(elementBlockIds);
     connMgr.getElementBlockTopologies(elementBlockTopologies);
-    
-    TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks > 0 &&
-                               numElementBlocks == static_cast<int>(elementBlockIds.size()) &&
-                               numElementBlocks == static_cast<int>(elementBlockTopologies.size()),
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks <= 0 &&
+                               numElementBlocks != static_cast<int>(elementBlockIds.size()) &&
+                               numElementBlocks != static_cast<int>(elementBlockTopologies.size()),
                                std::logic_error,
                                "panzer::buildIntrepidOrientation: Number of element blocks does not match to element block meta data");
     
