@@ -91,37 +91,37 @@ namespace panzer {
     // check basis
     TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().rank(),2);
     TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().dimension(0),num_points);
-    TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().dimension(1),base_cell_dimension);
+    TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().extent_int(1),base_cell_dimension);
     TEST_EQUALITY(point_values2.coords_ref.fieldTag().name(),"prefix_coords_ref");
 
     TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().dimension(1),4);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().dimension(2),base_cell_dimension);
+    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.node_coordinates.fieldTag().name(),"prefix_node_coordinates");
 
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().dimension(1),num_points);
-    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().dimension(2),base_cell_dimension);
+    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().name(),"prefix_point_coords");
 
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().dimension(1),num_points);
-    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().dimension(2),base_cell_dimension);
-    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().dimension(3),base_cell_dimension);
+    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
+    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(3),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac.fieldTag().name(),"prefix_jac");
 
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().dimension(1),num_points);
-    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().dimension(2),base_cell_dimension);
-    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().dimension(3),base_cell_dimension);
+    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
+    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(3),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().name(),"prefix_jac_inv");
 
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().dimension(1),num_points);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().name(),"prefix_jac_det");
 
@@ -216,7 +216,7 @@ namespace panzer {
 
     // check the reference values (ensure copying)
     for(int p=0;p<num_points;p++)
-       for(size_type d=0;d<base_cell_dimension;d++)
+       for(size_type d=0;d<static_cast<size_type>(base_cell_dimension);d++)
           TEST_EQUALITY(point_values2.coords_ref(p,d).val(),point_coordinates(p,d).val());
 
     // check the shifted values (ensure physical mapping)

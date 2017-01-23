@@ -478,7 +478,7 @@ namespace panzer {
 
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),4);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
-    TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),base_cell_dimension);
+    TEST_EQUALITY(basis_values.basis_ref_vector.extent_int(2),base_cell_dimension);
 
     TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
 
@@ -693,7 +693,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(0),12);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(1),num_qp);
     TEST_EQUALITY(basis_values.basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_vector.dimension(3),3);
@@ -707,11 +707,11 @@ namespace panzer {
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(0),12);
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(1),num_qp);
     TEST_EQUALITY(basis_values.curl_basis_ref_vector.dimension(2),3);
-    TEST_EQUALITY(basis_values.curl_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.curl_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.curl_basis_vector.dimension(3),3);
-    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_curl_basis_vector.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(1),12);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_curl_basis_vector.dimension(3),3);
@@ -751,13 +751,13 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
@@ -770,14 +770,14 @@ namespace panzer {
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
@@ -790,7 +790,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
@@ -831,13 +831,13 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_ref_scalar.fieldTag().name(),"prefix_basis_ref");
 
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.basis_scalar.fieldTag().name(),"prefix_basis");
 
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_basis_scalar.fieldTag().name(),"prefix_weighted_basis");
@@ -850,14 +850,14 @@ namespace panzer {
     TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
 
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
     TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
 
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
-    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
@@ -870,7 +870,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
 
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
@@ -949,7 +949,7 @@ namespace panzer {
                                   int_values_vol.jac_det,
                                   int_values_vol.jac_inv);
 
-    TEST_EQUALITY(basis_values.basis_scalar.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_scalar.extent_int(0),num_cells);
     TEST_EQUALITY(basis_values.basis_scalar.dimension(1),4);
     TEST_EQUALITY(basis_values.basis_scalar.dimension(2),num_qp);
 
