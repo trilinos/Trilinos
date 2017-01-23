@@ -166,6 +166,11 @@ namespace MueLu {
       }
       if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
 
+#ifdef HAVE_MUELU_INTREPID2
+      // If we're asking for it, find who made P
+      if (varName == "ipc: element to node map")                      return GetFactory("P");
+#endif
+
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");
     }
   }

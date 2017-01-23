@@ -631,7 +631,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
-    Input(fineLevel, "Nullspace");
+    //    Input(fineLevel, "Nullspace");//FIXME
     Input(fineLevel, "ipc: element to node map");
   }
 
@@ -728,7 +728,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
     // Used in all cases
     FC hi_DofCoords;
-    FCi P1_elemToNode;
+    Teuchos::RCP<FCi> P1_elemToNode = rcp(new FCi());
+
     std::vector<bool> P1_nodeIsOwned;
     int P1_numOwnedNodes;
     std::vector<LO> hi_to_lo_map;
@@ -745,7 +746,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       MueLuIntrepid::IntrepidGetLoNodeInHi(hi_basis,lo_basis,lo_node_in_hi,hi_DofCoords);
       
       // Generate lower-order element-to-node map
-      MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
+      MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
       assert(hi_to_lo_map.size() == colMap->getNodeNumElements());      
    }
     else { 
@@ -766,14 +767,16 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
 	// Generate the representative nodes
 	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,*Pn_elemToNode,colMap,lo_elemToHiRepresentativeNode);
-	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(*Pn_elemToNode,Pn_nodeIsOwned,lo_elemToHiRepresentativeNode,P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
+	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(*Pn_elemToNode,Pn_nodeIsOwned,lo_elemToHiRepresentativeNode,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
     }
-
+    
+    Set(coarseLevel,"ipc: element to node map",P1_elemToNode);
     /*******************/    
     // Generate the P1_domainMap
     // HOW: Since we know how many each proc has, we can use the non-uniform contiguous map constructor to do the work for us
     RCP<const Map> P1_domainMap = MapFactory::Build(rowMap->lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),P1_numOwnedNodes,rowMap->getIndexBase(),rowMap->getComm());
     Set(coarseLevel, "CoarseMap", P1_domainMap);       
+
 
     // Generate the P1_columnMap
     RCP<const Map> P1_colMap;
