@@ -245,6 +245,8 @@ namespace {
 
           // determine if you want rigid body null space modes...currently an extremely specialized case!
           if(strat_params->sublist("Preconditioner Types").isSublist("ML")) {
+/*           COMMENTING THIS OUT FOR NOW, this is causing problems with some of the preconditioners in optimization...not sure why
+ 
              Teuchos::ParameterList & ml_params = strat_params->sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
 
              {
@@ -260,6 +262,7 @@ namespace {
                 ml_params.set<double*>("y-coordinates",&ycoords[0]);
                 ml_params.set<double*>("z-coordinates",&zcoords[0]);
              }
+*/
 /*
              bool useRigidBodyNullSpace = false;
              if(ml_params.isType<std::string>("null space: type"))
