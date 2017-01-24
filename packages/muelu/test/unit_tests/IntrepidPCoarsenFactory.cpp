@@ -1423,7 +1423,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     //    Params.set("rap: fix zero diagonals",true);
     Params.set("verbosity","high");
     Params.set("max levels",3);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
 
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
@@ -1437,6 +1437,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     level2.set("ipc: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
       
+
+    // DEBUG
+    ParameterList dump;
+    dump.set("A","{0,1,2}");
+    dump.set("P","{0,1}");
+    dump.set("R","{0,1}");
+    Params.set("export data",dump);
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
@@ -1500,7 +1507,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     //    Params.set("rap: fix zero diagonals",true);
     Params.set("verbosity","high");
     Params.set("max levels",3);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
 
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
@@ -1543,9 +1550,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildP_PseudoPoisson_LINE_p4_to_p2,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node)
+  //      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) 
+  //      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>
