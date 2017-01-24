@@ -110,17 +110,24 @@ public:
   Environment(Teuchos::ParameterList &problemParams,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
 
-  /*! \brief Default Constructor
+  /*! \brief Constructor
    *
-   *    The default constructor uses the Teuchos default communicator,
+   *    This constructor does not take a Parameter list,
    *    BASIC_STATUS for debug_level, and does not timing or memory profiling.
    *    It has error_check_level BASIC_ASSERTION. It has no other parameters.
+   *  \param comm           the default communicator for the application
+   *
+   *   Note that the communicator is for the application, not the problem.
    */
-  Environment();
+  Environment(const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /*! \brief Destructor
    */
   ~Environment();
+
+  /*! \brief resetParameters and validate them - preserve the comm
+   */
+  void resetParameters(Teuchos::ParameterList &problemParams);
 
   /*! \brief Collect the paramaters specific to Environment
    */
@@ -530,12 +537,6 @@ public:
     {if (memoryOn_)
       memoryOut_->print(msg, getProcessKilobytes());}
 #endif
-
-
-  /*! \brief Returns this classes communicator.
-   *
-   */
-  Comm_t getComm() const { return comm_; }
 
   /*! \brief Returns a reference to the user's parameter list.
    *

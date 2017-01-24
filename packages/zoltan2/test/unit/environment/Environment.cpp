@@ -84,12 +84,12 @@ int main(int argc, char *argv[])
   int fail = 0;
 
   ////////////////////////////////////////////////////////////
-  // Create a default Environment and test it
+  // Test the Environment(comm) constructor - no param list
 
   Environment *defEnv = NULL;
 
   try{
-    defEnv = new Environment;
+    defEnv = new Environment(comm);
   }
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;

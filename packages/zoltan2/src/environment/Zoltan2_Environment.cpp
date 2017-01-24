@@ -123,16 +123,13 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   Z2_FORWARD_EXCEPTIONS
 }
 
-Environment::Environment():
-  myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
+Environment::Environment(const Teuchos::RCP<const Teuchos::Comm<int> > &comm):
+  myRank_(comm->getRank()), numProcs_(comm->getSize()), comm_(comm),
+  errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_("emptyList"), params_("emptyList"), 
   debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false),
   memoryOutputFile_()
 {
-  comm_ = Teuchos::DefaultComm<int>::getComm();
-  myRank_ = comm_->getRank();
-  numProcs_ = comm_->getSize();
-
   try{
     commitParameters();
   }
@@ -143,6 +140,12 @@ Environment::~Environment()
 {
   if (!memoryOutputFile_.is_null())
     memoryOutputFile_->close();
+}
+
+void Environment::resetParameters(Teuchos::ParameterList &problemParams)
+{
+  params_ = problemParams;
+  commitParameters();
 }
 
 RCP<Teuchos::BoolParameterEntryValidator> Environment::getBoolValidator()

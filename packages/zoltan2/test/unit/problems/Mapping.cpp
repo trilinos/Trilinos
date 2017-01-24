@@ -397,7 +397,7 @@ bool runTest(
   if (me == 0)
     std::cout << "Testing Mapping using a partitioning solution" << std::endl;
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
   Zoltan2::PartitioningSolution<Adapter> psoln(env, comm, 0);
 
   ArrayRCP<part_t> partList(ia.getLocalNumIDs());
