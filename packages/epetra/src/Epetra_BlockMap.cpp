@@ -1447,8 +1447,9 @@ void Epetra_BlockMap::Print(std::ostream & os) const
   os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << std::endl;
   os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << std::endl;
   os <<    "Index Base                 = "; os << IndexBase64(); os << std::endl;
-  if (ConstantElementSize())
+  if (ConstantElementSize()) {
     os <<  "Constant Element Size      = "; os << ElementSize(); os << std::endl;
+  }
       }
       os << std::endl;
 

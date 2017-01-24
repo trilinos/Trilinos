@@ -416,9 +416,7 @@ void Epetra_VbrMatrix::DeleteMemory()
 
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumAllocatedBlockEntries = NumAllocatedBlockEntriesPerRow_[i];
-
     if (NumAllocatedBlockEntries >0) {
-
       for (int j=0; j < NumAllocatedBlockEntries; j++) {
         if (Entries_[i][j]!=0) {
           delete Entries_[i][j];
@@ -485,9 +483,9 @@ int Epetra_VbrMatrix::PutScalar(double ScalarConstant)
       int LDA = Entries_[i][j]->LDA();
       int ColDim = Entries_[i][j]->N();
       for (int col=0; col < ColDim; col++) {
-  double * Entries = Entries_[i][j]->A()+col*LDA;
-  for (int row=0; row < RowDim; row++)
-    *Entries++ = ScalarConstant;
+        double * Entries = Entries_[i][j]->A()+col*LDA;
+        for (int row=0; row < RowDim; row++)
+          *Entries++ = ScalarConstant;
       }
     }
   }
@@ -507,9 +505,9 @@ int Epetra_VbrMatrix::Scale(double ScalarConstant)
       int LDA = Entries_[i][j]->LDA();
       int ColDim = Entries_[i][j]->N();
       for (int col=0; col < ColDim; col++) {
-  double * Entries = Entries_[i][j]->A()+col*LDA;
-  for (int row=0; row < RowDim; row++)
-    *Entries++ *= ScalarConstant;
+        double * Entries = Entries_[i][j]->A()+col*LDA;
+        for (int row=0; row < RowDim; row++)
+          *Entries++ *= ScalarConstant;
       }
     }
   }
@@ -949,20 +947,20 @@ int Epetra_VbrMatrix::SortEntries() {
     while (m > 0) {
       int max = n - m;
       for (int j=0; j<max; j++)
+      {
+        for (int k=j; k>=0; k-=m)
         {
-    for (int k=j; k>=0; k-=m)
-            {
-        if (Indices[k+m] >= Indices[k])
-    break;
-        Epetra_SerialDenseMatrix *dtemp = Entries[k+m];
-        Entries[k+m] = Entries[k];
-        Entries[k] = dtemp;
+          if (Indices[k+m] >= Indices[k])
+            break;
+          Epetra_SerialDenseMatrix *dtemp = Entries[k+m];
+          Entries[k+m] = Entries[k];
+          Entries[k] = dtemp;
 
-        int itemp = Indices[k+m];
-        Indices[k+m] = Indices[k];
-        Indices[k] = itemp;
-            }
+          int itemp = Indices[k+m];
+          Indices[k+m] = Indices[k];
+          Indices[k] = itemp;
         }
+      }
       m = m/2;
     }
   }
@@ -1669,13 +1667,13 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       double * cury = yp + *FirstPointInElement++;
       int      RowDim = *ElementSize++;
       for (j=0; j < NumEntries; j++) {
-  //sum += BlockRowValues[j] * xp[BlockRowIndices[j]];
-  double * A = BlockRowValues[j]->A();
-  int LDA = BlockRowValues[j]->LDA();
-  int Index = BlockRowIndices[j];
-  double * curx = xp + ColFirstPointInElementList[Index];
-  int ColDim = ColElementSizeList[Index];
-  GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
+        //sum += BlockRowValues[j] * xp[BlockRowIndices[j]];
+        double * A = BlockRowValues[j]->A();
+        int LDA = BlockRowValues[j]->LDA();
+        int Index = BlockRowIndices[j];
+        double * curx = xp + ColFirstPointInElementList[Index];
+        int ColDim = ColElementSizeList[Index];
+        GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
       }
     }
     if (Exporter()!=0) {
@@ -1693,9 +1691,13 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-  if (ExportVector_->NumVectors()!=1) { delete ExportVector_; ExportVector_= 0;}
+        if (ExportVector_->NumVectors()!=1) {
+          delete ExportVector_;
+          ExportVector_= 0;
+        }
       }
-      if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
+      if (ExportVector_==0)
+        ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
       EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
       xp = (double*)ExportVector_->Values();
     }
@@ -1703,9 +1705,13 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-  if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
+        if (ImportVector_->NumVectors()!=1) {
+          delete ImportVector_;
+          ImportVector_= 0;
+        }
       }
-      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
+      if (ImportVector_==0)
+        ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       yp = (double*)ImportVector_->Values();
       ColElementSizeList = ColMap().ElementSizeList(); // The Import map will always have an existing ElementSizeList
       ColFirstPointInElementList = ColMap().FirstPointInElementList(); // Import map will always have an existing ...
@@ -1722,13 +1728,13 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       double * curx = xp + *FirstPointInElement++;
       int      RowDim = *ElementSize++;
       for (j=0; j < NumEntries; j++) {
-  //yp[BlockRowIndices[j]] += BlockRowValues[j] * xp[i];
-  double * A = BlockRowValues[j]->A();
-  int LDA = BlockRowValues[j]->LDA();
-  int Index = BlockRowIndices[j];
-  double * cury = yp + ColFirstPointInElementList[Index];
-  int ColDim = ColElementSizeList[Index];
-  GEMV('T', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
+        //yp[BlockRowIndices[j]] += BlockRowValues[j] * xp[i];
+        double * A = BlockRowValues[j]->A();
+        int LDA = BlockRowValues[j]->LDA();
+        int Index = BlockRowIndices[j];
+        double * cury = yp + ColFirstPointInElementList[Index];
+        int ColDim = ColElementSizeList[Index];
+        GEMV('T', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
 
       }
     }
@@ -1791,7 +1797,10 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-  if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
+        if (ImportVector_->NumVectors()!=NumVectors) {
+          delete ImportVector_;
+          ImportVector_= 0;
+        }
       }
       // Create import vector if needed
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors);
@@ -1805,7 +1814,10 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-  if (ExportVector_->NumVectors()!=NumVectors) { delete ExportVector_; ExportVector_= 0;}
+        if (ExportVector_->NumVectors()!=NumVectors) {
+          delete ExportVector_;
+          ExportVector_= 0;
+        }
       }
       // Create Export vector if needed
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors);
@@ -1822,172 +1834,173 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
     // Do actual computation
     if ( All_Values_ != 0 ) { // Contiguous Storage
       if ( ! TransA && *RowElementSizeList <= 4 ) {
+        int RowDim = *RowElementSizeList ;
 
-  int RowDim = *RowElementSizeList ;
+        Epetra_SerialDenseMatrix* Asub = **Entries;
+        double *A = Asub->A_ ;
 
-  Epetra_SerialDenseMatrix* Asub = **Entries;
-  double *A = Asub->A_ ;
+        if ( NumVectors == 1 ) {
 
-  if ( NumVectors == 1 ) {
+          for (i=0; i < NumMyBlockRows_; i++) {
+            int      NumEntries = *NumBlockEntriesPerRow++;
+            int *    BlockRowIndices = *Indices++;
 
-    for (i=0; i < NumMyBlockRows_; i++) {
-      int      NumEntries = *NumBlockEntriesPerRow++;
-      int *    BlockRowIndices = *Indices++;
+            double * xptr = Xp[0];
+            double y0 = 0.0;
+            double y1 = 0.0;
+            double y2 = 0.0;
+            double y3 = 0.0;
+            switch(RowDim) {
+              case 1:
+                for (int j=0; j < NumEntries; ++j) {
+                  int xoff = ColFirstPointInElementList[*BlockRowIndices++];
 
-      double * xptr = Xp[0];
-      double y0 = 0.0;
-      double y1 = 0.0;
-      double y2 = 0.0;
-      double y3 = 0.0;
-      switch(RowDim) {
-      case 1:
-        for (int j=0; j < NumEntries; ++j) {
-    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                  y0 += A[0]*xptr[xoff];
+                  A += 1;
+                }
+                break;
 
-    y0 += A[0]*xptr[xoff];
-    A += 1;
-        }
-        break;
+              case 2:
+                for (int j=0; j < NumEntries; ++j) {
+                  int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                  y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
+                  y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
+                  A += 4 ;
+                }
+                break;
 
-      case 2:
-        for (int j=0; j < NumEntries; ++j) {
-    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-    y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
-    y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
-    A += 4 ;
-        }
-        break;
+              case 3:
+                for (int j=0; j < NumEntries; ++j) {
+                  int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                  y0 += A[0]*xptr[xoff+0] + A[3]*xptr[xoff+1] + A[6]*xptr[xoff+2];
+                  y1 += A[1]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[7]*xptr[xoff+2];
+                  y2 += A[2]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[8]*xptr[xoff+2];
+                  A += 9 ;
+                }
+                break;
 
-      case 3:
-        for (int j=0; j < NumEntries; ++j) {
-    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-    y0 += A[0]*xptr[xoff+0] + A[3]*xptr[xoff+1] + A[6]*xptr[xoff+2];
-    y1 += A[1]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[7]*xptr[xoff+2];
-    y2 += A[2]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[8]*xptr[xoff+2];
-    A += 9 ;
-        }
-        break;
+              case 4:
+                for (int j=0; j < NumEntries; ++j) {
+                  int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                  y0 += A[0]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[8]*xptr[xoff+2] +A[12]*xptr[xoff+3];
+                  y1 += A[1]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[9]*xptr[xoff+2] +A[13]*xptr[xoff+3];
+                  y2 += A[2]*xptr[xoff+0] + A[6]*xptr[xoff+1] + A[10]*xptr[xoff+2] +A[14]*xptr[xoff+3];
+                  y3 += A[3]*xptr[xoff+0] + A[7]*xptr[xoff+1] + A[11]*xptr[xoff+2] +A[15]*xptr[xoff+3];
+                  A += 16 ;
+                }
+                break;
+              default:
+                assert(false);
+            }
+            int  yoff = *RowFirstPointInElementList++;
+            switch(RowDim) {
+              case 4:
+                *(Yp[0]+yoff+3) = y3;
+              case 3:
+                *(Yp[0]+yoff+2) = y2;
+              case 2:
+                *(Yp[0]+yoff+1) = y1;
+              case 1:
+                *(Yp[0]+yoff) = y0;
+            }
+          }
+        } else { // NumVectors != 1
+          double *OrigA = A ;
+          for (i=0; i < NumMyBlockRows_; i++) {
+            int      NumEntries = *NumBlockEntriesPerRow++;
+            int  yoff = *RowFirstPointInElementList++;
+            int *    BRI = *Indices++;
 
-      case 4:
-        for (int j=0; j < NumEntries; ++j) {
-    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-    y0 += A[0]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[8]*xptr[xoff+2] +A[12]*xptr[xoff+3];
-    y1 += A[1]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[9]*xptr[xoff+2] +A[13]*xptr[xoff+3];
-    y2 += A[2]*xptr[xoff+0] + A[6]*xptr[xoff+1] + A[10]*xptr[xoff+2] +A[14]*xptr[xoff+3];
-    y3 += A[3]*xptr[xoff+0] + A[7]*xptr[xoff+1] + A[11]*xptr[xoff+2] +A[15]*xptr[xoff+3];
-    A += 16 ;
-        }
-        break;
-      default:
-        assert(false);
-      }
-      int  yoff = *RowFirstPointInElementList++;
-      switch(RowDim) {
-      case 4:
-        *(Yp[0]+yoff+3) = y3;
-      case 3:
-        *(Yp[0]+yoff+2) = y2;
-      case 2:
-        *(Yp[0]+yoff+1) = y1;
-      case 1:
-        *(Yp[0]+yoff) = y0;
-      }
-    }
-  } else { // NumVectors != 1
-    double *OrigA = A ;
-    for (i=0; i < NumMyBlockRows_; i++) {
-      int      NumEntries = *NumBlockEntriesPerRow++;
-      int  yoff = *RowFirstPointInElementList++;
-      int *    BRI = *Indices++;
+            for (int k=0; k<NumVectors; k++) {
+              int *    BlockRowIndices = BRI;
+              A = OrigA ;
+              double * xptr = Xp[k];
+              double y0 = 0.0;
+              double y1 = 0.0;
+              double y2 = 0.0;
+              double y3 = 0.0;
+              switch(RowDim) {
+                case 1:
+                  for (int j=0; j < NumEntries; ++j) {
+                    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
 
-      for (int k=0; k<NumVectors; k++) {
-        int *    BlockRowIndices = BRI;
-        A = OrigA ;
-        double * xptr = Xp[k];
-        double y0 = 0.0;
-        double y1 = 0.0;
-        double y2 = 0.0;
-        double y3 = 0.0;
-        switch(RowDim) {
-        case 1:
-    for (int j=0; j < NumEntries; ++j) {
-      int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                    y0 += A[0]*xptr[xoff];
+                    A += 1;
+                  }
+                  break;
 
-      y0 += A[0]*xptr[xoff];
-      A += 1;
-    }
-    break;
+                case 2:
+                  for (int j=0; j < NumEntries; ++j) {
+                    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                    y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
+                    y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
+                    A += 4 ;
+                  }
+                  break;
 
-        case 2:
-    for (int j=0; j < NumEntries; ++j) {
-      int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-      y0 += A[0]*xptr[xoff] + A[2]*xptr[xoff+1];
-      y1 += A[1]*xptr[xoff] + A[3]*xptr[xoff+1];
-      A += 4 ;
-    }
-    break;
-
-        case 3:
-    for (int j=0; j < NumEntries; ++j) {
-      int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-      y0 += A[0]*xptr[xoff+0] + A[3]*xptr[xoff+1] + A[6]*xptr[xoff+2];
-      y1 += A[1]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[7]*xptr[xoff+2];
-      y2 += A[2]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[8]*xptr[xoff+2];
-      A += 9 ;
-    }
-    break;
-      case 4:
-        for (int j=0; j < NumEntries; ++j) {
-    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
-    y0 += A[0]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[8]*xptr[xoff+2] +A[12]*xptr[xoff+3];
-    y1 += A[1]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[9]*xptr[xoff+2] +A[13]*xptr[xoff+3];
-    y2 += A[2]*xptr[xoff+0] + A[6]*xptr[xoff+1] + A[10]*xptr[xoff+2] +A[14]*xptr[xoff+3];
-    y3 += A[3]*xptr[xoff+0] + A[7]*xptr[xoff+1] + A[11]*xptr[xoff+2] +A[15]*xptr[xoff+3];
-    A += 16 ;
-        }
-        break;
-        default:
-    assert(false);
-        }
-        switch(RowDim) {
-        case 4:
-    *(Yp[k]+yoff+3) = y3;
-        case 3:
-    *(Yp[k]+yoff+2) = y2;
-        case 2:
-    *(Yp[k]+yoff+1) = y1;
-        case 1:
-    *(Yp[k]+yoff) = y0;
-        }
-      }
-      OrigA = A ;
-    }
-  } // end else NumVectors != 1
+                case 3:
+                  for (int j=0; j < NumEntries; ++j) {
+                    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                    y0 += A[0]*xptr[xoff+0] + A[3]*xptr[xoff+1] + A[6]*xptr[xoff+2];
+                    y1 += A[1]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[7]*xptr[xoff+2];
+                    y2 += A[2]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[8]*xptr[xoff+2];
+                    A += 9 ;
+                  }
+                  break;
+                case 4:
+                  for (int j=0; j < NumEntries; ++j) {
+                    int xoff = ColFirstPointInElementList[*BlockRowIndices++];
+                    y0 += A[0]*xptr[xoff+0] + A[4]*xptr[xoff+1] + A[8]*xptr[xoff+2] +A[12]*xptr[xoff+3];
+                    y1 += A[1]*xptr[xoff+0] + A[5]*xptr[xoff+1] + A[9]*xptr[xoff+2] +A[13]*xptr[xoff+3];
+                    y2 += A[2]*xptr[xoff+0] + A[6]*xptr[xoff+1] + A[10]*xptr[xoff+2] +A[14]*xptr[xoff+3];
+                    y3 += A[3]*xptr[xoff+0] + A[7]*xptr[xoff+1] + A[11]*xptr[xoff+2] +A[15]*xptr[xoff+3];
+                    A += 16 ;
+                  }
+                  break;
+                default:
+                  assert(false);
+              }
+              switch(RowDim) {
+                case 4:
+                  *(Yp[k]+yoff+3) = y3;
+                case 3:
+                  *(Yp[k]+yoff+2) = y2;
+                case 2:
+                  *(Yp[k]+yoff+1) = y1;
+                case 1:
+                  *(Yp[k]+yoff) = y0;
+              }
+            }
+            OrigA = A ;
+          }
+        } // end else NumVectors != 1
 
       } else {
 
-  for (i=0; i < NumMyBlockRows_; i++) {
-    int      NumEntries = *NumBlockEntriesPerRow++;
-    int *    BlockRowIndices = *Indices++;
-    Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-    int  yoff = *RowFirstPointInElementList++;
-    int RowDim = *RowElementSizeList++;
+        for (i=0; i < NumMyBlockRows_; i++) {
+          int      NumEntries = *NumBlockEntriesPerRow++;
+          int *    BlockRowIndices = *Indices++;
+          Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+          int  yoff = *RowFirstPointInElementList++;
+          int RowDim = *RowElementSizeList++;
 
-    FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff,
-             ColFirstPointInElementList, ColElementSizeList,
-             BlockRowValues, Xp, Yp, NumVectors);
-  }
+          FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff,
+              ColFirstPointInElementList, ColElementSizeList,
+              BlockRowValues, Xp, Yp, NumVectors);
+        }
       }
     } else {
       for (i=0; i < NumMyBlockRows_; i++) {
-  int      NumEntries = *NumBlockEntriesPerRow++;
-  int *    BlockRowIndices = *Indices++;
-  Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-  int  yoff = *RowFirstPointInElementList++;
-  int RowDim = *RowElementSizeList++;
-  BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff,
-       ColFirstPointInElementList, ColElementSizeList,
-       BlockRowValues, Xp, Yp, NumVectors);
+        int      NumEntries = *NumBlockEntriesPerRow++;
+        int *    BlockRowIndices = *Indices++;
+        Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+        int  yoff = *RowFirstPointInElementList++;
+        int RowDim = *RowElementSizeList++;
+        BlockRowMultiply(
+            TransA, RowDim, NumEntries, BlockRowIndices, yoff,
+            ColFirstPointInElementList, ColElementSizeList,
+            BlockRowValues, Xp, Yp, NumVectors
+            );
       }
     }
 
@@ -2019,7 +2032,7 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-  if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
+        if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
       // Create import vector if needed
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors);
@@ -2036,25 +2049,27 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
 
     if ( All_Values_ != 0 ) { // Contiguous Storage
       for (i=0; i < NumMyBlockRows_; i++) {
-  int      NumEntries = *NumBlockEntriesPerRow++;
-  int *    BlockRowIndices = *Indices++;
-  Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-  int  xoff = *RowFirstPointInElementList++;
-  int RowDim = *RowElementSizeList++;
-  FastBlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff,
-       ColFirstPointInElementList, ColElementSizeList,
-       BlockRowValues, Xp, Yp, NumVectors);
+        int      NumEntries = *NumBlockEntriesPerRow++;
+        int *    BlockRowIndices = *Indices++;
+        Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+        int  xoff = *RowFirstPointInElementList++;
+        int RowDim = *RowElementSizeList++;
+        FastBlockRowMultiply(
+            TransA, RowDim, NumEntries, BlockRowIndices, xoff,
+            ColFirstPointInElementList, ColElementSizeList,
+            BlockRowValues, Xp, Yp, NumVectors
+            );
       }
     } else {
       for (i=0; i < NumMyBlockRows_; i++) {
-  int      NumEntries = *NumBlockEntriesPerRow++;
-  int *    BlockRowIndices = *Indices++;
-  Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
-  int  xoff = *RowFirstPointInElementList++;
-  int RowDim = *RowElementSizeList++;
-  BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff,
-       ColFirstPointInElementList, ColElementSizeList,
-       BlockRowValues, Xp, Yp, NumVectors);
+        int      NumEntries = *NumBlockEntriesPerRow++;
+        int *    BlockRowIndices = *Indices++;
+        Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+        int  xoff = *RowFirstPointInElementList++;
+        int RowDim = *RowElementSizeList++;
+        BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff,
+            ColFirstPointInElementList, ColElementSizeList,
+            BlockRowValues, Xp, Yp, NumVectors);
       }
     }
 
@@ -2076,19 +2091,21 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
   return(0);
 }
 //=============================================================================
-void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
-          int RowDim,
-          int NumEntries,
-          int * BlockIndices,
-          int RowOff,
-          int * FirstPointInElementList,
-          int * ElementSizeList,
-          double Alpha,
-          Epetra_SerialDenseMatrix** As,
-          double ** X,
-          double Beta,
-          double ** Y,
-          int NumVectors) const
+void Epetra_VbrMatrix::BlockRowMultiply(
+    bool TransA,
+    int RowDim,
+    int NumEntries,
+    int * BlockIndices,
+    int RowOff,
+    int * FirstPointInElementList,
+    int * ElementSizeList,
+    double Alpha,
+    Epetra_SerialDenseMatrix** As,
+    double ** X,
+    double Beta,
+    double ** Y,
+    int NumVectors
+    ) const
 {
   //This overloading of BlockRowMultiply is the same as the one below, except
   //that this one accepts Alpha and Beta arguments. This BlockRowMultiply is
@@ -2104,14 +2121,13 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
       int ColDim = ElementSizeList[BlockIndex];
 
       for (k=0; k<NumVectors; k++) {
-  double * curx = X[k] + xoff;
-  double * cury = Y[k] + RowOff;
+        double * curx = X[k] + xoff;
+        double * cury = Y[k] + RowOff;
 
-  GEMV('N', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
+        GEMV('N', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
       }//end for (k
     }//end for (j
-  }
-  else { //TransA == true
+  } else { //TransA == true
     for (j=0; j < NumEntries; j++) {
       double * A = As[j]->A();
       int LDA = As[j]->LDA();
@@ -2119,9 +2135,9 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
       int yoff = FirstPointInElementList[BlockIndex];
       int ColDim = ElementSizeList[BlockIndex];
       for (k=0; k<NumVectors; k++) {
-  double * curx = X[k] + RowOff;
-  double * cury = Y[k] + yoff;
-  GEMV('T', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
+        double * curx = X[k] + RowOff;
+        double * cury = Y[k] + yoff;
+        GEMV('T', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
       }
     }
   }
@@ -3375,9 +3391,15 @@ void Epetra_VbrMatrix::Print(std::ostream& os) const {
   os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
   os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
   os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumNonzeros(); os << std::endl;
-  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
-  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
-  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
+  if (LowerTriangular()) {
+    os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+  }
+  if (UpperTriangular()) {
+    os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+  }
+  if (NoDiagonal()) {
+    os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
+  }
       }
 
       os <<  "\nNumber of My Block Rows  = "; os << NumMyBlockRows(); os << std::endl;
@@ -3400,63 +3422,67 @@ void Epetra_VbrMatrix::Print(std::ostream& os) const {
     Comm().Barrier();
   }
 
-  {for (int iproc=0; iproc < NumProc; iproc++) {
-    if (MyPID==iproc) {
-      int NumBlockRows1 = NumMyBlockRows();
-      int MaxNumBlockEntries1 = MaxNumBlockEntries();
-      int * BlockIndices1  = new int[MaxNumBlockEntries1];
-      Epetra_SerialDenseMatrix ** Entries1;
-      int RowDim1, NumBlockEntries1;
-      int i, j;
+  {
+    for (int iproc=0; iproc < NumProc; iproc++) {
+      if (MyPID==iproc) {
+        int NumBlockRows1 = NumMyBlockRows();
+        int MaxNumBlockEntries1 = MaxNumBlockEntries();
+        int * BlockIndices1  = new int[MaxNumBlockEntries1];
+        Epetra_SerialDenseMatrix ** Entries1;
+        int RowDim1, NumBlockEntries1;
+        int i, j;
 
-      if (MyPID==0) {
-  os.width(8);
-  os <<  "   Processor ";
-  os.width(10);
-  os <<  "   Block Row Index ";
-  os.width(10);
-  os <<  "   Block Col Index \n";
-  os.width(20);
-  os <<  "   values     ";
-  os << std::endl;
-      }
-      for (i=0; i<NumBlockRows1; i++) {
-  int BlockRow1 = GRID64(i); // Get global row number// FIXME long long
-  ExtractGlobalBlockRowPointers(BlockRow1, MaxNumBlockEntries1, RowDim1,
+        if (MyPID==0) {
+          os.width(8);
+          os <<  "   Processor ";
+          os.width(10);
+          os <<  "   Block Row Index ";
+          os.width(10);
+          os <<  "   Block Col Index \n";
+          os.width(20);
+          os <<  "   values     ";
+          os << std::endl;
+        }
+        for (i=0; i<NumBlockRows1; i++) {
+          int BlockRow1 = GRID64(i); // Get global row number// FIXME long long
+          ExtractGlobalBlockRowPointers(
+              BlockRow1, MaxNumBlockEntries1, RowDim1,
               NumBlockEntries1, BlockIndices1,
-              Entries1);
+              Entries1
+              );
 
-  for (j = 0; j < NumBlockEntries1 ; j++) {
-    os.width(8);
-    os <<  MyPID ; os << "    ";
-    os.width(10);
-    os <<  BlockRow1 ; os << "    ";
-    os.width(10);
-    os <<  BlockIndices1[j]; os << "    " << std::endl;
-    os.width(20);
+          for (j = 0; j < NumBlockEntries1 ; j++) {
+            os.width(8);
+            os <<  MyPID ; os << "    ";
+            os.width(10);
+            os <<  BlockRow1 ; os << "    ";
+            os.width(10);
+            os <<  BlockIndices1[j]; os << "    " << std::endl;
+            os.width(20);
 
-          if (Entries1[j] == 0) {
-            os << "Block Entry == NULL"<< std::endl;
-            continue;
+            if (Entries1[j] == 0) {
+              os << "Block Entry == NULL"<< std::endl;
+              continue;
+            }
+
+            Epetra_SerialDenseMatrix entry_view(View, Entries1[j]->A(), Entries1[j]->LDA(),
+                RowDim1, Entries1[j]->N());
+            os << entry_view; os << "    ";
+            os << std::endl;
           }
+        }
 
-    Epetra_SerialDenseMatrix entry_view(View, Entries1[j]->A(), Entries1[j]->LDA(),
-           RowDim1, Entries1[j]->N());
-          os << entry_view; os << "    ";
-    os << std::endl;
-  }
+        delete [] BlockIndices1;
+
+        os << std::flush;
+
       }
-
-      delete [] BlockIndices1;
-
-      os << std::flush;
-
+      // Do a few global ops to give I/O a chance to complete
+      Comm().Barrier();
+      Comm().Barrier();
+      Comm().Barrier();
     }
-    // Do a few global ops to give I/O a chance to complete
-    Comm().Barrier();
-    Comm().Barrier();
-    Comm().Barrier();
-  }}
+  }
 
   return;
 }

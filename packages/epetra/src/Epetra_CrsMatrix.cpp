@@ -495,7 +495,7 @@ int Epetra_CrsMatrix::PutScalar(double ScalarConstant)
       int NumEntries = Graph().NumMyIndices(i);
       double * targValues = Values(i);
       for(int j=0; j< NumEntries; j++)
-  targValues[j] = ScalarConstant;
+        targValues[j] = ScalarConstant;
     }
   }
   return(0);
@@ -512,7 +512,7 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
       int NumEntries = Graph().NumMyIndices(i);
       double * targValues = Values(i);
       for(int j=0; j< NumEntries; j++)
-  targValues[j] *= ScalarConstant;
+        targValues[j] *= ScalarConstant;
     }
   }
   return(0);
@@ -804,9 +804,9 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
            long long* Indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-  return InsertValues<long long>(Row, NumEntries, values, Indices);
+    return InsertValues<long long>(Row, NumEntries, values, Indices);
   else
-  throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
 }
 #endif
 
@@ -851,9 +851,9 @@ int Epetra_CrsMatrix::TReplaceGlobalValues(int_type Row, int NumEntries, const d
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
   if(RowMap().GlobalIndicesInt())
-  return TReplaceGlobalValues<int>(Row, NumEntries, srcValues, Indices);
+    return TReplaceGlobalValues<int>(Row, NumEntries, srcValues, Indices);
   else
-  throw ReportError("Epetra_CrsMatrix::ReplaceGlobalValues int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::ReplaceGlobalValues int version called for a matrix that is not int.", -1);
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -1031,9 +1031,9 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
             const int *Indices)
 {
   if(RowMap().GlobalIndicesInt())
-  return TSumIntoGlobalValues<int>(Row, NumEntries, srcValues, Indices);
+    return TSumIntoGlobalValues<int>(Row, NumEntries, srcValues, Indices);
   else
-  throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues int version called for a matrix that is not int.", -1);
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -1043,9 +1043,9 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(long long Row,
             const long long *Indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-  return TSumIntoGlobalValues<long long>(Row, NumEntries, srcValues, Indices);
+    return TSumIntoGlobalValues<long long>(Row, NumEntries, srcValues, Indices);
   else
-  throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 #endif
 
@@ -1219,16 +1219,16 @@ int Epetra_CrsMatrix::SortEntries() {
     while(m > 0) {
       int max = n - m;
       for(int j = 0; j < max; j++) {
-  for(int k = j; k >= 0; k-=m) {
-    if(locIndices[k+m] >= locIndices[k])
-      break;
-    double dtemp = locValues[k+m];
-    locValues[k+m] = locValues[k];
-    locValues[k] = dtemp;
-    int itemp = locIndices[k+m];
-    locIndices[k+m] = locIndices[k];
-    locIndices[k] = itemp;
-  }
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
       }
       m = m/2;
     }
@@ -1259,15 +1259,14 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
       int curEntry =0;
       double curValue = locValues[0];
       for(int k = 1; k < NumEntries; k++) {
-  if(locIndices[k] == locIndices[k-1])
-    curValue += locValues[k];
-  else {
-    locValues[curEntry++] = curValue;
-    curValue = locValues[k];
-  }
+        if(locIndices[k] == locIndices[k-1])
+          curValue += locValues[k];
+        else {
+          locValues[curEntry++] = curValue;
+          curValue = locValues[k];
+        }
       }
       locValues[curEntry] = curValue;
-
     }
   }
 
@@ -2903,9 +2902,15 @@ void Epetra_CrsMatrix::Print(std::ostream& os) const {
   os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
   os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
   os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumEntries(); os << std::endl;
-  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
-  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
-  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
+  if (LowerTriangular()) {
+    os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+  }
+  if (UpperTriangular()) {
+    os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+  }
+  if (NoDiagonal()) {
+    os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
+  }
       }
 
       os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
@@ -3897,50 +3902,50 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 
     else {
       for(k = 0; k < NumVectors; k++)
-  if(Yp[k] != Xp[k])
-    for(i = 0; i < NumMyRows_; i++)
-      Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        if(Yp[k] != Xp[k])
+          for(i = 0; i < NumMyRows_; i++)
+            Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
 
-  for(i = 0; i < NumMyRows_; i++) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = j0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        for(i = 0; i < NumMyRows_; i++) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = j0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset - j0;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = 0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset - j0;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = 0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
     }
   }
@@ -3998,48 +4003,48 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 
     else {
       for(k = 0; k < NumVectors; k++)
-  if(Yp[k] != Xp[k])
-    for(i = 0; i < NumMyRows_; i++)
-      Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        if(Yp[k] != Xp[k])
+          for(i = 0; i < NumMyRows_; i++)
+            Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
 
-  for(i = 0; i < NumMyRows_; i++) {
-    int     NumEntries = NumMyEntries(i);
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = j0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        for(i = 0; i < NumMyRows_; i++) {
+          int     NumEntries = NumMyEntries(i);
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = j0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int     NumEntries = NumMyEntries(i) - j0;
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = 0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int     NumEntries = NumMyEntries(i) - j0;
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = 0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
     }
   }
@@ -4534,45 +4539,45 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   else {
     for(k = 0; k < NumVectors; k++)
       if(Yp[k] != Xp[k])
-  for(i = 0; i < NumMyRows_; i++)
-    Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        for(i = 0; i < NumMyRows_; i++)
+          Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
     if(Upper) {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
 
       for(i = 0; i < NumMyRows_; i++) {
-  int     NumEntries = *NumEntriesPerRow++;
-  int*    RowIndices = *Indices++;
-  double* RowValues  = *Vals++;
-  if(!UnitDiagonal)
-    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    if(!UnitDiagonal)
-      Yp[k][i] = Yp[k][i]*diag;
-       double ytmp = Yp[k][i];
-    for(j = j0; j < NumEntries; j++)
-      Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-  }
+        int     NumEntries = *NumEntriesPerRow++;
+        int*    RowIndices = *Indices++;
+        double* RowValues  = *Vals++;
+        if(!UnitDiagonal)
+          diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          if(!UnitDiagonal)
+            Yp[k][i] = Yp[k][i]*diag;
+          double ytmp = Yp[k][i];
+          for(j = j0; j < NumEntries; j++)
+            Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+        }
       }
     }
     else {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
       for(i = NumMyRows_ - 1; i >= 0; i--) {
-  int     NumEntries = *NumEntriesPerRow-- - j0;
-  int*    RowIndices = *Indices--;
-  double* RowValues  = *Vals--;
-     if (!UnitDiagonal)
-       diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    if(!UnitDiagonal)
-      Yp[k][i] = Yp[k][i]*diag;
-       double ytmp = Yp[k][i];
-    for(j = 0; j < NumEntries; j++)
-      Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+        int     NumEntries = *NumEntriesPerRow-- - j0;
+        int*    RowIndices = *Indices--;
+        double* RowValues  = *Vals--;
+        if (!UnitDiagonal)
+          diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          if(!UnitDiagonal)
+            Yp[k][i] = Yp[k][i]*diag;
+          double ytmp = Yp[k][i];
+          for(j = 0; j < NumEntries; j++)
+            Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
         }
       }
     }
