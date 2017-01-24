@@ -918,7 +918,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // Dummy elem2node map
       Teuchos::Array<GO> hi_colids(numHi);
       for(size_t j=0; j<numHi; j++) {
-	hi_e2n(j)    = j;
+	hi_e2n(0,j)    = j;
 	hi_colids[j] = j;
       }
 
