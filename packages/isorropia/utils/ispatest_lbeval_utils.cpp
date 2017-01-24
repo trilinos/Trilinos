@@ -449,7 +449,7 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
   if ((totalHEWeights > 0) && (totalHEWeights <  numGlobalColumns)){
     if (myProc == 0)
       std::cerr << "Must supply either no h.e. weights or else supply at least one for each column" << std::endl;
-      return -1;
+    return -1;
   }
 
   std::map<int, float>::iterator heWgtIter;

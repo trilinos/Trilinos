@@ -409,29 +409,37 @@ Matcher::Matcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::Par
 
 Matcher::~Matcher()
 {
-    delete [] mateU_;
-    delete [] mateV_;
+  delete [] mateU_;
+  delete [] mateV_;
 
-    if(choice_==1 || choice_==2)
-    {
-        delete [] LU_;
-        delete [] LV_;
-        delete [] Queue_;
-    }
-    if(choice_==1 ||choice_==4)
-        delete [] lookahead_;
-    if(choice_==3 ||choice_==4)
-        delete [] unmatchedU_;
+  if(choice_==1 || choice_==2)
+  {
+    delete [] LU_;
+    delete [] LV_;
+    delete [] Queue_;
+  }
+  if(choice_==1 || choice_==4)
+    delete [] lookahead_;
+  if(choice_==3 || choice_==4)
+    delete [] unmatchedU_;
 
-    if (CRS_indices_) delete [] CRS_indices_; CRS_indices_ = NULL;
-    if (CRS_pointers_) delete [] CRS_pointers_; CRS_pointers_ = NULL;
-    if (parent_) delete [] parent_; parent_ = NULL;
+  if (CRS_indices_) {
+    delete [] CRS_indices_;
+    CRS_indices_ = NULL;
+  }
+  if (CRS_pointers_) {
+    delete [] CRS_pointers_;
+    CRS_pointers_ = NULL;
+  }
+  if (parent_) {
+    delete [] parent_;
+    parent_ = NULL;
+  }
 
 #ifdef ISORROPIA_HAVE_OMP
-    for(int i=0;i<V_;i++)
-        omp_destroy_lock(&scannedV_[i]);
+    for(int i=0; i < V_;i++)
+      omp_destroy_lock(&scannedV_[i]);
 #endif
-
 }
 
 void Matcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
