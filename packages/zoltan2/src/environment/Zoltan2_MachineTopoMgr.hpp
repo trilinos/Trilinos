@@ -92,24 +92,24 @@ public:
     //reduceAll the coordinates of each processor.
     gatherMachineCoordinates(comm);
 
-    const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("machine_coord_transformation");
-
+    const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("Machine_Optimization_Level");
     if (pe){
 
-      std::string approach;
-      approach = pe->getValue<std::string>(&approach);
+      int optimization_level = 0;
 
-      if (approach == "Node"){
+      optimization_level = pe->getValue<int>(&optimization_level);
+
+      if (optimization_level == 0){
         transformed_network_dim = networkDim - 1;
         transformed_coordinates = procCoords;
       }
 
-      else if (approach == "EIGNORE"){
-        if (this->myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
+      else if (optimization_level >= 1){
         transformed_network_dim = networkDim - 2;
         transformed_coordinates = procCoords;
       }
     }
+
   }
 
   virtual ~MachineTopoMgr() {
@@ -131,6 +131,8 @@ public:
   bool hasMachineCoordinates() const { return true; }
 
   int getMachineDim() const { return transformed_network_dim; }
+
+  int getRealMachineDim() const { return networkDim; }
 
   bool getMachineExtent(int *nxyz) const {
 #if defined (CMK_BLUEGENEQ)

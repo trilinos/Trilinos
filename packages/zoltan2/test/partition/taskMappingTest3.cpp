@@ -120,7 +120,7 @@ void getArgVals(
         std::string &procF,
         part_t &nx,
         part_t &ny,
-        part_t &nz){
+        part_t &nz, bool &divide_prime, int &ranks_per_node, string &taskGraphFile, string &taskCoordFile){
 
     bool isprocset = false;
     int ispartset = 0;
@@ -164,13 +164,41 @@ void getArgVals(
             stream >> nz;
             ispartset++;
         }
+        else if(identifier == "DP"){
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
+            stream << tmp;
+            getline(stream, tmp2, '=');
+            int val;
+            stream >> val;
+            if (val) divide_prime = true;
+            ispartset++;
+        }
+        else if(identifier == "RPN"){
+          std::stringstream stream(std::stringstream::in | std::stringstream::out);
+          stream << tmp;
+          getline(stream, tmp2, '=');
+          stream >> ranks_per_node;
+          ispartset++;
+        } else if(identifier == "TG"){
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
+            stream << tmp;
+            getline(stream, taskGraphFile, '=');
+
+            stream >> taskGraphFile;
+        }
+        else if(identifier == "TC"){
+          std::stringstream stream(std::stringstream::in | std::stringstream::out);
+          stream << tmp;
+          getline(stream, taskCoordFile, '=');
+          stream >> taskCoordFile;
+        }
 
         else {
             throw "Invalid argument at " + tmp;
         }
 
     }
-    if(!(ispartset == 3&& isprocset)){
+    if(!(ispartset >= 3&& isprocset)){
         throw "(PROC && PART) are mandatory arguments.";
     }
 
@@ -195,9 +223,12 @@ int main(int argc, char *argv[]){
     int procDim = 0;
 
 
-
+    string taskGraphFile = "";
+    string taskCoordFile = "";
+    bool divide_prime = false;
     part_t jobX = 1, jobY = 1, jobZ = 1;
     string procfile = "";
+    int rank_per_node = 16;
 
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
@@ -205,20 +236,24 @@ int main(int argc, char *argv[]){
 
     part_t *task_communication_xadj_ = NULL;
     part_t *task_communication_adj_ = NULL;
+    zscalar_t *task_communication_adjw_ = NULL;
     try {
 
         getArgVals<part_t>(
                 argc,
                 argv,
                 procfile ,
-                jobX, jobY, jobZ);
+                jobX, jobY, jobZ, divide_prime, rank_per_node, taskGraphFile, taskCoordFile);
 
         coordDim = 3;
         procDim = 3;
         numParts = jobZ*jobY*jobX;
-        numProcs = numParts;
+
+        //numProcs = numParts;
         //cout << "part:" << numParts << " proc:" << procfile << endl;
+        if (taskGraphFile == "" || taskCoordFile == "")
         {
+
             partCenters = new zscalar_t * [coordDim];
             for(int i = 0; i < coordDim; ++i){
                 partCenters[i] = new zscalar_t[numParts];
@@ -259,25 +294,68 @@ int main(int argc, char *argv[]){
               task_communication_xadj_[i+1] = prevNCount;
             }
         }
+        else {
+          int ne = 0;
+          FILE *f2 = fopen(taskGraphFile.c_str(), "rb");
+
+          fread(&numParts,sizeof(int),1,f2); // write 10 bytes to our buffer
+          fread(&ne,sizeof(int),1,f2); // write 10 bytes to our buffer
+
+
+          std::cout << "numParts:" << numParts << " ne:" << ne << std::endl;
+
+          task_communication_xadj_ = new part_t [numParts+1];
+          task_communication_adj_ = new part_t [ne];
+          task_communication_adjw_ = new zscalar_t [ne];
+
+          fread((void *)task_communication_xadj_,sizeof(int),numParts + 1,f2); // write 10 bytes to our buffer
+          fread((void *)task_communication_adj_,sizeof(int),ne ,f2); // write 10 bytes to our buffer
+          fread((void *)task_communication_adjw_,sizeof(double),ne,f2); // write 10 bytes to our buffer
+          fclose(f2);
+
+          f2 = fopen(taskCoordFile.c_str(), "rb");
+          fread((void *)&numParts,sizeof(int),1,f2); // write 10 bytes to our buffer
+          fread((void *)&coordDim,sizeof(int),1,f2); // write 10 bytes to our buffer
+
+          std::cout << "numParts:" << numParts << " coordDim:" << coordDim << std::endl;
+
+          partCenters = new zscalar_t * [coordDim];
+          for(int i = 0; i < coordDim; ++i){
+              partCenters[i] = new zscalar_t[numParts];
+              fread((void *) partCenters[i],sizeof(double),numParts, f2); // write 10 bytes to our buffer
+          }
+          fclose(f2);
+        }
+
 
 
 
         {
+            std::vector < std::vector <zscalar_t> > proc_coords(procDim);
             std::fstream m(procfile.c_str());
             procCoordinates = new zscalar_t * [procDim];
-            for(int i = 0; i < procDim; ++i){
-                procCoordinates[i] = new zscalar_t[numParts];
-            }
+
             part_t i = 0;
-            while(i < numProcs){
-                m >> procCoordinates[0][i] >> procCoordinates[1][i] >> procCoordinates[2][i];
-                //cout << "i:" <<i << endl;
-                ++i;
-
+            zscalar_t a,b, c;
+            m >> a >> b >> c;
+            while(!m.eof()){
+              proc_coords[0].push_back(a);
+              proc_coords[1].push_back(b);
+              proc_coords[2].push_back(c);
+              ++i;
+              m >> a >> b >> c;
             }
-            m.close();
-        }
 
+            m.close();
+            numProcs = i;
+            for(int ii = 0; ii < procDim; ++ii){
+              procCoordinates[ii] = new zscalar_t[numProcs];
+              for (int j = 0; j < numProcs; ++j){
+                procCoordinates[ii][j] = proc_coords[ii][j];
+              }
+            }
+        }
+        std::cout << "numProcs:" << numProcs << std::endl;
 
         /*
         Zoltan2::CoordinateCommunicationModel<zscalar_t,zscalar_t,int> *cm =
@@ -334,14 +412,14 @@ int main(int argc, char *argv[]){
 
                 task_communication_xadj_,
                 task_communication_adj_,
-		NULL,
+                task_communication_adjw_,
 
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
 		
                 partArraysize,
                 partArray,
-                machineDimensions
+                machineDimensions, rank_per_node, divide_prime
                 );
 
         if (tcomm->getRank() == 0){
@@ -356,6 +434,7 @@ int main(int argc, char *argv[]){
         delete [] proc_to_task_adj_;
         delete [] task_communication_xadj_;
         delete [] task_communication_adj_;
+        delete [] task_communication_adjw_;
 
         for (int i = 0; i < coordDim; i++) delete [] partCenters[i];
         delete [] partCenters;

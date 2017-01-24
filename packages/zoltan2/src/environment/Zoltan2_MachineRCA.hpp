@@ -90,14 +90,14 @@ public:
     //reduceAll the coordinates of each processor.
     gatherMachineCoordinates(comm);
 
-    const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("machine_coord_transformation");
+    const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("Machine_Optimization_Level");
     this->printAllocation();
     if (pe){
 
-      std::string approach;
-      approach = pe->getValue<std::string>(&approach);
+      int optimization_level;
+      optimization_level = pe->getValue<int>(&optimization_level);
 
-      if (approach == "EIGNORE"){
+      if (optimization_level >= 1){
         for (int i = 0; i < this->numRanks; ++i){
           this->transform_coords( procCoords[0][i], procCoords[1][i], procCoords[2][i]);
         }

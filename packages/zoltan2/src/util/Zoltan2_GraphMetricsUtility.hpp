@@ -342,7 +342,7 @@ void globalWeightedCutsMessagesHopsByPart(
       }
       else {
         std::ostringstream oss;
-        oss << "md weight " << weight_index;
+        oss << "md weighted edge cuts" << weight_index;
         metrics[next]->setName( oss.str());
       }
 
@@ -359,7 +359,7 @@ void globalWeightedCutsMessagesHopsByPart(
 
 
       if (weight_index == -1){
-        metrics[next]->setName("hops");
+        metrics[next]->setName("hops (No Weight)");
         metrics[next]->setMetricValue("global maximum", g_max_hop_count);
         metrics[next]->setMetricValue("global sum", g_total_hop_count);
         next++;
