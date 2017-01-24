@@ -631,8 +631,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
-    //    Input(fineLevel, "Nullspace");//FIXME
     Input(fineLevel, "ipc: element to node map");
+    Input(fineLevel, "Nullspace");
   }
 
 /*********************************************************************************************************/
@@ -662,7 +662,9 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> >(fineLevel, "Nullspace");
     Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Acrs = dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*A);
+
 
     if (restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
@@ -701,7 +703,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: hi basis"),hi_degree);
     RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: lo basis"),lo_degree);
 #endif
-
 
     /*******************/    
     // Get the higher-order element-to-node map 
@@ -794,6 +795,12 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     // Zero out the Dirichlet rows in P
     Utilities::ZeroDirichletRows(finalP,A_dirichletRows);
 
+    /*******************/    
+    // Build the nullspace
+    RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P1_domainMap, fineNullspace->getNumVectors());
+    finalP->apply(*fineNullspace,*coarseNullspace,Teuchos::TRANS);
+    Set(coarseLevel, "Nullspace", coarseNullspace);
+
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
@@ -808,7 +815,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
         params->set("printCommInfo",          true);
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
       }
-
     } else {
       // The factory is in restriction mode
       RCP<Matrix> R;
