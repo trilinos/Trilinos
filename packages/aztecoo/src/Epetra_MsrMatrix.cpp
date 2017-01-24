@@ -2,13 +2,13 @@
 /*
 //@HEADER
 // ***********************************************************************
-// 
-//        AztecOO: An Object-Oriented Aztec Linear Solver Package 
+//
+//        AztecOO: An Object-Oriented Aztec Linear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,8 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -73,7 +73,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
   Comm_ = new Epetra_MpiComm(*mpicomm);
 #else
   Comm_ = new Epetra_SerialComm();
-#endif  
+#endif
   if (a_mat->data_org[AZ_matrix_type]!=AZ_MSR_MATRIX)
     throw Comm_->ReportError("AZ_matrix_type must be AZ_MSR_MATRIX", -1);
   int * bindx = a_mat->bindx;
@@ -92,7 +92,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
 #endif
 
   int * MyGlobalElements = a_mat->update;
-  if (MyGlobalElements==0) 
+  if (MyGlobalElements==0)
     throw Comm_->ReportError("Aztec matrix has no update list: Check if AZ_Transform was called.", -2);
 
 #ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -114,7 +114,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
 #endif
 
   Importer_ = new Epetra_Import(*ColMap_, *DomainMap_);
-  
+
   delete [] dbleColGIDs;
   delete [] ColGIDs;
 }
@@ -131,7 +131,7 @@ Epetra_MsrMatrix::~Epetra_MsrMatrix(){
 }
 //==========================================================================
 int Epetra_MsrMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * Values,
-					 int * Indices) const 
+					 int * Indices) const
 {
   int tmpNumEntries;
   int err = AZ_MSR_getrow(Indices, Values, &tmpNumEntries, Amat_, 1, &Row, Length);
@@ -139,7 +139,7 @@ int Epetra_MsrMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
   return(err-1);
 }
 //==========================================================================
-int Epetra_MsrMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
+int Epetra_MsrMatrix::NumMyRowEntries(int Row, int & NumEntries) const
 {
 
   if (RowMatrixRowMap().MyLID(Row)) NumEntries = Amat_->bindx[Row+1] - Amat_->bindx[Row] + 1;
@@ -150,7 +150,7 @@ int Epetra_MsrMatrix::NumMyRowEntries(int Row, int & NumEntries) const
 }
 //==============================================================================
 int Epetra_MsrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
-	
+
   int iend = NumMyDiagonals();
   for (int i=0; i<iend; i++) Diagonal[i] = Amat_->val[i];
   return(0);
@@ -178,7 +178,7 @@ int Epetra_MsrMatrix::Multiply(bool TransA,
   }
   for (int i=0; i<NumVectors; i++)
     Amat_->matvec(xptrs[i], yptrs[i], Amat_, proc_config_);
-  
+
   double flops = (double) NumGlobalNonzeros64();
   flops *= 2.0;
   flops *= (double) NumVectors;
@@ -187,7 +187,7 @@ int Epetra_MsrMatrix::Multiply(bool TransA,
 }
 
 //=============================================================================
-int Epetra_MsrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, 
+int Epetra_MsrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
                             const Epetra_MultiVector& X,
                             Epetra_MultiVector& Y) const
 {
@@ -225,7 +225,7 @@ int Epetra_MsrMatrix::GetRow(int Row) const {
     if (Indices_==0) Indices_ = new int[maxNumEntries];
   }
   Epetra_MsrMatrix::ExtractMyRowCopy(Row, maxNumEntries, NumEntries, Values_, Indices_);
-  
+
   return(NumEntries);
 }
 
@@ -265,11 +265,11 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
   if (!OperatorDomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
-  
+
 
   Epetra_Vector * xp = 0;
   Epetra_Vector * x_tmp = 0;
-  
+
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
   if (RowMatrixImporter()!=0) {
@@ -323,7 +323,7 @@ int Epetra_MsrMatrix::LeftScale(const Epetra_Vector& x) {
 
 
   for (i=0; i < NumMyRows_; i++) {
-    
+
     int NumEntries = bindx[i+1] - bindx[i];
     double scale = x[i];
     val[i] *= scale;
@@ -386,7 +386,7 @@ double Epetra_MsrMatrix::NormInf() const {
     int NumEntries = GetRow(i);
     double sum = 0.0;
     for (int j=0; j < NumEntries; j++) sum += fabs(Values_[j]);
-    
+
     Local_NormInf = EPETRA_MAX(Local_NormInf, sum);
   }
   Comm().MaxAll(&Local_NormInf, &NormInf_, 1);
@@ -401,10 +401,10 @@ double Epetra_MsrMatrix::NormOne() const {
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   Epetra_Vector * x = new Epetra_Vector(RowMatrixRowMap()); // Need temp vector for column sums
-  
+
   Epetra_Vector * xp = 0;
   Epetra_Vector * x_tmp = 0;
-  
+
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
   if (RowMatrixImporter()!=0) {
@@ -437,12 +437,16 @@ void Epetra_MsrMatrix::Print(std::ostream& os) const {
       const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
       const int             oldp = os.precision(12); */
       if (MyPID==0) {
-	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
-	os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
-	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
-	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
-	if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
-	if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+        os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
+        os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
+        os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
+        os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
+        if (LowerTriangular()) {
+          os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+        }
+        if (UpperTriangular()) {
+          os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+        }
       }
 
       os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
@@ -451,9 +455,9 @@ void Epetra_MsrMatrix::Print(std::ostream& os) const {
       os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << std::endl; os << std::endl;
 
       os << std::flush;
-      
+
       // Reset os flags
-      
+
 /*      os.setf(olda,ios::adjustfield);
       os.setf(oldf,ios::floatfield);
       os.precision(oldp); */
@@ -469,36 +473,33 @@ void Epetra_MsrMatrix::Print(std::ostream& os) const {
       int i, j;
 
       if (MyPID==0) {
-	os.width(8);
-	os <<  "   Processor ";
-	os.width(10);
-	os <<  "   Row Index ";
-	os.width(10);
-	os <<  "   Col Index ";
-	os.width(20);
-	os <<  "   Value     ";
-	os << std::endl;
+        os.width(8);
+        os <<  "   Processor ";
+        os.width(10);
+        os <<  "   Row Index ";
+        os.width(10);
+        os <<  "   Col Index ";
+        os.width(20);
+        os <<  "   Value     ";
+        os << std::endl;
       }
       for (i=0; i<NumMyRows_; i++) {
-	long long Row = RowMatrixRowMap().GID64(i); // Get global row number
-	int NumEntries = GetRow(i); // ith row is now in Values_ and Indices_
-	
-	for (j = 0; j < NumEntries ; j++) {   
-	  os.width(8);
-	  os <<  MyPID ; os << "    ";	
-	  os.width(10);
-	  os <<  Row ; os << "    ";	
-	  os.width(10);
-	  os <<  RowMatrixColMap().GID64(Indices_[j]); os << "    ";
-	  os.width(20);
-	  os <<  Values_[j]; os << "    ";
-	  os << std::endl;
-	}
-      }
+        long long Row = RowMatrixRowMap().GID64(i); // Get global row number
+        int NumEntries = GetRow(i); // ith row is now in Values_ and Indices_
 
-      
+        for (j = 0; j < NumEntries ; j++) {
+          os.width(8);
+          os <<  MyPID ; os << "    ";
+          os.width(10);
+          os <<  Row ; os << "    ";
+          os.width(10);
+          os <<  RowMatrixColMap().GID64(Indices_[j]); os << "    ";
+          os.width(20);
+          os <<  Values_[j]; os << "    ";
+          os << std::endl;
+        }
+      }
       os << std::flush;
-      
     }
     // Do a few global ops to give I/O a chance to complete
     RowMatrixRowMap().Comm().Barrier();
