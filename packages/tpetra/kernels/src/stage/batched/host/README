@@ -1,0 +1,32 @@
+
+
+Test code compile
+=================
+
+1. modify ../Makefile.inc to define your environment variables.
+
+CXX=icpc  ## c++ compiler
+MKL_CFLAG = -mkl ## for benchmark with mkl
+KOKKOS=/home/kyukim/Work/lib/kokkos/install/intel/release ## Kokkos install directory; this should be configued with OpenMP
+CXXFLAGS=-O3 -g -restrict -qopt-report=5 \
+## -D__KOKKOSKERNELS_INTEL_MKL__ \ ## to enable benchmark with intel mkl
+## -D__KOKKOSKERNELS_INTEL_MKL_BATCHED__ ## to enable benchmark with intel batched dgemm
+LIBS = -lm 
+
+2. modify test you want to perform
+
+make test EXEC=KokkosKernels_Test_Gemm
+
+The list of tests are as follows
+        KokkosKernels_Test_Vector_Arithmatic
+        KokkosKernels_Test_Gemm
+        KokkosKernels_Test_Gemm_Complex
+        KokkosKernels_Test_Trsm
+        KokkosKernels_Test_LU
+        KokkosKernels_Test_Opt
+
+
+3. run the executables with OMP environments (num threads and affinity)
+   some OMP variables canbe overriden in the kokkos command line parser 
+   e.g., ./KokkosKernels_Test_Gemm --kokkos-threads=n 
+
