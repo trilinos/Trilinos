@@ -108,7 +108,10 @@ namespace Xpetra {
   //protected:
 
     //! Destructor
-    virtual ~ReorderedBlockedMultiVector() {}
+    virtual ~ReorderedBlockedMultiVector() {
+      brm_ = Teuchos::null;
+      fullVec_ = Teuchos::null;
+    }
 
     //@}
 

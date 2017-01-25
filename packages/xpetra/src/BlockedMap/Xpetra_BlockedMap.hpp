@@ -231,7 +231,18 @@ namespace Xpetra {
     }
 
     //! Destructor.
-    virtual ~BlockedMap() { }
+    virtual ~BlockedMap() {
+
+      // make sure all RCP's are freed
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        maps_[v] = Teuchos::null;
+        if(bThyraMode_ == true)
+          thyraMaps_[v] = Teuchos::null;
+        importers_[v] = Teuchos::null;
+      }
+
+      fullmap_ = Teuchos::null;
+    }
 
     //! @name Attributes
     //@{
