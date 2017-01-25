@@ -724,7 +724,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (sTest_.is_null () || newResTest)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-  if (outputTest_ == Teuchos::null) {
+  if (outputTest_.is_null () || newResTest) {
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
