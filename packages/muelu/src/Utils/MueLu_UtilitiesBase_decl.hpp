@@ -596,7 +596,7 @@ namespace MueLu {
 
     // Finds the OAZ Dirichlet rows for this matrix
     static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
-                                  std::vector<LocalOrdinal>& dirichletRows) {
+                                  std::vector<LocalOrdinal>& dirichletRows, bool count_twos_as_dirichlet=false) {
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
       dirichletRows.resize(0);
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
@@ -606,12 +606,10 @@ namespace MueLu {
         int nnz=0;
         for (size_t j=0; j<(size_t)indices.size(); j++) {
           if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > Teuchos::ScalarTraits<MT>::eps()) {
-            //MT absv = Teuchos::ScalarTraits<Scalar>::magnitude(values[j]);
-            //    if (absv > Teuchos::ScalarTraits<MT>::eps()) {
             nnz++;
           }
         }
-        if (nnz == 1 || nnz == 2) {
+        if (nnz == 1 || (count_twos_as_dirichlet && nnz == 2)) {
           dirichletRows.push_back(i);
         }
       }
@@ -658,7 +656,45 @@ namespace MueLu {
       }
     }
 
+    // Finds the OAZ Dirichlet rows for this matrix
+    static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,		
+						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
+						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol) {
+      
+      // Make sure A's RowMap == DomainMap
+      if(!A->getRowMap()->isSameAs(*A->getDomainMap())) {
+        throw std::runtime_error("UtilitiesBase::FindDirichletRowsAndPropagateToCols row and domain maps must match.");
+      }
+      RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A->getCrsGraph()->getImporter();
+      bool has_import = !importer.is_null();
+    
+      // Find the Dirichlet rows
+      std::vector<LocalOrdinal> dirichletRows;
+      FindDirichletRows(A,dirichletRows);
+    
+    printf("[%d] DirichletRow Ids = ",A->getRowMap()->getComm()->getRank());
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) 
+	printf("%d ",dirichletRows[i]);
+    printf("\n");
+    fflush(stdout);
 
+      // Allocate all as non-Dirichlet
+      isDirichletRow = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),true);
+      isDirichletCol = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap(),true);
+
+      Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
+      Teuchos::ArrayView<int> dr    = dr_rcp();
+      Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
+      Teuchos::ArrayView<int> dc    = dc_rcp();
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+	dr[dirichletRows[i]] = 1;
+	if(!has_import) dc[dirichletRows[i]] = 1;
+      }
+
+      if(has_import) 
+	isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
+
+    }
 
   }; // class Utils
 
