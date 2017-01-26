@@ -49,6 +49,14 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   RCP<Thyra::VectorBase<Scalar> >   x_dot = Thyra::createMember(get_x_space());
+  RCP<Thyra::VectorBase<Scalar> >   x_dot_dot; 
+  if (secondOrderScheme_ == true) { 
+    x_dot_dot = Thyra::createMember(get_x_space());
+  }
+
+  // IKT, FIXME, 1/25/16: add routine to compute relevant variables 
+  // for second order schemes (if x_dot_dot != Teuchos::null),
+  // and call here (put logic to call this routine instead of computeXDot_). 
 
   // call functor to compute x dot
   computeXDot_(*x,*x_dot);
@@ -57,9 +65,15 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
   transientInArgs.set_x(x);
   transientInArgs.set_x_dot(x_dot);
+  if (x_dot_dot != Teuchos::null) {
+    transientInArgs.set_x_dot_dot(x_dot_dot);
+  }
   transientInArgs.set_t(t_);
   transientInArgs.set_alpha(alpha_);
   transientInArgs.set_beta(beta_);
+  if (x_dot_dot != Teuchos::null) {
+    transientInArgs.set_W_x_dot_dot_coeff(omega_);
+  }
   for (int i=0; i<transientModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
       transientInArgs.set_p(i, inArgs.get_p(i));

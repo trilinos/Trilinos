@@ -24,8 +24,9 @@ public:
 
   /// Constructor
   ResidualModelEvaluator(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
-    : transientModel_(transientModel)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    bool secondOrderScheme = false)
+    : transientModel_(transientModel), secondOrderScheme_(secondOrderScheme)
   {}
 
   /// Set the underlying transient ModelEvaluator
@@ -40,9 +41,9 @@ public:
   /// Set values to compute x dot and evaluate transient model.
   void initialize(
     std::function<void (const Vector &,Vector &)> computeXDot,
-    double t, double alpha, double beta)
+    double t, double alpha, double beta, double omega = 0.0)
   {
-    computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta;
+    computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta; omega_ = omega; 
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -85,6 +86,8 @@ private:
   Scalar t_;
   Scalar alpha_;
   Scalar beta_;
+  Scalar omega_;
+  bool secondOrderScheme_; 
 };
 
 } // namespace Tempus
