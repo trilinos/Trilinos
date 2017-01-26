@@ -109,26 +109,6 @@ namespace {
     return true;
   }
 
-#ifdef PANZER_HAVE_FEI
-  template<typename GO>
-  void 
-  fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
-                      const std::string & fieldName,
-                      std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
-  {
-     std::vector<std::string> elementBlocks;
-     globalIndexer.getElementBlockIds(elementBlocks);
-
-     for(std::size_t e=0;e<elementBlocks.size();e++) {
-        std::string blockId = elementBlocks[e];
-
-        if(globalIndexer.fieldInBlock(fieldName,blockId))
-           fieldPatterns[blockId] =
-              Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
-     }
-  }
-#endif
-
   template<typename GO>
   void 
   fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
@@ -462,80 +442,6 @@ namespace {
 
     return lowsFactory;
   }
-
-/*
- * This FEI stuff is no longer needed, but I'm keeping it around in case this code needs to be
- * recreated for the current DOFManager
- *
-  template<typename GO>
-  void 
-  writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs)
-  {
-    using Teuchos::RCP;
-
-    // loop over each field block
-    const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
-    for(std::size_t b=0;b<blk_dofMngrs.size();b++) {
-#ifdef PANZER_HAVE_FEI
-      RCP<panzer::DOFManagerFEI<int,GO> > dofMngr = Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,GO> >(blk_dofMngrs[b],true);
-
-      std::vector<std::string> eBlocks;
-      dofMngr->getElementBlockIds(eBlocks);
-
-      // build file name
-      std::stringstream fileName;
-      fileName << "elements_" << b;
-      std::ofstream file(fileName.str().c_str());
-
-      // loop over each element block, write out topology
-      for(std::size_t e=0;e<eBlocks.size();e++)
-        writeTopology(*dofMngr,eBlocks[e],file);
-#else
-      TEUCHOS_ASSERT(false);
-#endif
-    }
-  }
-#ifdef PANZER_HAVE_FEI
-  template <typename GO>
-  void 
-  writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os)
-  {
-    std::vector<std::string> fields(dofs.getElementBlockGIDCount(block));
-
-    const std::set<int> & fieldIds = dofs.getFields(block);
-    for(std::set<int>::const_iterator itr=fieldIds.begin();itr!=fieldIds.end();++itr) {
-      std::string field = dofs.getFieldString(*itr);
-
-      // get the layout of each field
-      const std::vector<int> & fieldOffsets = dofs.getGIDFieldOffsets(block,*itr);
-      for(std::size_t f=0;f<fieldOffsets.size();f++)
-        fields[fieldOffsets[f]] = field;
-
-    }
-
-    // print the layout of the full pattern
-    os << "#" << std::endl;
-    os << "# Element Block \"" << block << "\"" << std::endl;
-    os << "#   field pattern = [ " << fields[0];
-    for(std::size_t f=1;f<fields.size();f++)
-      os << ", " << fields[f];
-    os << " ]" << std::endl;
-    os << "#" << std::endl;
-
-    const std::vector<int> & elements = dofs.getElementBlock(block);
-    for(std::size_t e=0;e<elements.size();e++) {
-      std::vector<GO> gids;
-      dofs.getElementGIDs(elements[e],gids,block);
-
-      // output gids belonging to this element
-      os << "[ " << gids[0];
-      for(std::size_t g=1;g<gids.size();g++)
-        os << ", " << gids[g];
-      os << " ]" << std::endl;
-    }
-  }
-#endif
-*/
 
 }
 

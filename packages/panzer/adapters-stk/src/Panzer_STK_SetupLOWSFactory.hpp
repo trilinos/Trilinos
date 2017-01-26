@@ -54,9 +54,6 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#ifdef PANZER_HAVE_FEI
-#include "Panzer_DOFManagerFEI.hpp"
-#endif
 
 #include "Panzer_STKConnManager.hpp"
 
@@ -101,20 +98,6 @@ buildLOWSFactory(bool blockedAssembly,
                  bool writeTopo=false,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
                  );
-
-/*
- * Topology writing is no longer implemented. It needs to be reimplemented for the
- * default DOFManager (estimate 2 days with testing)")
- *                                   
-template <typename GO>
-void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
-
-#ifdef PANZER_HAVE_FEI
-template <typename GO> 
-void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
-#endif
- *
- */
 
 }
 

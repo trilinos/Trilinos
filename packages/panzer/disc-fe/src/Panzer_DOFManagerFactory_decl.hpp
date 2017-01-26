@@ -80,9 +80,6 @@ public:
 
    void setUseDOFManagerFEI(bool flag)
    { 
-     #ifdef PANZER_HAVE_FEI
-     useDOFManagerFEI_ = flag; 
-     #else
      useDOFManagerFEI_ = flag; 
 
      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
@@ -94,16 +91,11 @@ public:
      out << "*                  therefore the internal DOFManager will be used.  *" << std::endl;
      out << "*                                                                   *" << std::endl;
      out << "*********************************************************************" << std::endl;
-     #endif
    }
 
    bool getUseDOFManagerFEI() const
    { 
-     #ifdef PANZER_HAVE_FEI
-     return useDOFManagerFEI_; 
-     #else
      return false;
-     #endif
    }
 
    void setUseTieBreak(bool flag) 

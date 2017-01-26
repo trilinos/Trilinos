@@ -58,15 +58,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
 {
-
-#ifdef PANZER_HAVE_FEI
-   if(useDOFManagerFEI_)
-      return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-   else
-      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-#else
-   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
-#endif
+  return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
 }
 
 template <typename LO,typename GO>
