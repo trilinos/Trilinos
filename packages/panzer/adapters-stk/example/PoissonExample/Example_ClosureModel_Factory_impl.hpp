@@ -53,6 +53,12 @@
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#include "Panzer_Product.hpp"
+#include "Panzer_Sum.hpp"
+
+#include "Example_SimpleSource.hpp"
+#include "Example_SimpleSolution.hpp"
+
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
@@ -123,6 +129,64 @@ buildClosureModels(const std::string& model_id,
       found = true;
     }
 
+    if (plist.isType<std::string>("Type")) {
+      std::string type = plist.get<std::string>("Type");
+      if(type=="SIMPLE SOURCE") {
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="TEMPERATURE_EXACT") {
+        RCP< Evaluator<panzer::Traits> > e = 
+          rcp(new Example::SimpleSolution<EvalT,panzer::Traits>(key,*ir));
+        evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="ERROR_CALC") {
+        {
+          std::vector<std::string> values(2);
+          values[0] = plist.get<std::string>("Field A");
+          values[1] = plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key+"_DIFF"); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars",Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          Teuchos::RCP<const panzer::PointRule> pr = ir;
+          std::vector<std::string> values(2);
+          values[0] = key+"_DIFF";
+          values[1] = key+"_DIFF";
+  
+          Teuchos::ParameterList p;
+          p.set("Product Name",key);
+          p.set("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Product<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        found = true;
+      }
+    }
 
     if (!found) {
       std::stringstream msg;

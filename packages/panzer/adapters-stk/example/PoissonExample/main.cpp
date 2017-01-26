@@ -65,6 +65,9 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
+#include "Panzer_Response_Functional.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -106,6 +109,17 @@ int main(int argc,char * argv[])
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
 
+   // Build command line processor
+   ////////////////////////////////////////////////////
+
+   int x_elements=10,y_elements=10;
+   Teuchos::CommandLineProcessor clp;
+   clp.setOption("x-elements",&x_elements);
+   clp.setOption("y-elements",&y_elements);
+
+   // parse commandline argument
+   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
+
    // variable declarations
    ////////////////////////////////////////////////////
 
@@ -126,8 +140,8 @@ int main(int argc,char * argv[])
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
-   pl->set("X Elements",10);
-   pl->set("Y Elements",10);
+   pl->set("X Elements",x_elements);
+   pl->set("Y Elements",y_elements);
    mesh_factory.setParameterList(pl);
 
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -208,6 +222,26 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
+   // Setup response library for checking the error in this manufactered solution
+   ////////////////////////////////////////////////////////////////////////
+
+   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
+      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+
+   {
+     std::vector<std::string> eBlocks;
+     mesh->getElementBlockNames(eBlocks);
+
+     panzer::FunctionalResponse_Builder<int,int> builder;
+     builder.comm = MPI_COMM_WORLD;
+     builder.cubatureDegree = 4;
+     builder.requiresCellIntegral = true;
+     builder.quadPointField = "TEMPERATURE_ERROR";
+
+     errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
+   }
+
+
    // setup closure model
    /////////////////////////////////////////////////////////////
  
@@ -217,8 +251,16 @@ int main(int argc,char * argv[])
    cm_factory.buildObjects(cm_builder);
 
    Teuchos::ParameterList closure_models("Closure Models");
-   closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",0.0); // a constant source
+   {
+     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+     // required for error calculation
+     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Type","ERROR_CALC");
+     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Field A","TEMPERATURE");
+     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
+
+     closure_models.sublist("solid").sublist("TEMPERATURE_EXACT").set<std::string>("Type","TEMPERATURE_EXACT");
+   }
 
    Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
@@ -241,6 +283,16 @@ int main(int argc,char * argv[])
    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
+
+   // Finalize construcition of STK writer response library
+   /////////////////////////////////////////////////////////////
+   {
+      user_data.set<int>("Workset Size",workset_size);
+      errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                                    cm_factory,
+                                                    closure_models,
+                                                    user_data);
+   }
 
    // assemble linear system
    /////////////////////////////////////////////////////////////
@@ -318,6 +370,29 @@ int main(int argc,char * argv[])
       mesh->writeToExodus("output.exo");
    }
 
+   // compute error norm
+   /////////////////////////////////////////////////////////////
+
+   if(true) {
+      Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
+      lout.setOutputToRootOnly(0);
+
+      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+      respInput.alpha = 0;
+      respInput.beta = 1;
+
+      Teuchos::RCP<panzer::ResponseBase> resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > respVec = Thyra::createMember(resp_func->getVectorSpace());
+      resp_func->setVector(respVec);
+
+      errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+      errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+
+      lout << "L2 Error = " << sqrt(resp_func->value) << std::endl;
+   }
+
    // all done!
    /////////////////////////////////////////////////////////////
 
@@ -335,7 +410,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Integration Order",4);
   }
   
    {
@@ -345,7 +420,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
-      double value = 5.0;
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
@@ -360,7 +435,37 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
-      double value = -5.0;
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 2;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 3;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "bottom";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
