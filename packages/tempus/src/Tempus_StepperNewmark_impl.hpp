@@ -361,9 +361,6 @@ void StepperNewmark<Scalar>::setParameterList(
   pList_ = pList;
   //Get beta and gamma from parameter list 
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
-  std::cout << "IKT pList = " << *pList << std::endl; 
-  beta_ = pList->get("Beta", 0.25); 
-  gamma_ = pList->get("Gamma", 0.5); 
 
   std::string stepperType = pList_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Beta",
@@ -371,6 +368,19 @@ void StepperNewmark<Scalar>::setParameterList(
        "Error - Stepper Type is not 'Newmark Beta'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
   Teuchos::readVerboseObjectSublist(&*pList_,this);
+  beta_ = 0.25; //default value
+  gamma_ = 0.5; //default value
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream(); 
+  if (pList_->isSublist("Newmark Beta Parameters")) {
+    Teuchos::ParameterList &newmarkPL = pList_->sublist("Newmark Beta Parameters", true);
+    beta_ = newmarkPL.get("Beta", 0.25); 
+    gamma_ = newmarkPL.get("Gamma", 0.5);
+    *out << " Setting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n";  
+  }
+  else {
+    *out << " No Newmark Beta Parameters sublist found in input file; using default values of Beta = " 
+         << beta_ << " and Gamma = " << gamma_ << "\n"; 
+  }
 }
 
 
