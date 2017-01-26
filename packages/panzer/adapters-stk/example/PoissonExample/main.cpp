@@ -390,13 +390,16 @@ int main(int argc,char * argv[])
       errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
-      lout << "L2 Error = " << sqrt(resp_func->value) << std::endl;
+      lout << "This is the L2 Error" << std::endl;
+      lout << "Error = " << sqrt(resp_func->value) << std::endl;
    }
 
    // all done!
    /////////////////////////////////////////////////////////////
 
    //PHX::FinalizeKokkosDevice();
+   
+   std::cout << "ALL PASSED" << std::endl;
 
    return 0;
 }
