@@ -261,7 +261,18 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
      }
 
 }
+
 /*********************************************************************************************************/
+// Inputs:
+//  hi_elemToNode   - FC<LO> containing the high order element-to-node map
+//  hi_nodeIsOwned  - std::vector<bool> of size hi's column map, which described hi node ownership
+//  lo_elemToHiRepresentativeNode - FC<LO> of size (# elements, # lo dofs per element) listing the hi unknown chosen as the single representative for each lo unknown for counting purposes
+// Outputs:
+//  lo_elemToNode   - FC<LO> containing the low order element-to-node map.
+//  lo_nodeIsOwned  - std::vector<bool> of size lo's (future) column map, which described lo node ownership
+//  hi_to_lo_map    - std::vector<LO> of size equal to hi's column map, which contains the lo id each hi idea maps to (or invalid if it doesn't)
+//  lo_numOwnedNodes- Number of lo owned nodes
+
 template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 					 const std::vector<bool> & hi_nodeIsOwned,
@@ -325,6 +336,16 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 
 
 /*********************************************************************************************************/
+// Inputs:
+//  hi_elemToNode   - FC<LO> containing the high order element-to-node map
+//  hi_nodeIsOwned  - std::vector<bool> of size hi's column map, which described hi node ownership
+//  lo_node_in_hi   - std::vector<size_t> of size lo dofs in the reference element, which describes the coindcident hi dots
+// Outputs:
+//  lo_elemToNode   - FC<LO> containing the low order element-to-node map.
+//  lo_nodeIsOwned  - std::vector<bool> of size lo's (future) column map, which described lo node ownership
+//  hi_to_lo_map    - std::vector<LO> of size equal to hi's column map, which contains the lo id each hi idea maps to (or invalid if it doesn't)
+//  lo_numOwnedNodes- Number of lo owned nodes
+
 template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                        const std::vector<bool> & hi_nodeIsOwned,
@@ -740,6 +761,22 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   
     // Degree-n variables
     FCi lo_elemToHiRepresentativeNode;
+
+    // Get Dirichlet unknown information
+    RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> > isDirichletRow, isDirichletCol;
+    Utilities::FindDirichletRowsAndPropagateToCols(A,isDirichletRow, isDirichletCol);
+
+#if 1
+    printf("[%d] isDirichletRow = ",A->getRowMap()->getComm()->getRank());
+    for(size_t i=0;i<isDirichletRow->getMap()->getNodeNumElements(); i++)
+      printf("%d ",isDirichletRow->getData(0)[i]);
+    printf("\n");
+    printf("[%d] isDirichletCol = ",A->getRowMap()->getComm()->getRank());
+    for(size_t i=0;i<isDirichletCol->getMap()->getNodeNumElements(); i++)
+      printf("%d ",isDirichletCol->getData(0)[i]);
+    printf("\n");
+    fflush(stdout);
+#endif
 
     /*******************/    
     if(lo_degree == 1) {

@@ -1400,7 +1400,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO num_nodes = 972;
+    GO num_nodes = 10;
+    //    GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
     RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
@@ -1418,13 +1419,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
     // ParameterList
-    ParameterList Params, level0, level1, level2;
+    ParameterList Params, level0, level1, level2, mmm;
     Params.set("multigrid algorithm","pcoarsen");
-    Params.set("rap: fix zero diagonals",true);
     Params.set("verbosity","high");
     Params.set("max levels",3);
     //    Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
-    Params.set("coarse: max size",100);
+    Params.set("coarse: max size",5);
 
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -1437,7 +1437,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     level2.set("ipc: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
       
-#if 0
+#if 1
     // DEBUG
     ParameterList dump;
     dump.set("A","{0,1,2}");
