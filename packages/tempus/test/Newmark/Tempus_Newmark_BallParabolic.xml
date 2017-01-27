@@ -2,12 +2,6 @@
   <ParameterList name="BallParabolicModel">
     <Parameter name="Accept model parameters"    type="bool" value="false"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
-    <Parameter name="Coeff a" type="double" value="0.0"/>
-    <Parameter name="Coeff f" type="double" value="1.0"/>
-    <Parameter name="Coeff L" type="double" value="1.0"/>
-    <Parameter name="IC x0"   type="double" value="0.0"/>
-    <Parameter name="IC x1"   type="double" value="1.0"/>
-    <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
@@ -24,7 +18,7 @@
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
-        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Final Time"             type="double" value="2.0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>

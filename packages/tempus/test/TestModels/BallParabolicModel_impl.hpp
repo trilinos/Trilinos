@@ -496,13 +496,6 @@ setParameterList(RCP<ParameterList> const& paramList)
   }
   acceptModelParams_ = acceptModelParams;
   haveIC_ = haveIC;
-  a_ = get<Scalar>(*pl,"Coeff a");
-  f_ = get<Scalar>(*pl,"Coeff f");
-  L_ = get<Scalar>(*pl,"Coeff L");
-  x0_ic_ = get<Scalar>(*pl,"IC x0");
-  x1_ic_ = get<Scalar>(*pl,"IC x1");
-  t0_ic_ = get<Scalar>(*pl,"IC t0");
-  calculateCoeffFromIC_();
   setupInOutArgs_();
 }
 
@@ -531,15 +524,6 @@ getValidParameters() const
     validPL = pl;
   }
   return validPL;
-}
-
-template<class Scalar>
-void
-BallParabolicModel<Scalar>::
-calculateCoeffFromIC_()
-{
-  phi_ = atan(((f_/L_)/x1_ic_)*(x0_ic_-a_))-(f_/L_)*t0_ic_;
-  b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));
 }
 
 } // namespace Tempus_Test

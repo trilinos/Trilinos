@@ -133,8 +133,6 @@ private:
     ) const;
   //@}
 
-  void calculateCoeffFromIC_();
-
 private:
   int dim_;         ///< Number of state unknowns (2)
   int Np_;          ///< Number of parameter vectors (1)
