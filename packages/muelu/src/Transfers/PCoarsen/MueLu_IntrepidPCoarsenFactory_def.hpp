@@ -572,6 +572,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   // Evaluate the linear basis functions at the Pn nodes
   size_t numFieldsHi = hi_elemToNode.dimension(1);
   size_t numFieldsLo = lo_basis.getCardinality();
+  LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
 #else
@@ -600,6 +601,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
         for(size_t k=0; k<numFieldsLo; k++) {
           // Get the local id in P1's column map
           LO col_lid = hi_to_lo_map[hi_elemToNode(i,lo_node_in_hi[k])];
+	  if(col_lid==LOINVALID) continue;
+
           col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
           val[0]     = LoValues_at_HiDofs(k,j);
           
