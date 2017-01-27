@@ -143,12 +143,12 @@ public:
     // this would not be the natural result of rcb
     // however other algorithms may also need this swap step so
     // I made it general here
-    int findRoot = -1;
-    for(int n = 0; n < static_cast<int>(partitionTree.size()); ++n) {
+    part_t findRoot = -1;
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
       if(partitionTree[n].parent == 0) { // root has parent=0 by convention
         if(findRoot != -1) {
           throw std::logic_error("setPartitionTreeNodes found more than one root. "
-            " This is not expected.");
+            "This is not expected.");
         }
         findRoot = n;
       }
@@ -156,20 +156,20 @@ public:
 
     if(findRoot == -1) {
       throw std::logic_error( "setPartitionTreeNodes did not find a root. "
-        " This is not expected." );
+        "This is not expected." );
     }
 
     // potentially we would not do this and simply apply the 'swap' on the
     // data write out when requested - but that could create confusion
     // To do - verify how we want to apply this convention
-    swapPartitionTreeNodes(findRoot, partitionTree.size()-1);
+    swapPartitionTreeNodes(findRoot, static_cast<part_t>(partitionTree.size())-1);
 
     // Swap the order of the two nodes under the root
     // This would intentionally put permPartNums out of sequence for rcb for ex.
     // Just for validating code right now...
     /*
-    int newRoot = partitionTree.size()-1;
-    int save1 = partitionTree[newRoot].children[1];
+    part_t newRoot = partitionTree.size()-1;
+    part_t save1 = partitionTree[newRoot].children[1];
     partitionTree[newRoot].children[1] = partitionTree[newRoot].children[0];
     partitionTree[newRoot].children[0] = save1;
     */
@@ -178,14 +178,14 @@ public:
   //! \brief  swap to node indices and update all the corresponding parent and
   //          children indices to preserve the tree structure.
   //
-  void swapPartitionTreeNodes(int a, int b) {
+  void swapPartitionTreeNodes(part_t a, part_t b) {
     if(a != b) {
       partitionTreeNode<part_t> saveOld = partitionTree[a];
       partitionTree[a] = partitionTree[b];
       partitionTree[b] = saveOld;
 
       // now we have to remap all parent/child indices
-      for(int n = 0; n < static_cast<int>(partitionTree.size()); ++n) {
+      for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
         partitionTreeNode<part_t> & node = partitionTree[n];
         if(node.parent == a+1) { // index+1 convention
           node.parent = b+1; // index+1 convention
@@ -194,6 +194,7 @@ public:
           node.parent = a+1; // index+1 convention
         }
 
+        // note c is not part_t because children size will be just a few elements
         for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
           if(node.children[c] > 0 && node.children[c] == a+1) { // index+1 convention
             node.children[c] = b+1; // index+1 convention

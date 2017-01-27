@@ -244,19 +244,19 @@ private:
     bool bLoadTrivialNodes = true;
 
     // get the total number of global parts
-    int num_parts = static_cast<int>(solution->getTargetGlobalNumberOfParts());
+    part_t num_parts = static_cast<part_t>(solution->getTargetGlobalNumberOfParts());
 
     // Determine how many nodes are in the rcb tree
-    int numTreeNodes = num_parts - 1; // always true for rcb binary?
+    part_t numTreeNodes = num_parts - 1; // always true for rcb binary?
     if(bLoadTrivialNodes) { // if using trivial nodes we insert the extra
       numTreeNodes += num_parts; // 1 trivial node for each part is inserted
     }
 
     // Allocate partitionTreeNode vector and we will set all values below
-    std::vector<partitionTreeNode<int>> partitionTreeNodes(numTreeNodes);
+    std::vector<partitionTreeNode<part_t>> partitionTreeNodes(numTreeNodes);
 
     // Add the rcb nodes to the general tree, converting conventions as we go
-    for(int n = 0; n < numTreeNodes; ++n) {
+    for(part_t n = 0; n < numTreeNodes; ++n) {
       // is this a trivial node
       // rcb doesn't include these
       // we won't know the parent until we load the parent
@@ -267,17 +267,18 @@ private:
         // the trivial terminal node will have it's own node index
         // and also be point to a single child - the part
         // We may need to set a bool flag instead of the neg convnetion
-        ArrayRCP<int> children(1);
+        ArrayRCP<part_t> children(1);
         children[0] = -n;
         partitionTreeNodes[n].children = children;
       }
       else {
         // call zoltan wrapper to get the node information - starts at +1 by conv
+        // these are int types because zoltan is defined as int
         int parent = -1;
         int left_leaf = -1;
         int right_leaf = -1;
 
-        int rcbIndex = n + 1; // rcb starts at 1
+        int rcbIndex = static_cast<int>(n) + 1; // rcb starts at 1
         if(bLoadTrivialNodes) {
           rcbIndex -= num_parts; // shift back to account for extra trivial nodes
         }
@@ -308,9 +309,9 @@ private:
         partitionTreeNodes[n].parent = parent;
 
         // set node children
-        ArrayRCP<int> children(2);
-        children[0] = left_leaf;
-        children[1] = right_leaf;
+        ArrayRCP<part_t> children(2);
+        children[0] = static_cast<part_t>(left_leaf);
+        children[1] = static_cast<part_t>(right_leaf);
         partitionTreeNodes[n].children = children;
 
         // special case - if we are the parent of a trivial node tell them
@@ -332,11 +333,11 @@ private:
 
     // For debugging output the tree with the children for each
     /*
-    for(size_t n = 0; n < static_cast<int>(partitionTreeNodes.size()); ++n) {
-      const partitionTreeNode<int> & node = partitionTreeNodes[n];
+    for(part n = 0; n < static_cast<part_t>(partitionTreeNodes.size()); ++n) {
+      const partitionTreeNode<part_t> & node = partitionTreeNodes[n];
       std::cout << "General index: " << n
         << " parent: " << partitionTreeNodes[n].parent << " ";
-      for(size_t c = 0; c < node.children.size(); ++c) {
+      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
         std::cout << "Child" << c+1 << ": " << node.children[c] << " ";
       }
       std::cout << std::endl; // end the child lines

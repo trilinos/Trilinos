@@ -385,7 +385,7 @@ public:
 
   /*! \brief returns the partition tree nodes.
    */
-  virtual const std::vector<partitionTreeNode<int> > &
+  virtual const std::vector<partitionTreeNode<part_t> > &
   getPartitionTreeNodes() const
   {
     return this->algorithm_->getPartitionTreeNodes();
@@ -403,7 +403,7 @@ public:
       throw std::logic_error(
         "no binary tree available. Set param 'keep_partition_tree' true");
     }
-    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
       if(getPartitionTreeNodes()[n].children.size() > 2) {
         return false;
       }
@@ -413,13 +413,15 @@ public:
 
   /*! \brief build a list of all children under the indexed node
    */
-  void recursiveCollectAllParts(int nodeIndex, std::vector<part_t> & parts) const {
+  void recursiveCollectAllParts(part_t nodeIndex, std::vector<part_t> & parts) const {
     // traverse the tree filling with all children
     const partitionTreeNode<part_t> & node = getPartitionTreeNodes()[nodeIndex];
+    // note this is not part_t because the children of a node is expected to
+    // always be a short list - for rcb it will be just 2 elements
     for(int n = 0; n < static_cast<int>(node.children.size()); ++n) {
-      int child = node.children[n];
+      part_t child = node.children[n];
       if(child <= 0) { // this is a terminal
-        parts.push_back(static_cast<part_t>(-child)); // terminal = -child convention
+        parts.push_back(-child); // terminal = -child convention
       }
       else { // if not terminal, -1 for convention and recursive continue
         recursiveCollectAllParts(child-1, parts); // node+1 convention
@@ -429,17 +431,18 @@ public:
 
   /*! \brief get the partition tree - fill the relevant arrays
    */
-  void getPartitionTree(int & numTreeVerts,
-                        std::vector<int> & permPartNums,
-                        std::vector<int> & splitRangeBeg,
-                        std::vector<int> & splitRangeEnd,
-                        std::vector<int> & treeVertParents) const {
+  void getPartitionTree(part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const {
 
     // determine number of nodes - design indicates count does not include root
-    numTreeVerts = static_cast<int>(getPartitionTreeNodes().size()) - 1;
+    numTreeVerts = static_cast<part_t>(getPartitionTreeNodes().size()) - 1;
 
     // determine permPartNums - by convention root is designated as last element
-    int rootIndex = static_cast<int>(getPartitionTreeNodes().size()) - 1;
+    // this could just be numTreeVerts-1 but thought that might lack clarity
+    part_t rootIndex = static_cast<part_t>(getPartitionTreeNodes().size()) - 1;
     recursiveCollectAllParts(rootIndex, permPartNums);
 
     // determine splitRangeBeg and splitRangeEnd
@@ -448,14 +451,14 @@ public:
     // other algorithms will have different needs since things may not be sorted
     // ahead of time the exact way as rcb - so for now I am just reusing the
     // recursiveCollectAllParts method and then scan that for min and max
-    splitRangeBeg = std::vector<int>(getPartitionTreeNodes().size());
-    splitRangeEnd = std::vector<int>(getPartitionTreeNodes().size());
-    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+    splitRangeBeg = std::vector<part_t>(getPartitionTreeNodes().size());
+    splitRangeEnd = std::vector<part_t>(getPartitionTreeNodes().size());
+    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
       splitRangeBeg[n] = -1; // means not set yet
       splitRangeEnd[n] = -1; // means not set yet
       std::vector<part_t> allParts;
       recursiveCollectAllParts(n, allParts);
-      for(int c = 0; c < static_cast<int>(allParts.size()); ++c) {
+      for(part_t c = 0; c < static_cast<part_t>(allParts.size()); ++c) {
         if(splitRangeBeg[n] == -1 || splitRangeBeg[n] > allParts[c]) {
           splitRangeBeg[n] = allParts[c]; // inclusive
         }
@@ -466,8 +469,8 @@ public:
     }
 
     // determine treeVertParents - simply fill from the tree nodes
-    treeVertParents = std::vector<int>(getPartitionTreeNodes().size());
-    for(int n = 0; n < static_cast<int>(getPartitionTreeNodes().size()); ++n) {
+    treeVertParents = std::vector<part_t>(getPartitionTreeNodes().size());
+    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
       treeVertParents[n] = getPartitionTreeNodes()[n].parent - 1;
     }
   }
