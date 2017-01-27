@@ -220,6 +220,7 @@ namespace MueLu {
     void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                            const std::vector<bool> & hi_nodeIsOwned,
                            const std::vector<size_t> & lo_node_in_hi,
+			   const Teuchos::ArrayRCP<const int> & hi_isDirichlet,
                            LOFieldContainer & lo_elemToNode,
                            std::vector<bool> & lo_nodeIsOwned,
                            std::vector<LocalOrdinal> & hi_to_lo_map,

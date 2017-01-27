@@ -356,6 +356,7 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 //  hi_elemToNode   - FC<LO> containing the high order element-to-node map
 //  hi_nodeIsOwned  - std::vector<bool> of size hi's column map, which described hi node ownership
 //  lo_node_in_hi   - std::vector<size_t> of size lo dofs in the reference element, which describes the coindcident hi dots
+//  hi_isDirichlet  - ArrayView<int> of size of hi's column map, which has a 1 if the unknown is Dirichlet and a 0 if it isn't.
 // Outputs:
 //  lo_elemToNode   - FC<LO> containing the low order element-to-node map.
 //  lo_nodeIsOwned  - std::vector<bool> of size lo's (future) column map, which described lo node ownership
@@ -365,12 +366,14 @@ template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                        const std::vector<bool> & hi_nodeIsOwned,
                        const std::vector<size_t> & lo_node_in_hi,
+		       const Teuchos::ArrayRCP<const int> & hi_isDirichlet,
                        LOFieldContainer & lo_elemToNode,
                        std::vector<bool> & lo_nodeIsOwned,
                        std::vector<LocalOrdinal> & hi_to_lo_map,
                        int & lo_numOwnedNodes) {
   typedef LocalOrdinal LO;
   using Teuchos::RCP;
+  LocalOrdinal LOINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   //  printf("CMS:BuildLoElemToNode: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
 
   size_t numElem     = hi_elemToNode.dimension(0);
@@ -383,8 +386,15 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   std::vector<bool> is_low_order(hi_numNodes,false);
   for(size_t i=0; i<numElem; i++)
     for(size_t j=0; j<lo_nperel; j++) {
-      lo_elemToNode(i,j)  = hi_elemToNode(i,lo_node_in_hi[j]);
-      is_low_order[hi_elemToNode(i,lo_node_in_hi[j])] = true; // This can overwrite and that is OK.
+      LO lid = hi_elemToNode(i,lo_node_in_hi[j]);
+
+      // Remove Dirichlet 
+      if(hi_isDirichlet[lid])
+	lo_elemToNode(i,j) = LOINVALID;
+      else {
+	lo_elemToNode(i,j)  = lid;       
+	is_low_order[hi_elemToNode(i,lo_node_in_hi[j])] = true; // This can overwrite and that is OK.	
+      }
     }
 
   // Count the number of lo owned nodes, generating a local index for lo nodes
@@ -408,9 +418,10 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 
   // Translate lo_elemToNode to a lo local index
   for(size_t i=0; i<numElem; i++)
-    for(size_t j=0; j<lo_nperel; j++) 
-      lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToNode(i,j)];    
-
+    for(size_t j=0; j<lo_nperel; j++) {
+      if(lo_elemToNode(i,j) != LOINVALID)
+	lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToNode(i,j)];    
+    }
   
   // Check for the [E|T]petra column map ordering property, namely LIDs for owned nodes should all appear first.  
   // Since we're injecting from the higher-order mesh, it should be true, but we should add an error check & throw in case.
@@ -793,17 +804,17 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     FCi lo_elemToHiRepresentativeNode;
 
     // Get Dirichlet unknown information
-    RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> > isDirichletRow, isDirichletCol;
-    Utilities::FindDirichletRowsAndPropagateToCols(A,isDirichletRow, isDirichletCol);
+    RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> > hi_isDirichletRow, hi_isDirichletCol;
+    Utilities::FindDirichletRowsAndPropagateToCols(A,hi_isDirichletRow, hi_isDirichletCol);
 
 #if 1
     printf("[%d] isDirichletRow = ",A->getRowMap()->getComm()->getRank());
-    for(size_t i=0;i<isDirichletRow->getMap()->getNodeNumElements(); i++)
-      printf("%d ",isDirichletRow->getData(0)[i]);
+    for(size_t i=0;i<hi_isDirichletRow->getMap()->getNodeNumElements(); i++)
+      printf("%d ",hi_isDirichletRow->getData(0)[i]);
     printf("\n");
     printf("[%d] isDirichletCol = ",A->getRowMap()->getComm()->getRank());
-    for(size_t i=0;i<isDirichletCol->getMap()->getNodeNumElements(); i++)
-      printf("%d ",isDirichletCol->getData(0)[i]);
+    for(size_t i=0;i<hi_isDirichletCol->getMap()->getNodeNumElements(); i++)
+      printf("%d ",hi_isDirichletCol->getData(0)[i]);
     printf("\n");
     fflush(stdout);
 #endif
@@ -814,7 +825,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       MueLuIntrepid::IntrepidGetP1NodeInHi(hi_basis,lo_node_in_hi,hi_DofCoords);
       
       // Generate lower-order element-to-node map
-      MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
+      MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,hi_isDirichletCol->getData(0),*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
       assert(hi_to_lo_map.size() == colMap->getNodeNumElements());      
    }
     else { 
