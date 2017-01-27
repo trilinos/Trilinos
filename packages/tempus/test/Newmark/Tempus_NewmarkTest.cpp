@@ -7,7 +7,7 @@
 
 //IKT, FIXME: replace the following with Newmark test case model, 
 //to be implemented 
-#include "../TestModels/SinCosModel.hpp"
+#include "../TestModels/BallParabolicModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -34,7 +34,7 @@ using Tempus::SolutionState;
 
 namespace Tempus_Test {
 
-TEUCHOS_UNIT_TEST(Newmark, Test1)
+TEUCHOS_UNIT_TEST(Newmark, BallParabolic)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -45,17 +45,17 @@ TEUCHOS_UNIT_TEST(Newmark, Test1)
 
     // Read params from .xml file
     RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_Newmark.xml");
+      getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
 
     //std::ofstream ftmp("PL.txt");
     //pList->print(ftmp);
     //ftmp.close();
 
-    // Setup the SinCosModel
-    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-    RCP<SinCosModel<double> > model =
-      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+    // Setup the BallParabolicModel
+    RCP<ParameterList> scm_pl = sublist(pList, "BallParabolicModel", true);
+    //RCP<BallParabolicModel<double> > model = sineCosineModel(scm_pl);
+    RCP<BallParabolicModel<double> > model =
+      Teuchos::rcp(new BallParabolicModel<double>(scm_pl));
 
     dt /= 2;
 
@@ -84,7 +84,7 @@ TEUCHOS_UNIT_TEST(Newmark, Test1)
 
     // Plot sample solution and exact solution
     if (n == 0) {
-      std::ofstream ftmp("Tempus_Newmark.dat");
+      std::ofstream ftmp("Tempus_Newmark_BallParabolic.dat");
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(Newmark, Test1)
   TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
-  std::ofstream ftmp("Tempus_Newmark-Error.dat");
+  std::ofstream ftmp("Tempus_Newmark-Error_BallParabolic.dat");
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "

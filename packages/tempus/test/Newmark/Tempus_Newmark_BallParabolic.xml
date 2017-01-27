@@ -1,5 +1,5 @@
-<ParameterList name="BackwardEuler_SinCos">
-  <ParameterList name="SinCosModel">
+<ParameterList name="Newmark_BallParabolic">
+  <ParameterList name="BallParabolicModel">
     <Parameter name="Accept model parameters"    type="bool" value="false"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
     <Parameter name="Coeff a" type="double" value="0.0"/>

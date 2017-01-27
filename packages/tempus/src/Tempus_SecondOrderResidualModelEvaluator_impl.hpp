@@ -1,12 +1,12 @@
-#ifndef Tempus_ResidualModelEvaluator_impl_hpp
-#define Tempus_ResidualModelEvaluator_impl_hpp
+#ifndef Tempus_SecondOrderResidualModelEvaluator_impl_hpp
+#define Tempus_SecondOrderResidualModelEvaluator_impl_hpp
 
 namespace Tempus {
 
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-ResidualModelEvaluator<Scalar>::
+SecondOrderResidualModelEvaluator<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -22,7 +22,7 @@ createInArgs() const
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-ResidualModelEvaluator<Scalar>::
+SecondOrderResidualModelEvaluator<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -39,7 +39,7 @@ createOutArgsImpl() const
 
 template <typename Scalar>
 void
-ResidualModelEvaluator<Scalar>::
+SecondOrderResidualModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -49,6 +49,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   RCP<Thyra::VectorBase<Scalar> >   x_dot = Thyra::createMember(get_x_space());
+  RCP<Thyra::VectorBase<Scalar> >   x_dot_dot = Thyra::createMember(get_x_space());
+
+  // IKT, FIXME, 1/25/16: add routine to compute relevant variables 
+  // for second order schemes to replace call to computeXDot_
 
   // call functor to compute x dot
   computeXDot_(*x,*x_dot);
@@ -57,9 +61,11 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
   transientInArgs.set_x(x);
   transientInArgs.set_x_dot(x_dot);
+  transientInArgs.set_x_dot_dot(x_dot_dot);
   transientInArgs.set_t(t_);
   transientInArgs.set_alpha(alpha_);
   transientInArgs.set_beta(beta_);
+  transientInArgs.set_W_x_dot_dot_coeff(omega_);
   for (int i=0; i<transientModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
       transientInArgs.set_p(i, inArgs.get_p(i));
@@ -77,4 +83,4 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
 } // namespace Tempus
 
-#endif  // Tempus_ResidualModelEvaluator_impl_hpp
+#endif  // Tempus_SecondOrderResidualModelEvaluator_impl_hpp

@@ -2,7 +2,7 @@
 #define Tempus_StepperNewmark_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_ResidualModelEvaluator.hpp"
+#include "Tempus_SecondOrderResidualModelEvaluator.hpp"
 
 namespace Tempus {
 
@@ -97,13 +97,13 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>              pList_;
-  Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
+  Teuchos::RCP<Teuchos::ParameterList>                         pList_;
+  Teuchos::RCP<SecondOrderResidualModelEvaluator<Scalar> >     residualModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >            solver_;
+  Teuchos::RCP<Stepper<Scalar> >                               predictorStepper_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>         inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>        outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>                    inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>                   outArgs_;
 
   // Compute the balancing time derivative as a function of x
   std::function<void (const Thyra::VectorBase<Scalar> &,

@@ -96,11 +96,11 @@ void StepperNewmark<Scalar>::setModel(
 {
   this->validImplicitSecondOrderODE_DAE(transientModel);
   if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  //IKT, 1/25/16: it is important to set 2nd argument of ResidualModelEvaluator to true! 
+  //IKT, 1/25/16: it is important to set 2nd argument of SecondOrderResidualModelEvaluator to true! 
   //This tells the code that it is a second order time integration scheme, and therefore 
   //to use xdotdot support.
   residualModel_ =
-    Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel, true));
+    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel));
 
   inArgs_  = residualModel_->getNominalValues();
   outArgs_ = residualModel_->createOutArgs();
@@ -272,7 +272,7 @@ void StepperNewmark<Scalar>::takeStep(
     
     //IKT, FIXME: modify initialize to take in disp_pred and vel_pred 
     //(predictors), if possible.  We don't want to compute disp_pred 
-    //and vel_pred in ResidualModelEvaluator::evalModelImpl, but rather save it 
+    //and vel_pred in SecondOrderResidualModelEvaluator::evalModelImpl, but rather save it 
     //and use it there.  Will not need to pass in computeXDot. 
 
     residualModel_->initialize(computeXDot, t, alpha, beta, omega);
@@ -375,11 +375,11 @@ void StepperNewmark<Scalar>::setParameterList(
     Teuchos::ParameterList &newmarkPL = pList_->sublist("Newmark Beta Parameters", true);
     beta_ = newmarkPL.get("Beta", 0.25); 
     gamma_ = newmarkPL.get("Gamma", 0.5);
-    *out << " Setting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n";  
+    *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n\n";  
   }
   else {
-    *out << " No Newmark Beta Parameters sublist found in input file; using default values of Beta = " 
-         << beta_ << " and Gamma = " << gamma_ << "\n"; 
+    *out << "\n  \nNo Newmark Beta Parameters sublist found in input file; using default values of Beta = " 
+         << beta_ << " and Gamma = " << gamma_ << ".\n\n"; 
   }
 }
 
