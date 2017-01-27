@@ -84,7 +84,7 @@
 namespace MueLuTests {
 
   /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GetLoNodeInHi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GetP1NodeInHi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -121,9 +121,9 @@ namespace MueLuTests {
         FC hi_dofCoords;
 
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
 #endif  
         TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());  
         TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
@@ -205,9 +205,9 @@ namespace MueLuTests {
         int lo_numOwnedNodes=0;
         FC hi_dofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
 #endif  
 
         for(int i=0; i<Nn; i++) {
@@ -906,11 +906,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       std::vector<size_t> lo_node_in_hi;
       FC hi_dofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-      MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+      MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
       FCi hi_e2n("hi_e2n",1,numHi);
       FCi lo_e2n("lo_e2n",1,numLo);
 #else
-      MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+      MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
       FCi hi_e2n(1,numHi);
       FCi lo_e2n(1,numLo);
 #endif  
@@ -1006,9 +1006,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 	/*** Do stuff the injection way ***/
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,typename Node::device_type>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
-        MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
 #endif  
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
 
@@ -1529,7 +1529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetLoNodeInHi,Scalar,LO,GO,Node)  \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetP1NodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node) \

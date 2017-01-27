@@ -101,6 +101,14 @@ inline std::string tolower(const std::string & str) {
   return data;
 }
 
+
+/*********************************************************************************************************/
+// Syntax [HGRAD|HCURL|HDIV][_| ][HEX|LINE|POLY|PYR|QUAD|TET|TRI|WEDGE][_| ][C|I][1|2|n]
+// Inputs:
+//  name - name of the intrepid basis to generate
+// Outputs:
+//  degree - order of resulting discretization
+//  return value - Intrepid2 basis correspionding to the name
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
 template<class Scalar,class KokkosExecutionSpace>
 Teuchos::RCP< Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> > BasisFactory(const std::string & name, int & degree)
@@ -167,12 +175,15 @@ template<class Scalar>
 }
 
 /*********************************************************************************************************/
-
-
+// Gets the "lo" nodes nested into a "hi" basis.  Only works on quads and lines for a lo basis of p=1
+// Inputs:
+//  hi_basis - Higher order Basis
+// Outputs:
+//  lo_node_in_hi   - std::vector<size_t> of size lo dofs in the reference element, which describes the coindcident hi dots
+//  hi_DofCoords    - FC<Scalar> of size (#hi dofs, dim) with the coordinate locations of the hi dofs on the reference element
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
 template<class Scalar,class KokkosDeviceType>
-void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&hi_basis,
-                           const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&lo_basis,
+void IntrepidGetP1NodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&hi_basis,
                            std::vector<size_t> & lo_node_in_hi,
                            Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords) {
   
@@ -198,10 +209,9 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDe
 }
 #else
 typedef<class Scalar, class ArrayScalar>
-void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
-                           const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
-                           std::vector<size_t> & lo_node_in_hi,
-                           ArrayScalar & hi_DofCoords) {
+void IntrepidGetP1NodeIn(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
+			 std::vector<size_t> & lo_node_in_hi,
+			 ArrayScalar & hi_DofCoords) {
   
   // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
   size_t degree         = hi_basis->getDegree();
@@ -228,6 +238,13 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScala
 
 
 /*********************************************************************************************************/
+// Given a list of candidates picks a definitive list of "representative" higher order nodes for each lo order node via the "smallest GID" rule
+// Input:
+//  representative_node_candidates - std::vector<std::vector<size_t> > of lists of "representative candidate" hi dofs for each lo dof
+//  hi_elemToNode   - FC<LO> containing the high order element-to-node map
+//  hi_columnMap    - Column map of the higher order matrix
+// Output:
+//  lo_elemToHiRepresentativeNode - FC<LO> of size (# elements, # lo dofs per element) listing the hi unknown chosen as the single representative for each lo unknown for counting purposes
 template<class LocalOrdinal, class GlobalOrdinal, class Node, class LOFieldContainer>
 void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candidates,const LOFieldContainer & hi_elemToNode,
 			       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & hi_columnMap,
@@ -272,7 +289,6 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
 //  lo_nodeIsOwned  - std::vector<bool> of size lo's (future) column map, which described lo node ownership
 //  hi_to_lo_map    - std::vector<LO> of size equal to hi's column map, which contains the lo id each hi idea maps to (or invalid if it doesn't)
 //  lo_numOwnedNodes- Number of lo owned nodes
-
 template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 					 const std::vector<bool> & hi_nodeIsOwned,
@@ -345,7 +361,6 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 //  lo_nodeIsOwned  - std::vector<bool> of size lo's (future) column map, which described lo node ownership
 //  hi_to_lo_map    - std::vector<LO> of size equal to hi's column map, which contains the lo id each hi idea maps to (or invalid if it doesn't)
 //  lo_numOwnedNodes- Number of lo owned nodes
-
 template <class LocalOrdinal, class LOFieldContainer>
 void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
                        const std::vector<bool> & hi_nodeIsOwned,
@@ -410,6 +425,14 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 }
 
 /*********************************************************************************************************/
+// Generates the lo_columnMap
+// Input:
+//  hi_importer        - Importer from the hi matrix
+//  hi_to_lo_map       - std::vector<LO> of size equal to hi's column map, which contains the lo id each hi idea maps to (or invalid if it doesn't)
+//  lo_DomainMap       - Domain map for the lo matrix
+//  lo_columnMapLength - Number of local columns in the lo column map
+// Output:
+//  lo_columnMap       - Column map of the lower order matrix
   template <class LocalOrdinal, class GlobalOrdinal, class Node> 
   void GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal, Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap) {
   typedef LocalOrdinal LO;
@@ -454,6 +477,13 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 }
 
 /*********************************************************************************************************/
+// Generates a list of "representative candidate" hi dofs for each lo dof on the reference element.  This is to be used in global numbering.
+// Input:
+//  basis                  - The low order basis
+//  ReferenceNodeLocations - FC<Scalar> of size (#hidofs, dim) Locations of higher order nodes on the reference element
+//  threshold              - tolerance for equivalance testing
+// Output:
+//  representative_node_candidates - std::vector<std::vector<size_t> > of lists of "representative candidate" hi dofs for each lo dof
 template<class Basis, class SCFieldContainer>
 void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold,std::vector<std::vector<size_t> > & representative_node_candidates) {
  typedef SCFieldContainer FC;
@@ -781,7 +811,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     /*******************/    
     if(lo_degree == 1) {
       // Get reference coordinates and the lo-to-hi injection list for the reference element     
-      MueLuIntrepid::IntrepidGetLoNodeInHi(hi_basis,lo_basis,lo_node_in_hi,hi_DofCoords);
+      MueLuIntrepid::IntrepidGetP1NodeInHi(hi_basis,lo_node_in_hi,hi_DofCoords);
       
       // Generate lower-order element-to-node map
       MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
