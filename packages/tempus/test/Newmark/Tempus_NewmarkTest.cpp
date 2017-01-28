@@ -34,7 +34,7 @@ using Tempus::SolutionState;
 
 namespace Tempus_Test {
 
-TEUCHOS_UNIT_TEST(Newmark, BallParabolic)
+TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;

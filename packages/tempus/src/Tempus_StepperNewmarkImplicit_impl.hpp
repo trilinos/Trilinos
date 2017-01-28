@@ -1,5 +1,5 @@
-#ifndef Tempus_StepperNewmark_impl_hpp
-#define Tempus_StepperNewmark_impl_hpp
+#ifndef Tempus_StepperNewmarkImplicit_impl_hpp
+#define Tempus_StepperNewmarkImplicit_impl_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
@@ -17,7 +17,7 @@ template<class Scalar> class StepperFactory;
 template <typename Scalar>
 std::function<void (const Thyra::VectorBase<Scalar> &,
                           Thyra::VectorBase<Scalar> &)>
-StepperNewmark<Scalar>::xDotFunction(
+StepperNewmarkImplicit<Scalar>::xDotFunction(
   Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old)
 {
   return [=](const Thyra::VectorBase<Scalar> & x,
@@ -29,7 +29,7 @@ StepperNewmark<Scalar>::xDotFunction(
 }
 
 template<class Scalar>
-void StepperNewmark<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+void StepperNewmarkImplicit<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& vPred,
                                                  const Thyra::VectorBase<Scalar>& v,
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
@@ -39,7 +39,7 @@ void StepperNewmark<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& vPred,
 }
     
 template<class Scalar>
-void StepperNewmark<Scalar>::predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+void StepperNewmarkImplicit<Scalar>::predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
                                                    const Thyra::VectorBase<Scalar>& d,
                                                    const Thyra::VectorBase<Scalar>& v,
                                                    const Thyra::VectorBase<Scalar>& a,
@@ -54,7 +54,7 @@ void StepperNewmark<Scalar>::predictDisplacement(Thyra::VectorBase<Scalar>& dPre
 }
     
 template<class Scalar>
-void StepperNewmark<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& v,
+void StepperNewmarkImplicit<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& v,
                                                  const Thyra::VectorBase<Scalar>& vPred,
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
@@ -64,7 +64,7 @@ void StepperNewmark<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& v,
 }
 
 template<class Scalar>
-void StepperNewmark<Scalar>::correctDisplacement(Thyra::VectorBase<Scalar>& d,
+void StepperNewmarkImplicit<Scalar>::correctDisplacement(Thyra::VectorBase<Scalar>& d,
                                                    const Thyra::VectorBase<Scalar>& dPred,
                                                    const Thyra::VectorBase<Scalar>& a,
                                                    const Scalar dt) const
@@ -74,9 +74,9 @@ void StepperNewmark<Scalar>::correctDisplacement(Thyra::VectorBase<Scalar>& d,
 }
 
 
-// StepperNewmark definitions:
+// StepperNewmarkImplicit definitions:
 template<class Scalar>
-StepperNewmark<Scalar>::StepperNewmark(
+StepperNewmarkImplicit<Scalar>::StepperNewmarkImplicit(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
@@ -91,7 +91,7 @@ StepperNewmark<Scalar>::StepperNewmark(
 
 
 template<class Scalar>
-void StepperNewmark<Scalar>::setModel(
+void StepperNewmarkImplicit<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
 {
   this->validImplicitSecondOrderODE_DAE(transientModel);
@@ -108,7 +108,7 @@ void StepperNewmark<Scalar>::setModel(
 
 
 template<class Scalar>
-void StepperNewmark<Scalar>::setNonConstModel(
+void StepperNewmarkImplicit<Scalar>::setNonConstModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
 {
   this->setModel(transientModel);
@@ -121,7 +121,7 @@ void StepperNewmark<Scalar>::setNonConstModel(
  *  ParameterList.  Otherwise it will fail.
  */
 template<class Scalar>
-void StepperNewmark<Scalar>::setSolver(std::string solverName)
+void StepperNewmarkImplicit<Scalar>::setSolver(std::string solverName)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -141,7 +141,7 @@ void StepperNewmark<Scalar>::setSolver(std::string solverName)
  *  in the Stepper's ParameterList.
  */
 template<class Scalar>
-void StepperNewmark<Scalar>::setSolver(
+void StepperNewmarkImplicit<Scalar>::setSolver(
   Teuchos::RCP<Teuchos::ParameterList> solverPL)
 {
   using Teuchos::RCP;
@@ -173,7 +173,7 @@ void StepperNewmark<Scalar>::setSolver(
  *  in the Stepper's ParameterList.  Otherwise it will fail.
  */
 template<class Scalar>
-void StepperNewmark<Scalar>::setPredictor(std::string predictorName)
+void StepperNewmarkImplicit<Scalar>::setPredictor(std::string predictorName)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -191,7 +191,7 @@ void StepperNewmark<Scalar>::setPredictor(std::string predictorName)
  *  the Stepper's ParameterList.
  */
 template<class Scalar>
-void StepperNewmark<Scalar>::setPredictor(
+void StepperNewmarkImplicit<Scalar>::setPredictor(
   Teuchos::RCP<Teuchos::ParameterList> predPL)
 {
   using Teuchos::RCP;
@@ -225,7 +225,7 @@ void StepperNewmark<Scalar>::setPredictor(
 
 
 template<class Scalar>
-void StepperNewmark<Scalar>::initialize()
+void StepperNewmarkImplicit<Scalar>::initialize()
 {
   this->setSolver();
   this->setPredictor();
@@ -233,7 +233,7 @@ void StepperNewmark<Scalar>::initialize()
 
 
 template<class Scalar>
-void StepperNewmark<Scalar>::takeStep(
+void StepperNewmarkImplicit<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
@@ -244,7 +244,7 @@ void StepperNewmark<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
     //IKT, FIXME, 1/25/17: replace the following code, cut/paste from Backward Euler, 
-    //with code for Newmark Beta scheme.
+    //with code for Newmark Beta Implicit scheme.
    
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
@@ -263,8 +263,8 @@ void StepperNewmark<Scalar>::takeStep(
     // constant variable capture of xOld pointer
     auto computeXDot = xDotFunction(dt, xOld);
     
-    //IKT, FIXME: replace the following with values for Newmark-Beta. 
-    //See Piro::Epetra::NewmarkDecorator::evalModel 
+    //IKT, FIXME: replace the following with values for NewmarkImplicit-Beta. 
+    //See Piro::Epetra::NewmarkImplicitDecorator::evalModel 
     Scalar alpha = 1.0/dt;
     Scalar beta = 1.0;
     Scalar omega = 0.0; //FIXME set to correct value 
@@ -297,7 +297,7 @@ void StepperNewmark<Scalar>::takeStep(
 }
 
 template<class Scalar>
-void StepperNewmark<Scalar>::computePredictor(
+void StepperNewmarkImplicit<Scalar>::computePredictor(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   if (predictorStepper_ == Teuchos::null) return;
@@ -308,7 +308,7 @@ void StepperNewmark<Scalar>::computePredictor(
 
   if (stepperStatus == Status::FAILED) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperNewmark::computePredictor");
+    Teuchos::OSTab ostab(out,1,"StepperNewmarkImplicit::computePredictor");
     *out << "Warning - predictorStepper has failed." << std::endl;
   } else {
     // Reset status to WORKING since this is the predictor
@@ -325,7 +325,7 @@ void StepperNewmark<Scalar>::computePredictor(
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperNewmark<Scalar>::
+StepperNewmarkImplicit<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
@@ -335,7 +335,7 @@ getDefaultStepperState()
 
 
 template<class Scalar>
-std::string StepperNewmark<Scalar>::description() const
+std::string StepperNewmarkImplicit<Scalar>::description() const
 {
   std::string name = "Backward Euler";
   return(name);
@@ -343,7 +343,7 @@ std::string StepperNewmark<Scalar>::description() const
 
 
 template<class Scalar>
-void StepperNewmark<Scalar>::describe(
+void StepperNewmarkImplicit<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
@@ -353,7 +353,7 @@ void StepperNewmark<Scalar>::describe(
 
 
 template <class Scalar>
-void StepperNewmark<Scalar>::setParameterList(
+void StepperNewmarkImplicit<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
@@ -363,9 +363,9 @@ void StepperNewmark<Scalar>::setParameterList(
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
 
   std::string stepperType = pList_->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Beta",
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Beta Implicit",
     std::logic_error,
-       "Error - Stepper Type is not 'Newmark Beta'!\n"
+       "Error - Stepper Type is not 'Newmark Beta Implicit'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
   Teuchos::readVerboseObjectSublist(&*pList_,this);
   beta_ = 0.25; //default value
@@ -375,6 +375,13 @@ void StepperNewmark<Scalar>::setParameterList(
     Teuchos::ParameterList &newmarkPL = pList_->sublist("Newmark Beta Parameters", true);
     beta_ = newmarkPL.get("Beta", 0.25); 
     gamma_ = newmarkPL.get("Gamma", 0.5);
+    if (gamma_ == 0.0) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
+        std::logic_error,
+           "Error - Stepper Type = Newmark Beta Implicit is not value with Gamma = 0.0, as this \n"
+            << " value specifies an explicit scheme.  Please run with Gamma > 0.0.  Explicit Newmark Beta \n"
+            << " scheme is not yet available in Tempus. \n");
+    }
     *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n\n";  
   }
   else {
@@ -386,7 +393,7 @@ void StepperNewmark<Scalar>::setParameterList(
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-StepperNewmark<Scalar>::getValidParameters() const
+StepperNewmarkImplicit<Scalar>::getValidParameters() const
 {
   static Teuchos::RCP<Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -406,7 +413,7 @@ StepperNewmark<Scalar>::getValidParameters() const
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-StepperNewmark<Scalar>::getNonconstParameterList()
+StepperNewmarkImplicit<Scalar>::getNonconstParameterList()
 {
   return(pList_);
 }
@@ -414,7 +421,7 @@ StepperNewmark<Scalar>::getNonconstParameterList()
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-StepperNewmark<Scalar>::unsetParameterList()
+StepperNewmarkImplicit<Scalar>::unsetParameterList()
 {
   Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
   pList_ = Teuchos::null;
@@ -423,4 +430,4 @@ StepperNewmark<Scalar>::unsetParameterList()
 
 
 } // namespace Tempus
-#endif // Tempus_StepperNewmark_impl_hpp
+#endif // Tempus_StepperNewmarkImplicit_impl_hpp

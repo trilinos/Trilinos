@@ -1,5 +1,5 @@
-#ifndef Tempus_StepperNewmark_decl_hpp
-#define Tempus_StepperNewmark_decl_hpp
+#ifndef Tempus_StepperNewmarkImplicit_decl_hpp
+#define Tempus_StepperNewmarkImplicit_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_SecondOrderResidualModelEvaluator.hpp"
@@ -11,12 +11,12 @@ namespace Tempus {
  *  Backward Euler is an implicit time stepper (i.e., with solver).
  */
 template<class Scalar>
-class StepperNewmark : virtual public Tempus::StepperImplicit<Scalar>
+class StepperNewmarkImplicit : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
   /// Constructor
-  StepperNewmark(
+  StepperNewmarkImplicit(
     Teuchos::RCP<Teuchos::ParameterList>                      pList,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
 
@@ -93,7 +93,7 @@ public:
 private:
 
   /// Default Constructor -- not allowed
-  StepperNewmark();
+  StepperNewmarkImplicit();
 
 private:
 
@@ -117,4 +117,4 @@ private:
 };
 } // namespace Tempus
 
-#endif // Tempus_StepperNewmark_decl_hpp
+#endif // Tempus_StepperNewmarkImplicit_decl_hpp

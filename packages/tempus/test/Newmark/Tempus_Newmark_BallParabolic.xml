@@ -40,7 +40,7 @@
 
     <ParameterList name="Demo Stepper">
 
-      <Parameter name="Stepper Type"   type="string" value="Newmark Beta"/>
+      <Parameter name="Stepper Type"   type="string" value="Newmark Beta Implicit"/>
       <ParameterList name="Newmark Beta Parameters">
         <Parameter name="Beta"    type="double" value="0.25"/>
         <Parameter name="Gamma"   type="double" value="0.5"/>
