@@ -143,11 +143,11 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
     gno_t numGlobalRows = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
@@ -246,11 +246,10 @@ struct XpetraTraits<Epetra_CrsMatrix>
   static RCP<Epetra_CrsMatrix> doMigration(const Epetra_CrsMatrix &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    int base = 0;
-
     // source map
     const Epetra_Map &smap = from.RowMap();
     gno_t numGlobalRows = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
@@ -419,18 +418,17 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
       size_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
     int oldNumElts = smap->getNodeNumElements();
     gno_t numGlobalRows = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
     const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalRows, rowList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -510,17 +508,15 @@ struct XpetraTraits<Epetra_CrsGraph>
   static RCP<Epetra_CrsGraph> doMigration(const Epetra_CrsGraph &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    int base = 0;
-
     // source map
     const Epetra_BlockMap &smap = from.RowMap();
     gno_t numGlobalRows = smap.NumGlobalElements();
     lno_t oldNumElts = smap.NumMyElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
-    Epetra_BlockMap tmap(numGlobalRows, numLocalRows,
-       myNewRows, 1, base, comm);
+    Epetra_BlockMap tmap(numGlobalRows, numLocalRows, myNewRows, 1, base, comm);
     lno_t newNumElts = tmap.NumMyElements();
 
     // importer
@@ -665,18 +661,17 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
   static RCP<t_vector_t> doMigration(const t_vector_t &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    gno_t base = 0;
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
 
     // source map
     const RCP<const map_t> &smap = from.getMap();
     gno_t numGlobalElts = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> eltList(myNewElts, numLocalElts);
     const RCP<const Teuchos::Comm<int> > comm = from.getMap()->getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalElts, eltList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalElts, eltList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -729,15 +724,15 @@ struct XpetraTraits<Epetra_Vector>
   static RCP<Epetra_Vector> doMigration(const Epetra_Vector &from,
       size_t numLocalElts, const gno_t *myNewElts)
   {
-    int base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
     const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
-      1, base, comm);
+                               1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);
@@ -867,17 +862,16 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
       size_t numLocalElts, const gno_t *myNewElts)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    gno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from.getMap();
     gno_t numGlobalElts = smap->getGlobalNumElements();
+    gno_t base = smap->getMinAllGlobalIndex();
 
     // target map
     ArrayView<const gno_t> eltList(myNewElts, numLocalElts);
     const RCP<const Teuchos::Comm<int> > comm = from.getMap()->getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalElts, eltList, base, comm));
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalElts, eltList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
@@ -930,15 +924,15 @@ struct XpetraTraits<Epetra_MultiVector>
   static RCP<Epetra_MultiVector> doMigration(const Epetra_MultiVector &from,
     size_t numLocalElts, const gno_t *myNewElts)
   {
-    int base = 0;
     // source map
     const Epetra_BlockMap &smap = from.Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
+    int base = smap.MinAllGID();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
     const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
-      1, base, comm);
+                               1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);
