@@ -181,6 +181,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     int max_degree=5;
 
+
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned      
@@ -215,10 +216,89 @@ namespace MueLuTests {
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
-        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
+	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,false);
+
+        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
         
         // Checks
         TEST_EQUALITY(lo_numOwnedNodes,2);
+
+        size_t num_lo_nodes_located=0;
+        for(size_t i=0;i<hi_to_lo_map.size(); i++) {
+          if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
+            num_lo_nodes_located++;
+        }
+        TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
+      }
+    }//end QUAD
+
+  }
+
+  /*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+  #   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+    typedef typename Node::device_type::execution_space ES;
+    typedef Intrepid2::Basis<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::FieldContainer<LO> FCi;
+    typedef Intrepid2::Basis<MT,FC> Basis;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    int max_degree=5;
+
+
+    {
+      //QUAD
+      // A one element test with Kirby-numbered nodes where the top edge is not owned      
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
+#else
+      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
+#endif
+
+      for(int degree=2; degree < max_degree; degree++) {
+        int Nn = (degree+1)*(degree+1);
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n("hi_e2n",1,Nn), lo_e2n;
+#else
+        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+        FCi hi_e2n(1,Nn), lo_e2n;
+#endif
+        std::vector<bool> hi_owned(Nn,false),lo_owned;
+        std::vector<size_t> lo_node_in_hi;
+        std::vector<LO> hi_to_lo_map;
+        int lo_numOwnedNodes=0;
+        FC hi_dofCoords;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
+#else
+        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
+#endif  
+
+        for(int i=0; i<Nn; i++) {
+          hi_e2n(0,i)=i;
+          if(i < Nn-(degree+1)) hi_owned[i]=true;
+        }
+
+
+	// Mark of the very first node as Dirichlet
+	Teuchos::ArrayRCP<int> is_dirichlet(Nn,false);
+	is_dirichlet[0] = 1;
+
+        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
+        
+        // Checks
+        TEST_EQUALITY(lo_numOwnedNodes,1);
 
         size_t num_lo_nodes_located=0;
         for(size_t i=0;i<hi_to_lo_map.size(); i++) {
@@ -415,10 +495,10 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
     // GOLD vector collection
-    std::vector<Scalar> p2_gold_in = {0,1,2,3,4,5,6,7,8,9};
+    std::vector<Scalar> p2_gold_in = {/*0,*/1,2,3,4,5,6,7,8,/*9*/};//Ignore Dirichlet unknowns
     std::vector<Scalar> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
                                   0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p2_gold_in.size(),2,p2_gold_in,p2_gold_out,std::string("hgrad_line_c2"));
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,2+p2_gold_in.size(),2,p2_gold_in,p2_gold_out,std::string("hgrad_line_c2"));
   }
 
 
@@ -428,37 +508,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     // GOLD vector collection
     size_t total_num_points=10;
     int degree=3;
-    std::vector<Scalar> p3_gold_in(total_num_points);
-    std::vector<Scalar> p3_gold_out(total_num_points + (total_num_points-1) *(degree-1));
-    for(size_t i=0; i<total_num_points; i++) {
-      p3_gold_in[i] = i;
-      p3_gold_out[i] = i;
-    }
-
-    size_t idx=total_num_points;
-    for(size_t i=0; i<total_num_points-1; i++) {
-      for(size_t j=0; j<(size_t)degree-1; j++) {
-        p3_gold_out[idx] = i + ((double)j+1)/degree;
-        idx++;
-      }
-    }
-
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p3_gold_in.size(),3,p3_gold_in,p3_gold_out,std::string("hgrad_line_c3"));
-  }
-
-/*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
-  {
-
-    // GOLD vector collection
-    size_t total_num_points=10;
-    int degree=4;
-    std::vector<Scalar> gold_in(total_num_points);
+    std::vector<Scalar> gold_in(total_num_points-2);
     std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
-    for(size_t i=0; i<total_num_points; i++) {
-      gold_in[i] = i;
-      gold_out[i] = i;
+    for(size_t i=0; i<total_num_points-2; i++) {
+      gold_in[i] = i+1;
+      gold_out[i+1] = i+1;
     }
+    gold_out[0] = 0.0;
+    gold_out[total_num_points-1] = total_num_points-1;
 
     size_t idx=total_num_points;
     for(size_t i=0; i<total_num_points-1; i++) {
@@ -468,7 +525,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
       }
     }
 
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"));
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,2+gold_in.size(),3,gold_in,gold_out,std::string("hgrad_line_c3"));
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+
+    // GOLD vector collection
+    size_t total_num_points=10;
+    int degree=4;
+
+    std::vector<Scalar> gold_in(total_num_points-2);
+    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points-2; i++) {
+      gold_in[i] = i+1;
+      gold_out[i+1] = i+1;
+    }
+    gold_out[0] = 0.0;
+    gold_out[total_num_points-1] = total_num_points-1;
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+        gold_out[idx] = i + ((double)j+1)/degree;
+        idx++;
+      }
+    }
+
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,2+gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"));
   }
 
 
@@ -1004,13 +1089,15 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
+	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
+	
 	/*** Do stuff the injection way ***/
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
 #endif  
-        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
+        MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
 
 	/*** Do stuff the representative way ***/
 	RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
@@ -1532,6 +1619,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetP1NodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3,Scalar,LO,GO,Node) \
