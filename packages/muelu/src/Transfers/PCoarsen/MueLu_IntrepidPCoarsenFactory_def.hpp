@@ -810,7 +810,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> > hi_isDirichletRow, hi_isDirichletCol;
     Utilities::FindDirichletRowsAndPropagateToCols(A,hi_isDirichletRow, hi_isDirichletCol);
 
-#if 1
+#if 0
     printf("[%d] isDirichletRow = ",A->getRowMap()->getComm()->getRank());
     for(size_t i=0;i<hi_isDirichletRow->getMap()->getNodeNumElements(); i++)
       printf("%d ",hi_isDirichletRow->getData(0)[i]);
