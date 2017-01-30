@@ -67,7 +67,7 @@ namespace Impl {
 template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
-typename inputViewType, ordinal_type n>
+typename inputViewType, bool hasDeriv, ordinal_type n>
 struct OrthPolynomial {
   KOKKOS_INLINE_FUNCTION
   static void
@@ -79,8 +79,9 @@ struct OrthPolynomial {
 template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
-typename inputViewType>
-struct OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0> {
+typename inputViewType,
+bool hasDeriv>
+struct OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(   outputViewType output,
@@ -88,11 +89,13 @@ struct OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0> {
       const ordinal_type p );
 };
 
+
 template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
-typename inputViewType>
-struct OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,1> {
+typename inputViewType,
+bool hasDeriv>
+struct OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,1> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(   outputViewType output,
