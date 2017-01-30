@@ -1192,7 +1192,6 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     {
       OrthoManagerFactory<ScalarType, MV, OP> factory;
       pl->set("Orthogonalization", orthoType_default_,
