@@ -1038,7 +1038,7 @@ protected:
       return;
     }
     if (sizeof (int) <= sizeof (size_t) &&
-        numPermuteIDs > static_cast<int> (std::numeric_limits<size_t>::max ())) {
+        numPermuteIDs > static_cast<size_t> (std::numeric_limits<int>::max ())) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "numPermuteIDs = " << numPermuteIDs
           << ", a size_t, overflows int." << endl;
@@ -1052,7 +1052,7 @@ protected:
     // just by iterating through the first entries of the set.
 
     if (sizeof (int) <= sizeof (size_t) &&
-        numSameIDs > static_cast<int> (std::numeric_limits<size_t>::max ())) {
+        numSameIDs > static_cast<size_t> (std::numeric_limits<int>::max ())) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "numSameIDs = " << numSameIDs
           << ", a size_t, overflows int." << endl;
@@ -1226,13 +1226,13 @@ protected:
     else if (* (src->localError_)) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "The source (input) object of the Import or Export "
-	"is already in an error state on this process."
+        "is already in an error state on this process."
           << endl;
     }
     else if (* (this->localError_)) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "The target (output, \"this\") object of the Import "
-	"or Export is already in an error state on this process." << endl;
+        "or Export is already in an error state on this process." << endl;
     }
     // Respond to detected error(s) by resizing 'exports' to zero (so
     // we won't be tempted to read it later), and filling
@@ -1339,9 +1339,9 @@ protected:
       std::vector<std::pair<LO, GO> > invalidRowInds;
       for (size_t k = 0; k < numExports; ++k) {
         const LO lclRow = exportLIDs.h_view[k];
-	// We're packing the source object's data, so we need to use
-	// the source object's Map to convert from local to global
-	// indices.
+        // We're packing the source object's data, so we need to use
+        // the source object's Map to convert from local to global
+        // indices.
         const GO gblRow = src->map_->getGlobalElement (lclRow);
         if (gblRow == ::Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
           invalidRowInds.push_back ({lclRow, gblRow});
@@ -1387,7 +1387,7 @@ protected:
       const GO gblRow = src->map_->getGlobalElement (lclRow);
       // Pack the current row of the source object.
       src->impl_.packRow (outBuf, totalNumPackets, outBufCurPos, *comm,
-			  gblRowInds, gblColInds, vals, gblRow);
+                          gblRowInds, gblColInds, vals, gblRow);
     }
 
     // Keep 'exports' modified on host.
@@ -1532,7 +1532,7 @@ protected:
 #ifdef HAVE_TPETRA_DEBUG
         // Clear out the current error stream, so we don't accumulate
         // over loop iterations.
-        errStrm = std::ostringstream ();
+        errStrm.str ("");
         continue;
 #else
         return;
@@ -1561,7 +1561,7 @@ protected:
 #ifdef HAVE_TPETRA_DEBUG
         // Clear out the current error stream, so we don't accumulate
         // over loop iterations.
-        errStrm = std::ostringstream ();
+        errStrm.str ("");
         continue;
 #else
         return;
