@@ -47,6 +47,20 @@
 using namespace Teko;
 using namespace Teko::Epetra;
 
+// <http://stackoverflow.com/a/5525712/353337>
+std::string get_exe_dir() {
+  char buff[PATH_MAX];
+  ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    std::string full = std::string(buff);
+    // remove the part after the last slash to retrieve the path
+    full.erase(full.rfind('/'));
+    return full + "/";
+  }
+  return "";
+}
+
 // int
 // main(int argc, char * argv[])
 TEUCHOS_UNIT_TEST(tALOperator, test)
@@ -103,12 +117,23 @@ TEUCHOS_UNIT_TEST(tALOperator, test)
 
    // Read matrices and vector.
    Epetra_CrsMatrix *ptrMat = 0, *ptrMp = 0;
-   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToCrsMatrix("data/tOpMat.mm", mapAll, ptrMat)==0);
-   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToCrsMatrix("data/tOpMp.mm", mapPre, ptrMp)==0);
+   const auto path1 = get_exe_dir() + "./data/tOpMat.mm";
+   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToCrsMatrix(
+         path1.c_str(),
+         mapAll, ptrMat
+         )==0);
+   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToCrsMatrix(
+         (get_exe_dir() + "./data/tOpMp.mm").c_str(),
+         mapPre, ptrMp
+         )==0);
    LinearOp lpMp = Thyra::epetraLinearOp(Teuchos::rcpFromRef(*ptrMp));
    // This vector is computed by Matlab for comparison.
    Epetra_Vector *ptrExact = 0;
-   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToVector("data/tOpRhs.mm", mapAll, ptrExact)==0);
+   const auto path = get_exe_dir() + "./data/tOpRhs.mm";
+   TEUCHOS_ASSERT(EpetraExt::MatrixMarketFileToVector(
+         path.c_str(),
+         mapAll, ptrExact
+         )==0);
 
    // Reorder matrix.
    RCP < Epetra_CrsMatrix > mat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *mapReorder, ptrMat->GlobalMaxNumEntries()));

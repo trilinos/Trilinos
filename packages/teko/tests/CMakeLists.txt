@@ -6,13 +6,13 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 SET(HEADERS "")
 SET(SOURCES "")
 
-APPEND_GLOB( HEADERS 
+APPEND_GLOB( HEADERS
   ./src/Epetra/*.hpp
   ./src/Tpetra/*.hpp
   ./src/*.hpp
 )
 
-APPEND_GLOB( SOURCES 
+APPEND_GLOB( SOURCES
   ./src/Epetra/*.cpp
   ./src/Tpetra/*.cpp
   ./src/*.cpp
@@ -89,6 +89,7 @@ TRIBITS_ADD_TEST(
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
+
 SET(TEST_DRIVER_DATA_FILES
   lsc_B_2.mm
   lsc_Bt_2.mm
@@ -104,27 +105,61 @@ SET(TEST_DRIVER_DATA_FILES
   szdRHS.mm
   )
 
+# test
+SET(input_files
+  lsc_B_2.mm
+  lsc_Bt_2.mm
+  lsc_exact_2.mm
+  lsc_F_2.mm
+  lsc_Qu_2.mm
+  lsc_rhs.mm
+  szdMat.mm
+  szdMp.mm
+  szdRHS.mm
+  tOpMat.mm
+  tOpMp.mm
+  tOpRhs.mm
+  )
 IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-  SET(TEST_DRIVER_DATA_FILES
-    ${TEST_DRIVER_DATA_FILES}
+  LIST(APPEND input_files
     nsjac.mm
-    nsjac_1.mm  
+    nsjac_1.mm
     )
 ENDIF()
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
-  SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
-  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
-  EXEDEPS testdriver
+include(ExternalData)
+set(ExternalData_URL_TEMPLATES
+  "https://sourceforge.net/projects/trilinos-data/files/%(algo)/%(hash)"
   )
+foreach(file ${input_files})
+  ExternalData_Expand_Arguments(
+    tekoTestFetchData
+    OUT_DATA DATA{${CMAKE_CURRENT_LIST_DIR}/data/${file}}
+    )
+endforeach()
+ExternalData_Add_Target(tekoTestFetchData)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_tpetra_copyfiles
-  SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
-  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
-  EXEDEPS testdriver_tpetra
-  )
+
+# IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+#   SET(TEST_DRIVER_DATA_FILES
+#     ${TEST_DRIVER_DATA_FILES}
+#     nsjac.mm
+#     nsjac_1.mm
+#     )
+# ENDIF()
+
+# TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
+#   SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
+#   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
+#   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
+#   EXEDEPS testdriver
+#   )
+
+# TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_tpetra_copyfiles
+#   SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
+#   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
+#   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
+#   EXEDEPS testdriver_tpetra
+#   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
@@ -157,7 +192,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RequestInterface_test 
+  RequestInterface_test
   SOURCES
     unit_tests/tRequestInterface.cpp
     ${UNIT_TEST_DRIVER}
@@ -167,7 +202,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagnosticLinearOp_test 
+  DiagnosticLinearOp_test
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
     ${UNIT_TEST_DRIVER}
@@ -177,7 +212,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonallyScaledPreconditioner 
+  DiagonallyScaledPreconditioner
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
     ${UNIT_TEST_DRIVER}
@@ -187,7 +222,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InverseFactoryOperator 
+  InverseFactoryOperator
   SOURCES
     unit_tests/tInverseFactoryOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -207,7 +242,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonalPreconditionerFactory 
+  DiagonalPreconditionerFactory
   SOURCES
     unit_tests/tDiagonalPreconditionerFactory.cpp
     ${UNIT_TEST_DRIVER}
@@ -217,7 +252,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StratimikosFactory 
+  StratimikosFactory
   SOURCES
     unit_tests/tStratimikosFactory.cpp
     ${UNIT_TEST_DRIVER}
@@ -227,7 +262,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExplicitOps 
+  ExplicitOps
   SOURCES
     unit_tests/tExplicitOps.cpp
     ${UNIT_TEST_DRIVER}
@@ -237,7 +272,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ALOperator 
+  ALOperator
   SOURCES
     unit_tests/tALOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -267,7 +302,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UtilitiesTests 
+  UtilitiesTests
   SOURCES
     unit_tests/tUtilitiesTests.cpp
     ${UNIT_TEST_DRIVER}
