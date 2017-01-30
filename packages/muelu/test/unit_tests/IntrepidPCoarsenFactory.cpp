@@ -1517,7 +1517,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     level2.set("ipc: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
       
-#if 1
+#if 0
     // DEBUG
     ParameterList dump;
     dump.set("A","{0,1,2}");
