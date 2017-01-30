@@ -616,7 +616,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-     if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
+    //     if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -684,7 +684,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -752,7 +751,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -1307,7 +1305,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("ipc: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -1375,7 +1372,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("ipc: lo basis","hgrad_line_c3");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -1443,7 +1439,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("ipc: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
-    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -1487,8 +1482,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    GO num_nodes = 10;
-    //    GO num_nodes = 972;
+    GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
     FCi elem_to_node;
     RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
@@ -1510,7 +1504,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("multigrid algorithm","pcoarsen");
     Params.set("verbosity","high");
     Params.set("max levels",3);
-    //    Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",5);
 
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
@@ -1595,7 +1588,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("rap: fix zero diagonals",true);
     Params.set("verbosity","high");
     Params.set("max levels",3);
-    //    Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
 
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
