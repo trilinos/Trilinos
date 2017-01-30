@@ -89,22 +89,6 @@ TRIBITS_ADD_TEST(
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
-
-SET(TEST_DRIVER_DATA_FILES
-  lsc_B_2.mm
-  lsc_Bt_2.mm
-  lsc_F_2.mm
-  lsc_Qu_2.mm
-  lsc_exact_2.mm
-  lsc_rhs.mm
-  tOpMat.mm
-  tOpMp.mm
-  tOpRhs.mm
-  szdMat.mm
-  szdMp.mm
-  szdRHS.mm
-  )
-
 # test
 SET(input_files
   lsc_B_2.mm
@@ -138,28 +122,6 @@ foreach(file ${input_files})
 endforeach()
 ExternalData_Add_Target(tekoTestFetchData)
 
-
-# IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-#   SET(TEST_DRIVER_DATA_FILES
-#     ${TEST_DRIVER_DATA_FILES}
-#     nsjac.mm
-#     nsjac_1.mm
-#     )
-# ENDIF()
-
-# TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
-#   SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
-#   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
-#   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
-#   EXEDEPS testdriver
-#   )
-
-# TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_tpetra_copyfiles
-#   SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
-#   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
-#   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
-#   EXEDEPS testdriver_tpetra
-#   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
