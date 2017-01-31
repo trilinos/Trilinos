@@ -156,6 +156,48 @@ protected:
 
   //@}
 
+  // This doesn't inherit from TpetraMultiVector, so need to overwrite these again :(
+  /** @name Overridden protected functions from MultiVectorBase */
+  //@{
+  /** \brief . */
+  virtual void assignImpl(Scalar alpha);
+
+  /** \brief . */
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv);
+
+  /** \brief . */
+  virtual void scaleImpl(Scalar alpha);
+
+  /** \brief . */
+  virtual void updateImpl(
+    Scalar alpha,
+    const MultiVectorBase<Scalar>& mv
+    );
+
+  /** \brief . */
+  virtual void linearCombinationImpl(
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+    const Scalar& beta
+    );
+
+  /** \brief . */
+  virtual void norms1Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief . */
+  virtual void norms2Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  /** \brief . */
+  virtual void normsInfImpl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const;
+
+  //@}
+
 private:
 
   // ///////////////////////////////////////

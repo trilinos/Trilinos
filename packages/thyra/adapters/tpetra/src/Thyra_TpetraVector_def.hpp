@@ -44,7 +44,7 @@
 
 
 #include "Thyra_TpetraVector_decl.hpp"
-
+#include "Thyra_TpetraMultiVector.hpp"
 
 namespace Thyra {
 
@@ -232,21 +232,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateVecImpl(
   const VectorBase<Scalar>& x
   )
 {
-  // Try to cast x to this type.
-  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
-  RCP<const TV> tx = Teuchos::rcp_dynamic_cast<const TV>(Teuchos::rcpFromRef(x));
-
-  // If the cast succeeded, call Tpetra directly.
-  // Otherwise, fall back to the RTOp implementation.
-  if (nonnull(tx)) {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    tpetraVector_.getNonconstObj()->update(alpha, *tx->getConstTpetraVector(), ST::one());
-  } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-    VectorDefaultBase<Scalar>::updateVecImpl(alpha, x);
-  }
+  this->updateImpl(alpha, x);
 }
 
 
@@ -257,53 +243,10 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationVecI
   const Scalar& beta
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(alpha.size(), x.size());
-#endif
-
-  // Try to cast x to an array of this type
-  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
-  Teuchos::Array<Ptr<const TV> > tx(x.size());
-  bool allCastsSuccessful = true;
-  {
-    auto xIter = x.begin();
-    auto txIter = tx.begin();
-    for (; txIter != tx.end(); ++xIter, ++txIter) {
-      *txIter = Teuchos::ptr_dynamic_cast<const TV>(*xIter);
-      if (is_null(*txIter)) {
-        allCastsSuccessful = false;
-        break;
-      }
-    }
-  }
-
-  // If each cast succeeded, call Tpetra directly.
-  // Otherwise, fall back to the RTOp implementation.
-  if (allCastsSuccessful) {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    auto txIter = tx.begin();
-    auto alphaIter = alpha.begin();
-    // We add two vecs at a time, so only scale if even num vecs,
-    // and additionally do the first addition if odd num vecs.
-    if ((tx.size() % 2) == 0) {
-      tpetraVector_.getNonconstObj()->scale(beta);
-    } else {
-      tpetraVector_.getNonconstObj()->update(
-        *alphaIter, *(*txIter)->getConstTpetraVector(), beta);
-      ++txIter;
-      ++alphaIter;
-    }
-    for (; txIter != tx.end(); txIter+=2, alphaIter+=2) {
-      tpetraVector_.getNonconstObj()->update(
-        *alphaIter, *(*txIter)->getConstTpetraVector(),
-        *(alphaIter+1), *(*(txIter+1))->getConstTpetraVector(), ST::one());
-    }
-  } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-    VectorDefaultBase<Scalar>::linearCombinationVecImpl(alpha, x, beta);
-  }
+  Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > > mv(x.size());
+  for (typename Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > >::size_type i = 0; i < mv.size(); ++i)
+    mv[i] = Teuchos::ptr_static_cast<const MultiVectorBase<Scalar> >(x[i]);
+  this->linearCombinationImpl(alpha, mv, beta);
 }
 
 
@@ -344,9 +287,8 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2WeightedImpl(
       ST::one(), *tx->getConstTpetraVector(), *tpetraVector_.getConstObj(), ST::zero());
     return ST::magnitude(ST::squareroot(tpetraVector_.getConstObj()->dot(*temp)));
   } else {
-    // This version will require/modify the host view of this vector.
+    // This version will require the host view of this vector.
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
     return VectorDefaultBase<Scalar>::norm2WeightedImpl(x);
   }
 }
@@ -357,6 +299,168 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInfImpl() const
 {
   return tpetraVector_.getConstObj()->normInf();
+}
+
+
+// Overridden protected functions from MultiVectorBase
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::assignImpl(Scalar alpha)
+{
+  tpetraVector_.getNonconstObj()->putScalar(alpha);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
+{
+  // Try to cast mv to a Tpetra type
+  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  RCP<const TMV> tmv = Teuchos::rcp_dynamic_cast<const TMV>(Teuchos::rcpFromRef(mv));
+  RCP<const TV> tv = Teuchos::rcp_dynamic_cast<const TV>(Teuchos::rcpFromRef(mv));
+
+  // If a cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the RTOp implementation.
+  if (nonnull(tmv)) {
+    tpetraVector_.getNonconstObj()->assign(*tmv->getConstTpetraMultiVector());
+  } else if (nonnull(tv)) {
+    tpetraVector_.getNonconstObj()->assign(*tv->getConstTpetraVector());
+  } else {
+    // This version will require/modify the host view of this vector.
+    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+    MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(mv);
+  }
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scaleImpl(Scalar alpha)
+{
+  tpetraVector_.getNonconstObj()->scale(alpha);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
+  Scalar alpha,
+  const MultiVectorBase<Scalar>& mv
+  )
+{
+  // Try to cast mv to a Tpetra type
+  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  RCP<const TMV> tmv = Teuchos::rcp_dynamic_cast<const TMV>(Teuchos::rcpFromRef(mv));
+  RCP<const TV> tv = Teuchos::rcp_dynamic_cast<const TV>(Teuchos::rcpFromRef(mv));
+
+  // If a cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the RTOp implementation.
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (nonnull(tmv)) {
+    tpetraVector_.getNonconstObj()->update(alpha, *tmv->getConstTpetraMultiVector(), ST::one());
+  } else if (nonnull(tv)) {
+    tpetraVector_.getNonconstObj()->update(alpha, *tv->getConstTpetraVector(), ST::one());
+  } else {
+    // This version will require/modify the host view of this vector.
+    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+    MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
+  }
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl(
+  const ArrayView<const Scalar>& alpha,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+  const Scalar& beta
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(), mv.size());
+#endif
+
+  // Try to cast mv to Tpetra objects
+  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  Teuchos::Array<Ptr<const TpetraMultiVector_t> > tmvs(mv.size());
+  Ptr<const TMV> tmv;
+  Ptr<const TV> tv;
+  bool allCastsSuccessful = true;
+  {
+    auto mvIter = mv.begin();
+    auto tmvIter = tmvs.begin();
+    for (; mvIter != mv.end(); ++mvIter, ++tmvIter) {
+      //*tmvIter = Teuchos::ptr_dynamic_cast<const TMV>(*mvIter);
+      tmv = Teuchos::ptr_dynamic_cast<const TMV>(*mvIter);
+      tv = Teuchos::ptr_dynamic_cast<const TV>(*mvIter);
+      if (nonnull(tmv)) {
+        *tmvIter = tmv->getConstTpetraMultiVector().ptr();
+      } else if (nonnull(tv)) {
+        *tmvIter = tv->getConstTpetraVector().ptr();
+      } else {
+        allCastsSuccessful = false;
+        break;
+      }
+    }
+  }
+
+  // If each cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the RTOp implementation.
+  if (allCastsSuccessful) {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    auto tmvIter = tmvs.begin();
+    auto alphaIter = alpha.begin();
+    // We add two MVs at a time, so only scale if even num MVs,
+    // and additionally do the first addition if odd num MVs.
+    if ((tmvs.size() % 2) == 0) {
+      tpetraVector_.getNonconstObj()->scale(beta);
+    } else {
+      tpetraVector_.getNonconstObj()->update(
+        *alphaIter, *(*tmvIter), beta);
+      ++tmvIter;
+      ++alphaIter;
+    }
+    for (; tmvIter != tmvs.end(); tmvIter+=2, alphaIter+=2) {
+      tpetraVector_.getNonconstObj()->update(
+        *alphaIter, *(*tmvIter), *(alphaIter+1), *(*(tmvIter+1)), ST::one());
+    }
+  } else {
+    // This version will require/modify the host view of this vector.
+    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+    MultiVectorDefaultBase<Scalar>::linearCombinationImpl(alpha, mv, beta);
+  }
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norms1Impl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+  tpetraVector_.getConstObj()->norm1(norms);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norms2Impl(
+    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+    ) const
+{
+  tpetraVector_.getConstObj()->norm2(norms);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normsInfImpl(
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
+  ) const
+{
+  tpetraVector_.getConstObj()->normInf(norms);
 }
 
 

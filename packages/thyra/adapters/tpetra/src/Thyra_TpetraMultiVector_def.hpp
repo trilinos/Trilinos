@@ -234,7 +234,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norms1Impl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
 {
-  tpetraMultiVector_.getNonconstObj()->norm1(norms);
+  tpetraMultiVector_.getConstObj()->norm1(norms);
 }
 
 
@@ -243,7 +243,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norms2Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const
 {
-  tpetraMultiVector_.getNonconstObj()->norm2(norms);
+  tpetraMultiVector_.getConstObj()->norm2(norms);
 }
 
 
@@ -252,7 +252,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normsInfImpl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
 {
-  tpetraMultiVector_.getNonconstObj()->normInf(norms);
+  tpetraMultiVector_.getConstObj()->normInf(norms);
 }
 
 
