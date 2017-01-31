@@ -423,11 +423,10 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
                            "implement migration for your RowMatrix.");
   }
 
-  gno_t base = 0;
-
   // source map
   const RCP<const map_t> &smap = from.getRowMap();
   gno_t numGlobalRows = smap->getGlobalNumElements();
+  gno_t base = smap->getMinAllGlobalIndex();
 
   // target map
   ArrayView<const gno_t> rowList(myNewRows, numLocalRows);

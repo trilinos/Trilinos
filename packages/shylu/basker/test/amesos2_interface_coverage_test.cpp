@@ -19,28 +19,27 @@ int main(int argc, char* argv[])
   std::string mname;
 
   if(argc > 2)
-    {
-      std::cout <<"Test Input is only the coverage matrix"
-		<< std::endl;
-      return -1;
-    }
+  {
+    std::cout <<"Test Input is only the coverage matrix"
+      << std::endl;
+    return -1;
+  }
   else if (argc == 2)
-    {
-      mname = std::string(argv[1]);
-    }
+  {
+    mname = std::string(argv[1]);
+  }
   else
-    {
-      mname = std::string("coverage.mtx");
-    }
+  {
+    mname = std::string("coverage.mtx");
+  }
   
- 
   //Load inital information
   //Matrix
   Int m, n, nnz; 
   m = n = nnz = 0;
-  Int *col_ptr, *row_idx;
-  Entry *val;
-  col_ptr = NULL;
+  Int *col_ptr = nullptr;
+  Int *row_idx = nullptr;
+  Entry *val = nullptr;
   
   std::cout << "Matrix read" << std::endl;
   double rmatrix = myTime();
@@ -62,15 +61,15 @@ int main(int argc, char* argv[])
     vm = m;
     y = new Entry[m]();
     for(Int i = 0; i < vm; i++)
-      {
-	xhat[i] = (Entry) i;
-      }
+    {
+      xhat[i] = (Entry) i;
+    }
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
     for(Int i = 0; i < vm; i++)
-      {
-	//std::cout  << "y " << y[i] << std::endl;
-	xhat[i] = (Entry) 0.0;
-      }
+    {
+      //std::cout  << "y " << y[i] << std::endl;
+      xhat[i] = (Entry) 0.0;
+    }
   }
   
   //Starting up Kokkos
@@ -135,9 +134,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+      xhat[i] = y[i] - xhat[i];
+    }
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
@@ -155,9 +154,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+      xhat[i] = y[i] - xhat[i];
+    }
     
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
@@ -215,9 +214,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+      xhat[i] = y[i] - xhat[i];
+    }
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
@@ -235,10 +234,10 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
-    
+    {
+      xhat[i] = y[i] - xhat[i];
+    }
+
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
@@ -298,9 +297,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+     	xhat[i] = y[i] - xhat[i];
+    }
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
@@ -318,9 +317,9 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+     	xhat[i] = y[i] - xhat[i];
+    }
     
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
@@ -329,7 +328,6 @@ int main(int argc, char* argv[])
     mybasker.Finalize();
   }
 */
-
   
   Kokkos::finalize();
 

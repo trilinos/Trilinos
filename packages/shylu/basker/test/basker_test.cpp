@@ -31,17 +31,15 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
+  cout << "basker_test: filename, numthreads should be passed as command line args" << endl; 
+
   std::string fname = std::string(argv[1]);
+  Int numthreads = atoi(argv[2]);
   //std::string rhsname = std::string(argv[2]);
   //Int numthreads = atoi(argv[3]);
-
   //std::string fname = "matrix1.mtx";
  
-  Int numthreads = atoi(argv[2]);
-
-  cout << "using " << numthreads << "threads" << endl;
-
-
+  cout << "basker_test: using " << numthreads << "threads" << endl;
   #ifdef BASKER_KOKKOS
   Exe_Space::initialize(numthreads);
   cout << "---------------USING KOKKOS-------------" << endl;
@@ -51,21 +49,18 @@ int main(int argc, char* argv[])
   #endif
 
   {
-
   #ifdef BASKER_KOKKOS
-  cout << "true: " << true << endl;
   cout << "hwloc aval: " << Kokkos::hwloc::available()<<endl;
   cout << "numa count: " << Kokkos::hwloc::get_available_numa_count() << endl;
   cout << "thrd numa:  " << Kokkos::hwloc::get_available_cores_per_numa() << endl;
   #endif
 
-
   //Read in MTX
   //Note: Adapted from Siva's original bsk_util
   Int m,n, nnz, innz;
-  Int *col_ptr;
-  Int *row_idx;
-  Entry *vals;
+  Int *col_ptr = nullptr;
+  Int *row_idx = nullptr;
+  Entry *vals  = nullptr;
 
   n = m = 0;
   nnz = 0;
@@ -150,11 +145,9 @@ int main(int argc, char* argv[])
       nnz--;
     }
     inp_str.close();
-
     //cout << "MTX done reading" << endl;
 
     //count col_sums
-
     for(Int k =1 ; k<(ncols+1); k++)
     {
       col_ptr[k] = col_ptr[k] + col_ptr[k-1];
@@ -163,7 +156,6 @@ int main(int argc, char* argv[])
     //cout << "MTX done sorting " << endl;
 
     //Sort index in column...
-
   }//end if open
 
   cout << "NNZ " << nnz
@@ -171,7 +163,6 @@ int main(int argc, char* argv[])
        << " "    << col_ptr[ncols]
        << endl;
   nnz = innz;
-
 
   //====Load righthand side
   Entry* y = new Entry[n]();
@@ -198,7 +189,6 @@ int main(int argc, char* argv[])
   mybasker.Options.symmetric = false;
   mybasker.Options.realloc   = true;
   mybasker.Options.btf       = true;
- 
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;
@@ -213,7 +203,7 @@ int main(int argc, char* argv[])
   mybasker.Solve(1,y,x);
   cout << "--------------Done Solve----------------------"<<endl;
 
-    Int *lperm;
+  Int *lperm;
   Int *rperm;
   mybasker.GetPerm(&lperm, &rperm);
   mybasker.Finalize();
@@ -221,10 +211,8 @@ int main(int argc, char* argv[])
  
   //}//After
   //Kokkos::fence();
-
   }
   //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
   //#endif
-
 }

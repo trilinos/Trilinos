@@ -43,8 +43,14 @@ namespace Basker
     {}
 
     KOKKOS_INLINE_FUNCTION
-    workspace_init_funct(INT_2DARRAY  _ws,   ENTRY_2DARRAY  _X, 
-			 TREE _tree, INT_2DARRAY _S,  Int _lvl)
+    workspace_init_funct
+    (
+     INT_2DARRAY   _ws,
+     ENTRY_2DARRAY _X, 
+		 TREE          _tree, 
+     INT_2DARRAY   _S,
+     Int           _lvl
+    )
     {
       ws = _ws;
       X  = _X;
@@ -62,6 +68,5 @@ namespace Basker
   };
 
 }//end Basker namespace
-
 
 #endif //end ifndef

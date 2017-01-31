@@ -319,6 +319,7 @@ private:
 
   // Modify the Maps of an input matrix to make them non-contiguous 
   RCP<tcrsMatrix_t> modifyMatrixGIDs(RCP<tcrsMatrix_t> &in);
+  inline zgno_t newID(const zgno_t id) { return id * 2 + 10001; }
 
   // Read Zoltan data that is in a .graph file.
   void getUIChacoGraph(FILE *fptr, bool haveAssign, FILE *assignFile,
@@ -1042,7 +1043,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
   auto inRows = inMap->getMyGlobalIndices();
   Teuchos::Array<zgno_t> outRows(nRows);
   for (size_t i = 0; i < nRows; i++) {
-    outRows[i] = inRows[i] * 2 + 1;
+    outRows[i] = newID(inRows[i]);
   }
 
   Tpetra::global_size_t nGlobalRows = inMap->getGlobalNumElements();
@@ -1077,7 +1078,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
     zgno_t inGid = inMap->getGlobalElement(i);
     inMatrix->getGlobalRowCopy(inGid, indices, values, nEntries);
     for (size_t j = 0; j < nEntries; j++)
-      indices[j] = indices[j] * 2 + 1;
+      indices[j] = newID(indices[j]);
 
     zgno_t outGid = outMap->getGlobalElement(i);
     outMatrix->insertGlobalValues(outGid, indices(0, nEntries),
@@ -1146,7 +1147,7 @@ void UserInputForTests::readMatrixMarketFile(
                                              true, false, false);
 #ifdef KDD_NOT_READY_YET
     // See note below about modifying coordinate IDs as well.
-    if (makeNonContiguous)
+    //if (makeNonContiguous)
       fromMatrix = modifyMatrixGIDs(fromMatrix);
 #endif
 
@@ -1181,8 +1182,10 @@ void UserInputForTests::readMatrixMarketFile(
                       "UserInputForTests unable to read matrix market file");
 
   M_ = toMatrix;
-  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows() << " " << M_->getGlobalNumRows()
-            << " " << M_->getNodeNumEntries() << " " << M_->getGlobalNumEntries() << std::endl;
+  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows() 
+            << " " << M_->getGlobalNumRows()
+            << " " << M_->getNodeNumEntries() 
+            << " " << M_->getGlobalNumEntries() << std::endl;
 
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
@@ -1331,10 +1334,13 @@ void UserInputForTests::readMatrixMarketFile(
     ArrayRCP<const zgno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
 
 #ifdef KDD_NOT_READY_YET
-    // TODO if do modifyMatrixGIDs, I think we need to modify ids here as well
-#endif
+    // TODO if modifyMatrixGIDs, we need to modify ids here as well
+    for (zgno_t id=0; id < zgno_t(numGlobalCoords); id++)
+      *tmp++ = newID(id);
+#else
     for (zgno_t id=0; id < zgno_t(numGlobalCoords); id++)
       *tmp++ = id;
+#endif
 
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords,
                                              rowIds.view(0, numGlobalCoords),

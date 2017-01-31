@@ -241,9 +241,6 @@ namespace Belos {
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
-    // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
-
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
@@ -418,9 +415,6 @@ void PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuch
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
 #endif
-      if (ortho_ != Teuchos::null) {
-        ortho_->setLabel( label_ );
-      }
     }
   }
 
@@ -642,7 +636,6 @@ PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
             "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  defaultParams_->set("Restart Timers", restartTimers_);
     validParams_ = pl;
   }
   return validParams_;

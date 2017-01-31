@@ -39,60 +39,48 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_EREDUCTIONTYPE_HPP
-#define TEUCHOS_EREDUCTIONTYPE_HPP
-
-/// \file Teuchos_EReductionType.hpp
-/// \brief Declaration of Teuchos::EReductionType enum, and related functions
-
-#include "Teuchos_config.h"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #ifdef HAVE_TEUCHOS_MPI
-#  include "mpi.h" // need this for MPI_Op (see below)
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif // HAVE_TEUCHOS_MPI
+#include "Teuchos_UnitTestHarness.hpp"
 
-namespace Teuchos {
 
-/// \brief Predefined reduction operations that Teuchos::Comm understands
-/// \relates Comm
-///
-/// Teuchos' Comm class wraps MPI (the Message Passing Interface for
-/// distributed-memory parallel programming).  If you do not have MPI,
-/// it imitates MPI's functionality, as if you were running with a
-/// single "parallel" process.  This means that Teuchos must wrap a
-/// subset of MPI's functionality, so that it can build without MPI.
-///
-/// Comm provides wrappers for \c MPI_Reduce, \c MPI_Allreduce, and
-/// other collectives that take a reduction operator \c MPI_Op.
-/// Teuchos wraps \c MPI_Op in two different ways.  The first way is
-/// this enum, which lets users pick from a set of common predefined
-/// \c MPI_Op.  The second way is through Teuchos' wrappers for custom
-/// \c MPI_Op, namely ValueTypeReductionOp and ValueTypeReductionOp.
-/// Most users should find the reduction operators below sufficient.
-enum EReductionType {
-  REDUCE_SUM, ///< Sum
-  REDUCE_MIN, ///< Min
-  REDUCE_MAX, ///< Max
-  REDUCE_AND, ///< Logical AND
-  REDUCE_BOR, ///< Bitwise OR
-};
+TEUCHOS_UNIT_TEST( Comm, Issue1029 )
+{
+  using Teuchos::Comm;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_BOR;
+  using Teuchos::reduceAll;
+  using std::endl;
 
-/// \brief Convert EReductionType to string representation.
-/// \relates EReductionType
-const char* toString (const EReductionType reductType);
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
 
-#ifdef HAVE_TEUCHOS_MPI
-namespace Details {
+  const int numProcs = comm->getSize ();  
+  TEST_ASSERT( numProcs > 1 );
+  if (numProcs < 2) {
+    out << "This test requires at least 2 MPI processes." << endl;
+    return;
+  }
 
-/// \brief Get the raw MPI_Op corresponding to the given reduction
-///   type enum value.
-///
-/// \warning This is an implementation detail and not for public use.
-///   It only exists when Trilinos was built with MPI.
-MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
+  const int myRank = comm->getRank ();
 
-} // namespace Details
-#endif // HAVE_TEUCHOS_MPI
+  // Use a mix of positive, negative, and zero values, so that neither
+  // min nor max would give the full picture.
+  int lclResult;
+  if (myRank == 0) {
+    lclResult = 0;
+  }
+  else if (myRank == 1) {
+    lclResult = -1;
+  }
+  else {
+    lclResult = 1;
+  }
+  int gblResult = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_BOR, lclResult, outArg (gblResult));
+  TEST_EQUALITY( gblResult, -1 );
+}
 
-} // namespace Teuchos
-
-#endif // TEUCHOS_EREDUCTIONTYPE_HPP

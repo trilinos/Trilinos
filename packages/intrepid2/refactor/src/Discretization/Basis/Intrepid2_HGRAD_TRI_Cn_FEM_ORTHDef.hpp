@@ -60,16 +60,16 @@ namespace Impl {
 template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
-typename inputViewType>
+typename inputViewType,
+bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate( /**/  outputViewType output,
+void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0>::generate( /**/  outputViewType output,
     const inputViewType input,
     const ordinal_type order ) {
 
   typedef typename outputViewType::value_type value_type;
 
-  // outputViewType doutput_0("doutput_0", output.dimension(0), output.dimension(1));
-  //  outputViewType doutput_1("doutput_1", output.dimension(0), output.dimension(1));
+  auto output0 = (hasDeriv) ? Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL(),0) : Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL());
 
   const ordinal_type
   npts = input.dimension(0);
@@ -102,29 +102,39 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate
   // set D^{0,0} = 1.0
   {
     const ordinal_type loc = idx(0,0);
-    for (ordinal_type i=0;i<npts;++i)
-      output(loc, i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1);
+    for (ordinal_type i=0;i<npts;++i) {
+      output0(loc, i) = 1.0;
+      if(hasDeriv) {
+        output(loc,i,1) = 0;
+        output(loc,i,2) = 0;
+      }
+    }
   }
 
   if (order > 0) {
-    value_type f1[maxNumPts],f2[maxNumPts],f3[maxNumPts];//, df3_0[maxNumPts], df3_1[maxNumPts];;
-    //  value_type df1_0, df1_1;
+    value_type f1[maxNumPts],f2[maxNumPts], df2_1[maxNumPts];;
+    value_type df1_0, df1_1;
 
     for (ordinal_type i=0;i<npts;++i) {
       f1[i] = 0.5 * (1.0+2.0*(2.0*z(i,0)-1.0)+(2.0*z(i,1)-1.0));   // \eta_1 * (1 - \eta_2)/2
-      f2[i] = 0.5 * (1.0-(2.0*z(i,1)-1.0));  // (1 - \eta_2)/2
-      f3[i] = f2[i] * f2[i];
-      //       df1_0 = 2.0;
-      //       df1_1 = 1.0;
-      //       df3_0[i] = -2.0*z(i,1);
-      //       df3_1[i] = 1-2.0*z(i,0)-2.0*z(i,1);
+      f2[i] = std::pow(z(i,1)-1,2);  //( (1 - \eta_2)/2 )^2
+      if(hasDeriv) {
+        df1_0 = 2.0;
+        df1_1 = 1.0;
+        df2_1[i] = 2.0*(z(i,1)-1);
+      }
     }
 
     // set D^{1,0} = f1
     {
       const ordinal_type loc = idx(1,0);
-      for (ordinal_type i=0;i<npts;++i)
-        output(loc, i) = f1[i];
+      for (ordinal_type i=0;i<npts;++i) {
+        output0(loc, i) = f1[i];
+        if(hasDeriv) {
+          output(loc,i,1) = df1_0;
+          output(loc,i,2) = df1_1;
+        }
+      }
     }
 
     // recurrence in p
@@ -139,12 +149,14 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate
       b = p / (p+1.0);
 
       for (ordinal_type i=0;i<npts;++i) {
-        output(loc_p1,i) = ( a * f1[i] * output(loc,i) -
-            b * f3[i] * output(loc_m1,i) );
-        //       doutput_0(loc_p1,i) = ( a * (f1[i] * doutput_0(loc,i) + df1_0 * output(loc,i))  -
-        //                       b * (df3_0[i] * output(loc_m1,i) + f3[i] * doutput_0(loc_m1,i)) );
-        //       doutput_1(loc_p1,i) = ( a * (f1[i] * doutput_1(loc,i) + df1_1 * output(loc,i))  -
-        //                                   b * (df3_1[i] * output(loc_m1,i) + f3[i] * doutput_1(loc_m1,i)) );
+        output0(loc_p1,i) = ( a * f1[i] * output0(loc,i) -
+            b * f2[i] * output0(loc_m1,i) );
+        if(hasDeriv) {
+          output(loc_p1,i,1) =  a * (f1[i] * output(loc,i,1) + df1_0 * output0(loc,i))  -
+                               b * f2[i] * output(loc_m1,i,1) ;
+          output(loc_p1,i,2) =  a * (f1[i] * output(loc,i,2) + df1_1 * output0(loc,i))  -
+                               b * (df2_1[i] * output0(loc_m1,i) + f2[i] * output(loc_m1,i,2)) ;
+        }
       }
     }
 
@@ -155,9 +167,11 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate
       loc_p_1 = idx(p,1);
 
       for (ordinal_type i=0;i<npts;++i) {
-        output(loc_p_1,i) = output(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
-        //         doutput_0(loc_p_1,i) = doutput_0(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
-        //         doutput_1(loc_p_1,i) = doutput_1(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0)) + output(loc_p_0,i)*(1.0+2.0*p+(3.0+2.0*p));
+        output0(loc_p_1,i) = output0(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+        if(hasDeriv) {
+        output(loc_p_1,i,1) = output(loc_p_0,i,1)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+        output(loc_p_1,i,2) = output(loc_p_0,i,2)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0)) + output0(loc_p_0,i)*(3.0+2.0*p);
+        }
       }
     }
 
@@ -173,12 +187,14 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate
         value_type a,b,c;
         jrc((value_type)(2*p+1),(value_type)0,q,a,b,c);
         for (ordinal_type i=0;i<npts;++i) {
-          output(loc_p_qp1,i) = ( (a*(2.0*z(i,1)-1.0)+b)*output(loc_p_q,i)
-              - c*output(loc_p_qm1,i) );
-          //           doutput_0(loc_p_qp1,i) = ( (a*(2.0*z(i,1)-1.0)+b)*doutput_0(loc_p_q,i)
-          //                                                 - c*doutput_0(loc_p_qm1,i) );
-          //            doutput_1(loc_p_qp1,i) = ( (a*(2.0*z(i,1)-1.0)+b)*doutput_1(loc_p_q,i) +2*a*output(loc_p_q,i)
-          //                                                  - c*doutput_1(loc_p_qm1,i) );
+          output0(loc_p_qp1,i) =  (a*(2.0*z(i,1)-1.0)+b)*output0(loc_p_q,i)
+              - c*output0(loc_p_qm1,i) ;
+            if(hasDeriv) {
+            output(loc_p_qp1,i,1) =  (a*(2.0*z(i,1)-1.0)+b)*output(loc_p_q,i,1)
+                                                           - c*output(loc_p_qm1,i,1) ;
+            output(loc_p_qp1,i,2) =  (a*(2.0*z(i,1)-1.0)+b)*output(loc_p_q,i,2) +2*a*output0(loc_p_q,i)
+                                                            - c*output(loc_p_qm1,i,2) ;
+          }
         }
       }
   }
@@ -187,61 +203,37 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate
   for (ordinal_type p=0;p<=order;++p)
     for (ordinal_type q=0;q<=order-p;++q)
       for (ordinal_type i=0;i<npts;++i) {
-        output(idx(p,q),i) *= std::sqrt( (p+0.5)*(p+q+1.0));
-        //          doutput_0(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
-        //          doutput_1(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
+        output0(idx(p,q),i) *= std::sqrt( (p+0.5)*(p+q+1.0));
+        if(hasDeriv) {
+          output(idx(p,q),i,1) *= std::sqrt( (p+0.5)*(p+q+1.0));
+          output(idx(p,q),i,2) *= std::sqrt( (p+0.5)*(p+q+1.0));
+        }
       }
 }
 
 template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
-typename inputViewType>
+typename inputViewType,
+bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,1>::generate( /**/  outputViewType output,
+void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,1>::generate( /**/  outputViewType output,
     const inputViewType input,
-    const ordinal_type p ) {
+    const ordinal_type order ) {
   typedef typename outputViewType::value_type value_type;
-  typedef Sacado::Fad::SFad<value_type,2> fad_type;
-  //    constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
+  typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
 
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
-  // use stack buffer
-  //   fad_type inBuf[maxNumPts][2], outBuf[maxCard][maxNumPts];
+ outViewType out = Kokkos::createDynRankView(output, "out", card, npts, 3);
 
-
-  //Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> in(&inBuf[0][0],            npts, 2);
-  //Kokkos::View<fad_type***,Kokkos::Impl::ActiveExecutionMemorySpace> out(outBuf, card, npts);
-
-
-  typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
-  typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
-
-  inViewType in("in", npts, input.dimension(1), 2);
-  outViewType out("out", card, npts, 2);
-
-  typedef typename Kokkos::View<fad_type*, Kokkos::Impl::ActiveExecutionMemorySpace>::reference_type fad_ref_type;
-
-
-
-  for (ordinal_type i=0;i<npts;++i)
-    for (ordinal_type j=0;j<2;++j) {
-      //     Sacado::Fad::SFad<value_type,2> tmp =  input(i,j);
-      //     tmp.diff(j,2);
-      fad_ref_type ref = in(i,j);
-      ref = input(i,j) ;
-      ref.diff(j,2);
-    }
-  OrthPolynomial<maxOrder,maxNumPts,outViewType,inViewType,0>::generate(out, in, p);
+  OrthPolynomial<maxOrder,maxNumPts,outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
-    for (ordinal_type j=0;j<npts;++j) {
-      fad_ref_type ref = out(i,j);
-      for (ordinal_type k=0;k<2;++k)
-        output(i,j,k) = ref.dx(k);
-    }
+      for (ordinal_type j=0;j<npts;++j)
+        for (ordinal_type k=0;k<2;++k)
+          output(i,j,k) = out(i,j,k+1);
 }
 
 // when n >= 2, use recursion
@@ -249,47 +241,42 @@ template<ordinal_type maxOrder,
 ordinal_type maxNumPts,
 typename outputViewType,
 typename inputViewType,
+bool hasDeriv,
 ordinal_type n>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,n>::generate( /**/  outputViewType output,
+void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,n>::generate( /**/  outputViewType output,
     const inputViewType input,
-    const ordinal_type p ) {
+    const ordinal_type order ) {
   typedef typename outputViewType::value_type value_type;
   typedef Sacado::Fad::SFad<value_type,2> fad_type;
 
-  //  constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
+  constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
 
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  //    fad_type inBuf[maxNumPts][2], outBuf[maxCard][maxNumPts][n+1];
+  fad_type inBuf[maxNumPts][2], outBuf[maxCard][maxNumPts][n];
 
   typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
   typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
 
-  inViewType in("in", npts, 2, 2);
-  outViewType out("out", card, npts, 2, 2);
-
-  typedef typename Kokkos::View<fad_type*, Kokkos::Impl::ActiveExecutionMemorySpace>::reference_type fad_ref_type;
+  inViewType in((value_type*)(&inBuf[0][0]), npts, 2);
+  outViewType out((value_type*)(&outBuf[0][0][0]), card, npts, n);
 
   for (ordinal_type i=0;i<npts;++i)
     for (ordinal_type j=0;j<2;++j) {
-      fad_ref_type ref = in(i,j);
-      ref = input(i,j) ;
-      ref.diff(j,2);
+      in(i,j) = input(i,j);
+      in(i,j).diff(j,2);
     }
 
-  OrthPolynomial<maxOrder,maxNumPts,outViewType,inViewType,n-1>::generate(out, in, p);
+  OrthPolynomial<maxOrder,maxNumPts,outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<npts;++j) {
-      fad_ref_type ref = out(i,j,0);
-      output(i,j,0) = ref.dx(0);
-      for (ordinal_type k=0;k<n;++k) {
-        fad_ref_type ref = out(i,j,k);
-        output(i,j,k+1) = ref.dx(1);
-      }
+      output(i,j,0) = out(i,j,0).dx(0);
+      for (ordinal_type k=0;k<n;++k)
+        output(i,j,k+1) = out(i,j,k).dx(1);
     }
 }
 
@@ -308,49 +295,49 @@ getValues( /**/  outputViewType output,
   constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
   switch (opType) {
   case OPERATOR_VALUE: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,0>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,false,0>::generate( output, input, order );
     break;
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1:
   {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,1>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,1>::generate( output, input, order );
     break;
   }
   case OPERATOR_D2: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,2>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,2>::generate( output, input, order );
     break;
   }
   case OPERATOR_D3: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,3>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
   case OPERATOR_D4: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,4>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,4>::generate( output, input, order );
     break;
   }
   case OPERATOR_D5: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,5>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,5>::generate( output, input, order );
     break;
   }
   case OPERATOR_D6: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,6>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,6>::generate( output, input, order );
     break;
   }
   case OPERATOR_D7: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,7>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,7>::generate( output, input, order );
     break;
   }
   case OPERATOR_D8: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,8>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,8>::generate( output, input, order );
     break;
   }
   case OPERATOR_D9: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,9>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,9>::generate( output, input, order );
     break;
   }
   case OPERATOR_D10: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,10>::generate( output, input, order );
+    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,10>::generate( output, input, order );
     break;
   }
   case OPERATOR_Dn:

@@ -32,17 +32,15 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
+  cout << "basker_test: filename, numthreads should be passed as command line args" << endl; 
+
   std::string fname = std::string(argv[1]);
+  Int numthreads = atoi(argv[2]);
   //std::string rhsname = std::string(argv[2]);
   //Int numthreads = atoi(argv[3]);
-
   //std::string fname = "matrix1.mtx";
  
-  Int numthreads = atoi(argv[2]);
-
-  cout << "using " << numthreads << "threads" << endl;
-
-
+  cout << "basker_test: using " << numthreads << "threads" << endl;
   #ifdef BASKER_KOKKOS
   Exe_Space::initialize(numthreads);
   cout << "---------------USING KOKKOS-------------" << endl;
@@ -52,9 +50,7 @@ int main(int argc, char* argv[])
   #endif
 
   {
-
   #ifdef BASKER_KOKKOS
-  cout << "true: " << true << endl;
   cout << "hwloc aval: " << Kokkos::hwloc::available()<<endl;
   cout << "numa count: " << Kokkos::hwloc::get_available_numa_count() << endl;
   cout << "thrd numa:  " << Kokkos::hwloc::get_available_cores_per_numa() << endl;
@@ -172,7 +168,6 @@ int main(int argc, char* argv[])
        << " "    << col_ptr[ncols]
        << endl;
   nnz = innz;
-
 
   //====Load righthand side
   string t;

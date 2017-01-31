@@ -487,8 +487,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Maximum Restarts", maxRestarts_default_,
       "The maximum number of restarts allowed for each\n"
       "set of RHS solved.");
-    pl->set(
-      "Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
     pl->set("Num Blocks", numBlocks_default_,
@@ -526,7 +525,6 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
     pl->set("Orthogonalization Constant",orthoKappa_default_,
@@ -633,6 +631,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
                         "Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
+      params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
       if (orthoType_=="DGKS") {
         if (orthoKappa_ <= 0) {
@@ -802,6 +801,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {
+    params_->set("Orthogonalization", orthoType_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ <= 0) {
         ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );

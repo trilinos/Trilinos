@@ -87,7 +87,6 @@ namespace BaskerNS
     void init_inc_lvl();
 
 
-
     //****Deprecated*******
     BASKER_INLINE
     void malloc_perm(Int n);

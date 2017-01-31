@@ -7,14 +7,14 @@
 
 #include "Tacho_Util.hpp"
 
-#ifdef HAVE_SHYLUTACHO_AMESOS
+//#ifdef HAVE_SHYLUTACHO_AMESOS
 #include "trilinos_camd.h"
-#define TACHO_CHOLMOD(run) amesos_ ## run
+#define TACHO_CHOLMOD(run) trilinos_ ## run
 typedef UF_long SuiteSparse_long;
-#else
-#include "camd.h"
-#define TACHO_CHOLMOD(run) run
-#endif
+// #else
+// #include "camd.h"
+// #define TACHO_CHOLMOD(run) run
+// #endif
 
 namespace Tacho {
 

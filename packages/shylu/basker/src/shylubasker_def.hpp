@@ -56,21 +56,19 @@ namespace BaskerNS
     gn = 0;
 
     btf_total_work = 0;
-
   }//end Basker()
   
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   Basker<Int ,Entry, Exe_Space>::~Basker()
-  {
-    
-  }//end ~Basker()
+  {}//end ~Basker()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::Finalize()
   {
-    
     //finalize all matrices
     A.Finalize();
     At.Finalize(); //??? is At even used
@@ -110,25 +108,25 @@ namespace BaskerNS
     FREE_INT_1DARRAY(gperm);
     FREE_INT_1DARRAY(gpermi);
     if(match_flag == BASKER_TRUE)
-      {
-        FREE_INT_1DARRAY(order_match_array);
-        match_flag = BASKER_FALSE;
-      }
+    {
+      FREE_INT_1DARRAY(order_match_array);
+      match_flag = BASKER_FALSE;
+    }
     if(btf_flag == BASKER_TRUE)
-      {
-        FREE_INT_1DARRAY(order_btf_array);
-        btf_flag = BASKER_FALSE;
-      }
+    {
+      FREE_INT_1DARRAY(order_btf_array);
+      btf_flag = BASKER_FALSE;
+    }
     if(nd_flag == BASKER_TRUE)
-      {
-        FREE_INT_1DARRAY(order_scotch_array);
-        nd_flag = BASKER_FALSE;
-      }
+    {
+      FREE_INT_1DARRAY(order_scotch_array);
+      nd_flag = BASKER_FALSE;
+    }
     if(amd_flag == BASKER_TRUE)
-      {
-        FREE_INT_1DARRAY(order_csym_array);
-        amd_flag = BASKER_FALSE;
-      }
+    {
+      FREE_INT_1DARRAY(order_csym_array);
+      amd_flag = BASKER_FALSE;
+    }
 
     //NDE: Free workspace and permutation arrays
     FREE_INT_1DARRAY(perm_comp_array);
@@ -138,14 +136,13 @@ namespace BaskerNS
     FREE_ENTRY_1DARRAY(x_view_ptr_copy);
     FREE_ENTRY_1DARRAY(y_view_ptr_copy);
 
-
     //Structures
     part_tree.Finalize();
     tree.Finalize();
     stree.Finalize();
     stats.Finalize();
-
   }//end Finalize()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -161,13 +158,18 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space >
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::InitMatrix(Int nrow, Int ncol, Int nnz, 
-					       Int *col_ptr,
-					       Int *row_idx, Entry *val)
+  int Basker<Int,Entry, Exe_Space>::InitMatrix
+  (
+   Int nrow, 
+   Int ncol, 
+   Int nnz, 
+   Int *col_ptr,
+   Int *row_idx, 
+   Entry *val
+  )
   {
     //Note: jdb comeback to add trans option
-    A.init_matrix("Original Matrix",
-		  nrow, ncol, nnz, col_ptr, row_idx, val);
+    A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
     A.scol = 0;
     A.srow = 0;
     sort_matrix(A);
@@ -175,11 +177,11 @@ namespace BaskerNS
     return 0;
   }//end InitMatrix (int, int , int, int *, int *, entry *)
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Order(Int option)
   {
-
     //Option = 0, FAIL NATURAL WITHOUT BOX
     //Option = 1, BASKER Standard
     //Option = 2, BTF BASKER
@@ -190,9 +192,7 @@ namespace BaskerNS
     }
     else if(option == 2)
     {
-      //printf("btf_order called \n");
       btf_order();
-      //printf("btf_order returned \n");
     }
     else
     {
@@ -206,6 +206,7 @@ namespace BaskerNS
     return 0;
   }//end Order()
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::InitOrder(Int option)
@@ -213,6 +214,7 @@ namespace BaskerNS
     tree_flag = true;
     return 0;
   }//end InitOrder
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -223,9 +225,8 @@ namespace BaskerNS
    Int parts, 
    Int *row_tabs, Int *col_tabs,
    Int *tree_tabs
-   )
+  )
   {
-
     /*------------OLD
     init_tree(perm, nblks, parts, row_tabs, col_tabs, tree_tabs, 0);
     #ifdef BASKER_2DL
@@ -246,34 +247,28 @@ namespace BaskerNS
     return 0;
   }//end InitOrder
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Symbolic(Int option)
   {
-
-
-    printf("calling symbolic \n");
-#ifdef BASKER_KOKKOS_TIME 
+    #ifdef BASKER_KOKKOS_TIME 
     Kokkos::Impl::Timer timer;
-#endif
+    #endif
 
     //symmetric_sfactor();
     sfactor();
 
-
     if(option == 0)
     {
-
     }
     else if(option == 1)
     {
-
-
     }
 
-#ifdef BASKER_KOKKOS_TIME
+    #ifdef BASKER_KOKKOS_TIME
     stats.time_sfactor += timer.seconds();
-#endif
+    #endif
 
     return 0;
   }//end Symbolic
@@ -282,10 +277,16 @@ namespace BaskerNS
   //This is the interface for Amesos2
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Symbolic(Int nrow, Int ncol,
-	         Int nnz, Int *col_ptr, Int *row_idx, Entry *val)
+  int Basker<Int, Entry, Exe_Space>::Symbolic
+  (
+   Int nrow, 
+   Int ncol,
+   Int nnz, 
+   Int *col_ptr, 
+   Int *row_idx, 
+   Entry *val
+  )
   {
-    // printf("befor symbolic\n");
     if(Options.verbose == BASKER_TRUE)
     {
       std::cout << "Basker Symbolic" << std::endl;
@@ -300,27 +301,16 @@ namespace BaskerNS
     else
     {
       //Kokkos::Impl::Timer timer_move;
-
       if(Options.transpose == BASKER_FALSE)
       {
-        //printf("=======NO TRANS=====\n");
-        A.init_matrix("Original Matrix",
-            nrow, ncol, nnz, col_ptr, row_idx, val);
+        A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
         A.scol = 0;
         A.srow = 0;
-
       }
       else
       {
-        //printf("======TRANS=====\n");
         //Will transpose and put in A using little extra
-        matrix_transpose(0, nrow,
-            0, ncol,
-            nnz,
-            col_ptr,
-            row_idx,
-            val,
-            A);
+        matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
       }
       sort_matrix(A);
 
@@ -336,8 +326,7 @@ namespace BaskerNS
 
       matrix_flag = BASKER_TRUE;
 
-      //std::cout << "Transpose A: " << timer_move.seconds()
-      //	  << std::endl;
+      //std::cout << "Transpose A: " << timer_move.seconds() << std::endl;
     }
 
     //Init Ordering
@@ -350,7 +339,6 @@ namespace BaskerNS
     }
     else
     {
-      //printf("btf_order called \n");
       //btf_order();
 
       Kokkos::Impl::Timer timer_order;
@@ -371,7 +359,6 @@ namespace BaskerNS
         printf("Basker Ordering Found \n");
       }
 
-      //if(btf_tabs_offset != 0)
       if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
       {
         basker_barrier.init(num_threads, 16, tree.nlvls );
@@ -383,14 +370,8 @@ namespace BaskerNS
         printf("Basker P2P Thread Barriers Init\n");
       }
 
-      //std::cout << "Time Order/Init arrays " 
-      //	  << timer_order.seconds()
-      //	  << std::endl;
-
-      //printf("btf_order done \n");
+      //std::cout << "Time Order/Init arrays " << timer_order.seconds() << std::endl;
     }
-
-    //printf("\n\n+++++++++++++++BREAKER BREAKER++++++++\n\n");
 
     if(symb_flag == BASKER_TRUE)
     {
@@ -421,12 +402,7 @@ namespace BaskerNS
       printf("Basker Symbolic Done \n");
     }
 
-    //printf("\nTEST ALM\n");
-    //ALM(0)(0).info();
-    //printf("\n");
-
     return 0;
-
   }//end Symbolic()
   
 
@@ -434,15 +410,15 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Factor(Int option)
   {
-#ifdef BASKER_KOKKOS_TIME
+    #ifdef BASKER_KOKKOS_TIME
     Kokkos::Impl::Timer timer;
-#endif
+    #endif
 
     factor_notoken(option);
 
-#ifdef BASKER_KOKKOS_TIME
+    #ifdef BASKER_KOKKOS_TIME
     stats.time_nfactor += timer.seconds();
-#endif
+    #endif
 
     // NDE
     MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
@@ -463,8 +439,15 @@ namespace BaskerNS
   //This is the interface for Amesos2
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::Factor(Int nrow, Int ncol,
-	        Int nnz, Int *col_ptr, Int *row_idx, Entry *val) 
+  int Basker<Int,Entry,Exe_Space>::Factor
+  (
+   Int nrow, 
+   Int ncol,
+   Int nnz, 
+   Int *col_ptr, 
+   Int *row_idx, 
+   Entry *val
+  ) 
   {
     int err = 0;
 
@@ -474,44 +457,26 @@ namespace BaskerNS
       std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
 
-    /*
-       int err = A.copy_values(nrow, ncol, nnz, col_ptr, 
-       row_idx, val);
-    */
-
     if((Options.same_pattern == BASKER_TRUE) && (Options.no_pivot == BASKER_FALSE))
     {
-      printf("Warning: Same Pattern will not allow pivoting\n");
+      std::cout << "Warning: Same Pattern will not allow pivoting" << std::endl;
       Options.no_pivot = BASKER_TRUE;
     }
 
-
     if(Options.transpose == BASKER_FALSE)
     {
-      //printf("=======NO TRANS=====\n");
-      //A.init_matrix("Original Matrix",
-      //	      nrow, ncol, nnz, col_ptr, row_idx, val);
+      //A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
       //A.scol = 0;
       //A.srow = 0;
-      A.copy_values(nrow, ncol, nnz, col_ptr,
-          row_idx, val);
-      //printf("Copy done\n");
+      A.copy_values(nrow, ncol, nnz, col_ptr, row_idx, val);
       //printMTX("A_LOAD.mtx", A);
     }
     else
     {
-      //printf("======TRANS=====\n");
       //Will transpose and put in A using little extra
-      matrix_transpose(0, 
-          nrow,
-          0, 
-          ncol,
-          nnz,
-          col_ptr,
-          row_idx,
-          val,
-          A);
+      matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
     }
+
     sort_matrix(A);
     if(Options.verbose_matrix_out == BASKER_TRUE)
     {
@@ -531,19 +496,15 @@ namespace BaskerNS
       printf("Basker Copy Structure Done \n");
     }
 
-    //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
     {
       return BASKER_ERROR;
     }
-    //printf("before notoken\n");
 
     //Kokkos::Impl::Timer timer;
-
     if(Options.incomplete == BASKER_FALSE)    
     {
       err = factor_notoken(0);
-      //printf("Notoken called\n");
     }
     else
     {
@@ -559,11 +520,7 @@ namespace BaskerNS
       printf("Basker Factor Done \n");
     }
 
-    /*
-       std::cout << "Raw Factor Time: "
-       << timer.seconds()
-       << std::endl;
-       */
+    //std::cout << "Raw Factor Time: " << timer.seconds() << std::endl;
 
     //DEBUG_PRINT();
 
@@ -581,6 +538,7 @@ namespace BaskerNS
 
     return 0;
   }//end Factor()
+
 
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
@@ -610,10 +568,10 @@ namespace BaskerNS
     return 0;
   }//end SolveTest
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, 
-					   Entry *x)
+  int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x)
   {
     if(Options.verbose == BASKER_TRUE)
     {
@@ -630,11 +588,10 @@ namespace BaskerNS
     return 0;
   }//Solve(Entry *, Entry *);
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs,
-                                         Entry *b,
-                                         Entry *x)
+  int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs, Entry *b, Entry *x)
   {
     if(Options.verbose == BASKER_TRUE)
     {
@@ -651,10 +608,10 @@ namespace BaskerNS
     return 0;
   }
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(ENTRY_1DARRAY b,
-					   ENTRY_1DARRAY x)
+  int Basker<Int, Entry, Exe_Space>::Solve(ENTRY_1DARRAY b, ENTRY_1DARRAY x)
   {
     printf("Currently not used \n");
     return -1;
@@ -663,9 +620,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(Int nrhs, 
-					   Entry *b, Entry *x, 
-                                           Int option)
+  int Basker<Int, Entry, Exe_Space>::Solve(Int nrhs, Entry *b, Entry *x, Int option)
   {    
     int err = 0;
     if(solve_flag == false) //never solved before
@@ -683,6 +638,7 @@ namespace BaskerNS
     return err;
   }//end Solve()
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::SetThreads(Int nthreads)
@@ -690,7 +646,7 @@ namespace BaskerNS
     //Need to test if power of 2.
     if((nthreads != 1) && (nthreads%2 != 0))
     {
-      BASKER_ASSERT(0==1, "Number of thread error");
+      BASKER_ASSERT(0==1, "Number of thread error"); //NDE: Won't this end the program?
       //Set default 1
       num_threads = 1;
       return BASKER_ERROR;
@@ -698,7 +654,7 @@ namespace BaskerNS
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
-#ifdef KOKKOS_HAVE_OPENMP
+    #ifdef KOKKOS_HAVE_OPENMP
     int check_value = Kokkos::OpenMP::max_hardware_threads();
     if(nthreads > check_value)
     {
@@ -706,13 +662,14 @@ namespace BaskerNS
       num_threads =  1;
       return BASKER_ERROR;
     }
-#else
+    #else
     nthreads = 1;
-#endif
+    #endif
 
     num_threads = nthreads;
     return BASKER_SUCCESS;
   }//end SetThreads()
+
 
   //Return nnz of L
   template <class Int, class Entry, class Exe_Space>
@@ -721,10 +678,11 @@ namespace BaskerNS
   {
     (Lnnz) = get_Lnnz();
     if(Lnnz == 0)
-      return BASKER_ERROR;
+    { return BASKER_ERROR; }
     else
-      return BASKER_SUCCESS;
+    { return BASKER_SUCCESS; }
   }//end GetLnnz();
+
 
   //Return nnz of U
   template <class Int, class Entry, class Exe_Space>
@@ -733,31 +691,44 @@ namespace BaskerNS
   {
     (Unnz) = get_Unnz();
     if(Unnz == 0)
-      return BASKER_ERROR;
+    { return BASKER_ERROR; }
     else
-      return BASKER_SUCCESS;
+    { return BASKER_SUCCESS; }
   }//end GetUnnz()
+
 
   //Returns assembled L
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetL(Int &n, Int &nnz,
-           Int **col_ptr, Int **row_idx,
-           Entry **val)
+  int Basker<Int,Entry,Exe_Space>::GetL
+  (
+   Int &n, 
+   Int &nnz, 
+   Int **col_ptr, 
+   Int **row_idx, 
+   Entry **val
+  )
   {
     get_L(n,nnz,col_ptr, row_idx, val);
     
     return BASKER_SUCCESS;
   }//end GetL()
   
+
   //returns assembles U
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetU(Int &n, Int &nnz,
-           Int **col_ptr, Int **row_idx,
-           Entry **val)
+  int Basker<Int,Entry,Exe_Space>::GetU
+  (
+   Int &n, 
+   Int &nnz, 
+   Int **col_ptr, 
+   Int **row_idx, 
+   Entry **val
+  )
   {
     get_U(n, nnz, col_ptr, row_idx, val);
     return BASKER_SUCCESS;
   }//end GetU()
+
 
   //returns global P
   template<class Int, class Entry, class Exe_Space>
@@ -784,6 +755,7 @@ namespace BaskerNS
 
     return BASKER_SUCCESS;
   }//end GetPerm()
+
 
   //Timer Information function
   template <class Int, class Entry, class Exe_Space>
@@ -812,18 +784,18 @@ namespace BaskerNS
   }
 
 
-  //Debub tester function
+  //Debug tester function
   template<class Int, class Entry, class Exe_Space>
   void Basker<Int,Entry,Exe_Space>::DEBUG_PRINT()
   {
     //print_sep_bal();
 
-#ifdef BASKER_2DL
+    #ifdef BASKER_2DL
     printL2D();
     printLMTX();
-#else
+    #else
     //printL();
-#endif
+    #endif
     std::cout << "L printed " << std::endl;
     printU();
     printUMTX();
@@ -858,8 +830,8 @@ namespace BaskerNS
       printVec("camd.csc", order_csym_array,
           order_csym_array.dimension_0());
     }
-
   }//end DEBUG_PRINT()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

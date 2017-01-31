@@ -168,12 +168,14 @@ protected:
   int NumLocalParts_;
 
   /// \brief Mapping from local row to partition number.
+  ///
   /// \c Partition_[i] contains the local index of the nonoverlapping
   /// partition to which local row i belongs.  If the application has
   /// explicitly defined \c Parts_, then \c Partition_ is unused.
   Teuchos::Array<local_ordinal_type> Partition_;
 
   /// \brief Mapping from partition to all local rows it contains.
+  ///
   /// \c Parts_[i][j] is the local index of the j-th row contained in the
   /// (overlapping) partition i.
   Teuchos::Array<Teuchos::ArrayRCP<local_ordinal_type> > Parts_;
@@ -189,6 +191,12 @@ protected:
 
   //! If \c true, information are reported to stdout.
   bool verbose_;
+
+  /// \brief If \c true, only add row to partition (block) if doing so won't add new columns to the column map.
+  ///
+  /// Default is false.  This option should decrease computational cost of the apply, but convergence
+  /// will likely degrade.
+  bool maintainSparsity_;
 }; // class Ifpack2::OverlappingPartitioner
 
 }// namespace Ifpack2

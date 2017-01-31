@@ -85,11 +85,7 @@ namespace BaskerNS
     BASKER_MATRIX *base_backup;
     INT_1DARRAY *lpinv;
 
-
     //Offsets
-    
-
-
 
   };//end BaskerMatrixView
   

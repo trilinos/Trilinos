@@ -758,6 +758,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
+      params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
       if (orthoType_ == "DGKS") {
         typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
@@ -1040,6 +1041,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Create orthogonalization manager if we need to.
   if (ortho_.is_null ()) {
+    params_->set("Orthogonalization", orthoType_);
     if (orthoType_ == "DGKS") {
       typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
       if (orthoKappa_ <= 0) {
@@ -1165,7 +1167,6 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  defaultParams_->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
       "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
     pl->set("Orthogonalization Constant",orthoKappa_default_,
