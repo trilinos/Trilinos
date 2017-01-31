@@ -302,6 +302,40 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInfImpl() const
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Ordinal global_offset
+  ) const
+{
+  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+
+  // Sync any non-target Tpetra vecs to host space
+  for (auto itr = vecs.begin(); itr != vecs.end(); ++itr) {
+    Ptr<const TV> tv = Teuchos::ptr_dynamic_cast<const TV>(*itr);
+    if (nonnull(tv)) {
+      // Tpetra frequently const_casts to sync, so I'm assuming this is alright
+      Teuchos::rcp_const_cast<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
+        tv->getConstTpetraVector())->template sync<Kokkos::HostSpace>();
+    }
+  }
+
+  // Sync any target Tpetra vecs and mark modified
+  for (auto itr = targ_vecs.begin(); itr != targ_vecs.end(); ++itr) {
+    Ptr<TV> tv = Teuchos::ptr_dynamic_cast<TV>(*itr);
+    if (nonnull(tv)) {
+      tv->getTpetraVector()->template sync<Kokkos::HostSpace>();
+      tv->getTpetraVector()->template modify<Kokkos::HostSpace>();
+    }
+  }
+
+  SpmdVectorDefaultBase<Scalar>::applyOpImpl(op, vecs, targ_vecs, reduct_obj, global_offset);
+}
+
+
 // Overridden protected functions from MultiVectorBase
 
 

@@ -154,6 +154,15 @@ protected:
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   normInfImpl() const;
 
+  /** \brief . */
+  virtual void applyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Ordinal global_offset
+    ) const;
+
   //@}
 
   // This doesn't inherit from TpetraMultiVector, so need to overwrite these again :(

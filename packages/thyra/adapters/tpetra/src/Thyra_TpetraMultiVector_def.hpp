@@ -346,6 +346,42 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstContigSubView
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+mvMultiReductApplyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+  const Ordinal primary_global_offset
+  ) const
+{
+  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+
+  // Sync any non-target Tpetra MVs to host space
+  for (auto itr = multi_vecs.begin(); itr != multi_vecs.end(); ++itr) {
+    Ptr<const TMV> tmv = Teuchos::ptr_dynamic_cast<const TMV>(*itr);
+    if (nonnull(tmv)) {
+      // Tpetra frequently const_casts to sync, so I'm assuming this is alright
+      Teuchos::rcp_const_cast<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
+      tmv->getConstTpetraMultiVector())-> template sync<Kokkos::HostSpace>();
+    }
+  }
+
+  // Sync any target Tpetra MVs and mark modified
+  for (auto itr = targ_multi_vecs.begin(); itr != targ_multi_vecs.end(); ++itr) {
+    Ptr<TMV> tmv = Teuchos::ptr_dynamic_cast<TMV>(*itr);
+    if (nonnull(tmv)) {
+      tmv->getTpetraMultiVector()->template sync<Kokkos::HostSpace>();
+      tmv->getTpetraMultiVector()->template modify<Kokkos::HostSpace>();
+    }
+  }
+
+  MultiVectorAdapterBase<Scalar>::mvMultiReductApplyOpImpl(
+    primary_op, multi_vecs, targ_multi_vecs, reduct_objs, primary_global_offset);
+}
+
+
 /* ToDo: Implement these?
 
 
