@@ -58,12 +58,15 @@ SimpleSolution<EvalT,Traits>::SimpleSolution(const std::string & name,
 {
   using Teuchos::RCP;
 
-  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+  Teuchos::RCP<PHX::DataLayout> data_layout_scalar = ir.dl_scalar;
+  Teuchos::RCP<PHX::DataLayout> data_layout_vector = ir.dl_vector;
   ir_degree = ir.cubature_degree;
 
-  solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+  solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout_scalar);
+  solution_grad = PHX::MDField<ScalarT,Cell,Point,Dim>("GRAD_"+name, data_layout_vector);
 
   this->addEvaluatedField(solution);
+  this->addEvaluatedField(solution_grad);
   
   std::string n = "Simple Solution";
   this->setName(n);
@@ -92,6 +95,8 @@ void SimpleSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData work
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
       solution(cell,point) = std::sin(2*M_PI*x)*std::sin(2*M_PI*y);
+      solution_grad(cell,point,0) = 2.0*M_PI*std::cos(2*M_PI*x)*std::sin(2*M_PI*y);
+      solution_grad(cell,point,1) = 2.0*M_PI*std::sin(2*M_PI*x)*std::cos(2*M_PI*y);
     }
   }
 }

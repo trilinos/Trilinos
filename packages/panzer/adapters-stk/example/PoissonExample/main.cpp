@@ -236,9 +236,16 @@ int main(int argc,char * argv[])
      builder.comm = MPI_COMM_WORLD;
      builder.cubatureDegree = 4;
      builder.requiresCellIntegral = true;
-     builder.quadPointField = "TEMPERATURE_ERROR";
+     builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
      errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
+
+     builder.comm = MPI_COMM_WORLD;
+     builder.cubatureDegree = 4;
+     builder.requiresCellIntegral = true;
+     builder.quadPointField = "TEMPERATURE_H1_ERROR";
+
+     errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
    }
 
 
@@ -255,9 +262,13 @@ int main(int argc,char * argv[])
      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
      // required for error calculation
-     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Type","ERROR_CALC");
-     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Field A","TEMPERATURE");
-     closure_models.sublist("solid").sublist("TEMPERATURE_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Type","L2 ERROR_CALC");
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Field A","TEMPERATURE");
+     closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
+
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Type","H1 ERROR_CALC");
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field A","TEMPERATURE");
+     closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
 
      closure_models.sublist("solid").sublist("TEMPERATURE_EXACT").set<std::string>("Type","TEMPERATURE_EXACT");
    }
@@ -381,17 +392,25 @@ int main(int argc,char * argv[])
       respInput.alpha = 0;
       respInput.beta = 1;
 
-      Teuchos::RCP<panzer::ResponseBase> resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp_func = 
-             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
-      Teuchos::RCP<Thyra::VectorBase<double> > respVec = Thyra::createMember(resp_func->getVectorSpace());
-      resp_func->setVector(respVec);
+      Teuchos::RCP<panzer::ResponseBase> l2_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
+      l2_resp_func->setVector(l2_respVec);
+
+      Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
+      h1_resp_func->setVector(h1_respVec);
 
       errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
       lout << "This is the L2 Error" << std::endl;
-      lout << "Error = " << sqrt(resp_func->value) << std::endl;
+      lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
+      lout << "This is the H1 Error" << std::endl;
+      lout << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
    }
 
    // all done!

@@ -35,7 +35,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 4
     OUTPUT_FILE MPE-ConvTest-20
   TEST_3 CMND python
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../MixedPoissonExample/convergence_rate.py
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          MPE-ConvTest-
          5
          10

@@ -54,6 +54,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include "Panzer_Product.hpp"
+#include "Panzer_DotProduct.hpp"
 #include "Panzer_Sum.hpp"
 
 #include "Example_SimpleSource.hpp"
@@ -145,7 +146,7 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
-      else if(type=="ERROR_CALC") {
+      else if(type=="L2 ERROR_CALC") {
         {
           std::vector<std::string> values(2);
           values[0] = plist.get<std::string>("Field A");
@@ -180,6 +181,102 @@ buildClosureModels(const std::string& model_id,
   
           RCP< Evaluator<panzer::Traits> > e = 
                    rcp(new panzer::Product<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        found = true;
+      }
+      else if(type=="H1 ERROR_CALC") {
+        // Compute L2 contribution
+        {
+          std::vector<std::string> values(2);
+          values[0] = plist.get<std::string>("Field A");
+          values[1] = plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key+"_H1_L2DIFF"); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars",Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          std::vector<std::string> values(2);
+          values[0] = "GRAD_"+plist.get<std::string>("Field A");
+          values[1] = "GRAD_"+plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name","GRAD_"+key+"_DIFF"); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars",Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout",ir->dl_vector);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          Teuchos::RCP<const panzer::PointRule> pr = ir;
+          std::vector<std::string> values(2);
+          values[0] = "GRAD_"+key+"_DIFF";
+          values[1] = "GRAD_"+key+"_DIFF";
+  
+          Teuchos::ParameterList p;
+          p.set("Product Name",key+"_H1Semi");
+          p.set("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_vector);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+             panzer::buildEvaluator_DotProduct<EvalT,panzer::Traits>(key,*ir,values[0],values[1]);
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          Teuchos::RCP<const panzer::PointRule> pr = ir;
+          std::vector<std::string> values(2);
+          values[0] = key+"_H1_L2DIFF";
+          values[1] = key+"_H1_L2DIFF";
+  
+          Teuchos::ParameterList p;
+          p.set("Product Name",key+"_L2");
+          p.set("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Product<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          std::vector<std::string> values(2);
+          values[0] = key+"_L2";
+          values[1] = key+"_H1Semi";
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
   
           evaluators->push_back(e);
         }
