@@ -252,8 +252,9 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Symbolic(Int option)
   {
-    #ifdef BASKER_KOKKOS_TIME 
-    Kokkos::Impl::Timer timer;
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer;
+    double time = 0.0;
     #endif
 
     //symmetric_sfactor();
@@ -266,8 +267,10 @@ namespace BaskerNS
     {
     }
 
-    #ifdef BASKER_KOKKOS_TIME
-    stats.time_sfactor += timer.seconds();
+    #ifdef BASKER_TIMER
+    time = timer.seconds();
+    stats.time_sfactor += time;
+    std::cout << "Basker Symbolic total time: " << time << std::endl;
     #endif
 
     return 0;
@@ -287,6 +290,15 @@ namespace BaskerNS
    Entry *val
   )
   {
+    #ifdef BASKER_TIMER 
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double time = 0.0;
+    Kokkos::Timer timer;
+    #endif
+
     if(Options.verbose == BASKER_TRUE)
     {
       std::cout << "Basker Symbolic" << std::endl;
@@ -300,7 +312,11 @@ namespace BaskerNS
     }
     else
     {
-      //Kokkos::Impl::Timer timer_move;
+      #ifdef BASKER_TIMER
+      double init_time = 0.0;
+      Kokkos::Timer timer_init;
+      #endif
+
       if(Options.transpose == BASKER_FALSE)
       {
         A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
@@ -326,7 +342,10 @@ namespace BaskerNS
 
       matrix_flag = BASKER_TRUE;
 
-      //std::cout << "Transpose A: " << timer_move.seconds() << std::endl;
+      #ifdef BASKER_TIMER
+      init_time += timer_init.seconds();
+      std::cout << "Basker Symbolic matrix init time: " << init_time << std::endl;
+      #endif
     }
 
     //Init Ordering
@@ -340,8 +359,10 @@ namespace BaskerNS
     else
     {
       //btf_order();
-
-      Kokkos::Impl::Timer timer_order;
+      #ifdef BASKER_TIMER
+      double order_time = 0.0;
+      Kokkos::Timer timer_order;
+      #endif
       /*
          if(Options.incomplete == BASKER_TRUE)
          {
@@ -370,7 +391,10 @@ namespace BaskerNS
         printf("Basker P2P Thread Barriers Init\n");
       }
 
-      //std::cout << "Time Order/Init arrays " << timer_order.seconds() << std::endl;
+      #ifdef BASKER_TIMER
+      order_time += timer_order.seconds();
+      std::cout << "Basker Symbolic order arrays time: " << order_time << std::endl;
+      #endif
     }
 
     if(symb_flag == BASKER_TRUE)
@@ -380,6 +404,10 @@ namespace BaskerNS
     }
     else
     {
+      #ifdef BASKER_TIMER
+      double sfactor_time = 0.0;
+      Kokkos::Timer timer_sfactor;
+      #endif
       if(Options.incomplete == BASKER_FALSE)
       {
         sfactor();
@@ -388,6 +416,10 @@ namespace BaskerNS
       {
         sfactor_inc();
       }
+      #ifdef BASKER_TIMER
+      sfactor_time += timer_sfactor.seconds();
+      std::cout << "Basker Symbolic sfactor time: " << sfactor_time << std::endl;
+      #endif
 
       if(Options.verbose == BASKER_TRUE)
       {
@@ -402,6 +434,14 @@ namespace BaskerNS
       printf("Basker Symbolic Done \n");
     }
 
+    #ifdef BASKER_TIMER
+    time = timer.seconds();
+    stats.time_sfactor += time;
+    std::cout << "Basker Symbolic total time: " << time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
+
     return 0;
   }//end Symbolic()
   
@@ -410,14 +450,18 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Factor(Int option)
   {
-    #ifdef BASKER_KOKKOS_TIME
-    Kokkos::Impl::Timer timer;
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    double time = 0.0;
     #endif
 
     factor_notoken(option);
 
-    #ifdef BASKER_KOKKOS_TIME
-    stats.time_nfactor += timer.seconds();
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    stats.time_nfactor += time;
+    std::cout << "Basker factor_notoken time: " << time << std::endl;
+    timer.reset();
     #endif
 
     // NDE
@@ -429,6 +473,11 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn); 
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
+
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Factor total time: " << time << std::endl;
+    #endif
 
     factor_flag = BASKER_TRUE;
 
@@ -449,6 +498,17 @@ namespace BaskerNS
    Entry *val
   ) 
   {
+    #ifdef BASKER_TIMER
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double time = 0.0;
+    double init_time = 0.0;
+    Kokkos::Timer timer;
+    Kokkos::Timer timer_init;
+    #endif
+
     int err = 0;
 
     if (Options.verbose == BASKER_TRUE)
@@ -482,6 +542,10 @@ namespace BaskerNS
     {
       printMTX("A_Factor.mtx", A);
     }
+    #ifdef BASKER_TIMER
+    init_time += timer_init.seconds();
+    std::cout << "Basker Factor init matrix time: " << init_time << std::endl;
+    #endif
 
     matrix_flag = BASKER_TRUE;
 
@@ -489,19 +553,31 @@ namespace BaskerNS
     {
       return BASKER_ERROR;
     }
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_sfactorcopy;
+    double sfactorcopy_time = 0.0;
+    #endif
     //err = sfactor_copy();
     err = sfactor_copy2();
     if (Options.verbose == BASKER_TRUE)
     {
       printf("Basker Copy Structure Done \n");
     }
+    #ifdef BASKER_TIMER
+    sfactorcopy_time += timer_sfactorcopy.seconds();
+    std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+    #endif
 
     if(err == BASKER_ERROR)
     {
       return BASKER_ERROR;
     }
 
-    //Kokkos::Impl::Timer timer;
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_factornotoken;
+    double fnotoken_time = 0.0;
+    #endif
     if(Options.incomplete == BASKER_FALSE)    
     {
       err = factor_notoken(0);
@@ -510,6 +586,11 @@ namespace BaskerNS
     {
       err = factor_inc_lvl(0);
     }
+    #ifdef BASKER_TIMER
+    fnotoken_time += timer_factornotoken.seconds();
+    std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
+    #endif
+
     if(err == BASKER_ERROR)
     {
       return BASKER_ERROR;
@@ -533,6 +614,13 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
+
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Factor total time: " << time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
 
     factor_flag = BASKER_TRUE;
 
@@ -573,6 +661,11 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x)
   {
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer;
+    double time = 0.0;
+    #endif
+
     if(Options.verbose == BASKER_TRUE)
     {
       printf("Basker Solve Called \n");
@@ -585,6 +678,11 @@ namespace BaskerNS
       printf("Basker Solve Done \n");
     }
 
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Solve total time: " << time << std::endl;
+    #endif
+
     return 0;
   }//Solve(Entry *, Entry *);
 
@@ -593,6 +691,11 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs, Entry *b, Entry *x)
   {
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer;
+    double time = 0.0;
+    #endif
+
     if(Options.verbose == BASKER_TRUE)
     {
       printf("Basker MultiSolve Called \n");
@@ -604,6 +707,11 @@ namespace BaskerNS
     {
       printf("Basker Multisolve Done \n");
     }
+    
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Solve total time: " << time << std::endl;
+    #endif
 
     return 0;
   }

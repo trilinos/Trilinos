@@ -1212,6 +1212,19 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy2()
   {
+    //Timers
+    #ifdef BASKER_TIMER_FINE
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double permute_time = 0.0;
+    double sort_time = 0.0;
+    double tmp_time = 0.0;
+    Kokkos::Timer timer_permute;
+    Kokkos::Timer timer_sort;
+    #endif
+
     //Reorder A;
     //Match order
     if(match_flag == BASKER_TRUE)
@@ -1219,7 +1232,20 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE)
       {printf("match copy\n");}
       permute_row(A,order_match_array);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_permute.seconds();
+        permute_time += tmp_time;
+        std::cout << "    Basker match reorder time: " << tmp_time << std::endl;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
       sort_matrix(A);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_sort.seconds();
+        sort_time += tmp_time;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
     }
 
     //BTF order
@@ -1229,13 +1255,50 @@ namespace BaskerNS
       {printf("btf copy\n");}
       permute_col(A,order_btf_array);
       permute_row(A,order_btf_array);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_permute.seconds();
+        permute_time += tmp_time;
+        std::cout << "    Basker order_btf_array reorder time: " << tmp_time << std::endl;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
       sort_matrix(A);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_sort.seconds();
+        sort_time += tmp_time;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
 
       permute_col(A,order_blk_amd_array);
       permute_row(A,order_blk_amd_array);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_permute.seconds();
+        permute_time += tmp_time;
+        std::cout << "    Basker order_blk_amd_array reorder time: " << tmp_time << std::endl;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
       sort_matrix(A);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_sort.seconds();
+        sort_time += tmp_time;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
 
+        #ifdef BASKER_TIMER_FINE 
+        double break_time = 0.0;
+        Kokkos::Timer timer_break;
+        #endif
       break_into_parts2(A, btf_nblks, btf_tabs);
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_break.seconds();
+        break_time += tmp_time;
+        std::cout << "    Basker break_into_parts2 reorder time: " << tmp_time << std::endl;
+        timer_permute.reset();
+        timer_sort.reset();
+        #endif
     }
 
     //ND order
@@ -1247,23 +1310,55 @@ namespace BaskerNS
       if(btf_tabs_offset != 0)
       {
         sort_matrix(BTF_A);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_sort.seconds();
+          sort_time += tmp_time;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
 
         //Permute the A
         permute_row(BTF_A, part_tree.permtab);
         permute_col(BTF_A, part_tree.permtab);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_permute.seconds();
+          permute_time += tmp_time;
+          std::cout << "    Basker nd BTF_A reorder time: " << tmp_time << std::endl;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
 
         //Permute the B
         if(btf_nblks > 1)
         {
           permute_row(BTF_B, part_tree.permtab);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_permute.seconds();
+          permute_time += tmp_time;
+          std::cout << "    Basker nd BTF_B reorder time: " << tmp_time << std::endl;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
         }
 
         sort_matrix(BTF_A);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_sort.seconds();
+          sort_time += tmp_time;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
 
         if(btf_nblks > 1)
         {
           sort_matrix(BTF_B);
           sort_matrix(BTF_C);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_sort.seconds();
+          sort_time += tmp_time;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
         }
       }
     }
@@ -1278,15 +1373,54 @@ namespace BaskerNS
       {
         //Permute A
         permute_col(BTF_A, order_csym_array);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_permute.seconds();
+          permute_time += tmp_time;
+          std::cout << "    Basker BTF_A order_csym_array col reorder time: " << tmp_time << std::endl;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
         sort_matrix(BTF_A);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_sort.seconds();
+          sort_time += tmp_time;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
         permute_row(BTF_A, order_csym_array);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_permute.seconds();
+          permute_time += tmp_time;
+          std::cout << "    Basker BTF_A order_csym_array row reorder time: " << tmp_time << std::endl;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
         sort_matrix(BTF_A);
+          #ifdef BASKER_TIMER_FINE
+          tmp_time = timer_sort.seconds();
+          sort_time += tmp_time;
+          timer_permute.reset();
+          timer_sort.reset();
+          #endif
 
         //Permute B
         if(btf_nblks > 1)
         {
           permute_row(BTF_B, order_csym_array);
+            #ifdef BASKER_TIMER_FINE
+            tmp_time = timer_permute.seconds();
+            permute_time += tmp_time;
+            std::cout << "    Basker BTF_B order_csym_array row reorder time: " << tmp_time << std::endl;
+            timer_permute.reset();
+            timer_sort.reset();
+            #endif
           sort_matrix(BTF_B);
+            #ifdef BASKER_TIMER_FINE
+            tmp_time = timer_sort.seconds();
+            sort_time += tmp_time;
+            timer_permute.reset();
+            timer_sort.reset();
+            #endif
         }
       }
     }
@@ -1296,6 +1430,11 @@ namespace BaskerNS
       //Find submatices view shapes
       if(Options.verbose == BASKER_TRUE)
       { printf("btf tabs reorder\n"); }
+
+        #ifdef BASKER_TIMER_FINE 
+        double twod_time = 0.0;
+        Kokkos::Timer timer_twod;
+        #endif
 
       clean_2d();
 
@@ -1311,6 +1450,12 @@ namespace BaskerNS
       #else
       //Comeback
       #endif
+
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_twod.seconds();
+        twod_time += tmp_time;
+        std::cout << "    Basker move into 2D ND reorder time: " << tmp_time << std::endl;
+        #endif
     }
 
     if(btf_nblks > 1)
@@ -1322,6 +1467,10 @@ namespace BaskerNS
     }
 
     //If same pattern, permute using pivot, and reset
+        #ifdef BASKER_TIMER_FINE 
+        double gperm_time = 0.0;
+        Kokkos::Timer timer_gperm;
+        #endif
     if((Options.same_pattern == BASKER_TRUE))
     {
       if(same_pattern_flag == BASKER_FALSE)
@@ -1342,7 +1491,12 @@ namespace BaskerNS
         gperm(i) = BASKER_MAX_IDX;
       }
     }
-
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_gperm.seconds();
+        gperm_time += tmp_time;
+        std::cout << "    Basker gperm (pivot) reorder time: " << tmp_time << std::endl;
+        timer_gperm.reset();
+        #endif
     if(factor_flag == BASKER_TRUE)
     {
       typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
@@ -1352,6 +1506,14 @@ namespace BaskerNS
           reset_factors);
       Kokkos::fence();
     }
+        #ifdef BASKER_TIMER_FINE
+        tmp_time = timer_gperm.seconds();
+        std::cout << "    Basker reset_factors time: " << tmp_time << std::endl;
+        std::cout << "    Basker sorts total time: " << sort_time << std::endl;
+        std::cout.precision(old_precision);
+        std::cout.flags(old_settings);
+        #endif
+
     return 0;
   }//sfactor_copy2()
 
