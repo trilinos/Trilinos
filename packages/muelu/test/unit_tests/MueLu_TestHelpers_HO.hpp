@@ -57,6 +57,10 @@
 
 #include "MueLu_TestHelpers.hpp"
 
+#ifdef HAVE_MUELU_EPETRA
+#include "Epetra_FECrsMatrix.h"
+#endif
+
 
 namespace MueLuTests {
   namespace TestHelpers {
@@ -204,9 +208,24 @@ namespace MueLuTests {
           elem_to_node(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
       }
 
+      // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
+      RCP<Matrix> B;
+      if(Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+	// Epetra is hard
+	const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
+	const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
+	RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
+	B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<SC,LO,GO,NO>(B_epetra);
+#endif
+      }
+      else {
+	// Tpetra is easy
+	B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); 
+      }
+
 
       // Assemble pseudo-poisson matrix
-      RCP<Matrix> B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); //FIX THIS LATER FOR FAST FILL
       for(size_t i=0; i<local_num_elements; i++) {
 	// Fill in a fake stiffness matrix
 	for(int j=0; j<degree+1; j++) {
