@@ -14,9 +14,7 @@
 
 namespace BaskerNS
 {
-
-
-    //==========================csymamd===================
+  //==========================csymamd===================
 
   template <class Int>
   BASKER_FINLINE
@@ -27,11 +25,10 @@ namespace BaskerNS
    Int *Ai,
    Int *p, 
    Int *cmember
-   )
+  )
   {
     return -1;
   }//end my_amesos_csymamd
-
 
   template <>
   BASKER_FINLINE
@@ -42,9 +39,8 @@ namespace BaskerNS
    int *Ai,
    int *p, 
    int *cmember
-   )
+  )
   {
-    
     double knobs[CCOLAMD_KNOBS];
     int    stats[CCOLAMD_STATS];
 
@@ -55,11 +51,11 @@ namespace BaskerNS
     knobs[2] = 2;
 
     trilinos_csymamd(n, Ai, Ap,  p, knobs, stats, 
-		     &(calloc), &(free), 
-		     cmember, 0);
+        &(calloc), &(free), 
+        cmember, 0);
 
     //trilinos_csymamd_report(stats);
-    
+
     return 0;
   }
 
@@ -73,9 +69,8 @@ namespace BaskerNS
    long *Ai,
    long *p, 
    long *cmember
-   )
+  )
   {
-    
     double knobs[CCOLAMD_KNOBS];
     long    stats[CCOLAMD_STATS];
 
@@ -95,17 +90,13 @@ namespace BaskerNS
   }
 
 
-
-
-
-
   template <class Int, class Entry, class Exe_Space>
   BASKER_FINLINE
   void Basker<Int,Entry,Exe_Space>::amd_order
   (
    BASKER_MATRIX &M,
    INT_1DARRAY   p
-   )
+  )
   {
 
     double amd_info[AMD_INFO];
@@ -113,9 +104,9 @@ namespace BaskerNS
 	       &(M.row_idx(0)), &(p(0)),
 	       NULL, amd_info);
 
-
   }//end amd_order()
-  
+
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_FINLINE
   void Basker<Int, Entry,Exe_Space>::csymamd_order
@@ -123,34 +114,30 @@ namespace BaskerNS
    BASKER_MATRIX &M,
    INT_1DARRAY p,
    INT_1DARRAY cmember
-   )
+  )
   {    
-
     amd_flag = BASKER_TRUE;
 
     //Debug,
     #ifdef BASKER_DEBUG_ORDER_AMD
     printf("cmember: \n");
     for(Int i = 0; i < M.ncol; ++i)
-      {
-	printf("(%d, %d), ", i, cmember(i));
-      }
+    {
+      printf("(%d, %d), ", i, cmember(i));
+    }
     printf("\n"); 
     #endif
-    
+
     //If doing  iluk, we will not want this.
     //See amd blk notes
     if(Options.incomplete == BASKER_TRUE)
+    {
+      for(Int i = 0; i < M.ncol; i++)
       {
-	for(Int i = 0; i < M.ncol; i++)
-	  {
-	    p(i) = i;
-	  }
-	//printf("Short csym \n");
-	return;
+        p(i) = i;
       }
-
-
+      return;
+    }
 
     INT_1DARRAY temp_p;
     BASKER_ASSERT(M.ncol > 0, "AMD perm not long enough");
@@ -160,12 +147,10 @@ namespace BaskerNS
     my_amesos_csymamd(M.ncol, &(M.col_ptr(0)), &(M.row_idx(0)),
 		     &(temp_p(0)), &(cmember(0)));
 
-
     for(Int i = 0; i < M.ncol; ++i)
-      {
-	p(temp_p(i)) = i;
-      }
-
+    {
+      p(temp_p(i)) = i;
+    }
 
   }//end csymamd()
 
@@ -183,7 +168,7 @@ namespace BaskerNS
    Int *p,
    double *knobs, 
    Int *stats
-   )
+  )
   {
     return -1;
   }//end trilinos_colamd()
@@ -200,7 +185,7 @@ namespace BaskerNS
    int *p,
    double *knobs,
    int *stats
-   )
+  )
   {
     trilinos_colamd(n_row,n_col,Alen,A,p,knobs,stats);
     return 0;
@@ -219,7 +204,7 @@ namespace BaskerNS
    long *p,
    double *knobs,
    long *stats
-   )
+  )
   {
     trilinos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);
     return 0;
@@ -228,9 +213,8 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::blk_amd(BASKER_MATRIX &M, INT_1DARRAY p)
+  void Basker<Int,Entry,Exe_Space>::blk_amd( BASKER_MATRIX &M, INT_1DARRAY p )
   {
-    
     //p == length(M)
     //Scan over all blks
     //Note, that this needs to be made parallel in the 
@@ -245,98 +229,88 @@ namespace BaskerNS
 
 
     for(Int b = btf_tabs_offset; b < btf_nblks; b++)
+    {
+      Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+      if(blk_size < 3)
       {
-	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
-	if(blk_size < 3)
-	  {
-	    
-	    //printf("debug, blk_size: %d \n", blk_size);
-	    for(Int ii = 0; ii < blk_size; ++ii)
-	      {
-		//printf("set %d \n", btf_tabs(b)+ii-M.scol);
-		p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
-	      }
-	    continue;
-	  }
-	
-	INT_1DARRAY tempp;
-	MALLOC_INT_1DARRAY(tempp, blk_size+1);
-	
-	
-	//Fill in temp matrix
-	Int nnz = 0;
-	Int column = 1;
-	temp_col(0) = 0;
-	for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
-	  {
-	    for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
-	      {
-		if(M.row_idx(i) < btf_tabs(b))
-		  continue;
-		  
-		temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
-		nnz++;
-	      }// end over all row_idx
-	    temp_col(column) = nnz;
-	    column++;
-	  }//end over all columns k
-	
-	#ifdef BASKER_DEBUG_ORDER_AMD
-	printf("col_ptr: ");
-	for(Int i = 0 ; i < blk_size+1; i++)
-	  {
-	    printf("%d, ", temp_col(i));
-	  }
-	printf("\n");
-	printf("row_idx: ");
-	for(Int i = 0; i < nnz; i++)
-	  {
-	    printf("%d, ", temp_row(i));
-	  }
-	printf("\n");
-	#endif
+        for(Int ii = 0; ii < blk_size; ++ii)
+        {
+          //printf("set %d \n", btf_tabs(b)+ii-M.scol);
+          p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+        }
+        continue;
+      }
 
+      INT_1DARRAY tempp;
+      MALLOC_INT_1DARRAY(tempp, blk_size+1);
 
-	BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
-					&(temp_row(0)),&(tempp(0)));
+      //Fill in temp matrix
+      Int nnz = 0;
+      Int column = 1;
+      temp_col(0) = 0;
+      for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
+      {
+        for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+        {
+          if(M.row_idx(i) < btf_tabs(b))
+          { continue; }
 
+          temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+          nnz++;
+        }// end over all row_idx
 
-	
-	#ifdef BASKER_DEBUG_ORDER_AMD
-	printf("blk: %d order: \n", b);
-	for(Int ii = 0; ii < blk_size; ii++)
-	  {
-	    printf("%d, ", tempp(ii));
-	  }
-	#endif
+        temp_col(column) = nnz;
+        column++;
+      }//end over all columns k
 
-				     
-	//Add to the bigger perm vector
-	for(Int ii = 0; ii < blk_size; ii++)
-	  {
-	    //printf("loc: %d val: %d \n", 
-	    //ii+btf_tabs(b), tempp(ii)+btf_tabs(b));
+      #ifdef BASKER_DEBUG_ORDER_AMD
+      printf("col_ptr: ");
+      for(Int i = 0 ; i < blk_size+1; i++)
+      {
+        printf("%d, ", temp_col(i));
+      }
+      printf("\n");
+      printf("row_idx: ");
+      for(Int i = 0; i < nnz; i++)
+      {
+        printf("%d, ", temp_row(i));
+      }
+      printf("\n");
+      #endif
 
-	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
-	  }
+      BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
+          &(temp_row(0)),&(tempp(0)));
 
+      #ifdef BASKER_DEBUG_ORDER_AMD
+      printf("blk: %d order: \n", b);
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        printf("%d, ", tempp(ii));
+      }
+      #endif
 
-	FREE_INT_1DARRAY(tempp);
-	
-      }//over all blk_tabs
+      //Add to the bigger perm vector
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+      }
+
+      FREE_INT_1DARRAY(tempp);
+
+    }//over all blk_tabs
 
     #ifdef BASKER_DEBUG_AMD_ORDER
     printf("blk amd final order\n");
     for(Int ii = 0; ii < M.ncol; ii++)
-      {
-	printf("%d, ", p(ii));
-      }
+    {
+      printf("%d, ", p(ii));
+    }
     printf("\n");
     #endif
 
     FREE_INT_1DARRAY(temp_col);
     FREE_INT_1DARRAY(temp_row);
-    
+
   }//end blk_amd()
       
 
@@ -349,31 +323,27 @@ namespace BaskerNS
    INT_1DARRAY btf_work
   )
   {
-   
-
     // printf("=============BTF_BLK_AMD_CALLED========\n");
     if(Options.incomplete == BASKER_TRUE)
+    {
+      //We note that AMD on incomplete ILUK
+      //Seems realy bad and leads to a zero on the diag
+      //Therefore, we simply return the natural ordering
+      for(Int i = 0 ; i < M.ncol; i++)
       {
-	//We note that AMD on incomplete ILUK
-	//Seems realy bad and leads to a zero on the diag
-	//Therefore, we simply return the natural ordering
-	for(Int i = 0 ; i < M.ncol; i++)
-	  {
-	    p(i) = i;
-	  }
-	//We will makeup work to be 1, 
-	//Since BTF is not supported in our iluk
-	for(Int b = 0; b < btf_nblks; b++)
-	  {
-	    btf_nnz(b) = 1;
-	    btf_work(b) =1;
-	  }
-       
-	//printf("Short amd blk\n");
-
-	return;
+        p(i) = i;
       }
 
+      //We will makeup work to be 1, 
+      //Since BTF is not supported in our iluk
+      for(Int b = 0; b < btf_nblks; b++)
+      {
+        btf_nnz(b) = 1;
+        btf_work(b) =1;
+      }
+
+      return;
+    }
  
     //p == length(M)
     //Scan over all blks
@@ -391,104 +361,92 @@ namespace BaskerNS
 
 
     for(Int b = 0; b < btf_nblks; b++)
+    {
+      Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+
+      if(blk_size < 3)
       {
-	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+        for(Int ii = 0; ii < blk_size; ++ii)
+        {
+          //printf("set %d \n", btf_tabs(b)+ii-M.scol);
+          p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+        }
 
-	//printf("blk: %d blk_size: %d \n",
-	//     b, blk_size);
+        btf_work(b) = blk_size*blk_size*blk_size;
+        btf_nnz(b)  = (.5*(blk_size*blk_size) + blk_size);
+        continue;
+      }
 
-	if(blk_size < 3)
-	  {
-	    
-	    //printf("debug, blk_size: %d \n", blk_size);
-	    for(Int ii = 0; ii < blk_size; ++ii)
-	      {
-		//printf("set %d \n", btf_tabs(b)+ii-M.scol);
-		p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
-	      }
-	    btf_work(b) = blk_size*blk_size*blk_size;
-	    btf_nnz(b)  = (.5*(blk_size*blk_size) + blk_size);
-	    continue;
-	  }
-	
-	INT_1DARRAY tempp;
-	MALLOC_INT_1DARRAY(tempp, blk_size+1);
-	
-	
-	//Fill in temp matrix
-	Int nnz = 0;
-	Int column = 1;
-	temp_col(0) = 0;
-	for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
-	  {
-	    for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
-	      {
-		if(M.row_idx(i) < btf_tabs(b))
-		  continue;
-		  
-		temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
-		nnz++;
-	      }// end over all row_idx
-	    temp_col(column) = nnz;
-	    column++;
-	  }//end over all columns k
-	
-	#ifdef BASKER_DEBUG_ORDER_AMD
-	printf("col_ptr: ");
-	for(Int i = 0 ; i < blk_size+1; i++)
-	  {
-	    printf("%d, ", temp_col(i));
-	  }
-	printf("\n");
-	printf("row_idx: ");
-	for(Int i = 0; i < nnz; i++)
-	  {
-	    printf("%d, ", temp_row(i));
-	  }
-	printf("\n");
-	#endif
+      INT_1DARRAY tempp;
+      MALLOC_INT_1DARRAY(tempp, blk_size+1);
 
+      //Fill in temp matrix
+      Int nnz = 0;
+      Int column = 1;
+      temp_col(0) = 0;
+      for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
+      {
+        for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+        {
+          if(M.row_idx(i) < btf_tabs(b))
+          { continue; }
 
-	double l_nnz = 0;
-	double lu_work = 0;
-	BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
-					&(temp_row(0)),&(tempp(0)), 
-					l_nnz, lu_work);
+          temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+          nnz++;
+        }// end over all row_idx
 
+        temp_col(column) = nnz;
+        column++;
+      }//end over all columns k
 
-	btf_nnz(b)  = l_nnz;
-	btf_work(b) = lu_work;
-       
-	
-	#ifdef BASKER_DEBUG_ORDER_AMD
-	printf("blk: %d order: \n", b);
-	for(Int ii = 0; ii < blk_size; ii++)
-	  {
-	    printf("%d, ", tempp(ii));
-	  }
-	#endif
+      #ifdef BASKER_DEBUG_ORDER_AMD
+      printf("col_ptr: ");
+      for(Int i = 0 ; i < blk_size+1; i++)
+      {
+        printf("%d, ", temp_col(i));
+      }
+      printf("\n");
+      printf("row_idx: ");
+      for(Int i = 0; i < nnz; i++)
+      {
+        printf("%d, ", temp_row(i));
+      }
+      printf("\n");
+      #endif
 
-				     
-	//Add to the bigger perm vector
-	for(Int ii = 0; ii < blk_size; ii++)
-	  {
-	    //printf("loc: %d val: %d \n", 
-	    //ii+btf_tabs(b), tempp(ii)+btf_tabs(b));
+      double l_nnz = 0;
+      double lu_work = 0;
+      BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
+          &(temp_row(0)),&(tempp(0)), 
+          l_nnz, lu_work);
 
-	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
-	  }
+      btf_nnz(b)  = l_nnz;
+      btf_work(b) = lu_work;
 
+      #ifdef BASKER_DEBUG_ORDER_AMD
+      printf("blk: %d order: \n", b);
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        printf("%d, ", tempp(ii));
+      }
+      #endif
 
-	FREE_INT_1DARRAY(tempp);
-	
-      }//over all blk_tabs
+      //Add to the bigger perm vector
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+      }
+
+      FREE_INT_1DARRAY(tempp);
+
+    }//over all blk_tabs
 
     #ifdef BASKER_DEBUG_AMD_ORDER
     printf("blk amd final order\n");
     for(Int ii = 0; ii < M.ncol; ii++)
-      {
-	printf("%d, ", p(ii));
-      }
+    {
+      printf("%d, ", p(ii));
+    }
     printf("\n");
     #endif
 

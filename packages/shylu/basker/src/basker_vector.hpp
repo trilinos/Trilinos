@@ -11,6 +11,7 @@
 
 namespace BaskerNS
 {
+
   template <class Int, class Entry, class Exe_Space>
   struct basker_vector
   {
@@ -21,9 +22,9 @@ namespace BaskerNS
     {
       //need to add some kind of fast copy
       for(Int i=0; i < size; i++)
-	{
-	  a[i] = c;
-	}
+      {
+        a[i] = c;
+      }
     }//end init_value
 
     template <class TypeOut, class TypeIn >
@@ -33,12 +34,12 @@ namespace BaskerNS
     {
       //need to do some fast copy
       for(Int i=0; i< size; i++)
-	{
-	  a[i] = c[i];
-	}
+      {
+        a[i] = c[i];
+      }
     }//end init_vector
-
   };
+
 }//end BaskerNS
 
 #endif

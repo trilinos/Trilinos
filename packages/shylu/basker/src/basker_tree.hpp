@@ -15,8 +15,6 @@
 
 using namespace std;
 
-//#define BASKER_DEBUG_TREE 
-
 namespace BaskerNS
 {
   ///wrapper init tree function for selection
@@ -27,7 +25,7 @@ namespace BaskerNS
   Int *row_tabs, Int *col_tabs, Int *treetab, Int options)       
   {
     if((tree_flag == true) || (matrix_flag == false))
-      {return -1;}
+    {return -1;}
 
     //Copy into our tree_struct
     part_tree.basic_convert(A.nrow, perm, nblks, parts,
@@ -35,24 +33,25 @@ namespace BaskerNS
 
     int result = 0;
     if(options == 0) //default case (based on threads)
-      {
-	/*
-       result = init_tree_thread(perm, nblks, parts, row_tabs, 
-                                  col_tabs, treetab);
-	*/
-	init_tree_thread();
+    {
+      /*
+         result = init_tree_thread(perm, nblks, parts, row_tabs, 
+         col_tabs, treetab);
+      */
+      init_tree_thread();
 
-      }
+    }
     else if(options > 0)
-      {
-	/*
-        result = init_tree_lvl(perm, nblks, parts, row_tabs, col_tabs, 
-                               treetab, options);
-	*/
-      }
+    {
+      /*
+         result = init_tree_lvl(perm, nblks, parts, row_tabs, col_tabs, 
+         treetab, options);
+      */
+    }
     
     return result;
   }//init_tree
+
 
   //Used to provide memory
   //Do we still need this??
@@ -83,8 +82,8 @@ namespace BaskerNS
 
     init_tree_struc();
 
-    //return 0;
   }//end malloc_tree
+
 
   //Used to init values
   //Can be done with functor call in future
@@ -95,44 +94,45 @@ namespace BaskerNS
   {   
     //Ok because will only be accessed by master thrd
     for(Int i=0; i < tree.nblks+1; i++)
-      {
-        tree.row_tabs[i] = 0;
-        tree.col_tabs[i] = 0;
-        tree.treetab[i]  = 0;
-        tree.rowptr[i]   = 0;
-        //tree.child[i]    = A.max_idx;
-	tree.child[i]     = BASKER_MAX_IDX;
-        //tree.sibling[i]  = A.max_idx;
-	tree.sibling[i]   = BASKER_MAX_IDX;
-      }
+    {
+      tree.row_tabs[i] = 0;
+      tree.col_tabs[i] = 0;
+      tree.treetab[i]  = 0;
+      tree.rowptr[i]   = 0;
+      //tree.child[i]    = A.max_idx;
+      tree.child[i]     = BASKER_MAX_IDX;
+      //tree.sibling[i]  = A.max_idx;
+      tree.sibling[i]   = BASKER_MAX_IDX;
+    }
+
     //S will be accessed by all threads (but is first created using one thread
     //Should we use first touch?
     for(Int i =0; i < tree.nblks+1; i++)
-      {
-	BASKER_ASSERT(num_threads > 0, "tree num_threads");
-	MALLOC_INT_1DARRAY(S[i], num_threads);
-      }
+    {
+      BASKER_ASSERT(num_threads > 0, "tree num_threads");
+      MALLOC_INT_1DARRAY(S[i], num_threads);
+    }
+
     //this will want to be across all threads 
     //(but is first created using on thread)
     for(Int i=0; i < A.nrow; i++)
-      {
-        tree.pivot[i] = true;
-      }
-    //return 0;
+    {
+      tree.pivot[i] = true;
+    }
+
   }// end init_tree()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::init_tree_thread()
   {
-    //#ifdef BASKER_DEBUG_TREE
     if (Options.verbose == BASKER_TRUE)
-      {
-    printf("----init_tree_thread()----\n");
-    printf("---Starting Tree----\n");
-    part_tree.info();
-      }
-    ///#endif
+    {
+      printf("----init_tree_thread()----\n");
+      printf("---Starting Tree----\n");
+      part_tree.info();
+    }
 
     //Note: Convert this to use these values everywhere
     INT_1DARRAY ttemp;
@@ -148,8 +148,8 @@ namespace BaskerNS
     #endif
 
 
-    /*Calculate maximum number of levels*/
-    /* parts^x = threads*/
+    //Calculate maximum number of levels
+    // parts^x = threads
     #ifdef BASKER_DEBUG_TREE
     printf("nblks: %d parts: %d \n", nblks, parts);
     printf("log: %f %f %f \n", 
@@ -170,7 +170,7 @@ namespace BaskerNS
     //		    ((double)log((double)parts))) ;
     //Int treelvls = crazy_temp -1;
 
-    /*Number of blocks now is parts^lvl+1 - 1*/
+    //Number of blocks now is parts^lvl+1 - 1
     Int newnblks = round(pow(parts, maxlvls+1)) - 1;
     
     #ifdef BASKER_DEBUG_TREE
@@ -179,21 +179,20 @@ namespace BaskerNS
     #endif
 
     if(newnblks < nblks)
-      {
-        cout << "Reducing nblks to: " << newnblks << 
-          " in order to fit threads" <<endl;
-      }
+    {
+      cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" <<endl;
+    }
     else if(newnblks > nblks)
-      {
-        cout << "Error: need more blocks to fit threads" << endl;
-        return -1;
-      }
+    {
+      cout << "Error: need more blocks to fit threads" << endl;
+      return -1;
+    }
 
     malloc_tree(parts, newnblks, maxlvls);
-    //cout << "Done alloc tree" << endl;
     //thread array
     //MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-    //cout << "Done alloc thread_array" << endl;
+
     //Step 1
     //Build new row and col tabs (DFS)
     Int old_pos = nblks;
@@ -211,21 +210,19 @@ namespace BaskerNS
     init_value(temp_row_tabs, tree.nblks+1, (Int)0);
     
     rec_tabs(0, tree.nlvls, treelvls, tree.nblks, old_pos,
-	     &new_pos,
-             col_tabs, row_tabs, treetab,
-             temp_col_tabs, temp_row_tabs, temp_tree);
+	     &new_pos, col_tabs, row_tabs, treetab,
+       temp_col_tabs, temp_row_tabs, temp_tree);
 
     for(Int i=0; i < tree.nblks+1; i++)
-      {
-        tree.row_tabs[i] = temp_row_tabs[i];
-        tree.col_tabs[i] = temp_col_tabs[i];
-        tree.treetab[i] = temp_tree[i];
-      }
+    {
+      tree.row_tabs[i] = temp_row_tabs[i];
+      tree.col_tabs[i] = temp_col_tabs[i];
+      tree.treetab[i] = temp_tree[i];
+    }
 
     FREE(temp_tree);
     FREE(temp_col_tabs);
     FREE(temp_row_tabs);
-    //cout << "done with retabs" << endl;
 
     #ifdef BASKER_DEBUG_TREE
     cout << "row_tabs: " << endl;
@@ -245,20 +242,16 @@ namespace BaskerNS
       {cout << i << "  " << tree.col_tabs[i+1]-tree.col_tabs[i] << endl;}
     #endif
 
-    //cout << "BEfore alloc thread_array: " 
-    //	 << num_threads << " alloc " << endl;
     BASKER_ASSERT(num_threads > 0, "tree num_threas");
     MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-    //cout << "Done alloc thread_array" << endl;
-   
 
     //Step 2
-    /*Build treeptr list*/
+    //Build treeptr list
     for(Int i=0; i < tree.nblks; i++)
-      {
-        for(Int j = tree.col_tabs[i]; j < tree.col_tabs[i+1]; j++)
-          {tree.treeptr[j] = i;}
-      }
+    {
+      for(Int j = tree.col_tabs[i]; j < tree.col_tabs[i+1]; j++)
+      {tree.treeptr[j] = i;}
+    }
     
     //Step 3
     //Get level sets  (BFS) 
@@ -274,29 +267,30 @@ namespace BaskerNS
     
     new_pos--;
     for(Int l = 1; l < tree.nlvls+1; l++)
+    {
+      Int nparents = pow(tree.nparts, l-1);
+      Int pp = new_pos;
+      //ttemp = lvl_task[l];
+      //Int task_pos = 0; //Not used
+      //Int task_offset = pow(tree.nparts, tree.nlvls-l); //NU
+      for(Int p = 0 ; p < nparents; p++)
       {
-        Int nparents = pow(tree.nparts, l-1);
-        Int pp = new_pos;
-        //ttemp = lvl_task[l];
-	//Int task_pos = 0; //Not used
-	//Int task_offset = pow(tree.nparts, tree.nlvls-l); //NU
-        for(Int p = 0 ; p < nparents; p++)
-          {
-            Int parentptr = pp+nparents-p;
-            Int leftc     = tree.lvlset[parentptr]-1;
-            Int rightc    = tree.lvlset[parentptr] - 
-              pow(tree.nparts, tree.nlvls-l+1);
-            tree.lvlset[new_pos] = leftc;
-            temptree[new_pos] = tree.treetab[leftc];
-            new_pos--;
-            tree.lvlset[new_pos] = rightc;
-            temptree[new_pos] = tree.treetab[rightc];
-            tree.child[tree.lvlset[parentptr]] = rightc;
-            tree.sibling[rightc] = leftc;
-            new_pos--; 
+        Int parentptr = pp+nparents-p;
+        Int leftc     = tree.lvlset[parentptr]-1;
+        Int rightc    = tree.lvlset[parentptr] - 
+          pow(tree.nparts, tree.nlvls-l+1);
 
-          }//over all parents
-      }// over all levels
+        tree.lvlset[new_pos] = leftc;
+        temptree[new_pos] = tree.treetab[leftc];
+        new_pos--;
+
+        tree.lvlset[new_pos] = rightc;
+        temptree[new_pos] = tree.treetab[rightc];
+        tree.child[tree.lvlset[parentptr]] = rightc;
+        tree.sibling[rightc] = leftc;
+        new_pos--; 
+      }//over all parents
+    }// over all levels
 
 
     #ifdef BASKER_DEBUG_TREE
@@ -320,63 +314,60 @@ namespace BaskerNS
       { cout << tree.sibling[b] << " " ;} 
     #endif
 
-
-
     //Step 4 
     //Setup schedule (S)
     Int lvl_idx = 0;
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      Int lvl_counter = 0;
+      for(Int t=0; t < num_threads; t++)
       {
-        Int lvl_counter = 0;
-        for(Int t=0; t < num_threads; t++)
-          {
-            #ifdef BASKER_DEBUG_TREE
-            printf("l %d t %d lvl_counter %d lvl_idx %d size: %d \n",
-                   l, t, lvl_counter ,lvl_idx, tree.nblks);
-            #endif
-            S[l][t] = tree.lvlset[lvl_idx];
-            if(lvl_counter >= (pow(tree.nparts,l)-1))
-              {
-                lvl_idx++;
-                lvl_counter = 0;
-              }
-            else
-              {
-                lvl_counter++;
-              }
-          }//end over threads
-      }//end over nlvls
+        #ifdef BASKER_DEBUG_TREE
+        printf("l %d t %d lvl_counter %d lvl_idx %d size: %d \n",
+            l, t, lvl_counter ,lvl_idx, tree.nblks);
+        #endif
+
+        S[l][t] = tree.lvlset[lvl_idx];
+        if(lvl_counter >= (pow(tree.nparts,l)-1))
+        {
+          lvl_idx++;
+          lvl_counter = 0;
+        }
+        else
+        {
+          lvl_counter++;
+        }
+      }//end over threads
+    }//end over nlvls
 
     //printf("===TEST==\n");
 
     #ifdef BASKER_DEBUG_TREE
     cout << "Schedule: " << endl; 
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      for(Int t=0; t < num_threads; t++)
       {
-        for(Int t=0; t < num_threads; t++)
-          {
-            cout << S[l][t] << " , " ; 
-          }//end over nhreads
-        cout << endl;
-      }//end over nlvls
+        cout << S[l][t] << " , " ; 
+      }//end over nhreads
+      cout << endl;
+    }//end over nlvls
     #endif
-    
     
     //Step 5
     //Get workspace size
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      for(Int t=0; t < num_threads; t++)
       {
-	for(Int t=0; t < num_threads; t++)
-	  {
-	    Int s_element = S[l][t];
-	    Int row_size = (tree.row_tabs[s_element+1] - 
-			    tree.row_tabs[s_element]);
-	    thread_array[t].iws_size += row_size;
-	    thread_array[t].ews_size += row_size;
-	  }//end over threads
-      }//end over lvls
+        Int s_element = S[l][t];
+        Int row_size = (tree.row_tabs[s_element+1] - 
+            tree.row_tabs[s_element]);
+        thread_array[t].iws_size += row_size;
+        thread_array[t].ews_size += row_size;
+      }//end over threads
+    }//end over lvls
     
-
     //Step 6
     //Generate the do not pivot list
     //Don't need anymore
@@ -396,27 +387,26 @@ namespace BaskerNS
       }
     */
 
-
     //Comeback and clean this up!!!
     if(Options.btf == BASKER_FALSE)
-      {
-	//printf("Given A End\n");
-	tree.treetab[tree.nblks-1] = A.ncol;
-      }
+    {
+      //printf("Given A End\n");
+      tree.treetab[tree.nblks-1] = A.ncol;
+    }
     else
-      {
-	//printf("Given BTF_A End\n");
-	tree.treetab[tree.nblks-1] = BTF_A.ncol;
-      }
+    {
+      //printf("Given BTF_A End\n");
+      tree.treetab[tree.nblks-1] = BTF_A.ncol;
+    }
     FREE(temptree);
 
     tree_flag = true;
     return 0;
 
-
   }//end init_tree_thread()
 
-  /*function init tree using omp threads to determine tree size*/
+
+  //function init tree using omp threads to determine tree size
   //OLD DEFUNCT
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -424,13 +414,12 @@ namespace BaskerNS
   (
    Int *perm, Int nblks, 
    Int parts,Int *row_tabs, Int *col_tabs, Int *treetab
-   )
+  )
   {
 
     #ifdef BASKER_DEBUG_TREE
     printf("----init_tree_thread----\n");
     #endif
-
 
     //test
     //printf("---------------test -----------------\n");
@@ -440,26 +429,26 @@ namespace BaskerNS
 
     INT_1DARRAY ttemp;
 
-    /*Calculate maximum number of levels*/
-    /* parts^x = threads*/
+    //Calculate maximum number of levels
+    // parts^x = threads
     Int maxlvls = log(num_threads)/log(parts);
     Int treelvls = log(nblks+1)/log(parts) - 1;
-    /*Number of blocks now is parts^lvl+1 - 1*/
+    //Number of blocks now is parts^lvl+1 - 1
     Int newnblks = pow(parts, maxlvls+1) - 1;
 
     if(newnblks < nblks)
-      {
-        cout << "Reducing nblks to: " << newnblks << 
-          " in order to fit threads" <<endl;
-      }
+    {
+      cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" <<endl;
+    }
     else if(newnblks > nblks)
-      {
-        cout << "Error: need more blocks to fit threads" << endl;
-        return -1;
-      }
+    {
+      cout << "Error: need more blocks to fit threads" << endl;
+      return -1;
+    }
 
     malloc_tree(parts, newnblks, maxlvls);
-    //cout << "Done alloc tree" << endl;
+
     //thread array
     //MALLOC_THREAD_1DARRAY(thread_array, num_threads);
     //cout << "Done alloc thread_array" << endl;
@@ -467,7 +456,6 @@ namespace BaskerNS
     //Build new row and col tabs (DFS)
     Int old_pos = nblks;
     Int new_pos = tree.nblks;
-    
 
     BASKER_ASSERT((tree.nblks+1)>0, "tree nblks2");
     INT_1DARRAY temp_tree;
@@ -485,16 +473,15 @@ namespace BaskerNS
              temp_col_tabs, temp_row_tabs, temp_tree);
 
     for(Int i=0; i < tree.nblks+1; i++)
-      {
-        tree.row_tabs[i] = temp_row_tabs[i];
-        tree.col_tabs[i] = temp_col_tabs[i];
-        tree.treetab[i] = temp_tree[i];
-      }
+    {
+      tree.row_tabs[i] = temp_row_tabs[i];
+      tree.col_tabs[i] = temp_col_tabs[i];
+      tree.treetab[i] = temp_tree[i];
+    }
 
     FREE(temp_tree);
     FREE(temp_col_tabs);
     FREE(temp_row_tabs);
-    //cout << "done with retabs" << endl;
 
     #ifdef BASKER_DEBUG_TREE
     cout << "row_tabs: " << endl;
@@ -514,20 +501,16 @@ namespace BaskerNS
       {cout << i << "  " << tree.col_tabs[i+1]-tree.col_tabs[i] << endl;}
     #endif
 
-    //cout << "BEfore alloc thread_array: " 
-    //	 << num_threads << " alloc " << endl;
     BASKER_ASSERT(num_threads > 0, "tree num_threads2");
     MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-    //cout << "Done alloc thread_array" << endl;
-   
 
     //Step 2
-    /*Build treeptr list*/
+    //Build treeptr list
     for(Int i=0; i < tree.nblks; i++)
-      {
-        for(Int j = tree.col_tabs[i]; j < tree.col_tabs[i+1]; j++)
-          {tree.treeptr[j] = i;}
-      }
+    {
+      for(Int j = tree.col_tabs[i]; j < tree.col_tabs[i+1]; j++)
+      {tree.treeptr[j] = i;}
+    }
     
     //Step 3
     //Get level sets  (BFS) 
@@ -543,30 +526,28 @@ namespace BaskerNS
     
     new_pos--;
     for(Int l = 1; l < tree.nlvls+1; l++)
+    {
+      Int nparents = pow(tree.nparts, l-1);
+      Int pp = new_pos;
+      //ttemp = lvl_task[l];
+      Int task_pos = 0;
+      Int task_offset = pow(tree.nparts, tree.nlvls-l);
+      for(Int p = 0 ; p < nparents; p++)
       {
-        Int nparents = pow(tree.nparts, l-1);
-        Int pp = new_pos;
-        //ttemp = lvl_task[l];
-	Int task_pos = 0;
-	Int task_offset = pow(tree.nparts, tree.nlvls-l);
-        for(Int p = 0 ; p < nparents; p++)
-          {
-            Int parentptr = pp+nparents-p;
-            Int leftc     = tree.lvlset[parentptr]-1;
-            Int rightc    = tree.lvlset[parentptr] - 
-              pow(tree.nparts, tree.nlvls-l+1);
-            tree.lvlset[new_pos] = leftc;
-            temptree[new_pos] = tree.treetab[leftc];
-            new_pos--;
-            tree.lvlset[new_pos] = rightc;
-            temptree[new_pos] = tree.treetab[rightc];
-            tree.child[tree.lvlset[parentptr]] = rightc;
-            tree.sibling[rightc] = leftc;
-            new_pos--; 
-
-          }//over all parents
-      }// over all levels
-
+        Int parentptr = pp+nparents-p;
+        Int leftc     = tree.lvlset[parentptr]-1;
+        Int rightc    = tree.lvlset[parentptr] - 
+          pow(tree.nparts, tree.nlvls-l+1);
+        tree.lvlset[new_pos] = leftc;
+        temptree[new_pos] = tree.treetab[leftc];
+        new_pos--;
+        tree.lvlset[new_pos] = rightc;
+        temptree[new_pos] = tree.treetab[rightc];
+        tree.child[tree.lvlset[parentptr]] = rightc;
+        tree.sibling[rightc] = leftc;
+        new_pos--; 
+      }//over all parents
+    }// over all levels
 
     #ifdef BASKER_DEBUG_TREE
     cout << "Treetabs: " << endl;
@@ -590,81 +571,79 @@ namespace BaskerNS
     cout << endl;
     #endif
 
-
-
     //Step 4 
     //Setup schedule (S)
     Int lvl_idx = 0;
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      Int lvl_counter = 0;
+      for(Int t=0; t < num_threads; t++)
       {
-        Int lvl_counter = 0;
-        for(Int t=0; t < num_threads; t++)
-          {
-            #ifdef BASKER_DEBUG_TREE
-            printf("l %d t %d lvl_counter %d lvl_idx %d size: %d \n",
-                   l, t, lvl_counter ,lvl_idx, tree.nblks);
-            #endif
-            S[l][t] = tree.lvlset[lvl_idx];
-            if(lvl_counter >= (pow(tree.nparts,l)-1))
-              {
-                lvl_idx++;
-                lvl_counter = 0;
-              }
-            else
-              {
-                lvl_counter++;
-              }
-          }//end over threads
-      }//end over nlvls
+        #ifdef BASKER_DEBUG_TREE
+        printf("l %d t %d lvl_counter %d lvl_idx %d size: %d \n",
+            l, t, lvl_counter ,lvl_idx, tree.nblks);
+        #endif
+
+        S[l][t] = tree.lvlset[lvl_idx];
+        if(lvl_counter >= (pow(tree.nparts,l)-1))
+        {
+          lvl_idx++;
+          lvl_counter = 0;
+        }
+        else
+        {
+          lvl_counter++;
+        }
+      }//end over threads
+    }//end over nlvls
 
     #ifdef BASKER_DEBUG_TREE
     cout << "Schedule: " << endl; 
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      for(Int t=0; t < num_threads; t++)
       {
-        for(Int t=0; t < num_threads; t++)
-          {
-            cout << S[l][t] << " , " ; 
-          }//end over nhreads
-        cout << endl;
-      }//end over nlvls
+        cout << S[l][t] << " , " ; 
+      }//end over nhreads
+      cout << endl;
+    }//end over nlvls
     #endif
     
     
     //Step 5
     //Get workspace size
     for(Int l=0; l < tree.nlvls+1; l++)
+    {
+      for(Int t=0; t < num_threads; t++)
       {
-	for(Int t=0; t < num_threads; t++)
-	  {
-	    Int s_element = S[l][t];
-	    Int row_size = (tree.row_tabs[s_element+1] - tree.row_tabs[s_element]);
-	    thread_array[t].iws_size += row_size;
-	    thread_array[t].ews_size += row_size;
-	  }//end over threads
-      }//end over lvls
+        Int s_element = S[l][t];
+        Int row_size = (tree.row_tabs[s_element+1] - tree.row_tabs[s_element]);
+        thread_array[t].iws_size += row_size;
+        thread_array[t].ews_size += row_size;
+      }//end over threads
+    }//end over lvls
     
-
     //Step 6
     //Generate the do not pivot list
- 
     Int leafStart = pow(tree.nparts, tree.nlvls);
     for(Int i = (tree.nblks-1); i > leafStart-1; i--)
+    {
+      for(Int j = tree.row_tabs[tree.lvlset[i]]; 
+          j < tree.row_tabs[tree.lvlset[i]+1]; j++)
       {
-        for(Int j = tree.row_tabs[tree.lvlset[i]]; 
-            j < tree.row_tabs[tree.lvlset[i]+1]; j++)
-          {
-            #ifdef BASKER_DEBUG_TREE
-            cout << "DENSE ROW AT: " << j << endl;
-            #endif
-            tree.pivot[j] = false;
-          }
+        #ifdef BASKER_DEBUG_TREE
+        cout << "DENSE ROW AT: " << j << endl;
+        #endif
+        tree.pivot[j] = false;
       }
+    }
     
     FREE(temptree);
 
     tree_flag = true;
     return 0;
   }//init_tree_omp()
+
 
   //recursive function to find col and row pos
   //come back and write as an iterative function
@@ -678,11 +657,8 @@ namespace BaskerNS
    Int* old_tree,
    INT_1DARRAY new_col, INT_1DARRAY new_row, 
    INT_1DARRAY new_tree
-   )
+  )
   {
-
-    //printf("lvl: %d mlvl: %d tlvl: %d \n", lvl, mlvl, tlvl);
-
     //Set Values
     #ifdef BASKER_DEBUG_TREE
     printf("Rec Tabs, new_pos: %d old_pos %d\n", 
@@ -694,43 +670,47 @@ namespace BaskerNS
     new_col[*new_pos]  = old_col[old_pos];
     new_row[*new_pos]  = old_row[old_pos];
     new_tree[(*new_pos)-1] = mynum;
-    /*Note: needs to be refactored for nparts*/
+    //Note: needs to be refactored for nparts
     if(lvl < mlvl)
-      {
-        Int rightc = old_pos - 1;
-        Int leftc  = old_pos - pow(tree.nparts, tlvl-(lvl));
-	#ifdef BASKER_DEBUG_TREE
-	printf("Left Child, old_pos: %d tlvl: %d lvl: %d parts: %d \n", old_pos, tlvl, lvl, tree.nparts);
-	printf("Left child: %d \n", leftc);
-	#endif
-      
-        mynum = (*new_pos)-1;
-        lvl++;
-        (*new_pos)--;
-        rec_tabs(lvl, mlvl, tlvl, mynum, rightc, new_pos, 
-                old_col, old_row, old_tree,
-                new_col, new_row, new_tree);
+    {
+      Int rightc = old_pos - 1;
+      Int leftc  = old_pos - pow(tree.nparts, tlvl-(lvl));
+      #ifdef BASKER_DEBUG_TREE
+      printf("Left Child, old_pos: %d tlvl: %d lvl: %d parts: %d \n", old_pos, tlvl, lvl, tree.nparts);
+      printf("Left child: %d \n", leftc);
+      #endif
 
-        (*new_pos)--;
-        
-        
-        rec_tabs(lvl, mlvl, tlvl, mynum, leftc, new_pos,
-                 old_col, old_row, old_tree,
-                 new_col, new_row, new_tree);
-        
-      }
-    //printf("Returned, new_pos: %d \n", *new_pos);
+      mynum = (*new_pos)-1;
+      lvl++;
+      (*new_pos)--;
+      rec_tabs(lvl, mlvl, tlvl, mynum, rightc, new_pos, 
+          old_col, old_row, old_tree,
+          new_col, new_row, new_tree);
 
-    //return 0;
+      (*new_pos)--;
+
+
+      rec_tabs(lvl, mlvl, tlvl, mynum, leftc, new_pos,
+          old_col, old_row, old_tree,
+          new_col, new_row, new_tree);
+    }
+
   }//rec_tabs()
 
-  /*Still need to add*/
+
+  //Still need to add
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::init_tree_lvl
-  (Int *perm, Int nblks, Int parts,
-   Int *row_tabs, Int *col_tabs, Int *treetab, Int lvls
-   )
+  (
+   Int *perm, 
+   Int nblks, 
+   Int parts,
+   Int *row_tabs, 
+   Int *col_tabs, 
+   Int *treetab, 
+   Int lvls
+  )
   {
     return -1;
   }//init_tree_lvl()
@@ -743,15 +723,15 @@ namespace BaskerNS
   {
     Int b;
     for(b = start; b < end; b++)
+    {
+      Int bb = tree.lvlset[b];
+      for(Int i = tree.row_tabs[bb]; i < tree.row_tabs[bb+1]; i++)
       {
-        Int bb = tree.lvlset[b];
-        for(Int i = tree.row_tabs[bb]; i < tree.row_tabs[bb+1]; i++)
-          {
-            tree.pivot[i] = true;
-          }//Allow rows in this level to pivot
-      }//end for each block
-    //return 0;
+        tree.pivot[i] = true;
+      }//Allow rows in this level to pivot
+    }//end for each block
   }//end update_pivot_tree()
+
 
   //function to update the local pinv into paren -- reformat
   template <class Int, class Entry, class Exe_Space>
@@ -767,7 +747,7 @@ namespace BaskerNS
   void Basker<Int,Entry, Exe_Space>::matrix_to_views_2D
   (
    BASKER_MATRIX &flat
-   )
+  )
   {
     #ifdef BASKER_DEBUG_TREE
     printf("Called matrix_to_views_2d \n");
@@ -785,22 +765,19 @@ namespace BaskerNS
     init_value(L_view_count, nblks, (Int)0);
 
     //Should also do LL and LU while it
-
     #ifdef BASKER_DEBUG_TREE
     flat.info();
     printf("nblks: %d \n", nblks);
     #endif
 
     for(Int i=0; i < nblks; i++)
+    {
+      for(Int j=i; j != flat.ncol; nnzblks++, j=(tree.treetab[j]))
       {
-        for(Int j=i; j != flat.ncol; nnzblks++, j=(tree.treetab[j]))
-          {
-	    //printf("Accessing j: %d i: %d \n",
-	    //	   j, i);
-            U_view_count[j] = U_view_count[j] + 1;
-	    L_view_count[i] = L_view_count[i] + 1;
-          }
+        U_view_count[j] = U_view_count[j] + 1;
+        L_view_count[i] = L_view_count[i] + 1;
       }
+    }
    
     #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
@@ -821,126 +798,106 @@ namespace BaskerNS
     MALLOC_MATRIX_2DARRAY(LL, nblks);
     
     for(Int i=0; i < nblks; i++)
-      {
+    {
 
-	//Malloc each AU and AL subarray
-	BASKER_ASSERT(U_view_count(i)>0, "tree uvc");
-	MALLOC_MATRIX_VIEW_1DARRAY(AV(i), U_view_count(i));
-	BASKER_ASSERT(L_view_count(i)>0, "tree lvc");
-	MALLOC_MATRIX_VIEW_1DARRAY(AL(i), L_view_count(i));
+      //Malloc each AU and AL subarray
+      BASKER_ASSERT(U_view_count(i)>0, "tree uvc");
+      MALLOC_MATRIX_VIEW_1DARRAY(AV(i), U_view_count(i));
+      BASKER_ASSERT(L_view_count(i)>0, "tree lvc");
+      MALLOC_MATRIX_VIEW_1DARRAY(AL(i), L_view_count(i));
 
-	//Malloc each AU and AL matrix
-	BASKER_ASSERT(U_view_count(i)>0, "tree uvc2");
-	MALLOC_MATRIX_1DARRAY(AVM(i), U_view_count(i));
-	BASKER_ASSERT(L_view_count(i)>0, "tree lvv2");
-	MALLOC_MATRIX_1DARRAY(ALM(i), L_view_count(i));
+      //Malloc each AU and AL matrix
+      BASKER_ASSERT(U_view_count(i)>0, "tree uvc2");
+      MALLOC_MATRIX_1DARRAY(AVM(i), U_view_count(i));
+      BASKER_ASSERT(L_view_count(i)>0, "tree lvv2");
+      MALLOC_MATRIX_1DARRAY(ALM(i), L_view_count(i));
 
-	//Malloc each LU and LL subarray
-	MALLOC_MATRIX_1DARRAY(LU(i), U_view_count(i));
-	MALLOC_MATRIX_1DARRAY(LL(i), L_view_count(i));
+      //Malloc each LU and LL subarray
+      MALLOC_MATRIX_1DARRAY(LU(i), U_view_count(i));
+      MALLOC_MATRIX_1DARRAY(LL(i), L_view_count(i));
 
-	LU_size(i) = U_view_count(i);
-	LL_size(i) = L_view_count(i);
-	U_view_count(i) = 0;
-	L_view_count(i) = 0;
-	//printf("Setting size for blk: %d \n", i);
-      }
+      LU_size(i) = U_view_count(i);
+      LL_size(i) = L_view_count(i);
+      U_view_count(i) = 0;
+      L_view_count(i) = 0;
+    }
     
     //Loop over again and fill
     nnzblks = 0;
     for(Int i=0; i < nblks; i++)
+    {
+      for(Int j=i; j != flat.ncol; j=tree.treetab[j])
       {
-	for(Int j=i; j != flat.ncol; j=tree.treetab[j])
-	  {
-	    //printf("Accessing blks j: %d i: %d \n",
-	    //	   j, i);
+        MATRIX_VIEW_1DARRAY &Utemp = AV[j];
+        MATRIX_VIEW_1DARRAY &Ltemp = AL[i];
 
-	    MATRIX_VIEW_1DARRAY &Utemp = AV[j];
-	    MATRIX_VIEW_1DARRAY &Ltemp = AL[i];
+        MATRIX_1DARRAY &UMtemp = AVM[j];
+        MATRIX_1DARRAY &LMtemp = ALM[i];
 
-	    MATRIX_1DARRAY &UMtemp = AVM[j];
-	    MATRIX_1DARRAY &LMtemp = ALM[i];
+        MATRIX_1DARRAY &LUtemp = LU[j];
+        MATRIX_1DARRAY &LLtemp = LL[i];
 
-	    MATRIX_1DARRAY &LUtemp = LU[j];
-	    MATRIX_1DARRAY &LLtemp = LL[i];
+        //Init AU
+        Utemp[U_view_count[j]].init(&(flat), 
+            tree.col_tabs[i], 
+            (tree.col_tabs[i+1]-tree.col_tabs[i]),
+            tree.col_tabs[j], 
+            (tree.col_tabs[j+1]-tree.col_tabs[j])
+            );
 
+        UMtemp[U_view_count[j]].set_shape(
+            tree.col_tabs[i], 
+            (tree.col_tabs[i+1]-tree.col_tabs[i]),
+            tree.col_tabs[j], 
+            (tree.col_tabs[j+1]-tree.col_tabs[j])
+            );	
+        UMtemp[U_view_count[j]].init_col();
 
-	    //printf("Accessing blks j: %d i: %d \n",
-	    //	   j, i);
+        //Int LU
+        LUtemp[U_view_count[j]].set_shape(
+            tree.col_tabs[i], 
+            (tree.col_tabs[i+1]-tree.col_tabs[i]),
+            tree.col_tabs[j], 
+            (tree.col_tabs[j+1]-tree.col_tabs[j])
+            );	
 
+        U_view_count[j] = U_view_count[j]+1;
 
-	    //Init AU
-            Utemp[U_view_count[j]].init(&(flat), 
-                                     tree.col_tabs[i], 
-                (tree.col_tabs[i+1]-tree.col_tabs[i]),
-                                     tree.col_tabs[j], 
-                 (tree.col_tabs[j+1]-tree.col_tabs[j])
-                                     );
+        //Init AL
+        Ltemp[L_view_count[i]].init(&(flat),
+            tree.col_tabs[j],
+            (tree.col_tabs[j+1]-tree.col_tabs[j]),
+            tree.col_tabs[i],
+            (tree.col_tabs[i+1] - tree.col_tabs[i])
+            );
 
-	    UMtemp[U_view_count[j]].set_shape(
-			      tree.col_tabs[i], 
-                (tree.col_tabs[i+1]-tree.col_tabs[i]),
-                           tree.col_tabs[j], 
-                (tree.col_tabs[j+1]-tree.col_tabs[j])
-                                     );	
-	    UMtemp[U_view_count[j]].init_col();
+        LMtemp[L_view_count[i]].set_shape(
+            tree.col_tabs[j],
+            (tree.col_tabs[j+1]-tree.col_tabs[j]),
+            tree.col_tabs[i],
+            (tree.col_tabs[i+1] - tree.col_tabs[i])
+            );
+        LMtemp[L_view_count[i]].init_col();
 
-	    //Int LU
-	    LUtemp[U_view_count[j]].set_shape(
-					tree.col_tabs[i], 
-                           (tree.col_tabs[i+1]-tree.col_tabs[i]),
-                                     tree.col_tabs[j], 
-                           (tree.col_tabs[j+1]-tree.col_tabs[j])
-                                     );	
+        //Init LL
+        LLtemp[L_view_count[i]].set_shape(
+            tree.col_tabs[j],
+            (tree.col_tabs[j+1]-tree.col_tabs[j]),
+            tree.col_tabs[i],
+            (tree.col_tabs[i+1] - tree.col_tabs[i])
+            );
 
+        L_view_count[i] = L_view_count[i]+1;
 
-	    //printf("Done one\n");
-            U_view_count[j] = U_view_count[j]+1;
-	    //printf("Done two \n");
+        nnzblks++;
+      }//end over all inner
+    }//end over all blks
 
-	    //Init AL
-	    Ltemp[L_view_count[i]].init(&(flat),
-					tree.col_tabs[j],
-			  (tree.col_tabs[j+1]-tree.col_tabs[j]),
-					tree.col_tabs[i],
-			  (tree.col_tabs[i+1] - tree.col_tabs[i])
-					);
-	    
-	    LMtemp[L_view_count[i]].set_shape(
-					       tree.col_tabs[j],
-			  (tree.col_tabs[j+1]-tree.col_tabs[j]),
-					tree.col_tabs[i],
-			  (tree.col_tabs[i+1] - tree.col_tabs[i])
-					      );
-	    LMtemp[L_view_count[i]].init_col();
-
-	    //Init LL
-	    LLtemp[L_view_count[i]].set_shape(
-					      	tree.col_tabs[j],
-			  (tree.col_tabs[j+1]-tree.col_tabs[j]),
-					tree.col_tabs[i],
-			  (tree.col_tabs[i+1] - tree.col_tabs[i])
-					      );
-
-
-	    //printf("Done three \n");
-	    L_view_count[i] = L_view_count[i]+1;
-	    //printf("Done four \n");
-            nnzblks++;
-
-	    //#ifdef BASKER_DEBUG_TREE
-	    //printf("View, i: %d j %d, (%d %d) (%d %d) \n",
-	    //	   i, j, tree.col_tabs[i], (tree.col_tabs[i+1]-tree.col_tabs[i]),
-	    //	   tree.col_tabs[j], tree.col_tabs[j+1]-tree.col_tabs[j]);
-	    //#endif
-
-	  }//end over all inner
-      }//end over all blks
     FREE(U_view_count);
     FREE(L_view_count); 
-    //return 0;
   }//end matrix_to_view_2D()
   
+
   //Translate A -> B
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -948,7 +905,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &flat, 
    MATRIX_VIEW_2DARRAY &view
-   )
+  )
   {
 
     #ifdef BASKER_DEBUG_TREE
@@ -965,57 +922,54 @@ namespace BaskerNS
     MALLOC_MATRIX_VIEW_2DARRAY(view, nblks);
 
     for(Int i=0; i < nblks; i++)
+    {
+      for(Int j=i; j != flat.ncol; nnzblks++, j=(tree.treetab[j]))
       {
-        for(Int j=i; j != flat.ncol; nnzblks++, j=(tree.treetab[j]))
-          {
-            view_count[j] = view_count[j] + 1;
-          }
+        view_count[j] = view_count[j] + 1;
       }
+    }
    
     #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
     #endif    
   
     for(Int i=0; i < nblks; i++)
-      {
-	BASKER_ASSERT(view_count[i] > 0 , "tree vc matrix2");
-	MALLOC_MATRIX_VIEW_1DARRAY(view[i], view_count[i]);
-	LU_size[i] = view_count[i];
-        view_count[i] = 0;
-      }     
+    {
+      BASKER_ASSERT(view_count[i] > 0 , "tree vc matrix2");
+      MALLOC_MATRIX_VIEW_1DARRAY(view[i], view_count[i]);
+      LU_size[i] = view_count[i];
+      view_count[i] = 0;
+    }     
+
     nnzblks = 0;
     for(Int i=0; i < nblks; i++)
+    {
+      for(Int j=i; j != flat.ncol; j=tree.treetab[j])
       {
-	for(Int j=i; j != flat.ncol; j=tree.treetab[j])
-	  {
-            //M_V temp = view[j];
-	    MATRIX_VIEW_1DARRAY temp = view[j];
-            temp[view_count[j]].init(&(flat), 
-                                     tree.col_tabs[i], 
-                                     (tree.col_tabs[i+1] - tree.col_tabs[i]),
-                                     tree.col_tabs[j], 
-                                     (tree.col_tabs[j+1]-tree.col_tabs[j])
-                                     );
-            view_count[j] = view_count[j]+1;
-            nnzblks++;
-	  }
+        //M_V temp = view[j];
+        MATRIX_VIEW_1DARRAY temp = view[j];
+        temp[view_count[j]].init(&(flat), 
+            tree.col_tabs[i], 
+            (tree.col_tabs[i+1] - tree.col_tabs[i]),
+            tree.col_tabs[j], 
+            (tree.col_tabs[j+1]-tree.col_tabs[j])
+            );
+        view_count[j] = view_count[j]+1;
+        nnzblks++;
       }
+    }
+
     FREE(view_count);
-    //return 0;
   }//end matrix_to_views()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::find_2D_convert
   (
    BASKER_MATRIX &M
-   )
+  )
   {
-
-    //printf("\n\n\n----------------------------");
-    //printf("CALLED FIND 2D CONVERT");
-    // printf("-----------------------------\n\n\n");
-
     //This will scan the whle matrix and find the nnz and cuts
     //In parallel the values will be copied over
 
@@ -1025,190 +979,123 @@ namespace BaskerNS
     Int U_row = 0; //Upper Blk row
     Int c_idx = 0; //Col tab offset
 
-
-    //M.info();
-
     for(Int k = 0; k < M.ncol; ++k)
+    {
+      //Fast-forward to first column tab in this column
+      while(k >= tree.col_tabs(c_idx+1))
       {
-	
-	//Fast-forward to first column tab in this column
-	while(k >= tree.col_tabs(c_idx+1))
-	  {
-	    c_idx++;
-	    L_col++;
-	    U_col++;
-	  }
+        c_idx++;
+        L_col++;
+        U_col++;
+      }
 
-	//Get the first blks
-	L_row = 0;
-	U_row = 0;
-	Int r_idx = 0;
-	BASKER_BOOL start_col = BASKER_TRUE;
-	
-	//Debug
-	//printf("A2D start k: %d L: %d %d U: %d %d \n",
-	// k, L_col, L_row, U_col, U_row);
+      //Get the first blks
+      L_row = 0;
+      U_row = 0;
+      Int r_idx = 0;
+      BASKER_BOOL start_col = BASKER_TRUE;
 
-	//return 0;
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+      {
 
-	for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
-	  {
-	    
-	    Int j = M.row_idx(i);
-   
-	    //if(k==118800)
-	      {
-		//printf("CONVERT, i: %d j: %d \n",i, j);
-	      }
+        Int j = M.row_idx(i);
 
-	    //Get right blk
-	    while(j >= tree.row_tabs(r_idx+1))
-	      {
-	
-		//if(k==118800)
-		  {
-		    //printf("k: %d r_idx: %d j: %d row_t: %d \n",
-		    //	   k, r_idx, j, tree.row_tabs[r_idx+1]);
-		  }
-		if(j > k)
-		  {
-		    //printf("k: %d i: %d j: %d row: %d L_col: %d L_row: %d \n",
-		    //	   k,i,j,r_idx+1, L_col, L_row+1);
-		    //printf("row_tab: %d \n",
-		    //	   tree.row_tabs[r_idx+1]);
-		  
+        //Get right blk
+        while(j >= tree.row_tabs(r_idx+1))
+        {
+          if(j > k)
+          {
+            if((L_row+1 < LL_size(L_col)) &&
+                (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
+            {
+              L_row++;
+              BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
+              start_col = BASKER_TRUE;
+            }
+          }
+          else if(j <= k)
+          {
+            if((U_row+1 < LU_size(U_col)) &&
+                (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
+            {
+              U_row++;
+              BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
+              start_col = BASKER_TRUE;
+            }
+          }
+          r_idx++;
+        }
 
-		    if((L_row+1 < LL_size(L_col)) &&
-		       (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
-		      {
-			L_row++;
-			if(k==118800)
-			  {
-			    //printf("k: %d j: %d L: %d %d s: %d \n", 
-			    //k, j, L_col, L_row, LL_size[L_col]);
-			  }
-			BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
-			//printf("new start_col\n");
-			start_col = BASKER_TRUE;
-		      }
-		    //printf("here\n");
-		  }
-		else if(j <= k)
-		  {
-		    if((U_row+1 < LU_size(U_col)) &&
-		       (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
-		      {
-			U_row++;
-			//if(k==118800)
-			  {
-			    //printf("k: %d j: %d U: %d %d \n",
-			    //		     k, j , U_col, U_row);
-			  }
-			  BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
-			start_col = BASKER_TRUE;
-		      }
-		  }
-		r_idx++;
-	      }
+        //Get Matrix Ref
+        BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
+        BASKER_MATRIX &Utemp = AVM(U_col)(U_row);
+        Int bcol  = Ltemp.scol;
 
-	    //Get Matrix Ref
-	    BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
-	    BASKER_MATRIX &Utemp = AVM(U_col)(U_row);
-	    Int bcol  = Ltemp.scol;
-	    
-	    //Debug
-	    //if(U_col>61)
-	      {
-		//printf("A2D.  L: %d %d U %d %d \n", 
-		// L_col, L_row, 
-		// U_col, U_row);
-	      }
+        //diag blk
+        if((L_row==0)&&(U_row==LU_size(U_col)-1))
+        {
+          if(start_col == BASKER_TRUE)
+          {
+            Ltemp.col_ptr(k-bcol) = i;
+          }
+          Ltemp.nnz = Ltemp.nnz+1;
+        }
+        else //offdig
+        {
+          if(j > k)
+          {
+            if(start_col == BASKER_TRUE)
+            {
+              Ltemp.col_ptr(k-bcol) = i;
+            }
+            Ltemp.nnz = Ltemp.nnz+1;
+          }
 
-	    //diag blk
-	      if((L_row==0)&&(U_row==LU_size(U_col)-1))
-	      {
-		if(start_col == BASKER_TRUE)
-		  {
-		    //if(U_col>61)
-		      {
-			//printf("setting diag blk start: %d %d \n",
-			// k, i);
-		      }
-		    Ltemp.col_ptr(k-bcol) = i;
-		  }
-		Ltemp.nnz = Ltemp.nnz+1;
-	      }
-	    else //offdig
-	      {
+          if( j < k)
+          {
+            if(start_col == BASKER_TRUE)
+            {
+              Utemp.col_ptr(k-bcol) = i;
+            }
+            Utemp.nnz = Utemp.nnz+1;
+          }
 
-      
-		if(j > k)
-		  {
-		    if(start_col == BASKER_TRUE)
-		      {
-			//if(U_col>61)
-			  {
-			    //	printf("setting L : %d %d \n",
-			    // k, i);
-			  }
-			Ltemp.col_ptr(k-bcol) = i;
-		      }
-		    Ltemp.nnz = Ltemp.nnz+1;
-		  }
-	   
-		if( j < k)
-		  {
-		    if(start_col == BASKER_TRUE)
-		      {
-			//if(U_col>61)
-			  {
-			    //printf("setting U: %d %d \n",
-			    // k, i);
-			  }
-			Utemp.col_ptr(k-bcol) = i;
-		      }
-		    Utemp.nnz = Utemp.nnz+1;
-		  }
-		
-		if(j == k)
-		  {
-//		    printf("Error: L: %d %d U: %d %d Usize: %d \n",L_col, L_row, U_col, U_row, LU_size[U_col]);
-        std::cout << "Error: L: " << L_col << " " << L_row
-                  << " U: " << U_col << " " << U_row
-                  << " Usize: " << LU_size[U_col] 
-                  << std::endl;
-		    BASKER_ASSERT(0==1, "A2D offdiag blk with diag element");
-		  }
-	      }
-	    start_col = BASKER_FALSE;
-	    
-	  }//over each row	
+          if(j == k)
+          {
+            // printf("Error: L: %d %d U: %d %d Usize: %d \n",L_col, L_row, U_col, U_row, LU_size[U_col]);
+            std::cout << "Error: L: " << L_col << " " << L_row
+              << " U: " << U_col << " " << U_row
+              << " Usize: " << LU_size[U_col] 
+              << std::endl;
+            BASKER_ASSERT(0==1, "A2D offdiag blk with diag element");
+          }
+        }
+        start_col = BASKER_FALSE;
 
-      }//over each colunm
-   
+      }//over each row	
 
-
-    //printf("\n\n 2D Convert over \n\n");
+    }//over each colunm
 
   }//end find_2d_convert()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::clean_2d()
   {
-    
+
     for(Int b = 0 ; b < tree.nblks; ++b)
+    {
+      for(Int sb = 0; sb < LL_size(b); ++sb)
       {
-	for(Int sb = 0; sb < LL_size(b); ++sb)
-	  {
-	    ALM(b)(sb).clean_col();
-	  }
-	for(Int sb = 0; sb < LU_size(b); ++sb)
-	  {
-	    AVM(b)(sb).clean_col();
-	  }
-      }//for - over all blks
-    
+        ALM(b)(sb).clean_col();
+      }
+      for(Int sb = 0; sb < LU_size(b); ++sb)
+      {
+        AVM(b)(sb).clean_col();
+      }
+    }//for - over all blks
+
     return 0;
   }//end clean_2d
 
@@ -1217,139 +1104,102 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy()
   {
-    printf("sfactor_copy debug\n");
-    //ALM(0)(0).info();
-
-    //A.print();
     //Reorder A;
     //Match order
     if(match_flag == BASKER_TRUE)
-      {
-	//printf("Test order_mactch_array(0): %d %d \n",
-	//       order_match_array(0),
-	//      order_match_array(1));
+    {
+      permute_row(A,order_match_array);
+      sort_matrix(A);
+    }
 
-        
-        //printf("match_flag\n");
-	permute_row(A,order_match_array);
-	sort_matrix(A);
-      }
     //BTF order
     if(btf_flag == BASKER_TRUE)
-      {
-	//printf("Test order_btf_array(0): %d %d: \n",
-	//       order_btf_array(0),
-	//       order_btf_array(1));
+    {
+      permute_col(A,order_btf_array);
+      permute_row(A,order_btf_array);
+      break_into_parts(A, btf_nblks, btf_tabs);
+    }
 
-        //printf("btf_flag\n");
-	permute_col(A,order_btf_array);
-	permute_row(A,order_btf_array);
-	break_into_parts(A, btf_nblks, btf_tabs);
-      }
     //ND order
     if(nd_flag == BASKER_TRUE)
+    {
+      if(btf_tabs_offset != 0)
       {
+        sort_matrix(BTF_A);
 
-        //printf("nd_flag \n");
+        //Permute the A
+        permute_row(BTF_A, part_tree.permtab);
+        permute_col(BTF_A, part_tree.permtab);
 
-	if(btf_tabs_offset != 0)
-	  {
-	//printf("Test order_nd_array(0): %d %d: \n",
-	//       part_tree.permtab(0),
-	//       part_tree.permtab(1));
-	
+        //Permute the B
+        if(btf_nblks > 1)
+        {
+          permute_row(BTF_B, part_tree.permtab);
+        }
 
-	//BTF_A.print();
-	
-	sort_matrix(BTF_A);
-	//Permute the A
-	permute_row(BTF_A, part_tree.permtab);
-	permute_col(BTF_A, part_tree.permtab);
-	//Permute the B
-	if(btf_nblks > 1)
-	  {
-	    permute_row(BTF_B, part_tree.permtab);
-	  }
-	sort_matrix(BTF_A);
-	if(btf_nblks > 1)
-	  {
-	    sort_matrix(BTF_B);
-	    sort_matrix(BTF_C);
-	  }
-	  }
+        sort_matrix(BTF_A);
+        if(btf_nblks > 1)
+        {
+          sort_matrix(BTF_B);
+          sort_matrix(BTF_C);
+        }
       }
+    }
+
     //AMD
     if(amd_flag == BASKER_TRUE)
+    {
+      if(btf_tabs_offset != 0)
       {
-	
-        //printf("amd flag \n");
+        //Permute A
+        permute_col(BTF_A, order_csym_array);
+        sort_matrix(BTF_A);
+        permute_row(BTF_A, order_csym_array);
+        sort_matrix(BTF_A);
 
-	if(btf_tabs_offset != 0)
-	  {
-
-	//printf("Test order_amd_array(0): %d %d: \n",
-	//       order_csym_array(0),
-	//       order_csym_array(1));
-
-	//Permute A
-	permute_col(BTF_A, order_csym_array);
-	sort_matrix(BTF_A);
-	permute_row(BTF_A, order_csym_array);
-	sort_matrix(BTF_A);
-       
-	//Permute B
-	if(btf_nblks > 1)
-	  {
-	permute_row(BTF_B, order_csym_array);
-	sort_matrix(BTF_B);
-	  }
-	  }
+        //Permute B
+        if(btf_nblks > 1)
+        {
+          permute_row(BTF_B, order_csym_array);
+          sort_matrix(BTF_B);
+        }
       }
-
-    
-    //printf("ALM after perms\n");
-    //ALM(0)(0).info();
+    }
 
     if(btf_tabs_offset != 0)
-      {
-    //=====Move into 2D ND-Structure====/
-    //Find submatices view shapes
-    clean_2d();
-    //printf("Done with clean 2d\n");
-    //ALM(0)(0).info();
-    //matrix_to_views_2D(BTF_A);
-    //Find starting point
-    find_2D_convert(BTF_A);
-    //printf("done with 2d convert \n");
-    //ALM(0)(0).info();
-    //Fill 2D structure
-    #ifdef BASKER_KOKKOS
-    kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-    Kokkos::fence();
-    #else
-    //Comeback
-    #endif
-      }
+    {
+      //=====Move into 2D ND-Structure====/
+      //Find submatices view shapes
+      clean_2d();
 
+      //matrix_to_views_2D(BTF_A);
+      //Find starting point
+      find_2D_convert(BTF_A);
+
+      //Fill 2D structure
+      #ifdef BASKER_KOKKOS
+      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
+      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+      Kokkos::fence();
+      #else
+      //Comeback
+      #endif
+    }
 
     if(btf_nblks > 1)
+    {
+      sort_matrix(BTF_C);
+      permute_col(BTF_C, order_c_csym_array);
+      sort_matrix(BTF_C);
+      permute_row(BTF_C, order_c_csym_array);
+      sort_matrix(BTF_C);
+
+      if(btf_tabs_offset != 0)
       {
-	sort_matrix(BTF_C);
-	permute_col(BTF_C, order_c_csym_array);
-	sort_matrix(BTF_C);
-	permute_row(BTF_C, order_c_csym_array);
-	sort_matrix(BTF_C);
-	
-
-	if(btf_tabs_offset != 0)
-	  {
-	    permute_col(BTF_B, order_c_csym_array);	
-	    sort_matrix(BTF_B);
-	  }
-
+        permute_col(BTF_B, order_c_csym_array);	
+        sort_matrix(BTF_B);
       }
-
+    }
 
     //test
     //printMTX("A_BTF.mtx", BTF_A);
@@ -1371,6 +1221,7 @@ namespace BaskerNS
       permute_row(A,order_match_array);
       sort_matrix(A);
     }
+
     //BTF order
     if(btf_flag == BASKER_TRUE)
     {
@@ -1386,30 +1237,29 @@ namespace BaskerNS
 
       break_into_parts2(A, btf_nblks, btf_tabs);
     }
+
     //ND order
     if(nd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
-        printf("nd copy \n");
+      { printf("nd copy \n"); }
 
       if(btf_tabs_offset != 0)
       {
-        //printf("Test order_nd_array(0): %d %d: \n",
-        // part_tree.permtab(0),
-        // part_tree.permtab(1));
-
-        //BTF_A.print();
-
         sort_matrix(BTF_A);
+
         //Permute the A
         permute_row(BTF_A, part_tree.permtab);
         permute_col(BTF_A, part_tree.permtab);
+
         //Permute the B
         if(btf_nblks > 1)
         {
           permute_row(BTF_B, part_tree.permtab);
         }
+
         sort_matrix(BTF_A);
+
         if(btf_nblks > 1)
         {
           sort_matrix(BTF_B);
@@ -1417,18 +1267,15 @@ namespace BaskerNS
         }
       }
     }
+
     //AMD
     if(amd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
-      {printf("amd copy \n");}
+      { printf("amd copy \n"); }
 
       if(btf_tabs_offset != 0)
       {
-        //printf("Test order_amd_array(0): %d %d: \n",
-        // order_csym_array(0),
-        // order_csym_array(1));
-
         //Permute A
         permute_col(BTF_A, order_csym_array);
         sort_matrix(BTF_A);
@@ -1448,24 +1295,22 @@ namespace BaskerNS
       //=====Move into 2D ND-Structure====/
       //Find submatices view shapes
       if(Options.verbose == BASKER_TRUE)
-      {printf("btf tabs reorder\n");}
+      { printf("btf tabs reorder\n"); }
 
       clean_2d();
-      //printf("Done with clean 2d\n");
-      //ALM(0)(0).info();
+
       //matrix_to_views_2D(BTF_A);
       //Find starting point
       find_2D_convert(BTF_A);
-      //printf("done with 2d convert \n");
-      //ALM(0)(0).info();
+
       //Fill 2D structure
-#ifdef BASKER_KOKKOS
+      #ifdef BASKER_KOKKOS
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
-#else
+      #else
       //Comeback
-#endif
+      #endif
     }
 
     if(btf_nblks > 1)

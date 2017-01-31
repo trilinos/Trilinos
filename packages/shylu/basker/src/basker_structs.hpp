@@ -72,23 +72,23 @@ namespace BaskerNS
     Int ** volatile token;
 
     BASKER_INLINE
-      void init_token(const Int size)
+    void init_token(const Int size)
+    {
+      printf("token size: %ld \n", (long)size);
+      token = (Int **)malloc(size*sizeof(Int*));
+      for(Int i = 0; i < size; i++)
       {
-        printf("token size: %ld \n", (long)size);
-        token = (Int **)malloc(size*sizeof(Int*));
-        for(Int i = 0; i < size; i++)
-        {
-          token[i] = (Int *)malloc(8*sizeof(Int));
-          token[i][0] = 0;
-          token[i][1] = 0;
-          token[i][2] = 0;
-          token[i][3] = 0;
-          token[i][4] = 0;
-          token[i][5] = 0;
-          token[i][6] = 0;
-          token[i][7] = 0;
-        }
+        token[i] = (Int *)malloc(8*sizeof(Int));
+        token[i][0] = 0;
+        token[i][1] = 0;
+        token[i][2] = 0;
+        token[i][3] = 0;
+        token[i][4] = 0;
+        token[i][5] = 0;
+        token[i][6] = 0;
+        token[i][7] = 0;
       }
+    }
 
 
     Int ops_counts[10][10];
@@ -123,34 +123,40 @@ namespace BaskerNS
     }//end ~basker_tree
 
     BASKER_INLINE
-      void Finalize()
+    void Finalize()
+    {
+      //printf("basker_tree Finalize todo \n");
+      if(nroots > 0)
       {
-        //printf("basker_tree Finalize todo \n");
-        if(nroots > 0)
-        {
-          FREE_INT_1DARRAY(roots);
-        }
-        if(nblks > 0)
-        {
-          FREE_INT_1DARRAY(permtab);
-          FREE_INT_1DARRAY(ipermtab);
-          FREE_INT_1DARRAY(row_tabs);
-          FREE_INT_1DARRAY(col_tabs);
-          FREE_INT_1DARRAY(lvlset);
-          FREE_INT_1DARRAY(treetab);
-          FREE_INT_1DARRAY(lvltreetabs);
-          FREE_INT_1DARRAY(treeptr);
-          FREE_INT_1DARRAY(rowptr);
-          FREE_INT_1DARRAY(child);
-          FREE_INT_1DARRAY(sibling);
-        }
-      }//end Finalize();
+        FREE_INT_1DARRAY(roots);
+      }
+      if(nblks > 0)
+      {
+        FREE_INT_1DARRAY(permtab);
+        FREE_INT_1DARRAY(ipermtab);
+        FREE_INT_1DARRAY(row_tabs);
+        FREE_INT_1DARRAY(col_tabs);
+        FREE_INT_1DARRAY(lvlset);
+        FREE_INT_1DARRAY(treetab);
+        FREE_INT_1DARRAY(lvltreetabs);
+        FREE_INT_1DARRAY(treeptr);
+        FREE_INT_1DARRAY(rowptr);
+        FREE_INT_1DARRAY(child);
+        FREE_INT_1DARRAY(sibling);
+      }
+    }//end Finalize();
 
     BASKER_INLINE
-    void basic_convert(Int _m, Int *_perm, Int _nblks,
-		       Int _parts, 
-		       Int *_row_tabs, Int *_col_tabs,
-		       Int *_treetab)
+    void basic_convert
+    (
+     Int _m, 
+     Int *_perm, 
+     Int _nblks,
+     Int _parts, 
+     Int *_row_tabs, 
+     Int *_col_tabs,
+     Int *_treetab
+    )
     {
       nblks = _nblks;
       //For now defaulting parts to 2
@@ -247,7 +253,6 @@ namespace BaskerNS
       U_col_counts_flg = 0;
       S_col_counts_flg = 0;
       S_row_counts_flg = 0;
-
     }
 
     ~basker_symbolic_tree()
@@ -261,66 +266,66 @@ namespace BaskerNS
       //This can be removed to use only in sfactor stage than delete
       //printf("basker_symbolic_tree finalize todo \n");
       if(parent_flg > 0)
-        {
-          FREE_INT_1DARRAY(parent);
-        }
+      {
+        FREE_INT_1DARRAY(parent);
+      }
       if(post_flg > 0)
-        {
-          FREE_INT_1DARRAY(post);
-        }
+      {
+        FREE_INT_1DARRAY(post);
+      }
       if(col_ptr_flg > 0)
-        {
-          FREE_INT_1DARRAY(col_ptr);
-        }
+      {
+        FREE_INT_1DARRAY(col_ptr);
+      }
       if(left_most_flg > 0)
-        {
-          FREE_INT_1DARRAY(left_most);
-        }
+      {
+        FREE_INT_1DARRAY(left_most);
+      }
       if(row_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(row_counts);
-        }
+      {
+        FREE_INT_1DARRAY(row_counts);
+      }
       if(col_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(col_counts);
-        }
+      {
+        FREE_INT_1DARRAY(col_counts);
+      }
       if(WS_flg > 0)
-        {
-          FREE_INT_1DARRAY(WS);
-        }
+      {
+        FREE_INT_1DARRAY(WS);
+      }
       if(S_col_flg > 0)
-        {
-          FREE_INT_1DARRAY(S_col);
-        }
+      {
+        FREE_INT_1DARRAY(S_col);
+      }
       if(S_row_flg > 0)
-        {
-          FREE_INT_1DARRAY(S_row);
-        }
+      {
+        FREE_INT_1DARRAY(S_row);
+      }
       if(L_row_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(L_row_counts);
-        }
+      {
+        FREE_INT_1DARRAY(L_row_counts);
+      }
       if(L_col_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(L_col_counts);
-        }
+      {
+        FREE_INT_1DARRAY(L_col_counts);
+      }
       if(U_row_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(U_row_counts);
-        }
+      {
+        FREE_INT_1DARRAY(U_row_counts);
+      }
       if(U_col_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(U_col_counts);
-        }
+      {
+        FREE_INT_1DARRAY(U_col_counts);
+      }
       if(S_col_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(S_col_counts);
-        }
+      {
+        FREE_INT_1DARRAY(S_col_counts);
+      }
       if(S_row_counts_flg > 0)
-        {
-          FREE_INT_1DARRAY(S_row_counts);
-        }
- 
+      {
+        FREE_INT_1DARRAY(S_row_counts);
+      }
+
     }//end Finalize()
     
     BASKER_INLINE
@@ -815,7 +820,7 @@ namespace BaskerNS
     BASKER_INT   incomplete_type;
     BASKER_INT   inc_lvl;
     BASKER_ENTRY inc_tol;    //Not Used
-//    BASKER_ENTRY user_fill;
+    //BASKER_ENTRY user_fill;
     double user_fill;
     
     /* ---- todo add more ----*/

@@ -24,15 +24,14 @@ int main(int argc, char* argv[])
   Int nthreads = atoi(argv[1]);
   std::string mname = std::string(argv[2]);
   std::string vname;
-  
 
   //Load inital information
   //Matrix
   Int m, n, nnz; 
   m = n = nnz = 0;
-  Int *col_ptr, *row_idx;
-  Entry *val;
-  col_ptr = NULL;
+  Int *col_ptr = nullptr;
+  Int *row_idx = nullptr;
+  Entry *val = nullptr;
   
   std::cout << "Matrix read" << std::endl;
   double rmatrix = myTime();
@@ -52,7 +51,6 @@ int main(int argc, char* argv[])
 
   if(argc == 4)
   {
-
     vname = std::string(argv[3]);
     //std::cout << "reading vector " << vname << std::endl;
     readVector<Int,Entry>(vname, vm, &y);
@@ -135,22 +133,10 @@ int main(int argc, char* argv[])
     {
       xhat[i] = y[i] - xhat[i];
     }
-    
-    /*
-    for(Int i = 0; i < n; i++)
-      {
-	std::cout << "idx: " << i
-	          << "x: " << x[i]
-		  << " xhat: " << xhat[i]
-		  << " y: " << y[i]
-		  << std::endl;
-      }
-    */
 
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
-    
 
     /*
     //Refactor
@@ -166,14 +152,13 @@ int main(int argc, char* argv[])
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
     for(Int i = 0; i < m; i++)
-      {
-	xhat[i] = y[i] - xhat[i];
-      }
+    {
+    	xhat[i] = y[i] - xhat[i];
+    }
     
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
-
     */
     //mybasker.GetPerm()
     mybasker.Finalize();

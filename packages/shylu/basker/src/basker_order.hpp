@@ -35,12 +35,10 @@ namespace BaskerNS
    Int parts, 
    Int *row_tabs, Int *col_tabs,
    Int *tree_tabs
-   )
+  )
   {
-
     //init tree structure
-    init_tree(perm, nblks, parts, row_tabs, 
-	      col_tabs, tree_tabs,0);
+    init_tree(perm, nblks, parts, row_tabs, col_tabs, tree_tabs,0);
 
     //Find 2D structure
     matrix_to_views_2D(A);
@@ -80,17 +78,13 @@ namespace BaskerNS
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
 
-
     printf("outter num_threads:%d \n", num_threads);
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, 0);
     find_btf(A); 
-
    
-    
     if(btf_tabs_offset != 0)
     {
-
       //  printf("A/B block stuff called\n");
       //3. ND on BTF_A
       //currently finds ND and permute BTF_A
@@ -121,7 +115,6 @@ namespace BaskerNS
       //thread counts
       init_tree_thread();
 
-
       //5. Permute BTF_A
       //Constrained symamd on A
       INT_1DARRAY cmember;
@@ -150,7 +143,6 @@ namespace BaskerNS
       sort_matrix(BTF_A);
       //printMTX("A_BTF_AMD.mtx", BTF_A);
 
-
       if(btf_nblks > 1)
       {
         permute_row(BTF_B, order_csym_array);
@@ -159,7 +151,6 @@ namespace BaskerNS
         sort_matrix(BTF_C);
         //printMTX("C_BTF_AMD.mtx", BTF_C);
       }
-
 
       //6. Move to 2D Structure
       //finds the shapes for both view and submatrices,
@@ -175,11 +166,9 @@ namespace BaskerNS
 #else
       //Comeback
 #endif
-
       //printMTX("BTF_A.mtx", BTF_A); 
 
     }//if btf_tab_offset == 0
-
     
     if(btf_nblks > 1)
     {
@@ -212,8 +201,6 @@ namespace BaskerNS
       //printMTX("BTF_C.mtx", BTF_C);
     }
     
-    //printf("Done with ordering\n");
-    
     return 0;
   }//end btf_order
 
@@ -233,7 +220,6 @@ namespace BaskerNS
     match_ordering(0);
     sort_matrix(A); //May want to remove? (need)
 
-   
     //2. BTF ordering on whole matrix
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
@@ -241,20 +227,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, (Int)0);
   
-
     find_btf2(A); 
-
-    //TEst 
-    //sort_matrix(BTF_A);
-    //printMTX("A_TEST.mtx", BTF_A);
-    //sort_matrix(BTF_C);
-
-    //btf_tabs_offset = 0;
-    //btf_tabs
-    
-    //std::cout << "Order Timer 1: "
-    //	      << timer_one.seconds()
-    //	      << std::endl;
 
     if((btf_tabs_offset != 0) )
     {
@@ -293,7 +266,6 @@ namespace BaskerNS
       //thread counts
       init_tree_thread();
 
-
       //5. Permute BTF_A
       //Constrained symamd on A
       INT_1DARRAY cmember;
@@ -321,9 +293,7 @@ namespace BaskerNS
       permute_row(BTF_A, order_csym_array);
       sort_matrix(BTF_A);
 
-
       //printMTX("A_BTF_AMD1.mtx", BTF_A);
-
 
       if(btf_nblks > 1)
       {
@@ -332,9 +302,7 @@ namespace BaskerNS
         //printMTX("B_BTF_AMD.mtx", BTF_B);
         sort_matrix(BTF_C);
         //printMTX("C_BTF_AMD.mtx", BTF_C);
-
       }
-
 
       //printMTX("BTF_A.mtx", BTF_A);
 
@@ -353,15 +321,8 @@ namespace BaskerNS
 #else
       //Comeback
 #endif
-
-      /*
-         printf("===PRINT==\n");
-         printMTX("BTF_A.mtx", BTF_A); 
-         */
-
     }//if btf_tab_offset == 0
 
-    
     if(btf_nblks > 1)
     {
       sort_matrix(BTF_C);
@@ -370,7 +331,6 @@ namespace BaskerNS
         printMTX("C_Symbolic.mtx", BTF_C);
       }
       //Permute C
-
 
       /*
          MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
@@ -505,7 +465,6 @@ namespace BaskerNS
     return;
   }
 
-
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry,Exe_Space>::partition(int option)
@@ -526,8 +485,6 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry,Exe_Space>::match_ordering(int option)
   {
-    //printf("match_order called\n");
-
     /* ---- Tests --------
 
        INT_1DARRAY mperm;
@@ -542,7 +499,7 @@ namespace BaskerNS
 
        return 0;
 
-*/
+    */
 
     //You would think a match order would help!
     //It does not!
@@ -599,8 +556,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::scotch_partition
-  (BASKER_MATRIX &M)
+  int Basker<Int, Entry, Exe_Space>::scotch_partition( BASKER_MATRIX &M )
   { 
     nd_flag = BASKER_TRUE;
 
@@ -621,8 +577,6 @@ namespace BaskerNS
 
     nd_flag = BASKER_TRUE;
     //permute
-    //permute_col(M, part_tree.permtab);
-    ///permute_row(M, part_tree.permtab);
     permute_row(M, part_tree.permtab);
     permute_col(M, part_tree.permtab);
 
@@ -637,7 +591,7 @@ namespace BaskerNS
    INT_1DARRAY vec,
    INT_1DARRAY p,
    Int n
-   )
+  )
   {
     INT_1DARRAY temp;
     MALLOC_INT_1DARRAY(temp,n);
@@ -665,7 +619,7 @@ namespace BaskerNS
    ENTRY_1DARRAY vec,
    INT_1DARRAY   p, 
    Int n
-   )
+  )
   {
     ENTRY_1DARRAY temp;
     MALLOC_ENTRY_1DARRAY(temp, n);
@@ -698,7 +652,7 @@ namespace BaskerNS
    Int n, //size(vec) //size(vec) > size(p)
    Int m, //size(p)
    Int start
-   )
+  )
   {
     if(m > n)
     {
@@ -735,7 +689,7 @@ namespace BaskerNS
    ENTRY_1DARRAY vec,
    INT_1DARRAY   p, 
    Int n
-   )
+  )
   {
     ENTRY_1DARRAY temp;
     MALLOC_ENTRY_1DARRAY(temp, n);
@@ -745,14 +699,12 @@ namespace BaskerNS
     for(Int i = 0; i < n; i++)
     {
       temp(i) = vec(p(i));
-      //temp(p(i)) = vec(i);
     }
     //Copy back
     for(Int i = 0; i < n; i++)
     {
       vec(i) = temp(i);
     }
-
 
     FREE_ENTRY_1DARRAY(temp);
 
@@ -770,7 +722,7 @@ namespace BaskerNS
    Int n, //n = size(vec) //n > m 
    Int m,  //m = size(p) 
    Int start
-   )
+  )
   {
 
     if(m > n)
@@ -787,7 +739,6 @@ namespace BaskerNS
     for(Int i = 0; i < n; i++)
     {
       temp(i) = vec(p(i));
-      //temp(p(i)) = vec(i);
     }
     //Copy back
     for(Int i = 0; i < n; i++)
@@ -816,103 +767,102 @@ namespace BaskerNS
   }//end permute(int, int)
 
 
-
   // NDE - added functions for solve performance improvements
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute_inv_and_init_for_solve
-    (
-     Entry* y,
-     ENTRY_1DARRAY &xcon,
-     ENTRY_1DARRAY &ycon,
-     INT_1DARRAY  &p, 
-     Int n
-    )
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_inv_and_init_for_solve
+  (
+   Entry* y,
+   ENTRY_1DARRAY &xcon,
+   ENTRY_1DARRAY &ycon,
+   INT_1DARRAY  &p, 
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; i++)
     {
-      //Permute
-      for(Int i = 0; i < n; i++)
-      {
-        xcon(p(i))  = y[i];
-        ycon(i)    = (Entry) 0.0;
-      }
-      return 0;
+      xcon(p(i))  = y[i];
+      ycon(i)    = (Entry) 0.0;
     }
+    return 0;
+  }
 
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute_and_finalcopy_after_solve
-    (
-     Entry* x,
-     ENTRY_1DARRAY &xconv,
-     ENTRY_1DARRAY &yconv,
-     INT_1DARRAY  &p,
-     Int n
-    )
-    {
-      //Permute
-      for(Int i = 0; i < btf_tabs(btf_tabs_offset); i++)
-      { x[i] = xconv(p(i)); }
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_and_finalcopy_after_solve
+  (
+   Entry* x,
+   ENTRY_1DARRAY &xconv,
+   ENTRY_1DARRAY &yconv,
+   INT_1DARRAY  &p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < btf_tabs(btf_tabs_offset); i++)
+    { x[i] = xconv(p(i)); }
 
-      for(Int i = btf_tabs(btf_tabs_offset); i < n; i++)
-      { x[i] = yconv(p(i)); }
+    for(Int i = btf_tabs(btf_tabs_offset); i < n; i++)
+    { x[i] = yconv(p(i)); }
 
-      return 0;
-    }
-
-  template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute
-    (
-     Entry* vec,
-     INT_1DARRAY   p,
-     Int n
-    )
-    {
-      ENTRY_1DARRAY temp;
-      MALLOC_ENTRY_1DARRAY(temp, n);
-      init_value(temp, n, (Entry) 0.0);
-
-      //Permute
-      for(Int i = 0; i < n; i++)
-      {
-        temp(i) = vec[p(i)];
-      }
-      //Copy back
-      for(Int i = 0; i < n; i++)
-      {
-        vec[i] = temp(i);
-      }
-      FREE_ENTRY_1DARRAY(temp);
-      return 0;
-    }
+    return 0;
+  }
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute
-    (
-     INT_1DARRAY vec,
-     INT_1DARRAY   p,
-     Int n
-    )
-    {
-      INT_1DARRAY temp;
-      MALLOC_INT_1DARRAY(temp, n);
-      init_value(temp, n, (Int) 0);
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute
+  (
+   Entry* vec,
+   INT_1DARRAY   p,
+   Int n
+  )
+  {
+    ENTRY_1DARRAY temp;
+    MALLOC_ENTRY_1DARRAY(temp, n);
+    init_value(temp, n, (Entry) 0.0);
 
-      //Permute
-      for(Int i = 0; i < n; i++)
-      {
-        temp(i) = vec(p(i));
-      }
-      //Copy back
-      for(Int i = 0; i < n; i++)
-      {
-        vec(i) = temp(i);
-      }
-      FREE_INT_1DARRAY(temp);
-      return 0;
+    //Permute
+    for(Int i = 0; i < n; i++)
+    {
+      temp(i) = vec[p(i)];
     }
+    //Copy back
+    for(Int i = 0; i < n; i++)
+    {
+      vec[i] = temp(i);
+    }
+    FREE_ENTRY_1DARRAY(temp);
+    return 0;
+  }
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute
+  (
+   INT_1DARRAY vec,
+   INT_1DARRAY   p,
+   Int n
+  )
+  {
+    INT_1DARRAY temp;
+    MALLOC_INT_1DARRAY(temp, n);
+    init_value(temp, n, (Int) 0);
+
+    //Permute
+    for(Int i = 0; i < n; i++)
+    {
+      temp(i) = vec(p(i));
+    }
+    //Copy back
+    for(Int i = 0; i < n; i++)
+    {
+      vec(i) = temp(i);
+    }
+    FREE_INT_1DARRAY(temp);
+    return 0;
+  }
 
   // NDE: permute_with_workspace
   //      this routine uses a pre-allocated array 
@@ -920,236 +870,236 @@ namespace BaskerNS
   //      the workspace size is gn; may want to force that here, 
   //      or init value < gn - n (input) to 0
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute_with_workspace
-    (
-     INT_1DARRAY & vec,
-     INT_1DARRAY & p,
-     Int n
-    )
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_with_workspace
+  (
+   INT_1DARRAY & vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; i++)
     {
-      //Permute
-      for(Int i = 0; i < n; i++)
-      {
-        perm_comp_iworkspace_array(i) = vec(p(i));
-      }
-      //Copy back
-      for(Int i = 0; i < n; i++)
-      {
-        vec(i) = perm_comp_iworkspace_array(i);
-      }
-      return BASKER_SUCCESS;
+      perm_comp_iworkspace_array(i) = vec(p(i));
     }
+    //Copy back
+    for(Int i = 0; i < n; i++)
+    {
+      vec(i) = perm_comp_iworkspace_array(i);
+    }
+    return BASKER_SUCCESS;
+  }
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int,Entry, Exe_Space>::permute_inv_with_workspace
-    (
-     INT_1DARRAY & vec,
-     INT_1DARRAY & p,
-     Int n
-    )
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::permute_inv_with_workspace
+  (
+   INT_1DARRAY & vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; ++i)
     {
-      //Permute
-      for(Int i = 0; i < n; ++i)
-      {
-        perm_comp_iworkspace_array(p(i)) = vec(i);
-      }
-      //Copy back
-      for(Int i = 0; i < n; ++i)
-      {
-        vec(i) = perm_comp_iworkspace_array(i);
-      }
-
-      return BASKER_SUCCESS;
+      perm_comp_iworkspace_array(p(i)) = vec(i);
     }
+    //Copy back
+    for(Int i = 0; i < n; ++i)
+    {
+      vec(i) = perm_comp_iworkspace_array(i);
+    }
+
+    return BASKER_SUCCESS;
+  }
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int, Entry, Exe_Space>::permute_with_workspace
-    (
-     ENTRY_1DARRAY & vec,
-     INT_1DARRAY & p,
-     Int n
-    )
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_with_workspace
+  (
+   ENTRY_1DARRAY & vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; i++)
     {
-      //Permute
-      for(Int i = 0; i < n; i++)
-      {
-        perm_comp_fworkspace_array(i) = vec(p(i));
-      }
-      //Copy back
-      for(Int i = 0; i < n; i++)
-      {
-        vec(i) = perm_comp_fworkspace_array(i);
-      }
-      return BASKER_SUCCESS;
+      perm_comp_fworkspace_array(i) = vec(p(i));
     }
+    //Copy back
+    for(Int i = 0; i < n; i++)
+    {
+      vec(i) = perm_comp_fworkspace_array(i);
+    }
+    return BASKER_SUCCESS;
+  }
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    int Basker<Int,Entry, Exe_Space>::permute_inv_with_workspace
-    (
-     ENTRY_1DARRAY & vec,
-     INT_1DARRAY & p,
-     Int n
-    )
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::permute_inv_with_workspace
+  (
+   ENTRY_1DARRAY & vec,
+   INT_1DARRAY & p,
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; ++i)
     {
-      //Permute
-      for(Int i = 0; i < n; ++i)
-      {
-        perm_comp_fworkspace_array(p(i)) = vec(i);
-      }
-      //Copy back
-      for(Int i = 0; i < n; ++i)
-      {
-        vec(i) = perm_comp_fworkspace_array(i);
-      }
-
-      return BASKER_SUCCESS;
+      perm_comp_fworkspace_array(p(i)) = vec(i);
     }
+    //Copy back
+    for(Int i = 0; i < n; ++i)
+    {
+      vec(i) = perm_comp_fworkspace_array(i);
+    }
+
+    return BASKER_SUCCESS;
+  }
 
 
 
   template <class Int, class Entry, class Exe_Space>
-    BASKER_INLINE
-    void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve ()
+  BASKER_INLINE
+  void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve ()
+  {
+
+    for(Int i = 0; i < gn; i++) // Move this to a different init function
     {
-
-      for(Int i = 0; i < gn; i++) // Move this to a different init function
-      {
-        perm_inv_comp_array(i) = i; 
-        perm_comp_array(i) = i;
-      }
-
-      // perm_inv_comp_array calculation
-      //
-      // This replaces the inverse perms in solve_interface
-      // i.e. (...o p2^-1 o p1^-1)(v) = (p1 o p2 o ... )^-1(v)
-      // BUT only p1 o p2 o ... is computed here and stored in perm_inv_comp_array 
-      // In solve_interface, the inverse of this composition will be applied to v
-      //
-      // Note: The order had to be reversed as well as the type of permutation call
-      //
-      // p6 inv
-//      permute(perm_inv_comp_array , gperm, gn);
-
-      // p5 inv
-      // NDE: This is moved out and initialized once - reused in 4 possible permutations
-      for(Int i = BTF_A.ncol; i < gn; ++i)
-      {
-        perm_comp_iworkspace_array(i) = i;
-      }
-
-      if(amd_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("AMD order in \n");}
-        //printVec("amd.txt",order_csym_array, gn);
-        for(Int i = 0; i < BTF_A.ncol; ++i)
-        {
-          perm_comp_iworkspace_array(i) = order_csym_array(i);
-        }
-//        for(Int i = BTF_A.ncol; i < gn; ++i)
-//        {
-//          perm_comp_iworkspace_array(i) = i;
-//        }
-        //permute_inv(y,order_csym_array, gn);
-        permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn);
-      }
-      // p4 inv
-      if(nd_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("ND order in \n");}
-        //printVec("nd.txt", part_tree.permtab, gn);
-        for(Int i = 0; i < BTF_A.ncol; ++i)
-        {
-          perm_comp_iworkspace_array(i) = part_tree.permtab(i);
-        }
-//        for(Int i = BTF_A.ncol; i < gn; ++i)
-//        {
-//          perm_comp_iworkspace_array(i) = i;
-//        }
-        //permute_inv(y,part_tree.permtab, gn);
-        permute_with_workspace(perm_inv_comp_array , perm_comp_iworkspace_array,gn);
-      }
-      // p2, p3 inv
-      if(btf_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("btf order in\n");}
-        //printVec("btf_amd.txt", order_c_csym_array, gn);
-        //p3
-        permute_with_workspace(perm_inv_comp_array ,order_blk_amd_array, gn);
-        //printVec("btf.txt", order_btf_array, gn);
-        //p2
-        permute_with_workspace(perm_inv_comp_array ,order_btf_array, gn);
-      }
-      // p1 inv
-      if(match_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("match order in\n");}
-        //printVec("match.txt", order_match_array, gn);
-        permute_with_workspace(perm_inv_comp_array ,order_match_array, gn);
-      }
-
-
-      // perm_comp_array calculation
-      //
-      // Note: don't need to inverse a row only perm
-      // q1
-      if(amd_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("AMD order out \n");}
-        //printVec(order_csym_array, gn);
-        for(Int i = 0; i < BTF_A.ncol; ++i)
-        {
-          perm_comp_iworkspace_array(i) = order_csym_array(i);
-        }
-        //printf("Fill first \n");
-//        for(Int i = BTF_A.ncol; i < gn; ++i)
-//        {
-//          perm_comp_iworkspace_array(i) = i;
-//        }
-        //printf("Fill second \n");
-        //permute(x,order_csym_array, gn);
-        //printVec(perm_comp_iworkspace_array,gn);
-        permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array,gn);
-      }
-      // q2
-      if(nd_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("ND order out \n");}
-        //printVec(part_tree.permtab, gn);
-        for(Int i = 0; i < BTF_A.ncol; ++i)
-        {
-          perm_comp_iworkspace_array(i) = part_tree.permtab(i);
-        }
-//        for(Int i = BTF_A.ncol; i < gn; i++)
-//        {
-//          perm_comp_iworkspace_array(i) = i;
-//        }
-        //permute(x,part_tree.permtab, gn);
-        //printVec(perm_comp_iworkspace_array,gn);
-        permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn);
-      }
-      // q3, q4
-      if(btf_flag == BASKER_TRUE)
-      {
-        if(Options.verbose == BASKER_TRUE)
-        {printf("btf order out\n");}
-        //printVec(order_btf_array, gn);
-        // q3
-        permute_with_workspace(perm_comp_array,order_blk_amd_array, gn);
-        // q4
-        permute_with_workspace(perm_comp_array,order_btf_array, gn);
-      }
-
+      perm_inv_comp_array(i) = i; 
+      perm_comp_array(i) = i;
     }
+
+    // perm_inv_comp_array calculation
+    //
+    // This replaces the inverse perms in solve_interface
+    // i.e. (...o p2^-1 o p1^-1)(v) = (p1 o p2 o ... )^-1(v)
+    // BUT only p1 o p2 o ... is computed here and stored in perm_inv_comp_array 
+    // In solve_interface, the inverse of this composition will be applied to v
+    //
+    // Note: The order had to be reversed as well as the type of permutation call
+    //
+    // p6 inv
+    //      permute(perm_inv_comp_array , gperm, gn);
+
+    // p5 inv
+    // NDE: This is moved out and initialized once - reused in 4 possible permutations
+    for(Int i = BTF_A.ncol; i < gn; ++i)
+    {
+      perm_comp_iworkspace_array(i) = i;
+    }
+
+    if(amd_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("AMD order in \n");}
+      //printVec("amd.txt",order_csym_array, gn);
+      for(Int i = 0; i < BTF_A.ncol; ++i)
+      {
+        perm_comp_iworkspace_array(i) = order_csym_array(i);
+      }
+      //        for(Int i = BTF_A.ncol; i < gn; ++i)
+      //        {
+      //          perm_comp_iworkspace_array(i) = i;
+      //        }
+      //permute_inv(y,order_csym_array, gn);
+      permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn);
+    }
+    // p4 inv
+    if(nd_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("ND order in \n");}
+      //printVec("nd.txt", part_tree.permtab, gn);
+      for(Int i = 0; i < BTF_A.ncol; ++i)
+      {
+        perm_comp_iworkspace_array(i) = part_tree.permtab(i);
+      }
+      //        for(Int i = BTF_A.ncol; i < gn; ++i)
+      //        {
+      //          perm_comp_iworkspace_array(i) = i;
+      //        }
+      //permute_inv(y,part_tree.permtab, gn);
+      permute_with_workspace(perm_inv_comp_array , perm_comp_iworkspace_array,gn);
+    }
+    // p2, p3 inv
+    if(btf_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("btf order in\n");}
+      //printVec("btf_amd.txt", order_c_csym_array, gn);
+      //p3
+      permute_with_workspace(perm_inv_comp_array ,order_blk_amd_array, gn);
+      //printVec("btf.txt", order_btf_array, gn);
+      //p2
+      permute_with_workspace(perm_inv_comp_array ,order_btf_array, gn);
+    }
+    // p1 inv
+    if(match_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("match order in\n");}
+      //printVec("match.txt", order_match_array, gn);
+      permute_with_workspace(perm_inv_comp_array ,order_match_array, gn);
+    }
+
+
+    // perm_comp_array calculation
+    //
+    // Note: don't need to inverse a row only perm
+    // q1
+    if(amd_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("AMD order out \n");}
+      //printVec(order_csym_array, gn);
+      for(Int i = 0; i < BTF_A.ncol; ++i)
+      {
+        perm_comp_iworkspace_array(i) = order_csym_array(i);
+      }
+      //printf("Fill first \n");
+      //        for(Int i = BTF_A.ncol; i < gn; ++i)
+      //        {
+      //          perm_comp_iworkspace_array(i) = i;
+      //        }
+      //printf("Fill second \n");
+      //permute(x,order_csym_array, gn);
+      //printVec(perm_comp_iworkspace_array,gn);
+      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array,gn);
+    }
+    // q2
+    if(nd_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("ND order out \n");}
+      //printVec(part_tree.permtab, gn);
+      for(Int i = 0; i < BTF_A.ncol; ++i)
+      {
+        perm_comp_iworkspace_array(i) = part_tree.permtab(i);
+      }
+      //        for(Int i = BTF_A.ncol; i < gn; i++)
+      //        {
+      //          perm_comp_iworkspace_array(i) = i;
+      //        }
+      //permute(x,part_tree.permtab, gn);
+      //printVec(perm_comp_iworkspace_array,gn);
+      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn);
+    }
+    // q3, q4
+    if(btf_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("btf order out\n");}
+      //printVec(order_btf_array, gn);
+      // q3
+      permute_with_workspace(perm_comp_array,order_blk_amd_array, gn);
+      // q4
+      permute_with_workspace(perm_comp_array,order_btf_array, gn);
+    }
+
+  }
   //NDE end
 
 
@@ -1158,8 +1108,8 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute_col
   (
-    BASKER_MATRIX &M
-  , INT_1DARRAY col
+   BASKER_MATRIX &M,
+   INT_1DARRAY col
   )
   {
     if((M.ncol == 0)||(M.nnz == 0))
@@ -1178,43 +1128,43 @@ namespace BaskerNS
     MALLOC_ENTRY_1DARRAY(temp_v, nnz);
     init_value(temp_v, nnz, (Entry)0.0);
     //printf("done with init \n");
-   
+
     //Determine column ptr of output matrix
     for(Int j = 0; j < n; j++)
-      {
-        Int i = col (j);
-        temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
-      }
+    {
+      Int i = col (j);
+      temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
+    }
     //Get ptrs from lengths
     temp_p (0) = 0;
-  
+
     for(Int j = 0; j < n; j++)
-      {
-        temp_p (j+1) = temp_p (j+1) + temp_p (j);
-      }
+    {
+      temp_p (j+1) = temp_p (j+1) + temp_p (j);
+    }
     //copy idxs
-    
+
     for(Int ii = 0; ii < n; ii++)
+    {
+      Int ko = temp_p (col (ii) );
+      for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
       {
-        Int ko = temp_p (col (ii) );
-        for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
-          {
-            temp_i (ko) = M.row_idx (k);
-            temp_v (ko) = M.val (k);
-            ko++;
-          }
+        temp_i (ko) = M.row_idx (k);
+        temp_v (ko) = M.val (k);
+        ko++;
       }
-    
+    }
+
     //copy back int A
     for(Int ii=0; ii < n+1; ii++)
-      {
-        M.col_ptr (ii) = temp_p (ii);
-      }
+    {
+      M.col_ptr (ii) = temp_p (ii);
+    }
     for(Int ii=0; ii < nnz; ii++)
-      {
-        M.row_idx (ii) = temp_i (ii);
-        M.val (ii) = temp_v (ii);
-      }
+    {
+      M.row_idx (ii) = temp_i (ii);
+      M.val (ii) = temp_v (ii);
+    }
     FREE_INT_1DARRAY(temp_p);
     FREE_INT_1DARRAY(temp_i);
     FREE_ENTRY_1DARRAY(temp_v);
@@ -1225,15 +1175,17 @@ namespace BaskerNS
   /*GOBACK and make this good*/
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::permute_row(
-				      BASKER_MATRIX &M,
-				       INT_1DARRAY row)
+  int Basker<Int,Entry, Exe_Space>::permute_row
+  (
+   BASKER_MATRIX &M,
+	 INT_1DARRAY row
+  )
   {
-
     if(M.nnz == 0)
-      {
-	return 0;
-      }
+    {
+      return 0;
+    }
+
     Int nnz = M.nnz;
     INT_1DARRAY temp_i;
     MALLOC_INT_1DARRAY(temp_i, nnz);
@@ -1241,22 +1193,24 @@ namespace BaskerNS
 
     //permute
     for(Int k = 0; k < nnz; k++)
-      {
-        temp_i[k] = row[M.row_idx[k]];
-      }
+    {
+      temp_i[k] = row[M.row_idx[k]];
+    }
     //Copy back
     for(Int k = 0; k < nnz; k++)
-      {
-        M.row_idx[k] = temp_i[k];
-      }
+    {
+      M.row_idx[k] = temp_i[k];
+    }
+
     FREE_INT_1DARRAY(temp_i);
+
     return 0;
   }//end permute_row(matrix,int)
 
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sort_matrix(BASKER_MATRIX &M)
+  int Basker<Int,Entry,Exe_Space>::sort_matrix( BASKER_MATRIX &M )
   {
     if(M.nnz == 0)
       return 0;
@@ -1295,12 +1249,6 @@ namespace BaskerNS
       } //end for i
 
     }//end over all columns k
-
-#ifdef BASKER_DEBUG_ORDER
-    //printf("\n\n Matrix Sorted \n \n");
-    //M.print();
-    //printf("\n\n");
-#endif
 
     return 0;
   }//end sort_matrix()
