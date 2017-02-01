@@ -891,6 +891,7 @@ namespace BaskerNS
     return BASKER_SUCCESS;
   }
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry, Exe_Space>::permute_inv_with_workspace
@@ -914,6 +915,7 @@ namespace BaskerNS
     return BASKER_SUCCESS;
   }
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute_with_workspace
@@ -935,6 +937,7 @@ namespace BaskerNS
     }
     return BASKER_SUCCESS;
   }
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -960,16 +963,18 @@ namespace BaskerNS
   }
 
 
-
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve ()
   {
+    #define REDUCE_PERM_COMP_ARRAY 1
 
     for(Int i = 0; i < gn; i++) // Move this to a different init function
     {
       perm_inv_comp_array(i) = i; 
+      #ifndef REDUCE_PERM_COMP_ARRAY
       perm_comp_array(i) = i;
+      #endif
     }
 
     // perm_inv_comp_array calculation
@@ -984,13 +989,13 @@ namespace BaskerNS
     // p6 inv
     //      permute(perm_inv_comp_array , gperm, gn);
 
-    // p5 inv
     // NDE: This is moved out and initialized once - reused in 4 possible permutations
     for(Int i = BTF_A.ncol; i < gn; ++i)
     {
       perm_comp_iworkspace_array(i) = i;
     }
 
+    // p5 inv
     if(amd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
@@ -1047,9 +1052,21 @@ namespace BaskerNS
 
 
     // perm_comp_array calculation
-    //
     // Note: don't need to inverse a row only perm
     // q1
+    #if REDUCE_PERM_COMP_ARRAY
+    for(Int i = 0; i < gn; i++) // NDE: Move this to a different init function
+    {
+      perm_comp_array(i) = perm_inv_comp_array(i);
+    }
+    if(match_flag == BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE)
+      {printf("match order in\n");}
+      //printVec("match.txt", order_match_array, gn);
+      permute_inv_with_workspace(perm_comp_array ,order_match_array, gn);
+    }
+    #else
     if(amd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
@@ -1098,7 +1115,8 @@ namespace BaskerNS
       // q4
       permute_with_workspace(perm_comp_array,order_btf_array, gn);
     }
-
+    #endif
+    #undef REDUCE_PERM_COMP_ARRAY
   }
   //NDE end
 
