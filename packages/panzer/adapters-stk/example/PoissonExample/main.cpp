@@ -231,19 +231,21 @@ int main(int argc,char * argv[])
       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
    {
+     const int integration_order = 10;
+
      std::vector<std::string> eBlocks;
      mesh->getElementBlockNames(eBlocks);
 
      panzer::FunctionalResponse_Builder<int,int> builder;
      builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = basis_order + 3;
+     builder.cubatureDegree = integration_order;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
      errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
 
      builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = basis_order + 3;
+     builder.cubatureDegree = integration_order;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_H1_ERROR";
 
@@ -432,12 +434,13 @@ void testInitialization(const int basis_order,
                         std::vector<panzer::BC>& bcs)
 {
   {
+    const int integration_order = 10;
     Teuchos::ParameterList& p = ipb->sublist("Poisson Physics");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",basis_order);
-    p.set("Integration Order",basis_order + 3);
+    p.set("Integration Order",integration_order);
   }
   
    {

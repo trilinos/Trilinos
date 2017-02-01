@@ -18,7 +18,7 @@ TRIBITS_ADD_EXECUTABLE(
 #  )
 
 ## basis order 1-4
-FOREACH( ORDER 1 2 3 )
+FOREACH( ORDER 1 2 3 4 )
   TRIBITS_ADD_ADVANCED_TEST(
     PoissonExample-ConvTest-Order-${ORDER}
     TEST_0 EXEC PoissonExample 
@@ -41,11 +41,11 @@ FOREACH( ORDER 1 2 3 )
       PASS_REGULAR_EXPRESSION "ALL PASSED"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-40
-    # TEST_4 EXEC PoissonExample 
-    #   ARGS --x-elements=80 --y-elements=80 --basis-order=${ORDER}
-    #   PASS_REGULAR_EXPRESSION "ALL PASSED"
-    #   NUM_MPI_PROCS 4
-    #   OUTPUT_FILE MPE-ConvTest-80
+    TEST_4 EXEC PoissonExample 
+      ARGS --x-elements=80 --y-elements=80 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED"
+      NUM_MPI_PROCS 4
+      OUTPUT_FILE MPE-ConvTest-80
     TEST_5 CMND python
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          MPE-ConvTest-
@@ -53,6 +53,7 @@ FOREACH( ORDER 1 2 3 )
          10
          20
          40
+         80
       PASS_REGULAR_EXPRESSION "Test Passed"
     COMM mpi
   )
