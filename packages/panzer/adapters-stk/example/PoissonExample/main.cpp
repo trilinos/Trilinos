@@ -90,8 +90,9 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-		       std::vector<panzer::BC>& bcs);
+void testInitialization(const int basis_order,
+                        const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+                        std::vector<panzer::BC>& bcs);
 
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
@@ -112,10 +113,11 @@ int main(int argc,char * argv[])
    // Build command line processor
    ////////////////////////////////////////////////////
 
-   int x_elements=10,y_elements=10;
+   int x_elements=10,y_elements=10,basis_order=1;
    Teuchos::CommandLineProcessor clp;
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
+   clp.setOption("basis-order",&basis_order); 
 
    // parse commandline argument
    TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
@@ -155,7 +157,7 @@ int main(int argc,char * argv[])
    {
       bool build_transient_support = false;
 
-      testInitialization(ipb, bcs);
+      testInitialization(basis_order, ipb, bcs);
       
       const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
@@ -234,14 +236,14 @@ int main(int argc,char * argv[])
 
      panzer::FunctionalResponse_Builder<int,int> builder;
      builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = 4;
+     builder.cubatureDegree = basis_order + 3;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
      errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
 
      builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = 4;
+     builder.cubatureDegree = basis_order + 3;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_H1_ERROR";
 
@@ -407,6 +409,8 @@ int main(int argc,char * argv[])
       errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
+      lout << "This is the Basis Order" << std::endl;
+      lout << "Basis Order = " << basis_order << std::endl;
       lout << "This is the L2 Error" << std::endl;
       lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
       lout << "This is the H1 Error" << std::endl;
@@ -423,16 +427,17 @@ int main(int argc,char * argv[])
    return 0;
 }
 
-void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-		       std::vector<panzer::BC>& bcs)
+void testInitialization(const int basis_order,
+                        const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+                        std::vector<panzer::BC>& bcs)
 {
   {
     Teuchos::ParameterList& p = ipb->sublist("Poisson Physics");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
-    p.set("Basis Order",1);
-    p.set("Integration Order",4);
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",basis_order + 3);
   }
   
    {

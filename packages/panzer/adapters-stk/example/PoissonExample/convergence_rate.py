@@ -1,3 +1,4 @@
+import math
 import sys
 import re
 
@@ -13,13 +14,22 @@ try:
     mesh_res += [int(sys.argv[i])]
 
   max_res =  max(mesh_res)
-  
+
+  orderPat   = re.compile('.*Basis Order = (.*)$')  
   l2ErrorPat = re.compile('.*L2 Error = (.*)$')
   h1ErrorPat = re.compile('.*H1 Error = (.*)$')
 
+  basis_order = 0
+  l2_error_value = 0
+  h1_error_value = 0
+  prev_l2_error_value = 0
+  prev_h1_error_value = 0
+
   l2_error_values = []
   h1_error_values = []
-  for res in mesh_res:
+  rate_values = []
+
+  for cnt, res in enumerate(mesh_res):
     if max_res>=100:
       filename = '%s%03d' % (file_prefix,res)
     elif max_res>=10:
@@ -32,31 +42,42 @@ try:
 
     # look for the "Error = ..." line
     for line in f:
+      orderMatch = orderPat.match(line)
+      if orderMatch!=None:
+        basis_order = float(orderMatch.group(1))
+
       errorMatch = l2ErrorPat.match(line)
       if errorMatch!=None:
-        error = float(errorMatch.group(1))
-        l2_error_values += [error]
+        l2_error_value = float(errorMatch.group(1))
+        l2_error_values += [l2_error_value]
 
       errorMatch = h1ErrorPat.match(line)
       if errorMatch!=None:
-        error = float(errorMatch.group(1))
-        h1_error_values += [error]
+        h1_error_value = float(errorMatch.group(1))
+        h1_error_values += [h1_error_value]
+   
+    if cnt>0:
+      prev_error = prev_l2_error_value + prev_h1_error_value
+      error = l2_error_value + h1_error_value        
+      rate = math.log(prev_error/error)/math.log(2)
+      rate_values += [rate]
+      diff = rate - basis_order
+
+      if rate > 0.95*basis_order:
+        print('%s: Convergence rate of %f is within 5 percent of %f: PASSED' % (filename, rate, basis_order)) 
+      else:
+        print('%s: Convergence rate of %f is not within 5 percent of %f: FAILED' % (filename, rate, basis_order)) 
+        raise 'Exception' 
+
+    prev_l2_error_value = l2_error_value
+    prev_h1_error_value = h1_error_value
+
   # end for res
 
-  l2_rate = l2_error_values[-1]/l2_error_values[-2]
-  h1_rate = h1_error_values[-1]/h1_error_values[-2]
-
-  # the l2 convergence rate should be 0.25 (we are halfing the mesh size
-  # each refinement step). Though its not exact due to using tets and
-  # other reasons that lead to imperfect convergence rates. But its close
-  # enough to give a quadratic convergence order.
-  if (l2_rate-0.25)/0.25 > 0.05:
-    raise 'L2 Convergence rate of %f, is not within 5 percent bounds of 0.25: FAILED' % l2_rate
-
-  if (h1_rate-0.5)/0.5 > 0.05:
-    raise 'h1 Convergence rate of %f, is not within 5 percent bounds of 0.5: FAILED' % h1_rate
-
-  print('Convergence rates of (L2,H1) = (%f,%f) are within 5 percent of (0.25,0.5): PASSED' % (l2_rate, h1_rate))
+  print('L2 errors   : ', l2_error_values)
+  print('Grad errors : ', h1_error_values)
+  print('H1 errors   : ', [l2_error_values[i] + h1_error_values[i] for i in range(len(l2_error_values))])
+  print('Conv rate   : ', rate_values)
 
 except Exception as e:
   print("Test Failed: ")

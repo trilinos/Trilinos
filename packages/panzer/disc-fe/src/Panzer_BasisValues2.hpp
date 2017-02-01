@@ -51,6 +51,10 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_ArrayTraits.hpp"
 
+#ifndef __KK__
+#define __KK__
+#endif
+
 namespace panzer {
 
   /** Data structure that holds all evaluated fields associated

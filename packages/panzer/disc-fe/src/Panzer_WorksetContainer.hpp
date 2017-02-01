@@ -52,6 +52,10 @@
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
+#ifndef __KK__
+#define __KK__
+#endif
+
 namespace panzer {
 
 // forward declaration

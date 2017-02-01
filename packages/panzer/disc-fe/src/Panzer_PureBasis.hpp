@@ -52,6 +52,10 @@
 #include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
+#ifndef __KK__
+#define __KK__
+#endif
+
 namespace panzer {
 
   class CellData;
