@@ -123,14 +123,12 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
 {
-  // Try to cast mv to this type
-  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  RCP<const TMV> tmv = Teuchos::rcp_dynamic_cast<const TMV>(Teuchos::rcpFromRef(mv));
+  auto tmv = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(mv));
 
   // If the cast succeeded, call Tpetra directly.
   // Otherwise, fall back to the RTOp implementation.
   if (nonnull(tmv)) {
-    tpetraMultiVector_.getNonconstObj()->assign(*tmv->getConstTpetraMultiVector());
+    tpetraMultiVector_.getNonconstObj()->assign(*tmv);
   } else {
     // This version will require/modify the host view of this vector.
     tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
@@ -154,15 +152,13 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
   const MultiVectorBase<Scalar>& mv
   )
 {
-  // Try to cast mv to this type
-  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  RCP<const TMV> tmv = Teuchos::rcp_dynamic_cast<const TMV>(Teuchos::rcpFromRef(mv));
+  auto tmv = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(mv));
  
   // If the cast succeeded, call Tpetra directly.
   // Otherwise, fall back to the RTOp implementation.
   if (nonnull(tmv)) {
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    tpetraMultiVector_.getNonconstObj()->update(alpha, *tmv->getConstTpetraMultiVector(), ST::one());
+    tpetraMultiVector_.getNonconstObj()->update(alpha, *tmv, ST::one());
   } else {
     // This version will require/modify the host view of this vector.
     tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
@@ -184,15 +180,18 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinatio
 #endif
 
   // Try to cast mv to an array of this type
-  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  Teuchos::Array<Ptr<const TMV> > tmv(mv.size());
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  Teuchos::Array<RCP<const TMV> > tmvs(mv.size());
+  RCP<const TMV> tmv;
   bool allCastsSuccessful = true;
   {
     auto mvIter = mv.begin();
-    auto tmvIter = tmv.begin();
-    for (; tmvIter != tmv.end(); ++mvIter, ++tmvIter) {
-      *tmvIter = Teuchos::ptr_dynamic_cast<const TMV>(*mvIter);
-      if (is_null(*tmvIter)) {
+    auto tmvIter = tmvs.begin();
+    for (; mvIter != mv.end(); ++mvIter, ++tmvIter) {
+      tmv = this->getConstTpetraMultiVector(Teuchos::rcpFromPtr(*mvIter));
+      if (nonnull(tmv)) {
+        *tmvIter = tmv;
+      } else {
         allCastsSuccessful = false;
         break;
       }
@@ -203,22 +202,20 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinatio
   // Otherwise, fall back to the RTOp implementation.
   if (allCastsSuccessful) {
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    auto tmvIter = tmv.begin();
+    auto tmvIter = tmvs.begin();
     auto alphaIter = alpha.begin();
     // We add two MVs at a time, so only scale if even num MVs,
     // and additionally do the first addition if odd num MVs.
-    if ((tmv.size() % 2) == 0) {
+    if ((tmvs.size() % 2) == 0) {
       tpetraMultiVector_.getNonconstObj()->scale(beta);
     } else {
-      tpetraMultiVector_.getNonconstObj()->update(
-        *alphaIter, *(*tmvIter)->getConstTpetraMultiVector(), beta);
+      tpetraMultiVector_.getNonconstObj()->update(*alphaIter, *(*tmvIter), beta);
       ++tmvIter;
       ++alphaIter;
     }
-    for (; tmvIter != tmv.end(); tmvIter+=2, alphaIter+=2) {
+    for (; tmvIter != tmvs.end(); tmvIter+=2, alphaIter+=2) {
       tpetraMultiVector_.getNonconstObj()->update(
-        *alphaIter, *(*tmvIter)->getConstTpetraMultiVector(),
-        *(alphaIter+1), *(*(tmvIter+1))->getConstTpetraMultiVector(), ST::one());
+        *alphaIter, *(*tmvIter), *(alphaIter+1), *(*(tmvIter+1)), ST::one());
     }
   } else {
     // This version will require/modify the host view of this vector.
@@ -457,6 +454,28 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMultiVec
 }
 
 
+/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
+  ) const
+{
+  // Try to extract Tpetra objects from X and Y
+  auto X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
+  auto Y_tpetra = this->getTpetraMultiVector(Teuchos::rcpFromPtr(Y));
+
+  //
+  if (nonnull(X_tpetra) && nonnull(Y_tpetra)) {
+    Y_tpetra->multiply();
+  } else {
+    VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
+  }
+
+}*/
+
 // private
 
 
@@ -481,6 +500,50 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
   this->updateSpmdSpace();
 }
 
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getTpetraMultiVector(const RCP<MultiVectorBase<Scalar> >& mv) const
+{
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+
+  RCP<TMV> tmv = rcp_dynamic_cast<TMV>(mv);
+  if (nonnull(tmv)) {
+    return tmv->getTpetraMultiVector();
+  }
+
+  RCP<TV> tv = rcp_dynamic_cast<TV>(mv);
+  if (nonnull(tv)) {
+    return tv->getTpetraVector();
+  }
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
+{
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+
+  RCP<const TMV> tmv = rcp_dynamic_cast<const TMV>(mv);
+  if (nonnull(tmv)) {
+    return tmv->getConstTpetraMultiVector();
+  }
+
+  RCP<const TV> tv = rcp_dynamic_cast<const TV>(mv);
+  if (nonnull(tv)) {
+    return tv->getConstTpetraVector();
+  }
+
+  return Teuchos::null;
+}
 
 
 } // end namespace Thyra

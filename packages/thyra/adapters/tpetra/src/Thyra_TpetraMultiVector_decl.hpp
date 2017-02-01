@@ -186,6 +186,20 @@ protected:
   void getLocalMultiVectorDataImpl(
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const;
+
+  //@}
+
+  /** @name Overridden protected functions from MultiVectorAdapterBase */
+  //@{
+  /** \brief . */
+  /*virtual void euclideanApply(
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
+    ) const;*/
+
   //@}
 
 private:
@@ -207,6 +221,14 @@ private:
     const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
     const RCP<TpetraMultiVector_t> &tpetraMultiVector
     );
+
+  // Non-throwing Tpetra MultiVector extraction methods.
+  // Return null if casting failed.
+  RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMultiVector(const RCP<MultiVectorBase<Scalar> >& mv) const;
+
+  RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const;
 
 };
 

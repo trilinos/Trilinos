@@ -207,6 +207,20 @@ protected:
 
   //@}
 
+  /** @name Overridden protected functions from LinearOpBase */
+  //@{
+
+  /** \brief . */
+  /*void applyImpl(
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
+    ) const;*/
+
+  //@}
+
 private:
 
   // ///////////////////////////////////////
@@ -228,6 +242,20 @@ private:
     const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
     const RCP<TpetraVector_t> &tpetraVector
     );
+
+  // Non-throwing Tpetra Vector/MultiVector extraction methods.
+  // Return null if casting failed.
+  RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMultiVector(const RCP<MultiVectorBase<Scalar> >& mv) const;
+
+  RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const;
+
+  RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraVector(const RCP<VectorBase<Scalar> >& v) const;
+
+  RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getConstTpetraVector(const RCP<const VectorBase<Scalar> >& v) const;
 
 };
 
