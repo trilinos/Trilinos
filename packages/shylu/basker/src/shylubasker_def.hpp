@@ -273,6 +273,18 @@ namespace BaskerNS
     std::cout << "Basker Symbolic total time: " << time << std::endl;
     #endif
 
+    // NDE store matrix dims here
+    sym_gn = A.ncol;
+    sym_gm = A.nrow;
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+    MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
+    MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
+
+    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, sym_gn); 
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
+    permute_composition_for_solve(sym_gn);
+
     return 0;
   }//end Symbolic
 
@@ -442,6 +454,18 @@ namespace BaskerNS
     std::cout.flags(old_settings);
     #endif
 
+    // NDE store matrix dims here
+    sym_gn = A.ncol;
+    sym_gm = A.nrow;
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+    MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
+    MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
+
+    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, sym_gn); 
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
+    permute_composition_for_solve(sym_gn);
+
     return 0;
   }//end Symbolic()
   
@@ -465,14 +489,16 @@ namespace BaskerNS
     #endif
 
     // NDE
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
+    /*
+    
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
     MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn); 
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve();
+    permute_composition_for_solve(gn);
+    */
 
     #ifdef BASKER_TIMER
     time += timer.seconds();
@@ -606,6 +632,7 @@ namespace BaskerNS
     //DEBUG_PRINT();
 
     // NDE
+    /*
     MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
     MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
@@ -613,7 +640,8 @@ namespace BaskerNS
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve();
+    permute_composition_for_solve(gn);
+    */
 
     #ifdef BASKER_TIMER
     time += timer.seconds();
@@ -634,6 +662,7 @@ namespace BaskerNS
     factor_inc_lvl(Options);
 
     // NDE
+    /*
     MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
     MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
@@ -641,7 +670,8 @@ namespace BaskerNS
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve();
+    permute_composition_for_solve(gn);
+    */
 
     return 0;
   }

@@ -965,8 +965,9 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve ()
+  void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve( Int ncols )
   {
+    Int gn = ncols;
     #define REDUCE_PERM_COMP_ARRAY 1
 
     for(Int i = 0; i < gn; i++) // Move this to a different init function

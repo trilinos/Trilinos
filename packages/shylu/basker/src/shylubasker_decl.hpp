@@ -319,7 +319,7 @@ namespace BaskerNS
     );
 
     BASKER_INLINE
-    void permute_composition_for_solve();
+    void permute_composition_for_solve(Int);
   // end NDE
 
     BASKER_INLINE
@@ -1266,6 +1266,10 @@ namespace BaskerNS
 
     INT_1DARRAY perm_comp_iworkspace_array;
     ENTRY_1DARRAY perm_comp_fworkspace_array;
+
+    // Matrix dims stored within Symbolic
+    Int sym_gn;
+    Int sym_gm;
     //end NDE
 
 
