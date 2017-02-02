@@ -53,10 +53,11 @@ typedef double SC;
 typedef int LO;
 typedef long long GO;
 
-constexpr int expectedNumEnt = 5;
-const GO expectedGblRowInds[] = {93, 418, 31, 666, 93};
-const GO expectedGblColInds[] = {7, 4, 6, 5, 3};
-const SC expectedVals[] = {7.0, 4.0, 6.0, 5.0, 3.0};
+// // unused:
+// constexpr int expectedNumEnt = 5;
+// const GO expectedGblRowInds[] = {93, 418, 31, 666, 93};
+// const GO expectedGblColInds[] = {7, 4, 6, 5, 3};
+// const SC expectedVals[] = {7.0, 4.0, 6.0, 5.0, 3.0};
 
 void
 testCooMatrixImpl (bool& success, Teuchos::FancyOStream& out)
