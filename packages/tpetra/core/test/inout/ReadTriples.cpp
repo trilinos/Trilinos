@@ -273,15 +273,13 @@ testReal (bool& success,
 }
 
 
-// Use Kokkos::complex instead of std::complex, so that we don't
-// have to worry about HAVE_TEUCHOS_COMPLEX etc.
 void
 testComplex (bool& success,
              Teuchos::FancyOStream& out,
              const char testCase[],
              const GO expectedRowInds[], // on the calling process
              const GO expectedColInds[], // on the calling process
-             const ::Kokkos::complex<double> expectedVals[], // on the calling process
+             const std::complex<double> expectedVals[], // on the calling process
              const std::size_t expectedNumEnt, // on the calling process
              const Comm<int>& comm,
              const bool debug = false,
@@ -291,7 +289,7 @@ testComplex (bool& success,
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  typedef ::Kokkos::complex<double> SC;
+  typedef std::complex<double> SC;
   // Type representing the local entries of a sparse matrix.  The set
   // sorts its entries lexicographically, first by row index, then by
   // column index.
@@ -604,8 +602,6 @@ TEUCHOS_UNIT_TEST( ReadTriples, Real3 )
   }
 }
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-
 TEUCHOS_UNIT_TEST( ReadTriples, Complex )
 {
   auto comm = Tpetra::TestingUtilities::getDefaultComm ();
@@ -642,7 +638,7 @@ TEUCHOS_UNIT_TEST( ReadTriples, Complex )
   if (myRank == 0) {
     const GO expectedRowInds[] = {1, 3, 9, 11};
     const GO expectedColInds[] = {2, 4, 10, 12};
-    const ::Kokkos::complex<double> expectedVals[] = {
+    const std::complex<double> expectedVals[] = {
       {12.0, -1200.0},
       {34.0, -3400.0},
       {100.0, -10000.0},
@@ -657,7 +653,7 @@ TEUCHOS_UNIT_TEST( ReadTriples, Complex )
   else if (myRank == 1) {
     const GO expectedRowInds[] = {5, 7, 13};
     const GO expectedColInds[] = {6, 8, 14};
-    const ::Kokkos::complex<double> expectedVals[] = {
+    const std::complex<double> expectedVals[] = {
       {56.0, -5600.0},
       {78.0, -7800.0},
       {144.0, -14400.0}
@@ -671,7 +667,7 @@ TEUCHOS_UNIT_TEST( ReadTriples, Complex )
   else {
     const GO* const expectedRowInds = NULL;
     const GO* const expectedColInds = NULL;
-    const ::Kokkos::complex<double>* const expectedVals = NULL;
+    const std::complex<double>* const expectedVals = NULL;
     const std::size_t expectedNumEnt = 0;
     testComplex (success, out, inputFileComplex,
                  expectedRowInds, expectedColInds,
@@ -679,8 +675,6 @@ TEUCHOS_UNIT_TEST( ReadTriples, Complex )
                  debug, errStrm);
   }
 }
-
-#endif // HAVE_TEUCHOS_COMPLEX
 
 } // namespace (anonymous)
 

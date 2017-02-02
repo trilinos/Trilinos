@@ -70,6 +70,96 @@ namespace Details {
 
 namespace Impl {
 
+// mfh 01 Feb 2017: Unfortunately,
+// Teuchos::MatrixMarket::readComplexData requires Teuchos to have
+// complex arithmetic support enabled.  To avoid this issue, I
+// reimplement the function here.  It's not very long.
+
+/// \brief Read "<rowIndex> <colIndex> <realPart> <imagPart>" from a line.
+///
+/// Matrix Market files that store a sparse matrix with complex values
+/// do so with one sparse matrix entry per line.  It is stored as
+/// space-delimited ASCII text: the row index, the column index, the
+/// real part, and the imaginary part, in that order.  Both the row
+/// and column indices are 1-based.  This function attempts to read
+/// one line from the given input stream istr, extract the row and
+/// column indices and the real and imaginary parts, and write them to
+/// the corresponding output variables.
+///
+/// \param istr [in/out] Input stream from which to attempt to read
+///   one line.
+/// \param rowIndex [out] On output: if successful, the row index read
+///   from the line.
+/// \param colIndex [out] On output: if successful, the column index
+///   read from the line.
+/// \param realPart [out] On output: if successful, the real part of
+///   the matrix entry's value read from the line.
+/// \param imagPart [out] On output: if successful, the imaginary part
+///   of the matrix entry's value read from the line.
+/// \param lineNumber [in] The current line number.  Used only for
+///   diagnostic error messages.
+/// \param tolerant [in] Whether to parse tolerantly.  In tolerant
+///   mode, if this function fails in any way to read any of the data,
+///   it will return false without throwing an exception.  Otherwise,
+///   this function will either throw an exception or return true.
+///
+/// \return True if this function successfully read the line from istr
+///   and extracted all the output data, false otherwise.  If
+///   tolerant==false, this function never returns false; it either
+///   returns true or throws an exception.
+template<class OrdinalType, class RealType>
+bool
+readComplexData (std::istream& istr,
+                 OrdinalType& rowIndex,
+                 OrdinalType& colIndex,
+                 RealType& realPart,
+                 RealType& imagPart,
+                 const size_t lineNumber,
+                 const bool tolerant)
+{
+  using ::Teuchos::MatrixMarket::readRealData;
+
+  RealType the_realPart, the_imagPart;
+  if (! readRealData (istr, rowIndex, colIndex, the_realPart, lineNumber, tolerant)) {
+    if (tolerant) {
+      return false;
+    }
+    else {
+      std::ostringstream os;
+      os << "Failed to read pattern data and/or real value from line "
+         << lineNumber << " of input";
+      throw std::invalid_argument(os.str());
+    }
+  }
+  if (istr.eof ()) {
+    if (tolerant) {
+      return false;
+    }
+    else {
+      std::ostringstream os;
+      os << "No more data after real value on line "
+         << lineNumber << " of input";
+      throw std::invalid_argument (os.str ());
+    }
+  }
+  istr >> the_imagPart;
+  if (istr.fail ()) {
+    if (tolerant) {
+      return false;
+    }
+    else {
+      std::ostringstream os;
+      os << "Failed to get imaginary value from line "
+         << lineNumber << " of input";
+      throw std::invalid_argument (os.str ());
+    }
+  }
+  realPart = the_realPart;
+  imagPart = the_imagPart;
+  return true;
+}
+
+
 /// \brief Implementation of the readLine stand-alone function in this
 ///   namespace (see below).
 ///
@@ -112,10 +202,6 @@ struct ReadLine {
             const bool debug = false);
 };
 
-// mfh 01 Feb 2017: Unfortunately, readComplexData currently requires
-// Teuchos to have complex arithmetic support enabled.
-#ifdef HAVE_TEUCHOS_COMPLEX
-
 /// \brief Complex-arithmetic partial specialization of ReadLine.
 ///
 /// This helps implement the readLine stand-alone function in this
@@ -154,7 +240,6 @@ struct ReadLine<SC, GO, true> {
             const bool debug = false)
   {
     using ::Teuchos::MatrixMarket::checkCommentLine;
-    using ::Teuchos::MatrixMarket::readComplexData;
     typedef typename ::Kokkos::Details::ArithTraits<SC>::mag_type real_type;
     using std::endl;
 
@@ -163,6 +248,9 @@ struct ReadLine<SC, GO, true> {
     std::istringstream istr (line);
     bool success = true;
     try {
+      // Use the version of this function in this file, not the
+      // version in Teuchos_MatrixMarket_generic.hpp, because the
+      // latter only exists if HAVE_TEUCHOS_COMPLEX is defined.
       success = readComplexData (istr, rowInd, colInd, realPart, imagPart,
                                  lineNumber, tolerant);
     }
@@ -200,8 +288,6 @@ struct ReadLine<SC, GO, true> {
     }
   }
 };
-
-#endif // HAVE_TEUCHOS_COMPLEX
 
 /// \brief Real-arithmetic partial specialization of ReadLine.
 ///
