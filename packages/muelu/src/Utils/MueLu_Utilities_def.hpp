@@ -84,6 +84,7 @@
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
 //#include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_IO.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
@@ -112,9 +113,10 @@ namespace MueLu {
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
-  //defined after Utilities class
   template<typename SC,typename LO,typename GO,typename NO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB){
+    return Xpetra::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<SC,LO,GO,NO>(epAB);
+  }
 #endif
 
 #ifdef HAVE_MUELU_EPETRA

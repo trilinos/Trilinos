@@ -61,6 +61,7 @@
 #include "Epetra_FECrsMatrix.h"
 #endif
 
+#include "MueLu_Utilities_def.hpp"  
 
 namespace MueLuTests {
   namespace TestHelpers {
@@ -210,7 +211,7 @@ namespace MueLuTests {
 
       // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
       RCP<Matrix> B;
-      if(Xpetra::UseEpetra) {
+      if(lib==Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
 	// Epetra is hard
 	const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
