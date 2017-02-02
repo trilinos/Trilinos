@@ -71,7 +71,7 @@ static string fnParams[NUMFN][3]={
 };
 
 // Value is a particular string
-#define NUMSTR 34
+#define NUMSTR 35
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
@@ -83,6 +83,7 @@ static string strParams[NUMSTR][3]={
   {"mj_parts", "2,3,4", "not_a_valid_list_of_any_type"},
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
   {"order_method", "rcm", "invalid_method"},
+  {"order_method_type", "local", "invalid_method_type"},
   {"order_package", "amd", "invalid_package"},
   {"partitioning_objective", "balance_object_weight", "invalid_objective"},
   {"partitioning_approach", "repartition", "invalid_approach"},

@@ -120,8 +120,9 @@ public:
       Problem<Adapter>(A,p,comm), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), partIds_(), partSizes_(),
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
+      numberOfWeights_(),
+      partIds_(), partSizes_(), numberOfCriteria_(),
+      levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -147,9 +148,8 @@ public:
       Problem<Adapter>(A,p,comm), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(),
-      partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false)
+      numberOfWeights_(), partIds_(), partSizes_(),
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -176,7 +176,7 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
 
-  void solve(bool updateInputData=true );
+  void solve(bool updateInputData=true);
 
   //!  \brief Get the solution to the problem.
   //

@@ -63,11 +63,28 @@
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
+//! \brief ProblemRoot allows ptr storage and safe dynamic_cast of all
+// problem types.
+
+class ProblemRoot {
+  public:
+    virtual ~ProblemRoot() {} // required virtual declaration
+
+    // could consider storing comm_ here...
+    // this accessor means we can get comm without template upcast first
+    virtual RCP<const Comm<int> > getComm() = 0;
+
+   /*! \brief Method that creates a solution.
+    */
+    virtual void solve(bool updateInputData = true) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
      
 template<typename Adapter>
-class Problem {
+class Problem : public ProblemRoot {
 public:
   
   /*! \brief Constructor where communicator is Teuchos default.
@@ -140,10 +157,6 @@ public:
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params);
-
-  /*! \brief Method that creates a solution.
-   */
-  virtual void solve(bool updateInputData) = 0;
 
   /*! \brief Return the communicator passed to the problem
    */

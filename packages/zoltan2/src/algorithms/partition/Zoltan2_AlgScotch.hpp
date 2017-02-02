@@ -309,12 +309,8 @@ public:
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
-  /* BDD: Beginning work on ordering method.
-          Will use scotch for ordering, and then set fields in ording
-          solution. Ordering Solution is also being extended to
-          include fields needed by Basker for seperator information.
-  */
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution);
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution);
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution);
 
 private:
 
@@ -633,64 +629,94 @@ void AlgPTScotch<Adapter>::scale_weights(
 
 template <typename Adapter>
 int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank) {
-// get ordering parameters from parameter list
-  
+  // get ordering parameters from parameter list
+  bool bPrintOutput = false; // will be true if rank 0 and verbose is true
   const Teuchos::ParameterEntry *pe;
-  bool isVerbose = false;
-  pe = pList.getEntryPtr("scotch_verbose");
-  if (pe)
-    isVerbose = pe->getValue(&isVerbose);
 
-  bool use_default = true;
-  std::string strat_string("");
+  if (procRank == 0) {
+    pe = pList.getEntryPtr("scotch_verbose");
+    if (pe) {
+      bPrintOutput = pe->getValue(&bPrintOutput);
+    }
+  }
 
+  // get parameter setting for ordering default true/false
+  bool scotch_ordering_default = true;
   pe = pList.getEntryPtr("scotch_ordering_default");
-  if (pe)
-    use_default = pe->getValue(&use_default);
-  
-  pe = pList.getEntryPtr("scotch_ordering_strategy");
-  if (pe)
-    strat_string = pe->getValue<std::string>(&strat_string);
+  if (pe) {
+    scotch_ordering_default = pe->getValue(&scotch_ordering_default);
+  }
+  if (bPrintOutput) {
+    std::cout <<
+      "Scotch: Ordering default setting (parameter: scotch_ordering_default): "
+      << (scotch_ordering_default ? "True" : "False" ) << std::endl;
+  }
 
-  int ierr = 1;
-  if (!use_default && strat_string.size() > 0) {
+  // set up error code for return
+  int ierr = 1; // will be set 0 if successful
 
-    if (isVerbose && procRank == 0) {
-      std::cout << "Ordering strategy string: " << strat_string << std::endl;
-    }
-    SCOTCH_stratInit(c_strat_ptr);
-    ierr = SCOTCH_stratGraphOrder( c_strat_ptr, strat_string.c_str());
-
-  } else {
-
-    int levels = 0;
-    double balrat = 0.2;
-
+  if (scotch_ordering_default) {
+    // get parameter scotch_level
+    int scotch_level = 0;
     pe = pList.getEntryPtr("scotch_level");
-    if (pe)
-      levels = pe->getValue<int>(&levels);
-    
-    pe = pList.getEntryPtr("scotch_imbalance_ratio");
-    if (pe)
-      balrat = pe->getValue<double>(&balrat);
-    
-    if (isVerbose && procRank == 0) {
-      std::cout << "Ordering level: " << levels << std::endl;
-      std::cout << "Ordering dissection imbalance ratio: " << balrat << std::endl;
+    if (pe) {
+      scotch_level = pe->getValue(&scotch_level);
     }
-  
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering level (parameter: scotch_level): " <<
+        scotch_level << std::endl;
+    }
+
+    // get parameter scotch_imbalance_ratio
+    double scotch_imbalance_ratio = 0.2;
+    pe = pList.getEntryPtr("scotch_imbalance_ratio");
+    if (pe) {
+      scotch_imbalance_ratio = pe->getValue(&scotch_imbalance_ratio);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch: Ordering dissection imbalance ratio "
+        "(parameter: scotch_imbalance_ratio): "
+        << scotch_imbalance_ratio << std::endl;
+    }
+
     SCOTCH_stratInit(c_strat_ptr);
+
     ierr = SCOTCH_stratGraphOrderBuild( c_strat_ptr,
-        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
-        levels, balrat); // based on Siva's example
+        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN |
+        SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
+        scotch_level, scotch_imbalance_ratio); // based on Siva's example
+  }
+  else {
+    // get parameter scotch_ordering_strategy
+    std::string scotch_ordering_strategy_string("");
+    pe = pList.getEntryPtr("scotch_ordering_strategy");
+    if (pe) {
+      scotch_ordering_strategy_string =
+        pe->getValue(&scotch_ordering_strategy_string);
+    }
+    if (bPrintOutput) {
+      std::cout << "Scotch ordering strategy"
+        " (parameter: scotch_ordering_strategy): " <<
+        scotch_ordering_strategy_string << std::endl;
+    }
+
+    SCOTCH_stratInit(c_strat_ptr);
+    ierr = SCOTCH_stratGraphOrder( c_strat_ptr,
+      scotch_ordering_strategy_string.c_str());
   }
   
   return ierr;
 } 
 
 template <typename Adapter>
-int AlgPTScotch<Adapter>::order(
-    const RCP<OrderingSolution<lno_t, gno_t> > &solution) {
+int AlgPTScotch<Adapter>::globalOrder(
+    const RCP<GlobalOrderingSolution<gno_t> > &solution) {
+  throw std::logic_error("AlgPTScotch does not yet support global ordering.");
+}
+
+template <typename Adapter>
+int AlgPTScotch<Adapter>::localOrder(
+    const RCP<LocalOrderingSolution<lno_t> > &solution) {
   // TODO: translate teuchos sublist parameters to scotch strategy string
   // TODO: construct local graph model
   // TODO: solve with scotch
@@ -708,7 +734,7 @@ int AlgPTScotch<Adapter>::order(
   
   // build a local graph model
   this->buildModel(true);
-  if (isVerbose && me== 0) {
+  if (isVerbose && me==0) {
     std::cout << "Built local graph model." << std::endl;
   }
 
@@ -806,7 +832,7 @@ int AlgPTScotch<Adapter>::order(
   if (ierr != 0) {
     throw std::runtime_error("Can't build strategy!");
   }else if (isVerbose && me == 0) {
-    std::cout << "Graphing strategy built.." << std::endl;
+    std::cout << "Graphing strategy built." << std::endl;
   }
 
   // Allocate results

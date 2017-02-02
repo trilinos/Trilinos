@@ -43,11 +43,30 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_Metric.hpp
- *  \Includes the files for working with MetricValues and GraphMetricValues classes.
+/*! \file Zoltan2_EvaluateBaseClass.hpp
+ *  \brief Base class for the EvaluatePartition and EvaluateOrdering classes.
  */
 
-#include <Zoltan2_GraphMetrics.hpp>
-#include <Zoltan2_GraphMetricsUtility.hpp>
-#include <Zoltan2_ImbalanceMetrics.hpp>
-#include <Zoltan2_ImbalanceMetricsUtility.hpp>
+#ifndef ZOLTAN2_EVALUATEBASECLASS_HPP
+#define ZOLTAN2_EVALUATEBASECLASS_HPP
+
+namespace Zoltan2{
+
+/*! \brief A base class for EvaluatePartition, EvaluateOrdering, ...
+ */
+class EvaluateBaseClassRoot{
+  public:
+    virtual ~EvaluateBaseClassRoot() {} // required virtual declaration
+
+    /*! \brief Print all metrics */
+    virtual void printMetrics(std::ostream &os) const {};
+};
+
+template <typename Adapter>
+class EvaluateBaseClass : public EvaluateBaseClassRoot {
+public:
+};
+
+}   // namespace Zoltan2
+
+#endif

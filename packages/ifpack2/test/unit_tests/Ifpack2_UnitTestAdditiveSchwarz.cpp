@@ -119,6 +119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
   zlist.set ("order_method", "rcm");
+  zlist.set ("order_method_type", "local");
   params.set ("inner preconditioner name", "ILUT");
   {
     Teuchos::ParameterList innerParams;
@@ -203,6 +204,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LO, GO)
   Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
   zlist.set ("order_method", "rcm");
+  zlist.set ("order_method_type", "local");
 
   const int overlapLevel=3;
   params.set ("schwarz: overlap level", overlapLevel);
@@ -462,6 +464,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
       params.set ("schwarz: overlap level", overlapLevel);
       params.set ("schwarz: use reordering",reorderSubdomains);
       zlist.set ("order_method", "rcm");
+      zlist.set ("order_method_type", "local");
       params.set ("schwarz: reordering list", zlist);
       params.set("schwarz: combine mode", "Zero");
       params.set ("inner preconditioner name", "IDENTITY");

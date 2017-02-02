@@ -145,20 +145,26 @@ public:
   }
 
   // Ordering method
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_);
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_);
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-template <typename Adapter>
-int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
-{
-    // typedef typename Adapter::lno_t lno_t;     // local ids
-    // typedef typename Adapter::gno_t gno_t;     // global ids
-    // typedef typename Adapter::scalar_t scalar_t;   // scalars
 
+template <typename Adapter>
+int AlgND<Adapter>::globalOrder(
+  const RCP<GlobalOrderingSolution<gno_t> > &solution_)
+{
+  throw std::logic_error("AlgND does not yet support global ordering.");
+}
+
+template <typename Adapter>
+int AlgND<Adapter>::localOrder(
+  const RCP<LocalOrderingSolution<lno_t> > &solution_)
+{
     mEnv->debug(DETAILED_STATUS, std::string("Entering AlgND"));
 
     //////////////////////////////////////////////////////////////////////

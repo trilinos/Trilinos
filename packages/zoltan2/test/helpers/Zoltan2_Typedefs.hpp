@@ -54,7 +54,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Zoltan2_Metric.hpp>
+#include <Zoltan2_EvaluateBaseClass.hpp>
 //#include <Tpetra_Map.hpp>
 //#include <Xpetra_Vector_decl.hpp>
 //#include <Xpetra_CrsMatrix_decl.hpp>
@@ -162,31 +162,80 @@ namespace Zoltan2_TestingFramework {
 
   typedef GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>
   geometricgen_t;
- 
+
   // Adapter types 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t>        userTypes_t;
-  typedef Zoltan2::BaseAdapter<userTypes_t>                         base_adapter_t;
-  typedef Zoltan2::BasicIdentifierAdapter<userTypes_t>              basic_id_t;
-  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>             xpetra_mv_adapter;
-  typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t>   xcrsGraph_adapter;
-  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
-  typedef Zoltan2::BasicVectorAdapter<tMVector_t>                   basic_vector_adapter;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t>    userTypes_t;
+  typedef Zoltan2::BaseAdapter<userTypes_t>                     base_adapter_t;
+  typedef Zoltan2::BasicIdentifierAdapter<userTypes_t>          basic_id_t;
+
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>              xMV_tMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t>    xCG_tCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t>  xCM_tCM_t;
+
+  typedef Zoltan2::XpetraMultiVectorAdapter<xMVector_t>              xMV_xMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<xcrsGraph_t, tMVector_t>    xCG_xCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t>  xCM_xCM_t;
+
+#ifdef HAVE_EPETRA_DATA_TYPES
+  typedef Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>         xMV_eMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<Epetra_CrsGraph, tMVector_t>   xCG_eCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<Epetra_CrsMatrix, tMVector_t> xCM_eCM_t;
+#else // temp compiler issues - dummy place holders
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xMV_eMV_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCG_eCG_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCM_eCM_t;
+#endif
+
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t>         basic_vector_adapter;
 
 #ifdef HAVE_ZOLTAN2_PAMGEN
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t>                    pamgen_adapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<tMVector_t>          pamgen_adapter_t;
 #else
   // This typedef exists only to satisfy the compiler.
   // PamgenMeshAdapter cannot be used when Trilinos is not built with Pamgen
-  typedef Zoltan2::BasicVectorAdapter<tMVector_t>                   pamgen_adapter_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t>         pamgen_adapter_t;
 #endif
 
-  // Problem types
-  typedef Zoltan2::Problem<basic_id_t>                              base_problem_t;
-  typedef Zoltan2::PartitioningProblem<basic_id_t>                  partitioning_problem_t; 
-  typedef Zoltan2::OrderingProblem<basic_id_t>                      ordering_problem_t; 
-  typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
-  
-  typedef Zoltan2::BaseClassMetrics<zscalar_t>                      base_metric_t;
-}
+// when test objects are created they set an enum to define the adapter type
+// then when used they can be cast to that type safely using Z2_TEST_UPCAST
+enum EAdapterType {
+  AT_basic_id_t,
+  AT_xMV_tMV_t,
+  AT_xMV_xMV_t,
+  AT_xMV_eMV_t,
+  AT_xCG_tCG_t,
+  AT_xCG_xCG_t,
+  AT_xCG_eCG_t,
+  AT_xCM_tCM_t,
+  AT_xCM_xCM_t,
+  AT_xCM_eCM_t,
+  AT_basic_vector_adapter,
+  AT_pamgen_adapter_t
+};
 
-#endif
+#define Z2_TEST_UPCAST(adptr, TEMPLATE_ACTION)                                 \
+switch(adptr) {                                                                \
+  case AT_basic_id_t: {TEMPLATE_ACTION(basic_id_t)} break;                     \
+  case AT_xMV_tMV_t: {TEMPLATE_ACTION(xMV_tMV_t)} break;                       \
+  case AT_xMV_xMV_t: {TEMPLATE_ACTION(xMV_xMV_t)} break;                       \
+  case AT_xMV_eMV_t: {TEMPLATE_ACTION(xMV_eMV_t)} break;                       \
+  case AT_xCG_tCG_t: {TEMPLATE_ACTION(xCG_tCG_t)} break;                       \
+  case AT_xCG_xCG_t: {TEMPLATE_ACTION(xCG_xCG_t)} break;                       \
+  case AT_xCG_eCG_t: {TEMPLATE_ACTION(xCG_eCG_t)} break;                       \
+  case AT_xCM_tCM_t: {TEMPLATE_ACTION(xCM_tCM_t)} break;                       \
+  case AT_xCM_xCM_t: {TEMPLATE_ACTION(xCM_xCM_t)} break;                       \
+  case AT_xCM_eCM_t: {TEMPLATE_ACTION(xCM_eCM_t)} break;                       \
+  case AT_basic_vector_adapter: {TEMPLATE_ACTION(basic_vector_adapter)} break; \
+  case AT_pamgen_adapter_t: {TEMPLATE_ACTION(pamgen_adapter_t)} break;         \
+  default: throw std::logic_error( "Bad Z2_TEST_UPCAST" );                     \
+};
+
+#define Z2_TEST_UPCAST_COORDS(adptr, TEMPLATE_ACTION)                          \
+switch(adptr) {                                                                \
+  case AT_xMV_tMV_t: {TEMPLATE_ACTION(xMV_tMV_t)} break;                       \
+  default: throw std::logic_error( "Bad Z2_TEST_UPCAST_COORDINATES" );         \
+};
+
+} // namespace Zoltan2_TestingFramework
+
+#endif // ZOLTAN2_TYPEDEFS

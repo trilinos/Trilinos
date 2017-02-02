@@ -87,7 +87,13 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
+  virtual int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Ordering method
+  virtual int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
   {
     Z2_THROW_NOT_IMPLEMENTED 
   }

@@ -43,8 +43,8 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_ProblemFactory.hpp
-    \brief Returns a pointer to a new problem class.
+/*! \file Zoltan2_TestFactory.hpp
+    \brief Returns a pointer to new test classes.
     Is not responsible for memory management!
 */
 #ifndef ZOLTAN2_PROBLEM_FACTORY_HPP
@@ -52,8 +52,8 @@
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_ColoringProblem.hpp>
 #include <Zoltan2_OrderingProblem.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 #include <Zoltan2_Typedefs.hpp>
 
 using namespace Zoltan2_TestingFramework;
@@ -63,116 +63,71 @@ namespace Zoltan2_TestingFramework {
 /// \brief ProblemFactory class contains 1 static factory method
   class ProblemFactory {
   public:
-
     /// \brif Zoltan2::Problem factory method
     ///
     /// @param kind A string equal to the type of the problem (paritioning, ordering, coloring)
     /// @param kind A string equal to the type of the adapter
-    /// @param input Input adapter used to construct the problem
     /// @param params Zolta2 parameter list
     /// @param (MPI) MPI world communicator
     ///
-    /// @return returns a pointer to new Zoltan2::Problem or a nullptr if kind was not known.
-#ifdef HAVE_ZOLTAN2_MPI
-    static Problem<basic_id_t> * newProblem(  const std::string &kind,
-                                                const std::string &adapter_name, 
-                                                base_adapter_t *input,
-                                                ParameterList *params,
-                                                MPI_Comm comm)
-#else
-    static Problem<basic_id_t> * newProblem(  const std::string & kind,
-                                                const std::string &adapter_name, 
-                                                base_adapter_t *input,
-                                                ParameterList *params)
-#endif
-    {
-      if(kind == "partitioning") {
-#ifdef HAVE_ZOLTAN2_MPI
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params, comm));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params, comm));
-#else
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params));
-#endif
-      } else if (kind == "ordering") {
-#ifdef HAVE_ZOLTAN2_MPI
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params, comm));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params, comm));
-#else
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::OrderingProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params));
-#endif
-      } else if (kind == "coloring") {
-#ifdef HAVE_ZOLTAN2_MPI
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params, comm));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params, comm));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params, comm));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params, comm));
-#else
-        if (adapter_name == "BasicIdentifier")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "XpetraMultiVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsGraph")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xcrsGraph_adapter>(reinterpret_cast<xcrsGraph_adapter *>(input), params));
-        else if (adapter_name == "XpetraCrsMatrix")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<xcrsMatrix_adapter>(reinterpret_cast<xcrsMatrix_adapter *>(input), params));
-        else if (adapter_name == "BasicVector")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
-        else if (adapter_name == "PamgenMesh")
-          return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::ColoringProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params));
-#endif
+    /// @return returns a pointer to new Zoltan2::Problem or a nullptr if
+    /// problem_name was not known.
+    ProblemFactory(const std::string & problemName,
+                   RCP<AdapterFactory> adapterFactory,
+                   ParameterList *params
+                   #ifdef HAVE_ZOLTAN2_MPI
+                    , MPI_Comm comm
+                   #endif
+                   ) {
+
+      problem_name = problemName;
+      adapterType = adapterFactory->getMainAdapterType();
+
+      #ifdef HAVE_ZOLTAN2_MPI
+        #define CREATE_PRBLM(problemClass, adapterClass)                       \
+          adapterClass * pCast = dynamic_cast<adapterClass *>                  \
+            (adapterFactory->getMainAdapter());                                \
+          if(!pCast) { throw std::logic_error(                                 \
+            "ProblemFactory adapter dynamic_cast failed for problem name "     \
+              + problem_name + " and adapterClass " + #adapterClass ); }       \
+          problem = rcp(new problemClass<adapterClass>(pCast, params, comm));
+      #else
+        #define CREATE_PRBLM(problemClass, adapterClass)                       \
+          adapterClass * pCast = dynamic_cast<adapterClass *>                  \
+            (adapterFactory->getMainAdapter());                                \
+          if(!pCast) { throw std::logic_error(                                 \
+            "ProblemFactory adapter dynamic_cast failed for problem name "     \
+              + problem_name + " and adapterClass " + #adapterClass ); }       \
+          problem = rcp(new problemClass<adapterClass>(pCast, params));
+      #endif
+
+      #define MAKE_PARTITION_PROBLEM(adapterClass)  \
+        CREATE_PRBLM(PartitioningProblem, adapterClass);
+
+      #define MAKE_ORDERING_PROBLEM(adapterClass)  \
+        CREATE_PRBLM(OrderingProblem, adapterClass);
+
+      // PartitioningProblem
+      if(problem_name == "partitioning") {
+        Z2_TEST_UPCAST(adapterType, MAKE_PARTITION_PROBLEM)
       }
-     return nullptr; // problem type not known 
+      else if(problem_name == "ordering") {
+        Z2_TEST_UPCAST(adapterType, MAKE_ORDERING_PROBLEM)
+      }
+
+      if(problem == Teuchos::null) {
+        throw std::logic_error("ProblemFactory failed to create Problem!");
+      }
     }
+
+    RCP<ProblemRoot> getProblem() { return problem; }
+    const std::string & getProblemName() const { return problem_name; }
+    EAdapterType getAdapterType() const { return adapterType; }
+
+    private:
+      std::string problem_name; // string converts to a problem type
+      EAdapterType adapterType; // converts to an adapter type
+      RCP<ProblemRoot> problem;
   };
 }
 #endif // ZOLTAN2_PROBLEM_FACTORY_HPP

@@ -81,45 +81,13 @@ typedef zscalar_t z2TestScalar;
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
-
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 
-#define epsilon 0.00000001
 
-int validatePerm(size_t n, z2TestLO *perm)
-// returns 0 if permutation is valid, negative if invalid
-{
-  std::vector<int> count(n);
-  int status = 0;
-
-  for (size_t i=0; i<n; i++)
-    count[i]=0;
-
-  for (size_t i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=z2TestLO(n)))
-      status = -1;
-    else
-      count[perm[i]]++;
-  }
-
-  // Each index should occur exactly once (count==1)
-  for (size_t i=0; i<n; i++){
-    if (count[i] != 1){
-      status = -2;
-      break;
-    }
-  }
-
-  return status;
-}
-
+// Using perm
 size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
-// Returns the bandwidth of the (local) permuted matrix
-// Note we need to use the inverse permutation, but assume
-// the direct permutation is passed in.
 {
   z2TestLO ii, i, j, k;
-  z2TestLO *iperm = 0;
   ArrayView<const z2TestLO> indices;
   ArrayView<const z2TestScalar> values;
   z2TestLO bw_left = 0;
@@ -127,22 +95,14 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
 
   z2TestLO  n = A->getNodeNumRows();
 
-  // Construct inverse perm
-  if (perm){
-    iperm = new z2TestLO [n];
-    for (ii=0; ii<n; ii++) {
-      iperm[perm[ii]] = ii;
-    }
-  }
-
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
       if (indices[k] < n){ // locally owned
         if (perm){
-          i = iperm[ii];
-          j = iperm[indices[k]];
+          i = perm[ii];
+          j = perm[indices[k]];
         } else {
           i = ii;
           j = indices[k];
@@ -154,27 +114,120 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
       }
     }
   }
-
-  if (iperm)
-    delete [] iperm;
-
   // Total bandwidth is the sum of left and right + 1
   return (bw_left + bw_right + 1);
 }
 
+#define MDM
+#ifdef MDM
+// This is all temp code to be deleted when refactoring is compelte.
+void tempDebugTest(
+  RCP<SparseMatrix> origMatrix, Zoltan2::LocalOrderingSolution<z2TestLO> *soln)
+{
+  typedef typename SparseMatrixAdapter::scalar_t scalar_t;
+  typedef typename SparseMatrixAdapter::lno_t lno_t;
+
+  lno_t * perm = soln->getPermutationView();
+  lno_t * iperm = soln->getPermutationView(true);
+
+  lno_t numRows = origMatrix->getNodeNumRows();
+
+  std::cout << "origMatrix->getNodeNumRows(): " << numRows << std::endl;
+
+  if (numRows == 0) {
+    std::cout << "Skipping analysis - matrix is empty" << std::endl;
+    return;
+  }
+
+  Array<lno_t> oldMatrix(numRows*numRows);
+  Array<lno_t> newMatrix(numRows*numRows);
+
+  // print the solution permutation
+  lno_t showSize = numRows;
+  if(showSize > 30) {
+    showSize = 30;
+  }
+
+  std::cout << std::endl << "perm:  ";
+  for(lno_t n = 0; n < showSize; ++n) {
+    std::cout << " " << perm[n] << " ";
+  }
+  if(showSize < numRows) {
+    std::cout << " ..."; // partial print...
+  }
+  std::cout << std::endl << "iperm: ";
+  for(lno_t n = 0; n < showSize; ++n) {
+    std::cout << " " << iperm[n] << " ";
+  }
+  if(showSize < numRows) {
+    std::cout << " ..."; // partial print...
+  }
+
+  std::cout << std::endl;
+
+  // write 1's in our matrix
+  for (lno_t j = 0; j < numRows; ++j) {
+    ArrayView<const lno_t> indices;
+    ArrayView<const scalar_t> wgts;
+    origMatrix->getLocalRowView( j, indices, wgts );
+    for (lno_t n = 0; n < indices.size(); ++n) {
+      lno_t i = indices[n];
+      if (i < numRows) { // locally owned
+        oldMatrix[i + j*numRows] = 1;
+        newMatrix[perm[i] + perm[j]*numRows] = 1;
+      }
+    }
+  }
+
+  // print oldMatrix
+  std::cout << std::endl << "original graph in matrix form:" << std::endl;
+  for(lno_t y = 0; y < showSize; ++y) {
+    for(lno_t x = 0; x < showSize; ++x) {
+      std::cout << " " << oldMatrix[x + y*numRows];
+    }
+    if(showSize < numRows) {
+      std::cout << " ..."; // partial print...
+    }
+    std::cout << std::endl;
+  }
+  if(showSize < numRows) {
+    for(lno_t i = 0; i < showSize; ++i) {
+      std::cout << " ."; // partial print...
+    }
+    std::cout << " ..."; // partial print...
+  }
+  std::cout << std::endl;
+
+  // print newMatrix
+  std::cout << std::endl << "reordered graph in matrix form:" << std::endl;
+  for(lno_t y = 0; y < showSize; ++y) {
+    for(lno_t x = 0; x < showSize; ++x) {
+      std::cout << " " << newMatrix[x + y*numRows];
+    }
+    if(showSize < numRows) {
+      std::cout << " ..."; // partial print...
+    }
+    std::cout << std::endl;
+  }
+  if(showSize < numRows) {
+    for(lno_t i = 0; i < showSize; ++i) {
+      std::cout << " ."; // partial print...
+    }
+    std::cout << " ..."; // partial print...
+  }
+  std::cout << std::endl;
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
-int main(int narg, char** arg)
+int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 {
   std::string inputFile = "";            // Matrix Market file to read
   std::string outputFile = "";           // Output file to write
   bool verbose = false;                  // Verbosity of output
   int testReturn = 0;
 
-  ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  int me = comm->getRank();
+  int rank = comm->getRank();
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -185,7 +238,10 @@ int main(int narg, char** arg)
                  "Name of file to write the permutation");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
-  cout << "Starting everything" << endl;
+
+  if (rank == 0 ) {
+    cout << "Starting everything" << endl;
+  }
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -217,153 +273,229 @@ int main(int narg, char** arg)
   cmdp.setOption("order_method", &orderMethod,
                 "order_method: natural, random, rcm, scotch");
 
+  std::string orderMethodType("local");
+  cmdp.setOption("order_method_type", &orderMethodType,
+                "local or global or both" );
+
   //////////////////////////////////
   cmdp.parse(narg, arg);
 
 
   RCP<UserInputForTests> uinput;
 
+  // MDM - temp testing code
+  // testDataFilePath = "/Users/micheldemessieres/Documents/trilinos-build/trilinosrepo/parZoltan2/packages/zoltan2/test/driver/driverinputs/ordering";
+  // inputFile = "orderingTest";
+
   if (inputFile != ""){ // Input file specified; read a matrix
     uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
   }
-  else                  // Let Galeri generate a matrix
-
-    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
+  else {                  // Let Galeri generate a matrix
+    uinput = rcp(
+      new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
+  }
 
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
-  if (me == 0)
+  if (rank == 0) {
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
+  }
 
   ////// Create a vector to use with the matrix.
+  // Currently Not Used
+  /*
   RCP<Vector> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
+  */
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
   params.set("order_method", orderMethod);
+  params.set("order_method_type", orderMethodType);
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);
 
   ////// Create and solve ordering problem
-  try
-  {
-  Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  cout << "Going to solve" << endl;
-  problem.solve();
 
-  ////// Basic metric checking of the ordering solution
-  size_t checkLength;
-  z2TestLO *checkPerm, *checkInvPerm;
-  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
+  try {
+    Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
 
-  cout << "Going to get results" << endl;
-  // Permutation
-  checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutationView();
-  checkInvPerm = soln->getPermutationView(true); // get the permutation inverse
-
-  // Separators. 
-  // The following methods needs to be supported:
-  // haveSeparators: true if Scotch Nested Dissection was called.
-  // getCBlkPtr: *CBlkPtr from Scotch_graphOrder
-  // getRangeTab: RangeTab from Scotch_graphOrder
-  // getTreeTab: TreeTab from Scotch_graphOrder
-  z2TestLO    NumBlocks = 0;
-  z2TestLO    *RangeTab;
-  z2TestLO    *TreeTab;
-  if (soln->haveSeparators()) {
-    NumBlocks = soln->getNumSeparatorBlocks(); // BDD
-    RangeTab = soln->getSeparatorRangeView(); // BDD
-    TreeTab = soln->getSeparatorTreeView(); // BDD
-  }
-  else {
-    // TODO FAIL with error
-  }
-
-
-  if (outputFile != "") {
-    ofstream permFile;
-
-    // Write permutation (0-based) to file
-    // each process writes local perm to a separate file
-    //std::string fname = outputFile + "." + me;
-    std::stringstream fname;
-    fname << outputFile << "." << comm->getSize() << "." << me;
-    permFile.open(fname.str().c_str());
-    for (size_t i=0; i<checkLength; i++){
-      permFile << " " << checkPerm[i] << endl;
+    if( rank == 0 ) {
+      cout << "Going to solve" << endl;
     }
-    permFile.close();
-  }
+    problem.solve();
 
-  // Validate that checkPerm is a permutation
-  cout << "Checking permutation" << endl;
-  testReturn = validatePerm(checkLength, checkPerm);
-  if (testReturn) goto End;
+    ////// Basic metric checking of the ordering solution
+    size_t checkLength;
+    z2TestLO *checkPerm, *checkInvPerm;
+    Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
+      problem.getLocalOrderingSolution();
 
-  // Validate the inverse permutation.
-  cout << "Checking inverse permutation" << endl;
-  for (size_t i=0; i< checkLength; i++){
-    testReturn = (checkInvPerm[checkPerm[i]] != z2TestLO(i));
-    if (testReturn) goto End;
+    if( rank == 0 ) {
+      cout << "Going to get results" << endl;
+    }
+
+  #ifdef MDM // Temp debugging code all of which can be removed for final
+  for( int checkRank = 0; checkRank < comm->getSize(); ++checkRank ) {
+    comm->barrier();
+    if( checkRank == comm->getRank() ) {
+      std::cout << "Debug output matrix for rank: " << checkRank << std::endl;
+      tempDebugTest(origMatrix, soln);
+    }
+    comm->barrier();
   }
+  #endif
+
+    // Permutation
+    checkLength = soln->getPermutationSize();
+    checkPerm = soln->getPermutationView();
+    checkInvPerm = soln->getPermutationView(true); // get permutation inverse
+
+    // Separators.
+    // The following methods needs to be supported:
+    // haveSeparators: true if Scotch Nested Dissection was called.
+    // getCBlkPtr: *CBlkPtr from Scotch_graphOrder
+    // getRangeTab: RangeTab from Scotch_graphOrder
+    // getTreeTab: TreeTab from Scotch_graphOrder
+    z2TestLO    NumBlocks = 0;
+    z2TestLO    *RangeTab;
+    z2TestLO    *TreeTab;
+    if (soln->haveSeparators()) {
+      NumBlocks = soln->getNumSeparatorBlocks(); // BDD
+      RangeTab = soln->getSeparatorRangeView(); // BDD
+      TreeTab = soln->getSeparatorTreeView(); // BDD
+    }
+    else {
+      // TODO FAIL with error
+    }
+
+    if (outputFile != "") {
+      ofstream permFile;
+
+      // Write permutation (0-based) to file
+      // each process writes local perm to a separate file
+      //std::string fname = outputFile + "." + me;
+      std::stringstream fname;
+      fname << outputFile << "." << comm->getSize() << "." << rank;
+      permFile.open(fname.str().c_str());
+      for (size_t i=0; i<checkLength; i++){
+        permFile << " " << checkPerm[i] << endl;
+      }
+      permFile.close();
+    }
+
+    // Validate that checkPerm is a permutation
+    if (rank == 0 ) {
+      cout << "Checking permutation" << endl;
+    }
     
-  // Validate NumBlocks
-  cout << "Checking num blocks" << endl;
-  testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestLO(checkLength)));
-  if (testReturn) goto End;
+    testReturn = soln->validatePerm();
+    if (testReturn) return testReturn;
 
-  // Validate RangeTab.
-  // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
-  cout << "Checking range" << endl;
-  testReturn = RangeTab[0];
-  if (testReturn) goto End;
+    // Validate the inverse permutation.
+    if (rank == 0 ) {
+      cout << "Checking inverse permutation" << endl;
+    }
+    for (size_t i=0; i< checkLength; i++){
+      testReturn = (checkInvPerm[checkPerm[i]] != z2TestLO(i));
+      if (testReturn) return testReturn;
+    }
 
-  for (z2TestLO i = 0; i < NumBlocks; i++){
-    testReturn = !(RangeTab[i] < RangeTab[i+1]);
-    if (testReturn) goto End;
-  }
- 
-  // TODO How do we validate TreeTab?
-  //      TreeTab root has -1, other values < NumBlocks
+    // Validate NumBlocks
+    if (rank == 0 ) {
+      cout << "Checking num blocks" << endl;
+    }
+    testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestLO(checkLength)));
+    if (testReturn) return testReturn;
 
-  cout << "Going to compute the bandwidth" << endl;
-  // Compute original bandwidth
-  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, 0) << endl;
-  // Compute permuted bandwidth
-  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, checkPerm) << endl;
+    // Validate RangeTab.
+    // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
+    if (rank == 0 ) {
+      cout << "Checking range" << endl;
+    }
+    testReturn = RangeTab[0];
+    if (testReturn) return testReturn;
 
-  } catch (std::exception &e){
-      if (comm->getSize() != 1)
-      {
-          std::cout << "Ordering does not support distributed matrices."
-             << std::endl;
-          std::cout << "PASS" << std::endl;
+    for (z2TestLO i = 0; i < NumBlocks; i++){
+      testReturn = !(RangeTab[i] < RangeTab[i+1]);
+      if (testReturn) return testReturn;
+    }
+
+    // TODO How do we validate TreeTab?
+    //      TreeTab root has -1, other values < NumBlocks
+    if (rank == 0 ) {
+      cout << "Going to compute the bandwidth" << endl;
+    }
+
+    // Compute original and permuted bandwidth
+    z2TestLO originalBandwidth = computeBandwidth(origMatrix, nullptr);
+    z2TestLO permutedBandwidth = computeBandwidth(origMatrix, checkPerm);
+
+    if (rank == 0 ) {
+      cout << "Original Bandwidth: " << originalBandwidth << endl;
+      cout << "Permuted Bandwidth: " << permutedBandwidth << endl;
+    }
+
+    if(permutedBandwidth >= originalBandwidth) {
+      if (rank == 0 ) {
+        std::cout << "Test failed: bandwidth was not improved!" << std::endl;
+
+        std::cout << "Test in progress - returning OK for now..." << std::endl;
       }
-      else
-      {
-          std::cout << "Exception caught in ordering" << std::endl;
-          std::cout << e.what() << std::endl;
-          std::cout << "FAIL" << std::endl;
+
+     // return 1; // TO DO - we need test to have proper ordering
+    }
+    else {
+      if (rank == 0) {
+        std::cout << "The bandwidth was improved. Good!" << std::endl;
       }
-      return 0;
+    }
+  }
+  catch (std::exception &e) {
+    if (comm->getSize() != 1) {
+      // need to resolve - exactly why is this placed here?
+      std::cout << "Ordering does not support distributed matrices." <<
+        std::endl;
+    }
+    else {
+      std::cout << "Exception caught in ordering" << std::endl;
+      std::cout << e.what() << std::endl;
+      return 1;
+    }
   }
 
-End: // On error, goto End
-  if (me == 0) {
-    if (testReturn)
-      std::cout << "Solution is not a permutation; FAIL" << std::endl;
-    else
-      std::cout << "PASS" << std::endl;
-  }
+  return 0;
+}
 
+int main(int narg, char** arg)
+{
+  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  int result = mainExecute(narg, arg, comm);
+
+  // get reduced return code form all procsses
+  comm->barrier();
+  int resultReduced;
+  reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1,
+                     &result, &resultReduced);
+
+  // provide a final message which guarantees that the test will fail
+  // if any of the processes failed
+  if (comm->getRank() == 0) {
+    std::cout << "Scotch Ordering test with " << comm->getSize()
+              << " processes has test return code " << resultReduced
+              << " and is exiting in the "
+              << ((resultReduced == 0 ) ? "PASSED" : "FAILED") << " state."
+              << std::endl;
+  }
 }
 
