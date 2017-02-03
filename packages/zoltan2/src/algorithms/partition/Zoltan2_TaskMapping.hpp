@@ -2974,12 +2974,12 @@ inline void visualize_mapping(int myRank,
         }
       }
       std::tuple<int,int,int, int, int, int> foo (
-          int (machine_coords[0][origin_rank]),
-          int (machine_coords[1][origin_rank]),
-          int (machine_coords[2][origin_rank]),
-          int (machine_coords[0][neighbor_rank]),
-          int (machine_coords[1][neighbor_rank]),
-          int (machine_coords[2][neighbor_rank]));
+          (int) (machine_coords[0][origin_rank]),
+          (int)  (machine_coords[1][origin_rank]),
+          (int) (machine_coords[2][origin_rank]),
+          (int) (machine_coords[0][neighbor_rank]),
+          (int) (machine_coords[1][neighbor_rank]),
+          (int) (machine_coords[2][neighbor_rank]));
 
 
       if (differentnode && my_arrows.find(foo) == my_arrows.end()){
