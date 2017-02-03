@@ -837,7 +837,7 @@ public:
 	     hm2.hash_nexts = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size * 2);
              l2_allocated = true;
 	  }
-	  nnz_lno_t hash = -1;
+	  hash = -1;
 	  if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
  	  hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
 		teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size
@@ -4229,7 +4229,7 @@ public:
       KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::ManyThread2OneChunk;
       
       nnz_lno_t min_hash_size = 1;
-      while (max_row_nnz > min_hash_size){
+      while (max_row_nnz > (size_type) (min_hash_size)){
         min_hash_size *= 2;
       }
       size_t chunksize = min_hash_size ; //this is for used hash indices
