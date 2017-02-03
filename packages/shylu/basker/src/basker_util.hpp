@@ -65,8 +65,7 @@ namespace BaskerNS
     #endif
     {
       #ifdef BASKER_KOKKOS
-      Int kid = (Int)(thread.league_rank()*thread.team_size() +
-		      thread.team_rank());
+      Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
       #endif
       {
         basker->t_init_2DA(kid, alloc);
@@ -93,7 +92,7 @@ namespace BaskerNS
     kokkos_reset_factor(Basker<Int,Entry,Exe_Space> *_b)
     {
       basker = _b;
-    }//end kokkos_order_init_2D()
+    }
 
     BASKER_INLINE
     #ifdef BASKER_KOKKOS
@@ -103,10 +102,8 @@ namespace BaskerNS
     #endif
     {
       #ifdef BASKER_KOKKOS
-      Int kid = (Int)(thread.league_rank()*thread.team_size() +
-		      thread.team_rank());
+      Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
       #endif
-
       {
         if(basker->btf_tabs_offset!=0)
         {
@@ -363,7 +360,7 @@ namespace BaskerNS
            b, LU_size(b)-1,
            LU(b)(LU_size(b)-1).nnz,
            LU(b)(LU_size(b)-1).mnnz);
-         */
+        */
 
         LU(b)(LU_size(b)-1).nnz = LU(b)(LU_size(b)-1).mnnz;
 
@@ -478,7 +475,7 @@ namespace BaskerNS
 
           Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
 
-          if( (b > 14) &&
+          if( (b > 14) &&  // NDE: Why is 14 specifically used here?
               (b  > LU_size(U_col)) &&
               (l !=1)
             )

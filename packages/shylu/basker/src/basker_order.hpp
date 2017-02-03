@@ -782,8 +782,12 @@ namespace BaskerNS
     //Permute
     for(Int i = 0; i < n; i++)
     {
-      xcon(p(i))  = y[i];
-      ycon(i)    = (Entry) 0.0;
+      // Testing matching original for a bug fix with ND block...
+      //xcon(p(i))  = y[i];
+      //ycon(i)    = (Entry) 0.0;
+      // ND revert fix
+      xcon(i)  = (Entry) 0.0;
+      ycon(p(i))    = y[i];
     }
     return 0;
   }
@@ -800,12 +804,31 @@ namespace BaskerNS
    Int n
   )
   {
-    //Permute
-    for(Int i = 0; i < btf_tabs(btf_tabs_offset); i++)
-    { x[i] = xconv(p(i)); }
+    /*
+    // Steps from original code - this works with ND
+    for(Int i = btf_tabs(btf_tabs_offset); i < n; i++) // final step from serial_btf_solve
+    {
+      xconv(i) = yconv(i);
+    }
 
-    for(Int i = btf_tabs(btf_tabs_offset); i < n; i++)
-    { x[i] = yconv(p(i)); }
+    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
+    { x[i] = xconv(p(i)); }
+    */
+
+    const Int poffset = btf_tabs(btf_tabs_offset);
+    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
+    { 
+      Int permi = p(i);
+      if ( permi < poffset )
+      {
+        // ND blocks
+        x[i] = xconv(p(i)); 
+      } 
+      else {
+        // BTF blocks
+        x[i] = yconv(p(i)); 
+      }
+    }
 
     return 0;
   }
@@ -1162,19 +1185,18 @@ namespace BaskerNS
       temp_p (j+1) = temp_p (j+1) + temp_p (j);
     }
     //copy idxs
-
     for(Int ii = 0; ii < n; ii++)
     {
       Int ko = temp_p (col (ii) );
       for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
       {
-        temp_i (ko) = M.row_idx (k);
-        temp_v (ko) = M.val (k);
+        temp_i (ko) = M.row_idx (k); // preserves order of indices in row_idx (they may not be ordered, but won't be reshuffled)
+        temp_v (ko) = M.val (k);     // and corresponding order with vals
         ko++;
       }
     }
 
-    //copy back int A
+    //copy back into A
     for(Int ii=0; ii < n+1; ii++)
     {
       M.col_ptr (ii) = temp_p (ii);
@@ -1191,6 +1213,7 @@ namespace BaskerNS
     return 0;
   }//end permute_col(int) 
   
+
   /*GOBACK and make this good*/
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -1213,7 +1236,7 @@ namespace BaskerNS
     //permute
     for(Int k = 0; k < nnz; k++)
     {
-      temp_i[k] = row[M.row_idx[k]];
+      temp_i[k] = row[M.row_idx[k]]; // where does row_id=M.row_idx[k] move to? moves to row[row_id] looks like inverse perm...
     }
     //Copy back
     for(Int k = 0; k < nnz; k++)

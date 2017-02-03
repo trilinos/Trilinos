@@ -490,7 +490,6 @@ namespace BaskerNS
 
     // NDE
     /*
-    
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
     MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x

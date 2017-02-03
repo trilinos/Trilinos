@@ -176,9 +176,9 @@ namespace BaskerNS
     //BTF array
     int t_nfactor_diag(Int kid, Int schunk, Int nchunk);
 
-    INT_1DARRAY   btf_tabs;
-    Int           btf_tabs_offset;
-    Int           btf_nblks;
+    INT_1DARRAY   btf_tabs; // stores starting col id (global) of btf blocks
+    Int           btf_tabs_offset; // stores offset of first btf block in BTF_C, after the nd blocks BTF_A
+    Int           btf_nblks; // set during Symbolic() btf ordering step - total of BTF_C blocks and ND blocks?
 
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
@@ -1228,20 +1228,20 @@ namespace BaskerNS
     //Note: In future, rename AV -> AU
     MATRIX_VIEW_2DARRAY  AV;
     MATRIX_VIEW_2DARRAY  AL;
-    MATRIX_2DARRAY       AVM;
+    MATRIX_2DARRAY       AVM; // view of views of 2D blocks; stores CCS of the BTF_A upper matrix 2D blocks; btf_tabs_offset blocks in BTF_A
     MATRIX_2DARRAY       ALM;
 
     BASKER_MATRIX At;
     
-    MATRIX_2DARRAY LL;
-    MATRIX_2DARRAY LU;
-    INT_1DARRAY LL_size;
+    MATRIX_2DARRAY LL;   // view of views of 2D blocks; stores CCS factored ALM
+    MATRIX_2DARRAY LU;   // view of views of 2D blocks; stores CCS factored AVM
+    INT_1DARRAY LL_size; // tracks the number of 2D blocks ('rows') in a given 'column'
     INT_1DARRAY LU_size;
 
 
     //Used for BTF
-    MATRIX_1DARRAY LBTF;
-    MATRIX_1DARRAY UBTF;
+    MATRIX_1DARRAY LBTF; //lower blocks for BTF_C; total of btf_nblks - btf_tabs_offset
+    MATRIX_1DARRAY UBTF; //upper blocks for BTF_C
     
     //Thread Array 
     //2D-1D Format, stores workspace and token
@@ -1250,10 +1250,11 @@ namespace BaskerNS
     THREAD_1DARRAY  thread_array;
 
     //INT_2DARRAY lvl_task;
-    INT_2DARRAY  S;
+    INT_2DARRAY  S; //schedule
+                    // S maps a tree level and thread id to 2D col id
 
     //Made 2d Inorder to be able to use ref in Kokkos
-    INT_1DARRAY gperm;
+    INT_1DARRAY gperm; //global perm due to pivoting
     INT_1DARRAY gpermi;
     INT_1DARRAY gperm_same;
 

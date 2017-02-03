@@ -81,7 +81,6 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(LU_size, nblks+1);
 
     init_tree_struc();
-
   }//end malloc_tree
 
 
@@ -970,14 +969,14 @@ namespace BaskerNS
    BASKER_MATRIX &M
   )
   {
-    //This will scan the whle matrix and find the nnz and cuts
+    //This will scan the whole matrix and find the nnz and cuts
     //In parallel the values will be copied over
 
     Int L_col = 0; //Lower Blk col
     Int L_row = 0; //Lower Blk row
     Int U_col = 0; //Upper Blk col
     Int U_row = 0; //Upper Blk row
-    Int c_idx = 0; //Col tab offset
+    Int c_idx = 0; //Col tab offset; used to iterate through tree.col_tabs
 
     for(Int k = 0; k < M.ncol; ++k)
     {
@@ -992,18 +991,18 @@ namespace BaskerNS
       //Get the first blks
       L_row = 0;
       U_row = 0;
-      Int r_idx = 0;
+      Int r_idx = 0; //used to iterate through tree.row_tabs
       BASKER_BOOL start_col = BASKER_TRUE;
 
-      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) //offsets to row_idx - will yield range of row values to col k
       {
 
-        Int j = M.row_idx(i);
+        Int j = M.row_idx(i); //first row id entry in col k
 
         //Get right blk
         while(j >= tree.row_tabs(r_idx+1))
         {
-          if(j > k)
+          if(j > k) //lower
           {
             if((L_row+1 < LL_size(L_col)) &&
                 (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
@@ -1013,7 +1012,7 @@ namespace BaskerNS
               start_col = BASKER_TRUE;
             }
           }
-          else if(j <= k)
+          else if(j <= k) //upper
           {
             if((U_row+1 < LU_size(U_col)) &&
                 (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
@@ -1436,15 +1435,15 @@ namespace BaskerNS
         Kokkos::Timer timer_twod;
         #endif
 
-      clean_2d();
+      clean_2d(); // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
 
       //matrix_to_views_2D(BTF_A);
       //Find starting point
-      find_2D_convert(BTF_A);
+      find_2D_convert(BTF_A); //prepare CCS 'sizes' of each ALM(i)(j), AVM(i)(j) (nnz, col_idx, )
 
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
+      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
       #else
@@ -1494,21 +1493,19 @@ namespace BaskerNS
         #ifdef BASKER_TIMER_FINE
         tmp_time = timer_gperm.seconds();
         gperm_time += tmp_time;
-        std::cout << "    Basker gperm (pivot) reorder time: " << tmp_time << std::endl;
+        std::cout << "    Basker gperm (pivot) reset time: " << tmp_time << std::endl;
         timer_gperm.reset();
         #endif
     if(factor_flag == BASKER_TRUE)
     {
       typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
-      kokkos_reset_factor<Int,Entry,Exe_Space>
-        reset_factors(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1),
-          reset_factors);
+      kokkos_reset_factor<Int,Entry,Exe_Space> reset_factors(this); //t_reset_ND_factor, BTF; reset LL and LU for factorization factor_notoken step
+      Kokkos::parallel_for(TeamPolicy(num_threads,1), reset_factors);
       Kokkos::fence();
     }
         #ifdef BASKER_TIMER_FINE
         tmp_time = timer_gperm.seconds();
-        std::cout << "    Basker reset_factors time: " << tmp_time << std::endl;
+        std::cout << "    Basker 2D reset_factors time: " << tmp_time << std::endl;
         std::cout << "    Basker sorts total time: " << sort_time << std::endl;
         std::cout.precision(old_precision);
         std::cout.flags(old_settings);

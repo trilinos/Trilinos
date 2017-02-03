@@ -201,6 +201,8 @@ namespace BaskerNS
   // y_view_ptr_copy stores the solution pivots
   // After solve is complete, the y_view_ptr_copy results are permuted
   // and copied to the raw pointer _x
+  //
+  // NDE: 02/02/2017 Bug with ND block, returning wrong result; some reversion to match original implementation in terms of how to init x and y
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::solve_interface
@@ -214,7 +216,7 @@ namespace BaskerNS
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
     }
 
-    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0
+    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0 //NDE 02/02/2017: Reverted this to track bug, x is 0, y is perm rhs
 
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
 
@@ -250,13 +252,17 @@ namespace BaskerNS
     {
       if(btf_tabs_offset != 0)
       {
-        serial_solve(x,y);
+        //serial_solve(x,y);
+      // ND revert fix
+        serial_solve(y,x);
       }
     }
     else
     {
       //A\y -> y
-      serial_btf_solve(x,y);
+      //serial_btf_solve(x,y);
+      // ND revert fix
+      serial_btf_solve(y,x);
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -283,10 +289,19 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::serial_solve
   (
-   ENTRY_1DARRAY & x, // Permuted rhs at input
-   ENTRY_1DARRAY & y  // 0 at input
+   // ND revert fix
+   ENTRY_1DARRAY & y, // match original code
+   ENTRY_1DARRAY & x  
+   //ENTRY_1DARRAY & x, // Permuted rhs at input
+   //ENTRY_1DARRAY & y  // 0 at input
   )
   {
+    // ND revert fix
+    for( Int i = 0; i < gn; ++i ) //reintroduced for bug fix...
+    {
+      x(i) = y(i);
+      y(i) = (Entry)0.0;
+    }
     //L\x -> y
     serial_forward_solve(x,y);
 
@@ -307,10 +322,19 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::serial_btf_solve
   (
-   ENTRY_1DARRAY & x, // Permuted rhs at input
-   ENTRY_1DARRAY & y  // 0 at input
+   // ND revert fix
+   ENTRY_1DARRAY & y, // match original code
+   ENTRY_1DARRAY & x  
+   //ENTRY_1DARRAY & x, // Permuted rhs at input
+   //ENTRY_1DARRAY & y  // 0 at input
   )
   {
+    // ND revert fix
+    for( Int i = 0; i < gn; ++i ) //reintroduced for bug fix...
+    {
+      x(i) = y(i);
+      y(i) = (Entry)0.0;
+    }
     //Start in C and go backwards
     //In first level, only do U\L\x->y
     for(Int b = (btf_nblks-btf_tabs_offset)-1; b>= 0; b--)
@@ -553,14 +577,12 @@ namespace BaskerNS
   {
     //Add checks
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("SPMV. scol: %d ncol: %d \n",
-        M.scol, M.ncol);
+    printf("SPMV. scol: %d ncol: %d \n", M.scol, M.ncol);
     #endif
 
     const Int bcol = M.scol;
     const Int msrow = M.srow;
     //const Int brow = M.srow;
-    //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
     {
       const auto xkbcol = x(k+bcol);
@@ -591,8 +613,7 @@ namespace BaskerNS
   {
     //Add checks
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("SPMV. scol: %d ncol: %d \n",
-        M.scol, M.ncol);
+    printf("SPMV. scol: %d ncol: %d \n", M.scol, M.ncol);
     #endif
 
     const Int bcol = M.scol;
@@ -603,7 +624,7 @@ namespace BaskerNS
     {
       const Int istart = M.col_ptr(k);
       const Int iend   = M.col_ptr(k+1);
-      const auto xkbcol = y(k+bcol);
+      const auto ykbcol = y(k+bcol);
 
       //for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) 
       for(Int i = istart; i < iend; ++i) //NDE retest with const vars, scope tightly
@@ -614,7 +635,7 @@ namespace BaskerNS
                        gperm(M.row_idx(i) + msrow) :
                        (M.row_idx(i) + msrow) ;
 
-        x(j) -= M.val(i)*xkbcol;
+        x(j) -= M.val(i)*ykbcol;
       }
     }
 
