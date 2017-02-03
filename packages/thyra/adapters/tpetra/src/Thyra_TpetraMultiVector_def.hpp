@@ -454,7 +454,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMultiVec
 }
 
 
-/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
@@ -464,17 +464,48 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
   ) const
 {
   // Try to extract Tpetra objects from X and Y
-  auto X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
-  auto Y_tpetra = this->getTpetraMultiVector(Teuchos::rcpFromPtr(Y));
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  Teuchos::RCP<const TMV> X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
+  Teuchos::RCP<TMV> Y_tpetra = this->getTpetraMultiVector(Teuchos::rcpFromPtr(Y));
 
-  //
+  // If the cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the default implementation.
   if (nonnull(X_tpetra) && nonnull(Y_tpetra)) {
-    Y_tpetra->multiply();
+    // Sync everything to the execution space
+    typedef typename TMV::execution_space execution_space;
+    Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<execution_space>();
+    Y_tpetra->template sync<execution_space>();
+    Teuchos::rcp_const_cast<TMV>(tpetraMultiVector_.getConstObj())->template sync<execution_space>();
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_TEST_FOR_EXCEPTION(ST::isComplex && (M_trans == CONJ),
+      std::logic_error,
+      "Error, conjugation without transposition is not allowed for complex scalar types!");
+
+    Teuchos::ETransp trans;
+    switch (M_trans) {
+      case NOTRANS:
+        trans = Teuchos::NO_TRANS;
+        break;
+      case CONJ:
+        trans = Teuchos::NO_TRANS;
+        break;
+      case TRANS:
+        trans = Teuchos::TRANS;
+        break;
+      case CONJTRANS:
+        trans = Teuchos::CONJ_TRANS;
+        break;
+    }
+
+    Y_tpetra->template modify<execution_space>();
+    Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraMultiVector_.getConstObj(), *X_tpetra, beta);
   } else {
-    VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
+    Teuchos::rcp_const_cast<TMV>(tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+    SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(M_trans, X, Y, alpha, beta);
   }
 
-}*/
+}
 
 // private
 

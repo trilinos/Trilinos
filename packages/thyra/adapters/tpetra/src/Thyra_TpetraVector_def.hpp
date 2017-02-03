@@ -467,7 +467,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normsInfImpl(
 }
 
 
-/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
@@ -476,66 +476,50 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   const Scalar beta
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  // Try to extract Tpetra objects from X and Y
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  Teuchos::RCP<const TMV> X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
+  Teuchos::RCP<TMV> Y_tpetra = this->getTpetraMultiVector(Teuchos::rcpFromPtr(Y));
 
-  RCP<const TpetraMultiVector_t> X_tpetra;
-  if (nonnull(Teuchos::ptr_dynamic_cast<const TMV>(Teuchos::ptrFromRef(X)))) {
-    X_tpetra = dynamic_cast<const TMV&>(X).getConstTpetraMultiVector();
-  } else if (nonnull(Teuchos::ptr_dynamic_cast<const TV>(Teuchos::ptrFromRef(X)))) {
-    X_tpetra = dynamic_cast<const TV&>(X).getConstTpetraVector();
-  }
-
-  RCP<TpetraMultiVector_t> Y_tpetra;
-  if (nonnull(Teuchos::ptr_dynamic_cast<TMV>(Y))) {
-    Y_tpetra = Teuchos::ptr_dynamic_cast<TMV>(Y)->getTpetraMultiVector();
-  } else if (nonnull(Teuchos::ptr_dynamic_cast<TV>(Y))) {
-    Y_tpetra = Teuchos::ptr_dynamic_cast<TV>(Y)->getTpetraVector();
-  }
-
-  // If we succeeded, call Tpetra directly,
-  // otherwise fall back on the default implementation
+  // If the cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the default implementation.
   if (nonnull(X_tpetra) && nonnull(Y_tpetra)) {
-#ifdef TEUCHOS_DEBUG
-    TEUCHOS_ASSERT(X_tpetra->getNumVectors() == Y_tpetra->getNumVectors());
-#endif
-    if (M_trans == NOTRANS || (M_trans == CONJ && !ST::isComplex) ) {
-#ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(tpetraVector_.getConstObj()->getMap()->isCompatible(*Y_tpetra->getMap()));
-      TEUCHOS_ASSERT(X_tpetra->getLocalLength() == 1);
-      TEUCHOS_ASSERT(!(X_tpetra->isDistributed()));
-#endif
-      // Do this without copying X to host?
-      for (std::size_t i = 0; i < Y_tpetra->getNumVectors(); ++i) {
-        Y_tpetra->getVectorNonConst(i)->update(alpha * X_tpetra->getData(i)[0],
-          *tpetraVector_.getConstObj(), beta);
-      }
-    } else if(M_trans == CONJTRANS || (M_trans == TRANS && !ST::isComplex) ) {
-#ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(tpetraVector_.getConstObj()->getMap()->isCompatible(*X_tpetra->getMap()));
-      TEUCHOS_ASSERT(Y_tpetra->getLocalLength() == 1);
-      TEUCHOS_ASSERT(!(Y_tpetra->isDistributed()));
-#endif
-      // Do this without copying Y and scalar prods to host?
-      for (std::size_t i = 0; i < Y_tpetra->getNumVectors(); ++i) {
-        Scalar& value = Y_tpetra->getDataNonConst(i)[0];
-        // Argument of dot conjugated if complex.
-        // For complex Scalar, getting an error adding Kokkos:complex and
-        // std::complex, so need to explicitly cast the dot result.
-        value = alpha * static_cast<Scalar>(
-          X_tpetra->getVector(i)->dot(*tpetraVector_.getConstObj())) + beta * value;
-      }
-      Y_tpetra->template modify<Kokkos::HostSpace>();
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "TpetraVector<"<<ST::name()<<">::apply(M_trans,...): Error, M_trans="
-        <<toString(M_trans)<<" not supported!" );
+    // Sync everything to the execution space
+    typedef typename TMV::execution_space execution_space;
+    Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<execution_space>();
+    Y_tpetra->template sync<execution_space>();
+    Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->template sync<execution_space>();
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_TEST_FOR_EXCEPTION(ST::isComplex && (M_trans == CONJ),
+      std::logic_error,
+      "Error, conjugation without transposition is not allowed for complex scalar types!");
+
+    Teuchos::ETransp trans;
+    switch (M_trans) {
+      case NOTRANS:
+        trans = Teuchos::NO_TRANS;
+        break;
+      case CONJ:
+        trans = Teuchos::NO_TRANS;
+        break;
+      case TRANS:
+        trans = Teuchos::TRANS;
+        break;
+      case CONJTRANS:
+        trans = Teuchos::CONJ_TRANS;
+        break;
     }
+
+    Y_tpetra->template modify<execution_space>();
+    Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraVector_.getConstObj(), *X_tpetra, beta);
   } else {
+    Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->template sync<Kokkos::HostSpace>();
     VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
   }
-}*/
+
+}
 
 
 // private

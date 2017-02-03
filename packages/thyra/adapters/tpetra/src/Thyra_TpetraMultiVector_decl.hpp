@@ -192,13 +192,13 @@ protected:
   /** @name Overridden protected functions from MultiVectorAdapterBase */
   //@{
   /** \brief . */
-  /*virtual void euclideanApply(
+  virtual void euclideanApply(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
-    ) const;*/
+    ) const;
 
   //@}
 

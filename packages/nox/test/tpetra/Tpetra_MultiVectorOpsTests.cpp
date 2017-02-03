@@ -278,14 +278,13 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_3)
   }
 
   // Create locally replicated MultiVector with this data
-  // It seems that Teuchos::SerialDenseMatrix is column-major...
+  // It seems that Teuchos::SerialDenseMatrix is already column-major
   Teuchos::RCP<const Map> map_replicated = Teuchos::rcp(new const Map(5, 0, comm, Tpetra::LocallyReplicated));
   Teuchos::ArrayView<Scalar> mat_view = Teuchos::arrayView(mat.values(), 5*numCols);
   Teuchos::RCP<TMV> mat_mv = Teuchos::rcp(new TMV(map_replicated, mat_view, 5, numCols));
 
   // Perform operation with Tpetra directly
   x->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, ST::one(), *z, *mat_mv, ST::one());
-  x->describe(out, Teuchos::VERB_EXTREME);
 
   // Do the same thing through NOX/Thyra interface
   Teuchos::RCP<TMVB> y_thyra  = Thyra::createMultiVector(y);

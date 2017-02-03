@@ -211,13 +211,13 @@ protected:
   //@{
 
   /** \brief . */
-  /*void applyImpl(
+  void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
-    ) const;*/
+    ) const;
 
   //@}
 
