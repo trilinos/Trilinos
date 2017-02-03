@@ -768,6 +768,10 @@ namespace BaskerNS
 
 
   // NDE - added functions for solve performance improvements
+  // This function combines two steps: inverse permutation of the rhs and copying to local views
+  // The structure of the solve codes expect that x (at function call and at end as lhs) 
+  // acts as the rhs during the solve routines, and that y (at function call the rhs) 
+  // stores the lhs (until the final ND block solves in any case) and is init to 0 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute_inv_and_init_for_solve
@@ -782,12 +786,8 @@ namespace BaskerNS
     //Permute
     for(Int i = 0; i < n; i++)
     {
-      // Testing matching original for a bug fix with ND block...
-      //xcon(p(i))  = y[i];
-      //ycon(i)    = (Entry) 0.0;
-      // ND revert fix
-      xcon(i)  = (Entry) 0.0;
-      ycon(p(i))    = y[i];
+      xcon(p(i))  = y[i];
+      ycon(i)    = (Entry) 0.0;
     }
     return 0;
   }
@@ -833,6 +833,7 @@ namespace BaskerNS
     return 0;
   }
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute
@@ -860,6 +861,7 @@ namespace BaskerNS
     return 0;
   }
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::permute
@@ -886,6 +888,7 @@ namespace BaskerNS
     FREE_INT_1DARRAY(temp);
     return 0;
   }
+
 
   // NDE: permute_with_workspace
   //      this routine uses a pre-allocated array 

@@ -202,7 +202,6 @@ namespace BaskerNS
   // After solve is complete, the y_view_ptr_copy results are permuted
   // and copied to the raw pointer _x
   //
-  // NDE: 02/02/2017 Bug with ND block, returning wrong result; some reversion to match original implementation in terms of how to init x and y
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::solve_interface
@@ -216,7 +215,7 @@ namespace BaskerNS
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
     }
 
-    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0 //NDE 02/02/2017: Reverted this to track bug, x is 0, y is perm rhs
+    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0 
 
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
 
@@ -229,7 +228,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::solve_interface
   ( 
    ENTRY_1DARRAY & x, // x is permuted rhs at input
-   ENTRY_1DARRAY & y // y is 0 at input 
+   ENTRY_1DARRAY & y  // y is 0 at input 
   )
   {
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -252,17 +251,13 @@ namespace BaskerNS
     {
       if(btf_tabs_offset != 0)
       {
-        //serial_solve(x,y);
-      // ND revert fix
-        serial_solve(y,x);
+        serial_solve(x,y);
       }
     }
     else
     {
       //A\y -> y
-      //serial_btf_solve(x,y);
-      // ND revert fix
-      serial_btf_solve(y,x);
+      serial_btf_solve(x,y);
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -289,19 +284,10 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::serial_solve
   (
-   // ND revert fix
-   ENTRY_1DARRAY & y, // match original code
-   ENTRY_1DARRAY & x  
-   //ENTRY_1DARRAY & x, // Permuted rhs at input
-   //ENTRY_1DARRAY & y  // 0 at input
+   ENTRY_1DARRAY & x, // Permuted rhs at input
+   ENTRY_1DARRAY & y  // 0 at input
   )
   {
-    // ND revert fix
-    for( Int i = 0; i < gn; ++i ) //reintroduced for bug fix...
-    {
-      x(i) = y(i);
-      y(i) = (Entry)0.0;
-    }
     //L\x -> y
     serial_forward_solve(x,y);
 
@@ -322,19 +308,10 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::serial_btf_solve
   (
-   // ND revert fix
-   ENTRY_1DARRAY & y, // match original code
-   ENTRY_1DARRAY & x  
-   //ENTRY_1DARRAY & x, // Permuted rhs at input
-   //ENTRY_1DARRAY & y  // 0 at input
+   ENTRY_1DARRAY & x, // Permuted rhs at input
+   ENTRY_1DARRAY & y  // 0 at input
   )
   {
-    // ND revert fix
-    for( Int i = 0; i < gn; ++i ) //reintroduced for bug fix...
-    {
-      x(i) = y(i);
-      y(i) = (Entry)0.0;
-    }
     //Start in C and go backwards
     //In first level, only do U\L\x->y
     for(Int b = (btf_nblks-btf_tabs_offset)-1; b>= 0; b--)
@@ -494,11 +471,7 @@ namespace BaskerNS
 
       //U\y -> x
       upper_tri_solve(U,y,x); // NDE: y , x positions swapped...
-                              // in forward and backward solves
-                              // both use LU(b) with different offsets
-                              // to read and write from;
-                              // In previous i.e. btf_solve, different
-                              // matrices for L and U used
+                              //      seems role of x and y changed...
 
       for(Int bb = LU_size(b)-2; bb >= 0; bb--)
       {
@@ -511,7 +484,6 @@ namespace BaskerNS
         //y = UB*x;
         neg_spmv(UB,x,y);
       }
-
     }//end over all blks
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
