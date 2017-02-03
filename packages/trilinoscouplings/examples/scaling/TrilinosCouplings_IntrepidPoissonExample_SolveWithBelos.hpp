@@ -147,8 +147,10 @@ solveWithBelos (bool& converged,
   belosParams->set ("Num Blocks", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
   if (solverName == "GMRES") {
+    RCP<ParameterList> orthoParams = sublist (belosParams, "ICGS");
+    //orthoParams->set ("Name", "ICGS");
+    orthoParams->set ("maxNumOrthogPasses", 1);
     belosParams->set ("Orthogonalization", "ICGS");
-    belosParams->set ("maxNumOrthogPasses", 1);
   }
   belosParams->set ("Output Frequency", 10);
   belosParams->set ("Output Style", 1);

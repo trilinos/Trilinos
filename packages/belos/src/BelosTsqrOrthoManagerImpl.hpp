@@ -1450,6 +1450,8 @@ namespace Belos {
 
     if (defaultParams_.is_null()) {
       RCP<ParameterList> params = parameterList ("TsqrOrthoManagerImpl");
+
+      //params->set ("Name", "TSQR", "Tall Skinny QR");
       //
       // TSQR parameters (set as a sublist).
       //
