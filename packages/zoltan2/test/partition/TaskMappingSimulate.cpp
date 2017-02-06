@@ -23,9 +23,14 @@
 #include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_EvaluateMapping.hpp>
 
+/*
 typedef int test_lno_t;
 typedef long long test_gno_t;
 typedef double test_scalar_t;
+*/
+typedef zlno_t test_lno_t;
+typedef zgno_t test_gno_t;
+typedef zscalar_t test_scalar_t;
 
 typedef Tpetra::CrsGraph<test_lno_t, test_gno_t, znode_t> mytest_tcrsGraph_t;
 typedef Tpetra::MultiVector<test_scalar_t, test_lno_t, test_gno_t, znode_t> mytest_tMVector_t;
