@@ -221,13 +221,17 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,1>:
     const inputViewType input,
     const ordinal_type order ) {
   typedef typename outputViewType::value_type value_type;
+  typedef typename outputViewType::pointer_type pointer_type;
   typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
 
+  constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
- outViewType out = Kokkos::createDynRankView(output, "out", card, npts, 3);
+  // use stack buffer
+  value_type outBuf[maxCard][maxNumPts][2+1]; //2 for derivatives, 1 for value
+  outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, 3);
 
   OrthPolynomial<maxOrder,maxNumPts,outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
