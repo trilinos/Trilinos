@@ -1,9 +1,21 @@
 #!/bin/env python3
-import optparse
-import re
-import yaml
-import logging
-from   transitions      import Machine, logger
+"""log2yaml
+
+Usage:
+  log2yaml.py -i INPUT [-o OUTPUT] -m <mode>
+  log2yaml.py (-h | --help)
+
+Options:
+  -h --help                     Show this screen.
+  -i FILE --input-file=FILE     Input file
+  -o FILE --output-file=FILE    Output file
+  -m MODE --mode=MODE           Mode [muelu | albany | drekar]
+"""
+import  logging
+import  re
+import  yaml
+from    docopt      import docopt
+from    transitions import Machine, logger
 
 # YAML scheme structure
 #
@@ -615,33 +627,23 @@ def log2yaml_fsm(filename):
     return yaml_data
 
 if __name__ == '__main__':
-    p = optparse.OptionParser()
 
-    # action arguments
-    p.add_option('-i', '--input-file',    dest='input_file')
-    p.add_option('-o', '--output-file',   dest='output_file')
-    p.add_option('-m', '--mode',          dest='mode',       default='muelu')
+    options = docopt(__doc__)
 
-    # parse
-    options, arguments = p.parse_args()
+    input_file = options['--input-file']
+    mode       = options['--mode']
 
-    # validate options
-    if options.input_file == None:
-        raise RuntimeError("Please specify an input file")
-    filename = options.input_file
-
-    mode = options.mode
     assert(mode == 'muelu' or mode == 'albany' or mode == 'drekar')
 
     if mode != 'drekar':
-        yaml_data = log2yaml(filename, pmode=mode)
+        yaml_data = log2yaml(input_file, pmode=mode)
     else:
-        yaml_data = log2yaml_fsm(filename)
+        yaml_data = log2yaml_fsm(input_file)
 
     # dump the data
-    output_file = options.output_file
+    output_file = options['--output-file']
     if output_file == None:
-      output_file = filename + '.yaml'
+      output_file = input_file + '.yaml'
 
     f = open(output_file, 'w')
     yaml.dump(yaml_data, stream=f)
