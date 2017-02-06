@@ -132,18 +132,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::assignVecImpl(
   )
 {
   this->assignMultiVecImpl(x);
-  /*auto tx = this->getConstTpetraVector(Teuchos::rcpFromRef(x));
-
-  // If the cast succeeded, call Tpetra directly.
-  // Otherwise, fall back to the RTOp implementation.
-  if (nonnull(tx)) {
-    tpetraVector_.getNonconstObj()->assign(*tx);
-  } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
-    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
-    VectorDefaultBase<Scalar>::assignVecImpl(x);
-  }*/
 }
 
 
@@ -153,7 +141,18 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::randomizeImpl(
   Scalar u
   )
 {
-  tpetraVector_.getNonconstObj()->randomize(l, u);
+  // Tpetra randomizes with different seed for each proc, so need a global
+  // reduction to get locally-replicated random vector same on each proc.
+  if (!tpetraVector_.getNonconstObj()->isDistributed()) {
+    auto comm = tpetraVector_.getNonconstObj()->getMap()->getComm();
+    if (tpetraVector_.getConstObj()->getMap()->getComm()->getRank() == 0)
+      tpetraVector_.getNonconstObj()->randomize(l, u);
+    else
+      tpetraVector_.getNonconstObj()->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    tpetraVector_.getNonconstObj()->reduce();
+  } else {
+    tpetraVector_.getNonconstObj()->randomize(l, u);
+  }
 }
 
 
