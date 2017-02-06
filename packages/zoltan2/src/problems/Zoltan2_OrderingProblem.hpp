@@ -205,7 +205,7 @@ private:
     if (!(solution->haveInverse()))
       solution->computeInverse();
     return solution.getRawPtr();
-  };
+  }
 
   void createOrderingProblem();
 
