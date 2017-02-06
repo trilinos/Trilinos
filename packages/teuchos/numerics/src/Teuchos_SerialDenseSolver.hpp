@@ -599,7 +599,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::factor() {
 
   if (A_ == AF_)
     if (refineSolution_ ) {
-      Factor_ = rcp( new SerialDenseMatrix<OrdinalType,ScalarType>(*Matrix_) );
+      Factor_ = rcp( new SerialDenseMatrix<OrdinalType,ScalarType>(Teuchos::Copy, *Matrix_) );
       AF_ = Factor_->values();
       LDAF_ = Factor_->stride();
     }
