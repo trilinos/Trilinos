@@ -1412,8 +1412,13 @@ namespace Tpetra {
     //! \name Methods governing changes between global and local indices
     //@{
 
-    //! Make the graph's column Map, if it does not already have one.
+    /// \brief Make and set the graph's column Map.
+    ///
+    /// This method makes the column Map, even if the graph already
+    /// has one.  It is the caller's responsibility not to call this
+    /// method unnecessarily.
     void makeColMap ();
+
     void makeIndicesLocal ();
     void makeImportExport ();
 
