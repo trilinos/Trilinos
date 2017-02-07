@@ -111,13 +111,6 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_2( const VectorBase<Scalar>& w, const VectorBase<Scalar>& v )
 {
   return v.norm_2(w);
-  /*using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpWeightedNorm2<Scalar> wght_norm_2_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> wght_norm_2_targ = wght_norm_2_op.reduct_obj_create();
-  applyOp<Scalar>(wght_norm_2_op, tuple(ptrInArg(w), ptrInArg(v)),
-    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
-    wght_norm_2_targ.ptr());
-  return wght_norm_2_op(*wght_norm_2_targ);*/
 }
 
 

@@ -165,7 +165,6 @@ protected:
 
   //@}
 
-  // This doesn't inherit from TpetraMultiVector, so need to overwrite these again :(
   /** @name Overridden protected functions from MultiVectorBase */
   //@{
   /** \brief . */
