@@ -1,18 +1,26 @@
-//  This example compute the eigenvalues of a matrix from and input file using the block Davidson 
-//  method.  The matrix is passed to the example routine through the command line, and 
-//  converted to an Epetra matrix through some utilty routines.  This matrix is passed to the
-//  eigensolver, the specifics of the block Davidson method can be set by the user.
+/// \example LOBPCGEpetraFile.cpp
+/// \brief Use LOBPCG with Epetra test problem loaded from file.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// The example loads the matrix from a file whose name is specified
+/// at the command line.
 
-#include "AnasaziBlockDavidsonSolMgr.hpp"
+#include "AnasaziLOBPCGSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
+#include "Epetra_InvOperator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
+
+// Include header for Ifpack incomplete Cholesky preconditioner
+#include "Ifpack.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -36,13 +44,34 @@ int main(int argc, char *argv[]) {
   
   int MyPID = Comm.MyPID();
 
-  bool verbose=false;
+  //************************************
+  // Get the parameters from the command line
+  //************************************
+  //
+  int nev = 5;
+  int blockSize = 5;
+  int maxIterations = 1000;
+  double tol = 1.0e-8;
+  bool verbose = true;
+  bool locking=false, fullOrtho=true;
   std::string k_filename = "";
   std::string m_filename = "";
   std::string which = "SM";
+  bool usePrec = true;
+  double prec_dropTol = 1e-4;
+  int prec_lofill = 0;
   Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block size used in LOBPCG.");
+  cmdp.setOption("maxiters",&maxIterations,"Maximum number of iterations used in LOBPCG.");
+  cmdp.setOption("tol",&tol,"Convergence tolerance requested for computed eigenvalues.");
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("locking","nolocking",&locking,"Use locking of converged eigenvalues.");
+  cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,or LR).");
+  cmdp.setOption("usePrec","noPrec",&usePrec,"Use Ifpack for preconditioning.");
+  cmdp.setOption("prec_dropTol",&prec_dropTol,"Preconditioner: drop tolerance.");
+  cmdp.setOption("prec_lofill",&prec_lofill,"Preconditioner: level of fill.");
   cmdp.setOption("K-filename",&k_filename,"Filename and path of the stiffness matrix.");
   cmdp.setOption("M-filename",&m_filename,"Filename and path of the mass matrix.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -51,6 +80,7 @@ int main(int argc, char *argv[]) {
 #endif
     return -1;
   }
+
   if (k_filename=="") {
     std::cout << "The matrix K must be supplied through an input file!!!" << std::endl;
 #ifdef HAVE_MPI
@@ -75,19 +105,37 @@ int main(int argc, char *argv[]) {
   if (haveM) {
     EpetraExt::readEpetraLinearSystem( m_filename, Comm, &M, &Map );
   }
+
+
+  //************************************
+  // Select the Preconditioner
+  //************************************
+  //
+  Teuchos::RCP<Ifpack_Preconditioner> prec;
+  Teuchos::RCP<Epetra_Operator> PrecOp;
+  if (usePrec) {
+    Ifpack precFactory;
+    // additive-Schwartz incomplete Cholesky with thresholding; see IFPACK documentation
+    std::string precType = "IC stand-alone";
+    int overlapLevel = 0;
+    prec = Teuchos::rcp( precFactory.Create(precType,K.get(),overlapLevel) );
+    // parameters for preconditioner
+    Teuchos::ParameterList precParams;
+    precParams.set("fact: drop tolerance",prec_dropTol);
+    precParams.set("fact: level-of-fill",prec_lofill);
+    IFPACK_CHK_ERR(prec->SetParameters(precParams));
+    IFPACK_CHK_ERR(prec->Initialize());
+    IFPACK_CHK_ERR(prec->Compute());
+    //
+    // encapsulate this preconditioner into a IFPACKPrecOp class
+    PrecOp = Teuchos::rcp( new Epetra_InvOperator(&*prec) );
+  }
+
   //
   //************************************
   // Start the block Davidson iteration 
   //***********************************         
   //
-  //  Variables used for the Block Davidson Method
-  // 
-  int nev = 1;
-  int blockSize = 5;
-  int numBlocks = 8;
-  int maxRestarts = 10;
-  double tol = 1.0e-8;
-  
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
@@ -100,9 +148,10 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Num Blocks", numBlocks );
-  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Maximum Iterations", maxIterations );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Full Ortho", true );
+  MyPL.set( "Use Locking", true );
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -124,6 +173,11 @@ int main(int argc, char *argv[]) {
  
   // Inform the eigenproblem that (K,M) is Hermitian
   MyProblem->setHermitian(true);
+  
+  // Pass the preconditioner to the eigenproblem
+  if (usePrec) {
+    MyProblem->setPrec(PrecOp);
+  }
 
   // Set the number of eigenvalues requested 
   MyProblem->setNEV( nev );
@@ -140,8 +194,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // Initialize the Block Davidson solver
-  Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
+  // Initialize the LOBPCG solver
+  Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
     
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();

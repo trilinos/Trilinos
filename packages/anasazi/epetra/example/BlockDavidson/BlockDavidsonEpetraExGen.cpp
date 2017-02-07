@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
   // Get the sorting string from the command line
   //
-  std::string which("LM");
+  std::string which("SM");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -81,11 +81,12 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Davidson Method
   //
-  const int    nev         = 10;
-  const int    blockSize   = 10;
-  const int    numBlocks   = 4;
+  const int    nev         = 4;
+  const int    blockSize   = 5;
+  const int    numBlocks   = 8;
   const int    maxRestarts = 100;
   const double tol         = 1.0e-8;
+  const int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -129,6 +130,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Verbosity", verbosity );
   //
   // Create the solver manager
   Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);

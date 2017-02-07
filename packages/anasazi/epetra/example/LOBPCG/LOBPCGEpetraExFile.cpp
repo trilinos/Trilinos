@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   bool success = false;
-  bool verbose = false;
+  bool verbose = true;
   try {
 #ifdef EPETRA_MPI
     Epetra_MpiComm Comm( MPI_COMM_WORLD );

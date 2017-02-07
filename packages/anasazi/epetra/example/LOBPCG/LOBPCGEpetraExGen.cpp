@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     // Get the sorting std::string from the command line
     //
-    std::string which("LM");
+    std::string which("SM");
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -95,6 +95,7 @@ int main(int argc, char *argv[]) {
     int blockSize = 5;
     int maxIters = 500;
     double tol = 1.0e-8;
+    int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
 
     Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
     ivec->Random();
@@ -125,6 +126,7 @@ int main(int argc, char *argv[]) {
     MyPL.set( "Convergence Tolerance", tol );
     MyPL.set( "Full Ortho", true );
     MyPL.set( "Use Locking", true );
+    MyPL.set( "Verbosity", verbosity );
     //
     // Create the solver manager
     LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
