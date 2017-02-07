@@ -11,33 +11,22 @@ using Thyra::ModelEvaluatorBase;
 
 namespace Tempus_Test {
 
-/** \brief Sine-Cosine model problem from Rythmos.
-  * This is a canonical Sine-Cosine differential equation
+/** \brief This is the "parabolic ball" model problem from Piro.
+  * This is a canonical differential equation model of a ball thrown up 
+  * in the air, and taking on a parabolic trajectory:
   *   \f[
-  *   \mathbf{\ddot{x}}=-\mathbf{x}
+  *   \ddot{x}=-1
   *   \f]
-  * with a few enhancements. We start with the exact solution to the
-  * differential equation
+  * The initial conditions are:
   *   \f{eqnarray*}{
-  *     x_{0}(t) & = & a+b*\sin((f/L)*t+\phi)\\
-  *     x_{1}(t) & = & b*(f/L)*\cos((f/L)*t+\phi)
+  *     x(0) & = & 0\\
+  *     \dot{x}(0) & = & 1
   *   \f}
-  * then the form of the model is
-  * \f{eqnarray*}{
-  *   \frac{d}{dt}x_{0}(t) & = & x_{1}(t)\\
-  *   \frac{d}{dt}x_{1}(t) & = & \left(\frac{f}{L}\right)^{2}(a-x_{0}(t))
-  * \f}
-  * where the default parameter values are \f$a=0\f$, \f$f=1\f$, and \f$L=1\f$,
-  * and the initial conditions
-  * \f{eqnarray*}{
-  *   x_{0}(t_{0}=0) & = & \gamma_{0}[=0]\\
-  *   x_{1}(t_{0}=0) & = & \gamma_{1}[=1]
-  * \f}
-  * determine the remaining coefficients
-  * \f{eqnarray*}{
-  *   \phi & = & \arctan(((f/L)/\gamma_{1})*(\gamma_{0}-a))-(f/L)*t_{0}[=0]\\
-  *   b & = & \gamma_{1}/((f/L)*cos((f/L)*t_{0}+\phi))[=1]
-  * \f}
+  * It can be shown that the exact solution to this problem is:
+  *    \f[ 
+  *    x(t) = t(1-0.5t)
+  *    \f]
+  * We consider the problem for \f$t\in [0,2]\f$ .  
 
   * Therefore this model has three model parameters and two initial conditions
   * which effect the exact solution as above.
@@ -158,8 +147,6 @@ private:
   Scalar phi_;   ///< Parameter determined from the IC
   Scalar b_;     ///< Parameter determined from the IC
   Scalar t0_ic_; ///< Time value where the initial condition is specified
-  Scalar x0_ic_; ///< Initial condition for x0
-  Scalar x1_ic_; ///< Initial condition for x1
 };
 
 

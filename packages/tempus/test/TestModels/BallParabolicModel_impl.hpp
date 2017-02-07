@@ -26,7 +26,7 @@ BallParabolicModel<Scalar>::
 BallParabolicModel(RCP<ParameterList> pList_)
 {
   isInitialized_ = false;
-  dim_ = 2;
+  dim_ = 1;
   Np_ = 1; // Number of parameter vectors (1)
   np_ = 3; // Number of parameters in this vector (3)
   Ng_ = 1; // Number of observation functions (1)
@@ -36,8 +36,6 @@ BallParabolicModel(RCP<ParameterList> pList_)
   a_ = 0.0;
   f_ = 1.0;
   L_ = 1.0;
-  x0_ic_ = 0.0;
-  x1_ic_ = 1.0;
   t0_ic_ = 0.0;
 
   // Create x_space and f_space
@@ -63,17 +61,21 @@ getExactSolution(double t) const
   RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    exact_x_view[0] = a_+b_*sin((f_/L_)*t+phi_);
-    exact_x_view[1] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
+    exact_x_view[0] = t*(1.0-0.5*t);  
   }
   inArgs.set_x(exact_x);
   RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
-    exact_x_dot_view[0] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
-    exact_x_dot_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t+phi_);
+    exact_x_dot_view[0] = 1.0-t;
   }
   inArgs.set_x_dot(exact_x_dot);
+  RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
+  { // scope to delete DetachedVectorView
+    Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
+    exact_x_dot_dot_view[0] = -1.0;
+  }
+  inArgs.set_x_dot_dot(exact_x_dot_dot);
   return(inArgs);
 }
 
