@@ -1,4 +1,19 @@
 #!/bin/env python3
+"""analysis.py
+
+Usage:
+  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY]
+  analysis.py (-h | --help)
+
+Options:
+  -h --help                     Show this screen.
+  -i FILE --input-files=FILE    Input file
+  -o FILE --output-file=FILE    Output file
+  -a MODE --analysis=MODE       Mode [default: setup_timers]
+  -d DISPLAY --display=DISPLAY  Display mode [default: print]
+"""
+
+import glob
 import matplotlib.cm     as cmx
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -7,6 +22,7 @@ import pandas            as pd
 import optparse
 import re
 from   tableau import *
+from   docopt      import docopt
 import yaml
 
 def construct_dataframe(yaml_data):
@@ -57,6 +73,59 @@ def setup_timers(yaml_data, mode, ax = None, top=10):
         ax.set_xlabel('Time (s)')
     else:
         print(dfs['maxT'])
+
+def muelu_strong_scaling(input_files, mode, ax, top=10):
+    """Show scalability of setup level specific timers ordered by size"""
+
+    assert(mode == 'display')
+
+    ## Determine top  timers in the first log file
+    with open(input_files[0]) as data_file:
+        yaml_data = yaml.safe_load(data_file)
+
+    timer_data = construct_dataframe(yaml_data)
+
+    timers_all = timer_data.index
+
+    timers = [x for x in timers_all if re.search('.*\(level=', x) != None]    # search level specific
+    timers = [x for x in timers     if re.search('Solve', x)      == None]    # ignore Solve timers
+
+    # Select subset of the timer data based on the provided timer labels
+    dfs = timer_data.loc[timers]
+    dfs.sort(columns='maxT', ascending=True, inplace=True)
+    timers = dfs.index
+
+    # Top few
+    top = min(top, len(timers))
+    timers = dfs.index[-1:-top:-1]
+
+    x = np.ndarray(len(input_files))
+    y = np.ndarray([len(timers), len(x)])
+    k = 0
+    for input_file in input_files:
+        with open(input_file) as data_file:
+            yaml_data = yaml.safe_load(data_file)
+
+        timer_data = construct_dataframe(yaml_data)
+
+        dfs = timer_data.loc[timers]
+
+        x[k]   = yaml_data['Number of processes']
+        y[:,k] = dfs['maxT']
+        k = k+1
+
+    if mode == 'display':
+        colors = tableau20()
+
+        ax.stackplot(x, y, colors=colors, labels=timers)
+        ax.set_xlim([x[0], x[-1]])
+        ax.set_xticks(x)
+        ax.set_xticklabels(x);
+        ax.set_xscale('log')
+        ax.set_xlabel('Number of processes')
+        ax.set_ylabel('Time(s)')
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
 def solve_per_level(yaml_data, mode, ax = None):
     """Show solve timers per level"""
@@ -221,41 +290,62 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
         ax.set_ylabel('Solve time (s)')
 
 
+def string_split_by_numbers(x):
+    r = re.compile('(\d+)')
+    l = r.split(x)
+    return [int(x) if x.isdigit() else x for x in l]
+
 if __name__ == '__main__':
-    p = optparse.OptionParser()
 
-    # action arguments
-    p.add_option('-i', '--input-file',  dest='input_file')
-    p.add_option('-o', '--output-file', dest='output_file')
-    p.add_option('-d', '--display',     dest='display',     default='print')
-    p.add_option('-a', '--analysis',    dest='analysis',    default='mode1')
+    ## Process input
+    options = docopt(__doc__)
 
-    # parse
-    options, arguments = p.parse_args()
+    input_files = options['--input-files']
+    output_file = options['--output-file']
+    analysis    = options['--analysis']
+    display     = options['--display']
 
-    # validate options
-    if options.input_file == None:
-        raise RuntimeError("Please specify the input file")
+    input_files = glob.glob(input_files)
+    # Impose sorted order (similar to bash "sort -n"
+    input_files = sorted(input_files, key=string_split_by_numbers)
 
-    with open(options.input_file) as data_file:
-        yaml_data = yaml.safe_load(data_file)
+    ## Validate
+    valid_modes = ['setup_timers', 'solver_per_level', 'nonlinear_history_iterations',
+                   'nonlinear_history_residual', 'nonlinear_history_solve',
+                   'muelu_strong_scaling']
+    if not analysis in valid_modes:
+        print("Analysis must be one of: ")
+        print(valid_modes)
+        raise
+    valid_displays = ['print', 'display']
+    if not display in valid_displays:
+        print("Display must be one of " % valid_displays)
+        raise
 
+    ## Do plotting/printing
     f, ax = plt.subplots(1)
 
-    analysis = options.analysis
-    display  = options.display
-    if   analysis == 'mode1':
-        setup_timers(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode2':
-        solve_per_level(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode3':
-        nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode4':
-        nonlinear_history_residual(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode5':
-        nonlinear_history_solve(yaml_data, mode=display, ax=ax)
-
-    if options.output_file != None:
-        plt.savefig(options.output_file, bbox_inches='tight')
+    if analysis == 'muelu_strong_scaling':
+        muelu_strong_scaling(input_files, mode=display, ax=ax)
     else:
-        plt.show()
+        assert(len(input_files) == 1)
+        with open(input_files[0]) as data_file:
+            yaml_data = yaml.safe_load(data_file)
+
+        if   analysis == 'setup_timers':
+            setup_timers(yaml_data, mode=display, ax=ax)
+        elif analysis == 'solve_per_level':
+            solve_per_level(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_iterations':
+            nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_residual':
+            nonlinear_history_residual(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_solve':
+            nonlinear_history_solve(yaml_data, mode=display, ax=ax)
+
+    ## Save output
+    if display != 'print':
+        if output_file != None:
+            plt.savefig(output_file, bbox_inches='tight')
+        else:
+            plt.show()
