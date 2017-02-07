@@ -99,8 +99,13 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
     top = min(top, len(timers))
     timers = dfs.index[-1:-top:-1]
 
-    x = np.ndarray(len(input_files))
-    y = np.ndarray([len(timers), len(x)])
+    max_value = sum(dfs['maxT'])
+
+    nx = len(input_files)
+    ny = len(timers)
+
+    x = np.ndarray(nx)
+    y = np.ndarray([ny, nx])
     k = 0
     for input_file in input_files:
         with open(input_file) as data_file:
@@ -117,15 +122,38 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
     if mode == 'display':
         colors = tableau20()
 
-        ax.stackplot(x, y, colors=colors, labels=timers)
-        ax.set_xlim([x[0], x[-1]])
-        ax.set_xticks(x)
-        ax.set_xticklabels(x);
-        ax.set_xscale('log')
-        ax.set_xlabel('Number of processes')
-        ax.set_ylabel('Time(s)')
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles[::-1], labels[::-1], loc='upper right')
+        if True:
+            ax.stackplot(x, y, colors=colors, labels=timers)
+            ax.set_xlim([x[0], x[-1]])
+            ax.set_xticks(x)
+            ax.set_xticklabels(x);
+            ax.set_xscale('log')
+            ax.set_xlabel('Number of processes')
+            ax.set_ylabel('Time(s)')
+
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles[::-1], labels[::-1], loc='upper right')
+
+            log = False
+            if log == True:
+                [ymin,ymax] = ax.get_ylim()
+                ax.set_yscale('log')
+                ax.plot([x[0], x[-1]], [ymax, ymax*x[0]/x[-1]], color='k', linewidth=2)
+
+        else:
+            for k in range(ny):
+                y[k,:] = y[k,0] / y[k,:]
+            y = np.swapaxes(y, 0, 1)
+
+            plt.gca().set_color_cycle(colors) #[colormap(i) for i in np.linspace(0, 0.9, num_plots)])
+            ax.plot(x, y, linewidth=2)
+            ax.set_xlim([x[0], x[-1]])
+            ax.set_xticks(x)
+            ax.set_xticklabels(x);
+            ax.set_xscale('log')
+            ax.set_xlabel('Number of processes')
+            ax.yaxis.grid('on')
+            ax.legend(timers, loc='upper left')
 
 def solve_per_level(yaml_data, mode, ax = None):
     """Show solve timers per level"""
