@@ -3,23 +3,24 @@ import sys
 import re
 
 try:
-  if not len(sys.argv)>3:
+  if not len(sys.argv)>4:
     print('Expected at least three solution files with the line \"Error = \%f\" in them')
-    raise Exception("Failure: Command line - <cmd> [filename-prefix] [coarsest mesh res] [second mesh res] [third mesh res] ...")
+    raise Exception("Failure: Command line - <cmd> [basis-order] [filename-prefix] [coarsest mesh res] [second mesh res] [third mesh res] ...")
 
-  file_prefix = sys.argv[1]
+  basis_order = float(sys.argv[1])
+  file_prefix = sys.argv[2]
 
   mesh_res = []
-  for i in range(2,len(sys.argv)):
+  for i in range(3,len(sys.argv)):
     mesh_res += [int(sys.argv[i])]
 
   max_res =  max(mesh_res)
 
-  orderPat   = re.compile('.*Basis Order = (.*)$')  
+  #orderPat   = re.compile('.*Basis Order = (.*)$')  
   l2ErrorPat = re.compile('.*L2 Error = (.*)$')
   h1ErrorPat = re.compile('.*H1 Error = (.*)$')
 
-  basis_order = 0
+  #basis_order = 0
   l2_error_value = 0
   h1_error_value = 0
   prev_l2_error_value = 0
@@ -42,9 +43,9 @@ try:
 
     # look for the "Error = ..." line
     for line in f:
-      orderMatch = orderPat.match(line)
-      if orderMatch!=None:
-        basis_order = float(orderMatch.group(1))
+      #orderMatch = orderPat.match(line)
+      #if orderMatch!=None:
+      #  basis_order = float(orderMatch.group(1))
 
       errorMatch = l2ErrorPat.match(line)
       if errorMatch!=None:
