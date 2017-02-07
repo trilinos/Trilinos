@@ -2,6 +2,8 @@ function solnorm = m2ml_test
 
 addpath ../../mesh
 
+use_ml = 0;
+
 fprintf('\nTesting Intrepid and ML functionality ...\n');
 
 spaceDim  = 2;
@@ -133,30 +135,39 @@ toc
 pause(0.01)
 
 
-%%%%%%%%%%% set up and run ML
-ml('cleanup');
-ml_setup = { ...
-  'coarse: type',              'Amesos-KLU', ...
-  'ML output',                  1, ...
-  'coarse: max size',           128, ...
-  'smoother: type',            'symmetric Gauss-Seidel' ...
-};
-ml_apply = { ...
-  'krylov: type',              'fixed point', ...
-  'krylov: max iterations',     20, ...
-  'krylov: tolerance',          1e-100, ...
-  'krylov: output level',	1 ...
-};
-stiff_mat = stiff_mat + 1e-6*speye(size(stiff_mat));
-rr = symrcm(stiff_mat);
-[h,oc] = ml('setup', stiff_mat(rr,rr), ml_setup{:});
-x = (1/nx/ny)*ones(size(stiff_mat,1), 1);
-tic
-y(rr) = ml(h, stiff_mat(rr,rr), x(rr), ml_apply{:});
-toc
+%%%%%%%%%%% set up and run solver
+if use_ml  %% if using Trilinos' ML
+  ml('cleanup');
+  ml_setup = { ...
+    'coarse: type',              'Amesos-KLU', ...
+    'ML output',                  1, ...
+    'coarse: max size',           128, ...
+    'smoother: type',            'symmetric Gauss-Seidel' ...
+  };
+  ml_apply = { ...
+    'krylov: type',              'fixed point', ...
+    'krylov: max iterations',     20, ...
+    'krylov: tolerance',          1e-100, ...
+    'krylov: output level',	1 ...
+  };
+  stiff_mat = stiff_mat + 1e-6*speye(size(stiff_mat));
+  rr = symrcm(stiff_mat);
+  [h,oc] = ml('setup', stiff_mat(rr,rr), ml_setup{:});
+  x = (1/nx/ny)*ones(size(stiff_mat,1), 1);
+  tic
+  y(rr) = ml(h, stiff_mat(rr,rr), x(rr), ml_apply{:});
+  toc
+else  %% if using backslash
+  stiff_mat = stiff_mat + 1e-6*speye(size(stiff_mat));
+  rr = symrcm(stiff_mat);
+  x = (1/nx/ny)*ones(size(stiff_mat,1), 1);
+  tic
+  y(rr) = stiff_mat(rr,rr) \ x(rr);
+  toc
+end
 
 solnorm = norm(y);
 
-fprintf('Done testing Intrepid and ML functionality.\n\n');
+fprintf('Done testing Intrepid and solver functionality.\n\n');
 
-end % m2ml_test
+end % m2i_solver_test
