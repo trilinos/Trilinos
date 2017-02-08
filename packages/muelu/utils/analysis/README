@@ -1,3 +1,12 @@
+Prerequisites:
+
+  python3 (available via SEMS modules)
+  python modules:  numpy, pyyaml, matplotlib, pandas, docopt, transitions
+
+  Modules can be installed like so:
+
+    pip3 --proxy <proxy:port> install --user <module>
+
 Instructions for analyzing MueLu setup timers:
 
 1) Generate a file that contains only the MueLu timer summary.  If your log file has multiple timer summaries, this
