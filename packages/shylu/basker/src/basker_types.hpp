@@ -143,8 +143,17 @@ enum BASKER_INCOMPLETE_CODE
 #define MATRIX_VIEW_2DARRAY       Kokkos::View<MATRIX_VIEW_1DARRAY*, BASKER_EXE_SPACE>
 #define THREAD_1DARRAY            Kokkos::View<BASKER_THREAD*,       BASKER_EXE_SPACE>
 #define THREAD_2DARRAY            Kokkos::View<THREAD_1DARRAY*,      BASKER_EXE_SPACE>
+
+#define INT_1DARRAY_PAIRS        Kokkos::View<std::pair<Int,Int>*,  BASKER_EXE_SPACE>
 //Macro Memory Calls
 //MALLOC
+#define MALLOC_INT_1DARRAY_PAIRS(a,s)   \
+  { \
+    BASKER_ASSERT(s>0, "malloc_pairs_1d"); \
+    a = INT_1DARRAY_PAIRS(KOKKOS_NOINIT("pairs_1d"),s); \
+    if(a.data() == NULL)           \
+      throw std::bad_alloc();	   \
+  }
 #define MALLOC_INT_1DARRAY(a,s)   \
   { \
     BASKER_ASSERT(s>0, "init_1d"); \
@@ -262,6 +271,11 @@ enum BASKER_INCOMPLETE_CODE
   }
 
 #define FREE(a)                        BASKER_NO_OP
+
+#define FREE_INT_1DARRAY_PAIRS(a)      \
+  { \
+    a = INT_1DARRAY_PAIRS(); \
+  }
 
 #define FREE_INT_1DARRAY(a)      \
   { \

@@ -1722,8 +1722,8 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
-   BASKER_MATRIX &M,
-   BASKER_MATRIX &AT
+   BASKER_MATRIX &M, //BTF_A
+   BASKER_MATRIX &AT //T, blank
   )
   {
     //const Int brow = M.srow; Not used

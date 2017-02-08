@@ -1271,6 +1271,45 @@ namespace BaskerNS
     // Matrix dims stored within Symbolic
     Int sym_gn;
     Int sym_gm;
+
+    // sfactor_copy2 mapping of input vals to reordered vals
+    INT_1DARRAY vals_perm_composition; //this will store the btf permutation+sorts of val (for use in Factor)
+    INT_1DARRAY_PAIRS vals_block_map_perm_pair; //this will map perm(val) indices to BTF_A, BTF_B, and BTF_C 
+
+    // These store the permutation of indices of val during permute_col and sort calls
+    INT_1DARRAY vals_order_btf_array;
+    INT_1DARRAY vals_order_blk_amd_array;
+    INT_1DARRAY vals_order_scotch_array;
+    INT_1DARRAY vals_order_csym_array;
+
+    // These store the permutation indices of the block vals during ND permute_col and sort calls
+    INT_1DARRAY vals_order_ndbtfa_array;
+    INT_1DARRAY vals_order_ndbtfb_array;
+    INT_1DARRAY vals_order_ndbtfc_array;
+
+    INT_1DARRAY inv_vals_order_ndbtfa_array;
+    INT_1DARRAY inv_vals_order_ndbtfb_array;
+    INT_1DARRAY inv_vals_order_ndbtfc_array;
+
+    // To hold the nnz and avoid some compiler errors if BTF_A.nnz undefined, for example
+    Int btfa_nnz; 
+    Int btfb_nnz;
+    Int btfc_nnz;
+
+    //ENTRY_1DARRAY input_vals_unordered; //may be needed if a copy of val input is needed to be stored
+
+
+    BASKER_INLINE
+    int permute_col_store_valperms
+    (
+     BASKER_MATRIX &M,
+     INT_1DARRAY &col,
+     INT_1DARRAY &vals_order_perm
+    );
+
+    BASKER_INLINE
+    int sort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
+
     //end NDE
 
 

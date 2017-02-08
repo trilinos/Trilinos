@@ -35,7 +35,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::AplusAT
   (
-   BASKER_MATRIX &M, 
+   BASKER_MATRIX &M,
    BASKER_MATRIX &C
   )
   {
@@ -43,8 +43,7 @@ namespace BaskerNS
     //get matrix transpose
     matrix_transpose(M,T);
    
-    C.set_shape(M.srow, M.nrow,
-		M.scol, M.ncol);
+    C.set_shape(M.srow, M.nrow, M.scol, M.ncol);
 
     BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
     MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
@@ -78,7 +77,6 @@ namespace BaskerNS
       //scatter T
       for(Int i = T.col_ptr(k); i < T.col_ptr(k+1); ++i)
       {
-
         Int j = T.row_idx(i);
         if(ws(j) != k)
         {
@@ -122,7 +120,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::part_scotch
   (
    BASKER_MATRIX &M,
-   BASKER_TREE &BT, 
+   BASKER_TREE &BT,
    Int num_domains
   )
   {
@@ -248,21 +246,18 @@ namespace BaskerNS
 	    num_levels, sg.cblk, num_trees);
      printf("\n");
      printf("%d %d should blks: %f \n",
-	    2,
-	    ((Int)num_levels+1),
+	    2, ((Int)num_levels+1),
 	    pow(2.0,((double)num_levels+1))-1);
     #endif
      
-     if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) ||
-	(num_trees != 1))
+     if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) || (num_trees != 1))
      {
        //printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
 
        Int iblks = pow(2, num_levels+1)-1;
 
        #ifdef BASKER_DEBUG_ORDER_SCOTCH
-       printf("lvl: %d iblks: %d \n",
-           num_levels, iblks);
+       printf("lvl: %d iblks: %d \n", num_levels, iblks);
        #endif
 
        INT_1DARRAY ttree;
@@ -328,7 +323,6 @@ namespace BaskerNS
          sg.rangtab[i] = ttabs(i);
        }
        sg.rangtab[iblks] = ttabs(iblks);
-
 
      }
      #ifdef BASKER_DEBUG_ORDER_SCOTCH
@@ -438,7 +432,6 @@ namespace BaskerNS
     SCOTCH_graphFree(&cgrafptr);
 
     return 0;
-
   }//end part_scotch()
 
 
