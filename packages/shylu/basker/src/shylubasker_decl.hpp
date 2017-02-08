@@ -1296,7 +1296,7 @@ namespace BaskerNS
     Int btfb_nnz;
     Int btfc_nnz;
 
-    //ENTRY_1DARRAY input_vals_unordered; //may be needed if a copy of val input is needed to be stored
+    ENTRY_1DARRAY input_vals_unordered; //may be needed if a copy of val input is needed to be stored
 
 
     BASKER_INLINE
