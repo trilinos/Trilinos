@@ -83,6 +83,451 @@
 
 namespace MueLuTests {
 
+  /**** some helper methods and classes by Nate ****/
+  
+  using namespace std;
+  // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the dimension of the cellTopo
+  std::vector<std::pair<unsigned,unsigned>> subcellEntitiesForSide(const shards::CellTopology &cellTopo,
+                                                                   unsigned sideOrdinal)
+  {
+    using namespace std;
+    vector<pair<unsigned,unsigned>> subcellEntities;
+    set<unsigned> nodesForSide;
+    int spaceDim = cellTopo.getDimension();
+    if (spaceDim == 0) return {{}};
+    int sideDim = spaceDim - 1;
+    unsigned nodeCount = cellTopo.getNodeCount(sideDim, sideOrdinal);
+    // first, collect all the nodes that match the side
+    for (int nodeOrdinal=0; nodeOrdinal < nodeCount; nodeOrdinal++)
+    {
+      unsigned node = cellTopo.getNodeMap(sideDim, sideOrdinal, nodeOrdinal);
+      nodesForSide.insert(node);
+    }
+    // now, iterate over dimensions.
+    // Any subcells that only have nodes that match nodesForSide should be included.
+    for (unsigned d=0; d<=sideDim; d++)
+    {
+      int subcellCount = cellTopo.getSubcellCount(d);
+      for (unsigned subcord = 0; subcord < subcellCount; subcord++)
+      {
+        bool allNodesMatch = true;
+        if (d == 0)
+        {
+          // subcord is a node; just check whether that node is in nodesForSide
+          allNodesMatch = (nodesForSide.find(subcord) != nodesForSide.end());
+        }
+        else
+        {
+          int scNodeCount = cellTopo.getNodeCount(d, subcord);
+          for (unsigned scNodeOrdinal = 0; scNodeOrdinal < scNodeCount; scNodeOrdinal++)
+          {
+            unsigned scNode = cellTopo.getNodeMap(d, subcord, scNodeOrdinal);
+            if (nodesForSide.find(scNode) == nodesForSide.end())
+            {
+              allNodesMatch = false;
+              break;
+            }
+          }
+        }
+        if (allNodesMatch)
+        {
+          subcellEntities.push_back({d,subcord});
+        }
+      }
+    }
+    return subcellEntities;
+  }
+  
+  //! Returns ordinals in the basis that have nodes on the specified side, as a sorted vector<int>
+  template<class Basis>
+  std::vector<int> localDofOrdinalsForSide(RCP<Basis> basis, unsigned sideOrdinal)
+  {
+    using namespace std;
+    // to use dof tags for this, we first need to determine the subcells of the domain that
+    // are part of the specified side
+    auto subcellEntities = subcellEntitiesForSide(basis->getBaseCellTopology(), sideOrdinal);
+    
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    auto dofOrdinalData = basis->getAllDofOrdinal();
+#else
+    // dofOrdinalData has entries like: dofOrdinalData[subcellDim][subcellOrdinal][subcellDofOrdinal]
+    auto dofOrdinalData = basis->getDofOrdinalData();
+#endif
+    
+    // determine size of first two parts of dofOrdinalData container
+    // for dimensions > 0, there may no entries at all (for lower-order bases)
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    int maxDim = dofOrdinalData.dimension(0);
+    int maxSubcellOrdinal = dofOrdinalData.dimension(1);
+#else
+    int maxDim = dofOrdinalData.size();
+#endif
+    
+    vector<int> localDofOrdinals;
+    
+    for (auto subcellEntity : subcellEntities)
+    {
+      unsigned subcellDim = subcellEntity.first;
+      unsigned subcellOrdinal = subcellEntity.second;
+      
+      if (subcellDim >= maxDim) continue; // no entries
+      
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      int dofContainerSize = dofOrdinalData.dimension(2); // 3rd dimension: max dof count
+#else
+      int dofContainerSize = dofOrdinalData[subcellDim][subcellOrdinal].size();
+      int maxSubcellOrdinal = dofOrdinalData[subcellDim].size();
+#endif
+      if (subcellOrdinal >= maxSubcellOrdinal) continue; // no entries
+      
+      for (unsigned entryOrdinal = 0; entryOrdinal < dofContainerSize; entryOrdinal++)
+      {
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+        int localDofOrdinal = dofOrdinalData(subcellDim,subcellOrdinal,entryOrdinal);
+#else
+        int localDofOrdinal = dofOrdinalData[subcellDim][subcellOrdinal][entryOrdinal];
+#endif
+        if (localDofOrdinal >= 0)
+          localDofOrdinals.push_back(localDofOrdinal);
+        else
+          break;
+      }
+    }
+    
+    std::sort(localDofOrdinals.begin(), localDofOrdinals.end());
+    
+    return localDofOrdinals;
+  }
+  
+  class Symmetries
+  {
+    // the symmetries on a given topology (e.g. cube) are a subset of the
+    // permutations of the nodes: namely, the ones for which nodal connectivities
+    // (edges) are preserved.
+    // This class enumerates the symmetries.  The 0 symmetry is the identity permutation.
+    vector<vector<int>> _symmetries;
+    vector<vector<int>> _inverses;
+    int _N;
+  public:
+    Symmetries(const vector<vector<int>> &symmetries)
+    {
+      _symmetries = symmetries;
+      // sanity checks on the input:
+      // - require that all entries are of equal length N
+      // - require that all entries contain each of 0, ..., N-1
+      
+      if (symmetries.size() == 0)
+      {
+        _N = 0;
+      }
+      else
+      {
+        _N = int(symmetries[0].size());
+        for (auto symmetry : symmetries)
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(symmetry.size() != _N, std::invalid_argument, "Each symmetry must have the same length as all the others.");
+          vector<int> inverse(_N,-1);
+          for (int i=0; i<_N; i++)
+          {
+            int i_mapped = symmetry[i];
+            TEUCHOS_TEST_FOR_EXCEPTION((i_mapped < 0) || (i_mapped > _N), std::invalid_argument,
+                                       "Each symmetry entry must be between 0 and N-1, inclusive.");
+            inverse[i_mapped] = i;
+          }
+          for (int j=0; j<_N; j++)
+          {
+            TEUCHOS_TEST_FOR_EXCEPTION(j == -1, std::invalid_argument, "Each symmetry must include every integer between 0 and N-1, inclusive.");
+          }
+          _inverses.push_back(inverse);
+        }
+      }
+    }
+    
+    const vector<int>& getPermutation(int permutationOrdinal)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal < 0, std::invalid_argument, "permutationOrdinal must be positive");
+      TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal >= _symmetries.size(), std::invalid_argument, "permutationOrdinal out of range");
+      return _symmetries[permutationOrdinal];
+    }
+    
+    int getPermutationCount()
+    {
+      return _symmetries.size();
+    }
+    
+    void printAll()
+    {
+      for (auto permutation : _symmetries)
+      {
+        cout << permutationString(permutation) << endl;
+      }
+    }
+    
+    static string permutationString(vector<int> &permutation)
+    {
+      ostringstream permString;
+      permString << "{ ";
+      for (int entry : permutation)
+      {
+        permString << entry << " ";
+      }
+      permString << "}";
+      return permString.str();
+    }
+    
+    typedef vector<vector<int>> EdgeContainer;
+    
+    // assumes that the inner vectors are sorted:
+    static bool hasEdge(const EdgeContainer &edges, int node1, int node2)
+    {
+      return std::find(edges[node1].begin(), edges[node1].end(), node2) != edges[node1].end();
+    }
+    
+    /*
+     For any topology, we can determine the symmetries from
+     the graph of the edges.  This method takes as argument
+     a representation of said graph.  The edges container has
+     size equal to the node count, and the entries for a given
+     node are exactly the nodes that it is connected to by an edge.
+     */
+    static Symmetries symmetries(const EdgeContainer &unsortedEdges)
+    {
+      EdgeContainer edges = unsortedEdges;
+      // now sort
+      int nodeCount = (int) edges.size();
+      for (int node=0; node<nodeCount; node++)
+      {
+        std::sort(edges[node].begin(), edges[node].end());
+      }
+      
+      vector<vector<int>> permutations;
+      
+      // recursive lambda function to determine valid permutations that start with a specified set of choices:
+      function<void(const vector<int> &)> addPermutationsThatMatch;
+      addPermutationsThatMatch = [nodeCount,edges,&addPermutationsThatMatch,&permutations]
+      (const vector<int> &permutationStart) -> void
+      {
+        int nextNodeToMap = int(permutationStart.size());
+        // iterate through the possible choices for nodes to map to:
+        for (int possibleMappedNode=0; possibleMappedNode<nodeCount; possibleMappedNode++)
+        {
+          // is this node already mapped?
+          bool isAlreadyMapped = false;
+          for (int mappedNode : permutationStart)
+          {
+            if (mappedNode == possibleMappedNode) isAlreadyMapped = true;
+          }
+          if (isAlreadyMapped) continue;
+          // not already mapped: let's check whether the edge relationships agree
+          bool mappingAgrees = true;
+          for (int node=0; node<permutationStart.size(); node++)
+          {
+            int mappedNode = permutationStart[node];
+            bool originalHasEdge = hasEdge(edges, node, nextNodeToMap);
+            bool mappedHasEdge = hasEdge(edges, mappedNode, possibleMappedNode);
+            if (originalHasEdge != mappedHasEdge)
+            {
+              mappingAgrees = false;
+              break;
+            }
+          }
+          if (mappingAgrees)
+          {
+            // no conflict detected: try this mapping choice
+            vector<int> permutationStartCopy = permutationStart;
+            permutationStartCopy.push_back(possibleMappedNode);
+            if (permutationStartCopy.size() == nodeCount)
+            {
+              permutations.push_back(permutationStartCopy);
+            }
+            else
+            {
+              addPermutationsThatMatch(permutationStartCopy);
+            }
+          }
+        }
+      };
+      
+      vector<int> permutation;
+      addPermutationsThatMatch(permutation);
+      
+      return Symmetries(permutations);
+    }
+    
+    static Symmetries shardsSymmetries(shards::CellTopology &cellTopo)
+    {
+      int edgeDim = 1;
+      int nodeCount = cellTopo.getNodeCount();
+      TEUCHOS_TEST_FOR_EXCEPTION(nodeCount != cellTopo.getVertexCount(), std::invalid_argument, "Higher-order topologies are not supported");
+      int edgeCount = cellTopo.getSubcellCount(edgeDim);
+      EdgeContainer edges(nodeCount); // set --> sorted, which is handy
+      for (int edgeOrdinal=0; edgeOrdinal<edgeCount; edgeOrdinal++)
+      {
+        int node0 = cellTopo.getNodeMap(edgeDim, edgeOrdinal, 0);
+        int node1 = cellTopo.getNodeMap(edgeDim, edgeOrdinal, 1);
+        edges[node0].push_back(node1);
+        edges[node1].push_back(node0);
+      }
+      return symmetries(edges);
+    }
+  };
+  
+  TEUCHOS_UNIT_TEST(Symmetries, HypercubeSymmetryCount)
+  {
+    // Just for fun, confirm that Symmetries works with hypercubes up to 5 dimensions
+    // hypercube topology edges can be constructed as follows
+    auto nextDimensionHypercube = [](const vector<vector<int>> &edges) -> vector<vector<int>>
+    {
+      int oldNodeCount = edges.size();
+      vector<vector<int>> newEdges = vector<vector<int>>(oldNodeCount*2);
+      
+      // essentially, we make two copies of the lower-dimensional hypercube, and connect the
+      // nodes to their counterparts
+      for (int node=0; node<oldNodeCount; node++)
+      {
+        newEdges[node+oldNodeCount].push_back(node);
+        for (int entryOrdinal=0; entryOrdinal < edges[node].size(); entryOrdinal++)
+        {
+          int connectedNode = edges[node][entryOrdinal];
+          newEdges[node].push_back(connectedNode);
+          newEdges[node+oldNodeCount].push_back(connectedNode+oldNodeCount);
+        }
+        newEdges[node].push_back(node+oldNodeCount);
+      }
+      return newEdges;
+    };
+    
+    int d = 1, d_max = 5;
+    vector<vector<int>> edges = {{}}; // node: no edges
+    for (int d=1; d<= d_max; d++)
+    {
+      edges = nextDimensionHypercube(edges);
+      // expected count: d! * 2^d
+      int expectedCount = 1 << d;
+      for (int n=2; n<=d; n++) expectedCount *= n;
+      
+      Symmetries symmetries = Symmetries::symmetries(edges);
+      cout << "For hypercube of " << d << " dimensions, there are " << symmetries.getPermutationCount();
+      cout << " symmetries.\n";
+      
+      TEST_EQUALITY(symmetries.getPermutationCount(), expectedCount);
+    }
+  }
+  
+  class UniqueNumbering
+  {
+    vector<vector<double>> _knownCoords; // x,y,z, depending on spatial dimension; inner vector is sorted
+    double _tol; // what counts as a match
+    map<vector<double>, int> _numbering; // maps from tuple selected from the sets in _knownCoords to unique identifier for tuple
+    void getSanitizedCoords(const vector<double> &coords, vector<double> &sanitizedCoords)
+    {
+      sanitizedCoords.resize(coords.size());
+      for (int d=0; d<coords.size(); d++)
+      {
+        double val = coords[d];
+        // look to lower_bound to see if we already have something within _tol
+        auto lowerBoundIt = lower_bound(_knownCoords[d].begin(), _knownCoords[d].end(), val);
+        // lower_bound returns iterator to first value that does not compare less than val (i.e. lower_bound >= val)
+        if ((lowerBoundIt != _knownCoords[d].end()) && ((*lowerBoundIt - val) < _tol))
+        {
+          sanitizedCoords[d] = *lowerBoundIt;
+        }
+        else
+        {
+          bool shouldInsert = true; // unless we find that the previous entry is a match
+          if (lowerBoundIt != _knownCoords[d].begin())
+          {
+            // then check the prior guy to see if he's within _tol
+            double previousEntry = *(lowerBoundIt-1);
+            if ((val-previousEntry) < _tol)
+            {
+              sanitizedCoords[d] = previousEntry;
+              shouldInsert = false;
+            }
+          }
+          if (shouldInsert)
+          {
+            // neither prior nor following entry is within _tol
+            // add to our list:
+            _knownCoords[d].insert(lowerBoundIt, val);
+            sanitizedCoords[d] = val;
+          }
+        }
+      }
+    }
+    
+  public:
+    UniqueNumbering(int spaceDim, double tol)
+    {
+      _tol = tol;
+      _knownCoords = vector<vector<double>>(spaceDim);
+    }
+    int getGlobalID(const vector<double> &coords)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(coords.size() != _knownCoords.size(), std::invalid_argument,
+                                 "coords must be the same size as spaceDim!");
+      // we first filter ("sanitize") the coords to match _knownCoords within _tol
+      // (adding entries to _knownCoords as needed)
+      vector<double> coordsKey;
+      getSanitizedCoords(coords, coordsKey);
+      
+      // we look up using the sanitized coordsKey
+      if (_numbering.find(coordsKey) == _numbering.end())
+      {
+        int newID = _numbering.size();
+        _numbering[coordsKey] = newID;
+      }
+      return _numbering[coordsKey];
+    }
+    int totalCount()
+    {
+      return _numbering.size();
+    }
+  };
+  
+  TEUCHOS_UNIT_TEST(UniqueNumbering, IntegerCoords)
+  {
+    int spaceDim = 2;
+    double tol = 0.51;
+    UniqueNumbering numbering(spaceDim,tol);
+    int numXes = 11, numYs = 11;
+    for (int x=0; x<numXes; x++)
+    {
+      for (int y=0; y<numYs; y++)
+      {
+        numbering.getGlobalID({(double)x,(double)y});
+      }
+    }
+    // there should be 121 entries
+    int expectedCount = numXes * numYs;
+    TEST_EQUALITY(expectedCount, numbering.totalCount());
+    // now, try querying something between the entries:
+    int globalID = numbering.getGlobalID({0.5,0.5});
+    // there should still be 121 entries
+    TEST_EQUALITY(expectedCount, numbering.totalCount());
+    // globalID should be < 121
+    TEST_COMPARE(globalID, <, expectedCount);
+    
+    // now ask for one below 0, but within tol:
+    globalID = numbering.getGlobalID({-0.4,-0.3});
+    TEST_EQUALITY(expectedCount, numbering.totalCount());
+    TEST_COMPARE(globalID, <, expectedCount);
+    
+    // and now for one above 10, but within tol of it:
+    globalID = numbering.getGlobalID({10.4,10.3});
+    TEST_EQUALITY(expectedCount, numbering.totalCount());
+    TEST_COMPARE(globalID, <, expectedCount);
+    
+    // finally, add one outside tol -- now we expect the count to go up
+    globalID = numbering.getGlobalID({11,10});
+    TEST_COMPARE(globalID, ==, expectedCount);
+    expectedCount++;
+    TEST_EQUALITY(expectedCount, numbering.totalCount());
+  }
+  
+  /******* End helper methods and classes by Nate ********/
+  
+  
   /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GetP1NodeInHi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -770,7 +1215,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO; 
     typedef Node  NO;  
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;  
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Intrepid2::CellTools<typename Node::device_type::execution_space> CellTools;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
 #else
@@ -778,59 +1224,376 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 #endif
     out << "version: " << MueLu::Version() << std::endl;
     
-    for(int i=1; i<max_degree; i++) {
-      FC hi_DofCoords;
+    bool success = true;
+    int combinationTestedCount = 0;
+    
+    // Contruct a container that has the reference coordinates for the domain cell topology
+    RCP<Basis> linearBasis = rcp( new Basis(1,ptype) );
+    shards::CellTopology cellTopo = linearBasis->getBaseCellTopology();
+    int spaceDim = cellTopo.getDimension();
+    int vertexCount = cellTopo.getVertexCount();
+    FC refCellVertices,refCellVertex,physCellVertices,physCellVerticesPermuted;
+    /*
+     How many physical cells do we need to test adequately?  I believe the answer is just 2, even in 3D;
+     by running through all the symmetries we should have all the edge-to-edge pairings covered.
+     */
+    int numCells = 2;
+    double xTranslationForCell1 = 2.0; // shift to the right by 2
+    double pointTol = 1e-12;
+    
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-      RCP<Basis> hi = rcp(new Basis(i,ptype));
+    resize(physCellVertices,numCells,vertexCount,3);
+    resize(physCellVerticesPermuted,numCells,vertexCount,3);
+    resize(refCellVertices,vertexCount,3);
+    resize(refCellVertex,3);
+#else
+    physCellVertices.resize(numCells,vertexCount,3);
+    physCellVerticesPermuted.resize(numCells,vertexCount,3);
+    refCellVertices.resize(vertexCount,3);
+    refCellVertex.resize(3);
+#endif
+    // regardless of spatial dimension, CellTools::getReferenceVertex() populates 3 slots
+    for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
+    {
+      CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
+      for (int d=0; d<3; d++)
+      {
+        refCellVertices(vertexOrdinal,d) = refCellVertex(d);
+        //      cout << "refCellVertices(" << vertexOrdinal << "," << d << ") = " << refCellVertex(d) << endl;
+        // cell 0 is just the reference cell:
+        physCellVertices(0,vertexOrdinal,d) = refCellVertex(d);
+        // cell 1 is the reference cell, except that the x coords get translated
+        // NOTE: this will need to change to support non-hypercube topologies
+        physCellVertices(1,vertexOrdinal,d) = refCellVertex(d) + ((d==0) ? xTranslationForCell1 : 0);
+      }
+    }
+    Symmetries cellSymmetries = Symmetries::shardsSymmetries(cellTopo);
+    int symmetryCount = cellSymmetries.getPermutationCount();
+    
+    for(int highPolyDegree=1; highPolyDegree<max_degree; highPolyDegree++) {
+      FC hi_DofCoords, lo_DofCoords;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
       Kokkos::Experimental::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi->getDofCoords(hi_DofCoords);
 #else
-      RCP<Basis> hi = rcp(new Basis(i,ptype));
+      RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
       RCP<Intrepid2::DofCoordsInterface<FC> > hi_dci = rcp_dynamic_cast<Basis>(hi);
       hi_DofCoords.resize(hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi_dci->getDofCoords(hi_DofCoords);
 #endif
-      for(int j=1; j<i; j++) {
+      
+      // we'll want to create a global numbering for both high and low order bases
+      // --> we make a lambda function that accepts FC with dof coords as argument
+      auto getTwoCellNumbering = [pointTol,numCells,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
+      {
+        int dofsPerCell = dofCoords.dimension(0);
+        int spaceDim = dofCoords.dimension(1);
+        vector<double> coords(spaceDim);
+        UniqueNumbering numbering(spaceDim, pointTol);
+        
+        // number the guys on cell 0 first, then the ones on cell 1:
+        for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+        {
+          for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+          {
+            for (int d=0; d<spaceDim; d++)
+            {
+              if ((d==0) && (cellOrdinal == 1))
+              {
+                coords[d] = dofCoords(dofOrdinal,d) + xTranslationForCell1;
+              }
+              else
+              {
+                coords[d] = dofCoords(dofOrdinal,d);
+              }
+            }
+            numbering.getGlobalID(coords);
+          }
+        }
+        return numbering;
+      };
+      
+      UniqueNumbering hiNumbering = getTwoCellNumbering(hi_DofCoords);
+      out << "Total dof count two cells of degree " << highPolyDegree << ": ";
+      out << hiNumbering.totalCount() << endl;
+      
+      for(int lowPolyDegree=1; lowPolyDegree<highPolyDegree; lowPolyDegree++) {
+        out << "Testing with high order " << highPolyDegree << ", low order " << lowPolyDegree << endl;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-	RCP<Basis> lo = rcp(new Basis(j,ptype));
+        RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
+        Kokkos::Experimental::resize(lo_DofCoords,lo->getCardinality(),lo->getBaseCellTopology().getDimension());
+        lo->getDofCoords(lo_DofCoords);
 #else
-	RCP<Basis> lo = rcp(new Basis(j,ptype));
+        RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
+        RCP<Intrepid2::DofCoordsInterface<FC> > lo_dci = rcp_dynamic_cast<Basis>(lo);
+        lo_DofCoords.resize(lo->getCardinality(),lo->getBaseCellTopology().getDimension());
+        lo_dci->getDofCoords(lo_DofCoords);
 #endif
-
-	// Get the candidates
-	double threshold = 1e-10;
-	std::vector<std::vector<size_t> > candidates;
-	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
-
-	// Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
-	std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
-	bool no_doubles = true;
-	for(int k=0; no_doubles && k<(int)candidates.size(); k++) {
-	  if(candidates[k].size()==0) no_doubles=false;
-	  for(int l=0; l<(int)candidates[k].size(); l++)	    
-	    if(is_candidate[candidates[k][l]] == false) is_candidate[candidates[k][l]]=true;
-	    else {no_doubles=false;break;}
-	}
-#if 1
-	if(!no_doubles) {
-	  printf("*** lo/hi = %d/%d ***\n",j,i);
-	  for(int k=0; k<(int)candidates.size(); k++) {
-	    printf("candidates[%d] = ",k);
-	    for(int l=0; l<(int)candidates[k].size(); l++)
-	      printf("%d ",(int)candidates[k][l]);
-	    printf("\n");
-	  }
-	}
-#endif	         
-	if(!no_doubles) {
-	  out<<"ERROR: "<<name<<" The 'no duplicates' test fails w/ lo/hi = "<<j<<"/"<<i<<std::endl;
-	  return false;
-	}		
+        UniqueNumbering loNumbering = getTwoCellNumbering(lo_DofCoords);
+        
+        // print out the high/low global numbering along the x=1 interface:
+        out << "Low-order global IDs along intercell interface:\n";
+        for (int lowOrdinal=0; lowOrdinal<lo->getCardinality(); lowOrdinal++)
+        {
+          vector<double> coords(lo_DofCoords.dimension(1));
+          for (int d=0; d<lo_DofCoords.dimension(1); d++)
+          {
+            coords[d] = lo_DofCoords(lowOrdinal,d);
+          }
+          if (coords[0] == 1.0)
+          {
+            int globalOrdinal = loNumbering.getGlobalID(coords);
+            out << globalOrdinal << ": (";
+            for (int d=0; d<coords.size()-1; d++)
+            {
+              out << coords[d] << ",";
+            }
+            out << coords[coords.size()-1] << ")\n";
+          }
+        }
+        // print out the high/low global numbering along the x=1 interface:
+        out << "High-order global IDs along intercell interface:\n";
+        for (int highOrdinal=0; highOrdinal<hi->getCardinality(); highOrdinal++)
+        {
+          vector<double> coords(hi_DofCoords.dimension(1));
+          for (int d=0; d<hi_DofCoords.dimension(1); d++)
+          {
+            coords[d] = hi_DofCoords(highOrdinal,d);
+          }
+          if (coords[0] == 1.0)
+          {
+            int globalOrdinal = hiNumbering.getGlobalID(coords);
+            out << globalOrdinal << ": (";
+            for (int d=0; d<coords.size()-1; d++)
+            {
+              out << coords[d] << ",";
+            }
+            out << coords[coords.size()-1] << ")\n";
+          }
+        }
+        
+        // Get the candidates
+        double threshold = 1e-10;
+        std::vector<std::vector<size_t> > candidates;
+        MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
+        
+        // Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
+        std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
+        bool no_doubles = true;
+        for(int lowOrderDof=0; no_doubles && lowOrderDof<(int)candidates.size(); lowOrderDof++) {
+          if(candidates[lowOrderDof].size()==0) no_doubles=false; // this low DOF has no candidates!
+          for(int l=0; l<(int)candidates[lowOrderDof].size(); l++)
+            if(is_candidate[candidates[lowOrderDof][l]] == false) is_candidate[candidates[lowOrderDof][l]]=true;
+            else {no_doubles=false;break;} // this high-order dof was already claimed by an earlier low DOF!
+        }
+        if(!no_doubles) {
+          out<<"ERROR: "<<name<<" The 'no duplicates' test fails w/ lo/hi = "<< lowPolyDegree <<"/"<< highPolyDegree <<std::endl;
+          return false;
+        }
+        
+        // Correctness Test 2: Try 2 elements, in all possible relative orientations, and confirm that the
+        //                     "lowest global ordinal" tie-breaker always returns the same thing for both neighbors
+        for (int permOrdinal0=0; permOrdinal0<symmetryCount; permOrdinal0++)
+        {
+          vector<int> perm0 = cellSymmetries.getPermutation(permOrdinal0);
+          for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
+          {
+            int mappedVertexOrdinal = perm0[vertexOrdinal];
+            for (int d=0; d<3; d++)
+            {
+              physCellVerticesPermuted(0,vertexOrdinal,d) = physCellVertices(0,mappedVertexOrdinal,d);
+            }
+          }
+          
+          // brute force search for the side of cell shared with neighbor
+          // this is the one that has points with x coordinates equal to 1.0
+          // we'll want to do this once for cell 0, and once for cell 1, so we make it a lambda
+          // (NOTE: this will need to change for non-hypercube topology support)
+          auto searchForX1Side = [cellTopo,physCellVerticesPermuted](int cellOrdinal) -> int
+          {
+            int spaceDim = cellTopo.getDimension();
+            // Line<2> gives wrong answers for getSideCount() and getNodeCount(), so we handle 1D case separately:
+            if (spaceDim == 1)
+            {
+              int sideCount = 2;
+              for (int sideVertexOrdinal=0; sideVertexOrdinal<sideCount; sideVertexOrdinal++)
+              {
+                bool matchFound = true;
+                int cellVertexOrdinal = sideVertexOrdinal;
+                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) == 1.0)
+                {
+                  return sideVertexOrdinal;
+                }
+              }
+              return -1;
+            }
+            int sideCount = (spaceDim == 1) ? 2 : cellTopo.getSideCount();
+            for (int sideOrdinal=0; sideOrdinal<cellTopo.getSideCount(); sideOrdinal++)
+            {
+              int sideVertexCount = cellTopo.getNodeCount(spaceDim-1, sideOrdinal);
+              bool matchFound = true;
+              for (int sideVertexOrdinal=0; sideVertexOrdinal<sideVertexCount; sideVertexOrdinal++)
+              {
+                int cellVertexOrdinal = cellTopo.getNodeMap(spaceDim-1, sideOrdinal, sideVertexOrdinal);
+                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) != 1.0)
+                {
+                  matchFound = false;
+                  break;
+                }
+              }
+              if (matchFound)
+              {
+                return sideOrdinal;
+              }
+            }
+            return -1;
+          };
+          
+          int cell0Side = searchForX1Side(0);
+          //        out << "cell 0 side is " << cell0Side << endl;
+          
+          for (int permOrdinal1=0; permOrdinal1<symmetryCount; permOrdinal1++)
+          {
+            vector<int> perm1 = cellSymmetries.getPermutation(permOrdinal1);
+            for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
+            {
+              int mappedVertexOrdinal = perm1[vertexOrdinal];
+              for (int d=0; d<3; d++)
+              {
+                physCellVerticesPermuted(1,vertexOrdinal,d) = physCellVertices(1,mappedVertexOrdinal,d);
+              }
+            }
+            // get the mapped dof coords for lo and high bases:
+            FC lo_physDofCoords, hi_physDofCoords;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+            Kokkos::Experimental::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
+            Kokkos::Experimental::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
+#else
+            lo_physDofCoords.resize(numCells,lo->getCardinality(),cellTopo.getDimension());
+            hi_physDofCoords.resize(numCells,hi->getCardinality(),cellTopo.getDimension());
+#endif
+            CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
+            CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
+            int cell1Side = searchForX1Side(1);
+            
+            /*
+             We want to verify that the neighboring cells (as permuted) agree on their
+             representation of the low-order basis in their selection of high-order basis
+             members.  It suffices to check that the *set* of candidate high-order basis functions
+             is the same; then for any global numbering the "lowest global number" tie-breaker
+             will select the same function.
+             
+             The logic is this.  We have:
+             - a global numbering for the physical dof coords of the coarse discretization
+             - a global numbering for the physical dof coords of the fine discretization
+             - a local map from lo to hi on the reference cell
+             - a map from local dofs on each cell to the physical dof coords for the {lo|hi} basis
+             
+             On each cell, then, we can map from the local low dof ordinal to the local high dof ordinal.
+             At the same time, we can map the local ordinals for high and low to global ordinals, giving
+             us a mapping from global low ordinals to global high ordinals.  We then can compare the mapping
+             to verify that the two cells agree.
+             */
+            
+            auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering]
+            (int cellOrdinal, int sideOrdinal) -> map<int, set<int>>
+            {
+              map<int,set<int>> globalLowToHighMap;
+              int spaceDim = lo_physDofCoords.dimension(2);
+              vector<int> cell_loDofOrdinals = localDofOrdinalsForSide(lo, sideOrdinal);
+              for (int lowLocalOrdinal : cell_loDofOrdinals)
+              {
+                vector<double> loCoords(spaceDim);
+                for (int d=0; d<spaceDim; d++)
+                {
+                  loCoords[d] = lo_physDofCoords(cellOrdinal,lowLocalOrdinal,d);
+                }
+                int lowGlobalNumber = loNumbering.getGlobalID(loCoords);
+                vector<size_t> highLocalOrdinals = candidates[lowLocalOrdinal];
+                for (int highLocalOrdinal : highLocalOrdinals)
+                {
+                  vector<double> hiCoords(spaceDim);
+                  for (int d=0; d<spaceDim; d++)
+                  {
+                    hiCoords[d] = hi_physDofCoords(cellOrdinal,highLocalOrdinal,d);
+                  }
+                  int highGlobalNumber = hiNumbering.getGlobalID(hiCoords);
+                  globalLowToHighMap[lowGlobalNumber].insert(highGlobalNumber);
+                }
+              }
+              return globalLowToHighMap;
+            };
+            
+            map<int,set<int>> cell0_mapping = constructMap(0,cell0Side);
+            map<int,set<int>> cell1_mapping = constructMap(1,cell1Side);
+            
+            // verify the two maps are identical:
+            if (cell0_mapping.size() != cell1_mapping.size())
+            {
+              success = false;
+              out << "cell 0 and cell 1 mapping do not have the same number of low global ordinal entries!\n";
+            }
+            else
+            {
+              auto cell0_it = cell0_mapping.begin();
+              auto cell1_it = cell1_mapping.begin();
+              while (cell0_it != cell0_mapping.end())
+              {
+                if (cell0_it->first != cell1_it->first)
+                {
+                  success = false;
+                  out << "cell 0 and cell 1 have different low global ordinal entries; ";
+                  out << cell0_it->first << " != " << cell1_it->first << endl;
+                }
+                else if (cell0_it->second.size() != cell1_it->second.size())
+                {
+                  success = false;
+                  out << "cell 0 and cell 1 have a different number of high global ordinal entries for low global ordinal ";
+                  out << cell0_it->first << cell0_it->second.size() << " != " << cell1_it->second.size() << endl;
+                }
+                else
+                {
+                  // check that the set contents are identical
+                  auto cell0_set_it = cell0_it->second.begin();
+                  auto cell1_set_it = cell1_it->second.begin();
+                  bool setsMatch = true;
+                  while (cell0_set_it != cell0_it->second.end())
+                  {
+                    if (*cell0_set_it != *cell1_set_it)
+                    {
+                      setsMatch = false;
+                      break;
+                    }
+                    cell0_set_it++;
+                    cell1_set_it++;
+                  }
+                  if (!setsMatch)
+                  {
+                    int lowGlobalOrdinal = cell0_it->first;
+                    success = false;
+                    out << "with permutation selections " << permOrdinal0 << " and " << permOrdinal1 << ", ";
+                    out << "cell 0 and cell 1 maps differ in the high global entries for low global ordinal ";
+                    out << lowGlobalOrdinal << ": { ";
+                    for (int highGlobalOrdinal : cell0_it->second) { out << highGlobalOrdinal << " ";}
+                    out << "} != { ";
+                    for (int highGlobalOrdinal : cell1_it->second) { out << highGlobalOrdinal << " ";}
+                    out << "}\n";
+                  }
+                }
+                
+                cell0_it++;
+                cell1_it++;
+              }
+            }
+            
+            combinationTestedCount++;
+          }
+        }
       }
     }
-    
-    // Everything worked
-    return true;
+    cout << "Tested " << combinationTestedCount << " lo/hi, two-cell permutation combinations.\n";
+    return success;
   }
  
 /*********************************************************************************************************************/
