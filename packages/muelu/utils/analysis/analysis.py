@@ -2,7 +2,7 @@
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY]
+  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE]
   analysis.py (-h | --help)
 
 Options:
@@ -11,6 +11,7 @@ Options:
   -o FILE --output-file=FILE    Output file
   -a MODE --analysis=MODE       Mode [default: setup_timers]
   -d DISPLAY --display=DISPLAY  Display mode [default: print]
+  -s STYLE --style=DISPLAY      Plot style [default: stack]
 """
 
 import glob
@@ -74,7 +75,7 @@ def setup_timers(yaml_data, mode, ax = None, top=10):
     else:
         print(dfs['maxT'])
 
-def muelu_strong_scaling(input_files, mode, ax, top=10):
+def muelu_strong_scaling(input_files, mode, ax, style, top=10):
     """Show scalability of setup level specific timers ordered by size"""
 
     assert(mode == 'display')
@@ -83,9 +84,10 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
     #  - stack        : timers are on top of each other
     #  - stack-percent: same as stack, but shows percentage values on sides
     #  - scaling      : scaling of individual timers
-    style = 'stack'
+    #style = 'stack'
 
     ## Determine top timers in the first log file
+    print(input_files)
     with open(input_files[0]) as data_file:
         yaml_data = yaml.safe_load(data_file)
 
@@ -377,6 +379,7 @@ if __name__ == '__main__':
     output_file = options['--output-file']
     analysis    = options['--analysis']
     display     = options['--display']
+    style       = options['--style']
 
     input_files = glob.glob(input_files)
     # Impose sorted order (similar to bash "sort -n"
@@ -394,6 +397,10 @@ if __name__ == '__main__':
     if not display in valid_displays:
         print("Display must be one of " % valid_displays)
         raise
+
+    valid_styles = ['stack', 'stack-percent', 'scaling']
+    if not style in valid_styles:
+        print("Style must be one of " % valid_displays)
 
     ## Setup default plotting
     plt.figure(figsize=(12, 12))
@@ -416,7 +423,7 @@ if __name__ == '__main__':
 
     if analysis == 'muelu_strong_scaling':
         # Scaling studies work with multiple files
-        muelu_strong_scaling(input_files, mode=display, ax=ax)
+        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here
