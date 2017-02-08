@@ -15,10 +15,10 @@
 #
 
 # --> ACTION: define Trilinos install directory
-TRILINOS_INSTALL_DIR = /home/dridzal/research/Trilinos/BUILD/intrelab/install
+TRILINOS_INSTALL_DIR = /scratch/dridzal/Trilinos/BUILD/intrelab/install
 
 # --> ACTION: define Matlab binary directory
-MATLAB_BIN_DIR = /home/dridzal/software/MATLAB/R2016b/bin
+MATLAB_BIN_DIR = /usr/local/matlab/8.6b/bin
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
 INST_DIR = install
