@@ -147,19 +147,23 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     DynRankView ConstructWithLabel(cubWeights, npts);
 
     cub.getCubature(cubPoints, cubWeights);
+    auto h_cubWeights = Kokkos::create_mirror_view(cubWeights);
+    Kokkos::deep_copy(h_cubWeights, cubWeights);
 
     // Tabulate the basis functions at the cubature points
     DynRankView ConstructWithLabel(basisAtCubPts, polydim, npts);
 
     triBasis.getValues(basisAtCubPts, cubPoints, OPERATOR_VALUE);
+    auto h_basisAtCubPts = Kokkos::create_mirror_view(basisAtCubPts);
+    Kokkos::deep_copy(h_basisAtCubPts, basisAtCubPts);
 
     // Now let's compute the mass matrix
     for (ordinal_type i = 0; i < polydim; i++) {
       for (ordinal_type j = i; j < polydim; j++) {
         ValueType cur = 0.0;
         for (ordinal_type k = 0; k < cub.getNumPoints(); k++) {
-          cur += cubWeights(k) * basisAtCubPts(i, k)
-							                * basisAtCubPts(j, k);
+          cur += h_cubWeights(k) * h_basisAtCubPts(i, k)
+							                * h_basisAtCubPts(j, k);
         }
         if (i != j && fabs(cur) > tol) {
           errorFlag++;
@@ -190,6 +194,8 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , dim);
     triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D1);
 
+    auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
+    Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);
 
     const double fiat_vals[] = {
         0.000000000000000e+00, 0.000000000000000e+00,
@@ -298,16 +304,16 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     for (ordinal_type i=0;i<polydim;i++) {
       for (ordinal_type j=0;j<np_lattice;j++) {
         for (ordinal_type k=0;k<dim;k++) {
-          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*tol ) {
+          if (std::abs( h_dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
             // Output the multi-index of the value where the error is:
             *outStream << " At multi-index { ";
             *outStream << i << " " << j << " " << k;
-            *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
+            *outStream << "}  computed value: " << h_dBasisAtLattice(i,j,k)
                                      << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
-            *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+            *outStream << "Difference: " << std::abs( h_dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
           }
           fiat_index_cur++;
         }
@@ -332,6 +338,9 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
 
     DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , 3);
     triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D2);
+
+    auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
+    Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);
 
     const double fiat_vals[] = {
         0.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00,
@@ -440,16 +449,16 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     for (int i=0;i<polydim;i++) {
       for (int j=0;j<np_lattice;j++) {
         for (int k=0;k<3;k++) {
-          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*tol ) {
+          if (std::abs( h_dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
             // Output the multi-index of the value where the error is:
             *outStream << " At multi-index { ";
             *outStream << i << " " << j << " " << k;
-            *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
+            *outStream << "}  computed value: " << h_dBasisAtLattice(i,j,k)
                                   << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
-            *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+            *outStream << "Difference: " << std::abs( h_dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
           }
           fiat_index_cur++;
         }

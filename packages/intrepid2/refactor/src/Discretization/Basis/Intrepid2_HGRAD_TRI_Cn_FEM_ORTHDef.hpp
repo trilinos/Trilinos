@@ -231,7 +231,11 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,1>:
 
   // use stack buffer
   value_type outBuf[maxCard][maxNumPts][2+1]; //2 for derivatives, 1 for value
-  outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, 3);
+ // outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, 3); // createDynRankViewWithType not KOKKOS_INLINE_FUNCTION
+
+  typedef typename Kokkos::View<value_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outHackViewType; // Issue trying to do this directly with DynRankView - no matching ctor
+  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, 3); // As a hack, wrapped with a View then wrapped the View with a DynRankView
+  outViewType out(hack_view);
 
   OrthPolynomial<maxOrder,maxNumPts,outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
@@ -316,6 +320,7 @@ getValues( /**/  outputViewType output,
     OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
+  /*
   case OPERATOR_D4: {
     OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,4>::generate( output, input, order );
     break;
@@ -344,6 +349,7 @@ getValues( /**/  outputViewType output,
     OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,10>::generate( output, input, order );
     break;
   }
+  */
   case OPERATOR_Dn:
   default: {
     INTREPID2_TEST_FOR_ABORT( true,
@@ -395,6 +401,7 @@ getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+  /*
   case OPERATOR_D4: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D4,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
@@ -430,6 +437,7 @@ getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+  */
   case OPERATOR_DIV:
   case OPERATOR_CURL: {
     INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
