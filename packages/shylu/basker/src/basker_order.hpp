@@ -78,7 +78,7 @@ namespace BaskerNS
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
 
-    printf("outter num_threads:%d \n", num_threads);
+    printf("Basker outer num_threads:%d \n", num_threads);
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, 0);
     find_btf(A); 
@@ -204,11 +204,11 @@ namespace BaskerNS
     return 0;
   }//end btf_order
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::btf_order2()
   {
-
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
@@ -237,7 +237,7 @@ namespace BaskerNS
   
     find_btf2(A);
 
-    if( (btf_tabs_offset != 0) ) // BTF_A exists
+    if( (btf_tabs_offset != 0) ) // BTF_A exists and is not a btf_nblks > 1
     {
       //new for sfactor_copy2 replacement
       MALLOC_INT_1DARRAY(vals_order_ndbtfa_array, BTF_A.nnz); //track nd perms
@@ -342,32 +342,32 @@ namespace BaskerNS
         //printMTX("C_BTF_AMD.mtx", BTF_C);
       }
 
-    //new for sfactor_copy2 replacement
-    // Steps below necessary for later use in Factor(...) to follow permutation convention used up to this point
-    if ( BTF_A.nnz > 0 ) {
-      btfa_nnz = BTF_A.nnz;
-      MALLOC_INT_1DARRAY( inv_vals_order_ndbtfa_array, BTF_A.nnz );
-      for (Int i = 0; i < BTF_A.nnz; ++i) {
-        inv_vals_order_ndbtfa_array(i) = i;
+      //new for sfactor_copy2 replacement
+      // Steps below necessary for later use in Factor(...) to follow permutation convention used up to this point
+      if ( BTF_A.nnz > 0 ) {
+        btfa_nnz = BTF_A.nnz;
+        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfa_array, BTF_A.nnz );
+        for (Int i = 0; i < BTF_A.nnz; ++i) {
+          inv_vals_order_ndbtfa_array(i) = i;
+        }
+        permute_inv(inv_vals_order_ndbtfa_array, vals_order_ndbtfa_array, BTF_A.nnz);
       }
-      permute_inv(inv_vals_order_ndbtfa_array, vals_order_ndbtfa_array, BTF_A.nnz);
-    }
-    if ( BTF_B.nnz > 0 ) {
-      btfb_nnz = BTF_B.nnz;
-      MALLOC_INT_1DARRAY( inv_vals_order_ndbtfb_array, BTF_B.nnz );
-      for (Int i = 0; i < BTF_B.nnz; ++i) {
-        inv_vals_order_ndbtfb_array(i) = i;
+      if ( BTF_B.nnz > 0 ) { //this may not be the best way to test...
+        btfb_nnz = BTF_B.nnz;
+        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfb_array, BTF_B.nnz );
+        for (Int i = 0; i < BTF_B.nnz; ++i) {
+          inv_vals_order_ndbtfb_array(i) = i;
+        }
+        permute_inv(inv_vals_order_ndbtfb_array, vals_order_ndbtfb_array, BTF_B.nnz);
       }
-      permute_inv(inv_vals_order_ndbtfb_array, vals_order_ndbtfb_array, BTF_B.nnz);
-    }
-    if ( BTF_C.nnz > 0 ) {
-      btfc_nnz = BTF_C.nnz;
-      MALLOC_INT_1DARRAY( inv_vals_order_ndbtfc_array, BTF_C.nnz );
-      for (Int i = 0; i < BTF_C.nnz; ++i) {
-        inv_vals_order_ndbtfc_array(i) = i;
+      if ( BTF_C.nnz > 0 ) { //this may not be the best way to test...
+        btfc_nnz = BTF_C.nnz;
+        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfc_array, BTF_C.nnz );
+        for (Int i = 0; i < BTF_C.nnz; ++i) {
+          inv_vals_order_ndbtfc_array(i) = i;
+        }
+        permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
       }
-      permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
-    }
 
       //printMTX("BTF_A.mtx", BTF_A);
 
@@ -379,16 +379,16 @@ namespace BaskerNS
       find_2D_convert(BTF_A);
       //now we can fill submatrices
       //printf("AFTER CONVERT\n");
-#ifdef BASKER_KOKKOS
+     #ifdef BASKER_KOKKOS
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
-#else
+      #else
       //Comeback
-#endif
+      #endif
     }//if btf_tabs_offset != 0
 
-    if(btf_nblks > 1)
+    if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
       //sort_matrix(BTF_C); // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
       // NDE: May need to add permutation for this case...
@@ -1324,7 +1324,6 @@ namespace BaskerNS
         ko++;
       }
     }
-
     //copy back into A
     for(Int ii=0; ii < n+1; ii++)
     {
@@ -1353,9 +1352,7 @@ namespace BaskerNS
   )
   {
     if(M.nnz == 0)
-    {
-      return 0;
-    }
+    { return 0; }
 
     Int nnz = M.nnz;
     INT_1DARRAY temp_i;
@@ -1418,6 +1415,7 @@ namespace BaskerNS
 
     return 0;
   }//end sort_matrix()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
