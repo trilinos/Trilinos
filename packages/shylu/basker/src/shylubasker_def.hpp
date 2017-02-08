@@ -114,19 +114,40 @@ namespace BaskerNS
     }
     if(btf_flag == BASKER_TRUE)
     {
+    //NDE: sfactor_copy2 replacement
+      FREE_INT_1DARRAY(vals_order_btf_array);
+      FREE_INT_1DARRAY(vals_order_blk_amd_array);
+      FREE_INT_1DARRAY_PAIRS(vals_block_map_perm_pair); //this will map perm(val) indices to BTF_A, BTF_B, and BTF_C 
+
+      FREE_INT_1DARRAY(vals_order_ndbtfa_array); //track nd perms; BTF_A must be declared here, else it does not exist
+      FREE_INT_1DARRAY(vals_order_ndbtfb_array); //track nd perms; BTF_A must be declared here, else it does not exist
+      FREE_INT_1DARRAY(vals_order_ndbtfc_array); //track nd perms; BTF_A must be declared here, else it does not exist
+      FREE_INT_1DARRAY(inv_vals_order_ndbtfa_array);
+      FREE_INT_1DARRAY(inv_vals_order_ndbtfb_array);
+      FREE_INT_1DARRAY(inv_vals_order_ndbtfc_array);
+
       FREE_INT_1DARRAY(order_btf_array);
+      FREE_INT_1DARRAY(order_blk_amd_array); // previous memory leak due to this array, likely
       btf_flag = BASKER_FALSE;
     }
     if(nd_flag == BASKER_TRUE)
     {
+      FREE_INT_1DARRAY(vals_order_scotch_array);
+
       FREE_INT_1DARRAY(order_scotch_array);
       nd_flag = BASKER_FALSE;
     }
     if(amd_flag == BASKER_TRUE)
     {
+      FREE_INT_1DARRAY(vals_order_csym_array);
+
       FREE_INT_1DARRAY(order_csym_array);
       amd_flag = BASKER_FALSE;
     }
+
+    //NDE: sfactor_copy2 replacement
+    FREE_INT_1DARRAY(vals_perm_composition);
+    //FREE_ENTRY_1DARRAY(input_vals_unordered);
 
     //NDE: Free workspace and permutation arrays
     FREE_INT_1DARRAY(perm_comp_array);
@@ -488,17 +509,6 @@ namespace BaskerNS
     timer.reset();
     #endif
 
-    // NDE
-    /*
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
-    MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
-    MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
-
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn); 
-    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve(gn);
-    */
-
     #ifdef BASKER_TIMER
     time += timer.seconds();
     std::cout << "Basker Factor total time: " << time << std::endl;
@@ -529,75 +539,65 @@ namespace BaskerNS
     std::cout.setf(ios::fixed, ios::floatfield);
     std::cout.precision(8);
     double time = 0.0;
-    double init_time = 0.0;
     Kokkos::Timer timer;
-    Kokkos::Timer timer_init;
     #endif
 
-    int err = 0;
+    int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
 
-    if (Options.verbose == BASKER_TRUE)
-    {
-      std::cout << "Basker Factor Called" << std::endl;
-      std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
-    }
+    //sfactor_copy2 stuff
+    // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
+    // WARNING! This may require a sort step first if CRS matrix input - make sure Symbolic matches input pattern ie CCS vs CRS
+    //BASKER_MATRIX M;
+    //M.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+    //sort_matrix(M);
+    //MALLOC_ENTRY_1DARRAY(input_vals_unordered,nnz);
+    //for( Int i = 0; i < nnz; ++i ) { //sfactor_copy2 replacement: setup for testing success of perms
+    //  input_vals_unordered(i) = M.val(i);
+    //}
 
-    if((Options.same_pattern == BASKER_TRUE) && (Options.no_pivot == BASKER_FALSE))
-    {
-      std::cout << "Warning: Same Pattern will not allow pivoting" << std::endl;
-      Options.no_pivot = BASKER_TRUE;
-    }
+    // new vars needed
+    //inv_vals_order_ndbtfa_array, inv_vals_order_ndbtfb_array, inv_vals_order_ndbtfc_array
+    //vals_block_map_perm_pair, vals_perm_composition
 
-    if(Options.transpose == BASKER_FALSE)
-    {
-      //A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
-      //A.scol = 0;
-      //A.srow = 0;
-      A.copy_values(nrow, ncol, nnz, col_ptr, row_idx, val);
-      //printMTX("A_LOAD.mtx", A);
-    }
-    else
-    {
-      //Will transpose and put in A using little extra
-      matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
-    }
-
-    sort_matrix(A);
-    if(Options.verbose_matrix_out == BASKER_TRUE)
-    {
-      printMTX("A_Factor.mtx", A);
-    }
     #ifdef BASKER_TIMER
-    init_time += timer_init.seconds();
-    std::cout << "Basker Factor init matrix time: " << init_time << std::endl;
+    Kokkos::Timer copyperm_timer;
     #endif
-
-    matrix_flag = BASKER_TRUE;
-
-    if(err == BASKER_ERROR)
-    {
-      return BASKER_ERROR;
-    }
+    for( Int i = 0; i < nnz; ++i ) {
+      A.val(i) = val[ vals_perm_composition(i) ];
+      if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label should account for this anyway?
+        if ( vals_block_map_perm_pair(i).first == 0 ) { //in BTF_A
+          BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+        }
+      }
+      if ( btfb_nnz != 0 ) {
+        if ( vals_block_map_perm_pair(i).first == 1 ) { //in BTF_B
+          BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+        }
+      }
+//      if ( BTF_C.nnz != 0 ) {// this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+      if ( btfc_nnz != 0 ) {
+        if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
+          BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+        }
+      }
+    } //end for
+    #ifdef BASKER_TIMER
+    std::cout<< "FACTOR: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
+    #endif
+    //end sfactor_copy2 replacement stuff
 
     #ifdef BASKER_TIMER
     Kokkos::Timer timer_sfactorcopy;
     double sfactorcopy_time = 0.0;
     #endif
-    //err = sfactor_copy();
+    // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     err = sfactor_copy2();
-    if (Options.verbose == BASKER_TRUE)
-    {
-      printf("Basker Copy Structure Done \n");
-    }
     #ifdef BASKER_TIMER
     sfactorcopy_time += timer_sfactorcopy.seconds();
     std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
     #endif
-
     if(err == BASKER_ERROR)
-    {
-      return BASKER_ERROR;
-    }
+    { return BASKER_ERROR; }
 
     #ifdef BASKER_TIMER
     Kokkos::Timer timer_factornotoken;
@@ -617,30 +617,21 @@ namespace BaskerNS
     #endif
 
     if(err == BASKER_ERROR)
-    {
-      return BASKER_ERROR;
+    { 
+      printf(" ShyLUBasker factor_notoken/inc_lvl error returned\n");
+      return BASKER_ERROR; 
+    }
+
+    if ( sym_gn != gn || sym_gm != gm ) {
+      printf( " ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree - Symbolic reordered structure will not apply.\n");
+      exit(EXIT_FAILURE);
+      //return BASKER_ERROR; 
     }
 
     if(Options.verbose == BASKER_TRUE)
-    {
-      printf("Basker Factor Done \n");
-    }
-
-    //std::cout << "Raw Factor Time: " << timer.seconds() << std::endl;
+    { printf("Basker Factor Done \n"); }
 
     //DEBUG_PRINT();
-
-    // NDE
-    /*
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
-    MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
-    MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
-
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
-    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve(gn);
-    */
 
     #ifdef BASKER_TIMER
     time += timer.seconds();
@@ -659,18 +650,6 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
   {
     factor_inc_lvl(Options);
-
-    // NDE
-    /*
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, gn); //used in basker_solve_rhs - move alloc
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, gm);
-    MALLOC_INT_1DARRAY(perm_inv_comp_array , gm); //y
-    MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
-
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
-    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
-    permute_composition_for_solve(gn);
-    */
 
     return 0;
   }

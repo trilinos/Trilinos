@@ -184,8 +184,12 @@ namespace BaskerNS
       printf("\n");
     }//if verbose
 
-    permute_col(M, order_btf_array);
+    MALLOC_INT_1DARRAY(vals_order_btf_array, M.nnz);
+    //permute_col(M, order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
+    permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
     permute_row(M, order_btf_array);
+
+    permute_inv(vals_perm_composition, vals_order_btf_array, M.nnz);
 
     MALLOC_INT_1DARRAY(order_blk_amd_array, M.ncol);
     init_value(order_blk_amd_array, M.ncol, (Int)0);
@@ -219,14 +223,21 @@ namespace BaskerNS
     //printMTX("A_BEFORE.mtx", M);
     //printVec("AMD.txt", order_blk_amd_array, M.ncol);
 
-    permute_col(M, order_blk_amd_array);
+    MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
+    //permute_col(M, order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
+    permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
     permute_row(M, order_blk_amd_array);
-    sort_matrix(M);
+
+    permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
+
+    // retry with original vals ordering
+    sort_matrix_store_valperms(M, vals_perm_composition);
 
     //changed col to row, error.
     //print to see issue
     //printMTX("A_TOTAL.mtx", M);
 
+    //NDE at this point, vals_perm_composition stores the permutation of the vals array; will be needed during break_into_parts
     break_into_parts2(M, nblks, btf_tabs);
 
     //find schedule
@@ -659,12 +670,9 @@ namespace BaskerNS
     }//end while(move_fwd)
 
     #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Done finding BTF2 cut.  Cut size: %d scol: %d \n",
-        t_size, scol);
-    printf("Done finding BTF2 cut. blk_idx: %d \n", 
-        blk_idx);
+    printf("Done finding BTF2 cut.  Cut size: %d scol: %d \n", t_size, scol);
+    printf("Done finding BTF2 cut. blk_idx: %d \n", blk_idx);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
-
     BASKER_ASSERT((scol >= 0) && (scol <= M.ncol), "SCOL\n");
     #endif
 
@@ -673,6 +681,7 @@ namespace BaskerNS
     btf_tabs_offset = blk_idx;
 
     //Step 2. Move into Blocks 
+      MALLOC_INT_1DARRAY_PAIRS(vals_block_map_perm_pair, M.nnz); //this will store indices of BTF_A, BTF_B, and BTF_C 
     // Begin with BTF_A
     if(btf_tabs_offset != 0)
     {
@@ -704,9 +713,11 @@ namespace BaskerNS
 
         for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
         {
-          //printf("annz: %d i: %d \n", annz, i);
           BTF_A.row_idx(annz) = M.row_idx(i);
-          BTF_A.val(annz)     = M.val(i);
+          BTF_A.val(annz)     = M.val(i);  //NDE: Track movement of vals (lin_ind of row,col) here
+
+          vals_block_map_perm_pair(i) = std::pair<Int,Int>(0,annz);
+
           annz++;
         }
 
@@ -734,6 +745,7 @@ namespace BaskerNS
     //Added check
     if((BTF_C.nrow == 0)||(BTF_C.ncol == 0))
     {
+      printf("ShyLUBasker: either BTF_C number of rows or columns is 0\n");
       return 0;
     }
 
@@ -752,8 +764,7 @@ namespace BaskerNS
         if(M.row_idx(i) < scol)
         {
         #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Adding nnz to Upper, %d %d \n",
-              scol, M.row_idx(i));
+          printf("Adding nnz to Upper, %d %d \n", scol, M.row_idx(i));
         #endif
           bnnz++;
         }
@@ -775,6 +786,7 @@ namespace BaskerNS
 
     BTF_B.nnz = bnnz;
     BTF_C.nnz = cnnz;
+
 
     //Malloc need space
     if( (BTF_B.v_fill == BASKER_FALSE) && (BTF_B.nnz > 0) )
@@ -810,8 +822,7 @@ namespace BaskerNS
         if(M.row_idx(i) < scol)
         {
         #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Adding nnz to Upper, %d %d \n",
-              scol, M.row_idx[i]);
+          printf("Adding nnz to Upper, %d %d \n", scol, M.row_idx[i]);
         #endif
 
           BASKER_ASSERT(BTF_B.nnz > 0, "BTF B uninit");
@@ -819,6 +830,9 @@ namespace BaskerNS
           //Note: do not offset because B srow = 0
           BTF_B.row_idx(bnnz) = M.row_idx(i);
           BTF_B.val(bnnz)     = M.val(i);
+
+          vals_block_map_perm_pair(i) = std::pair<Int,Int>(1,bnnz);
+
           bnnz++;
         }
         else
@@ -831,6 +845,9 @@ namespace BaskerNS
           //BTF_C.row_idx[cnnz] = M.row_idx[i];
           BTF_C.row_idx(cnnz) = M.row_idx(i)-scol;
           BTF_C.val(cnnz)     = M.val(i);
+
+          vals_block_map_perm_pair(i) = std::pair<Int,Int>(2,cnnz);
+
           cnnz++;
         }
       }//over all nnz in k
