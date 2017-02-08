@@ -14,9 +14,9 @@ Options:
 """
 
 import glob
-import matplotlib.cm     as cmx
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+from math import ceil
 import numpy             as np
 import pandas            as pd
 import optparse
@@ -79,7 +79,13 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
 
     assert(mode == 'display')
 
-    ## Determine top  timers in the first log file
+    # Three style options:
+    #  - stack        : timers are on top of each other
+    #  - stack-percent: same as stack, but shows percentage values on sides
+    #  - scaling      : scaling of individual timers
+    style = 'stack'
+
+    ## Determine top timers in the first log file
     with open(input_files[0]) as data_file:
         yaml_data = yaml.safe_load(data_file)
 
@@ -95,17 +101,16 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
     dfs.sort(columns='maxT', ascending=True, inplace=True)
     timers = dfs.index
 
-    # Top few
+    # Choose top few
     top = min(top, len(timers))
     timers = dfs.index[-1:-top:-1]
 
-    max_value = sum(dfs['maxT'])
-
+    ## Setup plotting arrays
     nx = len(input_files)
     ny = len(timers)
-
     x = np.ndarray(nx)
     y = np.ndarray([ny, nx])
+
     k = 0
     for input_file in input_files:
         with open(input_file) as data_file:
@@ -119,40 +124,80 @@ def muelu_strong_scaling(input_files, mode, ax, top=10):
         y[:,k] = dfs['maxT']
         k = k+1
 
+    ## Plot the figure
     if mode == 'display':
         colors = tableau20()
 
-        if True:
-            ax.stackplot(x, y, colors=colors, labels=timers)
-            ax.set_xlim([x[0], x[-1]])
-            ax.set_xticks(x)
-            ax.set_xticklabels(x);
-            ax.set_xscale('log')
-            ax.set_xlabel('Number of processes')
-            ax.set_ylabel('Time(s)')
+        ## x axis
+        ax.set_xlim([x[0], x[-1]])
+        ax.set_xscale('log')
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(i) for i in x])
+        ax.set_xlabel('Number of cores', fontsize=17)
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax.tick_params(axis='x', which='minor', bottom='off')
 
+        if style == 'stack' or style == 'stack-percent':
+            ## y axis
+            ax.set_ylabel('Time (seconds)', fontsize=17)
+
+            if style == 'stack':
+                ax.yaxis.grid('on')
+
+            elif style == 'stack-percent':
+                # We need to set up 2 Y-axis ticks
+                ax2 = ax.twinx()
+
+                for i in [0, -1]:
+                    # i =  0: left  y-axis
+                    # i = -1: right y-axis
+                    yticks = np.ndarray(ny)
+                    yticks[0] = 0.5*y[0,i]
+                    for k in range(1, ny):
+                        yticks[k] = yticks[k-1]  + 0.5*y[k-1,i]  + 0.5*y[k,i]
+
+                    total  = sum(y[:,i])
+                    labels = np.ndarray(ny)
+                    for k in range(ny):
+                        labels[k] = (100*y[k,i])  / total
+
+                    if i == 0:
+                        ax.set_yticks([int(x) for x in yticks])
+                        ax.set_yticklabels([str(int(i)) + '%' for i in labels])
+                    else:
+                        ax2.set_ylim(ax.get_ylim())
+                        ax2.set_yticks([int(x) for x in yticks])
+                        ax2.set_yticklabels([str(int(i)) + '%' for i in labels])
+            ## Plot
+            ax.stackplot(x, y, colors=colors, labels=timers)
+
+            ## Legend
             handles, labels = ax.get_legend_handles_labels()
             ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
-            log = False
-            if log == True:
-                [ymin,ymax] = ax.get_ylim()
-                ax.set_yscale('log')
-                ax.plot([x[0], x[-1]], [ymax, ymax*x[0]/x[-1]], color='k', linewidth=2)
-
-        else:
+        elif style == 'scaling':
+            width = np.ndarray(ny)
+            for k in range(ny):
+                width[k] = 9 - min(ceil(y[0,0]/y[k,0]), 8)
+                #  width[k] = 9 - min(ceil(y[0,-1]/y[k,-1]), 8)
+                #  width[k] = 2
             for k in range(ny):
                 y[k,:] = y[k,0] / y[k,:]
             y = np.swapaxes(y, 0, 1)
 
             plt.gca().set_color_cycle(colors) #[colormap(i) for i in np.linspace(0, 0.9, num_plots)])
-            ax.plot(x, y, linewidth=2)
-            ax.set_xlim([x[0], x[-1]])
-            ax.set_xticks(x)
-            ax.set_xticklabels(x);
-            ax.set_xscale('log')
-            ax.set_xlabel('Number of processes')
+
+            for k in range(ny):
+                ax.plot(x, y[:,k], linewidth=width[k])
+
+            ax.plot([x[0], x[-1]], [1.0, x[-1]/x[0]], color='k', linestyle='--')
+
+            # y axis
             ax.yaxis.grid('on')
+            #  ax.set_ylim([0, x[-1]/x[0]])
+            ax.set_ylim([0.5, x[-1]/x[0]])
+            ax.set_xlabel('Scaling', fontsize=17)
+
             ax.legend(timers, loc='upper left')
 
 def solve_per_level(yaml_data, mode, ax = None):
@@ -337,8 +382,8 @@ if __name__ == '__main__':
     # Impose sorted order (similar to bash "sort -n"
     input_files = sorted(input_files, key=string_split_by_numbers)
 
-    ## Validate
-    valid_modes = ['setup_timers', 'solver_per_level', 'nonlinear_history_iterations',
+    ## Validate input options
+    valid_modes = ['setup_timers', 'solve_per_level', 'nonlinear_history_iterations',
                    'nonlinear_history_residual', 'nonlinear_history_solve',
                    'muelu_strong_scaling']
     if not analysis in valid_modes:
@@ -350,12 +395,31 @@ if __name__ == '__main__':
         print("Display must be one of " % valid_displays)
         raise
 
-    ## Do plotting/printing
-    f, ax = plt.subplots(1)
+    ## Setup default plotting
+    plt.figure(figsize=(12, 12))
+    ax = plt.subplot(111)
+
+    # Remove the plot frame lines.
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+
+    # Make ticks large enough to read.
+    plt.xticks(fontsize = 14)
+    plt.yticks(fontsize = 14)
+
+    # Make sure axis ticks are only on the bottom and left. Ticks on the right
+    # and top of the plot are generally not needed.
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
 
     if analysis == 'muelu_strong_scaling':
+        # Scaling studies work with multiple files
         muelu_strong_scaling(input_files, mode=display, ax=ax)
     else:
+        # Most analysis studies work with a single file
+        # Might as well open it here
         assert(len(input_files) == 1)
         with open(input_files[0]) as data_file:
             yaml_data = yaml.safe_load(data_file)
