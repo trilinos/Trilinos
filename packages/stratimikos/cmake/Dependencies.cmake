@@ -3,6 +3,7 @@
 # a required dependence on Epetra but the Stratimikos Belos and ML adapters
 # need the Thyra/Epetra adapters.
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_REQUIRED_PACKAGES ThyraCore
   LIB_OPTIONAL_PACKAGES Amesos AztecOO Belos Ifpack ML EpetraExt ThyraEpetraAdapters
   TEST_REQUIRED_PACKAGES ThyraEpetraAdapters
   TEST_OPTIONAL_PACKAGES Triutils Ifpack2 ThyraTpetraAdapters
