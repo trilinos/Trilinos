@@ -84,6 +84,15 @@
 namespace MueLuTests {
 
   /**** some helper methods and classes by Nate ****/
+#ifdef HAVE_INTREPID2_DEBUG
+  static const int MAX_LINE_DEGREE = 10;
+  static const int MAX_QUAD_DEGREE = 10;
+  static const int MAX_HEX_DEGREE = 4;
+#else
+  static const int MAX_LINE_DEGREE = 10;
+  static const int MAX_QUAD_DEGREE = 10;
+  static const int MAX_HEX_DEGREE = 8;
+#endif
   
   using namespace std;
   // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the dimension of the cellTopo
@@ -1419,7 +1428,6 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               int sideCount = 2;
               for (int sideVertexOrdinal=0; sideVertexOrdinal<sideCount; sideVertexOrdinal++)
               {
-                bool matchFound = true;
                 int cellVertexOrdinal = sideVertexOrdinal;
                 if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) == 1.0)
                 {
@@ -1428,8 +1436,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               }
               return -1;
             }
-            int sideCount = (spaceDim == 1) ? 2 : cellTopo.getSideCount();
-            for (int sideOrdinal=0; sideOrdinal<cellTopo.getSideCount(); sideOrdinal++)
+            int sideCount = (int) cellTopo.getSideCount();
+            for (int sideOrdinal=0; sideOrdinal<sideCount; sideOrdinal++)
             {
               int sideVertexCount = cellTopo.getNodeCount(spaceDim-1, sideOrdinal);
               bool matchFound = true;
@@ -1614,7 +1622,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 #endif
 
-    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_LINE_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,10);
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_LINE_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_LINE_DEGREE);
     TEST_EQUALITY(rv,true);
   }
 
@@ -1636,7 +1644,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 #endif
 
-    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,10);
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_QUAD_DEGREE);
     TEST_EQUALITY(rv,true);
   }
 
@@ -1659,7 +1667,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 #endif
 
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
-    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_SPECTRAL",POINTTYPE_SPECTRAL,10);
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_SPECTRAL",POINTTYPE_SPECTRAL,MAX_QUAD_DEGREE);
     TEST_EQUALITY(rv,true);
   }
 
@@ -1682,7 +1690,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 #endif
 
-    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,8);
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_HEX_DEGREE);
     TEST_EQUALITY(rv,true);
   }
 
@@ -1704,7 +1712,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 #endif
 
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
-    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_SPECTRAL",POINTTYPE_SPECTRAL,8);
+    bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_SPECTRAL",POINTTYPE_SPECTRAL,MAX_HEX_DEGREE);
     TEST_EQUALITY(rv,true);
   }
 
@@ -1736,7 +1744,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    int max_degree = 10;
+    int max_degree = MAX_QUAD_DEGREE;
     double threshold = 1e-10;
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
