@@ -206,7 +206,7 @@ int main(int argc, char** argv)
   // MDM - disabled the other tests - just did rcb so far...
 //  int err = testForMJ(matAdapter, me, numParts, coords, comm);
   int err = testForRCB(matAdapter, me, numParts, coords, comm);
-//  int err = testForPHG(matAdapter, me, numParts, coords, comm);
+ // int err = testForPHG(matAdapter, me, numParts, coords, comm);
 
 
 
@@ -391,14 +391,14 @@ int testForPHG(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
   //////////////////////////////////////////////////////////////////////
   Teuchos::ParameterList params;
 
-
   params.set("num_global_parts", numParts);
   params.set("partitioning_approach", "partition");
   params.set("algorithm", "zoltan");
+  params.set("keep_partition_tree", true);
+
   Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
   zparams.set("LB_METHOD","phg");
   zparams.set("FINAL_OUTPUT", "1");
-
 
   //////////////////////////////////////////////////////////////////////
 
