@@ -6,7 +6,7 @@ solving implicit DAEs, implicit Runge-Kutta (RK) methods. The most
 general form of implicit RK methods requires the simultaneous solution
 of $s$ sets of coupled nonlinear equations that take the form
 \begin{equation}
-r_{i}(z)=f\left(\dot{X}_{i},\; x_{n-1}+\Delta t\,\sum_{j=1}^{s}a_{ij}\,\dot{X}_{j},\; t_{n-1}+c_{i}\Delta t\right)=0\label{rythmos:eqn:irk_dae_ne}
+r_{i}(z)=f\left(\dot{X}_{i},\;x_{n-1}+\Delta t\,\sum_{j=1}^{s}a_{ij}\,\dot{X}_{j},\;t_{n-1}+c_{i}\Delta t\right)=0\label{rythmos:eqn:irk_dae_ne}
 \end{equation}
 for $i=1,\ldots,s$ where $\dot{X}_{i}$ are essentially approximations
 to the derivatives $\dot{x}(t_{n-1}+c_{i}\Delta t)$ called \emph{stage
@@ -32,12 +32,12 @@ Jacobian $\jac{r}{z}$ is represented as
 W_{ij} & = & \alpha\Jac{f}{\dot{x}}+\beta\Jac{f}{x}\nonumber \\
  & = & \Jac{r_{i}}{z_{j}}=\Jac{r_{i}}{\dot{X}_{j}}\nonumber \\
  & = & \frac{\partial\dot{x}}{\partial\dot{X}_{j}}\Jac{f}{\dot{x}}+\frac{\partial x}{\partial\dot{X}_{j}}\Jac{f}{x}\nonumber \\
- & = & \delta_{ij}\Jac{f}{\dot{x}}+\Delta t\, a_{ij}\Jac{f}{x}\label{rythmos:eq:dridzj_IRK}
+ & = & \delta_{ij}\Jac{f}{\dot{x}}+\Delta t\,a_{ij}\Jac{f}{x}\label{rythmos:eq:dridzj_IRK}
 \end{eqnarray}
 for $i=1,\ldots,s$ and $j=1,\ldots,s$ which is evaluated at the
 points $(\dot{x},x,t)=(\dot{X}_{i},\;$ $x_{n-1}+\Delta t\,\sum_{j=1}^{s}a_{ij}\,\dot{X}_{j},\;$
 $t_{n-1}+c_{i}\Delta t)$. Note that the iteration matrix, $W$, has
-$\alpha=\delta_{ij}$ and $\beta=\Delta t\, a_{ij}$.
+$\alpha=\delta_{ij}$ and $\beta=\Delta t\,a_{ij}$.
 
 When considering a iterative method for solving systems with the block
 operator matrix $\jac{r}{z}$, it is easy to see how to use the iteration
@@ -50,7 +50,6 @@ and this is an open area of research. In some cases, however, it may
 be possible to form a full matrix object for $\jac{r}{z}$ but this
 is not something that can be expected for most applications.
 
-
 \paragraph{Semi-explicit IRK methods}
 
 Semi-explicit IRK methods are those IRK methods where the Butcher
@@ -61,7 +60,6 @@ can be solved one at a time for $i=1,\ldots,s$ which is easily accommodated
 using a Newton-type method where the Newton Jacobian for each $i$
 is given by Eq.~(\ref{rythmos:eq:dridzj_IRK}), which is of our basic
 general form, Eq.~(\ref{rythmos:eq:W}).
-
 
 \paragraph{Singly-Diagonal-implicit IRK methods}
 
@@ -81,7 +79,6 @@ to utilize multi-vector applications of the operator and preconditioner
 for matrices of the form Eq.~(\ref{rythmos:eq:W}) which can be supported
 by many applications. 
 
-
 \subsubsection{Implicit RK Backward Euler}
 
 \begin{figure}[H]
@@ -95,7 +92,6 @@ a) $\begin{array}{c|c}
 (Section~\ref{rythmos:sec:SinCos-Problem}) for Implicit RK Backward
 Euler.}
 \end{figure}
-
 
 
 \subsubsection{IRK 1 Stage Theta}
@@ -115,7 +111,6 @@ method.}
 \end{figure}
 
 
-
 \subsubsection{IRK 2 Stage Theta}
 
 This is a generalization of the trapezoid method ($\theta=1/2$).
@@ -132,7 +127,6 @@ a) $\begin{array}{c|cc}
 (Section~\ref{rythmos:sec:SinCos-Problem}) for IRK 2 Stage Theta
 method.}
 \end{figure}
-
 
 
 \subsubsection{SDIRK 2 Stage 2 Order}
@@ -154,7 +148,6 @@ a) $\begin{array}{c|cc}
 \end{figure}
 
 
-
 \subsubsection{SDIRK 2 Stage 3 Order}
 
 For $\gamma=(3\pm\sqrt{3})/6$, this method is 3rd order accurate
@@ -174,7 +167,6 @@ a) $\begin{array}{c|cc}
 \end{figure}
 
 
-
 \subsubsection{SDIRK 3 Stage 4 Order}
 
 The coefficients are $\gamma=1/\sqrt{3}\,\cos(\pi/18)+1/2$ and $\delta=(2\gamma-1)^{-2}/6$.
@@ -191,7 +183,6 @@ a)$\begin{array}{c|ccc}
 \end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
 (Section~\ref{rythmos:sec:SinCos-Problem}) for SDIRK 3 Stage 4 Order.}
 \end{figure}
-
 
 
 \subsubsection{SDIRK 5 Stage 4 Order}
@@ -213,7 +204,6 @@ using SDIRK 5 Stage 4 Order.}
 \end{figure}
 
 
-
 \subsubsection{SDIRK 5 Stage 5 Order}
 
 \begin{figure}[H]
@@ -230,7 +220,6 @@ using SDIRK 5 Stage 4 Order.}
 \centering{}\includegraphics[scale=1.5]{figures/SDIRK_5Stage5Order}\caption{Order of accuracy for the SinCos Problem (Section~\ref{rythmos:sec:SinCos-Problem})
 for SDIRK 5 Stage 5 Order.}
 \end{figure}
-
 
 
 \subsubsection{DIRK 2 Stage 3 Order}

@@ -10,7 +10,8 @@
 %    http://www.cs.sandia.gov/SANDreport
 %
 % Originally written by Rolf Riesen
-% Currently maintained by Brian Barrett and Rich Field
+% Past maintainers: Brian Barrett
+% Currently maintained by Patrick Widener and Rich Field
 %
 %
 % 06/14/2002 v1.01
@@ -318,13 +319,25 @@
 % 06/12/2012 v1.38
 %    - Updated the background on the front cover to the latest from
 %      look & feel.
-
+%
+% 08/29/2014 v1.39
+%    - Changed ordering of distribution list per feedback from corporate
+%
+% 11/07/2014 v1.40
+%    - Add ability to mark back cover of document (thanks Kevin Manktelow for tracking it down)
+%    - Jason Verley contributed a new version of MarkOUO.tex that restores conformance with OUO
+%    markings related to the move from ITAR to AEA.
+%
+% 09/13/2016 v1.41
+%    - Revised funding statement to conform with new corporate standard
+%
+%
 % ******************************************************************************
 % Package definitions
 %
     % The version and date of this file
-    \newcommand\SANDreportVersionOnly{ v1.38 }		% leave the spaces before and after version
-    \newcommand\SANDreportVersionDate{2012/06/12}	% Date has to be in this format!
+    \newcommand\SANDreportVersionOnly{ v1.40 }		% leave the spaces before and after version
+    \newcommand\SANDreportVersionDate{2014/11/07}	% Date has to be in this format!
 
     \typeout{Using Sandia Technical Report class: \SANDreportVersionDate, \SANDreportVersionOnly Rolf Riesen}
     \newcommand\SANDreportVersion{\SANDreportVersionDate \SANDreportVersionOnly}
@@ -518,7 +531,7 @@
 	\setlength{\topleftwidth}{\the\textwidththird}
 	\setlength{\topmiddlewidth}{\the\textwidththird}
 	\setlength{\toprightwidth}{\the\textwidththird}
-
+	
 	% Changed following to -6, +10, and -6 from -3, +4, -3, to get "Official Use Only - Export Controlled Information
 	% to fit on one line on title page - MJK, 1/12/07
 	\addtolength{\topleftwidth}{-6em}
@@ -628,7 +641,7 @@
 	    \CoverFont{b}{24}{28pt}
 	    \parbox[t]{\textwidth}{
 		\raggedright
-		\@title
+		\@title            
 	    }
 
 
@@ -644,7 +657,7 @@
 	    Sandia National Laboratories\\
 	    Albuquerque, New Mexico 87185 and Livermore, California 94550\\
 	    \\
-	    Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation,\\
+	    Sandia National Laboratories is a multi-mission laboratory managed and operated by Sandia Corporation,\\
 	    a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's\\
 	    National Nuclear Security Administration under contract DE-AC04-94AL85000.\\
 	    \\
@@ -1020,7 +1033,7 @@
 		\SANDdistInternalM{2}{2497}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
 
-	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic copy)}
+
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
@@ -1036,6 +1049,8 @@
 	    \ifthenelse{\boolean{distLDRD}}   {
 		\SANDdistInternal{1}{0359}{D. Chavez, LDRD Office}{1911}
 	    }{}
+
+            \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic copy)}
 
 	}{}
 
@@ -1287,6 +1302,18 @@
 	    \pagestyle{fancy}
 	    \thispagestyle{fancy}
 
+            \ifthenelse{\equal{#1}{backcover}} {
+              % very last page of document with SNL logo
+              \ifthenelse{\boolean{MarkBottom}} {
+                \chead{\MarkTopBackVar}
+                \cfoot{\MarkBotBackVar}
+              }{
+                \chead{}
+                \cfoot{}
+              }
+            }{
+            }
+
 	    \ifthenelse{\equal{#1}{cover}}   {
 		% We're on the cover page
 		\ifthenelse{\boolean{MarkCover}}   {
@@ -1444,8 +1471,12 @@
 		    }
 		\fi
 	    }{
-		% We're not in TOC. Probably a figure or table; skip it
-		\relax
+		% We're not in TOC. Probably a figure or table; skip it in strict mode
+              \ifstrictSAND%
+              \relax
+              \else%
+              \addtocontents{#1}{\protect\contentsline{#2}{#3}{\thepage}}
+              \fi
 	    }
 
 	\else%
@@ -1467,7 +1498,7 @@
     }{
 	% For article.sty
 	% We don't want blank lines between entries and no boldface.
-	% This is the l@section definition from article.sty. We get rid of
+	% This is the l@section definition from article.sty. We get rid of 
 	% \addvspace{1.0em... and \bfseries (if relax is not set in the main doc)
 	\renewcommand*\l@section[2]{
 	    \setlength\parskip{0ex}
@@ -1926,13 +1957,10 @@
 	\mbox{}			% Some invisible text
 	\vfill
 	\hfill {\CoverFont{m}{6}{7pt} \SANDreportVersionOnly}
-	\setboolean{SANDmarkingsRequired}{false}
-	\thispagestyle{empty}
-	\pagestyle{empty}
 	\newpage		% Now we're on the outside of the end page
 
 	\vspace*{\fill}		% Move the logo to the bottom of the page
-	\thispagestyle{empty}
+        \SANDmarks{backcover}
 	\begin{center}
 	    \includegraphics{logos/snllineblk}
 	\end{center}

@@ -146,7 +146,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
                             kl_disc_exp_scale );
   typedef typename KL::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
-  RV rv = diffusion_coefficient.getRandomVariables();
+  RV rv("KL Random Variables", dim);
   HRV hrv = Kokkos::create_mirror_view(rv);
 
   // Set random variables
@@ -165,9 +165,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     hrv(i).fastAccessCoeff(index) = 1.0 / basis_vals[index];
   }
   Kokkos::deep_copy( rv, hrv );
+  diffusion_coefficient.setRandomVariables(rv);
 
   // Compute stochastic response using stochastic Galerkin method
   Scalar response = 0;
+  Teuchos::Array<Scalar> response_gradient;
   Perf perf;
   if ( cmd.USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
@@ -177,7 +179,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.USE_MEANBASED ,
         nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-        response, qd );
+        response, response_gradient, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
       ( comm , node , cmd.USE_FENL_XML_FILE ,
@@ -186,7 +188,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.USE_MEANBASED ,
         nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-        response , qd );
+        response , response_gradient, qd );
 
   // std::cout << "newton count = " << perf.newton_iter_count
   //           << " cg count = " << perf.cg_iter_count << std::endl;

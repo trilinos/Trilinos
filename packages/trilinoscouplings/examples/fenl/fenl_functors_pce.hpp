@@ -60,15 +60,17 @@ namespace FENL {
 // Specialization of ResponseComputation for PCE scalar types.  We currently
 // have to do this because parallel_reduce doesn't support non-POD types
 template< typename FixtureType ,
-          typename S , typename ... P >
+          typename S , typename ... P , typename ... Q >
 class ResponseComputation< FixtureType,
-                           Kokkos::View<Sacado::UQ::PCE<S>*,P...>
+                           Kokkos::View<Sacado::UQ::PCE<S>*,P...>,
+                           Kokkos::View<Sacado::UQ::PCE<S>**,Q...>
                          >
 {
 public:
 
   typedef FixtureType fixture_type ;
   typedef Kokkos::View<Sacado::UQ::PCE<S>*,P...> vector_type ;
+  typedef Kokkos::View<Sacado::UQ::PCE<S>**,Q...> multi_vector_type ;
   typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type scalar_type ;
 
@@ -88,6 +90,9 @@ public:
   const element_data_type    elem_data ;
   const fixture_type         fixture ;
   const vector_type          solution ;
+  const multi_vector_type    solution_dp ;
+  const unsigned             pce_size ;
+  const unsigned             num_param ;
   const unsigned             value_count ;
   const cijk_type            cijk ;
 
@@ -95,18 +100,29 @@ public:
     : elem_data()
     , fixture( rhs.fixture )
     , solution( rhs.solution )
+    , solution_dp( rhs.solution_dp )
+    , pce_size( rhs.pce_size )
+    , num_param( rhs.num_param )
     , value_count( rhs.value_count )
     , cijk( rhs.cijk )
     {}
 
   ResponseComputation( const fixture_type& arg_fixture ,
-                       const vector_type & arg_solution )
+                       const vector_type & arg_solution ,
+                       const multi_vector_type& arg_solution_dp =
+                         multi_vector_type() )
     : elem_data()
     , fixture( arg_fixture )
     , solution( arg_solution )
-    , value_count( Kokkos::dimension_scalar(solution) )
+    , solution_dp( arg_solution_dp )
+    , pce_size( Kokkos::dimension_scalar(solution) )
+    , num_param( solution_dp.dimension_1() )
+    , value_count( pce_size*(num_param+1) )
     , cijk( Kokkos::cijk(solution) )
-    {}
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        num_param > 0, std::logic_error, "PCE gradients not implemented!");
+    }
 
   //------------------------------------
 
@@ -118,9 +134,16 @@ public:
     return response;
   }
 
+  Teuchos::Array<scalar_type> apply_gradient() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "PCE gradients not implemented!");
+  }
+
   //------------------------------------
 
-   KOKKOS_INLINE_FUNCTION
+  /*
+  KOKKOS_INLINE_FUNCTION
   double compute_detJ(
     const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
@@ -199,7 +222,6 @@ public:
     return elem_response;
   }
 
-  /*
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned ielem , value_type response ) const
   {

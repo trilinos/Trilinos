@@ -8,7 +8,7 @@ derivative $\dot{x}(t_{n})=f(t_{n},x_{n})$. For evenly spaced intervals,
 $\Delta t=t_{n}-t_{n-1}$, an $s$-step BDF method (BDF$s$) is given
 by
 \begin{equation}
-\dot{x}_{n}=\bar{f}(t_{n},x_{n})=\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\, x_{n-i}\label{rythmos:eq:bdf_x_dot}
+\dot{x}_{n}=\bar{f}(t_{n},x_{n})=\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\,x_{n-i}\label{rythmos:eq:bdf_x_dot}
 \end{equation}
 where $\alpha_{0}$ is normally scaled to one, and the order is equal
 to the number of steps, $s$.
@@ -18,7 +18,7 @@ to $t_{n}$ is then formed by substituting $\dot{x}=\dot{x}_{n}$
 in (\ref{rythmos:eq:bdf_x_dot}), $x=x_{n}$ and $t=t_{n}$ into (\ref{rythmos:eq:dae})
 to obtain 
 \begin{equation}
-f\left(\left[\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\, x_{n-i}\right],x_{n},t_{n}\right)=0.\label{rythmos:eq:bdf_dae_ne}
+f\left(\left[\frac{1}{\Delta t\,\beta_{0}}\sum_{i=0}^{s}\alpha_{i}\,x_{n-i}\right],x_{n},t_{n}\right)=0.\label{rythmos:eq:bdf_dae_ne}
 \end{equation}
 One can immediately identify the BDF time step equations (\ref{rythmos:eq:bdf_dae_ne})
 with the general form of the time step equations (\ref{rythmos:eq:r})
@@ -75,11 +75,10 @@ this exception can be removed, and these methods have been termed
 fixed-leading-coefficient formulas. thus is a hybrid between the two
 methods and tries to obtain the best of both worlds.
 
-
 \paragraph*{Fixed-Leading-Coefficient Formula\cite{BDF-FLC}}
 
 To begin, we need a predictor polynomial, $\phi_{p}(t)$, that uses
-the past solution values (possiblity at uneven intervals)
+the past solution values (possibility at uneven intervals)
 \[
 \phi_{p}(t_{n-i})=x_{n-i}\mbox{{\,\,\,\ for\,\,}}i=1,\ldots,s
 \]
@@ -104,7 +103,6 @@ in time than $t_{n-2}$.
 \centering{}\includegraphics[width=4in]{figures/BDF2}\caption{Schematic of a BDF2 method with predictor and corrector polynomials
 when the variable time stepping is increasing.\label{rythmos:fig:BDF2-schematic}}
 \end{figure}
-
 
 With $\phi_{p}$ and $\phi_{c}$ being $s$-th order polynomials,
 they can be easily related through a new polynomial, $w(t)$, as
@@ -138,23 +136,21 @@ one gets
 \]
 or
 \[
-x{}_{n}=x_{n(0)}+\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}]
+x_{n}=x_{n(0)}+\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}]
 \]
 or
 \[
-x{}_{n}-x_{n(0)}=\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}].
+x_{n}-x_{n(0)}=\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}].
 \]
 
-
-Note that the predictor and corrector are interwined. One should not
-try to use a different predictor as this will change the predictor
+Note that the predictor and corrector are intertwined. One should
+not try to use a different predictor as this will change the predictor
 polynomial, $\phi_{p}(t)$, and its presentation of past solution
 values. Also the predictor is dependent on the time derivative at
 the last time step, so one should be careful to keep the solution,
 $x_{n-1}$, and its time derivative, $\dot{x}_{n-1}$, used by the
 predictor in ``sync'' and consistent with previous time steps (e.g.,
 clipping the solution between time steps will cause issues).
-
 
 \subsubsection{Convergence Test for Implicit BDF}
 
