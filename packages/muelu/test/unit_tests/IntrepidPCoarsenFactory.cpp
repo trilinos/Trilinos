@@ -1242,21 +1242,21 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     double pointTol = 1e-12;
     
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    resize(physCellVertices,numCells,vertexCount,3);
-    resize(physCellVerticesPermuted,numCells,vertexCount,3);
-    resize(refCellVertices,vertexCount,3);
+    resize(physCellVertices,numCells,vertexCount,spaceDim);
+    resize(physCellVerticesPermuted,numCells,vertexCount,spaceDim);
+    resize(refCellVertices,vertexCount,spaceDim);
     resize(refCellVertex,3);
 #else
-    physCellVertices.resize(numCells,vertexCount,3);
-    physCellVerticesPermuted.resize(numCells,vertexCount,3);
-    refCellVertices.resize(vertexCount,3);
+    physCellVertices.resize(numCells,vertexCount,spaceDim);
+    physCellVerticesPermuted.resize(numCells,vertexCount,spaceDim);
+    refCellVertices.resize(vertexCount,spaceDim);
     refCellVertex.resize(3);
 #endif
     // regardless of spatial dimension, CellTools::getReferenceVertex() populates 3 slots
     for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
-      for (int d=0; d<3; d++)
+      for (int d=0; d<spaceDim; d++)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);
         //      cout << "refCellVertices(" << vertexOrdinal << "," << d << ") = " << refCellVertex(d) << endl;
@@ -1400,7 +1400,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
           {
             int mappedVertexOrdinal = perm0[vertexOrdinal];
-            for (int d=0; d<3; d++)
+            for (int d=0; d<spaceDim; d++)
             {
               physCellVerticesPermuted(0,vertexOrdinal,d) = physCellVertices(0,mappedVertexOrdinal,d);
             }
@@ -1459,7 +1459,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
             {
               int mappedVertexOrdinal = perm1[vertexOrdinal];
-              for (int d=0; d<3; d++)
+              for (int d=0; d<spaceDim; d++)
               {
                 physCellVerticesPermuted(1,vertexOrdinal,d) = physCellVertices(1,mappedVertexOrdinal,d);
               }
