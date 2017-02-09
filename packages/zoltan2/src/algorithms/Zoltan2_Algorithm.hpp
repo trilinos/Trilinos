@@ -61,7 +61,6 @@ class Algorithm;
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
-#include <Zoltan2_PartitionTree.hpp>
 
 
 namespace Zoltan2 {
@@ -122,11 +121,19 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
-  //! \brief  for partitioning methods, file nodes with partition tree info
-  //
-  virtual void getPartitionTree(
-    std::vector<PartitionTreeNode<part_t>> & partitionTree,
-    part_t num_parts) const
+  //! \brief  return if algorithm determins tree to be binary
+  virtual bool isPartitioningTreeBinary() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  for partitioning methods, fill arrays with partition tree info
+  virtual void getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -221,6 +228,9 @@ public:
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
+
+
+private:
 };
   
 }  //namespace Zoltan2
