@@ -1532,11 +1532,14 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V1,
                       Teuchos::RCP<MV>& W,
                       const MV& X)
 {
-  if (V_.is_null ()) {
+  // ETP 02/08/17:  We must check not only if the temporary vectors are
+  // null, but also if the number of columns match, since some multi-RHS
+  // solvers (e.g., Belos) may call apply() with different numbers of columns.
+  if (V_.is_null () || V_->getNumVectors () != X.getNumVectors ()) {
     V_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), false));
   }
   //W must be initialized to zero when it is used as a multigrid smoother.
-  if (W_.is_null ()) {
+  if (W_.is_null () || W_->getNumVectors () != X.getNumVectors ()) {
     W_ = Teuchos::rcp (new MV (X.getMap (), X.getNumVectors (), true));
   }
   V1 = V_;
