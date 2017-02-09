@@ -316,6 +316,9 @@ namespace BaskerNS
 
       //new for sfactor_copy2 replacement
       MALLOC_INT_1DARRAY(vals_order_csym_array, BTF_A.nnz);
+      for (Int i = 0; i < BTF_A.nnz; ++i) {
+        vals_order_csym_array(i) = i;
+      }
       permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
       permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz); //must permute the array holding the perms
       sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
