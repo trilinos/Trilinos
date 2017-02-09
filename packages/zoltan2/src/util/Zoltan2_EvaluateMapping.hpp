@@ -94,7 +94,6 @@
 #ifndef ZOLTAN2_EVALUATEMAPPING_HPP
 #define ZOLTAN2_EVALUATEMAPPING_HPP
 
-#include <Zoltan2_Metric.hpp>
 #include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>

@@ -57,7 +57,8 @@
 #include <Zoltan2_MetricAnalyzer.hpp>
 
 #include <Zoltan2_ProblemFactory.hpp>
-#include <Zoltan2_EvaluatePartitionFactory.hpp>
+#include <Zoltan2_EvaluateFactory.hpp>
+
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -74,8 +75,6 @@
 #include <map>
 #include <iostream>
 #include <queue>
-
-//#include <BDD_PamgenUtils.hpp>
 
 using Teuchos::ParameterList;
 using Teuchos::Comm;
@@ -163,6 +162,66 @@ bool getParameterLists(const string &inputFileName,
   return true;
 }
 
+// Utility function for safe type conversion of adapter
+bool analyzeMetrics(RCP<EvaluateFactory> evaluateFactory,
+                    std::ostringstream & msg,
+                    const ParameterList &problem_parameters) {
+  #define ANALYZE_METRICS(adapterClass, metricAnalyzerClass)               \
+    RCP<EvaluateBaseClass<adapterClass>> pCast =                           \
+      rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(                   \
+         evaluateFactory->getEvaluateClass());                             \
+    if(pCast == Teuchos::null) throw std::logic_error(                     \
+      "Bad evaluate class cast in analyzeMetrics!"  );                     \
+    metricAnalyzerClass analyzer(pCast);                                   \
+    return analyzer.analyzeMetrics(                                        \
+      problem_parameters.sublist("Metrics"), msg);
+
+  #define ANALYZE_METRICS_PARTITIONING(adapterClass)                       \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluatePartition<adapterClass>)
+
+  #define ANALYZE_METRICS_ORDERING(adapterClass)                           \
+    ANALYZE_METRICS(adapterClass,                                          \
+      MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+  if(evaluateFactory->getProblemName() == "partitioning") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_PARTITIONING)
+  }
+  else if(evaluateFactory->getProblemName() == "ordering") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), ANALYZE_METRICS_ORDERING)
+  }
+  else {
+    throw std::logic_error(
+      "analyzeMetrics not implemented for this problem type!"  );
+  }
+}
+
+// Utility function for safe type conversion of adapter
+LocalOrderingSolution<zlno_t> * getLocalOrderingSolution(
+  RCP<ProblemFactory> problemFactory) {
+  #define GET_LOCAL_ORDERING(adapterClass)                                 \
+      return (rcp_dynamic_cast<OrderingProblem<adapterClass>>(             \
+        problemFactory->getProblem()))->getLocalOrderingSolution();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_LOCAL_ORDERING)
+}
+
+// Utility function for safe type conversion of adapter
+const zpart_t * getPartListView(RCP<ProblemFactory> problemFactory) {
+  #define GET_PROBLEM_PARTS(adapterClass)                                  \
+      return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(         \
+        problemFactory->getProblem()))->getSolution().getPartListView();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_PROBLEM_PARTS)
+}
+
+// Utility function for safe type conversion of adapter
+void getIDsView(RCP<AdapterFactory> adapterFactory, const zgno_t *&Ids) {
+    #define GET_IDS_VIEW(adapterClass)                                       \
+        return dynamic_cast<adapterClass*>(                                  \
+          adapterFactory->getMainAdapter())->getIDsView(Ids);
+    Z2_TEST_UPCAST(adapterFactory->getMainAdapterType(), GET_IDS_VIEW);
+    throw std::logic_error( "getIDsView() failed to match adapter name" );
+}
+
 bool run(const UserInputForTests &uinput,
         const ParameterList &problem_parameters,
         bool bHasComparisons,
@@ -202,11 +261,12 @@ bool run(const UserInputForTests &uinput,
   if(rank == 0) {
     cout << "\n\nRunning test: " << problem_parameters.name() << endl;
   }
-  
+
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
-  ComparisonSource * comparison_source = new ComparisonSource;
+  RCP<ComparisonSource> comparison_source = rcp(new ComparisonSource);
+
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
@@ -220,29 +280,19 @@ bool run(const UserInputForTests &uinput,
   comparison_source->timers["adapter construction time"]->start();
 
   // a pointer to a basic type
-  AdapterWithOptionalCoordinateAdapter adapters = 
-                     AdapterForTests::getAdapterForInput(
-                                        const_cast<UserInputForTests*>(&uinput),
-                                        adapterPlist,comm); 
+  RCP<AdapterFactory> adapterFactory = rcp(new AdapterFactory(
+    const_cast<UserInputForTests*>(&uinput), adapterPlist, comm));
+
   comparison_source->timers["adapter construction time"]->stop();
 
-  if(adapters.mainAdapter == nullptr)
-  {
-    cout << "Get adapter for input failed on rank " << rank << endl;
-    return false;
-  }
-  RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>
-    (adapters.mainAdapter), true);
-
-  RCP<Zoltan2::VectorAdapter<tMVector_t>> coordinateAdapterRCP = 
-    rcp(adapters.coordinateAdapter, true);
+  comparison_source->adapterFactory = adapterFactory; // saves until done
 
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
   // If we are here we have an input adapter, no need to check for one.
   string adapter_name = adapterPlist.get<string>("input adapter"); 
-  // get Zoltan2 partition parameters
+  // get Zoltan2 Parameters
   ParameterList zoltan2_parameters = 
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   if(rank == 0) {
@@ -254,83 +304,66 @@ bool run(const UserInputForTests &uinput,
   if (rank == 0) {
     std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
   }
-#ifdef HAVE_ZOLTAN2_MPI
-  base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,
-                                                         adapter_name,
-                                                         adapters.mainAdapter,
-                                                         &zoltan2_parameters,
-                                                         MPI_COMM_WORLD);
-#else
-  base_problem_t * problem = 
-    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,
-                                                         adapter_name,
-                                                         adapters.mainAdapter,
-                                                         &zoltan2_parameters);
-#endif
 
-  if (problem == nullptr) {
-    std::cerr << "Problem construction failed" << std::endl;
-    return false;
-  }
-  else if(rank == 0) {
+  RCP<ProblemFactory> problemFactory = rcp(new ProblemFactory(
+                                      problem_kind,
+                                      adapterFactory,
+                                      &zoltan2_parameters
+                                    #ifdef HAVE_ZOLTAN2_MPI
+                                      ,MPI_COMM_WORLD
+                                    #endif
+                                      ));
+
+  if(rank == 0) {
     std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
-  RCP<base_problem_t> problemRCP = rcp(problem, true);
+
+  comparison_source->problemFactory = problemFactory; // saves until done
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
   comparison_source->timers["solve time"]->start();
-  if (problem_kind == "partitioning") {
-    reinterpret_cast<partitioning_problem_t *>(problem)->solve();
-  } else if (problem_kind == "ordering") {
-    reinterpret_cast<ordering_problem_t *>(problem)->solve();
-  } else if (problem_kind == "coloring") {
-    reinterpret_cast<coloring_problem_t *>(problem)->solve();
-  }
+
+  problemFactory->getProblem()->solve();
 
   comparison_source->timers["solve time"]->stop();
   if (rank == 0) {
     cout << problem_kind + " problem solved." << endl;
   }
  
-#define KDDKDD
+#undef KDDKDD
 #ifdef KDDKDD
-  {
-  const base_adapter_t::gno_t *kddIDs = NULL;
-  adapters.mainAdapter->getIDsView(kddIDs);
-    for (size_t i = 0; i < adapters.mainAdapter->getLocalNumIDs(); i++) {
+  if(problem_kind == "partitioning") {
+    const base_adapter_t::gno_t *kddIDs = NULL;
+    getIDsView(adapterFactory, kddIDs);
+    for (size_t i = 0;
+      i < adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
-                << reinterpret_cast<partitioning_problem_t *>
-                               (problem)->getSolution().getPartListView()[i]
+                << getPartListView(problemFactory)[i]
                 << std::endl;
     }
   }
   if (adapter_name == "XpetraCrsGraph") {
-    typedef xcrsGraph_adapter::lno_t lno_t;
-    typedef xcrsGraph_adapter::gno_t gno_t;
-    typedef xcrsGraph_adapter::scalar_t scalar_t;
-    int ewgtDim = 
-        reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
-          getNumWeightsPerEdge();
-    lno_t localNumObj = 
-        reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
-          getLocalNumVertices();
+    typedef xCG_xCG_t::lno_t lno_t;
+    typedef xCG_xCG_t::gno_t gno_t;
+    typedef xCG_xCG_t::scalar_t scalar_t;
+    const xCG_xCG_t * xscrsGraphAdapter =
+      dynamic_cast<const xCG_xCG_t *>(adapterFactory->getMainAdapter());
+
+    int ewgtDim = xscrsGraphAdapter->getNumWeightsPerEdge();
+    lno_t localNumObj = xscrsGraphAdapter->getLocalNumVertices();
     const gno_t *vertexIds;
-    reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
-      getVertexIDsView(vertexIds);
+    xscrsGraphAdapter->getVertexIDsView(vertexIds);
     const lno_t *offsets;
     const gno_t *adjIds;
-    reinterpret_cast<const xcrsGraph_adapter *>(adapters.mainAdapter)->
-      getEdgesView(offsets, adjIds);
+    xscrsGraphAdapter->getEdgesView(offsets, adjIds);
     for (int edim = 0; edim < ewgtDim; edim++) {
       const scalar_t *weights;
       int stride=0;
-      reinterpret_cast<xcrsGraph_adapter *>(adapters.mainAdapter)->
-        getEdgeWeightsView(weights, stride, edim);
+      xscrsGraphAdapter->getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
         for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
           std::cout << edim << " " << vertexIds[i] << " " 
@@ -342,41 +375,30 @@ bool run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
-  // An environment.  This is usually created by the problem.
-  // BDD unused, only applicable to partitioning problems
-  // RCP<const Zoltan2::Environment> env =
-  //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
-
-  // get metric object
-  // this is not the most beautiful thing, but comparison parameters is checked 
-  // as well because it's possible we are checking comparisons of metrics but 
-  // not individual metrics
-  // we want to only load the EvaluatePartition when Metrics is requested, or 
-  // some comparison is requested
-
   bool bSuccess = true;
-
   if(problem_parameters.isSublist("Metrics") || bHasComparisons) { 
-    // the specification is that we don't create anything unless 
-    // the Metrics list exists
-    RCP<EvaluatePartition<basic_id_t> > metricObject = rcp(
-       Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(
-               reinterpret_cast<partitioning_problem_t*> (problem), 
-               adapter_name, adapters.mainAdapter, &zoltan2_parameters));
+    RCP<EvaluateFactory> evaluateFactory = rcp(new EvaluateFactory(
+                                        problem_kind,
+                                        adapterFactory,
+                                        &zoltan2_parameters,
+                                        problemFactory));
+
+    if(rank == 0) {
+      std::cout << "Create evaluate class for: " + problem_kind << std::endl;
+    }
+
+    // must add for proper deletion
+    comparison_source->evaluateFactory = evaluateFactory; // saves until done
 
     std::ostringstream msgSummary;
-    metricObject->printMetrics(msgSummary, true); //
+
+    evaluateFactory->getEvaluateClass()->printMetrics(msgSummary);
     if(rank == 0) {
       cout << msgSummary.str();
     }
 
     std::ostringstream msgResults;
-    if (!MetricAnalyzer::analyzeMetrics(metricObject, 
-                                        problem_parameters.sublist("Metrics"), 
-                                        msgResults)) 
-    { 
-     // Note the MetricAnalyzer only cares about the data found in the 
-     // "Metrics" sublist
+    if (!analyzeMetrics(evaluateFactory, msgResults, problem_parameters)) {
       bSuccess = false;
       std::cout << "MetricAnalyzer::analyzeMetrics() "
                 << "returned false and the test is FAILED." << std::endl;
@@ -389,71 +411,51 @@ bool run(const UserInputForTests &uinput,
 #ifdef BDD 
     if (problem_kind == "ordering") {
       std::cout << "\nLet's examine the solution..." << std::endl;
-      auto solution = reinterpret_cast<ordering_problem_t *>
-                                       (problem)->getSolution();
-      if (solution->haveSeparators() ) {
-      
-        std::ostringstream sol;
-        sol << "Number of column blocks: " << solution->getNumSeparatorBlocks() 
-            << std::endl;
-        if (solution->getPermutationSize() < 100) {
-          if (solution->havePerm()) {
-            sol << "permutation: {";
-            for (auto &x : solution->getPermutationRCPConst(false)) 
-              sol << " " << x;
-            sol << "}" << std::endl;
+      LocalOrderingSolution<zlno_t> * localOrderingSolution =
+         getLocalOrderingSolution(problemFactory);
+      if (localOrderingSolution->haveSeparators() ) {
+        std::cout << "Number of column blocks: "
+          << localOrderingSolution->getNumSeparatorBlocks() << std::endl;
+        {
+          if (localOrderingSolution->havePerm()) {
+            std::cout << "permutation: {";
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(false))
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
           }
        
-         if (solution->haveInverse()) { 
-            sol << "inverse permutation: {";
-            for (auto &x : solution->getPermutationRCPConst(true)) 
-              sol << " " << x;
-            sol << "}" << std::endl;
-         }
+          if (localOrderingSolution->haveInverse()) {
+            std::cout << "inverse permutation: {";
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(true))
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
         
-         if (solution->haveSeparatorRange()) {
-            sol << "separator range: {";
-            for (auto &x : solution->getSeparatorRangeRCPConst()) 
-              sol << " " << x;
-            sol << "}" << std::endl;
-         }
+          if (localOrderingSolution->haveSeparatorRange()) {
+            std::cout << "separator range: {";
+            for (auto &x : localOrderingSolution->getSeparatorRangeRCPConst())
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
+          }
          
-          if (solution->haveSeparatorTree()) { 
-            sol << "separator tree: {";
-            for (auto &x : solution->getSeparatorTreeRCPConst()) 
-              sol << " " << x;
-            sol << "}" << std::endl;
+          if (localOrderingSolution->haveSeparatorTree()) {
+            std::cout << "separator tree: {";
+            for (auto &x : localOrderingSolution->getSeparatorTreeRCPConst())
+              std::cout << " " << x;
+            std::cout << "}" << std::endl;
           }
         }
-
-        std::cout << sol.str() << std::endl;
       }
     }
 #endif
-    // 4b. timers
-    //  if(zoltan2_parameters.isParameter("timer_output_stream"))
-    //    reinterpret_cast<partitioning_problem_t *>(problem)->printTimers();
 
-    ////////////////////////////////////////////////////////////
-    // 5. Add solution to map for possible comparison testing
-    ////////////////////////////////////////////////////////////
+    comparison_source->printTimers();
 
-    comparison_source->adapter = iaRCP;
-    comparison_source->coordinateAdapterRCP = coordinateAdapterRCP;
-    comparison_source->problem = problemRCP;
-    comparison_source->metricObject = metricObject;
-    comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
-                                       problem_parameters.get<string>("kind") :
-                                       "?");
-    comparison_source->adapter_kind = adapter_name;
-  
     // write mesh solution
+    // if(problem_kind == "partitioning") {
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
     //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
-
-    ////////////////////////////////////////////////////////////
-    // 6. Clean up
-    ////////////////////////////////////////////////////////////
+    // }
   }
 
   return bSuccess;
@@ -488,7 +490,7 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   // (2) Get All Input Parameter Lists
   ////////////////////////////////////////////////////////////
   queue<ParameterList> problems, comparisons;
-  if( !getParameterLists(inputFileName,problems, comparisons, comm) ) {
+  if( !getParameterLists(inputFileName, problems, comparisons, comm) ) {
     return false;
   }
   

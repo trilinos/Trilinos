@@ -210,8 +210,14 @@ public:
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
                             int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerVertex_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
     size_t length;
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -222,8 +228,14 @@ public:
 
   void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
+    if(idx<0 || idx >= nWeightsPerEdge_)
+    {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid edge weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+    }
+
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -238,8 +250,6 @@ public:
       const PartitioningSolution<Adapter> &solution) const;
 
 private:
-
-  RCP<const Environment> env_;    // for error messages, etc.
 
   RCP<const User> graph_;
 
@@ -267,7 +277,6 @@ private:
 template <typename User, typename UserCoord>
   TpetraRowGraphAdapter<User,UserCoord>::TpetraRowGraphAdapter(
     const RCP<const User> &ingraph, int nVtxWgts, int nEdgeWgts):
-      env_(rcp(new Environment)),
       graph_(ingraph), offs_(),
       adjids_(),
       nWeightsPerVertex_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
@@ -286,12 +295,25 @@ template <typename User, typename UserCoord>
 
   size_t n = nvtx + 1;
   lno_t *offs = new lno_t [n];
-  env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
+
+  if (!offs)
+  {
+    std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+    std::cerr << n << " objects" << std::endl;
+    throw std::bad_alloc();
+  }
 
   gno_t *adjids = NULL;
-  if (nedges){
+  if (nedges)
+  {
     adjids = new gno_t [nedges];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, adjids);
+
+    if (!adjids)
+    {
+      std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+      std::cerr << nedges << " objects" << std::endl;
+      throw std::bad_alloc();
+    }
   }
 
   ArrayRCP<lno_t> nbors(maxnumentries); // Diff from CrsGraph
@@ -338,8 +360,14 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerVertex_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nvtx = getLocalNumVertices();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   vertexWeights_[idx] = input_t(weightV, stride);
@@ -366,8 +394,13 @@ template <typename User, typename UserCoord>
   void TpetraRowGraphAdapter<User,UserCoord>::setVertexWeightIsDegree(
     int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
+  if(idx<0 || idx >= nWeightsPerVertex_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vertex weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
 
   vertexDegreeWeight_[idx] = true;
 }
@@ -378,8 +411,15 @@ template <typename User, typename UserCoord>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__, "invalid edge weight index",
-    idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
+
+  if(idx<0 || idx >= nWeightsPerEdge_)
+  {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid edge weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str()); 
+  }
+
   size_t nedges = getLocalNumEdges();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges*stride, false);
   edgeWeights_[idx] = input_t(weightV, stride);
@@ -440,7 +480,6 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 {
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsgraph_t;
-  typedef Tpetra::RowGraph<lno_t, gno_t, node_t> trowgraph_t;
 
   // We cannot create a Tpetra::RowGraph, unless the underlying type is 
   // something we know (like Tpetra::CrsGraph).
@@ -461,12 +500,11 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
                            "implement migration for your RowGraph.");
   }
 
-  lno_t base = 0;
-
   // source map
   const RCP<const map_t> &smap = from.getRowMap();
   int oldNumElts = smap->getNodeNumElements();
   gno_t numGlobalRows = smap->getGlobalNumElements();
+  gno_t base = smap->getMinAllGlobalIndex();
 
   // target map
   ArrayView<const gno_t> rowList(myNewRows, numLocalRows);

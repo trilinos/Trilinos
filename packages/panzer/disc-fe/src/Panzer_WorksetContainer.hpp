@@ -45,10 +45,16 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Intrepid2_Orientation.hpp"
+
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
+
+#ifndef __KK__
+#define __KK__
+#endif
 
 namespace panzer {
 
@@ -205,6 +211,21 @@ private:
      * has been previously called.
      */
    void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
+
+#if defined(__KK__)
+   /** Using the stored global indexer, set the orientations for a volume workset on a
+     * specified element block.
+     */
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+                          const std::string & eBlock,
+                          std::vector<Workset> & worksets) const;
+
+   /** Using the stored global indexer, set the orientations for a side workset.
+     */
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+                          const SideId & sideId,
+                          std::map<unsigned,Workset> & worksets) const;
+#endif
 
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.

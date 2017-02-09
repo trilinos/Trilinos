@@ -10,6 +10,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Zoltan2_MachineRCA.hpp>
 #include <Zoltan2_MachineRCAForTest.hpp>
+#include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
 namespace Zoltan2{
@@ -45,7 +46,9 @@ public:
       machine(new machine_t(comm)) {
    }
 
-    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
+
+
+    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl) :
           machine(new machine_t(comm, pl)) { }
 
     ~MachineRepresentation() {delete machine;}
@@ -127,12 +130,20 @@ public:
     */
     static void getValidParameters(Teuchos::ParameterList & pl)
     {
-      Teuchos::RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
-        Teuchos::rcp( new Teuchos::StringValidator(
-          Teuchos::tuple<std::string>( "EIGNORE", "Node")));
-      pl.set("machine_coord_transformation", "Node", "BGQ Optimization Type",
-        mapping_algorithm_Validator);
+      //TODO: This should be positive integer validator.
+      pl.set("Machine_Optimization_Level", 10,
+          "Machine Coordinate Transformation Method",
+          Environment::getAnyIntValidator());
+
+      // validator for file does not have to exist
+      RCP<Teuchos::FileNameValidator> file_not_required_validator =
+        Teuchos::rcp( new Teuchos::FileNameValidator(false) );
+
+      // bool parameter
+      pl.set("Input_RCA_Machine_Coords", "", "Input File for input machine coordinates",
+          file_not_required_validator);
     }
+
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 

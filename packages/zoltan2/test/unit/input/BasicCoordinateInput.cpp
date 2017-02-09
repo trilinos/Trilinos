@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 
   Array<zgno_t> myIds(numLocalIds);
-  zgno_t base = rank * numLocalIds;
+  zgno_t myFirstId = rank * numLocalIds;
   
   int wdim = 2;
   Array<zscalar_t> weights(numLocalIds*wdim);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   Array<zscalar_t> xyz_values(3*numLocalIds);
 
   for (zlno_t i=0; i < numLocalIds; i++)   // global Ids
-    myIds[i] = base+i;
+    myIds[i] = myFirstId+i;
 
   zscalar_t *x = xyz_values.getRawPtr();   // a stride-3 coordinate array
   zscalar_t *y = x+1;

@@ -135,6 +135,7 @@ namespace Intrepid2 {
   RealSpaceTools<SpT>::Serial::
   det( const Kokkos::DynRankView<inMatValueType,inMatProperties...> inMat) {
 
+    typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
       bool dbgInfo = false;
@@ -145,13 +146,13 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.dimension(0) < 1 || inMat.dimension(0) > 3, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
-      if (dbgInfo) return inMatValueType(0);
+      if (dbgInfo) return value_type(0);
 #endif
     }
 #endif
     const auto dim = inMat.dimension(0);
     
-    inMatValueType r_val = 0.0;
+    value_type r_val = 0.0;
     switch (dim) {
     case 3:
       r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
@@ -368,7 +369,7 @@ namespace Intrepid2 {
         const ordinal_type lend = _inArray.dimension(3);
         const ordinal_type mend = _inArray.dimension(4);
 
-        typedef typename inArrayViewType::value_type value_type;
+        typedef typename inArrayViewType::non_const_value_type value_type;
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type k=0;k<kend;++k)
@@ -573,7 +574,7 @@ namespace Intrepid2 {
     template<typename inverseMatViewType,
              typename inMatViewType>
     struct F_inverse {
-      typedef typename inMatViewType::value_type value_type;
+      typedef typename inMatViewType::non_const_value_type value_type;
       inverseMatViewType _inverseMats;
       inMatViewType      _inMats;
 

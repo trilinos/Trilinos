@@ -181,8 +181,6 @@ namespace Graph{
 
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
-      valuesC = typename cscalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
-
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
           m,n,k,

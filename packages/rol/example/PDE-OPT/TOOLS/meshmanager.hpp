@@ -378,9 +378,8 @@ private:
 
   virtual void computeSideSets() {
 
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(10));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(11));
     int numSides = 4;
-    int numVertices = 4;
     (*meshSideSets_)[0].resize(numSides); // bottom
     (*meshSideSets_)[1].resize(numSides); // right lower
     (*meshSideSets_)[2].resize(numSides); // right upper
@@ -388,19 +387,21 @@ private:
     (*meshSideSets_)[4].resize(numSides); // left upper
     (*meshSideSets_)[5].resize(numSides); // middle
     (*meshSideSets_)[6].resize(numSides); // left lower
-    (*meshSideSets_)[7].resize(numVertices); // L-corner cell
+    (*meshSideSets_)[7].resize(1); // L-corner cell
     (*meshSideSets_)[8].resize(numSides); // top corner cell
-    (*meshSideSets_)[9].resize(numVertices); // between side 4 and 5
+    (*meshSideSets_)[9].resize(1); // between side 2 and 3
+    (*meshSideSets_)[10].resize(numSides); // top corner cell
     (*meshSideSets_)[0][0].resize(nx1_+nx2_);
     (*meshSideSets_)[1][1].resize(ny2_);
     (*meshSideSets_)[2][1].resize(ny5_);
     (*meshSideSets_)[3][2].resize(nx3_+nx4_+nx5_);
     (*meshSideSets_)[4][3].resize(ny3_);
     (*meshSideSets_)[5][0].resize(nx3_);
-    (*meshSideSets_)[6][3].resize(ny1_);
+    (*meshSideSets_)[6][3].resize(ny1_-1);
     (*meshSideSets_)[7][0].resize(1);
     (*meshSideSets_)[8][3].resize(1);
     (*meshSideSets_)[9][0].resize(1);
+    (*meshSideSets_)[10][3].resize(ny1_);
 
     for (int i=0; i<nx1_+nx2_; ++i) {
       (*meshSideSets_)[0][0](i) = i;
@@ -426,7 +427,10 @@ private:
     }
     (*meshSideSets_)[7][0](0) = offset + nx3_;
     (*meshSideSets_)[8][3](0) = (ny1_-1)*(nx1_+nx2_);
-    (*meshSideSets_)[9][0](0) = offset + (ny3_-1)*(nx3_+nx4_+nx5_);
+    (*meshSideSets_)[9][0](0) = offset + ny5_*(nx3_+nx4_+nx5_) - 1;
+    for (int i=0; i<ny1_; ++i) {
+      (*meshSideSets_)[10][3](i) = i*(nx1_+nx2_);
+    }
 
   } // computeSideSets
 

@@ -3,6 +3,4 @@
 
 #include "PanzerCore_config.hpp"
 
-#cmakedefine PANZER_HAVE_FEI
-
 #endif

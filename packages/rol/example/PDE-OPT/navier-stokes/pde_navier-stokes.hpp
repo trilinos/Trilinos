@@ -143,7 +143,8 @@ private:
   Teuchos::RCP<FE<Real> > fePrs_;
   std::vector<Teuchos::RCP<FE<Real> > > feVelBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
-  std::vector<std::vector<int> > fidx_;
+  std::vector<std::vector<int> > fvidx_;
+  std::vector<std::vector<int> > fpidx_;
   // Coordinates of degrees freedom on boundary cells.
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
@@ -157,8 +158,28 @@ private:
   // Problem parameters.
   Real viscosity_;
   bool horizontalControl_;
+  Real DirichletControlPenalty_;
+  bool useDirichletControl_;
 
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+
+  // Extract velocity coefficients on boundary.
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > getBoundaryCoeff(
+      const Intrepid::FieldContainer<Real> & cell_coeff,
+      int sideSet, int cell) const {
+    std::vector<int> bdryCellLocId = bdryCellLocIds_[sideSet][cell];
+    const int numCellsSide = bdryCellLocId.size();
+    const int f = basisPtrVel_->getCardinality();
+    
+    Teuchos::RCP<Intrepid::FieldContainer<Real > > bdry_coeff = 
+      Teuchos::rcp(new Intrepid::FieldContainer<Real > (numCellsSide, f));
+    for (int i = 0; i < numCellsSide; ++i) {
+      for (int j = 0; j < f; ++j) {
+        (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
+      }
+    }
+    return bdry_coeff;
+  }
 
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
@@ -224,8 +245,8 @@ private:
   Real viscosityFunc(const std::vector<Real> & coords) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
     if ( param.size() ) {
-      Real c1(0.5), c2(2.5), five(5), ten(10);
-      return five*std::pow(ten, c1*param[1]-c2);
+      Real five(5), three(3);
+      return (five + three*param[1])*static_cast<Real>(1e-3);
     }
     return viscosity_;
   }
@@ -269,6 +290,8 @@ public:
     // Other problem parameters.
     viscosity_ = parlist.sublist("Problem").get("Viscosity", 5e-3);
     horizontalControl_ = parlist.sublist("Problem").get("Horizontal control",false);
+    DirichletControlPenalty_ = parlist.sublist("Problem").get("Dirichlet control penalty",1e-5);
+    useDirichletControl_ = parlist.sublist("Problem").get("Dirichlet control",false);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -409,62 +432,141 @@ public:
                                                   false);
     Intrepid::RealSpaceTools<Real>::scale(pres_res,static_cast<Real>(-1));
 
-    // APPLY DIRICHLET CONTROL
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==6) || (i==7)) {
-        if (i==6) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                if ( !horizontalControl_ ) {
-                  for (int m=0; m < d; ++m) {
-                    (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
+      if ( !useDirichletControl_ ) {
+        const int numCubPerSide = bdryCub_->getNumPoints();
+        for (int i = 0; i < numSideSets; ++i) {
+          if (i==10) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              if (numCellsSide) {
+                for (int k = 0; k < d; ++k) {
+                  // Get U coefficients on Robin boundary
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff_bdry
+                    = getBoundaryCoeff(*U[k], i, j);
+                  // Evaluate U on FE basis
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval_bdry
+                    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+                  feVelBdry_[j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+                  // Get Z coefficients on Robin boundary
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
+                    = getBoundaryCoeff(*Z[k], i, j);
+                  // Evaluate Z on FE basis
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval_bdry
+                    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+                  if (horizontalControl_) {
+                    if (k==0) { // control in horizontal direction only
+                      feVelBdry_[j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+                    }
+                    // else valZ_eval_bdry=0
                   }
-                }
-                else {
-                  (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
-                  (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+                  else { // control in both directions
+                    feVelBdry_[j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+                  }
+                  // Compute Robin residual
+                  Intrepid::FieldContainer<Real> robinVal(numCellsSide, numCubPerSide);
+                  Intrepid::RealSpaceTools<Real>::subtract(robinVal,*valU_eval_bdry,*valZ_eval_bdry);
+                  Intrepid::RealSpaceTools<Real>::scale(robinVal,static_cast<Real>(1)/DirichletControlPenalty_);
+                  Intrepid::FieldContainer<Real> robinRes(numCellsSide, fv);
+                  Intrepid::FunctionSpaceTools::integrate<Real>(robinRes,
+                                                                robinVal,
+                                                                *(feVelBdry_[j]->NdetJ()),
+                                                                Intrepid::COMP_CPP, false);
+                  // Add Robin residual to volume residual
+                  for (int l = 0; l < numCellsSide; ++l) {
+                    int cidx = bdryCellLocIds_[i][j][l];
+                    for (int m = 0; m < fv; ++m) { 
+                      (*R[k])(cidx,m) += robinRes(l,m);
+                    }
+                  }
                 }
               }
             }
           }
         }
       }
-    }
-
-    // APPLY DIRICHLET CONDITIONS
-    if (numSideSets > 0) {
+      // APPLY DIRICHLET CONDITIONS
       computeDirichlet();
       for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==0) || (i==3) || (i==4) || (i==5)) {
-        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==7) || (i==8)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            // Added by DR.
-            if (i==7) {
-              numBdryDofs = 1;
-            } //
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],0);
-                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],1);
-                for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l],m);
+        if ( useDirichletControl_ ) {
+          // Apply Dirichlet control
+          if (i==6) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                  if ( !horizontalControl_ ) {
+                    for (int m=0; m < d; ++m) {
+                      (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*Z[m])(cidx,fvidx_[j][l]);
+                    }
+                  }
+                  else {
+                    (*R[0])(cidx,fvidx_[j][l]) = (*U[0])(cidx,fvidx_[j][l]) - (*Z[0])(cidx,fvidx_[j][l]);
+                    (*R[1])(cidx,fvidx_[j][l]) = (*U[1])(cidx,fvidx_[j][l]);
+                  }
                 }
               }
             }
+          }
+          // Apply Dirichlet conditions
+          if (i==8) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fvidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],0);
+                  //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fvidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],1);
+                  for (int m=0; m < d; ++m) {
+                    (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                  }
+                }
+              }
+            }
+          }
+        }
+        // Apply Dirichlet conditions
+        if ((i==0) || (i==3) || (i==4) || (i==5)) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fvidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],0);
+                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fvidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],1);
+                for (int m=0; m < d; ++m) {
+                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                }
+              }
+            }
+          }
+        }
+        // Step corner
+        if (i==7) {
+          int j = 0, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m=0; m < d; ++m) {
+              (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellDofValues_[i][j])(0,fvidx_[j][l],m);
+            }
+          }
+        }
+        // Pressure pinning
+        if (i==9) {
+          int j = 2, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            (*R[d])(cidx,fpidx_[j][l]) = (*U[d])(cidx,fpidx_[j][l]);
           }
         }
       }
@@ -653,36 +755,125 @@ public:
     // APPLY DIRICHLET CONDITIONS
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
+      if (!useDirichletControl_) {
+        for (int i = 0; i < numSideSets; ++i) {
+          if (i==10) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            const int numCubPerSide = bdryCub_->getNumPoints();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              if (numCellsSide) {
+                for (int k = 0; k < d; ++k) {
+                  // Compute Robin residual
+                  Intrepid::FieldContainer<Real> RobinDerivUN(numCellsSide, fv, numCubPerSide);
+                  Intrepid::RealSpaceTools<Real>::scale(RobinDerivUN,*feVelBdry_[j]->N(),static_cast<Real>(1)/DirichletControlPenalty_);
+                  Intrepid::FieldContainer<Real> RobinJac(numCellsSide, fv, fv);
+                  Intrepid::FunctionSpaceTools::integrate<Real>(RobinJac,
+                                                                RobinDerivUN,
+                                                                *(feVelBdry_[j]->NdetJ()),
+                                                                Intrepid::COMP_CPP, false);
+                  // Add Stefan-Boltzmann residual to volume residual
+                  for (int l = 0; l < numCellsSide; ++l) {
+                    int cidx = bdryCellLocIds_[i][j][l];
+                    for (int m = 0; m < fv; ++m) { 
+                      for (int n = 0; n < fv; ++n) { 
+                        (*J[k][k])(cidx,m,n) += RobinJac(l,m,n);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6)) {
-        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7) || (i==8)) {
+        if ( useDirichletControl_ ) {
+          if ((i==6) || (i==8)) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  for (int m=0; m < fv; ++m) {
+                    for (int n=0; n < d; ++n) {
+                      for (int p=0; p < d; ++p) {
+                        (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                      }
+                      (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
+                    }
+                  }
+                  for (int m=0; m < fp; ++m) {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][2])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if ((i==0) || (i==3) || (i==4) || (i==5)) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            // Added by DR.
-            if (i==7) {
-              numBdryDofs = 1;
-            } //
+            int numBdryDofs = fvidx_[j].size();
             for (int k = 0; k < numCellsSide; ++k) {
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < fv; ++m) {
                   for (int n=0; n < d; ++n) {
                     for (int p=0; p < d; ++p) {
-                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+                      (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
                     }
-                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+                    (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
                   }
                 }
                 for (int m=0; m < fp; ++m) {
                   for (int n=0; n < d; ++n) {
-                    (*J[n][2])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+                    (*J[n][2])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
                   }
                 }
               }
             }
+          }
+        }
+        // Step corner
+        if (i==7) {
+          int j = 0, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m=0; m < fv; ++m) {
+              for (int n=0; n < d; ++n) {
+                for (int p=0; p < d; ++p) {
+                  (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                }
+                (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
+              }
+            }
+            for (int m=0; m < fp; ++m) {
+              for (int n=0; n < d; ++n) {
+                (*J[n][d])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+              }
+            }
+          }
+        }
+        // Pressure pinning
+        if (i==9) {
+          int j = 2, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m = 0; m < fv; ++m) {
+              for (int n = 0; n < d; ++n) {
+                (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
+            }
+            for (int m = 0; m < fp; ++m) {
+              (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+            }
+            (*J[d][d])(cidx,fpidx_[j][l],fpidx_[j][l]) = static_cast<Real>(1);
           }
         }
       }
@@ -723,29 +914,42 @@ public:
     J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);
     J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);
 
-    // APPLY DIRICHLET CONTROL
+    // APPLY DIRICHLET CONDITIONS
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==6) || (i==7)) {
-        if (i==6) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < fv; ++m) {
-                  if ( !horizontalControl_ ) {
-                    for (int n=0; n < d; ++n) {
-                      (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+      if (!useDirichletControl_) {
+        for (int i = 0; i < numSideSets; ++i) {
+          if (i==10) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            const int numCubPerSide = bdryCub_->getNumPoints();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              if (numCellsSide) {
+                for (int k = 0; k < d; ++k) {
+                  // Compute Robin Jacobian
+                  Intrepid::FieldContainer<Real> RobinDerivZN(numCellsSide, fv, numCubPerSide);
+                  if (horizontalControl_) {
+                    if (k==0) { // control in horizontal direction only
+                      Intrepid::RealSpaceTools<Real>::scale(RobinDerivZN,*feVelBdry_[j]->N(),static_cast<Real>(-1)/DirichletControlPenalty_);
                     }
+                    // else RobinDerivZN=0
                   }
-                  else {
-                    (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  else { // control in both directions
+                    Intrepid::RealSpaceTools<Real>::scale(RobinDerivZN,*feVelBdry_[j]->N(),static_cast<Real>(-1)/DirichletControlPenalty_);
+                  }
+                  Intrepid::FieldContainer<Real> RobinJac(numCellsSide, fv, fv);
+                  Intrepid::FunctionSpaceTools::integrate<Real>(RobinJac,
+                                                                RobinDerivZN,
+                                                                *(feVelBdry_[j]->NdetJ()),
+                                                                Intrepid::COMP_CPP, false);
+                  // Add Robin Jacobian to volume Jacobian
+                  for (int l = 0; l < numCellsSide; ++l) {
+                    int cidx = bdryCellLocIds_[i][j][l];
+                    for (int m = 0; m < fv; ++m) { 
+                      for (int n = 0; n < fv; ++n) { 
+                        (*J[k][k])(cidx,m,n) += RobinJac(l,m,n);
+                      }
+                    }
                   }
                 }
               }
@@ -753,32 +957,110 @@ public:
           }
         }
       }
-    }
-
-    // APPLY DIRICHLET CONDITIONS
-    if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==0) || (i==3) || (i==4) || (i==5)) {
-        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==7) || (i==8)) {
+        if ( useDirichletControl_ ) {
+          // Apply Dirichlet controls
+          if (i==6) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                  for (int m=0; m < fv; ++m) {
+                    if ( !horizontalControl_ ) {
+                      for (int n=0; n < d; ++n) {
+                        (*J[n][n])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                      }
+                    }
+                    else {
+                      (*J[0][0])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    }
+                  }
+                  if ( !horizontalControl_ ) {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(-1);
+                    }
+                  }
+                  else {
+                    (*J[0][0])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(-1);
+                  }
+                }
+              }
+            }
+          }
+          // Apply Dirichlet conditions
+          if (i==8) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                  for (int m=0; m < fv; ++m) {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][n])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        // Apply Dirichlet conditions
+        if ((i==0) || (i==3) || (i==4) || (i==5)) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            // Added by DR.
-            if (i==7) {
-              numBdryDofs = 1;
-            } //
+            int numBdryDofs = fvidx_[j].size();
             for (int k = 0; k < numCellsSide; ++k) {
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
                 for (int m=0; m < fv; ++m) {
                   for (int n=0; n < d; ++n) {
-                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(0);
+                    (*J[n][n])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
                   }
                 }
               }
+            }
+          }
+        }
+        // Step corner
+        if (i==7) {
+          int j = 0, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m=0; m < fv; ++m) {
+              for (int n=0; n < d; ++n) {
+                for (int p=0; p < d; ++p) {
+                  (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                }
+              }
+            }
+            for (int m=0; m < fp; ++m) {
+              for (int n=0; n < d; ++n) {
+                (*J[n][d])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+              }
+            }
+          }
+        }
+        // Pressure pinning
+        if (i==9) {
+          int j = 2, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m = 0; m < fv; ++m) {
+              for (int n = 0; n < d; ++n) {
+                (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
+            }
+            for (int m = 0; m < fp; ++m) {
+              (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
             }
           }
         }
@@ -830,26 +1112,56 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        // Changed by DR.
-        //if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6)) {
-        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7) || (i==8)) {
+        if ( useDirichletControl_ ) {
+          if ((i==6) || (i==8)) {
+            int numLocalSideIds = bdryCellLocIds_[i].size();
+            for (int j = 0; j < numLocalSideIds; ++j) {
+              int numCellsSide = bdryCellLocIds_[i][j].size();
+              int numBdryDofs = fvidx_[j].size();
+              for (int k = 0; k < numCellsSide; ++k) {
+                int cidx = bdryCellLocIds_[i][j][k];
+                for (int l = 0; l < numBdryDofs; ++l) {
+                  //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                  for (int m=0; m < d; ++m) {
+                    (*L[m])(cidx,fvidx_[j][l]) = static_cast<Real>(0);
+                  }
+                }
+              }
+            }
+          }
+        }
+        if ((i==0) || (i==3) || (i==4) || (i==5)) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            // Added by DR.
-            if (i==7) {
-              numBdryDofs = 1;
-            } //
+            int numBdryDofs = fvidx_[j].size();
             for (int k = 0; k < numCellsSide; ++k) {
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
                 for (int m=0; m < d; ++m) {
-                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
+                  (*L[m])(cidx,fvidx_[j][l]) = static_cast<Real>(0);
                 }
               }
             }
+          }
+        }
+        // Step corner
+        if (i==7) {
+          int j = 0, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            for (int m=0; m < d; ++m) {
+              (*L[m])(cidx,fvidx_[j][l]) = static_cast<Real>(0);
+            }
+          }
+        }
+        // Pressure pinning
+        if (i==9) {
+          int j = 2, l = 0;
+          if (bdryCellLocIds_[i][0].size() > 0) { 
+            int cidx = bdryCellLocIds_[i][0][0];
+            (*L[d])(cidx,fpidx_[j][l]) = static_cast<Real>(0);
           }
         }
       }
@@ -1027,9 +1339,10 @@ public:
     // Finite element definition.
     feVel_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrVel_,cellCub_));
     fePrs_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrPrs_,cellCub_));
-    fidx_ = feVel_->getBoundaryDofs();
+    fvidx_ = feVel_->getBoundaryDofs();
+    fpidx_ = fePrs_->getBoundaryDofs();
     // Construct control boundary FE
-    int sideset = 6;
+    int sideset = (useDirichletControl_) ? 6 : 10;
     int numLocSides = bdryCellNodes[sideset].size();
     feVelBdry_.resize(numLocSides);
     for (int j = 0; j < numLocSides; ++j) {
@@ -1056,8 +1369,12 @@ public:
     return feVelBdry_;
   }
 
-  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset = 6) const {
-    return bdryCellLocIds_[sideset];
+  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset = -1) const {
+    int side = sideset;
+    if ( sideset < 0 ) {
+      side = (useDirichletControl_) ? 6 : 10;
+    }
+    return bdryCellLocIds_[side];
   }
 
   const Teuchos::RCP<FieldHelper<Real> > getFieldHelper(void) const {

@@ -49,6 +49,25 @@ namespace Sacado {
   template <typename ExecSpace>
   void destroyGlobalMemoryPool(const ExecSpace& space) {}
 
+#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+  namespace Impl {
+    extern const Kokkos::Experimental::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
+  }
+
+  inline void
+  createGlobalMemoryPool(const Kokkos::OpenMP& space, const size_t total_size)
+  {
+    typedef Kokkos::Experimental::MemoryPool<Kokkos::OpenMP> pool_t;
+    Impl::global_sacado_openmp_memory_pool =
+      new pool_t(typename Kokkos::OpenMP::memory_space(), total_size);
+  }
+
+  inline void destroyGlobalMemoryPool(const Kokkos::OpenMP& space)
+  {
+    delete Impl::global_sacado_openmp_memory_pool;
+  }
+#endif
+
 #if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
 
   namespace Impl {
@@ -154,6 +173,17 @@ namespace Sacado {
       }
       m = warpBcast(m,0);
       m += warpScan(sz);
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+      T* m = 0;
+      if (sz > 0) {
+        if (global_sacado_openmp_memory_pool != 0) {
+          m = static_cast<T*>(global_sacado_openmp_memory_pool->allocate(sz*sizeof(T)));
+          if (m == 0)
+            Kokkos::abort("Allocation failed.  Kokkos memory pool is out of memory");
+        }
+        else
+          m = static_cast<T* >(operator new(sz*sizeof(T)));
+      }
 #else
       T* m = static_cast<T* >(operator new(sz*sizeof(T)));
 #if defined(HAVE_SACADO_KOKKOSCORE)
@@ -175,6 +205,13 @@ namespace Sacado {
       const int lane = warpLane();
       if (total_sz > 0 && lane == 0) {
         global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, total_sz*sizeof(T));
+      }
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+      if (sz > 0) {
+        if (global_sacado_openmp_memory_pool != 0)
+          global_sacado_openmp_memory_pool->deallocate((void*) m, sz*sizeof(T));
+        else
+          operator delete((void*) m);
       }
 #else
       if (sz > 0)

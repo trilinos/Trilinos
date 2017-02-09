@@ -52,11 +52,9 @@
 #include "Zoltan2_TestHelpers.hpp"
 #include "Zoltan2_MetricAnalyzer.hpp"
 #include <Zoltan2_Typedefs.hpp>
+#include <Zoltan2_EvaluateFactory.hpp>
+#include <Zoltan2_ProblemFactory.hpp>
 #include <AdapterForTests.hpp>
-#include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_ColoringProblem.hpp>
-#include <Zoltan2_OrderingProblem.hpp>
-
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Time.hpp>
 
@@ -80,9 +78,9 @@ using namespace Zoltan2_TestingFramework;
 
 /*! \brief A class used to save problem solutions and timers.
  */
+
 class ComparisonSource
 {
-  
 public:
   /* \brief Add a timer by name to the comparison sources timers map.
    * \param name is the name of the timer to be defined
@@ -92,23 +90,29 @@ public:
     timers.insert(std::pair<const std::string &, RCP<Time> >(name,rcp(new Time(name))));
     timers[name]->enable();
   }
+
+  void printTimers() 
+  {
+    for(auto it = timers.begin(); it != timers.end(); ++it) {
+      std::cout << it->first << " " << it->second->totalElapsedTime() 
+                << std::endl;
+    }
+  }
+
+  // TODO:  Add method to print a timer summary:  max/min/avg over all procs
   
-  RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
-  RCP<base_problem_t> problem;
-  RCP<basic_id_t> adapter;
-  RCP<Zoltan2::VectorAdapter<tMVector_t> > coordinateAdapterRCP;
-  string problem_kind;
-  string adapter_kind;
   std::map<const std::string, RCP<Time> > timers;
+
+  RCP<EvaluateFactory> evaluateFactory;
+  RCP<ProblemFactory> problemFactory;
+  RCP<AdapterFactory> adapterFactory;
 };
 
 /*! \brief A class for comparing solutions, metrics, and timing data of Zoltan2 problems.
  */
 class ComparisonHelper
 {
-  
 public:
-  
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
    * \param comm is the process communicator
@@ -119,7 +123,7 @@ public:
    * \param name is the name of the new source
    * \param source a problem source that to be used for comparison to another source
    */
-  void AddSource(const string &name, ComparisonSource * source);
+  void AddSource(const string &name, RCP<ComparisonSource> source);
   
   /* \brief Return the total number of saved sources.
    */
@@ -130,8 +134,7 @@ public:
   
 private:
   map<const string,RCP<const ComparisonSource> > sources;
-  
-  
+
   /* \brief Method called to compare two solutions
    * \param p1 is the name of problem 1
    * \param p2 is the name of problem 2
@@ -141,6 +144,11 @@ private:
                         const string &p2,
                         const RCP<const Comm<int> > &comm);
   
+  /* \brief Safely get parts list by adapter type
+   * \param problemFactory is the ProblemFactory
+   */
+  const zpart_t * getPartListView(RCP<ProblemFactory> problemFactory) const;
+
   /* \brief Method called to compare two paritioning solutions
    * \param sourceA is a ptr to problem A's comparison source
    * \param sourceB is a ptr to problem B's comparison source
@@ -168,11 +176,21 @@ private:
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
+  /* \brief Safely get metric info by adapter type.
+   * \param problemFactory is the ProblemFactory
+   * \param metricInfo will be filled
+   * \param metricsPlist are the parameters to read
+   */
+  void loadMetricInfo(RCP<EvaluateFactory> problemFactory,
+                 std::vector<MetricAnalyzerInfo> & metricInfo,
+                 const ParameterList &metricsPlist);
+
   /* \brief Method called to compare the metrics/timers of two problems.
    * \param metricsPlist is a parameter list defining the comparison
    * \param comm is the process communicator
    */
-  bool CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm);
+  bool CompareMetrics(const ParameterList &metricsPlist,
+                      const RCP<const Comm<int> > &comm);
   
   /* \brief Method that compares two metrics and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -224,19 +242,22 @@ private:
   getMetricsToCompare(const ParameterList & pList);
   
   static void
-  reduceWithMessage(const RCP<const Comm<int> > &comm,const std::string &msg_in,
+  reduceWithMessage(const RCP<const Comm<int> > &comm,
+                    const std::string &msg_in,
                     int &local_status, std::ostringstream &msg);
   
 };
 
 
-void ComparisonHelper::AddSource(const string &name, ComparisonSource * source)
+void ComparisonHelper::AddSource(const string &name,
+                                 RCP<ComparisonSource> source)
 {
   typedef std::pair<const string &, RCP<const ComparisonSource> > pair_t;
-  this->sources.insert(pair_t(name, RCP<ComparisonSource>(source)));
+  this->sources.insert(pair_t(name, source));
 }
 
-bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm)
+bool ComparisonHelper::Compare(const ParameterList &pList,
+                               const RCP<const Comm<int> > &comm)
 {
   if(pList.isParameter("A") && pList.isParameter("B")) {
     // comparing solutions
@@ -244,7 +265,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(pA) == this->sources.end())
     {
       cout << "\nProblem: " + pA + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occurred while running the problem.";
+      cout << "\nThis typically indicates that an error ";
+      cout << "occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       return false;
     }
@@ -252,7 +274,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     string pB = pList.get<string>("B");
     if(this->sources.find(pB) == this->sources.end()) {
       cout << "\nProblem: " + pB + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occurred while running the problem.";
+      cout << "\nThis typically indicates that an error ";
+      cout << "occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       return false;
     }
@@ -265,7 +288,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     string prb = pList.get<string>("Problem");
     if(this->sources.find(prb) == this->sources.end()) {
       cout << "\nProblem: " + prb + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occurred while running the problem.";
+      cout << "\nThis typically indicates that an error ";
+      cout << "occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return false;
     }
@@ -273,7 +297,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     string ref = pList.get<string>("Reference");
     if(this->sources.find(ref) == this->sources.end()) {
       cout << "\nReference: " + ref + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occurred while running the problem.";
+      cout << "\nThis typically indicates that an error ";
+      cout << "occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return false;
     }
@@ -297,7 +322,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
   }
   else {
     if (comm->getRank() == 0) {
-      cout << "ComparisonHelper did not understand how to read the xml. Test FAILED." << endl;
+      cout << "ComparisonHelper did not understand how to read the xml. ";
+      cout << "Test FAILED." << endl;
     }
   }
   return false;
@@ -307,45 +333,54 @@ bool ComparisonHelper::CompareSolutions(const string &p1,
                                         const string &p2,
                                         const RCP<const Comm<int> > &comm)
 {
-  if(comm->getRank() == 0) printf("\nComparing: %s and %s\n",p1.c_str(),p2.c_str());
+  if(comm->getRank() == 0) printf( "\nComparing: %s and %s\n",
+    p1.c_str(), p2.c_str());
   auto A = this->sources[p1];
   auto B = this->sources[p2];
-  if(A->problem_kind != B->problem_kind) {
+  if(A->problemFactory->getProblemName() != B->problemFactory->getProblemName()) {
     cout << "Problem A and B are of a different kind and cannot be compared.";
     cout <<"\nSolution comparison FAILED." << endl;
   }
   else {
-    if(A->problem_kind == "partitioning") {
+    if(A->problemFactory->getProblemName() == "partitioning") {
       return this->ComparePartitionSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
-    else if(A->problem_kind == "coloring") {
+    else if(A->problemFactory->getProblemName() == "coloring") {
       return this->CompareColoringSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
-    else if(A->problem_kind == "ordering"){
+    else if(A->problemFactory->getProblemName() == "ordering"){
       return this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
     else {
-      cout << "Problem kind not recognized.  Check spelling.";
+      cout << "Problem kind: " << A->problemFactory->getProblemName() <<
+        " not recognized.  Check spelling.";
       cout <<"\nSolution comparison FAILED." << endl;
     }
   }
   return false;
 }
 
-void
-ComparisonHelper::reduceWithMessage(const RCP<const Comm<int> > &comm, const std::string &msg_in,
-                                    int &local_status, std::ostringstream &msg)
-{
+void ComparisonHelper::reduceWithMessage(const RCP<const Comm<int> > &comm,
+                                         const std::string &msg_in,
+                                         int &local_status,
+                                         std::ostringstream &msg) {
   comm->barrier();
   int global_buff;
   Teuchos::Ptr<int> global(&global_buff);
-  reduceAll<int,int>(*comm.get(), Teuchos::EReductionType::REDUCE_MAX, local_status , global);
-  
+  reduceAll<int,int>(*comm.get(), Teuchos::EReductionType::REDUCE_MAX,
+    local_status , global);
   local_status = *global;
   if (local_status == 1) {
     msg << msg_in;
   }
+}
 
+const zpart_t * ComparisonHelper::getPartListView(
+  RCP<ProblemFactory> problemFactory) const {
+  #define GET_PROBLEM_PARTS(adapterClass)                                  \
+      return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(         \
+        problemFactory->getProblem()))->getSolution().getPartListView();
+  Z2_TEST_UPCAST(problemFactory->getAdapterType(), GET_PROBLEM_PARTS)
 }
 
 bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * sourceA,
@@ -356,60 +391,26 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   ostringstream status;
   int failed = 0;
 
-  if(!sourceA->problem.getRawPtr()){ failed = 1;}
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution A is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
+  if(sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs()
+    != sourceB->adapterFactory->getMainAdapter()->getLocalNumIDs()) {
+      failed = 1;
+  }
   
-  if(!failed && !sourceB->problem.getRawPtr()){ failed = 1;}
   ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution B is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-
-  if(!failed) {
-    //    typedef Zoltan2::PartitioningSolution<basic_id_t> partitioning_solution_t; // BDD unused
-    // have some solutions lets compare them
-    if (partitioning_problem_t * problem_a = reinterpret_cast<partitioning_problem_t *>(sourceA->problem.getRawPtr())) {
-      if(partitioning_problem_t * problem_b = reinterpret_cast<partitioning_problem_t *>(sourceB->problem.getRawPtr())) {
-        auto solution_a = problem_a->getSolution();
-        auto solution_b = problem_b->getSolution();
+                                  "Number of parts in Solution A != Solution B. \
+                                  Partitioning solution comparison FAILED.",
+                                  failed, status);
         
-        if(sourceA->adapter->getLocalNumIDs() != sourceB->adapter->getLocalNumIDs()) {
-          failed = 1;
-        }
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Number of parts in Solution A != Solution B. \
-                                            Partitioning solution comparison FAILED.",
-                                            failed,
-                                            status);
-        
-        if (!failed) {
-          for(size_t i = 0; i < sourceA->adapter->getLocalNumIDs(); i++) {
-            if(!failed && solution_a.getPartListView()[i] != solution_b.getPartListView()[i]) {
-              failed = 1;
-              ComparisonHelper::reduceWithMessage(comm, "Solution sets A and B have different values for getPartListView(). Solution comparison FAILED.", failed, status);
-            }
-          }
-        }
-      }
-      else {
+  if (!failed) {
+    for(size_t i = 0;
+      i < sourceA->adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
+      if(!failed && getPartListView(sourceA->problemFactory)[i] !=
+        getPartListView(sourceB->problemFactory)[i]) {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
-                                            "Solution sets A and B are from different problem types. \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
+          "Solution sets A and B have different values for getPartListView(). "
+          "Solution comparison FAILED.", failed, status);
       }
-      
-    } else {
-        failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Could not cast solution A to valid problem type.  \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
     }
   }
   
@@ -432,86 +433,44 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
   int rank = comm->getRank();
   ostringstream status;
   int failed = 0;
-  
-  if(!sourceA->problem.getRawPtr()) {
-    failed = 1;
+
+  // TO DO - implement coloring comparison
+  /*
+  if(sourceA->problemFactory->getNumColors()
+    != sourceB->problemFactory->getNumColors()) {
+      failed = 1;
   }
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution A is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
   
-  if(!failed && !sourceB->problem.getRawPtr()) {
-    failed = 1;
-  }
   ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution B is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
+                              "Number of colors for Solution A != Solution B. \
+                              Coloring solution comparison FAILED.",
+                              failed, status);
+        
   if (!failed) {
-    // have some solutions lets compare them
-    typedef Zoltan2::ColoringProblem<basic_id_t> coloring_problem_t; //BDD unused
-    // have some solutions lets compare them
-    if(coloring_problem_t * problem_a = reinterpret_cast<coloring_problem_t *>(sourceA->problem.getRawPtr())) {
-      if(coloring_problem_t * problem_b = reinterpret_cast<coloring_problem_t *>(sourceB->problem.getRawPtr())) {
-        auto solution_a = problem_a->getSolution();
-        auto solution_b = problem_b->getSolution();
-        
-        if(solution_a->getNumColors() != solution_b->getNumColors()) {
-          failed = 1;
-        }
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Number of colors for Solution A != Solution B. \
-                                            Coloring solution comparison FAILED.",
-                                            failed,
-                                            status);
-        
-        if (!failed) {
-          if(solution_a->getColorsSize() != solution_b->getColorsSize()) {
-            failed = 1;
-          }
-          ComparisonHelper::reduceWithMessage(comm,
-                                              "Size of colors array for Solution A != Solution B. \
-                                              Coloring solution comparison FAILED.",
-                                              failed,
-                                              status);
-          
-        }
-        
-        if (!failed) {
-          for(size_t i = 0; i < solution_a->getColorsSize(); i++) {
-            if (solution_a->getColors()[i] != solution_b->getColors()[i]) {
-              if(!failed) {
-        	failed = 1;              // fail
-              }
-            }
-          }
-          ComparisonHelper::reduceWithMessage(comm,
-                                              "Coloring solution comparison FAILED.",
-                                              failed,
-                                              status);
-        }
-      }
-      else {
+    if(sourceA->problemFactory->getColorsSize()
+      != sourceB->problemFactory->getColorsSize()) {
         failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Solution sets A and B are from different problem types. \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
-      }
-      
     }
-    else {
-        failed = 1;
-        ComparisonHelper::reduceWithMessage(comm,
-                                            "Could not cast solution A to valid problem type.  \
-                                            Solution comparison FAILED.",
-                                            failed,
-                                            status);
-    }
+    ComparisonHelper::reduceWithMessage(comm,
+                              "Size of colors array for Solution A != Solution B. \
+                              Coloring solution comparison FAILED.",
+                              failed,
+                              status);
   }
+
+  if (!failed) {
+    for(size_t i = 0; i < sourceA->problemFactory->getColorsSize(); i++) {
+      if (sourceA->problemFactory->getColors()[i] !=
+        sourceB->problemFactory->getColors()[i]) {
+          failed = 1;              // fail
+      }
+    }
+    ComparisonHelper::reduceWithMessage(comm,
+                                        "Coloring solution comparison FAILED.",
+                                        failed,
+                                        status);
+  }
+  */
   
   if (!failed) {
     status << "Solution sets A and B are the same. ";
@@ -532,47 +491,8 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   ostringstream status;
   int failed = 0;
   
-  if (!sourceA->problem.getRawPtr()) {
-    failed = 1;
-  }
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution A is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
-  if(!failed && !sourceB->problem.getRawPtr()){ failed = 1;}
-  ComparisonHelper::reduceWithMessage(comm,
-                                      "Solution B is NULL. Solution comparison FAILED.",
-                                      failed,
-                                      status);
-  
-  //  if(!failed) //BDD, finish implementation when ordering problem metrics defined
-  //  {
-  //    // have some solutions lets compare them
-  //    typedef Zoltan2::OrderingProblem<basic_id_t> ordering_problem_t;
-  //    // have some solutions lets compare them
-  //    if(ordering_problem_t * problem_a = reinterpret_cast<ordering_problem_t *>(sourceA->problem.getRawPtr()))
-  //    {
-  //      if(ordering_problem_t * problem_b = reinterpret_cast<ordering_problem_t *>(sourceB->problem.getRawPtr()))
-  //      {
-  //
-  //      }else{
-  //        status << "Solution sets A and B are from different problem types. ";
-  //        status << "Solution comparison FAILED.";
-  //        failed = true;
-  //      }
-  //
-  //
-  //    }else{
-  //      if(rank == 0)
-  //      {
-  //        status << "Could not cast solution A to valid problem type. ";
-  //        status << "Solution comparison FAILED.";
-  //      }
-  //    }
-  //  }
-  
-  
+  // TO DO - implement ordering comparison
+
   if(!failed) {
     status << "Solution sets A and B are the same. ";
     status << "Solution set comparison PASSED.";
@@ -582,6 +502,37 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
     cout << status.str() << endl;
   }
   return (failed == 0);
+}
+
+// Utility function for safe type conversion of adapter
+void ComparisonHelper::loadMetricInfo(RCP<EvaluateFactory> evaluateFactory,
+  std::vector<MetricAnalyzerInfo> & metricInfo,
+  const ParameterList &metricsPlist) {
+
+  #define LOAD_METRIC_INFO(adapterClass, metricAnalyzerClass)                 \
+    RCP<EvaluateBaseClass<adapterClass>> pCast =                              \
+      rcp_dynamic_cast<EvaluateBaseClass<adapterClass>>(evaluateFactory->getEvaluateClass());  \
+    if(pCast == Teuchos::null) throw std::logic_error(                        \
+      "Bad evaluate class cast in loadMetricInfo!"  );                        \
+      metricAnalyzerClass analyzer(pCast);                                    \
+      analyzer.LoadMetricInfo(metricInfo, metricsPlist.sublist("Metrics"));
+
+  #define LOAD_METRIC_INFO_PARTITIONING(adapterClass)                      \
+    LOAD_METRIC_INFO(adapterClass, MetricAnalyzerEvaluatePartition<adapterClass>)
+
+  #define LOAD_METRIC_INFO_ORDERING(adapterClass)                          \
+    LOAD_METRIC_INFO(adapterClass, MetricAnalyzerEvaluateOrdering<adapterClass>)
+
+  if(evaluateFactory->getProblemName() == "partitioning") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), LOAD_METRIC_INFO_PARTITIONING)
+  }
+  else if(evaluateFactory->getProblemName() == "ordering") {
+    Z2_TEST_UPCAST(evaluateFactory->getAdapterType(), LOAD_METRIC_INFO_ORDERING)
+  }
+  else {
+    throw std::logic_error(
+      "loadMetricInfo not implemented for this problem type!"  );
+  }
 }
 
 // compare metrics
@@ -621,8 +572,8 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
       std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
       std::vector<MetricAnalyzerInfo> metricInfoSetRef;
 
-      MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb, sourcePrb.get()->metricObject, metricsPlist.sublist("Metrics"));
-      MetricAnalyzer::LoadMetricInfo(metricInfoSetRef, sourceRef.get()->metricObject, metricsPlist.sublist("Metrics"));
+      loadMetricInfo(sourcePrb.get()->evaluateFactory, metricInfoSetPrb, metricsPlist);
+      loadMetricInfo(sourceRef.get()->evaluateFactory, metricInfoSetRef, metricsPlist);
 
       // there is some redundancy here because the metric info holds both the questions and the results
       // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons

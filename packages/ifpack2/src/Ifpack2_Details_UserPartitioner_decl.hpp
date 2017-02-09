@@ -84,10 +84,10 @@ public:
   /// The only valid parameters are:
   ///   <ul>
   ///     <li> "partitioner: map" (Teuchos::ArrayRCP<local ordinal>)
-  /// Use this option if the parts (aka blocks) do not overlap.  The ith entry in the ArrayRCP is the part (block) number
+  /// The ith entry in the ArrayRCP is the part (block) number
   /// that row i belongs to.  In this case, you are specifying OverlappingPartitioner::Partition_.
   ///     <li> "partitioner: parts" (Teuchos::Array<Teuchos::ArrayRCP<local ordinal>>)
-  /// Use this option if the parts (aka blocks) overlap.  The i'th entry in the Array is an ArrayRCP that contains all the
+  /// The i'th entry in the Array is an ArrayRCP that contains all the
   /// rows in part (block) i. In this case, you are specifying OverlappingPartitioner::Parts_.
   ///   </ul>
   /// You may set only one of these parameters.  Setting both will results in a runtime exception.

@@ -30,9 +30,12 @@ mkdir build_updated
 cd build_updated
 export TRILINOS_PATH=${TRILINOS_UPDATED_PATH}
 
+echo "ulimit -c 0; ctest" &> test_submitted_command
+chmod a+x test_submitted_command
+
 echo "bsub -J ${JOBNAME}-Conf1 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
 echo "bsub -J ${JOBNAME}-Build1 -W 03:00 -Is -n 16 -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
-echo "bsub -J ${JOBNAME}-Test1 -W 02:00 -Is -n 16 -q ${QUEUE} ctest &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Test1 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 chmod a+x *_command
 echo ""
@@ -81,9 +84,12 @@ cd build_pristine
 
 export TRILINOS_PATH=${TRILINOS_PRISTINE_PATH}
 
+echo "ulimit -c 0; ctest" &> test_submitted_command
+chmod a+x test_submitted_command
+
 echo "bsub -J ${JOBNAME}-Conf2 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
 echo "bsub -J ${JOBNAME}-Build2 -W 03:00 -Is -n 16 -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
-echo "bsub -J ${JOBNAME}-Test2 -W 02:00 -Is -n 16 -q ${QUEUE} ctest &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Test2 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 
 chmod a+x *_command

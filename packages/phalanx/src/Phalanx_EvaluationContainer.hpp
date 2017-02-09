@@ -47,6 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_EvaluationContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
@@ -72,6 +73,9 @@ namespace PHX {
     
     //! Requests that the container must compute this field.
     void requireField(const PHX::FieldTag& f);
+
+    void aliasField(const PHX::FieldTag& aliasedField,
+                    const PHX::FieldTag& targetField);
 
     void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
@@ -119,6 +123,8 @@ namespace PHX {
 
     std::unordered_map<std::string,PHX::any> fields_;
 
+    std::unordered_map<std::string,std::string> aliased_fields_;
+    
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
   };
   

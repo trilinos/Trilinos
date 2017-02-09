@@ -44,7 +44,7 @@
 #ifndef _KOKKOSSPGEMMCUSP_HPP
 #define _KOKKOSSPGEMMCUSP_HPP
 
-#ifdef KERNELS_HAVE_CUSP1
+#ifdef KERNELS_HAVE_CUSP
 #include <cusp/multiply.h>
 #include <cusp/csr_matrix.h>
 #endif
@@ -100,7 +100,7 @@ void CUSP_apply(
     cin_row_index_view_type row_mapC,
     cin_nonzero_index_view_type &entriesC,
     cin_nonzero_value_view_type &valuesC){
-#ifdef KERNELS_HAVE_CUSP1
+#ifdef KERNELS_HAVE_CUSP
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;
 
@@ -122,7 +122,7 @@ void CUSP_apply(
     return;
   }
 
-  typedef in_row_index_view_type idx_array_type;
+  //typedef in_row_index_view_type idx_array_type;
 
   typedef typename Kokkos::RangePolicy<typename KernelHandle::HandleExecSpace> my_exec_space;
 
@@ -185,8 +185,12 @@ void CUSP_apply(
   cuspMatrix C;
 
 
-
+  Kokkos::Impl::Timer timer1;
   cusp::multiply(A,B,C);
+  KernelHandle::HandleExecSpace::fence();
+  std::cout << "Actual CUSP SPMM Time:" << timer1.seconds() << std::endl;
+
+
 
 
   //std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
@@ -194,7 +198,7 @@ void CUSP_apply(
   //row_mapC = typename cin_row_index_view_type::non_const_type("rowmapC", m + 1);
 
 
-  this->handle->get_spgemm_handle()->set_c_nnz( C.values.size());
+  handle->set_c_nnz( C.values.size());
 
   entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") ,  C.column_indices.size());
   valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC"),  C.values.size());

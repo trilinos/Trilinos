@@ -90,7 +90,8 @@ public:
 
   /** \brief .  */
   enum EInArgsMembers {
-    IN_ARG_x_dot ///< .
+    IN_ARG_x_dot_dot ///< .
+    ,IN_ARG_x_dot ///< .
     ,IN_ARG_x ///< .
     ,IN_ARG_x_dot_poly ///< .
     ,IN_ARG_x_poly ///< .
@@ -99,11 +100,12 @@ public:
     ,IN_ARG_t ///< .
     ,IN_ARG_alpha ///< .
     ,IN_ARG_beta ///< .
+    ,IN_ARG_W_x_dot_dot_coeff ///< .
     ,IN_ARG_step_size///< .
     ,IN_ARG_stage_number///< .
   };
   /** \brief .  */
-  static const int NUM_E_IN_ARGS_MEMBERS=11;
+  static const int NUM_E_IN_ARGS_MEMBERS=13;
 
   /** \brief .  */
   enum EInArgs_p_mp {
@@ -132,6 +134,10 @@ public:
     int Np() const;
     /** \brief Determines if an input argument is supported or not.  */
     bool supports(EInArgsMembers arg) const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_dot)==true</tt>.  */
+    void set_x_dot_dot( const RCP<const VectorBase<Scalar> > &x_dot_dot );
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_dot)==true</tt>.  */
+    RCP<const VectorBase<Scalar> > get_x_dot_dot() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
     void set_x_dot( const RCP<const VectorBase<Scalar> > &x_dot );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
@@ -181,12 +187,16 @@ public:
     ScalarMag get_t() const;
     /** \brief Precondition: <tt>supports(IN_ARG_alpha)==true</tt>.  */
     void set_alpha( Scalar alpha );
-    /** \brief Precondition: <tt>supports(IN_ARG_alph)==true</tt>.  */
+    /** \brief Precondition: <tt>supports(IN_ARG_alpha)==true</tt>.  */
     Scalar get_alpha() const;
     /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     void set_beta( Scalar beta );
     /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     Scalar get_beta() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_W_x_dot_dot_coeff)==true</tt>.  */
+    void set_W_x_dot_dot_coeff( Scalar W_x_dot_dot_coeff );
+    /** \brief Precondition: <tt>supports(IN_ARG_W_x_dot_dot_coeff)==true</tt>.  */
+    Scalar get_W_x_dot_dot_coeff() const;
     /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
     void set_step_size( Scalar step_size);
     /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
@@ -230,6 +240,7 @@ public:
     typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
     // data
     std::string modelEvalDescription_;
+    RCP<const VectorBase<Scalar> > x_dot_dot_;
     RCP<const VectorBase<Scalar> > x_dot_;
     RCP<const VectorBase<Scalar> > x_;
     RCP<const Stokhos::ProductEpetraVector > x_dot_mp_;
@@ -243,6 +254,7 @@ public:
     ScalarMag t_;
     Scalar alpha_;
     Scalar beta_;
+    Scalar W_x_dot_dot_coeff_;
     Scalar step_size_;
     Scalar stage_number_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
@@ -1129,6 +1141,8 @@ inline
 std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
 {
   switch(arg) {
+    case ModelEvaluatorBase::IN_ARG_x_dot_dot:
+      return "IN_ARG_x_dot_dot";
     case ModelEvaluatorBase::IN_ARG_x_dot:
       return "IN_ARG_x_dot";
     case ModelEvaluatorBase::IN_ARG_x:
@@ -1147,6 +1161,8 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
       return "IN_ARG_alpha";
     case ModelEvaluatorBase::IN_ARG_beta:
       return "IN_ARG_beta";
+    case ModelEvaluatorBase::IN_ARG_W_x_dot_dot_coeff:
+      return "IN_ARG_W_x_dot_dot_coeff";
     case ModelEvaluatorBase::IN_ARG_step_size:
       return "IN_ARG_step_size";
     case ModelEvaluatorBase::IN_ARG_stage_number:

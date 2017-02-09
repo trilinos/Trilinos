@@ -114,13 +114,12 @@ main (int argc, char *argv[])
   // Create a ParameterList, to pass parameters into the Block
   // Davidson eigensolver.
   Teuchos::ParameterList anasaziPL;
-  anasaziPL.set ("Which", "LM");
+  anasaziPL.set ("Which", "SM");
   anasaziPL.set ("Block Size", blockSize);
   anasaziPL.set ("Num Blocks", numBlocks);
   anasaziPL.set ("Maximum Restarts", maxRestarts);
   anasaziPL.set ("Convergence Tolerance", tol);
-  anasaziPL.set ("Verbosity", Anasazi::Errors + Anasazi::Warnings +
-                 Anasazi::TimingDetails + Anasazi::FinalSummary);
+  anasaziPL.set ("Verbosity", Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary);
 
   // Create the Block Davidson eigensolver.
   Anasazi::BlockDavidsonSolMgr<double, MV, OP> anasaziSolver (problem, anasaziPL);

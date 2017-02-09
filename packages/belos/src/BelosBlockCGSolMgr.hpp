@@ -363,6 +363,7 @@ namespace Belos {
     static const int verbosity_default_;
     static const int outputStyle_default_;
     static const int outputFreq_default_;
+    static const std::string resScale_default_;
     static const std::string label_default_;
     static const std::string orthoType_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
@@ -390,9 +391,10 @@ namespace Belos {
     //! Number of iterations taken by the last \c solve() invocation.
     int numIters_;
 
+    //! Current solver values
     int blockSize_, verbosity_, outputStyle_, outputFreq_;
     bool adaptiveBlockSize_, showMaxResNormOnly_;
-    std::string orthoType_;
+    std::string orthoType_, resScale_;
 
     //! Prefix label for all the timers.
     std::string label_;
@@ -434,6 +436,9 @@ template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
+const std::string BlockCGSolMgr<ScalarType,MV,OP,true>::resScale_default_ = "Norm of Initial Residual";
+
+template<class ScalarType, class MV, class OP>
 const std::string BlockCGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
 
 template<class ScalarType, class MV, class OP>
@@ -459,6 +464,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   orthoType_(orthoType_default_),
+  resScale_(resScale_default_),
   label_(label_default_),
   isSet_(false)
 {}
@@ -483,6 +489,7 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   orthoType_(orthoType_default_),
+  resScale_(resScale_default_),
   label_(label_default_),
   isSet_(false)
 {
@@ -564,6 +571,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
                         "Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
+      params_->set("Orthogonalization", orthoType_);
       // Create orthogonalization manager
       if (orthoType_=="DGKS") {
         if (orthoKappa_ <= 0) {
@@ -673,6 +681,35 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
       convTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
+  // Check for a change in scaling, if so we need to build new residual tests.
+  bool newResTest = false;
+  {
+    std::string tempResScale = resScale_;
+    if (params->isParameter ("Implicit Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Implicit Residual Scaling");
+    }
+
+    // Only update the scaling if it's different.
+    if (resScale_ != tempResScale) {
+      const Belos::ScaleType resScaleType =
+        convertStringToScaleType (tempResScale);
+      resScale_ = tempResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set ("Implicit Residual Scaling", resScale_);
+
+      if (! convTest_.is_null ()) {
+        try {
+          convTest_->defineScaleForm (resScaleType, Belos::TwoNorm);
+        }
+        catch (std::exception& e) {
+          // Make sure the convergence test gets constructed again.
+          newResTest = true;
+        }
+      }
+    }
+  }
+
   // Create status tests if we need to.
 
   // Basic test checks maximum iterations and native residual.
@@ -680,13 +717,15 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (convTest_ == Teuchos::null)
-    convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
+  if (convTest_.is_null () || newResTest) {
+    convTest_ = rcp (new StatusTestResNorm_t (convtol_, 1, showMaxResNormOnly_));
+    convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
+  }
 
-  if (sTest_ == Teuchos::null)
+  if (sTest_.is_null () || newResTest)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-  if (outputTest_ == Teuchos::null) {
+  if (outputTest_.is_null () || newResTest) {
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
@@ -701,6 +740,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {
+    params_->set("Orthogonalization", orthoType_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ <= 0) {
         ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
@@ -770,9 +810,10 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
+    pl->set("Implicit Residual Scaling", resScale_default_,
+      "The type of scaling used in the residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
-    //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
     pl->set("Orthogonalization Constant",orthoKappa_default_,

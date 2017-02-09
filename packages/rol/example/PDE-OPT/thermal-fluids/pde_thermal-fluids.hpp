@@ -1570,7 +1570,7 @@ public:
             for (int k = 0; k < numCellsSide; ++k) {
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numPBdryDofs; ++l) {
-                (*L[d])(cidx,fhidx_[j][l]) = static_cast<Real>(0);
+                (*L[d])(cidx,fpidx_[j][l]) = static_cast<Real>(0);
               }
             }
           }

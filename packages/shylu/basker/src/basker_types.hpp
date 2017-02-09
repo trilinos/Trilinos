@@ -465,7 +465,8 @@ enum BASKER_INCOMPLETE_CODE
 //Time Macro
 #ifdef BASKER_TIME
 #ifdef BASKER_KOKKOS
-#define BASKER_KOKKOS_TIME
+#define BASKER_TIMER
+#define BASKER_TIMER_FINE
 #else
 #define BASKER_OMP_TIME
 #endif

@@ -113,11 +113,12 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
+          typedef typename outputValueViewType::pointer_type outputPointerType;
           constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
           outputValueType buf[bufSize];
 
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -218,7 +219,7 @@ namespace Intrepid2 {
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
-    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinvLine_, vinvBubble_;
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
   };
 
 }// namespace Intrepid2

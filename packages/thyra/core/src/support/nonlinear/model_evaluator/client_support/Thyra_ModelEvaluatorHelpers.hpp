@@ -589,7 +589,11 @@ void Thyra::assertInArgsOutArgsSetup(
       ),
     std::logic_error,
     "Error: The underlying model " << modelEvalDescription << " supports W and/or W_op\n"
-    "and x_dot but it does not support alpha and beta as InArgs!"
+    "and x_dot but it does not support alpha and beta as InArgs! \n"
+    "If the model supports W and x_dot, then it can be interpreted as an implicit \n"
+    "ODE/DAE and therefore D(f)/D(x_dot) must be non-zero and therefore alpha must \n"
+    "be supported.  If, however, the model can be interpreted as an explicit ODE \n"
+    "then x_dot should not be supported at all."
     );
 
   for ( int l = 0; l < Np; ++l ) {

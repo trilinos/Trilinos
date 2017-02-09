@@ -886,6 +886,10 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: lo basis", std::string, Pparams);
       P->SetParameterList(Pparams);
       manager.SetFactory("P", P);
+
+      // Add special nullspace handling       
+      nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
+      manager.SetFactory("Nullspace", nullSpace);
     }
 #endif
 

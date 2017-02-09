@@ -230,8 +230,8 @@ namespace MueLu {
 
     static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList);
 
-    static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, std::vector<LocalOrdinal>& dirichletRows) {
-      MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FindDirichletRows(A,dirichletRows);
+    static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, std::vector<LocalOrdinal>& dirichletRows,bool count_twos_as_dirichlet=false) {
+      MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FindDirichletRows(A,dirichletRows,count_twos_as_dirichlet);
     }
 
     

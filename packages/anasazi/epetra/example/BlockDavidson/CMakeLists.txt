@@ -2,7 +2,7 @@
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_EXECUTABLE(
-    BlockDavidsonEpetra
+    Epetra_BD_Galeri_example
     SOURCES BlockDavidsonEpetra.cpp
     COMM serial mpi
   )
@@ -40,6 +40,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCES BlockDavidsonEpetraExFile.cpp
     COMM serial mpi
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+
+  TRIBITS_ADD_EXECUTABLE(
+    Epetra_BD_File_Ifpack_example
+    SOURCES BlockDavidsonEpetraExFilePrecIfpack.cpp
+    COMM serial mpi
+  )
+
+ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
 ENDIF(${PACKAGE_NAME}_ENABLE_EpetraExt)

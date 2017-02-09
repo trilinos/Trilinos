@@ -205,6 +205,9 @@ int main(int argc, char *argv[]) {
     int         use9ptPatA   = 1;               clp.setOption("use9pt",     &use9ptPatA,    "use 9-point stencil matrix for velocity prolongator construction");
     int         useFilters   = 1;               clp.setOption("usefilters", &useFilters,    "use filters on A and BB^T");
 
+    double      tau_1        = 0.06;            clp.setOption("tau_1",      &tau_1,         "tau_1 parameter from paper (for matrix filtering)");
+    double      tau_2        = sqrt(0.0015);    clp.setOption("tau_2",      &tau_2,         "tau_2 parameter from paper (for mid point detection)");
+
     int         binary       = 0;               clp.setOption("binary",     &binary,        "read matrix in binary format");
 
     // configure misc
@@ -306,6 +309,8 @@ int main(int argc, char *argv[]) {
 
     ParameterList& Q2Q1List = stratimikosList->sublist("Preconditioner Types").sublist("MueLu-TpetraQ2Q1");
     Q2Q1List.set("useFilters",  useFilters);
+    Q2Q1List.set("tau_1",       tau_1);
+    Q2Q1List.set("tau_2",       tau_2);
     Q2Q1List.set("Velcoords",   Vcoords);
     Q2Q1List.set("Prescoords",  Pcoords);
     Q2Q1List.set("p2vMap",      p2vMap);

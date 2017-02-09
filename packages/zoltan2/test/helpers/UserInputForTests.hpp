@@ -317,6 +317,10 @@ private:
   void readZoltanTestData(string path, string testData,
                           bool distributeInput);
 
+  // Modify the Maps of an input matrix to make them non-contiguous 
+  RCP<tcrsMatrix_t> modifyMatrixGIDs(RCP<tcrsMatrix_t> &in);
+  inline zgno_t newID(const zgno_t id) { return id * 2 + 10001; }
+
   // Read Zoltan data that is in a .graph file.
   void getUIChacoGraph(FILE *fptr, bool haveAssign, FILE *assignFile,
                        string name, bool distributeInput);
@@ -621,7 +625,7 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 
   int nElts = static_cast<int>(trowMap->getGlobalNumElements());
   int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
-  int base = trowMap->getIndexBase();
+  int base = 0;
   ArrayView<const int> gids = trowMap->getNodeElementList();
 
   Epetra_BlockMap erowMap(nElts, nMyElts,
@@ -629,7 +633,7 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 
   Array<int> rowSize(nMyElts);
   for (int i=0; i < nMyElts; i++){
-    rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
+    rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i));
   }
 
   size_t maxRow = M_->getNodeMaxNumRowEntries();
@@ -640,7 +644,7 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
                                 rowSize.getRawPtr(), true));
 
   for (int i=0; i < nMyElts; i++){
-    tgraph->getLocalRowView(i+base, colLid);
+    tgraph->getLocalRowView(i, colLid);
     for (int j=0; j < colLid.size(); j++)
       colGids[j] = tcolMap->getGlobalElement(colLid[j]);
     eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
@@ -658,7 +662,6 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
 
   size_t maxRow = M_->getNodeMaxNumRowEntries();
   int nrows = egraph->NumMyRows();
-  int base = egraph->IndexBase();
   const Epetra_BlockMap &rowMap = egraph->RowMap();
   const Epetra_BlockMap &colMap = egraph->ColMap();
   Array<int> colGid(maxRow);
@@ -666,9 +669,9 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
   for (int i=0; i < nrows; i++){
     ArrayView<const int> colLid;
     ArrayView<const zscalar_t> nz;
-    M_->getLocalRowView(i+base, colLid, nz);
+    M_->getLocalRowView(i, colLid, nz);
     size_t rowSize = colLid.size();
-    int rowGid = rowMap.GID(i+base);
+    int rowGid = rowMap.GID(i);
     for (size_t j=0; j < rowSize; j++){
       colGid[j] = colMap.GID(colLid[j]);
     }
@@ -1023,7 +1026,108 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   }
 }
 
-void UserInputForTests::readMatrixMarketFile(string path, string testData, bool distributeInput)
+/////////////////////////////////////////////////////////////////////////////
+RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
+  RCP<tcrsMatrix_t> &inMatrix
+)
+{
+  // Produce a new matrix with the same structure as inMatrix,
+  // but whose row/column GIDs are non-contiguous values.
+  // In this case GID g in inMatrix becomes g*2+1 in outMatrix.
+
+  // Create the map for the new matrix: same structure as inMap but with
+  // the GIDs modified.
+  RCP<const map_t> inMap = inMatrix->getRowMap();
+
+  size_t nRows = inMap->getNodeNumElements();
+  auto inRows = inMap->getMyGlobalIndices();
+  Teuchos::Array<zgno_t> outRows(nRows);
+  for (size_t i = 0; i < nRows; i++) {
+    outRows[i] = newID(inRows[i]);
+  }
+
+  Tpetra::global_size_t nGlobalRows = inMap->getGlobalNumElements();
+  RCP<map_t> outMap = rcp(new map_t(nGlobalRows, outRows(), 0,
+                                    inMap->getComm()));
+
+  // Sanity check output
+  {
+    std::cout << inMap->getComm()->getRank() << " KDDKDD "
+              << "nGlobal " << inMap->getGlobalNumElements() << " "
+                            << outMap->getGlobalNumElements() << "; "
+              << "nLocal  " << inMap->getNodeNumElements() << " "
+                            << outMap->getNodeNumElements() << "; " 
+              << std::endl;
+    std::cout << inMap->getComm()->getRank() << " KDDKDD ";
+    for (size_t i = 0; i < nRows; i++) 
+      std::cout << "(" << inMap->getMyGlobalIndices()[i] << ", "
+                << outMap->getMyGlobalIndices()[i] << ") ";
+    std::cout << std::endl;
+  }
+
+  // Create a new matrix using the new map
+  // Get the length of the longest row; allocate memory.
+  size_t rowLen = inMatrix->getNodeMaxNumRowEntries();
+  RCP<tcrsMatrix_t> outMatrix = rcp(new tcrsMatrix_t(outMap, rowLen));
+
+  Teuchos::Array<zgno_t> indices(rowLen);
+  Teuchos::Array<zscalar_t> values(rowLen);
+
+  for (size_t i = 0; i < nRows; i++) {
+    size_t nEntries;
+    zgno_t inGid = inMap->getGlobalElement(i);
+    inMatrix->getGlobalRowCopy(inGid, indices, values, nEntries);
+    for (size_t j = 0; j < nEntries; j++)
+      indices[j] = newID(indices[j]);
+
+    zgno_t outGid = outMap->getGlobalElement(i);
+    outMatrix->insertGlobalValues(outGid, indices(0, nEntries),
+                                          values(0, nEntries));
+  }
+  outMatrix->fillComplete();
+
+  // Sanity check output
+  {
+    std::cout << inMap->getComm()->getRank() << " KDDKDD Rows "
+              << "nGlobal " << inMatrix->getGlobalNumRows() << " "
+                            << outMatrix->getGlobalNumRows() << "; "
+              << "nLocal  " << inMatrix->getNodeNumRows() << " "
+                            << outMatrix->getNodeNumRows() << std::endl;
+    std::cout << inMap->getComm()->getRank() << " KDDKDD NNZS "
+              << "nGlobal " << inMatrix->getGlobalNumEntries() << " "
+                            << outMatrix->getGlobalNumEntries() << "; "
+              << "nLocal  " << inMatrix->getNodeNumEntries() << " "
+                            << outMatrix->getNodeNumEntries() << std::endl;
+
+    size_t nIn, nOut;
+    Teuchos::Array<zgno_t> in(rowLen), out(rowLen);
+    Teuchos::Array<zscalar_t> inval(rowLen), outval(rowLen);
+
+    for (size_t i = 0; i < nRows; i++) {
+      std::cout << inMap->getComm()->getRank() << " KDDKDD " << i << " nnz(";
+      inMatrix->getGlobalRowCopy(inMap->getGlobalElement(i), in, inval, nIn);
+      outMatrix->getGlobalRowCopy(outMap->getGlobalElement(i), out, outval,
+                                  nOut);
+  
+      std::cout << nIn << ", " << nOut << "): ";
+      for (size_t j = 0; j < nIn; j++) {
+        std::cout << "(" << in[j] << " " << inval[j] << ", "
+                  << out[j] << " " << outval[j] << ") ";
+      }
+      std::cout << std::endl;
+    }
+  }
+
+  return outMatrix;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void UserInputForTests::readMatrixMarketFile(
+  string path, 
+  string testData,
+  bool distributeInput
+)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
@@ -1040,7 +1144,13 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
   try{
     typedef Tpetra::MatrixMarket::Reader<tcrsMatrix_t> reader_type;
     fromMatrix = reader_type::readSparseFile(fname.str(), tcomm_,
-                                             true, true, false);
+                                             true, false, false);
+#ifdef KDD_NOT_READY_YET
+    // See note below about modifying coordinate IDs as well.
+    //if (makeNonContiguous)
+      fromMatrix = modifyMatrixGIDs(fromMatrix);
+#endif
+
     if(!distributeInput)
     {
       if (verbose_ && tcomm_->getRank() == 0)
@@ -1061,15 +1171,21 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
       toMatrix = fromMatrix;
     }
   }catch (std::exception &e) {
-    if (tcomm_->getRank() == 0)
+    if (tcomm_->getRank() == 0) {
       std::cout << "UserInputForTests unable to read matrix market file:"
                 << fname.str() << std::endl;
+      std::cout << e.what() << std::endl;
+    }
     aok = false;
   }
   TEST_FAIL_AND_THROW(*tcomm_, aok,
                       "UserInputForTests unable to read matrix market file");
 
   M_ = toMatrix;
+  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows() 
+            << " " << M_->getGlobalNumRows()
+            << " " << M_->getNodeNumEntries() 
+            << " " << M_->getGlobalNumEntries() << std::endl;
 
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
@@ -1172,11 +1288,10 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
   if (coordDim == 0)
     return;
 
-  zgno_t base;
+  zgno_t base = 0;
   RCP<const map_t> toMap;
 
   if (!M_.is_null()){
-    base = M_->getIndexBase();
     const RCP<const map_t> &mapM = M_->getRowMap();
     toMap = mapM;
   }
@@ -1184,16 +1299,17 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
     if (verbose_ && tcomm_->getRank() == 0)
     {
       std::cout << "Matrix was null. ";
-      std::cout << "Constructing distribution map for coordinate vector." <<  std::endl;
+      std::cout << "Constructing distribution map for coordinate vector." 
+                <<  std::endl;
     }
 
-    base = 0;
     if(!distributeInput)
     {
       if (verbose_ && tcomm_->getRank() == 0)
-        std::cout << "Constructing serial distribution map for coordinates." <<  std::endl;
+        std::cout << "Constructing serial distribution map for coordinates." 
+                  <<  std::endl;
 
-      size_t numLocalCoords = this->tcomm_->getRank() == 0 ? numGlobalCoords : 0;
+      size_t numLocalCoords = this->tcomm_->getRank()==0 ? numGlobalCoords : 0;
       toMap = rcp(new map_t(numGlobalCoords,numLocalCoords, base, tcomm_));
     }else{
       toMap = rcp(new map_t(numGlobalCoords, base, tcomm_));
@@ -1217,12 +1333,18 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
 
     ArrayRCP<const zgno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
 
-    zgno_t basePlusNumGlobalCoords = base + static_cast<zgno_t>(numGlobalCoords);
-    for (zgno_t id=base; id < basePlusNumGlobalCoords; id++)
+#ifdef KDD_NOT_READY_YET
+    // TODO if modifyMatrixGIDs, we need to modify ids here as well
+    for (zgno_t id=0; id < zgno_t(numGlobalCoords); id++)
+      *tmp++ = newID(id);
+#else
+    for (zgno_t id=0; id < zgno_t(numGlobalCoords); id++)
       *tmp++ = id;
+#endif
 
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords,
-                                             rowIds.view(0, numGlobalCoords), base, tcomm_));
+                                             rowIds.view(0, numGlobalCoords),
+                                             base, tcomm_));
 
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
 

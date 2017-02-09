@@ -57,14 +57,20 @@
 
 #include "MueLu_TestHelpers.hpp"
 
+#ifdef HAVE_MUELU_EPETRA
+#include "Epetra_FECrsMatrix.h"
+#endif
+
+#include "MueLu_Utilities_def.hpp"  
 
 namespace MueLuTests {
   namespace TestHelpers {
 
-    //Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    // Here nx is the number of nodes on the underlying (p=1) mesh.
+    // This mesh is then promoted up to degree 
     //Teuchos::RCP<Matrix>
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
 #                                 if defined(HAVE_MUELU_INTREPID2_REFACTOR)
                                     Kokkos::DynRankView<LocalOrdinal,typename Node::device_type>
@@ -106,11 +112,13 @@ namespace MueLuTests {
       RCP<const Map> p1_rowmap = Acrs->getRowMap();
 
       // Count edges.   For shared edges, lower PID gets the owning nodes
-      GO global_num_nodes = p1_rowmap->getGlobalNumElements();
-      size_t local_num_nodes = p1_rowmap->getNodeNumElements();
-      GO global_num_elments = global_num_nodes -1;
-      size_t local_num_elements = local_num_nodes;
+      GO global_num_nodes       = p1_rowmap->getGlobalNumElements();
+      size_t local_num_nodes    = p1_rowmap->getNodeNumElements();
+      GO global_num_elements    = global_num_nodes -1;
+      size_t local_num_elements = local_num_nodes; 
       if(p1_rowmap->getGlobalElement(local_num_elements-1) == global_num_nodes-1) local_num_elements--;
+
+      printf("[%d] P1 Problem Size: nodes=%d/%d elements=%d/%d\n",MyPID,(int)local_num_nodes,(int)global_num_nodes,(int)local_num_elements,(int)global_num_elements);
 
       int num_edge_dofs   = (degree-1)*local_num_elements;
       size_t p1_num_ghost_col_dofs = p1_colmap->getNodeNumElements() - local_num_nodes;
@@ -181,28 +189,6 @@ namespace MueLuTests {
       }
 #endif
 
-      // Assemble pseudo-poisson matrix
-      RCP<Matrix> B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); //FIX THIS LATER FOR FAST FILL
-      for(size_t i=0; i<pn_rowmap->getNodeNumElements(); i++) { 
-        GO row_gid = pn_rowmap->getGlobalElement(i);
-        if(i < p1_rowmap->getNodeNumElements()) {
-          Teuchos::ArrayView<const LO> indices;
-          Teuchos::ArrayView<const SC> values;
-          Acrs->getLocalRowView((LO)i,indices,values);
-          Teuchos::Array<GO> go_indices(indices.size());
-          for(size_t j=0; j<(size_t)indices.size(); j++)
-            go_indices[j] = p1_colmap->getGlobalElement(indices[j]);
-          B->insertGlobalValues(row_gid,go_indices,values);
-        }
-        else {
-          // Stick a 1 on the diagonal
-          Teuchos::Array<GO> index(1); index[0]=row_gid;
-          Teuchos::Array<SC> value(1); value[0]=1.0;
-          B->insertGlobalValues(row_gid,index(),value());
-        }
-      }
-      B->fillComplete(pn_rowmap,pn_rowmap);
-
       // Fill elem_to_node using Kirby-style ordering
       // Ownership rule: I own the element if I own the left node in said element
 #     ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -223,7 +209,63 @@ namespace MueLuTests {
           elem_to_node(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
       }
 
+      // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
+      RCP<Matrix> B;
+      if(lib==Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+	// Epetra is hard
+	const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
+	const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
+	RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
+	B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<SC,LO,GO,NO>(B_epetra);
+#endif
+      }
+      else {
+	// Tpetra is easy
+	B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); 
+      }
+
+
+      // Assemble pseudo-poisson matrix
+      for(size_t i=0; i<local_num_elements; i++) {
+	// Fill in a fake stiffness matrix
+	for(int j=0; j<degree+1; j++) {
+	  // Dirichlet check
+	  if( (j==0 && pn_colmap->getGlobalElement(elem_to_node(i,j)) == 0) ||
+	      (j==degree &&  pn_colmap->getGlobalElement(elem_to_node(i,j)) ==  global_num_nodes-1))  {
+	    // Stick a 1 on the diagonal
+	    GO row_gid = pn_colmap->getGlobalElement(elem_to_node(i,j));
+	    Teuchos::Array<GO> index(1); index[0]=row_gid;
+	    Teuchos::Array<SC> value(1); value[0]=1.0;
+	    B->insertGlobalValues(row_gid,index(),value());
+	    continue;
+	  }
+
+	  GO rowj =  pn_colmap->getGlobalElement(elem_to_node(i,j));
+	  for(int k=0; k<degree+1; k++) {
+	    GO rowk =  pn_colmap->getGlobalElement(elem_to_node(i,k));
+	    Teuchos::Array<GO> index(1); index[0] = rowk;
+	    Teuchos::Array<SC> value(1);	      
+	    if(j==0 && k==0)                value[0]=1.0;
+	    else if(j==0 && k==degree)      value[0]=-1.0;
+	    else if(j==degree && k==0)      value[0]=-1.0;
+	    else if(j==degree && k==degree) value[0]=1.0;
+	    else if(j==k)                   value[0] = (degree+1) / 100.0;
+	    else                            value[0] = -1.0/100;
+	    B->insertGlobalValues(rowj,index(),value());
+	  }
+	}
+      }
+      
+      B->fillComplete(pn_rowmap,pn_rowmap);
+      
+
 #if 0
+      std::cout<<"*** Pseudo Poisson ***"<<std::endl;
+      Teuchos::FancyOStream ofs(rcp(&std::cout,false));
+      B->describe(ofs,Teuchos::VERB_EXTREME);
+      std::cout<<"**********************"<<std::endl;
+
       printf("\n[%d] Pn elem_to_node = \n***\n",MyPID);
       for(size_t i=0; i<(size_t)elem_to_node.dimension(0); i++) {
         for(size_t j=0; j<(size_t)elem_to_node.dimension(1); j++)

@@ -82,7 +82,7 @@ namespace PHX {
     //! Require a variable to be evaluated.
     void requireField(const PHX::FieldTag& v);
     
-    //! Registers a variable provider with the manager.
+    //! Registers an evaluator with the manager.
     void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
     
@@ -101,7 +101,7 @@ namespace PHX {
     */
     void sortAndOrderEvaluators();
     
-    /*! Calls post registration setup on all variable providers.
+    /*! Calls post registration setup on all evaluators.
     */
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& vm);
@@ -121,9 +121,9 @@ namespace PHX {
 
     /*! \brief This routine is called before each residual/Jacobian fill.
       
-        This routine is called ONCE on the provider before the fill
+        This routine is called ONCE on the evaluator before the fill
         loop over elements is started.  This allows us to reset global
-        objects between each fill.  An example is to reset a provider
+        objects between each fill.  An example is to reset an evaluator
         that monitors the maximum grid peclet number in a cell.  This
         call would zero out the maximum for a new fill.
     */
@@ -131,7 +131,7 @@ namespace PHX {
     
     /*! \brief This routine is called after each residual/Jacobian fill.
       
-        This routine is called ONCE on the provider after the fill
+        This routine is called ONCE on the evaluator after the fill
         loop over elements is completed.  This allows us to evaluate
         any post fill data.  An example is to print out some
         statistics such as the maximum grid peclet number in a cell.

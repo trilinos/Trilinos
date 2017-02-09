@@ -148,16 +148,16 @@ int main(int argc, char *argv[]) {
     p_rcp->randomize();  //p_rcp->putScalar(static_cast<RealT>(1));
     du_rcp->randomize(); //du_rcp->putScalar(static_cast<RealT>(0));
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::Vector<RealT> > pp
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler,*parlist));
     // Create residual vectors
     Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
     r_rcp->randomize(); //r_rcp->putScalar(static_cast<RealT>(1));
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
     // Create control vector and set to ones
     Teuchos::RCP<Tpetra::MultiVector<> >  z_rcp = assembler->createControlVector();
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
@@ -166,11 +166,11 @@ int main(int argc, char *argv[]) {
     dz_rcp->randomize(); //dz_rcp->putScalar(static_cast<RealT>(0));
     yz_rcp->randomize(); //yz_rcp->putScalar(static_cast<RealT>(0));
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > zpde
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > dzpde
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > yzpde
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(yz_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(yz_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(new PDE_OptVector<RealT>(zpde));
     Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new PDE_OptVector<RealT>(dzpde));
     Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(new PDE_OptVector<RealT>(yzpde));
@@ -203,17 +203,20 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     Teuchos::RCP<Tpetra::MultiVector<> >  zlo_rcp = assembler->createControlVector();
     Teuchos::RCP<Tpetra::MultiVector<> >  zhi_rcp = assembler->createControlVector();
-    zlo_rcp->putScalar(static_cast<RealT>(-100));
-    zhi_rcp->putScalar(static_cast<RealT>( 100));
+    zlo_rcp->putScalar(static_cast<RealT>(0));
+    zhi_rcp->putScalar(ROL::ROL_INF<RealT>());
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > zlopde
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(zlo_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(zlo_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > zhipde
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(zhi_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(zhi_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::Vector<RealT> > zlop = Teuchos::rcp(new PDE_OptVector<RealT>(zlopde));
     Teuchos::RCP<ROL::Vector<RealT> > zhip = Teuchos::rcp(new PDE_OptVector<RealT>(zhipde));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
       = Teuchos::rcp(new ROL::BoundConstraint<RealT>(zlop,zhip));
-    bnd->deactivate();
+    bool useBounds = parlist->sublist("Problem").get("Use bounds", false);
+    if (!useBounds) {
+      bnd->deactivate();
+    }
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/

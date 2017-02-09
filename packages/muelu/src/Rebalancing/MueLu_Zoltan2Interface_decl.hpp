@@ -51,6 +51,7 @@
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"

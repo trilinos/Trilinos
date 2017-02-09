@@ -153,7 +153,6 @@ int main(int argc, char *argv[])
   typedef zlno_t part_t;
 
   Teuchos::ParameterList pl;
-  ///pl.set("machine_coord_transformation", "EIGNORE");
 
   Zoltan2::MachineRepresentation<ncoord_t, part_t> mach(*comm, pl);
 

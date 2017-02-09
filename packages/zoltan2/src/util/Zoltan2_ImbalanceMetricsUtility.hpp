@@ -121,32 +121,14 @@ template <typename scalar_t, typename lno_t, typename part_t>
   if (vwgtDim) numMetrics++;                // "normed weight" or "weight 0"
   if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
-  // add some more metrics to the array
-  typedef ImbalanceMetrics<scalar_t> mv_t;
-  typedef typename ArrayRCP<RCP<BaseClassMetrics<scalar_t> > >::size_type array_size_type;
-  metrics.resize( metrics.size() + numMetrics );
-  for(array_size_type n = metrics.size()-numMetrics; n < metrics.size(); ++n) {
-    mv_t * newMetric = new mv_t;									// allocate the new memory
-
-    // moved this here because we now allocate the polymorphic classes
-    // we should probably reorganize these functions so all data 
-    // setup is done on the derived classes
-    // then as a last step we can insert them into the general array of 
-    // MetricBase types
+  auto next = metrics.size(); // where we will start filling
+  typedef ImbalanceMetrics<scalar_t> im_t;
+  for(int n = 0; n < numMetrics; ++n) {
+    RCP<im_t> newMetric = addNewMetric<im_t, scalar_t>(env, metrics);
     if (vwgtDim > 1) {
       newMetric->setNorm(multiCriteriaNorm(mcNorm));
     }
-
-    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);	// check errors
-    metrics[n] = rcp( newMetric ); 		// create the new members
   }
-  array_size_type next = metrics.size() - numMetrics; // MDM - this is most 
-                                                      // likely temporary to 
-                                                      // preserve the format 
-                                                      // here - we are now 
-                                                      // filling a larger array
-                                                      // so we may not have 
-                                                      // started at 0
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.

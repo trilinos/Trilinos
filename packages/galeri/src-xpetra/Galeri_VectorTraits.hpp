@@ -55,6 +55,8 @@
 
 #ifdef HAVE_GALERI_XPETRA
 #  include "Xpetra_Map.hpp"  // needed for specialized traits
+#  include "Xpetra_BlockedMultiVector.hpp"
+#  include "Xpetra_BlockedVector.hpp"
 #  include "Xpetra_MultiVectorFactory.hpp"
 #endif
 

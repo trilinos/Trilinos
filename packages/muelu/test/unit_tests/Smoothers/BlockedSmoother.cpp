@@ -658,8 +658,19 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0);
       Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1);
 
-      TEST_EQUALITY((v0->getData(0))[0], Teuchos::as<Scalar>(0.25));
-      TEST_EQUALITY((v1->getData(0))[0], Teuchos::as<Scalar>(0.5));
+      Teuchos::RCP<BlockedMultiVector> bv0 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v0);
+      Teuchos::RCP<BlockedMultiVector> bv1 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v1);
+      TEST_EQUALITY(bv0.is_null(),false);
+      TEST_EQUALITY(bv1.is_null(),false);
+
+      Teuchos::RCP<MultiVector> bv00 = bv0->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv01 = bv0->getMultiVector(1,false);
+      Teuchos::RCP<MultiVector> bv10 = bv1->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv11 = bv1->getMultiVector(1,false);
+
+      TEST_EQUALITY((bv00->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv01->getData(0))[0], Teuchos::as<Scalar>(1.0));
+      TEST_EQUALITY((bv10->getData(0))[0], Teuchos::as<Scalar>(0.5));
 
       Teuchos::Array<magnitude_type> n0(1); v0->norm1(n0);
       Teuchos::Array<magnitude_type> n1(1); v1->norm1(n1);
@@ -1178,11 +1189,22 @@ namespace MueLuTests {
 
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
-      Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0);
-      Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1);
+      // We should remove the boolean from ExtractVector. It is not necessary
+#ifdef HAVE_XPETRA_DEBUG
+      TEST_THROW(doMapExtractor->ExtractVector(X,0,false),Xpetra::Exceptions::RuntimeError);
+      TEST_THROW(doMapExtractor->ExtractVector(X,1,false),Xpetra::Exceptions::RuntimeError);
+#endif
+      Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0,true);
+      Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1,true);
 
-      TEST_EQUALITY((v0->getData(0))[0], Teuchos::as<Scalar>(0.25));
-      TEST_EQUALITY((v1->getData(0))[0], Teuchos::as<Scalar>(0.5));
+      Teuchos::RCP<BlockedMultiVector> bv0 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v0);
+      Teuchos::RCP<BlockedMultiVector> bv1 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v1);
+      TEST_EQUALITY((bv0->getMultiVector(0,true)->getData(0))[0],  Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv0->getMultiVector(0,true)->getData(0))[19], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv1->getMultiVector(0,true)->getData(0))[0],  Teuchos::as<Scalar>(0.5));
+      TEST_EQUALITY((bv1->getMultiVector(0,true)->getData(0))[4],  Teuchos::as<Scalar>(0.5));
+      TEST_EQUALITY((bv0->getMultiVector(1,true)->getData(0))[0],  Teuchos::as<Scalar>(1.0));
+      TEST_EQUALITY((bv0->getMultiVector(1,true)->getData(0))[4],  Teuchos::as<Scalar>(1.0));
 
       Teuchos::Array<magnitude_type> n0(1); v0->norm1(n0);
       Teuchos::Array<magnitude_type> n1(1); v1->norm1(n1);
@@ -1194,24 +1216,24 @@ namespace MueLuTests {
       TEST_EQUALITY(v0->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v0->getMap()->getMaxLocalIndex(), 24);
       TEST_EQUALITY(v0->getMap()->getMinAllGlobalIndex(), 0);
-      TEST_EQUALITY(v0->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
-      TEST_EQUALITY(v0->getMap()->getMaxGlobalIndex(), comm->getSize() * 40 - (comm->getSize() - comm->getRank() - 1) * 20 - 1);
-      TEST_EQUALITY(v0->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+      TEST_EQUALITY(v0->getMap()->getMinGlobalIndex(), comm->getRank() * 20);
+      TEST_EQUALITY(v0->getMap()->getMaxGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 5 + 4);
+      TEST_EQUALITY(v0->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 25 - 1);
 
       TEST_EQUALITY(v1->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v1->getMap()->getMaxLocalIndex(), 14);
-      TEST_EQUALITY(v1->getMap()->getMinAllGlobalIndex(), comm->getSize() * 5);
-      TEST_EQUALITY(v1->getMap()->getMinGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5);
-      TEST_EQUALITY(v1->getMap()->getMaxGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10 + 9);
-      TEST_EQUALITY(v1->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+      TEST_EQUALITY(v1->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v1->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
+      TEST_EQUALITY(v1->getMap()->getMaxGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 10 + 9);
+      TEST_EQUALITY(v1->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 15 - 1);
 
       Teuchos::RCP<BlockedCrsMatrix> b00 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(0,0));
       TEST_EQUALITY(b00->Rows(), 2);
       TEST_EQUALITY(b00->Cols(), 2);
 
       Teuchos::RCP<const MapExtractor> me00 = b00->getDomainMapExtractor();
-      Teuchos::RCP<MultiVector> v00 = me00->ExtractVector(v0,0);
-      Teuchos::RCP<MultiVector> v01 = me00->ExtractVector(v0,1);
+      Teuchos::RCP<MultiVector> v00 = me00->ExtractVector(v0,0,true);
+      Teuchos::RCP<MultiVector> v01 = me00->ExtractVector(v0,1,true);
       TEST_EQUALITY((v00->getData(0))[0], Teuchos::as<Scalar>(0.25));
       TEST_EQUALITY((v01->getData(0))[0], Teuchos::as<Scalar>(1.0));
       TEST_EQUALITY(v00->getLocalLength(), 20);
@@ -1221,10 +1243,10 @@ namespace MueLuTests {
 
       TEST_EQUALITY(v00->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v00->getMap()->getMaxLocalIndex(), 19);
-      TEST_EQUALITY(v00->getMap()->getMinAllGlobalIndex(), comm->getSize() * 20);
-      TEST_EQUALITY(v00->getMap()->getMinGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20);
-      TEST_EQUALITY(v00->getMap()->getMaxGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20 + 19);
-      TEST_EQUALITY(v00->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+      TEST_EQUALITY(v00->getMap()->getMinAllGlobalIndex(),0);
+      TEST_EQUALITY(v00->getMap()->getMinGlobalIndex(), comm->getRank() * 20);
+      TEST_EQUALITY(v00->getMap()->getMaxGlobalIndex(), comm->getRank() * 20 + 19);
+      TEST_EQUALITY(v00->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
 
       TEST_EQUALITY(v01->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v01->getMap()->getMaxLocalIndex(), 4);
@@ -1233,14 +1255,13 @@ namespace MueLuTests {
       TEST_EQUALITY(v01->getMap()->getMaxGlobalIndex(), comm->getRank() * 5 + 4);
       TEST_EQUALITY(v01->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 5 - 1);
 
-
       Teuchos::RCP<BlockedCrsMatrix> b11 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(1,1));
       TEST_EQUALITY(b11->Rows(), 2);
       TEST_EQUALITY(b11->Cols(), 2);
 
       Teuchos::RCP<const MapExtractor> me11 = b11->getDomainMapExtractor();
-      Teuchos::RCP<MultiVector> v10 = me11->ExtractVector(v1,0);
-      Teuchos::RCP<MultiVector> v11 = me11->ExtractVector(v1,1);
+      Teuchos::RCP<MultiVector> v10 = me11->ExtractVector(v1,0,true);
+      Teuchos::RCP<MultiVector> v11 = me11->ExtractVector(v1,1,true);
       TEST_EQUALITY((v10->getData(0))[0], Teuchos::as<Scalar>(0.5));
       TEST_EQUALITY(v10->getLocalLength(), 5);
       TEST_EQUALITY(v11->getLocalLength(), 10);
@@ -1249,17 +1270,17 @@ namespace MueLuTests {
 
       TEST_EQUALITY(v10->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v10->getMap()->getMaxLocalIndex(), 4);
-      TEST_EQUALITY(v10->getMap()->getMinAllGlobalIndex(), comm->getSize() * 5);
-      TEST_EQUALITY(v10->getMap()->getMinGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5);
-      TEST_EQUALITY(v10->getMap()->getMaxGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5 + 4);
-      TEST_EQUALITY(v10->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
+      TEST_EQUALITY(v10->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v10->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
+      TEST_EQUALITY(v10->getMap()->getMaxGlobalIndex(), comm->getRank() * 5 + 4);
+      TEST_EQUALITY(v10->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 5 - 1);
 
       TEST_EQUALITY(v11->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v11->getMap()->getMaxLocalIndex(), 9);
-      TEST_EQUALITY(v11->getMap()->getMinAllGlobalIndex(), comm->getSize() * 10);
-      TEST_EQUALITY(v11->getMap()->getMinGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10);
-      TEST_EQUALITY(v11->getMap()->getMaxGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10 + 9);
-      TEST_EQUALITY(v11->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+      TEST_EQUALITY(v11->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v11->getMap()->getMinGlobalIndex(), comm->getRank() * 10);
+      TEST_EQUALITY(v11->getMap()->getMaxGlobalIndex(), comm->getRank() * 10 + 9);
+      TEST_EQUALITY(v11->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
 
       Teuchos::Array<magnitude_type> n00(1); v00->norm1(n00);
       Teuchos::Array<magnitude_type> n11(1); v01->norm1(n11);
@@ -1332,7 +1353,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1512,7 +1533,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1564,9 +1585,13 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -1671,7 +1696,7 @@ namespace MueLuTests {
         // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
         RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
         SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-        SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+        SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
         SFact->SetFactory("A",rAFact);
 
         // create a 2x2 SIMPLE for the prediction eq.
@@ -1745,9 +1770,12 @@ namespace MueLuTests {
 
         // solve system
         simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-        Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+        RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+        TEST_EQUALITY(bX.is_null(), false);
+        RCP<MultiVector> XX = bX->Merge();
+        Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
         bool bCheck = true;
-        for(size_t i=0; i<X->getLocalLength(); i++) {
+        for(size_t i=0; i<XX->getLocalLength(); i++) {
           if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
           if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
           if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -1876,7 +1904,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1928,9 +1956,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2035,7 +2066,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -2109,9 +2140,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2237,7 +2271,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -2381,7 +2415,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -2477,8 +2511,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 55e-4, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 35e-4, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 60e-4, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 25e-4, out, success);
     } // end UseTpetra
   }
 
@@ -2507,7 +2541,7 @@ namespace MueLuTests {
       RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2519,7 +2553,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2642,7 +2676,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2654,7 +2688,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2705,9 +2739,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -2779,7 +2816,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2791,7 +2828,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
@@ -2858,9 +2895,13 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 0.5) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -2933,7 +2974,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2945,7 +2986,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2996,9 +3037,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5 ) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=5  && i< 15) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -3070,7 +3114,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3082,7 +3126,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SimpleSmoother> smoProtoCorrect = Teuchos::rcp( new SimpleSmoother() );
@@ -3153,9 +3197,12 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -3228,7 +3275,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3240,7 +3287,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
@@ -3307,9 +3354,12 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10  && i< 15) { if(xdata[i] != (SC) 0.5) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -3392,7 +3442,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -3513,7 +3563,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -3608,8 +3658,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 35e-3, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 22e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 40e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 15e-3, out, success);
     } // end UseTpetra
   }
 
@@ -3801,7 +3851,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -3873,9 +3923,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -3979,7 +4032,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -4051,9 +4104,12 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4177,7 +4233,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -4320,7 +4376,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -4415,7 +4471,7 @@ namespace MueLuTests {
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 11e-3, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 6e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 5e-3, out, success);
     } // end UseTpetra
   }
 
@@ -4607,7 +4663,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 block smoother for the prediction eq.
@@ -4679,9 +4735,12 @@ namespace MueLuTests {
 
       // solve system
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4785,7 +4844,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -4857,9 +4916,12 @@ namespace MueLuTests {
 
       // solve system
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
-      for(size_t i=0; i<X->getLocalLength(); i++) {
+      for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
@@ -4983,7 +5045,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -5126,7 +5188,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -5220,8 +5282,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 2e-2, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 13e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 25e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 9e-3, out, success);
     } // end UseTpetra
   }
 

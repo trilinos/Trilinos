@@ -60,8 +60,8 @@ main (int argc, char *argv[])
   int maxIters  = 500;
   double tol = 1.0e-8;
   int numElements = 10;
-  bool verbose = false;
-  std::string which ("LM");
+  bool verbose = true;
+  std::string which ("SM");
   bool usePrec = true;
   double prec_dropTol = 1e-4;
   int prec_lofill = 0;
@@ -88,7 +88,7 @@ main (int argc, char *argv[])
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::FinalSummary;
   }
   BasicOutputManager<double> printer (verbosity);
   printer.stream(Errors) << Anasazi_Version() << endl << endl;

@@ -117,7 +117,7 @@ main (int argc, char *argv[])
   // Create a ParameterList, to pass parameters into the LOBPCG
   // eigensolver.
   Teuchos::ParameterList anasaziPL;
-  anasaziPL.set ("Which", "LM");
+  anasaziPL.set ("Which", "SM");
   anasaziPL.set ("Block Size", blockSize);
   anasaziPL.set ("Maximum Iterations", maxIters);
   anasaziPL.set ("Convergence Tolerance", tol);
@@ -166,7 +166,7 @@ main (int argc, char *argv[])
 
   // Print the results on MPI process 0.
   if (MyPID == 0) {
-    cout << "Solver manager returned "
+    cout << endl << "Solver manager returned "
          << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
          << endl << endl
          << "------------------------------------------------------" << endl

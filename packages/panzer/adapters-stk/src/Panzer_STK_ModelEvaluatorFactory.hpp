@@ -89,9 +89,6 @@ namespace panzer {
   template <typename> class LinearObjFactory;
 
   template <typename,typename> class BlockedDOFManager;
-#ifdef PANZER_HAVE_FEI
-  template <typename,typename> class DOFManagerFEI;
-#endif
   template <typename,typename> class DOFManager;
   template <typename> class ConnManagerBase;
 }

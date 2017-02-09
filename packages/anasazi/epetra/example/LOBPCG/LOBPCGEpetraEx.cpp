@@ -47,7 +47,7 @@ main (int argc, char *argv[])
   printer.stream(Errors) << Anasazi_Version() << std::endl << std::endl;
 
   // Get the sorting std::string from the command line
-  std::string which ("LM");
+  std::string which ("SM");
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption("sort", &which, "Targetted eigenvalues (SM or LM).");
   if (cmdp.parse (argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -261,6 +261,7 @@ main (int argc, char *argv[])
   const int blockSize = 5;
   const int maxIters  = 500;
   const double tol    = 1.0e-8;
+  const int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -300,6 +301,7 @@ main (int argc, char *argv[])
   MyPL.set ("Convergence Tolerance", tol);
   MyPL.set ("Full Ortho", true);
   MyPL.set ("Use Locking", true);
+  MyPL.set ("Verbosity", verbosity);
 
   // Create the solver manager
   LOBPCGSolMgr<double, MV, OP> MySolverMan (MyProblem, MyPL);

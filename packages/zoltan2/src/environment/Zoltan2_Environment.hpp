@@ -531,6 +531,12 @@ public:
       memoryOut_->print(msg, getProcessKilobytes());}
 #endif
 
+
+  /*! \brief Returns this classes communicator.
+   *
+   */
+  Comm_t getComm() const { return comm_; }
+
   /*! \brief Returns a reference to the user's parameter list.
    *
    *  This is the parameter list after validation and modification.

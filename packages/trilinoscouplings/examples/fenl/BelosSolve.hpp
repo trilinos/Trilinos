@@ -115,9 +115,9 @@ struct ExtractEnsembleIts {
 template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  Tpetra::CrsMatrix<SM,LO,GO,N>& A,
+  const Tpetra::MultiVector<SV,LO,GO,N>& b,
+  Tpetra::MultiVector<SV,LO,GO,N>& x,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
@@ -136,6 +136,7 @@ belos_solve(
   typedef SGPreconditioner<SM,LO,GO,N> PreconditionerType;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using Teuchos::ParameterList;
 
   // Create some timers used by Belos so we can access them
@@ -159,19 +160,21 @@ belos_solve(
     typename Mesh::node_coord_type node_coords = mesh.node_coord();
     //Teuchos::RCP<VectorType> coords =
     Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
-      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x->getMap(), node_coords.dimension_1()));
+      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x.getMap(), node_coords.dimension_1()));
     fill_coords(node_coords, coords->getDualView().d_view);
 
     RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
     if (use_mean_based) {
       preconditioner =
         Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+      precOp = preconditioner->setupPreconditioner(rcpFromRef(A), mueluParams,
+                                                   coords);
     }
     else {
       preconditioner =
         Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+      precOp = preconditioner->setupPreconditioner(rcpFromRef(A), mueluParams,
+                                                   coords);
     }
   }
 
@@ -186,7 +189,8 @@ belos_solve(
   if (!(belosParams->isParameter("Output Frequency")))
     belosParams->set("Output Frequency", 1);
 
-  RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
+  RCP<ProblemType> problem =
+    rcp(new ProblemType(rcpFromRef(A), rcpFromRef(x), rcpFromRef(b)));
 
   std::string belos_solver = belosParams->get("Belos Solver", "CG");
   RCP<SolverType> solver;
@@ -260,9 +264,9 @@ namespace Example {
 template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
-  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  Tpetra::CrsMatrix<SM,LO,GO,N>& A,
+  const Tpetra::MultiVector<SV,LO,GO,N>& b,
+  Tpetra::MultiVector<SV,LO,GO,N>& x,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,

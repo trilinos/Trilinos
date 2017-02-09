@@ -63,11 +63,28 @@
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
+//! \brief ProblemRoot allows ptr storage and safe dynamic_cast of all
+// problem types.
+
+class ProblemRoot {
+  public:
+    virtual ~ProblemRoot() {} // required virtual declaration
+
+    // could consider storing comm_ here...
+    // this accessor means we can get comm without template upcast first
+    virtual RCP<const Comm<int> > getComm() = 0;
+
+   /*! \brief Method that creates a solution.
+    */
+    virtual void solve(bool updateInputData = true) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
      
 template<typename Adapter>
-class Problem {
+class Problem : public ProblemRoot {
 public:
   
   /*! \brief Constructor where communicator is Teuchos default.
@@ -77,9 +94,13 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), comm_(), 
+	env_(rcp(new Environment(*params,Teuchos::DefaultComm<int>::getComm()))), 
+	envConst_(rcp_const_cast<const Environment>(env_)), 
+	timer_()
   {
     RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
+
     comm_ = tmp->duplicate();
     setupProblemEnvironment(params);
   }
@@ -93,7 +114,11 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), 
+	comm_(), 
+	env_(rcp(new Environment(*params, comm))),
+	envConst_(rcp_const_cast<const Environment>(env_)), 
+	timer_()
   {
     comm_ = comm->duplicate();
     setupProblemEnvironment(params);
@@ -107,7 +132,10 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
+        params_(), 
+	comm_(), 
+	env_(rcp(new Environment(*params, rcp<const Comm<int> >(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(comm)))))),
+	envConst_(rcp_const_cast<const Environment>(env_)), timer_()
   {
     RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
                                            Teuchos::opaqueWrapper(comm);
@@ -129,10 +157,6 @@ public:
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params);
-
-  /*! \brief Method that creates a solution.
-   */
-  virtual void solve(bool updateInputData) = 0;
 
   /*! \brief Return the communicator passed to the problem
    */
@@ -252,13 +276,6 @@ private:
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  try{
-    env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
-  }
-  Z2_FORWARD_EXCEPTIONS
-
-  envConst_ = rcp_const_cast<const Environment>(env_);
-
   ParameterList &processedParameters = env_->getParametersNonConst();
   params_ = rcp<ParameterList>(&processedParameters, false);
 
@@ -327,6 +344,16 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
+
+  RCP<const Comm<int> > tmpComm = env_->getComm();
+  // Recreate environment with new parameters
+  try
+  {
+     env_ = rcp(new Environment(*params, tmpComm));
+  }
+  Z2_FORWARD_EXCEPTIONS
+  envConst_  = rcp_const_cast<const Environment>(env_);
+  
   setupProblemEnvironment(params);
 
   // We assume the timing output parameters have not changed,

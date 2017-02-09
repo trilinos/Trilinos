@@ -124,7 +124,6 @@ int main(int narg, char **arg)
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
   typedef Zoltan2::EvaluatePartition<adapter_t> quality_t;
   typedef adapter_t::part_t part_t;
-  typedef adapter_t::base_adapter_t base_adapter_t;
 
   adapter_t *adapter = 
     new adapter_t(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);

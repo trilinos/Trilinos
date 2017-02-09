@@ -1,15 +1,5 @@
 TRIBITS_SUBPACKAGE(DofMgr)
 
-# Optional FEI package dependency
-#################################
-IF(${PACKAGE_NAME}_ENABLE_FEI)
-   GLOBAL_SET(PANZER_HAVE_FEI ON)
-   MESSAGE("-- FEI On")
-ELSE()
-   GLOBAL_SET(PANZER_HAVE_FEI OFF)
-   MESSAGE("-- FEI Off")
-ENDIF()
-
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

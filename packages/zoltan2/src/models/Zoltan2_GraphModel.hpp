@@ -725,8 +725,19 @@ void GraphModel<Adapter>::shared_constructor(
     std::unordered_map<gno_t, size_t> edgeRemoteUniqueMap;
 
     if (subsetGraph || consecutiveIdsRequired) {
+
+      // Find global minGID for map construction
+      gno_t myMinGID = std::numeric_limits<gno_t>::max();
+      size_t nVtx = adapterVGids.size();
+      for (size_t i = 0; i < nVtx; i++)
+        if (adapterVGids[i] < myMinGID) myMinGID = adapterVGids[i];
+
+      gno_t minGID;
+      reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_MIN, 1,
+                             &myMinGID, &minGID);
+
       gno_t dummy = Teuchos::OrdinalTraits<gno_t>::invalid();
-      Tpetra::Map<lno_t,gno_t> vtxMap(dummy, adapterVGids(), 0, comm_);
+      Tpetra::Map<lno_t,gno_t> vtxMap(dummy, adapterVGids(), minGID, comm_);
 
       // Need to filter requested edges to make a unique list,
       // as Tpetra::Map does not return correct info for duplicated entries

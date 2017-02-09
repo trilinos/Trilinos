@@ -1045,6 +1045,8 @@ public:
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
+    std::string mapfile = "map_" + filename;
+    vecWriter.writeMapFile(mapfile, *(vec->getMap()));
   }
   /***************************************************************************/
   /* End of output routines.                                                 */

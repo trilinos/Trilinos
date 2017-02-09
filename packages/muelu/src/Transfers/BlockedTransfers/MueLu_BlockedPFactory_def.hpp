@@ -47,6 +47,7 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DEF_HPP_
 #define MUELU_BLOCKEDPFACTORY_DEF_HPP_
 
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>

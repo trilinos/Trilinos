@@ -75,7 +75,6 @@ int main(int argc, char *argv[]) {
   if (haveM) {
     EpetraExt::readEpetraLinearSystem( m_filename, Comm, &M, &Map );
   }
-  K->Print( std::cout );
   //
   //************************************
   // Start the block Davidson iteration 
@@ -83,16 +82,16 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Davidson Method
   // 
-  int nev = 5;
+  int nev = 1;
   int blockSize = 5;
-  int numBlocks = 10;
-  int maxRestarts = 100;
+  int numBlocks = 8;
+  int maxRestarts = 10;
   double tol = 1.0e-8;
   
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::FinalSummary;
   }
   //
   // Create parameter list to pass into solver

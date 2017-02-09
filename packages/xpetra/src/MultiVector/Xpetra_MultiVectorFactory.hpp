@@ -58,9 +58,17 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
+#include "Xpetra_BlockedMap.hpp"
+#include "Xpetra_BlockedMultiVector.hpp"
+
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of BlockedMultiVector, needed to prevent circular inclusions
+  //template<class SC, class LO, class GO, class N> class BlockedMultiVector;
+#endif
 
   template <class Scalar = MultiVector<>::scalar_type,
             class LocalOrdinal =
@@ -83,6 +91,11 @@ namespace Xpetra {
            bool zeroOut=true)
     {
       XPETRA_MONITOR("MultiVectorFactory::Build");
+
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, NumVectors, zeroOut));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -133,6 +146,11 @@ namespace Xpetra {
     static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, NumVectors, zeroOut));
+      }
+
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, zeroOut) );
@@ -180,6 +198,11 @@ namespace Xpetra {
 
     static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
       XPETRA_MONITOR("MultiVectorFactory::Build");
+
+      RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> > bmap = Teuchos::rcp_dynamic_cast<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
+      if(!bmap.is_null()) {
+        return rcp(new BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bmap, NumVectors, zeroOut));
+      }
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)

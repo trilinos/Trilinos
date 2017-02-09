@@ -226,7 +226,7 @@ private:
               const bool useSecant = false )
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam),
         eps_(eps), secant_(secant), useSecant_(useSecant) {
-      v_ = x_->clone();
+      v_ = x_->dual().clone();
       if ( !useSecant || secant == Teuchos::null ) {
         useSecant_ = false;
       }

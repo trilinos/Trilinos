@@ -64,7 +64,9 @@ RCP<DummyTestModelEvaluator<Scalar> >
 dummyTestModelEvaluator(
   const Ordinal x_size = 2,
   const ArrayView<const Ordinal> &p_sizes = Teuchos::null,
-  const ArrayView<const Ordinal> &g_sizes = Teuchos::null
+  const ArrayView<const Ordinal> &g_sizes = Teuchos::null,
+  const bool supports_x_dot = false,
+  const bool supports_x_dot_dot = false
   );
 
 
@@ -85,7 +87,9 @@ public:
   DummyTestModelEvaluator(
     const Ordinal x_size,
     const ArrayView<const Ordinal> &p_sizes,
-    const ArrayView<const Ordinal> &g_sizes
+    const ArrayView<const Ordinal> &g_sizes,
+    const bool supports_x_dot = false,
+    const bool supports_x_dot_dot = false
     );
 
   //@}

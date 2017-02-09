@@ -251,7 +251,7 @@ namespace Intrepid2 {
     // form Vandermonde matrix; actually, this is the transpose of the VDM,
     // this matrix is used in LAPACK so it should be column major and left layout
     const ordinal_type lwork = card*card;
-    Kokkos::DynRankView<PT,Kokkos::LayoutLeft,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,Kokkos::LayoutLeft,Kokkos::HostSpace>
       vmat("Hgrad::Line::Cn::vmat", card, card), 
       work("Hgrad::Line::Cn::work", lwork),
       ipiv("Hgrad::Line::Cn::ipiv", card);
@@ -262,7 +262,7 @@ namespace Intrepid2 {
       (vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
 
     ordinal_type info = 0;
-    Teuchos::LAPACK<ordinal_type,PT> lapack;
+    Teuchos::LAPACK<ordinal_type,typename scalarViewType::value_type> lapack;
 
     lapack.GETRF(card, card, 
                  vmat.data(), vmat.stride_1(),

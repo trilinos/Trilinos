@@ -61,6 +61,7 @@
 #include "MueLu_HierarchyFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -149,6 +150,16 @@ namespace MueLu {
       VerboseObject::SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
+
+      if (VerboseObject::IsPrint(Statistics2)) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        RCP<const Matrix> Amat = rcp_dynamic_cast<const Matrix>(Op);
+        TEUCHOS_TEST_FOR_EXCEPTION(Amat==Teuchos::null, Exceptions::RuntimeError,
+                                 "MueLu::Hierarchy::Setup(): cast to Xpetra::Matrix failed");
+        VerboseObject::GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Amat, "A0", params);
+      }
 
       H.SetPRrebalance(doPRrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);

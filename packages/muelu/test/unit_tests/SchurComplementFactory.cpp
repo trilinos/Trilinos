@@ -329,12 +329,15 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
     sOp->getLocalDiagCopy(*v);
-    Teuchos::ArrayRCP<const Scalar> vdata = v->getData(0);
+    RCP<BlockedVector> bv = Teuchos::rcp_dynamic_cast<BlockedVector>(v);
+    TEST_EQUALITY(bv->getBlockedMap()->getNumMaps(),2);
+
+    RCP<MultiVector> mergedv = bv->Merge();
+    Teuchos::ArrayRCP<const Scalar> vdata = mergedv->getData(0);
     bool bCheck = true;
     for(int i=0; i<100; i++) if(vdata[i] != Teuchos::as<Scalar>(3.50)) bCheck = false;
     for(int i=100; i<200; i++) if(vdata[i] != Teuchos::as<Scalar>(4.00)) bCheck = false;
     TEST_EQUALITY(bCheck, true);
-
   } // SchurConstructor3x3
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SchurComplementFactory, SchurConstructorXpetra4x4, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -377,7 +380,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
 
     // generate Schur complement operator
     schurFact->Build(level);
-
+#if 1
     RCP<Matrix> sOp = level.Get<RCP<Matrix> >("A", schurFact.get());
     TEST_EQUALITY(sOp.is_null(), false);
     TEST_EQUALITY(sOp->getRangeMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
@@ -390,11 +393,17 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
     sOp->getLocalDiagCopy(*v);
-    Teuchos::ArrayRCP<const Scalar> vdata = v->getData(0);
+    RCP<BlockedVector> bv = Teuchos::rcp_dynamic_cast<BlockedVector>(v);
+    TEST_EQUALITY(bv.is_null(),false);
+    TEST_EQUALITY(bv->getBlockedMap()->getNumMaps(),2);
+
+    RCP<MultiVector> mergedv = bv->Merge();
+    Teuchos::ArrayRCP<const Scalar> vdata = mergedv->getData(0);
     bool bCheck = true;
     for(int i=0; i<5;  i++) if(vdata[i] != Teuchos::as<Scalar>(2.0)) bCheck = false;
     for(int i=5; i<15; i++) if(vdata[i] != Teuchos::as<Scalar>(3.0)) bCheck = false;
     TEST_EQUALITY(bCheck, true);
+#endif
   }
 
 

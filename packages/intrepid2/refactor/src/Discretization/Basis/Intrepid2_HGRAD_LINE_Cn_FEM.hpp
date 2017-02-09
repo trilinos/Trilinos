@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 #define __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 
+#include "Kokkos_ViewFactory.hpp"
+
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 
@@ -130,11 +132,13 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
+          typedef typename outputValueViewType::pointer_type outputPointerType;
+
           constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
           outputValueType buf[bufSize];
-
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+            work((outputPointerType)&buf[0], bufSize);
           
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -217,7 +221,7 @@ namespace Intrepid2 {
     }
 
     void
-    getVandermondeInverse( outputViewType vinv ) const {
+    getVandermondeInverse( scalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);      
     }
@@ -232,7 +236,7 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
                coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2

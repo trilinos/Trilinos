@@ -34,11 +34,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tDOFManager_SimpleTests
-  SOURCES tDOFManager_SimpleTests.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  tDOFManager_SimpleTests
+#  SOURCES tDOFManager_SimpleTests.cpp ${UNIT_TEST_DRIVER}
+#  COMM serial mpi
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tUniqueGlobalIndexerUtilities
@@ -54,12 +54,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tBlockedDOFManager_fei
-  SOURCES tBlockedDOFManager_fei.cpp UnitTest_ConnManager.cpp UnitTest_ConnManager.hpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM mpi
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  tBlockedDOFManager_fei
+#  SOURCES tBlockedDOFManager_fei.cpp UnitTest_ConnManager.cpp UnitTest_ConnManager.hpp ${UNIT_TEST_DRIVER}
+#  NUM_MPI_PROCS 2
+#  COMM mpi
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tOrientations

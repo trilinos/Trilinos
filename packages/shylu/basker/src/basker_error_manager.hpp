@@ -31,7 +31,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::nfactor_domain_error
   (
    INT_1DARRAY threads_start
-   )
+  )
   {
     Int nthread_remalloc = 0;
     for(Int ti = 0; ti < num_threads; ti++)
@@ -219,11 +219,11 @@ namespace BaskerNS
       }//if REMALLOC
 
     }//for all threads
-    
+
     if(nthread_remalloc == 0)
-        return BASKER_SUCCESS;
+      return BASKER_SUCCESS;
     else
-        return nthread_remalloc;
+      return nthread_remalloc;
 
   }//end nfactor_domain_error
 
@@ -235,7 +235,7 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::nfactor_sep_error
   (
    INT_1DARRAY thread_start
-   )
+  )
   {
     Int nthread_remalloc = 0;
     for(Int ti = 0; ti < num_threads; ti++)
@@ -294,9 +294,9 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR_THREADS: " << ti
-                    << " SEPBLK MALLOC: " << thread_array(ti).error_blk 
-                    << " " << thread_array(ti).error_subblk
-                    << std::endl;
+            << " SEPBLK MALLOC: " << thread_array(ti).error_blk 
+            << " " << thread_array(ti).error_subblk
+            << std::endl;
 
           std::cout << "ERROR SEPLVL: " << error_sep_lvl << std::endl;
         }
@@ -443,12 +443,11 @@ namespace BaskerNS
         {
           INC_LVL_TEMP(i) = BASKER_MAX_IDX;
         }
-
       }
 
 
     }//for all threads
-    
+
     if(nthread_remalloc == 0)
     {
       return BASKER_SUCCESS;
@@ -470,13 +469,12 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::nfactor_diag_error
   (
-   INT_1DARRAY threads_start
-   )
+    INT_1DARRAY threads_start
+  )
   {
     Int nthread_remalloc = 0;
     for(Int ti = 0; ti < num_threads; ti++)
     {
-
       //Note: jdb we can make this into a switch
       if(thread_array(ti).error_type ==
           BASKER_ERROR_NOERROR)
@@ -500,9 +498,9 @@ namespace BaskerNS
       if(thread_array(ti).error_type ==
           BASKER_ERROR_NOMALLOC)
       {
-          std::cout << "ERROR_THREADS: " << ti
-            << " DIAGBLK NOMALLOC " << thread_array(ti).error_blk
-            << std::endl;
+        std::cout << "ERROR_THREADS: " << ti
+          << " DIAGBLK NOMALLOC " << thread_array(ti).error_blk
+          << std::endl;
         return BASKER_ERROR;
       }//end if NOMALLOC
 
@@ -521,9 +519,9 @@ namespace BaskerNS
 
           //Clean the workspace
           std::cout << "test: "
-                    << thread_array(ti).iws_size*thread_array(ti).iws_mult
-                    << " " << thread_array(ti).ews_size*thread_array(ti).ews_mult
-                    << std::endl;
+            << thread_array(ti).iws_size*thread_array(ti).iws_mult
+            << " " << thread_array(ti).ews_size*thread_array(ti).ews_mult
+            << std::endl;
         }
 
         for(Int i = 0; 
@@ -610,7 +608,6 @@ namespace BaskerNS
     BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
     return BASKER_SUCCESS;
   }//end nfactor_diag_error
-
 
 }//end namespace BaskerNS
 

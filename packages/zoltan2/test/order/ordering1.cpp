@@ -81,45 +81,14 @@ typedef zscalar_t z2TestScalar;
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
-
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 
-#define epsilon 0.00000001
-
-int validatePerm(size_t n, z2TestLO *perm)
-// returns 0 if permutation is valid, negative if invalid
-{
-  std::vector<int> count(n);
-  int status = 0;
-
-  for (size_t i=0; i<n; i++)
-    count[i]=0;
-
-  for (size_t i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=z2TestLO(n)))
-      status = -1;
-    else
-      count[perm[i]]++;
-  }
-
-  // Each index should occur exactly once (count==1)
-  for (size_t i=0; i<n; i++){
-    if (count[i] != 1){
-      status = -2;
-      break;
-    }
-  }
-
-  return status;
-}
-
-size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
+size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *iperm)
 // Returns the bandwidth of the (local) permuted matrix
-// Note we need to use the inverse permutation, but assume
-// the direct permutation is passed in.
+// Uses the inverse permutation calculated from the OrderingSolution
+// if passed in, otherwise is calculating the original value.
 {
   z2TestLO ii, i, j, k;
-  z2TestLO *iperm = 0;
   ArrayView<const z2TestLO> indices;
   ArrayView<const z2TestScalar> values;
   z2TestLO bw_left = 0;
@@ -127,20 +96,12 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
 
   z2TestLO  n = A->getNodeNumRows();
 
-  // Construct inverse perm
-  if (perm){
-    iperm = new z2TestLO [n];
-    for (ii=0; ii<n; ii++) {
-      iperm[perm[ii]] = ii;
-    }
-  }
-
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
       if (indices[k] < n){ // locally owned
-        if (perm){
+        if (iperm){
           i = iperm[ii];
           j = iperm[indices[k]];
         } else {
@@ -154,9 +115,6 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
       }
     }
   }
-
-  if (iperm)
-    delete [] iperm;
 
   // Total bandwidth is the sum of left and right + 1
   return (bw_left + bw_right + 1);
@@ -217,6 +175,10 @@ int main(int narg, char** arg)
   cmdp.setOption("order_method", &orderMethod,
                 "order_method: natural, random, rcm, sorted_degree");
 
+  std::string orderMethodType("local"); // TODO: Allow "RCM" as well
+  cmdp.setOption("order_method_type", &orderMethodType,
+                "local or global or both");
+
   //////////////////////////////////
   cmdp.parse(narg, arg);
 
@@ -238,16 +200,20 @@ int main(int narg, char** arg)
          << "NumProcs = " << comm->getSize() << endl;
 
   ////// Create a vector to use with the matrix.
+  // Currently Not Used
+  /*
   RCP<Vector> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
+  */
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
   params.set("order_method", orderMethod);
+  params.set("order_method_type", orderMethodType);
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);
@@ -260,14 +226,14 @@ int main(int narg, char** arg)
   problem.solve();
 
   ////// Basic metric checking of the ordering solution
-  size_t checkLength;
-  z2TestLO *checkPerm;
-  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
+
+  Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
+    problem.getLocalOrderingSolution();
 
   cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
-  checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutationView();
+
+  z2TestLO * perm = soln->getPermutationView();
 
   if (outputFile != "") {
     ofstream permFile;
@@ -278,8 +244,9 @@ int main(int narg, char** arg)
     std::stringstream fname;
     fname << outputFile << "." << comm->getSize() << "." << me;
     permFile.open(fname.str().c_str());
+    size_t checkLength = soln->getPermutationSize();
     for (size_t i=0; i<checkLength; i++){
-      permFile << " " << checkPerm[i] << endl;
+      permFile << " " << perm[i] << endl;
     }
     permFile.close();
 
@@ -287,13 +254,14 @@ int main(int narg, char** arg)
 
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
-  testReturn = validatePerm(checkLength, checkPerm);
+  testReturn = soln->validatePerm();
 
   cout << "Going to compute the bandwidth" << endl;
   // Compute original bandwidth
-  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, 0) << endl;
+  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, nullptr) << endl;
   // Compute permuted bandwidth
-  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, checkPerm) << endl;
+  z2TestLO * iperm = soln->getPermutationView(true);
+  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << endl;
 
   } catch (std::exception &e){
       if (comm->getSize() != 1)

@@ -158,6 +158,18 @@ public:
         "Whether the input adapter for mapping is distributed over processes or not",
         Environment::getBoolValidator());
 
+    // bool parameter
+    pl.set("divide_prime_first", false,
+        "When partitioning into-non power of two, whether to partition for nonpowers of two at the beginning, or at the end",
+        Environment::getBoolValidator());
+
+    //TODO: This should be positive integer validator.
+    pl.set("ranks_per_node", 1,
+        "The number of MPI ranks per node",
+        Environment::getAnyIntValidator());
+    pl.set("reduce_best_mapping", true,
+        "If true, nodes will calculate different mappings with rotations, and best one will be reduced. If not, the result will be the one with longest dimension partitioning.",
+        Environment::getBoolValidator());
   }
 
   //!  \brief Get the solution to the problem.
@@ -272,13 +284,28 @@ void MappingProblem<Adapter, MachineRep>::solve(bool newData)
       const Teuchos::ParameterEntry *pe_input_adapter = pl.getEntryPtr("distributed_input_adapter");
       if (pe_input_adapter) is_input_distributed = pe_input_adapter->getValue<bool>(&is_input_distributed);
 
+
+      int ranks_per_node = 1;
+      pe_input_adapter = pl.getEntryPtr("ranks_per_node");
+      if (pe_input_adapter) ranks_per_node = pe_input_adapter->getValue<int>(&ranks_per_node);
+
+      bool divide_prime_first = false;
+      pe_input_adapter = pl.getEntryPtr("divide_prime_first");
+      if (pe_input_adapter) divide_prime_first = pe_input_adapter->getValue<bool>(&divide_prime_first);
+
+      bool reduce_best_mapping = true;
+      pe_input_adapter = pl.getEntryPtr("reduce_best_mapping");
+      if (pe_input_adapter) reduce_best_mapping = pe_input_adapter->getValue<bool>(&reduce_best_mapping);
+
+
+
       this->algorithm_ = 
             rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
                                                          machine, 
                                                          this->inputAdapter_,
                                                          partition,
                                                          this->envConst_,
-                                                         is_input_distributed));
+                                                         is_input_distributed, ranks_per_node, divide_prime_first, reduce_best_mapping));
       this->soln = rcp(new mapsoln_t(this->env_, this->comm_, this->algorithm_));
       this->algorithm_->map(this->soln);
 

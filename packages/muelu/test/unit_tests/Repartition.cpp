@@ -47,8 +47,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_IO.hpp>

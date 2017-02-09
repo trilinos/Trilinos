@@ -53,6 +53,8 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_MetricUtility.hpp>
 
+#define GRAPH_METRICS_TYPE_NAME "GraphMetrics"
+
 namespace Zoltan2{
 
 /*! \GraphMetrics class containing the metrics for one measurable item. */

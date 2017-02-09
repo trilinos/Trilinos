@@ -122,7 +122,7 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
 
   RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
-    return Xpetra::toEpetra(epbA->getDomainMap());
+    return Xpetra::toEpetra(epbA->getFullDomainMap()); // TODO check me
 
   RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
   if (crsOp == Teuchos::null)
@@ -138,7 +138,7 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
 
   RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
-    return Xpetra::toEpetra(epbA->getRangeMap());
+    return Xpetra::toEpetra(epbA->getFullRangeMap());
 
   RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
   if (crsOp == Teuchos::null)

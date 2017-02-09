@@ -48,7 +48,7 @@
 
 
 #ifdef KERNELS_HAVE_VIENNACL
-#define VIENNACL_WITH_OPENMP
+#define VIENNACL_WITH_CUDA
 #include "viennacl/compressed_matrix.hpp"
 #include "viennacl/linalg/prod.hpp"
 #include "viennacl/linalg/host_based/common.hpp"
@@ -143,17 +143,28 @@ namespace Impl{
 
 
       Kokkos::Impl::Timer timerset;
+      if (verbose)
+	std::cout << "viennacl matrix create begins here" << std::endl;
+#ifdef VIENNACL_WITH_CUDA
+      viennacl::compressed_matrix<value_type> A(a_xadj, a_adj, a_ew, viennacl::CUDA_MEMORY , m, n, nnzA);
+      viennacl::compressed_matrix<value_type> B(b_xadj, b_adj, b_ew, viennacl::CUDA_MEMORY, n, k, nnzB);
+#else 
+      viennacl::compressed_matrix<value_type> A(a_xadj, a_adj, a_ew, viennacl::MAIN_MEMORY, m, n, nnzA);
+      viennacl::compressed_matrix<value_type> B(b_xadj, b_adj, b_ew, viennacl::MAIN_MEMORY, n, k, nnzB);
 
-      viennacl::compressed_matrix<value_type> A;
-      viennacl::compressed_matrix<value_type> B;
-      A.set(a_xadj, a_adj, a_ew, m, n, nnzA);
-      B.set(b_xadj, b_adj, b_ew, n, k, nnzB);
+#endif
+      //viennacl::compressed_matrix<value_type> A;
+      //viennacl::compressed_matrix<value_type> B;
+      //A.set(a_xadj, a_adj, a_ew, m, n, nnzA);
+      //B.set(b_xadj, b_adj, b_ew, n, k, nnzB);
       if (verbose)
       std::cout << "VIENNACL compress matrix create:" << timerset.seconds() << std::endl;
 
 
       Kokkos::Impl::Timer timer1;
       viennacl::compressed_matrix<value_type> C = viennacl::linalg::prod(A, B);
+      MyExecSpace::fence();
+
       if (verbose)
       std::cout << "Actual VIENNACL SPMM Time:" << timer1.seconds() << std::endl;
 
@@ -163,23 +174,29 @@ namespace Impl{
 
         unsigned int c_rows = m, c_cols = k, cnnz = C.nnz();
 
-
+#ifdef VIENNACL_WITH_CUDA
+        value_type   const * values   = viennacl::cuda_arg<value_type>(C.handle());
+        unsigned int const * rows_start = viennacl::cuda_arg<unsigned int>(C.handle1());
+        unsigned int const * columns = viennacl::cuda_arg<unsigned int>(C.handle2());
+#else 
         value_type   const * values   = viennacl::linalg::host_based::detail::extract_raw_pointer<value_type>(C.handle());
         unsigned int const * rows_start = viennacl::linalg::host_based::detail::extract_raw_pointer<unsigned int>(C.handle1());
         unsigned int const * columns = viennacl::linalg::host_based::detail::extract_raw_pointer<unsigned int>(C.handle2());
 
+#endif
 
         {
           Kokkos::Impl::Timer copy_time;
           //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
+	  MyExecSpace::fence();
+          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m + 1, rows_start, row_mapC);
+          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (cnnz, columns, entriesC);
+          KokkosKernels::Experimental::Util::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (cnnz, values, valuesC);
+          MyExecSpace::fence();
 
-          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
-          idx nnz = cnnz;
 
-          KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
           double copy_time_d = copy_time.seconds();
           if (verbose)
           std::cout << "VIENNACL COPYTIME:" << copy_time_d << std::endl;

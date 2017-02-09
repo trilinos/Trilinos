@@ -87,7 +87,6 @@ namespace BaskerNS
     void init_inc_lvl();
 
 
-
     //****Deprecated*******
     BASKER_INLINE
     void malloc_perm(Int n);
@@ -126,8 +125,8 @@ namespace BaskerNS
 
     BASKER_BOOL v_fill;
 
-    Int srow, scol;
-    Int erow, ecol;
+    Int srow, scol; //start col (wrt global matrix, if a block)
+    Int erow, ecol; //end col (wrt global matrix, if a block)
     Int ncol, nrow, nnz;
     Int mnnz; //malloc nnz
     

@@ -54,6 +54,25 @@
 
 namespace Zoltan2{
 
+// this utlity method is used to allocate more metrics in the metric array
+// the array is composed of an array of ptrs to BaseClassMetric
+// but each ptr is allocated to the specific derived metric type
+// So the array can access the polymorphic hierarchy
+//
+// Note this is currently only relevant to EvaluatePartition and the
+// GraphMetrics and ImbalanceMetrics calculations
+template <typename metric_t, typename scalar_t>
+RCP<metric_t> addNewMetric(const RCP<const Environment> &env,
+  ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &metrics)
+{
+  metrics.resize(metrics.size() + 1); // increase array size by 1
+  metric_t * newMetric = new metric_t;  // allocate
+  env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric); // check errors
+  RCP<metric_t> newRCP = rcp(newMetric);       // rcp of derived class
+  metrics[metrics.size()-1] = newRCP; 				 // create the new rcp
+  return newRCP;
+}
+
 ///////////////////////////////////////////////////////////////////
 // Namespace methods to compute metric values
 ///////////////////////////////////////////////////////////////////

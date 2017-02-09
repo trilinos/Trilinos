@@ -86,15 +86,15 @@ namespace panzer {
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 4);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 4);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 4 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 4 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 4);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 4 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 4 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
 
   }
 
@@ -132,15 +132,15 @@ namespace panzer {
 
     const int dim = base_cell_dimension;
 
-    TEST_EQUALITY(basis.basis_ref->size(), 9 * 2);
-    TEST_EQUALITY(basis.basis->size(), num_cells * 9 * 2);
-    TEST_EQUALITY(basis.basis_grad_ref->size(), 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_grad->size(), num_cells * 9 * 2 * dim);
-    TEST_EQUALITY(basis.basis_D2_ref->size(), 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.basis_D2->size(), num_cells * 9 * 2 * dim * dim);
-    TEST_EQUALITY(basis.functional->size(), num_cells * 9);
-    TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
-    TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_ref->size()), 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis->size()), num_cells * 9 * 2);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad_ref->size()), 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_grad->size()), num_cells * 9 * 2 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2_ref->size()), 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.basis_D2->size()), num_cells * 9 * 2 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
+    TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
+    TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
 
   }
 

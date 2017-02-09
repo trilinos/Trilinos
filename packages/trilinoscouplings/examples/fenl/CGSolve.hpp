@@ -70,6 +70,18 @@ Scalar all_reduce( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int> >&
 
 template <typename Scalar>
 inline
+Teuchos::Array<Scalar>
+all_reduce( Teuchos::Array<Scalar> local ,
+            const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+  const int sz = local.size();
+  Teuchos::Array<Scalar> global(sz);
+  Teuchos::reduceAll( *comm , Teuchos::REDUCE_SUM , sz , local.getRawPtr() , global.getRawPtr() );
+  return global ;
+}
+
+template <typename Scalar>
+inline
 Scalar all_reduce_max( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 {
   Scalar global = 0 ;

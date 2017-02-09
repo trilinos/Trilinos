@@ -160,7 +160,7 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   mytest_part_t numProcs = tcomm->getSize();
   Teuchos::ParameterList distributed_problemParams;
   //create mapping problem parameters
-  distributed_problemParams.set("machine_coord_transformation", "EIGNORE");
+  distributed_problemParams.set("Machine_Optimization_Level", 10);
   distributed_problemParams.set("mapping_algorithm", "geometric");
   distributed_problemParams.set("distributed_input_adapter", true);
   distributed_problemParams.set("mj_enable_rcb", true);
@@ -277,7 +277,7 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   mytest_part_t numProcs = serial_comm->getSize();
   Teuchos::ParameterList serial_problemParams;
   //create mapping problem parameters
-  serial_problemParams.set("machine_coord_transformation", "EIGNORE");
+  serial_problemParams.set("Machine_Optimization_Level", 10);
   serial_problemParams.set("mapping_algorithm", "geometric");
   serial_problemParams.set("distributed_input_adapter", false);
   serial_problemParams.set("algorithm", "multijagged");

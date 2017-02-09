@@ -484,6 +484,15 @@ public:
                                                   *cellTopo_);
   }
 
+  void mapRefPointsToPhysical(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &px,
+                              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > &rx) const {
+    // Map input reference cell points to cells in physical space.
+    Intrepid::CellTools<Real>::mapToPhysicalFrame(*px,
+                                                  *rx,
+                                                  *cellNodes_,
+                                                  *cellTopo_);
+  }
+
 }; // FE_CURL
 
 #endif

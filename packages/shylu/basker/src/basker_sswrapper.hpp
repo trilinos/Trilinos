@@ -82,7 +82,7 @@ namespace BaskerNS
      int           *perm,
      int           *perm_in,
      int           *CC
-     )
+    )
     {
       typedef int l_Int;
       
@@ -92,7 +92,6 @@ namespace BaskerNS
       
       l_Int *work = new l_Int[n*4];
       
-      //printf("before amesos call \n");
       /*
         nblks = trilinos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
@@ -101,39 +100,33 @@ namespace BaskerNS
       nblks = trilinos_btf_strongcomp(n, col_ptr,
 				    row_idx, 
 				    perm_in, p, r, work);
-      //printf("after amesos call \n");
       
-#ifdef BASKER_DEBUG_ORDER_BTF
+      #ifdef BASKER_DEBUG_ORDER_BTF
       printf("\nBTF perm: \n");
-      //for(Int i=0; i <M.nrow; i++)
       for(Int i=0; i < n; i++)
-        {
-          printf("%d, ", p[i]);
-        }
-      
+      {
+        printf("%d, ", p[i]);
+      }
+
       printf("\n\nBTF tabs: <right> \n");
       for(Int i=0; i < nblks+1; i++)
-        {
-          printf("%d, ", r[i]);
-        }
+      {
+        printf("%d, ", r[i]);
+      }
       printf("\n");
-#endif
+      #endif
       
-      //BASKER_ASSERT(M.nrow > 0, "M.nrow btf");
       BASKER_ASSERT(n > 0, "M.nrow btf");
-      //MALLOC_INT_1DARRAY(perm,M.nrow);
-      // MALLOC_INT_1DARRAY(perm, n);
       for(l_Int i = 0; i < n; i++)
-        {
-          perm[p[i]] = i;
-        }
+      {
+        perm[p[i]] = i;
+      }
+
       BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
-      //MALLOC_INT_1DARRAY(CC, nblks+1);
       for(l_Int i = 0; i < nblks+1; i++)
-        {
-          CC[i] = r[i];
-        }
-      
+      {
+        CC[i] = r[i];
+      }
 
       delete [] p;
       delete [] r;
@@ -152,19 +145,15 @@ namespace BaskerNS
      int *col_ptr,
      int *row_idx,
      int *p
-     )
+    )
     {
       double Info[AMD_INFO];
       
       for(int i = 0; i < AMD_INFO; ++i)
       {Info[i] = 0;}
 
-
-      //printf("n: %d \n", n);
       int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      //if(ret == AMD_OK)
-      //printf("OK\n");
       if(ret == AMD_OUT_OF_MEMORY)
         printf("Memory \n");
       if(ret == AMD_INVALID)
@@ -185,19 +174,15 @@ namespace BaskerNS
      int *p, 
      double &l_nnz,
      double &lu_work
-     )
+    )
     {
       double Info[AMD_INFO];
       
       for(int i = 0; i < AMD_INFO; ++i)
       {Info[i] = 0;}
 
-
-      //printf("n: %d \n", n);
       int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      //if(ret == AMD_OK)
-      //printf("OK\n");
       if(ret == AMD_OUT_OF_MEMORY)
         printf("Memory \n");
       if(ret == AMD_INVALID)
@@ -215,6 +200,7 @@ namespace BaskerNS
 
   }; //end BaskerSSWraper template <int>
 
+
   template <>
   class BaskerSSWrapper <long>
   {
@@ -230,7 +216,7 @@ namespace BaskerNS
      long           *perm,
      long           *perm_in,
      long          *CC
-        )
+    )
     {
       typedef long  l_Int;
       
@@ -243,7 +229,6 @@ namespace BaskerNS
       //l_Int work[n*4];
       l_Int *work = new l_Int[n*4];
       
-      //printf("before trilinos call \n");
       /*
         nblks = trilinos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
@@ -253,11 +238,9 @@ namespace BaskerNS
                                       col_ptr,
                                       row_idx, 
                                       perm_in, p, r, work);
-      //printf("after trilinos call \n");
-      
 
       
-#ifdef BASKER_DEBUG_ORDER_BTF
+      #ifdef BASKER_DEBUG_ORDER_BTF
       printf("\nBTF perm: \n");
       for(Int i=0; i <n; i++)
       {
@@ -270,16 +253,15 @@ namespace BaskerNS
         printf("%d, ", r[i]);
       }
       printf("\n");
-#endif
+      #endif
 
     BASKER_ASSERT(n > 0, "M.nrow btf");
-    //MALLOC_INT_1DARRAY(perm,M.nrow);
     for(l_Int i = 0; i < n; i++)
     {
       perm[p[i]] = i;
     }
+
     BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
-    //MALLOC_INT_1DARRAY(CC, nblks+1);
     for(l_Int i = 0; i < nblks+1; i++)
     {
       CC[i] = r[i];
@@ -301,15 +283,14 @@ namespace BaskerNS
      long *col_ptr,
      long *row_idx,
      long *p
-     )
+    )
     {
       double Info[AMD_INFO];
       for(long i = 0; i < AMD_INFO; ++i)
       {Info[i] = 0;}
-      //printf("n: %d\n", n);
+
       long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
-      //if(ret == AMD_OK)
-      //	printf("OK\n");
+
       if(ret == AMD_OUT_OF_MEMORY)
         printf("AMD Memory \n");
       if(ret == AMD_INVALID)
@@ -331,15 +312,14 @@ namespace BaskerNS
      long *p,
      double &l_nnz,
      double &lu_work
-     )
+    )
     {
       double Info[AMD_INFO];
       for(long i = 0; i < AMD_INFO; ++i)
       {Info[i] = 0;}
-      //printf("n: %d\n", n);
+
       long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
-      //if(ret == AMD_OK)
-      //	printf("OK\n");
+
       if(ret == AMD_OUT_OF_MEMORY)
         printf("AMD Memory \n");
       if(ret == AMD_INVALID)

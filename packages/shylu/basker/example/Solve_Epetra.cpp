@@ -8,15 +8,12 @@
 #include "Amesos2.hpp"
 #include "Amesos2_Meta.hpp"
 
-
 #include <Kokkos_Core.hpp>
-
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-
   typedef int            LO;
   typedef int            GO;
   typedef double         VAL;
@@ -32,26 +29,22 @@ int main(int argc, char *argv[])
 
   Kokkos::initialize(argc,argv);
 
-
-  printf("After init \n");
+  printf(" Basker Solver_Epetra: After init \n");
   
   std::string solver_name = string(argv[1]);
   char *matrix_name = argv[2];
 
   //Does it exist?
   if(!Amesos2::query(solver_name))
-    {
-      printf("Does not exist \n");
-      return 0;
-    }
+  {
+    printf("Does not exist \n");
+    return 0;
+  }
 
-
-  printf("After Q\n");
+  printf(" Basker Solver_Epetra: After query\n");
 
   MAT* A;
-  int ret = EpetraExt::MatrixMarketFileToCrsMatrix(matrix_name, comm,
-                                                   A, false, false);
-  
+  int ret = EpetraExt::MatrixMarketFileToCrsMatrix(matrix_name, comm, A, false, false);
 
   const Epetra_Map dmnmap = A->DomainMap();
   const Epetra_Map rngmap = A->RangeMap();
@@ -61,17 +54,13 @@ int main(int argc, char *argv[])
   X->Random();
   Teuchos::RCP<VEC> B = Teuchos::rcp(new VEC(rngmap,1));
   B->Random();
-  
 
-
-  printf("After load \n");
-
+  printf(" Basker Solver_Epetra: After load\n");
   
   Teuchos::RCP< Amesos2::Solver<MAT,VEC> > solver;
   try
   {
     solver = Amesos2::create<MAT,VEC>("Basker", Teuchos::rcp(A),
-                                      X, B);
   }
   catch(std::invalid_argument e)
   {
@@ -79,13 +68,12 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  printf("After Create \n");
+  printf(" Basker Solver_Epetra: After solver create\n");
 
   solver->solve();
 
   printf("Done \n");
   
   Kokkos::finalize();
-
 
 }

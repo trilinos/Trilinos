@@ -146,6 +146,8 @@ namespace panzer {
        TEST_THROW(parser.buildMatcher("dog-face left;right"),std::logic_error);
 
        TEST_THROW(parser.buildMatcher("x-face left;right"),std::logic_error);
+
+       TEST_THROW(parser.buildMatcher("xface left;right"),std::logic_error);
     }
 
     // test parameter list based construction
@@ -161,11 +163,14 @@ namespace panzer {
        pl->set("Periodic Condition 6","x-edge top;bottom");
        pl->set("Periodic Condition 7","yz-edge fake_a;fake_b");
        pl->set("Periodic Condition 8","yz-face fake_a;fake_b");
-      
+std::cout << "1" << std::endl;      
        parser.setParameterList(pl);
+std::cout << "2" << std::endl;      
 
        TEST_EQUALITY(parser.getMatchers().size(),8);
+std::cout << "3" << std::endl;      
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[0]));
+std::cout << "4" << std::endl;      
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[1]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(parser.getMatchers()[2]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<QuarterPlaneMatcher> >(parser.getMatchers()[3]));
@@ -173,6 +178,7 @@ namespace panzer {
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(parser.getMatchers()[5]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(parser.getMatchers()[6]));
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(parser.getMatchers()[7]));
+std::cout << "5" << std::endl;      
     }
   }
 

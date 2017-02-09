@@ -119,6 +119,50 @@ void kk_inclusive_parallel_prefix_sum(typename forward_array_type::value_type nu
   Kokkos::parallel_scan( my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
 }
 
+template <typename view_t>
+struct ReductionFunctor{
+  view_t array_sum;
+  ReductionFunctor(view_t arr_): array_sum(arr_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, typename view_t::value_type & update) const {
+	  update += array_sum(ii);
+  }
+};
+
+
+template <typename view_t, typename view2_t>
+struct DiffReductionFunctor{
+  view_t array_begins;
+  view2_t array_ends;
+  DiffReductionFunctor(view_t begins, view2_t ends): array_begins(begins), array_ends(ends){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, typename view_t::non_const_value_type & update) const {
+          update += (array_ends(ii) - array_begins(ii));
+  }
+};
+
+template <typename view_t, typename view2_t, typename MyExecSpace>
+inline void kk_reduce_diff_view(size_t num_elements, view_t smaller, view2_t bigger, typename view_t::non_const_value_type & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), DiffReductionFunctor<view_t, view2_t>(smaller, bigger), reduction);
+}
+
+
+
+/***
+ * \brief Function performs the a reduction
+ * until itself.
+ * \param num_elements: size of the array
+ * \param arr: the array for which the prefix sum will be performed.
+ */
+template <typename view_t, typename MyExecSpace>
+inline void kk_reduce_view(size_t num_elements, view_t arr, typename view_t::value_type & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor<view_t>(arr), reduction);
+}
+
 
 template<typename view_type1, typename view_type2, typename eps_type = typename Kokkos::Details::ArithTraits<typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor{

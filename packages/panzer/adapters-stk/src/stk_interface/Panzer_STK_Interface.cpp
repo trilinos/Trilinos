@@ -60,6 +60,7 @@
 // #include <stk_rebalance_utils/RebalanceUtils.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 
 #ifdef PANZER_HAVE_IOSS
 #include <Ionit_Initializer.h>
@@ -339,7 +340,7 @@ void STK_Interface::endModification()
    // find where shared entities are being created in Panzer and declare it.
    // Once this is done, the extra code below can be deleted.
 
-    stk::CommAll comm(bulkData_->parallel());
+    stk::CommSparse comm(bulkData_->parallel());
 
     for (int phase=0;phase<2;++phase) {
       for (int i=0;i<bulkData_->parallel_size();++i) {
@@ -358,7 +359,7 @@ void STK_Interface::endModification()
       }
 
       if (phase == 0 ) {
-        comm.allocate_buffers( bulkData_->parallel_size()/4 );
+        comm.allocate_buffers();
       }
       else {
         comm.communicate();

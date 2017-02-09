@@ -1,12 +1,29 @@
 #!/bin/env python3
-import matplotlib.cm     as cmx
-import matplotlib.colors as colors
+"""analysis.py
+
+Usage:
+  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE]
+  analysis.py (-h | --help)
+
+Options:
+  -h --help                     Show this screen.
+  -i FILE --input-files=FILE    Input file
+  -o FILE --output-file=FILE    Output file
+  -a MODE --analysis=MODE       Mode [default: setup_timers]
+  -d DISPLAY --display=DISPLAY  Display mode [default: print]
+  -s STYLE --style=STYLE        Plot style [default: stack]
+"""
+
+import glob
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+from math import ceil
 import numpy             as np
 import pandas            as pd
 import optparse
 import re
 from   tableau import *
+from   docopt      import docopt
 import yaml
 
 def construct_dataframe(yaml_data):
@@ -57,6 +74,150 @@ def setup_timers(yaml_data, mode, ax = None, top=10):
         ax.set_xlabel('Time (s)')
     else:
         print(dfs['maxT'])
+
+def muelu_strong_scaling(input_files, mode, ax, style, top=10):
+    """Show scalability of setup level specific timers ordered by size"""
+
+    # Three style options:
+    #  - stack        : timers are on top of each other
+    #  - stack-percent: same as stack, but shows percentage values on sides
+    #  - scaling      : scaling of individual timers
+
+    assert(mode == 'display')
+
+    show_the_rest = 0
+    if style == 'stack' or style == 'stack-percent':
+        show_the_rest = 1
+
+    ## Determine top timers in the first log file
+    print(input_files)
+    with open(input_files[0]) as data_file:
+        yaml_data = yaml.safe_load(data_file)
+
+    timer_data = construct_dataframe(yaml_data)
+
+    timers_all = timer_data.index
+
+    timers = [x for x in timers_all if re.search('.*\(level=', x) != None]    # search level specific
+    timers = [x for x in timers     if re.search('Solve', x)      == None]    # ignore Solve timers
+
+    # Select subset of the timer data based on the provided timer labels
+    dfs = timer_data.loc[timers]
+    dfs.sort(columns='maxT', ascending=True, inplace=True)
+    timers = dfs.index
+
+    # Choose top few
+    top = min(top, len(timers))
+    timers = dfs.index[-1:-top-1:-1]
+
+    ## Setup plotting arrays
+    nx = len(input_files)
+    ny = len(timers) + show_the_rest
+    x = np.ndarray(nx)
+    y = np.ndarray([ny, nx])
+    t = np.ndarray(nx)
+
+    k = 0
+    for input_file in input_files:
+        with open(input_file) as data_file:
+            yaml_data = yaml.safe_load(data_file)
+
+        timer_data = construct_dataframe(yaml_data)
+
+        # Calculate total setup time
+        dfs = timer_data.loc['MueLu: Hierarchy: Setup (total)']
+        t[k] = dfs['maxT']
+
+        dfs = timer_data.loc[timers]
+
+        x[k] = yaml_data['Number of processes']
+        if not show_the_rest:
+            y[:,k] = dfs['maxT']
+        else:
+            y[:-1,k] = dfs['maxT']
+            y[-1,k]  = t[k] - sum(y[:-1,k])
+        k = k+1
+
+    ## Plot the figure
+    if mode == 'display':
+        colors = tableau20()
+
+        ## x axis
+        ax.set_xlim([x[0], x[-1]])
+        ax.set_xscale('log')
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(i) for i in x])
+        ax.set_xlabel('Number of cores', fontsize=17)
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax.tick_params(axis='x', which='minor', bottom='off')
+
+        if style == 'stack' or style == 'stack-percent':
+            ## Plot
+            labels = timers
+            if show_the_rest:
+                labels = np.append(labels, 'Other')
+
+            ax.stackplot(x, y, colors=colors, labels=labels)
+
+            ## y axis
+            ax.set_ylabel('Time (seconds)', fontsize=17)
+
+            if style == 'stack':
+                ax.yaxis.grid('on')
+
+            elif style == 'stack-percent':
+                # We need to set up 2 Y-axis ticks
+                ax2 = ax.twinx()
+
+                for i in [0, -1]:
+                    # i =  0: left  y-axis
+                    # i = -1: right y-axis
+                    yticks = np.ndarray(ny)
+                    yticks[0] = 0.5*y[0,i]
+                    for k in range(1, ny):
+                        yticks[k] = yticks[k-1]  + 0.5*y[k-1,i]  + 0.5*y[k,i]
+
+                    total  = sum(y[:,i])
+                    labels = np.ndarray(ny)
+                    for k in range(ny):
+                        labels[k] = (100*y[k,i])  / total
+
+                    if i == 0:
+                        ax.set_yticks([int(x) for x in yticks])
+                        ax.set_yticklabels([str(int(i)) + '%' for i in labels])
+                    else:
+                        ax2.set_ylim(ax.get_ylim())
+                        ax2.set_yticks([int(x) for x in yticks])
+                        ax2.set_yticklabels([str(int(i)) + '%' for i in labels])
+
+            ## Legend
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles[::-1], labels[::-1], loc='upper right')
+
+        elif style == 'scaling':
+            width = np.ndarray(ny)
+            for k in range(ny):
+                width[k] = 9 - min(ceil(y[0,0]/y[k,0]), 8)
+                #  width[k] = 9 - min(ceil(y[0,-1]/y[k,-1]), 8)
+                #  width[k] = 2
+            for k in range(ny):
+                y[k,:] = y[k,0] / y[k,:]
+            y = np.swapaxes(y, 0, 1)
+
+            plt.gca().set_color_cycle(colors) #[colormap(i) for i in np.linspace(0, 0.9, num_plots)])
+
+            for k in range(ny):
+                ax.plot(x, y[:,k], linewidth=width[k])
+
+            ax.plot([x[0], x[-1]], [1.0, x[-1]/x[0]], color='k', linestyle='--')
+
+            # y axis
+            ax.yaxis.grid('on')
+            #  ax.set_ylim([0, x[-1]/x[0]])
+            ax.set_ylim([0.5, x[-1]/x[0]])
+            ax.set_xlabel('Scaling', fontsize=17)
+
+            ax.legend(timers, loc='upper left')
 
 def solve_per_level(yaml_data, mode, ax = None):
     """Show solve timers per level"""
@@ -221,41 +382,86 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
         ax.set_ylabel('Solve time (s)')
 
 
+def string_split_by_numbers(x):
+    r = re.compile('(\d+)')
+    l = r.split(x)
+    return [int(x) if x.isdigit() else x for x in l]
+
 if __name__ == '__main__':
-    p = optparse.OptionParser()
 
-    # action arguments
-    p.add_option('-i', '--input-file',  dest='input_file')
-    p.add_option('-o', '--output-file', dest='output_file')
-    p.add_option('-d', '--display',     dest='display',     default='print')
-    p.add_option('-a', '--analysis',    dest='analysis',    default='mode1')
+    ## Process input
+    options = docopt(__doc__)
 
-    # parse
-    options, arguments = p.parse_args()
+    input_files = options['--input-files']
+    output_file = options['--output-file']
+    analysis    = options['--analysis']
+    display     = options['--display']
+    style       = options['--style']
 
-    # validate options
-    if options.input_file == None:
-        raise RuntimeError("Please specify the input file")
+    input_files = glob.glob(input_files)
+    # Impose sorted order (similar to bash "sort -n"
+    input_files = sorted(input_files, key=string_split_by_numbers)
 
-    with open(options.input_file) as data_file:
-        yaml_data = yaml.safe_load(data_file)
+    ## Validate input options
+    valid_modes = ['setup_timers', 'solve_per_level', 'nonlinear_history_iterations',
+                   'nonlinear_history_residual', 'nonlinear_history_solve',
+                   'muelu_strong_scaling']
+    if not analysis in valid_modes:
+        print("Analysis must be one of: ")
+        print(valid_modes)
+        raise
+    valid_displays = ['print', 'display']
+    if not display in valid_displays:
+        print("Display must be one of " % valid_displays)
+        raise
 
-    f, ax = plt.subplots(1)
+    valid_styles = ['stack', 'stack-percent', 'scaling']
+    if not style in valid_styles:
+        print("Style must be one of " % valid_displays)
 
-    analysis = options.analysis
-    display  = options.display
-    if   analysis == 'mode1':
-        setup_timers(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode2':
-        solve_per_level(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode3':
-        nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode4':
-        nonlinear_history_residual(yaml_data, mode=display, ax=ax)
-    elif analysis == 'mode5':
-        nonlinear_history_solve(yaml_data, mode=display, ax=ax)
+    ## Setup default plotting
+    plt.figure(figsize=(12, 12))
+    ax = plt.subplot(111)
 
-    if options.output_file != None:
-        plt.savefig(options.output_file, bbox_inches='tight')
+    # Remove the plot frame lines.
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+
+    # Make ticks large enough to read.
+    plt.xticks(fontsize = 14)
+    plt.yticks(fontsize = 14)
+
+    # Make sure axis ticks are only on the bottom and left. Ticks on the right
+    # and top of the plot are generally not needed.
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    if analysis == 'muelu_strong_scaling':
+        # Scaling studies work with multiple files
+        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style)
     else:
-        plt.show()
+        # Most analysis studies work with a single file
+        # Might as well open it here
+        assert(len(input_files) == 1)
+        with open(input_files[0]) as data_file:
+            yaml_data = yaml.safe_load(data_file)
+
+        if   analysis == 'setup_timers':
+            setup_timers(yaml_data, mode=display, ax=ax)
+        elif analysis == 'solve_per_level':
+            solve_per_level(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_iterations':
+            nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_residual':
+            nonlinear_history_residual(yaml_data, mode=display, ax=ax)
+        elif analysis == 'nonlinear_history_solve':
+            nonlinear_history_solve(yaml_data, mode=display, ax=ax)
+
+    ## Save output
+    if display != 'print':
+        if output_file != None:
+            plt.savefig(output_file, bbox_inches='tight')
+        else:
+            plt.show()

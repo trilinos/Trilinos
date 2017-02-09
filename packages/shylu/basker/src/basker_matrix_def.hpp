@@ -57,9 +57,10 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
-  (Int _m, Int _n, Int _nnz,
+  (
+   Int _m, Int _n, Int _nnz,
    Int *col_ptr, Int *row_idx, Entry *val
-   )
+  )
   {
     tpivot = 0;
     #ifdef BASKER_2DL
@@ -77,7 +78,7 @@ namespace BaskerNS
   (
    string label, Int _m, Int _n, Int _nnz,
    Int *col_ptr, Int *row_idx, Entry *val
-   )
+  )
   {
     tpivot = 0;
     #ifdef BASKER_2DL
@@ -144,9 +145,9 @@ namespace BaskerNS
   {
     //Does Kokkos have a copy function
     for(Int i=0; i < size; i++)
-      {
-        a(i) = ptr[i];
-      }
+    {
+      a(i) = ptr[i];
+    }
 
   }//end copy_vec(Int*, 1d)
 
@@ -158,9 +159,9 @@ namespace BaskerNS
   {
     //Kokkos::deep_copy(a.data, ptr);
     for(Int i=0; i < size; i++)
-      {
-        a(i) = ptr[i];
-      }
+    {
+      a(i) = ptr[i];
+    }
     //return 0;
   }//edn copy_vec(Entry*, 1d);
 
@@ -234,7 +235,7 @@ namespace BaskerNS
   (
    string _label, Int _m, Int _n, 
    Int _nnz
-   )
+  )
   {
     label = _label;
     init_vectors(_m, _n, _nnz);
@@ -323,8 +324,11 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int BaskerMatrix<Int,Entry,Exe_Space>::copy_values(Int _m, Int _n, Int _nnz,
-				   Int *_col_ptr, Int *_row_idx, Entry *_val)
+  int BaskerMatrix<Int,Entry,Exe_Space>::copy_values
+  (
+   Int _m, Int _n, Int _nnz,
+	 Int *_col_ptr, Int *_row_idx, Entry *_val
+  )
   {
     if(nrow!=_m)
     {
@@ -553,8 +557,6 @@ namespace BaskerNS
         //	   srow, nrow);
         //BASKER_ASSERT(temp_count < nnz, "2DConvert, too many values");
 
-        //row_idx[temp_count] = j;
-
         if(j-srow <0)
         {
           std::cout << "kid: " << kid 
@@ -574,8 +576,6 @@ namespace BaskerNS
       col_ptr(k-scol) = temp_count;
     }
 
-    //col_ptr[0] = 0;
-
     //NO!!1
     //Slide over the col counts
     for(Int i = ncol; i > 0; i--)
@@ -584,23 +584,14 @@ namespace BaskerNS
     }
     col_ptr(0) = (Int) 0;
 
-    //info();
-    //print();
-
   }//end convert2d(Matrix)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::init_inc_lvl()
   {
-
     MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
-    //for(Int i = 0; i < nnz+1; i++)
-    //  {
-    //	inc_lvl(i) = 0; 
-    // }
     inc_lvl_flg = BASKER_TRUE;
-
   }
 
   template <class Int, class Entry, class Exe_Space>
@@ -628,19 +619,19 @@ namespace BaskerNS
 
     std::cout << " col_ptr: ";
     for(Int i=0; i < ncol+1; i++)
-      {
-        std::cout << col_ptr(i) << " , ";
-      }
+    {
+      std::cout << col_ptr(i) << " , ";
+    }
     std::cout << "\n row_idx: ";
     for(Int i=0; i < nnz; i++)
-      {
-        std::cout << row_idx(i) << " , ";
-      }
+    {
+      std::cout << row_idx(i) << " , ";
+    }
     std::cout << "\n val: ";
     for(Int i=0; i < nnz; i++)
-      {
-        std::cout << val(i) << " , ";
-      }
+    {
+      std::cout << val(i) << " , ";
+    }
 
     std::cout << "\n END PRINT " << std::endl;
 

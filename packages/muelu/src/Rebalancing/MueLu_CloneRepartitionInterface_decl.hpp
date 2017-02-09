@@ -50,8 +50,8 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
