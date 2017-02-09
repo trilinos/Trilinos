@@ -11,7 +11,7 @@ Options:
   -o FILE --output-file=FILE    Output file
   -a MODE --analysis=MODE       Mode [default: setup_timers]
   -d DISPLAY --display=DISPLAY  Display mode [default: print]
-  -s STYLE --style=DISPLAY      Plot style [default: stack]
+  -s STYLE --style=STYLE        Plot style [default: stack]
 """
 
 import glob
@@ -78,13 +78,16 @@ def setup_timers(yaml_data, mode, ax = None, top=10):
 def muelu_strong_scaling(input_files, mode, ax, style, top=10):
     """Show scalability of setup level specific timers ordered by size"""
 
-    assert(mode == 'display')
-
     # Three style options:
     #  - stack        : timers are on top of each other
     #  - stack-percent: same as stack, but shows percentage values on sides
     #  - scaling      : scaling of individual timers
-    #style = 'stack'
+
+    assert(mode == 'display')
+
+    show_the_rest = 0
+    if style == 'stack' or style == 'stack-percent':
+        show_the_rest = 1
 
     ## Determine top timers in the first log file
     print(input_files)
@@ -105,13 +108,14 @@ def muelu_strong_scaling(input_files, mode, ax, style, top=10):
 
     # Choose top few
     top = min(top, len(timers))
-    timers = dfs.index[-1:-top:-1]
+    timers = dfs.index[-1:-top-1:-1]
 
     ## Setup plotting arrays
     nx = len(input_files)
-    ny = len(timers)
+    ny = len(timers) + show_the_rest
     x = np.ndarray(nx)
     y = np.ndarray([ny, nx])
+    t = np.ndarray(nx)
 
     k = 0
     for input_file in input_files:
@@ -120,10 +124,18 @@ def muelu_strong_scaling(input_files, mode, ax, style, top=10):
 
         timer_data = construct_dataframe(yaml_data)
 
+        # Calculate total setup time
+        dfs = timer_data.loc['MueLu: Hierarchy: Setup (total)']
+        t[k] = dfs['maxT']
+
         dfs = timer_data.loc[timers]
 
-        x[k]   = yaml_data['Number of processes']
-        y[:,k] = dfs['maxT']
+        x[k] = yaml_data['Number of processes']
+        if not show_the_rest:
+            y[:,k] = dfs['maxT']
+        else:
+            y[:-1,k] = dfs['maxT']
+            y[-1,k]  = t[k] - sum(y[:-1,k])
         k = k+1
 
     ## Plot the figure
@@ -140,6 +152,13 @@ def muelu_strong_scaling(input_files, mode, ax, style, top=10):
         ax.tick_params(axis='x', which='minor', bottom='off')
 
         if style == 'stack' or style == 'stack-percent':
+            ## Plot
+            labels = timers
+            if show_the_rest:
+                labels = np.append(labels, 'Other')
+
+            ax.stackplot(x, y, colors=colors, labels=labels)
+
             ## y axis
             ax.set_ylabel('Time (seconds)', fontsize=17)
 
@@ -170,8 +189,6 @@ def muelu_strong_scaling(input_files, mode, ax, style, top=10):
                         ax2.set_ylim(ax.get_ylim())
                         ax2.set_yticks([int(x) for x in yticks])
                         ax2.set_yticklabels([str(int(i)) + '%' for i in labels])
-            ## Plot
-            ax.stackplot(x, y, colors=colors, labels=timers)
 
             ## Legend
             handles, labels = ax.get_legend_handles_labels()
