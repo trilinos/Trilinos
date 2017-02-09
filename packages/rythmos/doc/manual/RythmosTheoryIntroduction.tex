@@ -1,11 +1,20 @@
+\cleardoublepage{}
 
 \section{Introduction}
-
+\begin{quote}
+\textbf{Notice:} Once again before beginning this report, we would
+like to bring the readers attention to the fact that this document
+has been released in an ``\textbf{as-is}'' condition, and therefore
+is in an incomplete state and has many readability issues. However
+it is hoped that the information contained in this document will still
+be helpful to users in their application development.
+\end{quote}
 Here we design and describe a set of C++ interfaces and concrete implementations
 for the solution of a broad class of transient ordinary differential
 equations (ODEs) and differential algebraic equations (DAEs) in a
 consistent manner. 
 
+\cleardoublepage{}
 
 \section{Mathematical Formulation of DAEs/ODEs for Basic Time Steppers\label{rythmos:sec:mathformulation}}
 
@@ -14,7 +23,7 @@ DAE (or ODE) for the purpose of presenting it to a forward time integrator.
 At the most general level of abstraction, we will consider the solution
 of fully implicit DAEs of the form 
 \begin{eqnarray}
-f(\dot{x},x,t) & = & 0,\;\mbox{for}\; t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
+f(\dot{x},x,t) & = & 0,\;\mbox{for}\;t\in[t_{0},t_{f}],\label{rythmos:eq:dae}\\
 x(t_{0}) & = & x_{0}\label{rythmos:eq:dae:ic}
 \end{eqnarray}
 \begin{tabbing} where\hspace{5ex}\= \\
@@ -68,15 +77,14 @@ in a time integration algorithm.
 Another formulation we will consider is the semi-explicit DAE formulation:
 \begin{equation}
 \begin{array}{rcl}
-\dot{y} & = & f(y,z,t)\;\mbox{for}\; t\in[t_{0},t_{f}],\\
-0 & = & g(y,z,t)\;\mbox{where}\; x=[y,z],\\
+\dot{y} & = & f(y,z,t)\;\mbox{for}\;t\in[t_{0},t_{f}],\\
+0 & = & g(y,z,t)\;\mbox{where}\;x=[y,z],\\
 x(t_{0}) & = & x_{0}.
 \end{array}\label{rythmos:eq:dae:semiexplicit}
 \end{equation}
 
-
 For each transient computation, the formulation will be cast into
-the general form in (\ref{rythmos:eq:dae})--(\ref{rythmos:eq:dae:ic})
+the general form in (\ref{rythmos:eq:dae})\textendash (\ref{rythmos:eq:dae:ic})
 to demonstrate how this general formulation can be exploited in many
 different contexts. 
 

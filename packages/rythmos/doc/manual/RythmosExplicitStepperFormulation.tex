@@ -1,3 +1,4 @@
+\cleardoublepage{}
 
 \section{Formulation for Explicit Time Steppers for ODEs}
 
@@ -25,7 +26,6 @@ that is considered by the explicit time integration strategies below.
 The above transformation of course requires that the matrix $\left(\jac{f}{\dot{x}}\right)^{-1}$
 be fairly easy to invert.
 
-
 \subsection{Forward Euler\label{rythmos:sec:Forward-Euler}}
 
 Forward Euler (Explicit Euler) is simply obtained by first-order differencing
@@ -44,7 +44,6 @@ accurate as can be seen in the global-convergence plot in Fig.~(\ref{rythmos:fig
 \centering{}\includegraphics[scale=1.5]{figures/ForwardEuler}\caption{Order of accuracy for the SinCos Problem (Section~\ref{rythmos:sec:SinCos-Problem})
 using Forward Euler.\label{rythmos:fig:OrderofAccuracy-ForwardEuler}}
 \end{figure}
-
 
 
 \subsection{Explicit Runge-Kutta Methods\label{rythmos:sec:Explicit-Runge-Kutta-Methods}}
@@ -69,7 +68,6 @@ this in terms of $\dot{X}_{i}$ (or $\bar{f}(x,t)$)
 \[
 x_{n}=x_{n-1}+\Delta t\,\sum_{i=1}^{s}b_{i}\,\dot{X}_{i}
 \]
-
 
 A convenient method to convey Runge-Kutta methods is to use the Butcher
 Tableau, which displays the coefficients in a ``table'' form.
@@ -109,7 +107,7 @@ for each stage, but are not coupled to other stages.
 \item If $a_{ij}=0$ for $j>i$ and $a_{ii}=C$, the method is known as
 a Singly Diagonally Implicit Runge-Kutta (SDIRK) method. Like with
 DIRK methods, an implicit solve is needed at each stage, but since
-$a_{ii}$ is the same, some of the preportory calculations can be
+$a_{ii}$ is the same, some of the preparatory calculations can be
 reused for each stage.
 \item $b_{i}$ are the weighting of the intermediate solutions, $X_{i}$,
 to obtain the final solution, and they are a partition of unity, $\sum_{i=1}^{s}b_{i}=1$.
@@ -138,7 +136,6 @@ Euler.\label{rythmos:fig:ERK-ForwardEuler}}
 \end{figure}
 
 
-
 \subsection{Explicit RK 2 Stage 2 Order by Runge (Explicit Midpoint)}
 
 \begin{figure}[H]
@@ -155,7 +152,6 @@ a) $\begin{array}{c|cc}
 \end{figure}
 
 
-
 \subsection{Explicit RK Trapezoidal}
 
 \begin{figure}[H]
@@ -169,7 +165,6 @@ a) $\begin{array}{c|cc}
 \end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
 (Section~\ref{rythmos:sec:SinCos-Problem}) for Explicit RK Trapezoidal.\label{rythmos:tab:ButcherTableau-ERK_Trapezoidal}}
 \end{figure}
-
 
 
 \subsection{Explicit RK 3 Stage 3 Order}
@@ -189,7 +184,6 @@ a)$\begin{array}{c|ccc}
 \end{figure}
 
 
-
 \subsection{Explicit RK 3 Stage 3 Order by Heun}
 
 \begin{figure}[H]
@@ -207,7 +201,6 @@ a) $\begin{array}{c|ccc}
 \end{figure}
 
 
-
 \subsection{Explicit RK 3 Stage 3 Order TVD}
 
 \begin{figure}[H]
@@ -223,7 +216,6 @@ a)$\begin{array}{c|ccc}
 (Section~\ref{rythmos:sec:SinCos-Problem}) for Explicit RK 3 Stage
 3rd Order TVD.\label{rythmos:tab:ButcherTableau-ERK_3Stage3OrderTVD}}
 \end{figure}
-
 
 
 \subsection{Explicit RK 4 Stage 3 Order by Runge}
@@ -244,7 +236,6 @@ a)$\begin{array}{c|cccc}
 \end{figure}
 
 
-
 \subsection{Explicit RK4}
 
 \begin{figure}[H]
@@ -260,7 +251,6 @@ a)$\begin{array}{c|cccc}
 \end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
 (Section~\ref{rythmos:sec:SinCos-Problem}) for Explicit RK 4.\label{rythmos:tab:ButcherTableau-ERK_4Stage}.}
 \end{figure}
-
 
 
 \subsection{Explicit RK 3/8 Rule}

@@ -1,7 +1,9 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
 \begin_document
 \begin_header
+\save_transient_properties true
+\origin unavailable
 \textclass article
 \use_default_options true
 \maintain_unincluded_children false
@@ -9,16 +11,16 @@
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
-
+\font_sf_scale 100 100
+\font_tt_scale 100 100
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -28,15 +30,24 @@
 \use_hyperref false
 \papersize default
 \use_geometry false
-\use_amsmath 1
-\use_esint 1
-\use_mhchem 1
-\use_mathdots 1
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
 \cite_engine basic
+\cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 1
 \index Index
 \shortcut idx
@@ -81,7 +92,7 @@ We now consider a class of powerful and popular one-step methods for solving
  sets of coupled nonlinear equations that take the form
 \begin_inset Formula 
 \begin{equation}
-r_{i}(z)=f\left(\dot{X}_{i},\; x_{n-1}+\Delta t\,\sum_{j=1}^{s}a_{ij}\,\dot{X}_{j},\; t_{n-1}+c_{i}\Delta t\right)=0\label{rythmos:eqn:irk_dae_ne}
+r_{i}(z)=f\left(\dot{X}_{i},\;x_{n-1}+\Delta t\,\sum_{j=1}^{s}a_{ij}\,\dot{X}_{j},\;t_{n-1}+c_{i}\Delta t\right)=0\label{rythmos:eqn:irk_dae_ne}
 \end{equation}
 
 \end_inset
@@ -177,7 +188,7 @@ reference "rythmos:eqn:irk_dae_ne"
 W_{ij} & = & \alpha\Jac{f}{\dot{x}}+\beta\Jac{f}{x}\nonumber \\
  & = & \Jac{r_{i}}{z_{j}}=\Jac{r_{i}}{\dot{X}_{j}}\nonumber \\
  & = & \frac{\partial\dot{x}}{\partial\dot{X}_{j}}\Jac{f}{\dot{x}}+\frac{\partial x}{\partial\dot{X}_{j}}\Jac{f}{x}\nonumber \\
- & = & \delta_{ij}\Jac{f}{\dot{x}}+\Delta t\, a_{ij}\Jac{f}{x}\label{rythmos:eq:dridzj_IRK}
+ & = & \delta_{ij}\Jac{f}{\dot{x}}+\Delta t\,a_{ij}\Jac{f}{x}\label{rythmos:eq:dridzj_IRK}
 \end{eqnarray}
 
 \end_inset
@@ -212,7 +223,7 @@ for
 \end_inset
 
  and 
-\begin_inset Formula $\beta=\Delta t\, a_{ij}$
+\begin_inset Formula $\beta=\Delta t\,a_{ij}$
 \end_inset
 
 .
@@ -424,7 +435,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/IRK_BackwardEuler.eps
+	filename figures/IRK_BackwardEuler.pdf
 	lyxscale 150
 	scale 150
 
@@ -441,7 +452,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -517,7 +528,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/IRK1StageTheta1.eps
+	filename figures/IRK1StageTheta1.pdf
 	lyxscale 150
 	scale 150
 
@@ -534,7 +545,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -611,7 +622,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/IRK2StageTheta1.eps
+	filename figures/IRK2StageTheta1.pdf
 	lyxscale 150
 	scale 150
 
@@ -628,7 +639,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -710,7 +721,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/SDIRK_2Stage2Order.eps
+	filename figures/SDIRK_2Stage2Order.pdf
 	lyxscale 150
 	scale 150
 
@@ -727,7 +738,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -809,7 +820,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/SDIRK_2Stage3OrderLStable.eps
+	filename figures/SDIRK_2Stage3OrderLStable.pdf
 	lyxscale 150
 	scale 150
 
@@ -826,7 +837,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -908,7 +919,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/SDIRK_3Stage4Order.eps
+	filename figures/SDIRK_3Stage4Order.pdf
 	lyxscale 150
 	scale 150
 
@@ -925,7 +936,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
@@ -977,7 +988,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Butcher Tableau for SDIRK 5 Stage 4 Order.
@@ -1000,14 +1011,14 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/SDIRK_5Stage4Order.eps
+	filename figures/SDIRK_5Stage4Order.pdf
 	lyxscale 150
 	scale 150
 
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Order of accuracy for the SinCos Problem (Section
@@ -1058,7 +1069,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Butcher Tableau for SDIRK 5 Stage 5 Order.
@@ -1081,14 +1092,14 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/SDIRK_5Stage5Order.eps
+	filename figures/SDIRK_5Stage5Order.pdf
 	lyxscale 150
 	scale 150
 
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Order of accuracy for the SinCos Problem (Section
@@ -1157,7 +1168,7 @@ a)
 \begin_layout Plain Layout
 b)
 \begin_inset Graphics
-	filename figures/DIRK_2Stage3Order.eps
+	filename figures/DIRK_2Stage3Order.pdf
 	lyxscale 150
 	scale 150
 
@@ -1174,7 +1185,7 @@ b)
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 a) Butcher Tableau and b) Order of accuracy for the SinCos Problem (Section
