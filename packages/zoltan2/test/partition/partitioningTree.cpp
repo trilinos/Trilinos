@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool distributeInput = true;
   int success = 0;
-  part_t numParts = 8;
+  part_t numParts = 13;
 
 
   //////////////////////////////////////////////////////////////////////
@@ -243,46 +243,6 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
 
   comm->barrier(); // for tidy output...
   if(comm->getRank() == 0) { // for now just plot for rank 0
-    // for debugging use the recursive search to generate a list of all
-    // children under each node and print them. The splitRangeBeg and
-    // splitRangeEnd have to match up with these properly:
-    cout << "partitioningTree.cpp test output for rank: " << comm->getRank() << endl;
-    #define MDM
-    #ifdef MDM
-    for(part_t n = 0; n < static_cast<part_t>(solution.getPartitionTreeNodes().size()); ++n) {
-      const Zoltan2::partitionTreeNode<part_t> & node =
-        solution.getPartitionTreeNodes()[n];
-      cout << "  Info for Node index " << n << endl;
-
-      // print the nodes that branch from this node
-      cout << "    Connects to node indices: ";
-      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
-        if(node.children[c] > 0) {
-          cout << node.children[c]-1 << " "; // leaf = node index = 1 convention
-        }
-      }
-      cout << endl;
-
-      // print the terminal children part IDs that branch from this node
-      cout << "    Connects to terminal part IDs: ";
-      // children can iterate int - will be a short list
-      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
-        if(node.children[c] <= 0) {
-          cout << -node.children[c] << " "; // negative sign convention
-        }
-      }
-      cout << endl;
-
-      // print all part IDs that are under this node (recursive)
-      cout << "    All part IDs under this node: ";
-      std::vector<part_t> allParts;
-      solution.recursiveCollectAllParts(n, allParts);
-      for(part_t i = 0; i < static_cast<part_t>(allParts.size()); ++i) {
-        cout << allParts[i] << " ";
-      }
-      cout << endl;
-    }
-    #endif
 
     // print the acquired information about the tree
 
