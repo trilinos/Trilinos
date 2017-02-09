@@ -20,6 +20,7 @@ typedef Tpetra::Map<LO,GO,Node> Map;
 typedef Tpetra::Vector<Scalar,LO,GO,Node> TV;
 typedef Thyra::VectorBase<Scalar> TVB;
 typedef NOX::Thyra::Vector NTV;
+typedef typename TV::mag_type mag_type;
 
 #if defined HAVE_TPETRACORE_CUDA
 #define NUM_LOCAL 1000000
@@ -30,9 +31,10 @@ const std::size_t numLocalElements = NUM_LOCAL;
 
 //Routines for checking solution
 
-bool checkEqualVectors(const Teuchos::RCP<TV>& a,
-                       const Teuchos::RCP<TV>& b,
-                       Teuchos::FancyOStream& out)
+bool checkVectors(const Teuchos::RCP<TV>& a,
+                  const Teuchos::RCP<TV>& b,
+                  const mag_type& expectedNorm,
+                  Teuchos::FancyOStream& out)
 {
   bool success = true;
   ST::magnitudeType tol = 1.0e-14;
@@ -40,17 +42,20 @@ bool checkEqualVectors(const Teuchos::RCP<TV>& a,
   Scalar one = ST::one();
   b->update(-1.0*one, *a, one);
   TEUCHOS_TEST_FLOATING_EQUALITY(b->norm2(), zero, tol, out, success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(a->norm2(), expectedNorm, tol, out, success);
   return success;
 }
 
 template <class T>
-bool checkEqualReduction(const T& a,
-                         const T& b,
-                         Teuchos::FancyOStream& out)
+bool checkReduction(const T& a,
+                    const T& b,
+                    const T& expectedVal,
+                    Teuchos::FancyOStream& out)
 {
   bool success = true;
   typename Teuchos::ScalarTraits<T>::magnitudeType tol = 1.0e-14;
-  TEUCHOS_TEST_FLOATING_EQUALITY(a, b, tol, out, success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(expectedVal, a, tol, out, success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(expectedVal, b, tol, out, success);
   return success;
 }
 
@@ -73,7 +78,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, CopyConstructor)
 
   // Check for correct answer
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar, LO, GO, Node> TOVE;
-  success = checkEqualVectors(x, TOVE::getTpetraVector(y->getThyraRCPVector()), out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(numGlobalElements));
+  success = checkVectors(x, TOVE::getTpetraVector(y->getThyraRCPVector()), ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, OperatorEquals)
@@ -98,7 +104,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, OperatorEquals)
   *y_nox = *x_nox;
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Init)
@@ -121,7 +128,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Init)
   y_nox->init(2.0*ST::one());
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(4.0*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Random)
@@ -143,9 +151,7 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Random)
 
   y_nox->random();
 
-  // Check for correct answer
   // Probaby can't expect these to get the same answer
-  //success = checkEqualVectors(x, y, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Abs)
@@ -171,7 +177,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Abs)
   y_nox->abs(*y_nox);
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Reciprocal)
@@ -197,7 +204,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Reciprocal)
   y_nox->reciprocal(*y_nox);
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(0.25*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Scale_Scalar)
@@ -223,7 +231,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Scale_Scalar)
   y_nox->scale(2.0*ST::one());
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(4.0*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Scale_Vector)
@@ -253,7 +262,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Scale_Vector)
   y_nox->scale(*z_nox);
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(4.0*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Update_1)
@@ -283,7 +293,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Update_1)
   y_nox->update(2.0*ST::one(), *z_nox, ST::one());
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(9.0*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Update_2)
@@ -317,7 +328,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Update_2)
   y_nox->update(2.0*ST::one(), *w_nox, 2.0*ST::one(), *z_nox, ST::one());
 
   // Check for correct answer
-  success = checkEqualVectors(x, y, out);
+  mag_type ans = static_cast<mag_type>(ST::squareroot(25.0*numGlobalElements));;
+  success = checkVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_1)
@@ -341,7 +353,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_1)
   ST::magnitudeType norm_nox = x_nox->norm(NOX::Abstract::Vector::OneNorm);
 
   // Check for correct answer
-  success = checkEqualReduction(norm_tpetra, norm_nox, out);
+  ST::magnitudeType ans = static_cast<mag_type>(numGlobalElements);;
+  success = checkReduction(norm_tpetra, norm_nox, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_2)
@@ -365,7 +378,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_2)
   ST::magnitudeType norm_nox = x_nox->norm(NOX::Abstract::Vector::TwoNorm);
 
   // Check for correct answer
-  success = checkEqualReduction(norm_tpetra, norm_nox, out);
+  ST::magnitudeType ans = static_cast<mag_type>(ST::squareroot(numGlobalElements));;
+  success = checkReduction(norm_tpetra, norm_nox, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_Inf)
@@ -389,7 +403,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_Inf)
   ST::magnitudeType norm_nox = x_nox->norm(NOX::Abstract::Vector::MaxNorm);
 
   // Check for correct answer
-  success = checkEqualReduction(norm_tpetra, norm_nox, out);
+  ST::magnitudeType ans = static_cast<mag_type>(1.0);;
+  success = checkReduction(norm_tpetra, norm_nox, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_Weighted)
@@ -422,7 +437,8 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, Norm_Weighted)
   ST::magnitudeType norm_nox = x_nox->norm(*y_nox);
 
   // Check for correct answer
-  success = checkEqualReduction(norm_tpetra, norm_nox, out);
+  ST::magnitudeType ans = static_cast<mag_type>(ST::squareroot(2.0*numGlobalElements));;
+  success = checkReduction(norm_tpetra, norm_nox, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_VectorOps, InnerProduct)
@@ -450,6 +466,7 @@ TEUCHOS_UNIT_TEST(Tpetra_VectorOps, InnerProduct)
   Scalar dot_nox = x_nox->innerProduct(*y_nox);
 
   // Check for correct answer
-  success = checkEqualReduction(dot_tpetra, dot_nox, out);
+  Scalar ans = static_cast<mag_type>(2.0*numGlobalElements);;
+  success = checkReduction(dot_tpetra, dot_nox, ans, out);
 }
 

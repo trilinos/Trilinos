@@ -20,6 +20,7 @@ typedef Tpetra::Map<LO,GO,Node> Map;
 typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
 typedef Thyra::MultiVectorBase<Scalar> TMVB;
 typedef NOX::Thyra::MultiVector NTMV;
+typedef typename TMV::mag_type mag_type;
 
 #if defined HAVE_TPETRACORE_CUDA
 #define NUM_LOCAL 1000000
@@ -31,9 +32,10 @@ const std::size_t numCols = 10;
 
 //Routines for checking solution
 
-bool checkEqualMultiVectors(const Teuchos::RCP<TMV>& a,
-                            const Teuchos::RCP<TMV>& b,
-                            Teuchos::FancyOStream& out)
+bool checkMultiVectors(const Teuchos::RCP<TMV>& a,
+                       const Teuchos::RCP<TMV>& b,
+                       const Teuchos::ArrayView<mag_type>& expectedNorms,
+                       Teuchos::FancyOStream& out)
 {
   TEUCHOS_ASSERT((a->getNumVectors() == numCols) &&  (b->getNumVectors() == numCols));
   Scalar one = ST::one();
@@ -47,22 +49,31 @@ bool checkEqualMultiVectors(const Teuchos::RCP<TMV>& a,
   for (auto norm = norms.begin(); norm != norms.end(); ++norm) {
     TEUCHOS_TEST_FLOATING_EQUALITY(*norm, zero, tol, out, success);
   }
+  a->norm2(norms);
+  auto normIter = norms.begin();
+  auto expNormIter = expectedNorms.begin();
+  for (; normIter != norms.end(); ++normIter, ++expNormIter) {
+    TEUCHOS_TEST_FLOATING_EQUALITY(*normIter, *expNormIter, tol, out, success);
+  }
   return success;
 }
 
 template <class T>
-bool checkEqualReductions(const Teuchos::ArrayView<T>& a,
-                          const Teuchos::ArrayView<T>& b,
-                          Teuchos::FancyOStream& out)
+bool checkReductions(const Teuchos::ArrayView<T>& a,
+                     const Teuchos::ArrayView<T>& b,
+                     const Teuchos::ArrayView<T>& expectedVals,
+                     Teuchos::FancyOStream& out)
 {
   TEUCHOS_ASSERT(a.size() == b.size());
 
   bool success = true;
   typename Teuchos::ScalarTraits<T>::magnitudeType tol = 1.0e-14;
-  auto a_itr = a.begin();
-  auto b_itr = b.begin();
-  for (; a_itr != a.end(); ++a_itr, ++b_itr) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(*a_itr, *b_itr, tol, out, success);
+  auto aItr = a.begin();
+  auto bItr = b.begin();
+  auto expItr = expectedVals.begin();
+  for (; aItr != a.end(); ++aItr, ++bItr, ++expItr) {
+    TEUCHOS_TEST_FLOATING_EQUALITY(*aItr, *bItr, tol, out, success);
+    TEUCHOS_TEST_FLOATING_EQUALITY(*aItr, *expItr, tol, out, success);
   }
   return success;
 }
@@ -86,7 +97,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, CopyConstructor)
 
   // Check for correct answer
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar, LO, GO, Node> TOVE;
-  success = checkEqualMultiVectors(x, TOVE::getTpetraMultiVector(y->getThyraMultiVector()), out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, TOVE::getTpetraMultiVector(y->getThyraMultiVector()), ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, OperatorEquals)
@@ -108,11 +121,12 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, OperatorEquals)
   Teuchos::RCP<TMVB> y_thyra  = Thyra::createMultiVector(y);
   Teuchos::RCP<NTMV> y_nox = Teuchos::rcp(new NTMV(y_thyra));
 
-  // This is causing a link error for some reason???
-  //*y_nox = *x_nox;
+  *y_nox = *x_nox;
 
   // Check for correct answer
-  //success = checkEqualMultiVectors(x, y, out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Init)
@@ -135,7 +149,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Init)
   y_nox->init(2.0*ST::one());
 
   // Check for correct answer
-  success = checkEqualMultiVectors(x, y, out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(4.0*numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Random)
@@ -157,9 +173,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Random)
 
   y_nox->random();
 
-  // Check for correct answer
   // Probaby can't expect these to get the same answer
-  //success = checkEqualMultiVectors(x, y, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Scale)
@@ -185,7 +199,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Scale)
   y_nox->scale(2.0*ST::one());
 
   // Check for correct answer
-  success = checkEqualMultiVectors(x, y, out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(4.0*numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_1)
@@ -216,7 +232,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_1)
   y_nox->update(2.0*ST::one(), *z_nox, ST::one());
 
   // Check for correct answer
-  success = checkEqualMultiVectors(x, y, out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(9.0*numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_2)
@@ -251,7 +269,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_2)
   y_nox->update(2.0*ST::one(), *w_nox, 2.0*ST::one(), *z_nox, ST::one());
 
   // Check for correct answer
-  success = checkEqualMultiVectors(x, y, out);
+  mag_type val = static_cast<mag_type>(ST::squareroot(25.0*numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_3)
@@ -295,7 +315,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Update_3)
   y_nox->update(Teuchos::NO_TRANS, ST::one(), *z_nox, mat, ST::one());
 
   // Check for correct answer
-  success = checkEqualMultiVectors(x, y, out);
+  Teuchos::Tuple<mag_type, numCols> ans;
+  for (Teuchos::Tuple<mag_type, numCols>::size_type i = 0; i < ans.size(); ++i)
+    ans[i] = static_cast<mag_type>((1.0 + 5.0*i)*ST::squareroot(numGlobalElements));
+  success = checkMultiVectors(x, y, ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_1)
@@ -321,7 +344,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_1)
   x_nox->norm(norms_nox, NOX::Abstract::Vector::OneNorm);
 
   // Check for correct answer
-  success = checkEqualReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), out);
+  ST::magnitudeType val = static_cast<ST::magnitudeType>(numGlobalElements);
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_2)
@@ -347,7 +372,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_2)
   x_nox->norm(norms_nox, NOX::Abstract::Vector::TwoNorm);
 
   // Check for correct answer
-  success = checkEqualReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), out);
+  ST::magnitudeType val = static_cast<ST::magnitudeType>(ST::squareroot(numGlobalElements));
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_Inf)
@@ -373,7 +400,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Norm_Inf)
   x_nox->norm(norms_nox, NOX::Abstract::Vector::MaxNorm);
 
   // Check for correct answer
-  success = checkEqualReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), out);
+  ST::magnitudeType val = static_cast<ST::magnitudeType>(1.0);
+  auto ans = Teuchos::tuple(val, val, val, val, val, val, val, val, val, val);
+  success = checkReductions(norms_tpetra, Teuchos::arrayViewFromVector(norms_nox), ans, out);
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Multiply)
@@ -395,7 +424,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Multiply)
   NOX::Abstract::MultiVector::DenseMatrix dots_tpetra(numCols, numCols);
   for (int j = 0; j < numCols; ++j) {
     for (int i = 0; i < numCols; ++i) {
-      dots_tpetra(i, j) = x->getVector(i)->dot(*(y->getVector(j)));
+      dots_tpetra(i, j) = y->getVector(j)->dot(*(x->getVector(i)));
     }
   }
 
@@ -409,7 +438,14 @@ TEUCHOS_UNIT_TEST(Tpetra_MultiVectorOps, Multiply)
   x_nox->multiply(ST::one(), *y_nox, dots_nox); 
 
   // Check for correct answer
-  success = checkEqualReductions(Teuchos::arrayView(dots_tpetra.values(), numCols*numCols),
-    Teuchos::arrayView(dots_nox.values(), numCols*numCols), out);
+  // REMINDER: SerialDenseMatrix is column-major
+  Teuchos::Tuple<Scalar, numCols*numCols> ans;
+  for (int j = 0; j < numCols; ++j) {
+    for (int i = 0; i < numCols; ++i) {
+      ans[i + j*numCols] = (2.0*i*j)*numGlobalElements;
+    }
+  }
+  success = checkReductions(Teuchos::arrayView(dots_tpetra.values(), numCols*numCols),
+    Teuchos::arrayView(dots_nox.values(), numCols*numCols), ans, out);
 }
 
