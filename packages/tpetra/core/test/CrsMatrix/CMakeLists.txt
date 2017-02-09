@@ -96,7 +96,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # This speeds up the build.
 
 ASSERT_DEFINED (Tpetra_INST_CUDA)
-IF (Tpetra_INST_CUDA) 
+IF (Tpetra_INST_CUDA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Cuda
     SOURCES
@@ -109,7 +109,7 @@ IF (Tpetra_INST_CUDA)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_OPENMP)
-IF (Tpetra_INST_OPENMP) 
+IF (Tpetra_INST_OPENMP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_OpenMP
     SOURCES
@@ -122,7 +122,7 @@ IF (Tpetra_INST_OPENMP)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_SERIAL)
-IF (Tpetra_INST_SERIAL) 
+IF (Tpetra_INST_SERIAL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Serial
     SOURCES
@@ -135,7 +135,7 @@ IF (Tpetra_INST_SERIAL)
 ENDIF ()
 
 ASSERT_DEFINED (Tpetra_INST_PTHREAD)
-IF (Tpetra_INST_PTHREAD) 
+IF (Tpetra_INST_PTHREAD)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Threads
     SOURCES
@@ -206,12 +206,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # FIXME (mfh 26 Sep 2015) Many (if not all) of these tests should not
 # depend on GO = int; they should be able to use the default GO type.
-IF (Tpetra_INST_INT_INT)
+#IF (Tpetra_INST_INT_INT)
   # This test only makes sense for exactly 2 MPI processes.
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_Bug5978
     SOURCES
-    bug5978
+    Bug5978
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
@@ -225,6 +225,7 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6069_1
     SOURCES
     Bug6069_1
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
     NUM_MPI_PROCS 3
@@ -237,6 +238,7 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6069_2
     SOURCES
     Bug6069_2
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS
     COMM mpi
     NUM_MPI_PROCS 2
@@ -249,12 +251,13 @@ IF (Tpetra_INST_INT_INT)
     CrsMatrix_Bug6171
     SOURCES
     Bug6171
-    ARGS ""
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS
     COMM mpi
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
-ENDIF()
+#ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues

@@ -41,36 +41,30 @@
 // @HEADER
 */
 
+// This test came about because of differences between openmpi and mpich
+// implementations. Tpetra had hard coded an openmpi specific flag, causing
+// crashes with mpich in some specific situations. See
+// https://software.sandia.gov/bugzilla/show_bug.cgi?id=6069
+
 #include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_TestingUtilities.hpp>
 
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+// typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
+// typedef int global_ordinal_type;   //<<<<<<<<   valgrind complains
 
-typedef double scalar_type;
-typedef int local_ordinal_type;
-//typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
-typedef int global_ordinal_type;     //<<<<<<<<   valgrind complains
+namespace { // anonymous
 
-void
-GetNeighboursCartesian2d (const global_ordinal_type i,
-                          const global_ordinal_type nx,
-                          const global_ordinal_type ny,
-                          global_ordinal_type& left,
-                          global_ordinal_type& right,
-                          global_ordinal_type& lower,
-                          global_ordinal_type& upper)
+template <class GO>
+void GetNeighboursCartesian2d(const GO i, const GO nx, const GO ny,
+                              GO& left, GO& right, GO& lower, GO& upper)
 {
-  global_ordinal_type ix, iy;
+  GO ix, iy;
   ix = i % nx;
   iy = (i - ix) / nx;
 
@@ -84,33 +78,41 @@ GetNeighboursCartesian2d (const global_ordinal_type i,
   else              upper = i + nx;
 }
 
-int
-main (int argc, char *argv[])
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_1, SC, LO, GO, NT)
 {
-  // global_size_t: Tpetra defines this unsigned integer type big
-  // enough to hold any global dimension or amount of data.
-  using Tpetra::global_size_t;
+
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Comm;
+  using Teuchos::FancyOStream;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   // Put these typedefs here, to avoid global shadowing warnings.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
+  typedef Tpetra::Map<LO, GO, NT> MapType;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> MatrixType;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = getDefaultComm();
   const size_t myRank = comm->getRank ();
+  const size_t numProc = comm->getSize ();
 
-  global_ordinal_type nx=10, ny=10;
-  scalar_type a=4,b=-1,c=-1,d=-1,e=-1;
+  if (numProc != 3) {
+    out << "This test must be run with exactly 3 MPI processes, but you ran "
+        << "it with " << numProc << " process" << (numProc != 1 ? "es" : "")
+        << "." << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "This test must be run with exactly "
+                               "3 MPI processes, but you ran it with "
+                               << numProc << " process"
+                               << (numProc != 1 ? "es" : "") << ".");
+  }
 
-  //global_size_t numMyElts;
-  Array<global_ordinal_type> myElts;
+  GO nx=10, ny=10;
+  SC a=4,b=-1,c=-1,d=-1,e=-1;
+
+  Array<GO> myElts;
 
   switch (myRank) {
 
@@ -143,24 +145,30 @@ main (int argc, char *argv[])
   }
 
 /*
-  My global indices: [0, 10, 20, 30, 1, 11, 21, 31, 2, 12, 22, 32, 3, 13, 23, 33, 4, 14, 24, 34, 5, 15, 25, 35, 6, 16, 26, 36, 7, 17, 27, 37, 8, 18, 28, 38, 9, 19, 29, 39]
+  My global indices: [0, 10, 20, 30, 1, 11, 21, 31, 2, 12, 22, 32, 3, 13, 23, 33,
+                      4, 14, 24, 34, 5, 15, 25, 35, 6, 16, 26, 36, 7, 17, 27, 37,
+                      8, 18, 28, 38, 9, 19, 29, 39]
+
  Process 1:
   My number of entries: 30
   My minimum global index: 40
   My maximum global index: 69
-  My global indices: [40, 50, 60, 41, 51, 61, 42, 52, 62, 43, 53, 63, 44, 54, 64, 45, 55, 65, 46, 56, 66, 47, 57, 67, 48, 58, 68, 49, 59, 69]
+  My global indices: [40, 50, 60, 41, 51, 61, 42, 52, 62, 43, 53, 63, 44, 54, 64,
+                      45, 55, 65, 46, 56, 66, 47, 57, 67, 48, 58, 68, 49, 59, 69]
+
  Process 2:
   My number of entries: 30
   My minimum global index: 70
   My maximum global index: 99
-  My global indices: [70, 80, 90, 71, 81, 91, 72, 82, 92, 73, 83, 93, 74, 84, 94, 75, 85, 95, 76, 86, 96, 77, 87, 97, 78, 88, 98, 79, 89, 99]
+  My global indices: [70, 80, 90, 71, 81, 91, 72, 82, 92, 73, 83, 93, 74, 84, 94,
+                      75, 85, 95, 76, 86, 96, 77, 87, 97, 78, 88, 98, 79, 89, 99]
+
 */
 
-  const global_ordinal_type indexBase = 0;
-  RCP<const map_type> map = rcp (new map_type (100, myElts (), indexBase, comm));
+  const GO indexBase = 0;
+  RCP<const MapType> map = rcp (new MapType (100, myElts (), indexBase, comm));
 
-  RCP<Teuchos::FancyOStream> fos =
-    Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  RCP<FancyOStream> fos = Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
   //fos->setOutputToRootOnly(-1);
   //map->describe(*fos,Teuchos::VERB_EXTREME);
 
@@ -182,14 +190,14 @@ main (int argc, char *argv[])
   fos->setOutputToRootOnly(0);
   *fos << std::endl << "Creating the sparse matrix" << std::endl;
 
-  local_ordinal_type nnz=5;
-  RCP<mat_type> A = rcp (new mat_type (map, nnz));
+  LO nnz=5;
+  RCP<MatrixType> A = rcp (new MatrixType (map, nnz));
 
-  ArrayView<const global_ordinal_type> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
-  global_ordinal_type center, left, right, lower, upper;
-  std::vector<scalar_type>        vals(nnz);
-  std::vector<global_ordinal_type> inds(nnz);
+  GO center, left, right, lower, upper;
+  std::vector<SC> vals(nnz);
+  std::vector<GO> inds(nnz);
 
   //    e
   //  b a c
@@ -198,7 +206,7 @@ main (int argc, char *argv[])
     size_t n = 0;
 
     center = myGlobalElements[i] - indexBase;
-    GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
+    GetNeighboursCartesian2d<GO>(center, nx, ny, left, right, lower, upper);
 
     if (left  != -1) { inds[n] = left;  vals[n++] = b; }
     if (right != -1) { inds[n] = right; vals[n++] = c; }
@@ -206,15 +214,15 @@ main (int argc, char *argv[])
     if (upper != -1) { inds[n] = upper; vals[n++] = e; }
 
     // diagonal
-    scalar_type z = a;
+    SC z = a;
     inds[n]   = center;
     vals[n++] = z;
 
     for (size_t j = 0; j < n; j++)
       inds[j] += indexBase;
 
-    ArrayView<global_ordinal_type> iv(&inds[0], n);
-    ArrayView<scalar_type>        av(&vals[0], n);
+    ArrayView<GO> iv(&inds[0], n);
+    ArrayView<SC> av(&vals[0], n);
     A->insertGlobalValues(myGlobalElements[i], iv, av);
   }
 
@@ -223,10 +231,14 @@ main (int argc, char *argv[])
   // Make sure that all processes finished fillComplete, before
   // reporting success.
   comm->barrier ();
-  if (comm->getRank () == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
-    return EXIT_SUCCESS;
-  }
+
 }
 
+#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, Bug6069_1, SC, LO, GO, NT)
 
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_SC_LO_GO_NO)
+
+} // namespace (anonymous)
