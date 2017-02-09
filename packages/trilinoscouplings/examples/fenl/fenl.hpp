@@ -44,6 +44,12 @@
 #ifndef KOKKOS_EXAMPLE_FENL_HPP
 #define KOKKOS_EXAMPLE_FENL_HPP
 
+#include "TrilinosCouplings_config.h"
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+#include "Sacado.hpp"
+#include "Sacado_mpl_apply.hpp"
+#endif
+
 #include <iostream>
 
 #include <stdlib.h>
@@ -237,6 +243,20 @@ struct LocalViewTraits {
   { return v; }
 };
 
+// Traits class for replacing a nested scalar type with the local scalar type
+template <typename ScalarType, typename LocalScalarType,
+          typename Enabled = void>
+struct ReplaceLocalScalarType {
+  typedef ScalarType type;
+};
+
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+template <typename ScalarType, typename LocalScalarType>
+struct ReplaceLocalScalarType<ScalarType,LocalScalarType,typename std::enable_if< Sacado::IsFad<ScalarType>::value >::type> {
+  typedef typename Sacado::mpl::apply<ScalarType,LocalScalarType>::type type;
+};
+#endif
+
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
 struct CreateDeviceConfigs {
@@ -385,6 +405,14 @@ public:
   }
 };
 
+template <typename CoeffType, typename FadType>
+struct FadCoeffFunctionTraits {
+  typedef CoeffType type;
+  static type eval(const CoeffType& coeff_function) {
+    return coeff_function;
+  }
+};
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
@@ -449,7 +477,8 @@ public:
     const bool use_exp,
     const MeshScalar exp_shift,
     const MeshScalar exp_scale,
-    const bool use_disc_exp_scale) :
+    const bool use_disc_exp_scale,
+    const bool init_random_variables = true) :
     m_mean( mean ),
     m_variance( variance ),
     m_corr_len( correlation_length ),
@@ -457,8 +486,7 @@ public:
     m_use_exp( use_exp ),
     m_exp_shift( exp_shift ),
     m_exp_scale( exp_scale ),
-    m_use_disc_exp_scale( use_disc_exp_scale ),
-    m_rv( "KL Random Variables", m_num_rv )
+    m_use_disc_exp_scale( use_disc_exp_scale )
   {
     Teuchos::ParameterList solverParams;
     solverParams.set("Number of KL Terms", int(num_rv));
@@ -472,6 +500,9 @@ public:
     solverParams.set("Correlation Lengths", correlation_lengths);
 
     m_rf = rf_type(solverParams);
+
+    if (init_random_variables)
+      m_rv = RandomVariableView( "KL Random Variables", m_num_rv );
   }
 
   ExponentialKLCoefficient( const ExponentialKLCoefficient & rhs ) :
@@ -527,6 +558,36 @@ public:
     return val;
   }
 };
+
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+template <typename Scalar, typename MeshScalar, typename Device,
+          typename FadType>
+struct FadCoeffFunctionTraits<
+  ExponentialKLCoefficient<Scalar,MeshScalar,Device>, FadType> {
+  typedef ExponentialKLCoefficient<Scalar,MeshScalar,Device> coeff_type;
+  typedef ExponentialKLCoefficient<FadType,MeshScalar,Device> type;
+  static type eval(const coeff_type& coeff_function) {
+    typedef typename type::RandomVariableView FadRV;
+    type fad_coeff_function(coeff_function.m_mean,
+                            coeff_function.m_variance,
+                            coeff_function.m_corr_len,
+                            coeff_function.m_num_rv,
+                            coeff_function.m_use_exp,
+                            coeff_function.m_exp_shift,
+                            coeff_function.m_exp_scale,
+                            coeff_function.m_use_disc_exp_scale,
+                            false);
+    FadRV fad_rv("Fad KL Random Variables",
+                 coeff_function.m_num_rv, coeff_function.m_num_rv+1 );
+    for (unsigned i=0; i<coeff_function.m_num_rv; ++i) {
+      fad_rv(i).val() = coeff_function.m_rv(i);
+      fad_rv(i).fastAccessDx(i) = 1.0;
+    }
+    fad_coeff_function.setRandomVariables(fad_rv);
+    return fad_coeff_function;
+  }
+};
+#endif
 
 } /* namespace FENL */
 } /* namespace Example */

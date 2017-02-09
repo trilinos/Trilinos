@@ -381,19 +381,104 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template< class FiniteElementMeshType , class SparseMatrixType
+class DefaultGatherScatterOp {
+public:
+  template <typename VectorType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  gather_solution(const unsigned i, const VectorType& solution,
+                  ScalarType& val) const {
+    val = solution(i);
+  }
+
+  template <typename VectorType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  scatter_residual(const unsigned i, const VectorType& residual,
+                   const ScalarType& val) const {
+    Kokkos::atomic_add( &residual(i), val );
+  }
+
+  template <typename MatrixType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  scatter_jacobian(const unsigned i, const MatrixType& jacobian,
+                   const ScalarType& val) const {
+    Kokkos::atomic_add( &jacobian(i), val );
+  }
+};
+
+#ifdef HAVE_TRILINOSCOUPLINGS_SACADO
+template <typename MultiVectorType>
+class ParamSensitivityGatherScatterOp {
+public:
+  ParamSensitivityGatherScatterOp() = default;
+
+  ParamSensitivityGatherScatterOp(
+    const MultiVectorType& sol_dp, const MultiVectorType& res_dp) :
+    solution_dp(sol_dp), residual_dp(res_dp),
+    num_p(solution_dp.dimension_1()) {}
+
+  KOKKOS_INLINE_FUNCTION
+  ParamSensitivityGatherScatterOp(const ParamSensitivityGatherScatterOp&) = default;
+
+  KOKKOS_INLINE_FUNCTION
+  ParamSensitivityGatherScatterOp& operator=(const ParamSensitivityGatherScatterOp&) = default;
+
+  template <typename VectorType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  gather_solution(const unsigned i, const VectorType& solution,
+                  ScalarType& val) const {
+    val.resize(num_p);
+    val.val() = solution(i);
+    for (unsigned j=0; j<num_p; ++j)
+      val.fastAccessDx(j) = solution_dp(i,j);
+  }
+
+  template <typename VectorType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  scatter_residual(const unsigned i, const VectorType& residual,
+                   const ScalarType& val) const {
+    Kokkos::atomic_add( &residual(i), val.val() );
+    for (unsigned j=0; j<num_p; ++j)
+      Kokkos::atomic_add( &residual_dp(i,j), val.fastAccessDx(j) );
+  }
+
+  template <typename MatrixType, typename ScalarType>
+  KOKKOS_INLINE_FUNCTION
+  void
+  scatter_jacobian(const unsigned i, const MatrixType& jacobian,
+                   const ScalarType& val) const {
+    Kokkos::atomic_add( &jacobian(i), val.val() );
+  }
+
+private:
+  const MultiVectorType solution_dp;
+  const MultiVectorType residual_dp;
+  const unsigned num_p;
+};
+#endif
+
+template< class FiniteElementMeshType
+        , class SparseMatrixType
         , class CoeffFunctionType = ElementComputationConstantCoefficient
+        , class GatherScatterOp = DefaultGatherScatterOp
+        , class ScalarType = typename SparseMatrixType::value_type
         >
 class ElementComputation ;
 
 
 template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
-          class CoeffFunctionType >
+          typename MatrixVectorScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
+          class CoeffFunctionType , class GatherScatterOp , class ScalarType >
 class ElementComputation
   < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >
-  , Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
-  , CoeffFunctionType >
+  , Kokkos::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
+  , CoeffFunctionType
+  , GatherScatterOp
+  , ScalarType >
 {
 public:
 
@@ -403,12 +488,12 @@ public:
   //------------------------------------
 
   typedef ExecutionSpace   execution_space ;
-  typedef ScalarType   scalar_type ;
+  typedef ScalarType       scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
+  typedef Kokkos::View< MatrixVectorScalarType* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
@@ -416,7 +501,8 @@ public:
   typedef LocalViewTraits< matrix_values_type> local_matrix_view_traits;
   typedef typename local_vector_view_traits::local_view_type local_vector_type;
   typedef typename local_matrix_view_traits::local_view_type local_matrix_type;
-  typedef typename local_vector_view_traits::local_value_type local_scalar_type;
+  typedef typename local_vector_view_traits::local_value_type local_matrix_vector_scalar_type;
+  typedef typename ReplaceLocalScalarType<ScalarType,local_matrix_vector_scalar_type>::type local_scalar_type;
   static const bool use_team = local_vector_view_traits::use_team;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
@@ -429,14 +515,6 @@ public:
 
   typedef typename mesh_type::node_coord_type                                      node_coord_type ;
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount] ,                execution_space > elem_vectors_type ;
-
-  typedef LocalViewTraits< elem_matrices_type > local_elem_matrices_traits;
-  typedef LocalViewTraits< elem_vectors_type > local_elem_vectors_traits;
-  typedef typename local_elem_matrices_traits::local_view_type local_elem_matrices_type;
-  typedef typename local_elem_vectors_traits::local_view_type local_elem_vectors_type;
-
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 
   //------------------------------------
@@ -449,11 +527,11 @@ public:
   const elem_node_type      elem_node_ids ;
   const node_coord_type     node_coords ;
   const elem_graph_type     elem_graph ;
-  const elem_matrices_type  elem_jacobians ;
-  const elem_vectors_type   elem_residuals ;
   const vector_type         solution ;
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
+  const GatherScatterOp     gather_scatter ;
+  const bool                assemble_jacobian ;
   const CoeffFunctionType   coeff_function ;
   const bool                isotropic ;
   const double              coeff_source ;
@@ -465,11 +543,11 @@ public:
     , elem_node_ids( rhs.elem_node_ids )
     , node_coords(   rhs.node_coords )
     , elem_graph(    rhs.elem_graph )
-    , elem_jacobians( rhs.elem_jacobians )
-    , elem_residuals( rhs.elem_residuals )
     , solution( rhs.solution )
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
+    , gather_scatter( rhs.gather_scatter )
+    , assemble_jacobian( rhs.assemble_jacobian )
     , coeff_function( rhs.coeff_function )
     , isotropic( rhs.isotropic )
     , coeff_source( rhs.coeff_source )
@@ -490,16 +568,19 @@ public:
                       const vector_type        & arg_residual ,
                       const Kokkos::DeviceConfig arg_dev_config ,
                       const QuadratureData<ExecutionSpace>& qd =
-                        QuadratureData<ExecutionSpace>() )
+                        QuadratureData<ExecutionSpace>() ,
+                      const GatherScatterOp    & arg_gather_scatter =
+                        GatherScatterOp(),
+                      const bool                 arg_assemble_jacobian = true )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
     , elem_graph(    arg_elem_graph )
-    , elem_jacobians()
-    , elem_residuals()
     , solution( arg_solution )
     , residual( arg_residual )
     , jacobian( arg_jacobian )
+    , gather_scatter( arg_gather_scatter )
+    , assemble_jacobian( arg_assemble_jacobian )
     , coeff_function( arg_coeff_function )
     , isotropic( arg_isotropic )
     , coeff_source( arg_coeff_source )
@@ -656,16 +737,18 @@ public:
                                     dpsidz_m * gradz_at_pt ) +
                         ( advection_term  + source_term ) * bases_val_m ) ;
 
-      for( unsigned n = 0; n < FunctionCount; n++) {
+      if (assemble_jacobian) {
+        for( unsigned n = 0; n < FunctionCount; n++) {
 
-        mat[n] +=
-          detJ_weight * ( coeff_k * ( dpsidx_m * dpsidx[n] +
-                                      dpsidy_m * dpsidy[n] +
-                                      dpsidz_m * dpsidz[n] ) +
-                          ( advection[0] * dpsidx[n] +
-                            advection[1] * dpsidy[n] +
-                            advection[2] * dpsidz[n] +
-                            source_deriv * bases_vals[n] ) * bases_val_m );
+          mat[n] +=
+            detJ_weight * ( coeff_k * ( dpsidx_m * dpsidx[n] +
+                                        dpsidy_m * dpsidy[n] +
+                                        dpsidz_m * dpsidz[n] ) +
+                            ( advection[0] * dpsidx[n] +
+                              advection[1] * dpsidy[n] +
+                              advection[2] * dpsidz[n] +
+                              source_deriv * bases_vals[n] ) * bases_val_m );
+        }
       }
     }
   }
@@ -722,16 +805,18 @@ public:
                         coeff_k * dpsidz_m * gradz_at_pt +
                         ( advection_term  + source_term ) * bases_val_m ) ;
 
-      for( unsigned n = 0; n < FunctionCount; n++) {
+      if (assemble_jacobian) {
+        for( unsigned n = 0; n < FunctionCount; n++) {
 
-        mat[n] +=
-          detJ_weight * (            dpsidx_m * dpsidx[n] +
-                                     dpsidy_m * dpsidy[n] +
-                           coeff_k * dpsidz_m * dpsidz[n] +
-                          ( advection[0] * dpsidx[n] +
-                            advection[1] * dpsidy[n] +
-                            advection[2] * dpsidz[n] +
-                            source_deriv * bases_vals[n] ) * bases_val_m );
+          mat[n] +=
+            detJ_weight * (            dpsidx_m * dpsidx[n] +
+                                       dpsidy_m * dpsidy[n] +
+                             coeff_k * dpsidz_m * dpsidz[n] +
+                             ( advection[0] * dpsidx[n] +
+                               advection[1] * dpsidy[n] +
+                               advection[2] * dpsidz[n] +
+                               source_deriv * bases_vals[n] ) * bases_val_m );
+        }
       }
     }
   }
@@ -787,7 +872,8 @@ public:
       y[i] = node_coords( ni , 1 );
       z[i] = node_coords( ni , 2 );
 
-      val[i] = local_solution( ni );
+      //val[i] = local_solution( ni );
+      gather_scatter.gather_solution( ni , local_solution , val[i] );
     }
 
 
@@ -796,8 +882,9 @@ public:
 
     for( unsigned i = 0; i < FunctionCount ; i++ ) {
       elem_vec[i] = 0 ;
-      for( unsigned j = 0; j < FunctionCount ; j++){
-        elem_mat[i][j] = 0 ;
+      if (assemble_jacobian)
+        for( unsigned j = 0; j < FunctionCount ; j++){
+          elem_mat[i][j] = 0 ;
       }
     }
 
@@ -841,12 +928,17 @@ public:
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
       if ( row < residual.dimension_0() ) {
-        atomic_add( & local_residual( row ) , elem_vec[i] );
+        //atomic_add( & local_residual( row ) , elem_vec[i] );
+        gather_scatter.scatter_residual( row , local_residual , elem_vec[i] );
 
-        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
-          const unsigned entry = elem_graph( ielem , i , j );
-          if ( entry != ~0u ) {
-            atomic_add( & local_jacobian_values( entry ) , elem_mat[i][j] );
+        if (assemble_jacobian) {
+          for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
+            const unsigned entry = elem_graph( ielem , i , j );
+            if ( entry != ~0u ) {
+              //atomic_add( & local_jacobian_values( entry ) , elem_mat[i][j] );
+              gather_scatter.scatter_jacobian( entry , local_jacobian_values ,
+                                               elem_mat[i][j] );
+            }
           }
         }
       }
@@ -878,12 +970,15 @@ public:
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , execution_space > vector_type ;
+  typedef Kokkos::View< scalar_type** , Kokkos::LayoutLeft, execution_space > multi_vector_type ;
 
   //------------------------------------
 
   typedef LocalViewTraits< vector_type > local_vector_view_traits;
+  typedef LocalViewTraits< multi_vector_type > local_multi_vector_view_traits;
   typedef LocalViewTraits< matrix_values_type> local_matrix_view_traits;
   typedef typename local_vector_view_traits::local_view_type local_vector_type;
+  typedef typename local_multi_vector_view_traits::local_view_type local_multi_vector_type;
   typedef typename local_matrix_view_traits::local_view_type local_matrix_type;
   static const bool use_team = local_vector_view_traits::use_team;
 
@@ -894,8 +989,10 @@ public:
 
   const node_coord_type     node_coords ;
   const vector_type         solution ;
+  const multi_vector_type   solution_dp ;
   const sparse_matrix_type  jacobian ;
   const vector_type         residual ;
+  const multi_vector_type   residual_dp ;
   const bc_scalar_type      bc_lower_value ;
   const bc_scalar_type      bc_upper_value ;
   const scalar_coord_type   bc_lower_limit ;
@@ -904,6 +1001,8 @@ public:
   const unsigned            node_count ;
         bool                init ;
   const Kokkos::DeviceConfig dev_config ;
+  const bool                assemble_jacobian ;
+  const unsigned            num_param ;
 
 
   DirichletComputation( const mesh_type          & arg_mesh ,
@@ -913,22 +1012,34 @@ public:
                         const unsigned             arg_bc_plane ,
                         const bc_scalar_type       arg_bc_lower_value ,
                         const bc_scalar_type       arg_bc_upper_value ,
-                        const Kokkos::DeviceConfig arg_dev_config )
+                        const Kokkos::DeviceConfig arg_dev_config ,
+                        const multi_vector_type  & arg_solution_dp =
+                          multi_vector_type() ,
+                        const multi_vector_type  & arg_residual_dp =
+                          multi_vector_type() ,
+                        const bool                 arg_assemble_jacobian = true,
+                        const bool                 arg_init = false )
     : node_coords( arg_mesh.node_coord() )
     , solution(    arg_solution )
+    , solution_dp( arg_solution_dp )
     , jacobian(    arg_jacobian )
     , residual(    arg_residual )
+    , residual_dp(  arg_residual_dp )
     , bc_lower_value( arg_bc_lower_value )
     , bc_upper_value( arg_bc_upper_value )
     , bc_lower_limit( std::numeric_limits<scalar_coord_type>::epsilon() )
     , bc_upper_limit( scalar_coord_type(1) - std::numeric_limits<scalar_coord_type>::epsilon() )
     , bc_plane(       arg_bc_plane )
     , node_count( arg_mesh.node_count_owned() )
-    , init( false )
+    , init( arg_init )
     , dev_config( arg_dev_config )
+    , assemble_jacobian( arg_assemble_jacobian )
+    , num_param( solution_dp.dimension_1() )
     {
-      parallel_for( node_count , *this );
-      init = true ;
+      if (!init) {
+        parallel_for( node_count , *this );
+        init = true ;
+      }
     }
 
   void apply() const
@@ -972,6 +1083,9 @@ public:
     local_vector_type local_residual =
       local_vector_view_traits::create_local_view(residual,
                                                   ensemble_rank);
+    local_multi_vector_type local_residual_dp =
+      local_multi_vector_view_traits::create_local_view(residual_dp,
+                                                        ensemble_rank);
     local_matrix_type local_jacobian_values =
       local_matrix_view_traits::create_local_view(jacobian.values,
                                                   ensemble_rank);
@@ -991,17 +1105,22 @@ public:
     if ( ! init ) {
       solution(inode) = bc_lower ? bc_lower_value : (
                         bc_upper ? bc_upper_value : 0 );
+      for (unsigned i=0; i<num_param; ++i)
+        solution_dp(inode,i) = 0 ;
     }
     else {
       if ( bc_lower || bc_upper ) {
 
         local_residual(inode) = 0 ;
+        for (unsigned i=0; i<num_param; ++i)
+          local_residual_dp(inode,i) = 0 ;
 
         //  zero each value on the row, and leave a one
         //  on the diagonal
 
-        for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-          local_jacobian_values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
+        if (assemble_jacobian)
+          for( unsigned i = iBeg ; i < iEnd ; ++i ) {
+            local_jacobian_values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
         }
       }
       else {
@@ -1009,28 +1128,32 @@ public:
         //  Find any columns that are boundary conditions.
         //  Clear them and adjust the residual vector
 
-        for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-          const unsigned       cnode = jacobian.graph.entries(i) ;
-          const scalar_coord_type cc = node_coords(cnode,bc_plane);
+        if (assemble_jacobian)
+          for( unsigned i = iBeg ; i < iEnd ; ++i ) {
+            const unsigned       cnode = jacobian.graph.entries(i) ;
+            const scalar_coord_type cc = node_coords(cnode,bc_plane);
 
-          if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
-            local_jacobian_values(i) = 0 ;
+            if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
+              local_jacobian_values(i) = 0 ;
+            }
           }
-        }
       }
     }
   }
 };
 
-template< typename FixtureType , typename VectorType >
+template< typename FixtureType , typename VectorType ,
+          typename MultiVectorType = Kokkos::View<typename VectorType::value_type**, Kokkos::LayoutLeft, typename VectorType::execution_space> >
 class ResponseComputation
 {
 public:
 
   typedef FixtureType fixture_type ;
   typedef VectorType vector_type ;
+  typedef MultiVectorType multi_vector_type;
   typedef typename vector_type::execution_space execution_space ;
-  typedef typename vector_type::value_type value_type ;
+  typedef typename vector_type::value_type scalar_type ;
+  typedef scalar_type value_type[];
 
   typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
@@ -1044,33 +1167,53 @@ public:
   const element_data_type    elem_data ;
   const fixture_type         fixture ;
   const vector_type          solution ;
+  const multi_vector_type    solution_dp ;
+  const unsigned             num_param ;
+  const unsigned             value_count ;
 
   ResponseComputation( const ResponseComputation & rhs )
     : elem_data()
     , fixture( rhs.fixture )
     , solution( rhs.solution )
+    , solution_dp( rhs.solution_dp )
+    , num_param( rhs.num_param )
+    , value_count( rhs.value_count )
     {}
 
   ResponseComputation( const fixture_type& arg_fixture ,
-                       const vector_type & arg_solution )
+                       const vector_type & arg_solution ,
+                       const multi_vector_type& arg_solution_dp =
+                         multi_vector_type() )
     : elem_data()
     , fixture( arg_fixture )
     , solution( arg_solution )
+    , solution_dp( arg_solution_dp )
+    , num_param( solution_dp.dimension_1() )
+    , value_count( num_param+1 )
     {}
 
   //------------------------------------
 
-  value_type apply() const
+  scalar_type apply() const
   {
-    value_type response = 0;
+    Teuchos::Array<scalar_type> response(value_count, 0.0);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , response );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , &response[0] );
+    return response[0];
+  }
+
+  Teuchos::Array<scalar_type> apply_gradient() const
+  {
+    Teuchos::Array<scalar_type> response(value_count, 0.0);
+    //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , &response[0] );
     return response;
   }
 
   //------------------------------------
 
-   KOKKOS_INLINE_FUNCTION
+  /*
+  KOKKOS_INLINE_FUNCTION
   double compute_detJ(
     const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
@@ -1130,35 +1273,34 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  value_type contributeResponse(
-    const value_type dof_values[] ,
+  scalar_type contributeResponse(
+    const scalar_type dof_values[] ,
     const double  detJ ,
     const double  integ_weight ,
     const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
-    value_type value_at_pt = 0 ;
+    scalar_type value_at_pt = 0 ;
     for ( unsigned m = 0 ; m < ElemNodeCount ; m++ ) {
       value_at_pt += dof_values[m] * bases_vals[m] ;
     }
 
-    value_type elem_response =
+    scalar_type elem_response =
       value_at_pt * value_at_pt * detJ * integ_weight ;
 
     return elem_response;
   }
 
-  /*
   KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned ielem , value_type& response ) const
+  void operator()( const unsigned ielem , scalar_type& response ) const
   {
     // Gather nodal coordinates and solution vector:
 
     double x[ ElemNodeCount ] ;
     double y[ ElemNodeCount ] ;
     double z[ ElemNodeCount ] ;
-    value_type val[ ElemNodeCount ] ;
+    scalar_type val[ ElemNodeCount ] ;
 
     for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
       const unsigned ni = fixture.elem_node( ielem , i );
@@ -1181,20 +1323,26 @@ public:
   */
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned i , value_type& response ) const
+  void operator()( const unsigned i , value_type response ) const
   {
-    const value_type& u = solution(i);
-    response += (u * u) / fixture.node_count_global();
+    const scalar_type& u = solution(i);
+    response[0] += (u * u) / fixture.node_count_global();
+    for (unsigned j=0; j<num_param; ++j)
+      response[j+1] += 2.0 * u * solution_dp(i,j) /  fixture.node_count_global();
   }
 
   KOKKOS_INLINE_FUNCTION
-  void init( value_type & response ) const
-  { response = 0 ; }
+  void init( value_type response ) const {
+    for (unsigned j=0; j<value_count; ++j)
+      response[j] = 0 ;
+  }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & response ,
-             volatile const value_type & input ) const
-  { response += input ; }
+  void join( volatile value_type response ,
+             volatile const value_type input ) const {
+     for (unsigned j=0; j<value_count; ++j)
+       response[j] += input[j] ;
+  }
 
 }; /* ResponseComputation */
 
