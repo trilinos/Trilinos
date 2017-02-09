@@ -94,6 +94,7 @@ const std::string prefSeparator = "=====================================";
 
 namespace MueLuExamples {
 
+#ifdef HAVE_MUELU_BELOS
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void solve_system_hierarchy(Xpetra::UnderlyingLib& lib,
                               Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>&   A,
@@ -156,7 +157,7 @@ namespace MueLuExamples {
     Belos::ReturnType result = BelosSolver->solve();
     TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
   }
-
+#endif
 
 
   // --------------------------------------------------------------------------------------
