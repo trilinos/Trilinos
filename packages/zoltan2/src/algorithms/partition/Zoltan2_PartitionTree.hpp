@@ -55,7 +55,7 @@ namespace Zoltan2{
 // Right now a negative sign convention means child <= 0 is actually part_t
 // but otherwise is a tree node index.
 template <typename node_t>
-struct partitionTreeNode
+struct PartitionTreeNode
 {
   node_t parent;
   ArrayRCP<node_t> children;

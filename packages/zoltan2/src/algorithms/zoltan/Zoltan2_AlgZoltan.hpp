@@ -212,7 +212,11 @@ private:
     //                         (void *) &(*adp));
   }
   
-  void loadRCBPartitionTree(const RCP<PartitioningSolution<Adapter> > &solution)
+  //! \brief  for partitioning methods, file nodes with partition tree info
+  //
+  virtual void getPartitionTree(
+    std::vector<PartitionTreeNode<part_t>> & partitionTree,
+    part_t num_parts) const
   {
     // This method is responsible for accessing the rcb formatted partition
     // tree and converting it to a general format all algorithms can use.
@@ -243,9 +247,6 @@ private:
     // also make sure parent mapping is correct for these trivial nodes.
     bool bLoadTrivialNodes = true;
 
-    // get the total number of global parts
-    part_t num_parts = static_cast<part_t>(solution->getTargetGlobalNumberOfParts());
-
     // Determine how many nodes are in the rcb tree
     part_t numTreeNodes = num_parts - 1; // always true for rcb binary?
     if(bLoadTrivialNodes) { // if using trivial nodes we insert the extra
@@ -253,7 +254,7 @@ private:
     }
 
     // Allocate partitionTreeNode vector and we will set all values below
-    std::vector<partitionTreeNode<part_t>> partitionTreeNodes(numTreeNodes);
+    partitionTree = std::vector<PartitionTreeNode<part_t>>(numTreeNodes);
 
     // Add the rcb nodes to the general tree, converting conventions as we go
     for(part_t n = 0; n < numTreeNodes; ++n) {
@@ -269,7 +270,7 @@ private:
         // We may need to set a bool flag instead of the neg convnetion
         ArrayRCP<part_t> children(1);
         children[0] = -n;
-        partitionTreeNodes[n].children = children;
+        partitionTree[n].children = children;
       }
       else {
         // call zoltan wrapper to get the node information - starts at +1 by conv
@@ -283,7 +284,11 @@ private:
           rcbIndex -= num_parts; // shift back to account for extra trivial nodes
         }
 
-        zz->RCB_Partition_Tree(rcbIndex, parent, left_leaf, right_leaf);
+        int err = zz->RCB_Partition_Tree(rcbIndex, parent, left_leaf, right_leaf);
+
+        if(err) {
+          throw std::runtime_error( "Zoltan RCP_Partition_Tree returned an error.");
+        }
 
         // convert parent from rcb conventions to our generalized convention
         parent = abs(parent); // remove negative it exists
@@ -306,13 +311,13 @@ private:
         }
 
         // set node parent
-        partitionTreeNodes[n].parent = parent;
+        partitionTree[n].parent = parent;
 
         // set node children
         ArrayRCP<part_t> children(2);
         children[0] = static_cast<part_t>(left_leaf);
         children[1] = static_cast<part_t>(right_leaf);
-        partitionTreeNodes[n].children = children;
+        partitionTree[n].children = children;
 
         // special case - if we are the parent of a trivial node tell them
         // terminal means leaf <= 0 in which case partID = -leaf
@@ -320,12 +325,12 @@ private:
         // and parent convention is node index + 1, so parent = n + 1
         if(bLoadTrivialNodes) {
           if(left_leaf <= 0) { // is left terminal?
-            partitionTreeNodes[-left_leaf - num_parts].parent = n + 1; // [CONVENTION]
-            partitionTreeNodes[n].children[0] = -left_leaf - num_parts + 1;
+            partitionTree[-left_leaf - num_parts].parent = n + 1; // [CONVENTION]
+            partitionTree[n].children[0] = -left_leaf - num_parts + 1;
           }
           if(right_leaf <= 0) { // is right terminal?
-            partitionTreeNodes[-right_leaf - num_parts].parent = n + 1; // [CONVENTION]
-            partitionTreeNodes[n].children[1] = -right_leaf - num_parts + 1;
+            partitionTree[-right_leaf - num_parts].parent = n + 1; // [CONVENTION]
+            partitionTree[n].children[1] = -right_leaf - num_parts + 1;
           }
         }
       }
@@ -344,9 +349,6 @@ private:
       std::cout << std::endl; // space between lines
     }
     */
-
-    // might want to avoid this copy - not sure if this is important
-    this->setPartitionTreeNodes(partitionTreeNodes);
   }
 
 public:
@@ -482,6 +484,10 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("RCB_MULTICRITERIA_NORM", "3");
   }
 
+  // perhaps make this a bool stored in the AlgZoltan if we want to follow
+  // the pattern of multijagged mj_keep_part_boxes for example. However we can
+  // collect the error straight from Zoltan if we attempt to access the tree
+  // when we never stored it so that may not be necessary
   bool bKeepPartitionTree = false;
   pe = pl.getEntryPtr("keep_partition_tree");
   if (pe) {
@@ -569,12 +575,6 @@ void AlgZoltan<Adapter>::partition(
     partList[tmp] = oParts[i];
   }
   
-  // if the param keep_partition_tree is not set true then the tree
-  // will not be available and not loaded - attempts to obtain it will throw
-  if(bKeepPartitionTree) {
-    loadRCBPartitionTree(solution);
-  }
-
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {

@@ -70,10 +70,6 @@ static char       *yo = "Zoltan_RCB_Partition_Tree";
 struct rcb_tree   *treept; /* tree of RCB cuts */
 int                i, ierr = ZOLTAN_OK;
 
-
-  RCB_STRUCT * rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
-  treept = rcb->Tree_Ptr;
-
   if (zz->LB.Data_Structure == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
       "No Decomposition Data available; use KEEP_CUTS parameter.");
@@ -87,6 +83,9 @@ int                i, ierr = ZOLTAN_OK;
     ierr = ZOLTAN_FATAL;
     goto End;
   }
+
+  RCB_STRUCT * rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
+  treept = rcb->Tree_Ptr;
 
   if (treept[0].dim < 0) {     /* RCB tree was never created. */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RCB tree saved; "

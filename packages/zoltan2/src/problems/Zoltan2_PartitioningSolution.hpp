@@ -383,50 +383,34 @@ public:
     else                   return NULL;
   }
 
-  /*! \brief returns the partition tree nodes.
-   */
-  virtual const std::vector<partitionTreeNode<part_t> > &
-  getPartitionTreeNodes() const
-  {
-    return this->algorithm_->getPartitionTreeNodes();
-  }
-
   /*! \brief calculate if partition tree is binary.
    */
   virtual bool isPartitioningTreeBinary() const
   {
+    part_t numParts = static_cast<part_t>(getTargetGlobalNumberOfParts());
+    std::vector<PartitionTreeNode<part_t> > partitionTree;
+
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+      this->algorithm_->getPartitionTree(partitionTree, numParts);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
     // returns true if tree is binary
     // TO DO - determine if this should be true if tree is in fact binary
     // or must have been binary - for example if an MJ algorithm could have
     // done a 3-split but all end up being 2, do we want true here?
-    if(getPartitionTreeNodes().size() == 0) {
+    if(partitionTree.size() == 0) {
       throw std::logic_error(
         "no binary tree available. Set param 'keep_partition_tree' true");
     }
-    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
-      if(getPartitionTreeNodes()[n].children.size() > 2) {
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
+      if(partitionTree[n].children.size() > 2) {
         return false;
       }
     }
     return true;
-  }
-
-  /*! \brief build a list of all children under the indexed node
-   */
-  void recursiveCollectAllParts(part_t nodeIndex, std::vector<part_t> & parts) const {
-    // traverse the tree filling with all children
-    const partitionTreeNode<part_t> & node = getPartitionTreeNodes()[nodeIndex];
-    // note this is not part_t because the children of a node is expected to
-    // always be a short list - for rcb it will be just 2 elements
-    for(int n = 0; n < static_cast<int>(node.children.size()); ++n) {
-      part_t child = node.children[n];
-      if(child <= 0) { // this is a terminal
-        parts.push_back(-child); // terminal = -child convention
-      }
-      else { // if not terminal, -1 for convention and recursive continue
-        recursiveCollectAllParts(child-1, parts); // node+1 convention
-      }
-    }
   }
 
   /*! \brief get the partition tree - fill the relevant arrays
@@ -437,13 +421,60 @@ public:
                         std::vector<part_t> & splitRangeEnd,
                         std::vector<part_t> & treeVertParents) const {
 
+    part_t numParts = static_cast<part_t>(getTargetGlobalNumberOfParts());
+
+    std::vector<PartitionTreeNode<part_t>> partitionTree;
+
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+      this->algorithm_->getPartitionTree(partitionTree, numParts);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
+    // now by convention the last node is the root
+    // this would not be the natural result of rcb
+    // however other algorithms may also need this swap step so
+    // I made it general here
+    part_t findRoot = -1;
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
+      if(partitionTree[n].parent == 0) { // root has parent=0 by convention
+        if(findRoot != -1) {
+          throw std::logic_error("setPartitionTreeNodes found more than one root. "
+            "This is not expected.");
+        }
+        findRoot = n;
+      }
+    }
+
+    if(findRoot == -1) {
+      throw std::logic_error( "setPartitionTreeNodes did not find a root. "
+        "This is not expected." );
+    }
+
+    // potentially we would not do this and simply apply the 'swap' on the
+    // data write out when requested - but that could create confusion
+    // To do - verify how we want to apply this convention
+    swapPartitionTreeNodes(partitionTree,
+      findRoot, static_cast<part_t>(partitionTree.size())-1);
+
+    // Swap the order of the two nodes under the root
+    // This would intentionally put permPartNums out of sequence for rcb for ex.
+    // Just for validating code right now...
+    /*
+    part_t newRoot = partitionTree.size()-1;
+    part_t save1 = partitionTree[newRoot].children[1];
+    partitionTree[newRoot].children[1] = partitionTree[newRoot].children[0];
+    partitionTree[newRoot].children[0] = save1;
+    */
+
     // determine number of nodes - design indicates count does not include root
-    numTreeVerts = static_cast<part_t>(getPartitionTreeNodes().size()) - 1;
+    numTreeVerts = static_cast<part_t>(partitionTree.size()) - 1;
 
     // determine permPartNums - by convention root is designated as last element
     // this could just be numTreeVerts-1 but thought that might lack clarity
-    part_t rootIndex = static_cast<part_t>(getPartitionTreeNodes().size()) - 1;
-    recursiveCollectAllParts(rootIndex, permPartNums);
+    part_t rootIndex = static_cast<part_t>(partitionTree.size()) - 1;
+    recursiveCollectAllParts(partitionTree, rootIndex, permPartNums);
 
     // determine splitRangeBeg and splitRangeEnd
     // this could be done a bit more efficiently with a new recursive function
@@ -451,13 +482,13 @@ public:
     // other algorithms will have different needs since things may not be sorted
     // ahead of time the exact way as rcb - so for now I am just reusing the
     // recursiveCollectAllParts method and then scan that for min and max
-    splitRangeBeg = std::vector<part_t>(getPartitionTreeNodes().size());
-    splitRangeEnd = std::vector<part_t>(getPartitionTreeNodes().size());
-    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
+    splitRangeBeg = std::vector<part_t>(partitionTree.size());
+    splitRangeEnd = std::vector<part_t>(partitionTree.size());
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
       splitRangeBeg[n] = -1; // means not set yet
       splitRangeEnd[n] = -1; // means not set yet
       std::vector<part_t> allParts;
-      recursiveCollectAllParts(n, allParts);
+      recursiveCollectAllParts(partitionTree, n, allParts);
       for(part_t c = 0; c < static_cast<part_t>(allParts.size()); ++c) {
         if(splitRangeBeg[n] == -1 || splitRangeBeg[n] > allParts[c]) {
           splitRangeBeg[n] = allParts[c]; // inclusive
@@ -469,10 +500,49 @@ public:
     }
 
     // determine treeVertParents - simply fill from the tree nodes
-    treeVertParents = std::vector<part_t>(getPartitionTreeNodes().size());
-    for(part_t n = 0; n < static_cast<part_t>(getPartitionTreeNodes().size()); ++n) {
-      treeVertParents[n] = getPartitionTreeNodes()[n].parent - 1;
+    treeVertParents = std::vector<part_t>(partitionTree.size());
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
+      treeVertParents[n] = partitionTree[n].parent - 1;
     }
+
+    // for debugging use the recursive search to generate a list of all
+    // children under each node and print them. The splitRangeBeg and
+    // splitRangeEnd have to match up with these properly:
+    #define MDM
+    #ifdef MDM
+    for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
+      const Zoltan2::PartitionTreeNode<part_t> & node = partitionTree[n];
+      std::cout << "  Info for Node index " << n << std::endl;
+
+      // print the nodes that branch from this node
+      std::cout << "    Connects to node indices: ";
+      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+        if(node.children[c] > 0) {
+          std::cout << node.children[c]-1 << " "; // leaf = node index = 1 convention
+        }
+      }
+      std::cout << std::endl;
+
+      // print the terminal children part IDs that branch from this node
+      std::cout << "    Connects to terminal part IDs: ";
+      // children can iterate int - will be a short list
+      for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+        if(node.children[c] <= 0) {
+          std::cout << -node.children[c] << " "; // negative sign convention
+        }
+      }
+      std::cout << std::endl;
+
+      // print all part IDs that are under this node (recursive)
+      std::cout << "    All part IDs under this node: ";
+      std::vector<part_t> allParts;
+      recursiveCollectAllParts(partitionTree, n, allParts);
+      for(part_t i = 0; i < static_cast<part_t>(allParts.size()); ++i) {
+        std::cout << allParts[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+    #endif
   }
 
   /*! \brief returns the part box boundary list.
@@ -590,6 +660,55 @@ public:
   }
 
 private:
+  void recursiveCollectAllParts(
+    const std::vector<PartitionTreeNode<part_t> > &partitionTree,
+    part_t nodeIndex, std::vector<part_t> & parts) const {
+    // traverse the tree filling with all children
+    const PartitionTreeNode<part_t> & node = partitionTree[nodeIndex];
+    // note this is not part_t because the children of a node is expected to
+    // always be a short list - for rcb it will be just 2 elements
+    for(int n = 0; n < static_cast<int>(node.children.size()); ++n) {
+      part_t child = node.children[n];
+      if(child <= 0) { // this is a terminal
+        parts.push_back(-child); // terminal = -child convention
+      }
+      else { // if not terminal, -1 for convention and recursive continue
+        recursiveCollectAllParts(partitionTree, child-1, parts); // node+1 convention
+      }
+    }
+  }
+
+  void swapPartitionTreeNodes(
+    std::vector<PartitionTreeNode<part_t>> &partitionTree,
+    part_t a, part_t b) const {
+    if(a != b) {
+      PartitionTreeNode<part_t> saveOld = partitionTree[a];
+      partitionTree[a] = partitionTree[b];
+      partitionTree[b] = saveOld;
+
+      // now we have to remap all parent/child indices
+      for(part_t n = 0; n < static_cast<part_t>(partitionTree.size()); ++n) {
+        PartitionTreeNode<part_t> & node = partitionTree[n];
+        if(node.parent == a+1) { // index+1 convention
+          node.parent = b+1; // index+1 convention
+        }
+        else if(node.parent == b+1) { // index+1 convention
+          node.parent = a+1; // index+1 convention
+        }
+
+        // note c is not part_t because children size will be just a few elements
+        for(int c = 0; c < static_cast<int>(node.children.size()); ++c) {
+          if(node.children[c] > 0 && node.children[c] == a+1) { // index+1 convention
+            node.children[c] = b+1; // index+1 convention
+          }
+          else if(node.children[c] == b+1) { // index+1 convention
+            node.children[c] = a+1; // index+1 convention
+          }
+        }
+      }
+    }
+  }
+
   void partToProc(bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
     int numLocalParts, int numGlobalParts);
 
@@ -614,9 +733,6 @@ private:
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
-
-  //part partition tree.
-  RCP < std::vector <Zoltan2::partitionTreeNode<part_t> > > partPartitionTree;
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -728,7 +844,7 @@ template <typename Adapter>
     int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm),
-      partBoxes(), partPartitionTree(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -763,7 +879,7 @@ template <typename Adapter>
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm),
-      partBoxes(), partPartitionTree(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
