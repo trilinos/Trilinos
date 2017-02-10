@@ -62,6 +62,8 @@ def setup_timers(yaml_data, mode, top, ax = None):
     timers_f = dfs.index
 
     # Top few
+    if top > len(timers_f):
+      print("Warning: there are only ", len(timers_f), " timers to plot.")
     top = min(top, len(timers_f))
     timers_f = dfs.index[-top:]
     dfs = dfs.loc[timers_f]
@@ -107,6 +109,8 @@ def muelu_strong_scaling(input_files, mode, ax, top, style):
     timers = dfs.index
 
     # Choose top few
+    if top > len(timers):
+      print("Warning: there are only ", len(timers), " timers to plot.")
     top = min(top, len(timers))
     timers = dfs.index[-1:-top-1:-1]
 
