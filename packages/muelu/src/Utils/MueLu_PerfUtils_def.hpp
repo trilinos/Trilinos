@@ -101,6 +101,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+    if (!CheckMatrix(A))
+      return "";
+
     typedef Xpetra::global_size_t global_size_t;
 
     std::ostringstream ss;
@@ -203,6 +206,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+    if (!CheckMatrix(A))
+      return "";
+
     std::ostringstream out;
 
     RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
@@ -237,6 +243,24 @@ namespace MueLu {
     }
 
     return out.str();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckMatrix(const Matrix& A) {
+    // We can only print statistics for matrices that have a crs graph. A
+    // potential issue is regarding Xpetra::TpetraBlockCrsMatrix which has no
+    // CrsGraph.  It is held as a private data member by Xpetra::CrsMatrix,
+    // which itself is an Xpetra::Matrix. So we check directly whether the
+    // request for the graph throws.
+    bool hasCrsGraph = true;
+    try {
+      A.getCrsGraph();
+
+    } catch (...) {
+      hasCrsGraph = false;
+    }
+
+    return hasCrsGraph;
   }
 
 } //namespace MueLu

@@ -66,6 +66,7 @@
 #include "MueLu_TopSmootherFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -469,6 +470,20 @@ namespace MueLu {
 
     RCP<Operator> A = Levels_[startLevel]->template Get<RCP<Operator> >("A");
     lib_ = A->getDomainMap()->lib();
+
+    if (IsPrint(Statistics2)) {
+      RCP<Matrix> Amat = rcp_dynamic_cast<Matrix>(A);
+
+      if (!Amat.is_null()) {
+          RCP<ParameterList> params = rcp(new ParameterList());
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Amat, "A0", params);
+      } else {
+          GetOStream(Warnings1) << "Fine level operator is not a matrix, statistics are not available" << std::endl;
+      }
+    }
 
     RCP<const FactoryManagerBase> rcpmanager = rcpFromRef(manager);
 

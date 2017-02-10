@@ -61,6 +61,7 @@
 #include "MueLu_HierarchyFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -149,6 +150,20 @@ namespace MueLu {
       VerboseObject::SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
+
+      if (VerboseObject::IsPrint(Statistics2)) {
+        RCP<Matrix> Amat = rcp_dynamic_cast<Matrix>(Op);
+
+        if (!Amat.is_null()) {
+            RCP<ParameterList> params = rcp(new ParameterList());
+            params->set("printLoadBalancingInfo", true);
+            params->set("printCommInfo",          true);
+
+            VerboseObject::GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Amat, "A0", params);
+        } else {
+            VerboseObject::GetOStream(Warnings1) << "Fine level operator is not a matrix, statistics are not available" << std::endl;
+        }
+      }
 
       H.SetPRrebalance(doPRrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
