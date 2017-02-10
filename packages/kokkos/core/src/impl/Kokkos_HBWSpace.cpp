@@ -58,7 +58,7 @@
 #include <Kokkos_HBWSpace.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <Kokkos_Atomic.hpp>
-#ifdef KOKKOS_HAVE_HBWSPACE
+#ifdef KOKKOS_ENABLE_HBWSPACE
 #include <memkind.h>
 #endif
 
@@ -68,7 +68,7 @@
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-#ifdef KOKKOS_HAVE_HBWSPACE
+#ifdef KOKKOS_ENABLE_HBWSPACE
 #define MEMKIND_TYPE MEMKIND_HBW //hbw_get_kind(HBW_PAGESIZE_4KB)
 
 namespace Kokkos {
@@ -138,7 +138,7 @@ HBWSpace::HBWSpace()
      HBWSpace::STD_MALLOC
     )
 {
-//printf("Init\n");
+printf("Init\n");
 setenv("MEMKIND_HBW_NODES", "1", 0);
 }
 
@@ -146,7 +146,7 @@ setenv("MEMKIND_HBW_NODES", "1", 0);
 HBWSpace::HBWSpace( const HBWSpace::AllocationMechanism & arg_alloc_mech )
   : m_alloc_mech( HBWSpace::STD_MALLOC )
 {
-//printf("Init2\n");
+printf("Init2\n");
 setenv("MEMKIND_HBW_NODES", "1", 0);
   if ( arg_alloc_mech == STD_MALLOC ) {
     m_alloc_mech = HBWSpace::STD_MALLOC ;
