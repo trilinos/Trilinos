@@ -1270,10 +1270,9 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     //-----------------------------------------------------------------------
 
     // legacy parameters
-    Teuchos::RCP<Teuchos::ParameterList> orthoPl = Teuchos::sublist(pl, "Orthogonalziation");
-    orthoPl->set("Orthogonalization", orthoType_default_,
+    pl->set("Orthogonalization", orthoType_default_,
       "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
-    orthoPl->set("Orthogonalization Constant",orthoKappa_default_,
+    pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
 
