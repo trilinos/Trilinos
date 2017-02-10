@@ -70,6 +70,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
 #include "MueLu_RFactory_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
