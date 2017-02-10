@@ -2,7 +2,7 @@
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE]
+  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE] [-t TOP]
   analysis.py (-h | --help)
 
 Options:
@@ -12,6 +12,7 @@ Options:
   -a MODE --analysis=MODE       Mode [default: setup_timers]
   -d DISPLAY --display=DISPLAY  Display mode [default: print]
   -s STYLE --style=STYLE        Plot style [default: stack]
+  -t TOP --top=TOP              Number of timers [default: 10]
 """
 
 import glob
@@ -46,7 +47,7 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(yaml_data, mode, ax = None, top=10):
+def setup_timers(yaml_data, mode, top, ax = None):
     """Show all setup level specific timers ordered by size"""
     timer_data = construct_dataframe(yaml_data)
 
@@ -75,7 +76,7 @@ def setup_timers(yaml_data, mode, ax = None, top=10):
     else:
         print(dfs['maxT'])
 
-def muelu_strong_scaling(input_files, mode, ax, style, top=10):
+def muelu_strong_scaling(input_files, mode, ax, top, style):
     """Show scalability of setup level specific timers ordered by size"""
 
     # Three style options:
@@ -90,7 +91,6 @@ def muelu_strong_scaling(input_files, mode, ax, style, top=10):
         show_the_rest = 1
 
     ## Determine top timers in the first log file
-    print(input_files)
     with open(input_files[0]) as data_file:
         yaml_data = yaml.safe_load(data_file)
 
@@ -397,6 +397,7 @@ if __name__ == '__main__':
     analysis    = options['--analysis']
     display     = options['--display']
     style       = options['--style']
+    top         = int(options['--top'])
 
     input_files = glob.glob(input_files)
     # Impose sorted order (similar to bash "sort -n"
@@ -440,7 +441,7 @@ if __name__ == '__main__':
 
     if analysis == 'muelu_strong_scaling':
         # Scaling studies work with multiple files
-        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style)
+        muelu_strong_scaling(input_files, mode=display, top=top, ax=ax, style=style)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here
@@ -449,7 +450,7 @@ if __name__ == '__main__':
             yaml_data = yaml.safe_load(data_file)
 
         if   analysis == 'setup_timers':
-            setup_timers(yaml_data, mode=display, ax=ax)
+            setup_timers(yaml_data, mode=display, top=top, ax=ax)
         elif analysis == 'solve_per_level':
             solve_per_level(yaml_data, mode=display, ax=ax)
         elif analysis == 'nonlinear_history_iterations':
