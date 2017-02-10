@@ -196,7 +196,7 @@ namespace Teuchos {
     //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
     /*! \note This interface will allow correct behavior for complex-valued linear systems, solveWithTranspose() will not.
     */
-    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
+    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; transpose_ = (trans != Teuchos::NO_TRANS) ? true : false; }
 
     //! Causes all solves to compute solution to best ability using iterative refinement.
     /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
@@ -658,24 +658,20 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
   int ierr = 0;
   if (equilibrate_) {
     ierr = equilibrateRHS();
-    equilibratedB_ = true;
   }
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
-  TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-                     std::logic_error, "SerialDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
                      "SerialDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
                      "SerialDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
-  if (shouldEquilibrate() && !equilibratedA_)
-    std::cout << "WARNING!  SerialDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
-
   if (inverted()) {
 
     TEUCHOS_TEST_FOR_EXCEPTION( RHS_->values() == LHS_->values(), std::invalid_argument,
                         "SerialDenseSolver<T>::solve: X and B must be different vectors if matrix is inverted.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                                 std::logic_error, "SerialDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
 
     INFO_ = 0;
     this->GEMM(TRANS_, Teuchos::NO_TRANS, N_, RHS_->numCols(), N_, 1.0, AF_, LDAF_,
@@ -686,6 +682,9 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
   else {
 
     if (!factored()) factor(); // Matrix must be factored
+  
+    TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
+                                 std::logic_error, "SerialDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
 
     if (RHS_->values()!=LHS_->values()) {
        (*LHS_) = (*RHS_); // Copy B to X if needed
@@ -716,6 +715,11 @@ int SerialDenseSolver<OrdinalType,ScalarType>::solve() {
     solved_ = true;
 
   }
+
+  // Warn the user that the matrix should be equilibrated, if it isn't being done already.
+  if (shouldEquilibrate() && !equilibratedA_)
+    std::cout << "WARNING!  SerialDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
+
   int ierr1=0;
   if (refineSolution_ && !inverted()) ierr1 = applyRefinement();
   if (ierr1!=0)
