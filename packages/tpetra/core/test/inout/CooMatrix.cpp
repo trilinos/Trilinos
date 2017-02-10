@@ -56,6 +56,7 @@ using std::endl;
 typedef double SC;
 typedef Tpetra::DistObject<char>::local_ordinal_type LO;
 typedef Tpetra::DistObject<char>::global_ordinal_type GO;
+typedef Tpetra::global_size_t GST;
 typedef Tpetra::Export<> export_type;
 typedef Tpetra::Map<> map_type;
 
@@ -113,7 +114,7 @@ testCooMatrix (bool& success,
   out << "Create output Map" << endl;
   RCP<const map_type> outMap;
   const GO indexBase = 31; // the smallest global index in the Map
-  const Tpetra::global_size_t numGblInds = 3;
+  const GST numGblInds = 3;
   if (myRank == 0) {
     const GO myGblInds[] = {418, 666};
     const LO numLclInds = 2;
@@ -167,6 +168,12 @@ TEUCHOS_UNIT_TEST( CooMatrix, doubleIntLongLong )
     return;
   }
 
+  // Throw away map, just to make sure that Kokkos is initialized
+  RCP<const map_type> throwaway_map;
+  throwaway_map = rcp(new map_type(static_cast<GST>(0),
+                                   static_cast<GO>(0),
+                                   comm));
+
 #ifdef HAVE_TPETRACORE_MPI
   // Set the MPI error handler so that errors return, instead of
   // immediately causing MPI_Abort.  This will help us catch any bugs
@@ -186,8 +193,8 @@ TEUCHOS_UNIT_TEST( CooMatrix, doubleIntLongLong )
   }
 #endif // HAVE_TPETRACORE_MPI
 
+
   testCooMatrix (success, out, comm);
 }
 
 } // namespace (anonymous)
-
