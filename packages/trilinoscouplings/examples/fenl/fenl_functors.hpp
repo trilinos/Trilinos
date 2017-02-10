@@ -408,12 +408,23 @@ public:
   }
 };
 
+template <typename GatherScatterType>
+struct LocalGatherScatterTraits {
+  typedef GatherScatterType gather_scatter_type;
+  typedef const gather_scatter_type& local_gather_scatter_type;
+  KOKKOS_INLINE_FUNCTION
+  static local_gather_scatter_type create_local_gather_scatter(
+    const gather_scatter_type& v, const unsigned local_rank) { return v; }
+};
+
 #ifdef HAVE_TRILINOSCOUPLINGS_SACADO
 template <typename MultiVectorType>
 class ParamSensitivityGatherScatterOp {
 public:
+  KOKKOS_INLINE_FUNCTION
   ParamSensitivityGatherScatterOp() = default;
 
+  KOKKOS_INLINE_FUNCTION
   ParamSensitivityGatherScatterOp(
     const MultiVectorType& sol_dp, const MultiVectorType& res_dp) :
     solution_dp(sol_dp), residual_dp(res_dp),
@@ -454,10 +465,27 @@ public:
     Kokkos::atomic_add( &jacobian(i), val.val() );
   }
 
-private:
+public:
   const MultiVectorType solution_dp;
   const MultiVectorType residual_dp;
   const unsigned num_p;
+};
+
+template <typename MultiVectorType>
+struct LocalGatherScatterTraits<
+  ParamSensitivityGatherScatterOp<MultiVectorType> > {
+  typedef ParamSensitivityGatherScatterOp<MultiVectorType> GatherScatterType;
+  typedef GatherScatterType gather_scatter_type;
+  typedef LocalViewTraits<MultiVectorType> local_vector_traits;
+  typedef typename local_vector_traits::local_view_type local_multi_vector_type;
+  typedef ParamSensitivityGatherScatterOp<local_multi_vector_type> local_gather_scatter_type;
+  KOKKOS_INLINE_FUNCTION
+  static local_gather_scatter_type create_local_gather_scatter(
+    const gather_scatter_type& v, const unsigned local_rank) {
+      return local_gather_scatter_type(
+        local_vector_traits::create_local_view(v.solution_dp, local_rank),
+        local_vector_traits::create_local_view(v.residual_dp, local_rank));
+  }
 };
 #endif
 
@@ -504,6 +532,8 @@ public:
   typedef typename local_vector_view_traits::local_value_type local_matrix_vector_scalar_type;
   typedef typename ReplaceLocalScalarType<ScalarType,local_matrix_vector_scalar_type>::type local_scalar_type;
   static const bool use_team = local_vector_view_traits::use_team;
+  typedef LocalGatherScatterTraits<GatherScatterOp> local_gather_scatter_traits;
+  typedef typename local_gather_scatter_traits::local_gather_scatter_type local_gather_scatter_type;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
   static const unsigned TensorDim        = SpatialDim * SpatialDim ;
@@ -855,6 +885,10 @@ public:
       local_matrix_view_traits::create_local_view(jacobian.values,
                                                   ensemble_rank);
 
+    local_gather_scatter_type local_gather_scatter =
+      local_gather_scatter_traits::create_local_gather_scatter( gather_scatter,
+                                                                ensemble_rank );
+
     // Gather nodal coordinates and solution vector:
 
     double x[ FunctionCount ] ;
@@ -873,7 +907,7 @@ public:
       z[i] = node_coords( ni , 2 );
 
       //val[i] = local_solution( ni );
-      gather_scatter.gather_solution( ni , local_solution , val[i] );
+      local_gather_scatter.gather_solution( ni , local_solution , val[i] );
     }
 
 
@@ -929,15 +963,16 @@ public:
       const unsigned row = node_index[i] ;
       if ( row < residual.dimension_0() ) {
         //atomic_add( & local_residual( row ) , elem_vec[i] );
-        gather_scatter.scatter_residual( row , local_residual , elem_vec[i] );
+        local_gather_scatter.scatter_residual(
+          row , local_residual , elem_vec[i] );
 
         if (assemble_jacobian) {
           for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
             const unsigned entry = elem_graph( ielem , i , j );
             if ( entry != ~0u ) {
               //atomic_add( & local_jacobian_values( entry ) , elem_mat[i][j] );
-              gather_scatter.scatter_jacobian( entry , local_jacobian_values ,
-                                               elem_mat[i][j] );
+              local_gather_scatter.scatter_jacobian(
+                entry , local_jacobian_values , elem_mat[i][j] );
             }
           }
         }

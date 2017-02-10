@@ -247,7 +247,7 @@ struct LocalViewTraits {
 template <typename ScalarType, typename LocalScalarType,
           typename Enabled = void>
 struct ReplaceLocalScalarType {
-  typedef ScalarType type;
+  typedef LocalScalarType type;
 };
 
 #ifdef HAVE_TRILINOSCOUPLINGS_SACADO
@@ -432,7 +432,9 @@ template <typename T>
 struct EnsembleTraits {
   static const int size = 1;
   typedef T value_type;
+  KOKKOS_INLINE_FUNCTION
   static const value_type& coeff(const T& x, int i) { return x; }
+  KOKKOS_INLINE_FUNCTION
   static value_type& coeff(T& x, int i) { return x; }
 };
 
