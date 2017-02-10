@@ -68,6 +68,37 @@ void md_malloc(stype **arr, size_t n, std::string alloc_str = ""){
   }
 }
 
+template <typename idx_array_type>
+inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename){
+
+  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view (view);
+  Kokkos::deep_copy (host_view , view);
+  Kokkos::fence();
+  std::ofstream myFile (filename, std::ios::out );
+  for (size_t i = 0; i < view.dimension_0(); ++i){
+	  myFile << host_view(i) << std::endl;
+  }
+  myFile.close();
+}
+
+template <typename idx_array_type>
+inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename){
+
+  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view (view);
+  std::ifstream myFile (filename, std::ios::in );
+
+  for (size_t i = 0; i < view.dimension_0(); ++i){
+	  myFile >> host_view(i);
+  }
+  myFile.close();
+  Kokkos::deep_copy (view, host_view);
+  Kokkos::fence();
+}
+
 template <typename idx, typename wt>
 struct Edge{
   idx src;

@@ -44,6 +44,7 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <iostream>
+#include <string>
 
 //#define KERNELS_HAVE_CUSPARSE
 
@@ -249,10 +250,22 @@ private:
 
   double multi_color_scale;
   int mkl_sort_option;
+  bool calculate_read_write_cost;
+
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
+
+  std::string coloring_input_file;
+  std::string coloring_output_file;
+
+  void set_read_write_cost_calc(bool read_write_cost_cal){
+    this->calculate_read_write_cost = read_write_cost_cal;
+  }
+  int get_read_write_cost_calc(){
+    return this->calculate_read_write_cost;
+  }
 
   typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
   bool mkl_keep_output;
@@ -365,7 +378,9 @@ private:
     tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
     num_colors(0),
-    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1), mkl_sort_option(7),
+    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
+	coloring_input_file(""),
+	coloring_output_file(""),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
     mkl_convert_to_1base(true)
