@@ -70,7 +70,6 @@
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_PerfUtils.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -470,16 +469,6 @@ namespace MueLu {
 
     RCP<Operator> A = Levels_[startLevel]->template Get<RCP<Operator> >("A");
     lib_ = A->getDomainMap()->lib();
-
-    if (IsPrint(Statistics2)) {
-      RCP<ParameterList> params = rcp(new ParameterList());
-      params->set("printLoadBalancingInfo", true);
-      params->set("printCommInfo",          true);
-      RCP<const Matrix> Amat = rcp_dynamic_cast<const Matrix>(A);
-      TEUCHOS_TEST_FOR_EXCEPTION(Amat==Teuchos::null, Exceptions::RuntimeError,
-                               "MueLu::Hierarchy::Setup(): cast to Xpetra::Matrix failed");
-      GetOStream(Statistics2) << PerfUtils<SC,LO,GO,NO>::PrintMatrixInfo(*Amat, "A0", params);
-    }
 
     RCP<const FactoryManagerBase> rcpmanager = rcpFromRef(manager);
 
