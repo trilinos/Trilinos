@@ -399,11 +399,11 @@ class HDF5
 
     //! Read the serial array \c data, of type \c type, from group \c GroupName, using the dataset name \c DataSetName.
     void Read(const std::string& GroupName, const std::string& DataSetName,
-              const int type, const int Length, void* data);
+              const hid_t type, const int Length, void* data);
 
     //! Write the serial array \c data, of type \c type, to group \c GroupName, using the dataset name \c DataSetName
     void Write(const std::string& GroupName, const std::string& DataSetName,
-                         const int type, const int Length, 
+                         const hid_t type, const int Length, 
                          void* data);
 
     //! Associate string \c Comment with group \c GroupName.
@@ -424,12 +424,12 @@ class HDF5
     // @{ \name Distributed arrays
     
     //! Write the distributed array \c data, of type \c type, to group \c GroupName, using dataset name \c DataSetName
-    void Write(const std::string& GroupName, const std::string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
+    void Write(const std::string& GroupName, const std::string& DataSetName, int MySize, int GlobalSize, hid_t type, const void* data);
 
     //! Read the distributed array \c data, of type \c type, from group \c GroupName, using dataset name \c DataSetName
     void Read(const std::string& GroupName, const std::string& DataSetName,
               int MySize, int GlobalSize,
-              const int type, void* data);
+              const hid_t type, void* data);
 
     // @}
     // @{ \name Epetra_Map/Epetra_BlockMap
