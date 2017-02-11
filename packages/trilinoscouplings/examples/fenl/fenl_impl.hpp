@@ -424,6 +424,7 @@ public:
       // out->setShowProcRank(true);
 
 
+      Teuchos::RCP< Tpetra::Operator<Scalar,int,int,NodeType> > precOp;
       for ( perf.newton_iter_count = 0 ;
             perf.newton_iter_count < newton_iteration_limit ;
             ++perf.newton_iter_count ) {
@@ -497,17 +498,21 @@ public:
 
         result_struct cgsolve;
         if (use_belos) {
-          // Don't accumulate Belos times as the internal Teuchos timers
-          // already accumulate
+          // Destroy previous preconditioner (we could make reusing it optional)
+          precOp = Teuchos::null;
           cgsolve = belos_solve(g_jacobian,
                                 g_nodal_residual,
                                 g_nodal_delta,
+                                precOp,
                                 fixture,
                                 use_muelu,
                                 use_mean_based ,
                                 fenlParams ,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
+
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
           perf.mat_vec_time    = cgsolve.matvec_time ;
           perf.cg_iter_time    = cgsolve.iter_time ;
           perf.prec_setup_time = cgsolve.prec_setup_time ;
@@ -595,7 +600,7 @@ public:
       // Compute sensitivity of response function if requested
       if (response_gradient.size() > 0 && num_sensitivities > 0) {
 #ifdef HAVE_TRILINOSCOUPLINGS_SACADO
-        typedef Sacado::Fad::SLFad<Scalar,8> FadType;
+        typedef Sacado::Fad::SLFad<Scalar,10> FadType;
         typedef FadCoeffFunctionTraits<CoeffFunctionType, FadType> CoeffTraits;
         typedef typename CoeffTraits::type FadCoeffFunctionType;
         typedef ParamSensitivityGatherScatterOp<LocalMultiVectorType> SensGatherScatter;
@@ -664,17 +669,20 @@ public:
 
         result_struct cgsolve;
         if (use_belos) {
-          // Don't accumulate Belos times as the internal Teuchos timers
-          // already accumulate
+          // Reuse preconditioner from forward solve
           cgsolve = belos_solve(g_jacobian,
                                 g_nodal_residual_dp,
                                 g_nodal_delta_dp,
+                                precOp,
                                 fixture,
                                 use_muelu,
                                 use_mean_based ,
                                 fenlParams ,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
+
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
           perf.mat_vec_time    = cgsolve.matvec_time ;
           perf.cg_iter_time    = cgsolve.iter_time ;
           perf.prec_setup_time = cgsolve.prec_setup_time ;

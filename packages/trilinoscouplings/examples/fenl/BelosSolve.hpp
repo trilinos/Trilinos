@@ -118,6 +118,7 @@ belos_solve(
   Tpetra::CrsMatrix<SM,LO,GO,N>& A,
   const Tpetra::MultiVector<SV,LO,GO,N>& b,
   Tpetra::MultiVector<SV,LO,GO,N>& x,
+  Teuchos::RCP< Tpetra::Operator<SM,LO,GO,N> >& precOp,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
@@ -149,12 +150,10 @@ belos_solve(
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
 
   //--------------------------------
-  // Create preconditioner
-  RCP<PreconditionerType> preconditioner;
-  RCP<OperatorType> precOp;
-
-  if (use_muelu) {
+  // Create preconditioner if requested and we weren't given one
+  if (use_muelu && precOp == Teuchos::null) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
+    RCP<PreconditionerType> preconditioner;
 
     // Create tpetra-vector storing coordinates for repartitioning
     typename Mesh::node_coord_type node_coords = mesh.node_coord();
@@ -267,6 +266,7 @@ belos_solve(
   Tpetra::CrsMatrix<SM,LO,GO,N>& A,
   const Tpetra::MultiVector<SV,LO,GO,N>& b,
   Tpetra::MultiVector<SV,LO,GO,N>& x,
+  Teuchos::RCP< Tpetra::Operator<SM,LO,GO,N> >& precOp,
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
