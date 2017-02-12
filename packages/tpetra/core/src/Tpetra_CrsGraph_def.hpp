@@ -2590,7 +2590,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalRowView (LocalOrdinal localRow,
+  getLocalRowView (const LocalOrdinal localRow,
                    Teuchos::ArrayView<const LocalOrdinal>& indices) const
   {
     const char tfecfFuncName[] = "getLocalRowView: ";
@@ -2633,7 +2633,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getGlobalRowView (GlobalOrdinal globalRow,
+  getGlobalRowView (const GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices) const
   {
     const char tfecfFuncName[] = "getGlobalRowView: ";
@@ -5911,6 +5911,13 @@ namespace Tpetra {
     // NOT recursion; this calls the overload that takes a device View.
     this->getLocalDiagOffsets (deviceOffsets);
     helper_type::copyBackIfNeeded (hostOffsets, deviceOffsets);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  supportsRowViews () const {
+    return true;
   }
 
 } // namespace Tpetra

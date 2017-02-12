@@ -50,10 +50,10 @@ namespace Tpetra {
   void
   RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	Teuchos::Array<GlobalOrdinal>& exports,
-	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	size_t& constantNumPackets,
-	Distributor& distor) const
+        Teuchos::Array<GlobalOrdinal>& exports,
+        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+        size_t& constantNumPackets,
+        Distributor& distor) const
   {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
@@ -103,6 +103,49 @@ namespace Tpetra {
       exportsOffset += row.size ();
     }
   }
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  getLocalRowView (const LocalOrdinal /* lclRow */,
+                   Teuchos::ArrayView<const LocalOrdinal>& /* lclColInds */) const
+  {
+    const char prefix[] = "Tpetra::RowGraph::getLocalRowView: ";
+
+    // Subclasses are expected to implement this method.  We would
+    // have made this method pure virtual, but that would have broken
+    // backwards compatibility, since we added the method at least one
+    // major release after introducing this class.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! this->supportsRowViews (), std::runtime_error,
+       prefix << "This object does not support row views.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->supportsRowViews (), std::runtime_error,
+       prefix << "This object claims to support row views, "
+       "but this method is not implemented.");
+  }
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  getGlobalRowView (const GlobalOrdinal /* gblRow */,
+                    Teuchos::ArrayView<const GlobalOrdinal>& /* gblColInds */) const
+  {
+    const char prefix[] = "Tpetra::RowGraph::getGlobalRowView: ";
+
+    // Subclasses are expected to implement this method.  We would
+    // have made this method pure virtual, but that would have broken
+    // backwards compatibility, since we added the method at least one
+    // major release after introducing this class.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! this->supportsRowViews (), std::runtime_error,
+       prefix << "This object does not support row views.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->supportsRowViews (), std::runtime_error,
+       prefix << "This object claims to support row views, "
+       "but this method is not implemented.");
+  }
+
 } // namespace Tpetra
 
 //

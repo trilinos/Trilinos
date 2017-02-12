@@ -1003,30 +1003,34 @@ namespace Tpetra {
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
     ///
-    /// \param GlobalRow [in] Global index of the row.
-    /// \param Indices [out] Global column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isLocallyIndexed()</tt>
-    /// \post <tt>Indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
     void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal>& Indices) const;
+    getGlobalRowView (const GlobalOrdinal gblRow,
+                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const;
+
+    /// \brief Whether this class implements getLocalRowView() and
+    ///   getGlobalRowView() (it does).
+    bool supportsRowViews () const;
 
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
     ///
-    /// \param LocalRow [in] Local index of the row.
-    /// \param indices [out] Local column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] Local column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isGloballyIndexed()</tt>
-    /// \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+    /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
     void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices) const;
+    getLocalRowView (const LocalOrdinal lclRow,
+                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const;
 
     //@}
     //! @name Overridden from Teuchos::Describable
