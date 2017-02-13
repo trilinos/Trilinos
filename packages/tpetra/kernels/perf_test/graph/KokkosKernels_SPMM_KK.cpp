@@ -58,12 +58,17 @@ int check_output = 0;
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
 int vector_size = -1;
+bool calculate_read_write_cost = false;
 
 enum MEMSPACE{HBM, DDR4}; //GPUS GPU vs DDR4
 MEMSPACE amemspace = HBM; //DEFAULT
 MEMSPACE bmemspace = HBM; //DEFAULT
 MEMSPACE cmemspace = HBM; //DEFAULT
 MEMSPACE workmemspace = HBM; //DEFAULT
+
+char *coloring_input_file = NULL;
+char *coloring_output_file = NULL;
+char spgemm_step = '0';
 
 namespace MyKokkosSparse{
 
@@ -199,25 +204,6 @@ crsMat_t get_crsmat(idx *xadj, idx *adj, wt *ew, idx ne, idx nv, int algo){
       //if algorithm is mkl_csrmultcsr convert to 1 base so that we dont dublicate the memory at the experiments/
       KokkosKernels::Experimental::Util::kk_a_times_x_plus_b< row_map_view_t, row_map_view_t,   int, int, myExecSpace>(nv + 1,  rowmap_view, rowmap_view,  1, 1);
       KokkosKernels::Experimental::Util::kk_a_times_x_plus_b<  cols_view_t, cols_view_t,  int, int, myExecSpace>(ne, columns_view, columns_view,  1, 1);
-    }
-
-    if (0)
-    {
-      cols_view_t tmp_columns_view_("colsmap_view", ne);
-      values_view_t tmp_values_view_("values_view", ne);
-      KokkosKernels::Experimental::Util::kk_sort_graph
-          <row_map_view_t,
-          cols_view_t,
-          values_view_t,
-          cols_view_t,
-          values_view_t,
-          myExecSpace
-          >(
-              rowmap_view, columns_view, values_view,
-          tmp_columns_view_, tmp_values_view_
-        );
-      columns_view = tmp_columns_view_;
-      values_view = tmp_values_view_;
     }
 
     graph_t static_graph (columns_view, rowmap_view);
@@ -400,6 +386,16 @@ int main (int argc, char ** argv){
       }
       memspaceinfo  = memspaceinfo >> 1;
     }
+    else if ( 0 == strcasecmp( argv[i] , "CRWC" ) ) {
+    	calculate_read_write_cost = true;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "CIF" ) ) {
+    	coloring_input_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "COF" ) ) {
+    	coloring_output_file = argv[++i];
+    }
+
     else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
       cmdline[ CMD_MULTICOLORSCALE ] = atoi( argv[++i] ) ;
     }
@@ -481,14 +477,36 @@ int main (int argc, char ** argv){
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+        std::cerr << "Options\n" << std::endl;
+        std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+        std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
+        std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+        std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+        std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
+        std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
+        std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
+        std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+        std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
+        std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
+
+
         return 0;
       }
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "Options\n" << std::endl;
+      std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+      std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
+      std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+      std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+      std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
+      std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
+      std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
+      std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+      std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
+      std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
 
       return 0;
     }
@@ -496,18 +514,48 @@ int main (int argc, char ** argv){
 
   if (a_mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+    std::cerr << "Options\n" << std::endl;
+    std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+    std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
+    std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+    std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+    std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
+    std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
+    std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
+    std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+    std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
+    std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
     return 0;
   }
   if (cmdline[ CMD_MM_MODE ] == 1 || cmdline[ CMD_MM_MODE ] == 2){
     if (r_mtx_bin_file == NULL){
       std::cerr << "Provide a r mtx binary file rmtx rmatrix_file" << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "Options\n" << std::endl;
+      std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+      std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
+      std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+      std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+      std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
+      std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
+      std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
+      std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+      std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
+      std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
       return 0;
     }
     if (p_mtx_bin_file == NULL){
       std::cerr << "Provide a p mtx binary file pmtx rmatrix_file" << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "Options\n" << std::endl;
+      std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+      std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
+      std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+      std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+      std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
+      std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
+      std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
+      std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+      std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
+      std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
       return 0;
     }
   }
@@ -710,32 +758,42 @@ int main (int argc, char ** argv){
 
 
 	  typedef Kokkos::OpenMP myExecSpace;
-	  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> myHostExecSpace;
 	  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
-	  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myHostExecSpace, void, size_type > crsMat_host_t;
-
-
 	  typedef typename crsMat_t::StaticCrsGraphType graph_t;
 	  typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
 	  typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
 	  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+	  crsMat_t crsmat;
 
-
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
+	  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> myHostExecSpace;
+	  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, myHostExecSpace, void, size_type > crsMat_host_t;
 	  typedef typename crsMat_host_t::StaticCrsGraphType host_graph_t;
 	  typedef typename crsMat_host_t::row_map_type::non_const_type host_row_map_view_t;
 	  typedef typename crsMat_host_t::index_type::non_const_type   host_cols_view_t;
 	  typedef typename crsMat_host_t::values_type::non_const_type host_values_view_t;
-
-	  crsMat_t crsmat;
 	  crsMat_host_t host_crsmat;
+#endif
 
+
+
+
+
+
+
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 	  if (cmdline[ CMD_MM_MODE ] != 2){
+
+
 		  if (amemspace == HBM){
 			  crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
 		  }
 		  else {
 			  host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
 		  }
+
+		  crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+
 	  }
 	  else {
 		  if (bmemspace == HBM){
@@ -744,7 +802,11 @@ int main (int argc, char ** argv){
 		  else {
 			  host_crsmat = get_crsmat<myExecSpace, crsMat_host_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
 		  }
+
 	  }
+#else
+	  crsmat = get_crsmat<myExecSpace, crsMat_t>(xadj, adj, ew, ne, nv, cmdline[ CMD_SPGEMM_ALGO ]);
+#endif
 	  delete [] xadj;
 	  delete [] adj;
 	  delete [] ew;
@@ -767,18 +829,23 @@ int main (int argc, char ** argv){
 			  wt *ew_;
 			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
 			  crsMat_t crsmat2;
-			  crsMat_host_t host_crsmat2;
 
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
+			  crsMat_host_t host_crsmat2;
 			  if (bmemspace == HBM){
 				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 
+#endif
 			  delete [] xadj_;
 			  delete [] adj_;
 			  delete [] ew_;
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 
 			  if (amemspace == HBM){
 				  if (bmemspace == HBM){
@@ -937,6 +1004,14 @@ int main (int argc, char ** argv){
 					  }
 				  }
 			  }
+#else
+			  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+			  (crsmat, crsmat2,
+					  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+					  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+					  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+					  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#endif
 
 
 
@@ -958,13 +1033,19 @@ int main (int argc, char ** argv){
 			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m__, &nnzA__, &xadj__, &adj__, &ew__, r_mtx_bin_file);
 
 			  crsMat_t crsmat2;
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 			  crsMat_host_t host_crsmat2;
+
 			  if (amemspace == HBM){
 				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj__, adj__, ew__, nnzA__, m__, cmdline[ CMD_SPGEMM_ALGO ]);
+
+#endif
 
 			  delete [] xadj__;
 			  delete [] adj__;
@@ -974,6 +1055,8 @@ int main (int argc, char ** argv){
 			  /* crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
         		(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 			   */
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
+
 			  if (amemspace == HBM){
 				  if (bmemspace == HBM){
 					  if (cmemspace == HBM){
@@ -1127,6 +1210,14 @@ int main (int argc, char ** argv){
 					  }
 				  }
 			  }
+#else
+			  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+		  (crsmat2, crsmat,
+				  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+				  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+				  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+				  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#endif
 
 		  }
 
@@ -1140,6 +1231,8 @@ int main (int argc, char ** argv){
 			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
 
 			  crsMat_t crsmat2;
+
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 			  crsMat_host_t host_crsmat2;
 			  if (amemspace == HBM){
 				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
@@ -1147,13 +1240,18 @@ int main (int argc, char ** argv){
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+
+#endif
+
 			  delete [] xadj_;
 			  delete [] adj_;
 			  delete [] ew_;
 
 			  //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
 			  //		(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
-
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 			  if (amemspace == HBM){
 				  if (bmemspace == HBM){
 					  if (cmemspace == HBM){
@@ -1311,6 +1409,14 @@ int main (int argc, char ** argv){
 					  }
 				  }
 			  }
+#else
+			  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+		  (crsmat2, crsmat,
+				  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+				  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+				  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+				  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#endif
 
 
 		  }
@@ -1322,6 +1428,7 @@ int main (int argc, char ** argv){
 			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
 
 			  crsMat_t crsmat2;
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 			  crsMat_host_t host_crsmat2;
 			  if (bmemspace == HBM){
 				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
@@ -1329,7 +1436,10 @@ int main (int argc, char ** argv){
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 
+#endif
 
 			  delete [] xadj_;
 			  delete [] adj_;
@@ -1339,6 +1449,8 @@ int main (int argc, char ** argv){
         crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
         		(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 			   */
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
+
 			  if (amemspace == HBM){
 				  if (bmemspace == HBM){
 					  if (cmemspace == HBM){
@@ -1493,7 +1605,14 @@ int main (int argc, char ** argv){
 					  }
 				  }
 			  }
-
+#else
+			  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+		  (crsmat, crsmat2,
+				  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+				  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+				  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+				  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#endif
 		  }
 	  }
 	  else if (cmdline[ CMD_MM_MODE ] == 3){
@@ -1507,6 +1626,7 @@ int main (int argc, char ** argv){
 
 
 			  crsMat_t crsmat2;
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 			  crsMat_host_t host_crsmat2;
 			  if (amemspace == HBM){
 				  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
@@ -1514,12 +1634,17 @@ int main (int argc, char ** argv){
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
+#endif
 
 
 			  delete [] xadj_;
 			  delete [] adj_;
 			  delete [] ew_;
 			  crsmat = crsmat2;
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
+
 			  host_crsmat= host_crsmat2;
 
 			  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
@@ -1529,12 +1654,16 @@ int main (int argc, char ** argv){
 			  else {
 				  host_crsmat2 = get_crsmat<myExecSpace, crsMat_host_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 			  }
+#else
+			  crsmat2 = get_crsmat<myExecSpace, crsMat_t>(xadj_, adj_, ew_, nnzA_, m_, cmdline[ CMD_SPGEMM_ALGO ]);
 
+#endif
 			  delete [] xadj_;
 			  delete [] adj_;
 			  delete [] ew_;
 			  //crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
 			  //		(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#ifdef KOKKOSKERNELS_MULTILEVELMEM
 
 			  if (amemspace == HBM){
 				  if (bmemspace == HBM){
@@ -1691,6 +1820,14 @@ int main (int argc, char ** argv){
 					  }
 				  }
 			  }
+#else
+			  crsmat = run_experiment<myExecSpace, crsMat_t,crsMat_t,crsMat_t, myExecSpace, myExecSpace>
+		  (crsmat, crsmat2,
+				  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],
+				  cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ],
+				  cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ],
+				  cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
+#endif
 
 		  }
 
@@ -2050,7 +2187,7 @@ crsMat_t3 run_experiment(
     crsMat_t crsMat, crsMat_t2 crsMat2,
     int algorithm, int repeat, int chunk_size ,int multi_color_scale, int shmemsize, int team_size, int use_dynamic_scheduling, int verbose){
 
-
+  spgemm_step++;
   typedef typename crsMat_t3::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t3::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t3::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
@@ -2213,6 +2350,14 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->set_multi_color_scale(multi_color_scale);
   kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
   kh.get_spgemm_handle()->mkl_convert_to_1base = false;
+  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+
+  if (coloring_input_file){
+	  kh.get_spgemm_handle()->coloring_input_file = std::string(&spgemm_step) + "_" + std::string(coloring_input_file);
+  }
+  if (coloring_output_file){
+	  kh.get_spgemm_handle()->coloring_output_file = std::string(&spgemm_step) + "_" + std::string(coloring_output_file);
+  }
 
   for (int i = 0; i < repeat; ++i){
 
@@ -2282,294 +2427,6 @@ crsMat_t3 run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
   KokkosKernels::Experimental::Util::print_1Dview(valuesC);
   KokkosKernels::Experimental::Util::print_1Dview(entriesC);
-
-  /*
-  if(0)
-  {
-    size_type numnnz = valuesC.dimension_0();
-    std::vector <KokkosKernels::Experimental::Util::Edge<idx, wt> > edges(numnnz);
-
-    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
-    Kokkos::deep_copy ( hr, row_mapC);
-
-    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (entriesC);
-    Kokkos::deep_copy ( he, entriesC);
-
-    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (valuesC);
-    Kokkos::deep_copy ( hv, valuesC);
-
-    std::cout << "inserting" << std::endl;
-
-    for (idx i = 0; i < m; ++i){
-
-      for (size_type j = hr(i); j < hr(i + 1); ++j){
-        edges[j].src = i;
-        edges[j].dst = he(j);
-        edges[j].ew = hv(j);
-      }
-
-    }
-    std::cout << "sorting" << std::endl;
-    std::sort (edges.begin(), edges.begin() + numnnz);
-    std::cout << "sorted" << std::endl;
-    std::vector<idx> edge_begins (numnnz);
-    std::vector<idx> edge_ends (numnnz);
-    std::vector<wt> edge_vals (numnnz);
-
-    for (size_type i = 0; i < numnnz; ++i){
-      edge_begins[i] = edges[i].src;
-      edge_ends[i] = edges[i].dst;
-      edge_vals[i] = edges[i].ew;
-    }
-    std::cout << "out" << std::endl;
-
-    KokkosKernels::Experimental::Util::write_edgelist_bin(
-        numnnz,
-        &(edge_begins[0]),
-        &(edge_ends[0]),
-        &(edge_vals[0]),
-        "outgraph.bin");
-  }
-
-
-  if (0)
-  {
-    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
-    Kokkos::deep_copy ( hr, row_mapC);
-
-    ExecSpace::fence();
-
-
-    idx *cent = entriesC.ptr_on_device();
-    wt * cval = valuesC.ptr_on_device();
-
-    scalar_view_t my_row_0_vals ("row0", hr(1));
-    lno_nnz_view_t my_row_0_entries ("row0", hr(1));
-
-    ExecSpace::fence();
-    KokkosKernels::Experimental::Util::copy_vector<wt * , scalar_view_t, ExecSpace>(hr(1), cval, my_row_0_vals);
-    ExecSpace::fence();
-    KokkosKernels::Experimental::Util::copy_vector<idx * , lno_nnz_view_t, ExecSpace>(hr(1), cent, my_row_0_entries);
-    ExecSpace::fence();
-
-
-    std::cout << "RESULT FIRST ROW" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(my_row_0_entries, true);
-    KokkosKernels::Experimental::Util::print_1Dview(my_row_0_vals, true);
-    std::cout << "#################" << std::endl;
-  }
-
-  if (0)
-  {
-    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
-    Kokkos::deep_copy ( hr, row_mapC);
-
-    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (entriesC);
-    Kokkos::deep_copy ( he, entriesC);
-
-    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (valuesC);
-    Kokkos::deep_copy ( hv, valuesC);
-
-    std::vector <KokkosKernels::Experimental::Util::Edge<idx, wt>> edge_list (he.dimension_0());
-
-    idx numr = hr.dimension_0() - 1;
-    for (idx i = 0; i < numr; ++i){
-      size_type begin = hr(i);
-      size_type end = hr(i + 1);
-      size_type edge_ind = 0;
-      for (size_type j = begin; j < end; ++j){
-        edge_list[edge_ind].src = i;
-        edge_list[edge_ind].dst = he(j);
-        edge_list[edge_ind].ew = hv(j);
-        edge_ind++;
-      }
-      std::sort (edge_list.begin(), edge_list.begin() + edge_ind);
-
-      edge_ind = 0;
-      for (size_type j = begin; j < end; ++j){
-        he(j) = edge_list[edge_ind].dst;
-        hv(j) = edge_list[edge_ind++].ew;
-      }
-
-      Kokkos::deep_copy ( entriesC, he);
-      Kokkos::deep_copy ( valuesC, hv);
-    }
-
-    KokkosKernels::Experimental::Util::print_1Dview(entriesC);
-    KokkosKernels::Experimental::Util::print_1Dview(valuesC);
-  }
-  if (1)
-  {
-    std::cout << "D1 Coloring Result Matrix " << std::endl;
-    kh.create_graph_coloring_handle();
-    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
-    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance1);
-    gch->set_algorithm(KokkosKernels::Experimental::Graph::COLORING_SERIAL);
-
-    lno_view_t tmp_xadj;
-    lno_nnz_view_t tmp_adj;
-
-
-    Kokkos::Impl::Timer timer;
-    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
-    < lno_view_t, lno_nnz_view_t,
-    lno_view_t, lno_nnz_view_t,
-    ExecSpace>
-    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
-
-
-
-    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
-    timer.reset();
-
-    KokkosKernels::Experimental::Graph::graph_color_symbolic
-        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
-
-
-
-
-    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
-
-
-    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
-
-    lno_view_t histogram ("histogram", gch->get_num_colors());
-
-    ExecSpace::fence();
-
-    timer.reset();
-
-
-    std::cout << "Histogram" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-    std::cout << "Colors" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(color_view);
-
-    KokkosKernels::Experimental::Util::get_histogram
-      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
-
-
-    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-
-    kh.destroy_graph_coloring_handle();
-  }
-
-  if (1)
-  {
-    std::cout << "Coloring Result Matrix with new distance-2 color" << std::endl;
-    kh.create_graph_coloring_handle();
-    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
-    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance2);
-    gch->set_algorithm(KokkosKernels::Experimental::Graph::COLORING_SERIAL2);
-
-    lno_view_t tmp_xadj;
-    lno_nnz_view_t tmp_adj;
-
-
-    Kokkos::Impl::Timer timer;
-    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
-    < lno_view_t, lno_nnz_view_t,
-    lno_view_t, lno_nnz_view_t,
-    ExecSpace>
-    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
-
-
-
-    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
-    timer.reset();
-
-    KokkosKernels::Experimental::Graph::graph_color_symbolic
-        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
-
-
-
-
-    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
-
-
-    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
-
-    lno_view_t histogram ("histogram", gch->get_num_colors());
-
-    ExecSpace::fence();
-
-    timer.reset();
-
-
-    std::cout << "Histogram" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-    std::cout << "Colors" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(color_view);
-
-    KokkosKernels::Experimental::Util::get_histogram
-      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
-
-
-    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-
-    kh.destroy_graph_coloring_handle();
-  }
-
-
-
-  if (1)
-  {
-    std::cout << "Coloring Result Matrix" << std::endl;
-    kh.create_graph_coloring_handle();
-    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
-    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance2);
-
-    lno_view_t tmp_xadj;
-    lno_nnz_view_t tmp_adj;
-
-
-    Kokkos::Impl::Timer timer;
-    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
-    < lno_view_t, lno_nnz_view_t,
-    lno_view_t, lno_nnz_view_t,
-    ExecSpace>
-    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
-
-
-
-    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
-    timer.reset();
-
-    KokkosKernels::Experimental::Graph::graph_color_symbolic
-        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
-
-
-
-
-    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
-
-
-    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
-
-    lno_view_t histogram ("histogram", gch->get_num_colors());
-
-    ExecSpace::fence();
-
-    timer.reset();
-
-
-    std::cout << "Histogram" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-    std::cout << "Colors" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(color_view);
-
-    KokkosKernels::Experimental::Util::get_histogram
-      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
-
-
-    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram);
-
-    kh.destroy_graph_coloring_handle();
-  }
-*/
 
 
   typename crsMat_t3::StaticCrsGraphType static_graph (entriesC, row_mapC);

@@ -3516,6 +3516,7 @@ public:
           original_num_colors, h_color_xadj, color_adj , vertex_colors_to_store,
           num_colors_in_one_step, num_multi_color_steps, spgemm_algorithm);
 
+      std::cout << "original_num_colors:" << original_num_colors << " num_colors_in_one_step:" << num_colors_in_one_step << " num_multi_color_steps:" << num_multi_color_steps << std::endl;
       timer1.reset();
 
       //sort the color indices.
@@ -4843,9 +4844,23 @@ public:
     nnz_lno_persistent_work_host_view_t h_color_adj;
     nnz_lno_persistent_work_host_view_t h_vertex_colors;
 
-    if (write_type == 2 || write_type == 3 || write_type == 4){
+    if (write_type == 2 || write_type == 3){
     	num_used_colors_steps  = num_colors / num_multi_colors;
     	if (num_colors % num_multi_colors) num_used_colors_steps++;
+    	num_multi_colors = 1;
+    	KokkosKernels::Experimental::Util::print_1Dview(vertex_colors);
+    	KokkosKernels::Experimental::Util::print_1Dview(color_adj);
+    	KokkosKernels::Experimental::Util::print_1Dview(color_xadj);
+    	h_color_adj= Kokkos::create_mirror_view (color_adj);
+    	h_vertex_colors= Kokkos::create_mirror_view (vertex_colors);
+    	Kokkos::deep_copy (h_color_adj, color_adj);
+    	Kokkos::deep_copy (h_vertex_colors, vertex_colors);
+    }
+    else if (write_type == 4){
+
+    	//num_used_colors_steps  = num_colors / num_multi_colors;
+    	//if (num_colors % num_multi_colors) num_used_colors_steps++;
+    	num_used_colors_steps = num_colors;
     	KokkosKernels::Experimental::Util::print_1Dview(vertex_colors);
     	KokkosKernels::Experimental::Util::print_1Dview(color_adj);
     	KokkosKernels::Experimental::Util::print_1Dview(color_xadj);
@@ -4942,7 +4957,6 @@ public:
       typename nnz_lno_persistent_work_view_t::HostMirror color_adj,
       typename nnz_lno_persistent_work_view_t::HostMirror vertex_colors,
 
-
       size_t overall_flops,
       typename row_lno_temp_work_view_t::HostMirror c_flop_rowmap,
       typename row_lno_temp_work_view_t::HostMirror c_comp_a_net_index,
@@ -4953,7 +4967,7 @@ public:
       int write_type //0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR 4-KKMULTICOLOR2
       ){
 
-	  std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_colors << " num_parallel_colors:" << num_parallel_colors << std::endl;
+	std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_colors << " num_parallel_colors:" << num_parallel_colors << std::endl;
 
     const int cache_1_line_word_count = cache_line_size / data_size;
     const int cache_1_line_count = cache_size / cache_line_size;
@@ -5009,10 +5023,17 @@ public:
 
 
     //std::cout << "num_parallel_colors:" << num_parallel_colors << std::endl;
-    for (nnz_lno_t i = 0; i < num_parallel_colors; ++i){
+    for (nnz_lno_t i = 0; i < num_parallel_colors; i+= num_multi_colors){
+
+
+      nnz_lno_t color_upperbound = KOKKOSKERNELS_MACRO_MIN(num_parallel_colors, i + num_multi_colors);
+      std::cout 	<< "i:" << i
+    		  	  	<< " color_upperbound:" << color_upperbound
+					<< " num_parallel_colors:" << num_parallel_colors
+					<< " num_multi_colors:" << num_multi_colors << std::endl;;
 
       nnz_lno_t color_begin = color_xadj(i);
-      nnz_lno_t color_end = color_xadj(i + 1);
+      nnz_lno_t color_end = color_xadj(color_upperbound);
       //std::cout << "i:" << i << " color_begin:" << color_begin  << " color_end:" << color_end << std::endl;
       nnz_lno_t percore = 32 / vectorlane;
       if (!isGPU) percore = (color_end - color_begin) / num_cores + 1;
@@ -5222,20 +5243,15 @@ public:
                 	rows_col_indices[z] = -1;
                 }
 
-
                 if (write_type != 0){
                   cmisswritecount_l1 += ceil ((h_rowmapC(row + 1) - h_rowmapC(row)) / double (cache_1_line_word_count));
                   creusecount_l1 += row_flop_end_index - row_flop_begin_index - ceil ((h_rowmapC(row + 1) - h_rowmapC(row)) / double (cache_1_line_word_count));
                 }
-
               }
-
             }
-
-
           }
-
         }
+
         Kokkos::atomic_fetch_add(&overall_c_l1_misswrite , cmisswritecount_l1);
         //overall_c_l1_misswrite += cmisswritecount_l1;
         Kokkos::atomic_fetch_add(&overall_c_l1_reuse , creusecount_l1);
@@ -5249,9 +5265,8 @@ public:
         Kokkos::atomic_fetch_add(&overall_b_l1_reuse , breusecount_l1);
         //overall_b_l1_reuse += breusecount_l1;
       }
-
-
     }
+
     for (int tid = 0; tid < num_threads; ++tid){
   	  delete t_team_caches[tid];
     }
