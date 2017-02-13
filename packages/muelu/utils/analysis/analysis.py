@@ -2,7 +2,7 @@
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE] [-t TOP]
+  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d DISPLAY] [-s STYLE] [-t TOP]
   analysis.py (-h | --help)
 
 Options:
@@ -47,8 +47,12 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(yaml_data, mode, top, ax = None):
+def setup_timers(input_files, mode, top, ax = None):
     """Show all setup level specific timers ordered by size"""
+    ## Choose top timers from the first file
+    with open(input_files[0]) as data_file:
+        yaml_data = yaml.safe_load(data_file)
+
     timer_data = construct_dataframe(yaml_data)
 
     timers = timer_data.index
@@ -68,13 +72,37 @@ def setup_timers(yaml_data, mode, top, ax = None):
     timers_f = dfs.index[-top:]
     dfs = dfs.loc[timers_f]
 
+    ## Check the second file (if present)
+    diff_mode = False
+    if len(input_files) == 2:
+        diff_mode = True
+
+        with open(input_files[1]) as data_file:
+            yaml_data = yaml.safe_load(data_file)
+
+        timer_data = construct_dataframe(yaml_data)
+
+        dfs1 = timer_data.loc[timers_f]
+
+    height = 0.4
+
     if mode == 'display':
         colors = tableau20()
 
-        ax.barh(np.arange(len(timers_f)), width=dfs['maxT'], color=colors[0])
-        ax.set_yticks(np.arange(len(timers_f))+0.4)
+        if diff_mode == False:
+            ax.barh(np.arange(len(timers_f))-height, width=dfs['maxT'], height=2*height, color=colors[0])
+        else:
+            ax.barh(np.arange(len(timers_f)), width=dfs['maxT'],  height=height, color=colors[0], label=input_files[0])
+            ax.barh(np.arange(len(timers_f))-height, width=dfs1['maxT'], height=height, color=colors[1], label=input_files[1])
+            ax.legend(loc='lower right')
+
+        ax.set_xlabel('Time (s)', fontsize=17)
+        ax.xaxis.grid('on')
+
+        ax.set_yticks(np.arange(len(timers_f)))
         ax.set_yticklabels(timers_f)
-        ax.set_xlabel('Time (s)')
+        ax.set_ylim([-0.5, len(timers_f)-0.5])
+
     else:
         print(dfs['maxT'])
 
@@ -403,9 +431,10 @@ if __name__ == '__main__':
     style       = options['--style']
     top         = int(options['--top'])
 
-    input_files = glob.glob(input_files)
-    # Impose sorted order (similar to bash "sort -n"
-    input_files = sorted(input_files, key=string_split_by_numbers)
+    if len(input_files) == 1:
+        input_files = glob.glob(input_files[0])
+        # Impose sorted order (similar to bash "sort -n"
+        input_files = sorted(input_files, key=string_split_by_numbers)
 
     ## Validate input options
     valid_modes = ['setup_timers', 'solve_per_level', 'nonlinear_history_iterations',
@@ -445,7 +474,13 @@ if __name__ == '__main__':
 
     if analysis == 'muelu_strong_scaling':
         # Scaling studies work with multiple files
-        muelu_strong_scaling(input_files, mode=display, top=top, ax=ax, style=style)
+        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style, top=top)
+    elif analysis == 'setup_timers':
+        # Setup timers work with multiple files
+        # If there are two files, it compares the timers, using top timers from
+        # the first file
+        assert(len(input_files) <= 2)
+        setup_timers(input_files, mode=display, ax=ax, top=top)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here
@@ -453,9 +488,7 @@ if __name__ == '__main__':
         with open(input_files[0]) as data_file:
             yaml_data = yaml.safe_load(data_file)
 
-        if   analysis == 'setup_timers':
-            setup_timers(yaml_data, mode=display, top=top, ax=ax)
-        elif analysis == 'solve_per_level':
+        if   analysis == 'solve_per_level':
             solve_per_level(yaml_data, mode=display, ax=ax)
         elif analysis == 'nonlinear_history_iterations':
             nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
@@ -469,4 +502,5 @@ if __name__ == '__main__':
         if output_file != None:
             plt.savefig(output_file, bbox_inches='tight')
         else:
+            plt.tight_layout()
             plt.show()
