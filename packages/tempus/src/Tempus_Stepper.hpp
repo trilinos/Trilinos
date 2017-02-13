@@ -115,7 +115,7 @@ public:
       return;
     }
 
-    /// Validate that the model supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
+    /// Validate ME supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
     void validImplicitODE_DAE(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
@@ -127,30 +127,40 @@ public:
                             inArgs.supports(MEB::IN_ARG_x_dot) and
                             inArgs.supports(MEB::IN_ARG_alpha) and
                             inArgs.supports(MEB::IN_ARG_beta) and
+                           !inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
                             outArgs.supports(MEB::OUT_ARG_f) and
                             outArgs.supports(MEB::OUT_ARG_W);
 
       TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
         model->description() << "can not support an implicit ODE with\n"
-        << "  IN_ARG_x     = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
-        << "  IN_ARG_x_dot = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
-        << "  IN_ARG_alpha = " << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
-        << "  IN_ARG_beta  = " << inArgs.supports(MEB::IN_ARG_beta) << "\n"
-        << "  OUT_ARG_f    = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
-        << "  OUT_ARG_W    = " << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+        << "  IN_ARG_x                 = "
+        << inArgs.supports(MEB::IN_ARG_x) << "\n"
+        << "  IN_ARG_x_dot             = "
+        << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+        << "  IN_ARG_alpha             = "
+        << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+        << "  IN_ARG_beta              = "
+        << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+        << "  IN_ARG_W_x_dot_dot_coeff = "
+        << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+        << "  OUT_ARG_f                = "
+        << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+        << "  OUT_ARG_W                = "
+        << outArgs.supports(MEB::OUT_ARG_W) << "\n"
         << "Implicit ODE requires:\n"
-        << "  IN_ARG_x     = true\n"
-        << "  IN_ARG_x_dot = true\n"
-        << "  IN_ARG_alpha = true\n"
-        << "  IN_ARG_beta  = true\n"
-        << "  OUT_ARG_f    = true\n"
-        << "  OUT_ARG_W    = true\n");
+        << "  IN_ARG_x                 = true\n"
+        << "  IN_ARG_x_dot             = true\n"
+        << "  IN_ARG_alpha             = true\n"
+        << "  IN_ARG_beta              = true\n"
+        << "  IN_ARG_W_x_dot_dot_coeff = false\n"
+        << "  OUT_ARG_f                = true\n"
+        << "  OUT_ARG_W                = true\n");
 
       return;
     }
 
 
-    /// Validate that the model supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
+    /// Validate ME supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
     void validImplicitSecondOrderODE_DAE(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
@@ -169,23 +179,31 @@ public:
 
       TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
         model->description() << "can not support an implicit ODE with\n"
-        << "  IN_ARG_x                      = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
-        << "  IN_ARG_x_dot                  = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
-        << "  IN_ARG_x_dot_dot              = " << inArgs.supports(MEB::IN_ARG_x_dot_dot) << "\n"
-        << "  IN_ARG_alpha                  = " << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
-        << "  IN_ARG_beta                   = " << inArgs.supports(MEB::IN_ARG_beta) << "\n"
-        << "  IN_ARG_W_x_dot_dot_coeff      = " << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
-        << "  OUT_ARG_f                     = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
-        << "  OUT_ARG_W                     = " << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+        << "  IN_ARG_x                 = "
+        << inArgs.supports(MEB::IN_ARG_x) << "\n"
+        << "  IN_ARG_x_dot             = "
+        << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+        << "  IN_ARG_x_dot_dot         = "
+        << inArgs.supports(MEB::IN_ARG_x_dot_dot) << "\n"
+        << "  IN_ARG_alpha             = "
+        << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+        << "  IN_ARG_beta              = "
+        << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+        << "  IN_ARG_W_x_dot_dot_coeff = "
+        << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+        << "  OUT_ARG_f                = "
+        << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+        << "  OUT_ARG_W                = "
+        << outArgs.supports(MEB::OUT_ARG_W) << "\n"
         << "Implicit Second Order ODE requires:\n"
-        << "  IN_ARG_x                      = true\n"
-        << "  IN_ARG_x_dot                  = true\n"
-        << "  IN_ARG_x_dot_dot              = true\n"
-        << "  IN_ARG_alpha                  = true\n"
-        << "  IN_ARG_beta                   = true\n"
-        << "  IN_ARG_W_x_dot_dot_coeff      = true\n"
-        << "  OUT_ARG_f                     = true\n"
-        << "  OUT_ARG_W                     = true\n");
+        << "  IN_ARG_x                 = true\n"
+        << "  IN_ARG_x_dot             = true\n"
+        << "  IN_ARG_x_dot_dot         = true\n"
+        << "  IN_ARG_alpha             = true\n"
+        << "  IN_ARG_beta              = true\n"
+        << "  IN_ARG_W_x_dot_dot_coeff = true\n"
+        << "  OUT_ARG_f                = true\n"
+        << "  OUT_ARG_W                = true\n");
 
       return;
     }

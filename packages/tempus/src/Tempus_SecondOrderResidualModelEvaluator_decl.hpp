@@ -17,7 +17,8 @@ namespace Tempus {
  *  it is not stateless!
  */
 template <typename Scalar>
-class SecondOrderResidualModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
+class SecondOrderResidualModelEvaluator
+ : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
   typedef Thyra::VectorBase<Scalar>  Vector;
@@ -42,7 +43,8 @@ public:
     std::function<void (const Vector &,Vector &)> computeXDot,
     double t, double alpha, double beta, double omega = 0.0)
   {
-    computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta; omega_ = omega; 
+    computeXDot_ = computeXDot; t_ = t;
+    alpha_ = alpha; beta_ = beta; omega_ = omega;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase

@@ -119,10 +119,10 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
     }
     RCP<Thyra::VectorBase<Scalar> > xdotdot;
     if (inArgsIC.supports(MEB::IN_ARG_x_dot_dot)) {
-      xdotdot = inArgsIC.get_x_dot_dot()->clone_v(); 
+      xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
     }
     else {
-      xdotdot = x->clone_v(); 
+      xdotdot = x->clone_v();
     }
     RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
       md, x, xdot, xdotdot, stepper_->getDefaultStepperState()));
