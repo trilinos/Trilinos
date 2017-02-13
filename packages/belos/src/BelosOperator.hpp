@@ -63,9 +63,8 @@ namespace Belos {
   /// Belos' linear solvers are templated on the scalar (Scalar),
   /// multivector (MV), and operator (OP) types.  The term "operator"
   /// includes the matrix A in the linear system \f$AX = B\f$, any
-  /// left or right preconditioners, and any left or right scaling
-  /// operators.  If you have enabled the corresponding Trilinos
-  /// packages, you can use Belos' solvers directly with OP =
+  /// left or right preconditioners. If you have enabled the corresponding 
+  /// Trilinos packages, you can use Belos' solvers directly with OP =
   /// Epetra_Operator, Tpetra::Operator, or Thyra::LinearOpBase.
   /// Alternately, you may wish to use some other object as an
   /// operator.  If so, you can make that object inherit from

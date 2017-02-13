@@ -98,8 +98,7 @@ namespace Belos {
     /// Creates an unpreconditioned LinearProblem instance with the
     /// operator (\c A), initial guess (\c X), and right hand side (\c
     /// B).  Preconditioners can be set using the \c setLeftPrec() and
-    /// \c setRightPrec() methods, and scaling can also be set using
-    /// the \c setLeftScale() and \c setRightScale() methods.
+    /// \c setRightPrec() methods.
     LinearProblem (const Teuchos::RCP<const OP> &A, 
 		   const Teuchos::RCP<MV> &X, 
 		   const Teuchos::RCP<const MV> &B);
@@ -550,12 +549,6 @@ namespace Belos {
     //! @name Booleans to keep track of linear problem attributes and status.
     //@{ 
 
-    //! Is there a left scaling?
-    bool Left_Scale_;
-
-    //! Is there a right scaling?
-    bool Right_Scale_;
-
     //! Has the linear problem to solve been set?
     bool isSet_;
 
@@ -585,8 +578,6 @@ namespace Belos {
     num2Solve_(0),
     rhsIndex_(0),
     lsNum_(0),
-    Left_Scale_(false),
-    Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
     solutionUpdated_(false),
@@ -606,8 +597,6 @@ namespace Belos {
     num2Solve_(0),
     rhsIndex_(0),
     lsNum_(0),
-    Left_Scale_(false),
-    Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
     solutionUpdated_(false),
@@ -634,8 +623,6 @@ namespace Belos {
     num2Solve_(Problem.num2Solve_),
     rhsIndex_(Problem.rhsIndex_),
     lsNum_(Problem.lsNum_),
-    Left_Scale_(Problem.Left_Scale_),
-    Right_Scale_(Problem.Right_Scale_),
     isSet_(Problem.isSet_),
     isHermitian_(Problem.isHermitian_),
     solutionUpdated_(Problem.solutionUpdated_),
