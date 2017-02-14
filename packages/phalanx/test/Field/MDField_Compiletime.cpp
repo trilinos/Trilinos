@@ -165,6 +165,24 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     MDField<double,Cell,Point> e;
     MDField<MyTraits::FadType,Cell,Point,Dim> f;
     cout << "passed!" << endl;
+
+    // MDField ctor interoperability between const and non-const tags
+    {
+      Tag<double> nonconst_tag("non-const tag", node_scalar);
+      Tag<const double> const_tag("const tag", node_scalar);
+
+      // Create a const field from a non-const field tag
+      MDField<const double,Cell,Point> c_field1(nonconst_tag);
+
+      // Create a non-const field from a const field tag
+      MDField<double,Cell,Point> nc_field1(const_tag);
+
+      // Create a non-const field from a non-const field tag
+      MDField<double,Cell,Point> nc_field2(nonconst_tag);
+
+      // Create a const field from a const field tag
+      MDField<const double,Cell,Point> c_field2(const_tag);
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // FieldTag accessor

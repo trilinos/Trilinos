@@ -167,5 +167,29 @@ TEUCHOS_UNIT_TEST(FieldTag,FieldTag)
     
     TEST_EQUALITY(*(*test), *tmp_rcp_grad_qp_density);
   }
+}
+
+TEUCHOS_UNIT_TEST(FieldTag,ConstCorrectness)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  // Dummy data layouts (same size different name/type)
+  RCP<DataLayout> node4 = rcp(new MDALayout<Cell,Node>(100,4));
   
+  // Tags ignore const in the scalar type. Should be equal.
+  Tag<double> nonconst_a("a", node4);
+  Tag<const double> const_a("a", node4);
+  TEST_ASSERT(nonconst_a == const_a);
+
+  // Tags should ignore const - test all combinations of constructors
+  Tag<double> nonconst_b(nonconst_a);      // nonconst from nonconst
+  Tag<const double> const_c(const_a);      // const    from const
+  Tag<const double> const_b(nonconst_a); // const    from nonconst
+  Tag<double> nonconst_c(const_a);       // nonconst from const
+
+  // This should fail to compile: uncomment to test static_assert
+  // warning message
+  //Tag<int> d(nonconst_a); // create int tag from double
 }
