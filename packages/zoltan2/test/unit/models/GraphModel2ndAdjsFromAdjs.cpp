@@ -153,7 +153,7 @@ int main(int narg, char *arg[]) {
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
   RCP<const base_adapter_t> baseInputAdapter;
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(CommT));
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   if (ia.availAdjs(primaryEType, adjEType)) {
