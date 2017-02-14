@@ -1,3 +1,11 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
 #ifndef Tempus_StepperBackwardEuler_decl_hpp
 #define Tempus_StepperBackwardEuler_decl_hpp
 

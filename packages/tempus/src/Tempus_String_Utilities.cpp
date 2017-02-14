@@ -1,3 +1,11 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
 #include "Tempus_String_Utilities.hpp"
 #include <sstream>
 

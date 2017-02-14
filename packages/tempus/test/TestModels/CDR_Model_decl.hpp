@@ -1,3 +1,11 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
 #ifndef TEMPUS_CDR_MODEL_DECL_HPP
 #define TEMPUS_CDR_MODEL_DECL_HPP
 

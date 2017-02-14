@@ -1,3 +1,11 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
 #ifndef TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 #define TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 

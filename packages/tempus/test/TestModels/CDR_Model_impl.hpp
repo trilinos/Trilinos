@@ -1,3 +1,11 @@
+// @HEADER
+// ****************************************************************************
+//                Tempus: Copyright (2017) Sandia Corporation
+//
+// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// ****************************************************************************
+// @HEADER
+
 #ifndef NOX_THYRA_MODEL_EVALUATOR_1DFEM_DEF_HPP
 #define NOX_THYRA_MODEL_EVALUATOR_1DFEM_DEF_HPP
 
