@@ -96,28 +96,27 @@ namespace MueLuTests {
   
   using namespace std;
   // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the dimension of the cellTopo
-  std::vector<std::pair<unsigned,unsigned>> subcellEntitiesForSide(const shards::CellTopology &cellTopo,
-                                                                   unsigned sideOrdinal)
+  std::vector<std::pair<int,int>> subcellEntitiesForSide(const shards::CellTopology &cellTopo, int sideOrdinal)
   {
     using namespace std;
-    vector<pair<unsigned,unsigned>> subcellEntities;
-    set<unsigned> nodesForSide;
-    int spaceDim = cellTopo.getDimension();
+    vector<pair<int,int>> subcellEntities;
+    set<int> nodesForSide;
+    int spaceDim = (int) cellTopo.getDimension();
     if (spaceDim == 0) return {{}};
     int sideDim = spaceDim - 1;
-    unsigned nodeCount = cellTopo.getNodeCount(sideDim, sideOrdinal);
+    int nodeCount = (int) cellTopo.getNodeCount(sideDim, sideOrdinal);
     // first, collect all the nodes that match the side
     for (int nodeOrdinal=0; nodeOrdinal < nodeCount; nodeOrdinal++)
     {
-      unsigned node = cellTopo.getNodeMap(sideDim, sideOrdinal, nodeOrdinal);
+      int node = (int) cellTopo.getNodeMap(sideDim, sideOrdinal, nodeOrdinal);
       nodesForSide.insert(node);
     }
     // now, iterate over dimensions.
     // Any subcells that only have nodes that match nodesForSide should be included.
-    for (unsigned d=0; d<=sideDim; d++)
+    for (int d=0; d<=sideDim; d++)
     {
       int subcellCount = cellTopo.getSubcellCount(d);
-      for (unsigned subcord = 0; subcord < subcellCount; subcord++)
+      for (int subcord = 0; subcord < subcellCount; subcord++)
       {
         bool allNodesMatch = true;
         if (d == 0)
@@ -128,9 +127,9 @@ namespace MueLuTests {
         else
         {
           int scNodeCount = cellTopo.getNodeCount(d, subcord);
-          for (unsigned scNodeOrdinal = 0; scNodeOrdinal < scNodeCount; scNodeOrdinal++)
+          for (int scNodeOrdinal = 0; scNodeOrdinal < scNodeCount; scNodeOrdinal++)
           {
-            unsigned scNode = cellTopo.getNodeMap(d, subcord, scNodeOrdinal);
+            int scNode = (int) cellTopo.getNodeMap(d, subcord, scNodeOrdinal);
             if (nodesForSide.find(scNode) == nodesForSide.end())
             {
               allNodesMatch = false;
@@ -149,7 +148,7 @@ namespace MueLuTests {
   
   //! Returns ordinals in the basis that have nodes on the specified side, as a sorted vector<int>
   template<class Basis>
-  std::vector<int> localDofOrdinalsForSide(RCP<Basis> basis, unsigned sideOrdinal)
+  std::vector<int> localDofOrdinalsForSide(RCP<Basis> basis, int sideOrdinal)
   {
     using namespace std;
     // to use dof tags for this, we first need to determine the subcells of the domain that
@@ -176,8 +175,8 @@ namespace MueLuTests {
     
     for (auto subcellEntity : subcellEntities)
     {
-      unsigned subcellDim = subcellEntity.first;
-      unsigned subcellOrdinal = subcellEntity.second;
+      int subcellDim = subcellEntity.first;
+      int subcellOrdinal = subcellEntity.second;
       
       if (subcellDim >= maxDim) continue; // no entries
       
@@ -189,7 +188,7 @@ namespace MueLuTests {
 #endif
       if (subcellOrdinal >= maxSubcellOrdinal) continue; // no entries
       
-      for (unsigned entryOrdinal = 0; entryOrdinal < dofContainerSize; entryOrdinal++)
+      for (int entryOrdinal = 0; entryOrdinal < dofContainerSize; entryOrdinal++)
       {
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
         int localDofOrdinal = dofOrdinalData(subcellDim,subcellOrdinal,entryOrdinal);
@@ -218,23 +217,23 @@ namespace MueLuTests {
     vector<vector<int>> _inverses;
     int _N;
   public:
-    Symmetries(const vector<vector<int>> &symmetries)
+    Symmetries(const vector<vector<int>> &symmetriesList)
     {
-      _symmetries = symmetries;
+      _symmetries = symmetriesList;
       // sanity checks on the input:
       // - require that all entries are of equal length N
       // - require that all entries contain each of 0, ..., N-1
       
-      if (symmetries.size() == 0)
+      if (symmetriesList.size() == 0)
       {
         _N = 0;
       }
       else
       {
-        _N = int(symmetries[0].size());
-        for (auto symmetry : symmetries)
+        _N = int(symmetriesList[0].size());
+        for (auto symmetry : symmetriesList)
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(symmetry.size() != _N, std::invalid_argument, "Each symmetry must have the same length as all the others.");
+          TEUCHOS_TEST_FOR_EXCEPTION(int(symmetry.size()) != _N, std::invalid_argument, "Each symmetry must have the same length as all the others.");
           vector<int> inverse(_N,-1);
           for (int i=0; i<_N; i++)
           {
@@ -255,7 +254,7 @@ namespace MueLuTests {
     const vector<int>& getPermutation(int permutationOrdinal)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal < 0, std::invalid_argument, "permutationOrdinal must be positive");
-      TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal >= _symmetries.size(), std::invalid_argument, "permutationOrdinal out of range");
+      TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal >= int(_symmetries.size()), std::invalid_argument, "permutationOrdinal out of range");
       return _symmetries[permutationOrdinal];
     }
     
@@ -329,7 +328,8 @@ namespace MueLuTests {
           if (isAlreadyMapped) continue;
           // not already mapped: let's check whether the edge relationships agree
           bool mappingAgrees = true;
-          for (int node=0; node<permutationStart.size(); node++)
+          int numNodesMapped = (int) permutationStart.size();
+          for (int node=0; node<numNodesMapped; node++)
           {
             int mappedNode = permutationStart[node];
             bool originalHasEdge = hasEdge(edges, node, nextNodeToMap);
@@ -345,7 +345,7 @@ namespace MueLuTests {
             // no conflict detected: try this mapping choice
             vector<int> permutationStartCopy = permutationStart;
             permutationStartCopy.push_back(possibleMappedNode);
-            if (permutationStartCopy.size() == nodeCount)
+            if (int(permutationStartCopy.size()) == nodeCount)
             {
               permutations.push_back(permutationStartCopy);
             }
@@ -367,7 +367,7 @@ namespace MueLuTests {
     {
       int edgeDim = 1;
       int nodeCount = cellTopo.getNodeCount();
-      TEUCHOS_TEST_FOR_EXCEPTION(nodeCount != cellTopo.getVertexCount(), std::invalid_argument, "Higher-order topologies are not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(nodeCount != int(cellTopo.getVertexCount()), std::invalid_argument, "Higher-order topologies are not supported");
       int edgeCount = cellTopo.getSubcellCount(edgeDim);
       EdgeContainer edges(nodeCount); // set --> sorted, which is handy
       for (int edgeOrdinal=0; edgeOrdinal<edgeCount; edgeOrdinal++)
@@ -395,7 +395,7 @@ namespace MueLuTests {
       for (int node=0; node<oldNodeCount; node++)
       {
         newEdges[node+oldNodeCount].push_back(node);
-        for (int entryOrdinal=0; entryOrdinal < edges[node].size(); entryOrdinal++)
+        for (int entryOrdinal=0; entryOrdinal < int(edges[node].size()); entryOrdinal++)
         {
           int connectedNode = edges[node][entryOrdinal];
           newEdges[node].push_back(connectedNode);
@@ -406,7 +406,7 @@ namespace MueLuTests {
       return newEdges;
     };
     
-    int d = 1, d_max = 5;
+    int d_max = 5;
     vector<vector<int>> edges = {{}}; // node: no edges
     for (int d=1; d<= d_max; d++)
     {
@@ -431,7 +431,7 @@ namespace MueLuTests {
     void getSanitizedCoords(const vector<double> &coords, vector<double> &sanitizedCoords)
     {
       sanitizedCoords.resize(coords.size());
-      for (int d=0; d<coords.size(); d++)
+      for (int d=0; d<int(coords.size()); d++)
       {
         double val = coords[d];
         // look to lower_bound to see if we already have something within _tol
@@ -847,8 +847,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
-    GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+//    GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+//    GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     int MyPID = comm->getRank();
 
     // Setup Levels
@@ -1294,10 +1294,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       
       // we'll want to create a global numbering for both high and low order bases
       // --> we make a lambda function that accepts FC with dof coords as argument
-      auto getTwoCellNumbering = [pointTol,numCells,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
+      auto getTwoCellNumbering = [pointTol,numCells,spaceDim,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
       {
         int dofsPerCell = dofCoords.dimension(0);
-        int spaceDim = dofCoords.dimension(1);
+        
         vector<double> coords(spaceDim);
         UniqueNumbering numbering(spaceDim, pointTol);
         
@@ -1346,7 +1346,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         for (int lowOrdinal=0; lowOrdinal<lo->getCardinality(); lowOrdinal++)
         {
           vector<double> coords(lo_DofCoords.dimension(1));
-          for (int d=0; d<lo_DofCoords.dimension(1); d++)
+          for (int d=0; d<int(lo_DofCoords.dimension(1)); d++)
           {
             coords[d] = lo_DofCoords(lowOrdinal,d);
           }
@@ -1354,7 +1354,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           {
             int globalOrdinal = loNumbering.getGlobalID(coords);
             out << globalOrdinal << ": (";
-            for (int d=0; d<coords.size()-1; d++)
+            for (int d=0; d<int(coords.size())-1; d++)
             {
               out << coords[d] << ",";
             }
@@ -1366,7 +1366,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         for (int highOrdinal=0; highOrdinal<hi->getCardinality(); highOrdinal++)
         {
           vector<double> coords(hi_DofCoords.dimension(1));
-          for (int d=0; d<hi_DofCoords.dimension(1); d++)
+          for (int d=0; d<int(hi_DofCoords.dimension(1)); d++)
           {
             coords[d] = hi_DofCoords(highOrdinal,d);
           }
@@ -1374,7 +1374,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           {
             int globalOrdinal = hiNumbering.getGlobalID(coords);
             out << globalOrdinal << ": (";
-            for (int d=0; d<coords.size()-1; d++)
+            for (int d=0; d<int(coords.size())-1; d++)
             {
               out << coords[d] << ",";
             }
@@ -1419,9 +1419,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           // this is the one that has points with x coordinates equal to 1.0
           // we'll want to do this once for cell 0, and once for cell 1, so we make it a lambda
           // (NOTE: this will need to change for non-hypercube topology support)
-          auto searchForX1Side = [cellTopo,physCellVerticesPermuted](int cellOrdinal) -> int
+          auto searchForX1Side = [cellTopo,physCellVerticesPermuted,spaceDim](int cellOrdinal) -> int
           {
-            int spaceDim = cellTopo.getDimension();
             // Line<2> gives wrong answers for getSideCount() and getNodeCount(), so we handle 1D case separately:
             if (spaceDim == 1)
             {
@@ -1504,11 +1503,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
              to verify that the two cells agree.
              */
             
-            auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering]
+            auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering, spaceDim]
             (int cellOrdinal, int sideOrdinal) -> map<int, set<int>>
             {
               map<int,set<int>> globalLowToHighMap;
-              int spaceDim = lo_physDofCoords.dimension(2);
               vector<int> cell_loDofOrdinals = localDofOrdinalsForSide(lo, sideOrdinal);
               for (int lowLocalOrdinal : cell_loDofOrdinals)
               {
