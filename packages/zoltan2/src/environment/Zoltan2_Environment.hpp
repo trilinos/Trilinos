@@ -104,8 +104,6 @@ public:
    *  \param problemParams  the parameters supplied by the user, and
    *                          not yet validated by the Environment
    *  \param comm           the default communicator for the application
-   *
-   *   Note that the communicator is for the application, not the problem.
    */
   Environment(Teuchos::ParameterList &problemParams,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
@@ -116,8 +114,6 @@ public:
    *    BASIC_STATUS for debug_level, and does not timing or memory profiling.
    *    It has error_check_level BASIC_ASSERTION. It has no other parameters.
    *  \param comm           the default communicator for the application
-   *
-   *   Note that the communicator is for the application, not the problem.
    */
   Environment(const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 

@@ -400,10 +400,7 @@ int main(int argc, char *argv[]){
         //hopper[2] = 24;
         part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
-        Teuchos::RCP <Zoltan2::Environment> env
-          = rcp(new Zoltan2::Environment(comm));
         Zoltan2::coordinateTaskMapperInterface<part_t, zscalar_t, zscalar_t>(
-                env,
                 tcomm,
                 procDim,
                 numProcs,

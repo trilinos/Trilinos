@@ -2849,7 +2849,6 @@ public:
  */
 template <typename part_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
-    const Teuchos::RCP <const Environment> envConst_,
     RCP<const Teuchos::Comm<int> > problemComm,
     int proc_dim,
     int num_processors,
@@ -2869,6 +2868,9 @@ void coordinateTaskMapperInterface(
     bool divide_to_prime_first = false
 )
 {
+
+  const Environment *envConst_ = new Environment(problemComm);
+
   // mfh 03 Mar 2015: It's OK to omit the Node template
   // parameter in Tpetra, if you're just going to use the
   // default Node.
@@ -2885,7 +2887,7 @@ void coordinateTaskMapperInterface(
 
   CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t> *ctm =
       new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t>(
-      envConst_.getRawPtr(),
+      envConst_,
       problemComm.getRawPtr(),
       proc_dim,
       num_processors,
@@ -2918,6 +2920,8 @@ void coordinateTaskMapperInterface(
     proc_to_task_adj[i] = proc_to_task_adj_[i];
   }
   delete ctm;
+  delete envConst_;
+
 }
 
 template <typename proc_coord_t, typename v_lno_t>
