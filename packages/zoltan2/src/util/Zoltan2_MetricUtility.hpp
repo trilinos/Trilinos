@@ -490,9 +490,10 @@ template <typename scalar_t>
       break;
 
     default:
-      Environment env;  // default environment
-      env.localBugAssertion(__FILE__, __LINE__, "invalid norm", false,
-        BASIC_ASSERTION);
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__ << std::endl;
+      emsg << "bug: " << "invalid norm" << std::endl;
+      throw std::logic_error(emsg.str());
       break;
   }
 

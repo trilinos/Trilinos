@@ -76,7 +76,7 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags = 0;
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
   //////////////////////////////////////////////////////////////
   // Use an Tpetra::CrsMatrix for the user data.

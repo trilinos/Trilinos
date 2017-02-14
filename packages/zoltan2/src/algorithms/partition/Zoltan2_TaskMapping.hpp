@@ -2869,7 +2869,7 @@ void coordinateTaskMapperInterface(
 )
 {
 
-  const Environment *envConst_ = new Environment();
+  const Environment *envConst_ = new Environment(problemComm);
 
   // mfh 03 Mar 2015: It's OK to omit the Node template
   // parameter in Tpetra, if you're just going to use the

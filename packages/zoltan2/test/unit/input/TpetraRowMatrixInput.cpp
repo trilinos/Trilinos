@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 
   // To test migration in the input adapter we need a Solution object. 
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
   int nWeights = 1;
 
