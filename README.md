@@ -37,4 +37,4 @@ documentation of each package.
 
 ### Pull requests
 
-Pull requests MUST be submitted against the develop branch.  The branch you see on the main page is the master branch.
+Pull requests MUST be submitted against the develop branch.  The branch you see on the main page is the master branch.  If you accidentally make your pull request against the master branch, you can switch it to be against the develop branch, by following these instructions: https://github.com/blog/2224-change-the-base-branch-of-a-pull-request
