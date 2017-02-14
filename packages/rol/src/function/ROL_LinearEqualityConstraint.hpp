@@ -41,64 +41,79 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
-
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
-*/
-
-#include "ROL_Vector.hpp"
+#include "ROL_EqualityConstraint.hpp"
 #include "ROL_LinearOperator.hpp"
+
+
+#ifndef ROL_LINEAR_EQUALITY_CONSTRAINT_H
+#define ROL_LINEAR_EQUALITY_CONSTRAINT_H
+
+
+/** @ingroup func_group
+    \class ROL::LinearEqualityConstraint
+    \brief Provides the interface to evaluate linear equality constraints.
+
+    This class implements the linear equality constraint
+    \f[
+       c(x) = Ax-b
+    \f]
+
+    Where A is a linear operator
+
+    ---
+*/
 
 namespace ROL {
 
-template<class Real>
-class Krylov {
-
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
-
+template <class Real>
+class LinearEqualityConstraint : public EqualityConstraint<Real> {
+private:
+  const Teuchos::RCP<const LinearOperator<Real> > A_;
+  const Teuchos::RCP<const LinearOperator<Real> > Atrans_;
+  const Teuchos::RCP<const Vector<Real> > b_;
+  bool  isSymmetric_;
 public:
-  virtual ~Krylov(void) {}
-
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
-
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+  // Nonsymmetric case
+  LinearEqualityConstraint( const Teuchos::RCP<const LinearOperator<Real> > &A,
+                            const Teuchos::RCP<const LinearOperator<Real> > &Atrans,
+                            const Teuchos::RCP<const Vector<Real> &b ) :
+      A_(A), Atrans_(Atrans), b_(b), isSymmetric_(false) {
+  }
+  // Symmetric case
+  LinearEqualityConstraint( const Teuchos::RCP<const LinearOperator<Real> > &A,
+                            const Teuchos::RCP<const Vector<Real> &b ) : 
+      A_(A), Atrans_(A), b_(b), isSymmetric_(true) {
   }
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
+    A_->apply(c,x,tol);
+    c_->axpy(-1.0,*b_);
+  }
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
+                     const Vector<Real> &x, Real &tol) {
+    A_->apply(jv,v,tol);
   }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
+ 
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v,
+                            const Vector<Real> &x, Real &tol) {
+    Atrans_->apply(ajv,v,tol);
   }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
 
-}
+  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
+                           const Vector<Real> &x, Real &tol) {
+    ahuv.zero();
+  }
 
-#include "ROL_KrylovFactory.hpp"
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    A_->update(x,flag,iter);
+    if( !isSymmetric_ ) {
+      A_->update(x,flag,iter);
+    }
+  }
+}; // class LinearEqualityConstraint
 
-#endif
+
+} // namespace ROL
+
+#endif //ROL_LINEAR_EQUALITY_CONSTRAINT_H

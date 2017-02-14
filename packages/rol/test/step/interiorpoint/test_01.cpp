@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     RCP<V> l  = rcp( new SV( l_rcp ) );
     RCP<V> u  = rcp( new SV( u_rcp ) );
 
-    RCP<V> maskL, maskU;
+    RCP<const V> maskL, maskU;
 
     ROL::RandomizeVector(*d,left,right);
     ROL::RandomizeVector(*v,left,right);
@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
     maskL = ipobj.getLowerMask();
     maskU = ipobj.getUpperMask();
 
-    RCP<std::vector<RealT> > maskL_rcp = Teuchos::dyn_cast<SV>(*maskL).getVector();
-    RCP<std::vector<RealT> > maskU_rcp = Teuchos::dyn_cast<SV>(*maskU).getVector();
+    RCP<const std::vector<RealT> > maskL_rcp = Teuchos::dyn_cast<const SV>(*maskL).getVector();
+    RCP<const std::vector<RealT> > maskU_rcp = Teuchos::dyn_cast<const SV>(*maskU).getVector();
 
     *outStream << "\nLower bound vector" << std::endl;
     printVector(*l,*outStream);

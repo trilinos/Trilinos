@@ -43,8 +43,11 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
-INCLUDE_DIRECTORIES(${DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/operator)
+
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/operator/*.hpp)
 
 #
 # step headers

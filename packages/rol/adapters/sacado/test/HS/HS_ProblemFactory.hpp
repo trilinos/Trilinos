@@ -84,6 +84,7 @@
 #include "HS_Problem_038.hpp"
 #include "HS_Problem_039.hpp"
 #include "HS_Problem_040.hpp"
+#include "HS_Problem_041.hpp"
 
 namespace HS {
 template<class Real> 
@@ -132,6 +133,7 @@ public:
       case  38: np = Teuchos::rcp( new Problem_038<Real>() ); break;
       case  39: np = Teuchos::rcp( new Problem_039<Real>() ); break;
       case  40: np = Teuchos::rcp( new Problem_040<Real>() ); break;
+      case  41: np = Teuchos::rcp( new Problem_041<Real>() ); break;
 
 
       default:

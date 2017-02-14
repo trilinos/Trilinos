@@ -156,6 +156,28 @@ public:
   }
 };
 
+
+template<class Real> 
+class EuclideanNormSquared : public ReductionOp<Real> {
+public: 
+  void reduce( const Real &input, Real &output ) const {
+    output = output*output + input;
+  }
+
+  void reduce( const volatile Real &input, volatile Real &output ) const {
+    output = output*output + input;
+  }
+
+  Real initialValue() const {
+    return 0;
+  }
+
+  Teuchos::EReductionType reductionType() const {
+    return Teuchos::REDUCE_SUM;
+  }
+
+};
+
 } // namespace Elementwise 
 } // namespace ROL
 

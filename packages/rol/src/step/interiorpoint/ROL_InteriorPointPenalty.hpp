@@ -70,7 +70,7 @@ class InteriorPointPenalty : public Objective<Real> {
 private:
   
   const Teuchos::RCP<OBJ>       obj_;
-  const Teuchos::RCP<BND>       con_;
+  const Teuchos::RCP<BND>       bnd_;
   const Teuchos::RCP<V>         lo_;
   const Teuchos::RCP<V>         up_;
 
@@ -146,7 +146,7 @@ public:
   InteriorPointPenalty( const Teuchos::RCP<Objective<Real> > &obj,
                         const Teuchos::RCP<BoundConstraint<Real> > &con, 
                         Teuchos::ParameterList &parlist ) :
-    obj_(obj), con_(con), lo_( con->getLowerVectorRCP() ), up_( con->getUpperVectorRCP() ) {
+    obj_(obj), bnd_(con), lo_( con->getLowerVectorRCP() ), up_( con->getUpperVectorRCP() ) {
 
     Real one(1.0);
     Real zero(0.0);
@@ -186,19 +186,19 @@ public:
     return g_;
   }
 
-  int getNumberFunctionEvaluations(void) {
+  int getNumberFunctionEvaluations(void) const {
     return nfval_;
   }
 
-  int getNumberGradientEvaluations(void) {
+  int getNumberGradientEvaluations(void) const {
     return ngval_;
   }
 
-  Teuchos::RCP<Vector<Real> > getLowerMask(void) {
+  Teuchos::RCP<const Vector<Real> > getLowerMask(void) const {
     return maskL_;
   }
 
-  Teuchos::RCP<Vector<Real> > getUpperMask(void) {
+  Teuchos::RCP<const Vector<Real> > getUpperMask(void) const {
     return maskU_;
   }
 
@@ -211,7 +211,7 @@ public:
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
-    con_->update(x,flag,iter);
+    bnd_->update(x,flag,iter);
   }
 
   /** \brief Compute value.
@@ -368,6 +368,11 @@ public:
     hv.axpy(mu_,*b_);
  }
 
+  // Return the unpenalized objective
+  const Teuchos::RCP<OBJ> getObjective( void ) { return obj_; }
+
+  // Return the bound constraint
+  const Teuchos::RCP<BND> getBoundConstraint( void ) { return bnd_; }
 
 }; // class InteriorPointPenalty
 

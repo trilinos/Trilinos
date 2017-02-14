@@ -41,69 +41,91 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef ROL_BLOCKOPERATOR2UNITUPPER_H
+#define ROL_BLOCKOPERATOR2UNITUPPER_H
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_BlockOperator2.hpp"
 
-/**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
-     \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
+/** @ingroup func_group
+    \class ROL::BlockOperator2UnitUpper
+    \brief Provides the interface to apply a 2x2 block unit upper operator to a 
+           partitioned vector.
+
+           \f[ U = \begin{pmatrix} I & B \\ 0 & I \end{pmatrix} \f]
+           \f[ U^{-1} = \begin{pmatrix} I & -B \\ 0 & I \end{pmatrix} \f]
+
+    ---
 */
 
 namespace ROL {
 
-template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+template<class Real>
+class BlockOperator2UnitUpper : public LinearOperator<Real> {
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+  typedef Vector<Real>               V;    // ROL Vector
+  typedef PartitionedVector<Real>    PV;   // ROL PartitionedVector
+  typedef LinearOperator<Real>       OP;   // Linear Operator
 
-public:
+private:
 
-  using EqualityConstraint<Real>::update;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+  Teuchos::RCP<OP> B_;
+
+
+public:   
+
+  BlockOperator2UnitUpper( Teuchos::RCP<OP> &B ) : B_(B) {}
   }
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
+  void apply( V &Hv, const V &v, Real &tol ) const {
+    using Teuchos::RCP;
+
+    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
+    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+      
+    RCP<V> Hv1 = Hv_pv.get(0);
+    RCP<V> Hv2 = Hv_pv.get(1);
+    RCP<const V> v1 = v_pv.get(0);
+    RCP<const V> v2 = v_pv.get(1);
+
+    B_->apply(*Hv1,*v2,tol);
+    Hv1->plus(*v1);
+    Hv2->set(*v2); 
   }
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
+
+  void applyInverse( V &Hv, const V &v Real &tol ) const {
+    using Teuchos::RCP;
+
+    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
+    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+      
+    RCP<V> Hv1 = Hv_pv.get(0);
+    RCP<V> Hv2 = Hv_pv.get(1);
+    RCP<const V> v1 = v_pv.get(0);
+    RCP<const V> v2 = v_pv.get(1);
+ 
+    B_->apply(*Hv1,*v2,tol);
+    Hv1->scale(-1.0);
+    Hv1->plus(*v1);
+    Hv2->set(*v2); 
+
+  } 
+
+  Teuchos::RCP<LinearOperator<Real> > getOperator( int row, int col ) const {
+    if( row == 0 && col == 1 ) {
+      return B_;
+    } 
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+                                  ">>> ERROR (ROL_BlockOperator2UnitUpper, getOperator): "
+                                  "invalid block indices."); 
+    }
+    
   }
 
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
-  }
 
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
-
-  }
-
-  using EqualityConstraint<Real>::solveAugmentedSystem;
-  std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
-                                         const Vector<Real> &b1, const Vector<Real> &b2,
-                                         const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
-  }
-
-  using EqualityConstraint<Real>::applyPreconditioner;
-  void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
-                           const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
-  }
-
-}; // class StdInequalityConstraint
+}; // class BlockOperator2UnitUpper
 
 } // namespace ROL
 
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+#endif // ROL_BLOCKOPERATOR2UNITUPPER_H

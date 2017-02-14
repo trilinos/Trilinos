@@ -70,6 +70,7 @@ ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
 
 #
 # Exclude files for source package.

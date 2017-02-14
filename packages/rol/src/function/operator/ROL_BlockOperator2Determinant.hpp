@@ -41,64 +41,66 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
+#ifndef ROL_BLOCKOPERATOR2DETERMINANT_H
+#define ROL_BLOCKOPERATOR2DETERMINANT_H
 
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
+#include "ROL_BlockOperator2.hpp"
+
+/** @ingroup func_group
+    \class ROL::BlockOperator2Determinant
+    \brief Provides the interface to the block determinant of a 2x2 block operator
+    ---
 */
 
-#include "ROL_Vector.hpp"
-#include "ROL_LinearOperator.hpp"
 
 namespace ROL {
 
-template<class Real>
-class Krylov {
+template <class Real>
+class BlockOperator2Determinant : public LinearOperator<Real> {
 
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
+  typedef Vector<Real>         V;
+  typedef LinearOperator<Real> OP;
+ 
+private:
+
+  Teuchos::RCP<OP> A_, B_, C_, D_;
+  Teuchos::RCP<V> scratch_;  
 
 public:
-  virtual ~Krylov(void) {}
 
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
+  BlockOperator2Determinant( Teuchos::RCP<OP> &A, 
+                             Teuchos::RCP<OP> &B, 
+                             Teuchos::RCP<OP> &C, 
+                             Teuchos::RCP<OP> &D,
+                             Teuchos::RCP<V>  &scratch ) : 
+    A_(A), B_(B), C_(C), D_(D), scratch_(scratch) {}
 
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    A_->update(x,flag,true);
+    B_->update(x,flag,true);
+    C_->update(x,flag,true);
+    D_->update(x,flag,true);
   }
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  // Apply the determinant \f$(A-BD^{-1}B)\f$
+  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const { 
+    B_->apply(*scratch_,v,tol);
+    D_->applyInverse(Hv,*scratch_,tol);
+    C_->apply(*scratch_,Hv,tol);
+    A_->apply(Hv,v,tol);
+    Hv.axpy(-1.0,*scratch_);  
+  }
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
-  }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
+  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
 
-}
+    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+                                ">>> ERROR (ROL_BlockOperator2Determinant, applyInverse): "
+                                "Not implemented."); 
+  }
 
-#include "ROL_KrylovFactory.hpp"
+}; // class BlockOperator2Determinant
 
-#endif
+} // namespace ROL
+
+#endif // ROL_BLOCKOPERATOR2DETERMINANT_H

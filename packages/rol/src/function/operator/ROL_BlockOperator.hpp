@@ -72,7 +72,7 @@ private:
   Teuchos::RCP<OpVec> blocks_;
 
 public:
-
+  BlockOperator() {}
   BlockOperator( const Teuchos::RCP<OpVec> &blocks ) : blocks_(blocks) {}
   
   virtual void apply( V &Hv, const V &v, Real &tol ) const {
@@ -101,48 +101,15 @@ public:
       u->zero(); 
 
       for( uint j=0; j<nvec2; ++j ) {
-        uint k = j+nvec1*i;
+        uint k = i+nvec1*j;
           (*blocks_)[k]->apply(*u,*v_part.get(j),tol);
           Hvi->plus(*u);
       }
     }
   }  
 
+
 }; // class BlockOperator
-
-
-// Simplified Construction for a 2-by-2 block operator
-template<class Real>
-class BlockOperator2 : public LinearOperator<Real> {
-
-  typedef Vector<Real>               V;    // ROL Vector
-  typedef LinearOperator<Real>       OP;   // Linear Operator
-
-private:
-
-  Teuchos::RCP<OP> bkop_;
-
-public:   
-  BlockOperator2( Teuchos::RCP<OP> &a11, Teuchos::RCP<OP> &a21,
-                  Teuchos::RCP<OP> &a12, Teuchos::RCP<OP> &a22 ) {
-
-    using std::vector;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    RCP<vector<RCP<OP> > > ops = rcp( new vector<RCP<OP> > );
-    ops->push_back(a11);
-    ops->push_back(a21);
-    ops->push_back(a12);
-    ops->push_back(a22);
-            
-    bkop_ = rcp( new BlockOperator<Real>(ops) );
-  }
-
-  void apply( V &Hv, const V &v, Real &tol ) const {
-    bkop_->apply(Hv,v,tol);  
-  }
-};
 
 } // namespace ROL
 

@@ -41,64 +41,99 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
-
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
+/*! \file  test_12.cpp
+    \brief Validate that the Householder Reflector implmentation 
+           works correctly.
 */
 
-#include "ROL_Vector.hpp"
-#include "ROL_LinearOperator.hpp"
 
-namespace ROL {
+#include "ROL_HouseholderReflector.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_RandomVector.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-template<class Real>
-class Krylov {
+template<class Real> 
+void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
 
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
+  Teuchos::RCP<const std::vector<Real> > xp = 
+    Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
 
-public:
-  virtual ~Krylov(void) {}
-
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
-
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+  outStream << "Standard Vector" << std::endl;
+  for( size_t i=0; i<xp->size(); ++i ) {
+    outStream << (*xp)[i] << std::endl;
   }
-
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
-
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
-  }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
-
 }
 
-#include "ROL_KrylovFactory.hpp"
 
-#endif
+
+typedef double RealT;
+
+int main(int argc, char *argv[]) {
+  
+  typedef ROL::Vector<RealT>    V;
+  typedef ROL::StdVector<RealT> SV;
+
+  using Teuchos::RCP; using Teuchos::rcp;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  int errorFlag = 0;
+
+  try {
+
+    int dim = 10;
+
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());  
+
+
+    RCP<V> v   = rcp( new SV( rcp( new std::vector<RealT>(dim) ) ) );
+    RCP<V> Hv  = v->clone();
+    RCP<V> HHv = v->clone();
+
+    RCP<V> e0 = v->basis(0);
+
+    RandomizeVector(*v);
+
+    ROL::HouseholderReflector<RealT> H(v,e0);
+
+    // Reflect v about a vector to the x direction
+    // Verify that the result is parallel to x
+
+    printVector(*v,*outStream);
+
+    H.apply(*Hv, *v, tol);
+  
+    printVector(*Hv,*outStream);
+
+    H.apply(*HHv, *Hv, tol);
+  
+    printVector(*HHv,*outStream);
+
+
+
+  }
+  
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
+}
+
+

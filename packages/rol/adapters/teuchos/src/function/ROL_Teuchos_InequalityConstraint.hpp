@@ -41,51 +41,51 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef ROL_TEUCHOS_INEQUALITYCONSTRAINT_HPP 
+#define ROL_TEUCHOS_INEQUALITYCONSTRAINT_HPP
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_TeuchosEqualityConstraint.hpp"
 
 /**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
+     \class ROL::TeuchosInequalityConstraint 
      \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
+            Teuchos::SerialDenseVector types, which otherwise behave exactly as equality constraints
 */
 
 namespace ROL {
 
-template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+template<class Ordinal, class Real> 
+class TeuchosInequalityConstraint : public virtual TeuchosEqualityConstraint<Ordinal, Real>,
+                                    public virtual InequalityConstraint<Real> {
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+  typedef TeuchosEqualityConstraint<Real>  TEC;
+  typedef Vector<Real>                     V;  
 
 public:
 
   using EqualityConstraint<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+    TEC::update(x,flag,iter);
   }
 
   using EqualityConstraint<Real>::value;
   void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
+    TEC::value(c,x,tol);
   }
 
   using EqualityConstraint<Real>::applyJacobian;
   void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
+    TEC::applyJacobian(jv, v, x, tol);
   }
 
   using EqualityConstraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
+    TEC::applyAdjointJacobian(aju, u, x, tol);
   }
 
   using EqualityConstraint<Real>::applyAdjointHessian;
   void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
+    TEC::applyAdjointHessian(ahuv, u, v, x, tol);  
 
   }
 
@@ -93,17 +93,16 @@ public:
   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
                                          const Vector<Real> &b1, const Vector<Real> &b2,
                                          const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
+    return TEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
   }
 
   using EqualityConstraint<Real>::applyPreconditioner;
   void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
                            const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
+    TEC::applyPreconditioner(pv,v,x,g,tol);
   }
-
-}; // class StdInequalityConstraint
+}; // class TeuchosInequalityConstraint
 
 } // namespace ROL
 
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+#endif // ROL_TEUCHOS_INEQUALITYCONSTRAINT_HPP

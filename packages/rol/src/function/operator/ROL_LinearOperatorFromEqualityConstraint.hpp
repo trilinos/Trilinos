@@ -41,64 +41,51 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
-
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
-*/
+#ifndef ROL_LINEAROPERATOR_FROM_EQUALITYCONSTRAINT_H
+#define ROL_LINEAROPERATOR_FROM_EQUALITYCONSTRAINT_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_EqualityConstraint.hpp"
 #include "ROL_LinearOperator.hpp"
+
+/** @ingroup func_group
+    \class ROL::LinearOperatorFromEqualityConstraint
+    \brief A simple wrapper which allows application of constraint Jacobians 
+           through the LinearOperator interface
+
+    ---
+*/
+
 
 namespace ROL {
 
-template<class Real>
-class Krylov {
-
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
+template <class Real>
+class LinearOperatorFromEqualityConstraint : public LinearOperator<Real> {
+private:
+  const Teuchos::RCP<const Vector<Real> > x_;
+  Teuchos::RCP<EqualityConstraint<Real> > con_;
+ 
 
 public:
-  virtual ~Krylov(void) {}
 
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
-
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+  LinearOperatorFromEqualityConstraint( const Teuchos::RCP<const Vector<Real> > &x, 
+                                        const Teuchos::RCP<EqualityConstraint<Real> > &con ) : 
+                                        x_(x), con_(con) {
   }
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  virtual ~LinearOperatorFromEqualityConstraint() {}
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
+  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    con_->applyJacobian(Hv,v,*x_,tol);
   }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
 
-}
+  // Not implemented for generic equality constraint
+  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v);
+  }
 
-#include "ROL_KrylovFactory.hpp"
+}; // class LinearOperator
+
+} // namespace ROL
 
 #endif

@@ -41,64 +41,54 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
-
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
+/*! \file  test_02.cpp
+    \brief Test Lanczos solver
 */
 
-#include "ROL_Vector.hpp"
-#include "ROL_LinearOperator.hpp"
+#include "ROL_StdLinearOperator.hpp"
+#include "ROL_Lanczos.hpp"
 
-namespace ROL {
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-template<class Real>
-class Krylov {
+#include<iomanip>
 
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
+typedef double RealT;
 
-public:
-  virtual ~Krylov(void) {}
+int main(int argc, char *argv[]) {
 
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
+  using Teuchos::RCP;
+  using Teuchos::rcp; 
 
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
-  }
+  typedef std::vector<RealT>            vector;
+  typedef ROL::StdVector<RealT>         SV; 
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  typedef typename vector::size_type    uint;
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
-  }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
+  int iprint     = argc - 1;
+  RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = rcp(&std::cout, false);
+  else
+    outStream = rcp(&bhs, false);
+
+  int errorFlag = 0;
+
+  try {
+
+ }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;   
 }
-
-#include "ROL_KrylovFactory.hpp"
-
-#endif

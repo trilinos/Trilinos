@@ -68,7 +68,7 @@ public:
     update(*(xs.getVector()),flag,true);
   }
 
-  virtual void update( const std::vector<Real> &x, Real &tol ) {}  
+  virtual void update( const std::vector<Real> &x, bool flag = true, int iter = -1 ) {}  
 
 
   using EqualityConstraint<Real>::value;
@@ -164,11 +164,11 @@ public:
     const StdVector<Real> b2s = Teuchos::dyn_cast<const StdVector<Real> >(b2);
     const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
     try {
-      solveAugmentedSystem( *(v1s.getVector()), *(v2s.getVector()), *(b1s.getVector()),
-                            *(b2s.getVector()), tol );
+      return solveAugmentedSystem( *(v1s.getVector()), *(v2s.getVector()), *(b1s.getVector()),
+                            *(b2s.getVector()), *(xs.getVector()), tol );
     }
     catch (std::exception &e) {
-      EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,x,tol); 
+      return EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,x,tol); 
     }
   }
 
@@ -177,6 +177,7 @@ public:
                                                   const std::vector<Real> &x, Real tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::StdEqualityConstraint) : solveAugmentedSystem not implemented!");
+    return std::vector<Real>();
   }
 
 

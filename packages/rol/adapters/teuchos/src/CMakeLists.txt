@@ -34,5 +34,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
     vector/ROL_TeuchosVector.hpp
 )
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
+  APPEND_SET(HEADERS 
+    function/ROL_Teuchos_Objective.hpp
+    function/ROL_Teuchos_EqualityConstraint.hpp
+    function/ROL_Teuchos_InequalityConstraint.hpp
+)
+
 
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})

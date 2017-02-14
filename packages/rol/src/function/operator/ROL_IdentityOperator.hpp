@@ -41,64 +41,36 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
+#ifndef ROL_IDENTITYOPERATOR_H
+#define ROL_IDENTITYOPERATOR_H
 
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
-*/
-
-#include "ROL_Vector.hpp"
 #include "ROL_LinearOperator.hpp"
+
+
+/** @ingroup func_group
+    \class ROL::IdentityOperator
+    \brief Multiplication by unity
+*/
 
 namespace ROL {
 
 template<class Real>
-class Krylov {
+class IdentityOperator : public LinearOperator<Real> {
 
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
-
-public:
-  virtual ~Krylov(void) {}
-
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
-
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v); 
   }
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v); 
+  }
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
-  }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
 };
 
-}
+} // namespace ROL
 
-#include "ROL_KrylovFactory.hpp"
 
-#endif
+
+
+#endif // ROL_NULLOPERATOR_H
+

@@ -41,69 +41,53 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef ROL_DYADICOPERATOR_H
+#define ROL_DYADICOPERATOR_H
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_LinearOperator.hpp"
 
-/**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
-     \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
+
+/** @ingroup func_group
+    \class ROL::DyadicOperator
+    \brief Interface to apply a dyadic operator to a vector
 */
 
 namespace ROL {
 
+// Implementation of a Dyadic operator x*y'
 template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+class DyadicOperator : public ROL::LinearOperator<Real> {
+  
+  typedef ROL::Vector<Real> V;
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+private:
+
+  const Teuchos::RCP<const V> x_;
+  const Teuchos::RCP<const V> y_;
 
 public:
+  
+  DyadicOperator( const Teuchos::RCP<const V> &x,
+                  const Teuchos::RCP<const V> &y ) : x_(x), y_(y) {}
 
-  using EqualityConstraint<Real>::update;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+  void apply( V &Hv, const V &v, Real &tol ) const {
+    Hv.set(*x_);
+    Hv.scale(v.dot(*y_));  
   }
+    
+  void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
-  }
+    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+                                ">>> ERROR (ROL_DyadicOperator, applyInverse): "
+                                "Not implemented."); 
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
-  }
-
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
-  }
-
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
-
-  }
-
-  using EqualityConstraint<Real>::solveAugmentedSystem;
-  std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
-                                         const Vector<Real> &b1, const Vector<Real> &b2,
-                                         const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
-  }
-
-  using EqualityConstraint<Real>::applyPreconditioner;
-  void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
-                           const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
-  }
-
-}; // class StdInequalityConstraint
+  } 
+}; // class DyadicOperator
 
 } // namespace ROL
 
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+
+
+
+#endif // ROL_NULLOPERATOR_H
+

@@ -80,6 +80,17 @@ public:
   }  
 }; // class Divide
 
+template<class Real>
+class DivideAndInvert : public BinaryFunction<Real> {
+public:
+  DivideAndInvert( ) { }
+
+  Real apply( const Real &x, const Real &y ) const {
+    return y/x;
+  }  
+}; // class DivideAndInvert
+
+
 
 template<class Real> 
 class Axpy : public BinaryFunction<Real> {

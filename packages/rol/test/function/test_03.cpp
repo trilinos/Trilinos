@@ -49,7 +49,9 @@
 
 */
 
-#include "ROL_BlockOperator.hpp"
+#include "ROL_NullOperator.hpp"
+#include "ROL_DyadicOperator.hpp"
+#include "ROL_BlockOperator2.hpp"
 #include "ROL_DiagonalOperator.hpp"
 #include "ROL_Elementwise_Function.hpp"
 #include "ROL_PartitionedVector.hpp"
@@ -81,45 +83,6 @@ void print_vector( const ROL::Vector<Real> &x ) {
   }
 }
 
-// Implemantation of a Dyadic operator x*y'
-template<class Real> 
-class DyadicOperator : public ROL::LinearOperator<Real> {
-  
-  typedef ROL::Vector<Real> V;
-
-private:
-
-  const Teuchos::RCP<const V> x_;
-  const Teuchos::RCP<const V> y_;
-
-public:
-  
-  DyadicOperator( const Teuchos::RCP<const V> &x,
-                  const Teuchos::RCP<const V> &y ) : x_(x), y_(y) {}
-
-  void apply( V &Hv, const V &v, Real &tol ) const {
-    Hv.set(*x_);
-    Hv.scale(v.dot(*y_));  
-  }
-    
-};
-
-// Implementation of a Null operator
-template<class Real> 
-class NullOperator : public ROL::LinearOperator<Real> {
-
-  typedef ROL::Vector<Real> V;
-
-public:
-
-  void apply( V &Hv, const V &v, Real &tol ) const {
-    Hv.zero();
-  }
-};
-
-
-
-
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -132,8 +95,8 @@ int main(int argc, char *argv[]) {
   // Define operators
   typedef ROL::LinearOperator<RealT>    LinOp;
   typedef ROL::DiagonalOperator<RealT>  DiagOp;
-  typedef DyadicOperator<RealT>         DyadOp;
-  typedef NullOperator<RealT>           NullOp;
+  typedef ROL::DyadicOperator<RealT>    DyadOp;
+  typedef ROL::NullOperator<RealT>      NullOp;
 
   typedef typename vector::size_type    uint;
 
@@ -215,7 +178,7 @@ int main(int argc, char *argv[]) {
     D1->apply(*x1,*x1,tol);
     D1->applyInverse(*x1,*x1,tol);
 
-    ROL::BlockOperator2<RealT> bkop(D1,UV,NO,D2);
+    ROL::BlockOperator2<RealT> bkop(D1,NO,UV,D2);
 
 
     bkop.apply(*y,*x,tol);  

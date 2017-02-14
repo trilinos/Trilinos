@@ -41,64 +41,89 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KRYLOV_H
-#define ROL_KRYLOV_H
+#ifndef ROL_HOUSEHOLDERREFLECTOR_H
+#define ROL_HOUSEHOLDERREFLECTOR_H
 
-/** \class ROL::Krylov
-    \brief Provides definitions for Krylov solvers.
+#include "ROL_LinearOperator.hpp"
+
+/** @ingroup func_group
+    \class ROL::HouseholderReflector
+    \brief Provides the interface to create a Householder reflector 
+           operator, that when applied to a vector x, produces a 
+           vector parallel to y
+
+    Forms the linear operator H such that 
+
+    \f[
+    Hv = (I-2u\otimes u) x = \frac{||x||}{||y||} y
+    \f]
+
+    where 
+    \f[
+    \hat u = x + \sign(\langle x,u\rangle)\frac{||x||}{||y||}y,\quad u = \frac{\hat u}{||\hat u||}
+    \f]
+
+    If y is not specified, it is taken to be the first canonical vector
+
+    ---
 */
 
-#include "ROL_Vector.hpp"
-#include "ROL_LinearOperator.hpp"
 
 namespace ROL {
 
-template<class Real>
-class Krylov {
+template <class Real>
+class HouseholderReflector : public LinearOperator<Real> {
 
-  Real absTol_;      // Absolute residual tolerance
-  Real relTol_;      // Relative residual tolerance
-  unsigned  maxit_;  // Maximum number of iterations
+  typedef Vector<Real>  V;
+  
+private:
+
+  const Teuchos::RCP<const V> x_;
+  const Teuchos::RCP<const V> y_;
+
+  Teuchos::RCP<V> u_;
 
 public:
-  virtual ~Krylov(void) {}
+  
+  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x, 
+                        const Teuchos::RCP<const Vector<Real> > &y) : x_(x), y_(y), u_(x->clone()) {}
+  
 
-  Krylov( Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100 ) 
-    : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
+  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x,
+                        const Teuchos::RCP<const Vector<Real> > &y,
+                        Teuchos::RCP<Vector<Real> > &scratch ) : x_(x), y_(y), u_(scratch) {}
 
-  Krylov( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-    absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
-    relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
-    maxit_  = krylovList.get("Iteration Limit", 100);
+  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x ) : x_(x), y_(x->basis(0)), u_(x->clone()) {}
+  
+  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x,
+                        Teuchos::RCP<Vector<Real> > &scratch ) : x_(x), y_(x->basis(0)), u_(scratch) {}
+  
+                      
+
+  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+
+    Real xdoty = x_->dot(*y_);
+    Real xnorm = x_->norm();
+    Real ynorm = y_->norm();
+    Real sgn = xdoty/std::abs(xdoty);
+
+    Real alpha = sgn*xnorm/ynorm;
+
+    u_->set(*x_);
+    u_->axpy(alpha,*y_);
+
+    Real beta  = -2.0*u_->dot(v)/u_->dot(*u_);
+   
+    Hv.set(v);
+    Hv.axpy(beta,*u_);
   }
 
-  // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
-                    int &iter, int &flag ) = 0;
+  void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    apply(Hv,v,tol); 
+  }
 
-  void resetAbsoluteTolerance(const Real absTol) const {
-    absTol_ = absTol;
-  }
-  void resetRelativeTolerance(const Real relTol) const {
-    relTol_ = relTol;
-  }
-  void resetMaximumIteration(const unsigned maxit) {
-    maxit_ = maxit;
-  }
-  Real getAbsoluteTolerance(void) const {
-    return absTol_;
-  }
-  Real getRelativeTolerance(void) const {
-    return relTol_;
-  }
-  unsigned getMaximumIteration(void) const {
-    return maxit_;
-  }
-};
+}; // class HouseholderReflector
 
-}
+} // namespace ROL
 
-#include "ROL_KrylovFactory.hpp"
-
-#endif
+#endif // ROL_HOUSEHOLDERREFLECTOR_H

@@ -47,6 +47,7 @@
 #include "ROL_BoundConstraint_Partitioned.hpp"
 #include "ROL_CompositeConstraint.hpp"
 #include "ROL_SlacklessObjective.hpp"
+#include "ROL_RandomVector.hpp"
 
 namespace ROL {
 
@@ -262,6 +263,36 @@ public:
   EProblem getProblemType(void) {
     return problemType_;
   }
+
+  // Check derivatives, and consistency 
+  void check( std::ostream &outStream = std::cout, const int numSteps = ROL_NUM_CHECKDERIV_STEPS, const int order = 1 ) {
+
+    Teuchos::RCP<V> x = sol_->clone();
+    Teuchos::RCP<V> u = sol_->clone();
+    Teuchos::RCP<V> v = sol_->clone();
+    Teuchos::RCP<V> c = mul_->dual().clone();
+    Teuchos::RCP<V> l = mul_->clone();
+    
+    RandomizeVector(*x);
+    RandomizeVector(*u);
+    RandomizeVector(*v);
+    RandomizeVector(*c);
+    RandomizeVector(*l);
+   
+    outStream << "\nChecking OptimizationProblem for accuracy of derivatives and consistency.\n" << std::endl;
+ 
+    obj_->checkGradient(*x,*v,true,outStream,numSteps,order);                     outStream << std::endl;
+    obj_->checkHessVec(*x,*u,true,outStream,numSteps,order);                      outStream << std::endl;
+    obj_->checkHessSym(*x,*u,*v,true,outStream);                                  outStream << std::endl;
+    
+    con_->checkApplyJacobian(*x,*v,*c,true,outStream,numSteps,order);             outStream << std::endl;
+    con_->checkAdjointConsistencyJacobian(*l,*u,*x,true,outStream);               outStream << std::endl;
+    con_->checkApplyAdjointHessian(*x,*l,*v,*u,true,outStream,numSteps,order);    outStream << std::endl;  
+
+
+  }
+  
+  
 
 }; // class OptimizationProblem
 

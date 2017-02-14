@@ -41,69 +41,82 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef ROL_BLOCKOPERATOR2_H
+#define ROL_BLOCKOPERATOR2_H
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_BlockOperator.hpp"
 
-/**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
-     \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
+/** @ingroup func_group
+    \class ROL::BlockOperator2
+    \brief Provides the interface to apply a 2x2 block operator to a 
+           partitioned vector.
+
+    ---
 */
 
 namespace ROL {
 
-template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+template<class Real>
+class BlockOperator2 : public LinearOperator<Real> {
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+  typedef Vector<Real>               V;    // ROL Vector
+  typedef PartitionedVector<Real>    PV;   // ROL PartitionedVector
+  typedef LinearOperator<Real>       OP;   // Linear Operator
 
-public:
+private:
 
-  using EqualityConstraint<Real>::update;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+  Teuchos::RCP<OP> bkop_;
+  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
+
+public:   
+
+  BlockOperator2( Teuchos::RCP<OP> &a11, Teuchos::RCP<OP> &a12,
+                  Teuchos::RCP<OP> &a21, Teuchos::RCP<OP> &a22 ) {
+
+    using std::vector;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    ops_ = rcp( new vector<RCP<OP> > );
+    ops_->push_back(a11);
+    ops_->push_back(a12);
+    ops_->push_back(a21);
+    ops_->push_back(a22);
+            
+    bkop_ = rcp( new BlockOperator<Real>(ops_) );
+ 
   }
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
+
+  void apply( V &Hv, const V &v, Real &tol ) const {
+    bkop_->apply(Hv,v,tol);  
   }
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
+
+  void applyInverse( V &Hv, const V &v, Real &tol ) const {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+                                ">>> ERROR (ROL_BlockOperator2, applyInverse): "
+                                "Not implemented."); 
+
+  } 
+
+  Teuchos::RCP<LinearOperator<Real> > getOperator( int row, int col ) const {
+    int dex = 2*row+col;
+    if( 0<=dex && dex<=3 ) {
+      return (*ops_)[dex];
+    } 
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+                                  ">>> ERROR (ROL_BlockOperator2, getOperator): "
+                                  "invalid block indices."); 
+    }
+    
   }
 
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
-  }
 
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
-
-  }
-
-  using EqualityConstraint<Real>::solveAugmentedSystem;
-  std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
-                                         const Vector<Real> &b1, const Vector<Real> &b2,
-                                         const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
-  }
-
-  using EqualityConstraint<Real>::applyPreconditioner;
-  void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
-                           const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
-  }
-
-}; // class StdInequalityConstraint
+}; // class BlockOperator2
 
 } // namespace ROL
 
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+#endif // ROL_BLOCKOPERATOR2_H

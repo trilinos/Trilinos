@@ -41,69 +41,79 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef ROL_LINEAROPERATORSUM_H
+#define ROL_LINEAROPERATORSUM_H
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_LinearOperator.hpp"
 
-/**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
-     \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
+/** @ingroup func_group
+    \class ROL::LinearOperatorSum
+    \brief Provides the interface to sum of linear operators applied to a vector
+    ---
 */
+
 
 namespace ROL {
 
-template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+template <class Real>
+class LinearOperatorSum : public LinearOperator<Real>  {
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+  typedef Vector<Real>         V;
+  typedef LinearOperator<Real> OP;
+ 
+  typedef typename std::vector<Teuchos::RCP<OP> >::size_type size_type;
+
+private:
+
+  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
+  Teuchos::RCP<V> scratch_;
 
 public:
 
-  using EqualityConstraint<Real>::update;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+  LinearOperatorSum( Teuchos::RCP<OP> &A, 
+                     Teuchos::RCP<OP> &B, 
+                     Teuchos::RCP<V> & scratch ) :
+    scratch_(scratch) {
+    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_->push_back(A);
+    ops_->push_back(B);
   }
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
+  LinearOperatorSum( Teuchos::RCP<OP> &A, 
+                     Teuchos::RCP<OP> &B, 
+                     Teuchos::RCP<OP> &C, 
+                     Teuchos::RCP<V> & scratch ) :
+    scratch_(scratch) {
+    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_->push_back(A);
+    ops_->push_back(B);
+    ops_->push_back(C);
   }
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
+  // TODO: implementation for arbitrary sum
+
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    for( size_type i=0; i<ops_->size(); ++i ) {
+      (*ops_)[i]->update(x,flag,true);
+    }
   }
 
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
+  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    (*ops_)[0]->apply(Hv,v,tol);
+    for( size_type i=1; i<ops_->size(); ++i ) {
+      (*ops_)[i]->apply(*scratch_,v,tol);
+      Hv.plus(*scratch_);
+    }
   }
 
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
-
+  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+                                  ">>> ERROR (ROL_LinearOperatorSum, applyInverse): "
+                                  "Inverse is not defined for general sum of operators.");     
   }
 
-  using EqualityConstraint<Real>::solveAugmentedSystem;
-  std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
-                                         const Vector<Real> &b1, const Vector<Real> &b2,
-                                         const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
-  }
-
-  using EqualityConstraint<Real>::applyPreconditioner;
-  void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
-                           const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
-  }
-
-}; // class StdInequalityConstraint
+}; // class LinearOperatorSum
 
 } // namespace ROL
 
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+#endif // ROL_LINEAROPERATOR_PRODUCT_H

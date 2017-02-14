@@ -41,69 +41,94 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDINEQUALITYCONSTRAINT_HPP 
-#define ROL_STDINEQUALITYCONSTRAINT_HPP
+#ifndef HS_PROBLEM_041_HPP
+#define HS_PROBLEM_041_HPP
 
-#include "ROL_StdEqualityConstraint.hpp"
+#include "ROL_NonlinearProgram.hpp"
 
-/**  @ingroup func_group
-     \class ROL::StdInequalityConstraint 
-     \brief Provides a unique argument for inequality constraints using
-            std::vector types, which otherwise behave exactly as equality constraints
-*/
+namespace HS {
 
-namespace ROL {
+namespace HS_041 {
+template<class Real> 
+class Obj {
+public:
+  template<class ScalarT>
+  ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
+    return 2.0-x[0]*x[1]*x[2];
+  }
+};
+
+template<class Real>
+class EqCon {
+public:
+  template<class ScalarT> 
+  void value( std::vector<ScalarT> &c,
+              const std::vector<ScalarT> &x,
+              Real &tol ) {
+    c[0] = x[0] + 2*x[1] + 2*x[2] - x[3];    
+  }
+};
+} // HS_041
+
 
 template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+class Problem_041 : public ROL::NonlinearProgram<Real> {
 
-  typedef StdEqualityConstraint<Real>  StdEC;
-  typedef Vector<Real>                 V;  
+  template<typename T> using RCP = Teuchos::RCP<T>;
+
+  typedef ROL::NonlinearProgram<Real>   NP;
+  typedef ROL::Vector<Real>             V;
+  typedef ROL::Objective<Real>          OBJ;
+  typedef ROL::EqualityConstraint<Real> EQCON;
 
 public:
 
-  using EqualityConstraint<Real>::update;
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    StdEC::update(x,flag,iter);
+  Problem_041() : NP( dimension_x() ) {
+    NP::setLower(0,0.0);
+    NP::setUpper(0,1.0);
+    NP::setLower(1,0.0);
+    NP::setUpper(1,1.0);
+    NP::setLower(2,0.0);
+    NP::setUpper(2,1.0);
+    NP::setLower(3,0.0);
+    NP::setUpper(3,2.0); 	
   }
 
-  using EqualityConstraint<Real>::value;
-  void value(V &c, const V &x, Real &tol ) {
-    StdEC::value(c,x,tol);
+  int dimension_x()  { return 4; }
+  int dimension_ce() { return 1; }
+
+  const RCP<OBJ> getObjective() { 
+    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_041::Obj> );
   }
 
-  using EqualityConstraint<Real>::applyJacobian;
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-    StdEC::applyJacobian(jv, v, x, tol);
+  const RCP<EQCON> getEqualityConstraint() {
+    return Teuchos::rcp( 
+      new ROL::Sacado_StdEqualityConstraint<Real,HS_041::EqCon> );
   }
 
-  using EqualityConstraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(V &aju, const V &u, const V &x, Real &tol) {
-    StdEC::applyAdjointJacobian(aju, u, x, tol);
+  const RCP<const V> getInitialGuess() {
+    Real x[] = {2.0,2.0,2.0,2.0};
+    return NP::createOptVector(x);
+  };
+   
+  bool initialGuessIsFeasible() { return false; }
+  
+  Real getInitialObjectiveValue() { 
+    return Real(-6.0);
+  }
+ 
+  Real getSolutionObjectiveValue() {
+    return Real(-52.0/27.0);
   }
 
-  using EqualityConstraint<Real>::applyAdjointHessian;
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-    StdEC::applyAdjointHessian(ahuv, u, v, x, tol);  
+  RCP<const V> getSolutionSet() {
+    Real x[] = {2.0/3.0,1.0/3.0,1.0/3.0,2.0};
 
+    return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }
+ 
+};
 
-  using EqualityConstraint<Real>::solveAugmentedSystem;
-  std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
-                                         const Vector<Real> &b1, const Vector<Real> &b2,
-                                         const Vector<Real> &x, Real &tol) {
-    return StdEC::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
-  }
+} // namespace HS
 
-  using EqualityConstraint<Real>::applyPreconditioner;
-  void applyPreconditioner(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x,
-                           const Vector<Real> &g, Real &tol) {
-    StdEC::applyPreconditioner(pv,v,x,g,tol);
-  }
-
-}; // class StdInequalityConstraint
-
-} // namespace ROL
-
-#endif // ROL_STDINEQUALITYCONSTRAINT_HPP
+#endif // HS_PROBLEM_041_HPP
