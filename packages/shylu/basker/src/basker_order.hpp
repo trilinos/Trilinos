@@ -270,21 +270,19 @@ namespace BaskerNS
       if(btf_nblks > 1)
       {
         //new for sfactor_copy2 replacement
-        if ( BTF_B.nnz > 0 && BTF_C.nnz > 0 ) {
-          MALLOC_INT_1DARRAY(vals_order_ndbtfb_array, BTF_B.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
-          MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
+        if ( BTF_B.nnz > 0 ) {
+          MALLOC_INT_1DARRAY(vals_order_ndbtfb_array, BTF_B.nnz); 
           for (Int i = 0; i < BTF_B.nnz; ++i) {
             vals_order_ndbtfb_array(i) = i;
           }
+          sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
+        }
+        if ( BTF_C.nnz > 0 ) {
+          MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); 
           for (Int i = 0; i < BTF_C.nnz; ++i) {
             vals_order_ndbtfc_array(i) = i;
           }
-          sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
           sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
-        }
-        else { // NDE: I think this should be removed...
-          sort_matrix(BTF_B);
-          sort_matrix(BTF_C);
         }
       }
       //For debug
@@ -333,13 +331,11 @@ namespace BaskerNS
       {
         permute_row(BTF_B, order_csym_array);
         //new for sfactor_copy2 replacement
-        if ( BTF_B.nnz > 0 && BTF_C.nnz > 0 ) {
+        if ( BTF_B.nnz > 0 ) {
           sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
-          sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
         }
-        else { // NDE: I think these should be removed
-          sort_matrix(BTF_B);
-          sort_matrix(BTF_C);
+        if ( BTF_C.nnz > 0 ) {
+          sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
         }
         //printMTX("B_BTF_AMD.mtx", BTF_B);
         //printMTX("C_BTF_AMD.mtx", BTF_C);
@@ -659,6 +655,9 @@ namespace BaskerNS
     //permute_col(M, part_tree.permtab); //old, try the new below
 
     MALLOC_INT_1DARRAY(vals_order_scotch_array,M.nnz);
+    for (Int i = 0; i < M.nnz; ++i) {
+      vals_order_scotch_array(i) = i; //init
+    }
     permute_col_store_valperms(M, part_tree.permtab, vals_order_scotch_array); //NDE: Track movement of vals (lin_ind of row,col) here
     permute_inv(vals_order_ndbtfa_array, vals_order_scotch_array, M.nnz); //must permute the array holding the perms
 
