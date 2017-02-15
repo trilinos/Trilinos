@@ -54,6 +54,8 @@
     \class ROL::StdLinearOperator
     \brief Provides the std::vector implementation to apply a linear operator,
       which is a std::vector representation of column-stacked matrix
+
+     Currently, this interface requires that the underlying matrix be square
     ---
 */
 
@@ -72,8 +74,6 @@ class StdLinearOperator : public LinearOperator<Real> {
 private:
 
   RCP<std::vector<Real> > A_;
-  char TRANS_;
-  Teuchos::ETransp etransp_;
   int N_;
   int INFO_;
   
@@ -85,8 +85,7 @@ private:
 
 public:
 
-  StdLinearOperator( RCP<std::vector<Real> > &A, 
-                     bool useTranspose=false ) : A_(A) { 
+  StdLinearOperator( RCP<std::vector<Real> > &A ) : A_(A) { 
     int N2 = A_->size();
     N_ = (std::round(std::sqrt(N2)));
     bool isSquare = N_*N_ == N2;
@@ -94,15 +93,6 @@ public:
       "Error: vector representation of matrix must have a square "
       "number of elements.");
     ipiv_.reserve(N_);   
-
-    if( useTranspose ) {
-      etransp_ = Teuchos::TRANS;
-      TRANS_ = 'T';
-    }
-    else {
-      etransp_ = Teuchos::NO_TRANS;
-      TRANS_ = 'N';
-    }
   }
 
   virtual ~StdLinearOperator() {}
@@ -127,8 +117,24 @@ public:
   virtual void apply( std::vector<Real> &Hv, const std::vector<Real> &v, Real &tol ) const {
     int LDA = N_;
 
-    blas_.GEMV(etransp_,N_,N_,1.0,&(*A_)[0],LDA,&(v)[0],1,0.0,&(Hv)[0],1);
+    blas_.GEMV(Teuchos::NO_TRANS,N_,N_,1.0,&(*A_)[0],LDA,&(v)[0],1,0.0,&(Hv)[0],1);
   }
+
+  // Matrix multiplication with transpose
+  using LinearOperator<Real>::apply;
+  void applyAdjoint( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    using Teuchos::dyn_cast;    
+    RCP<vector> Hvp = dyn_cast<SV>(Hv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    applyAdjoint(*Hvp,*vp,tol);
+  }
+
+  virtual void applyAdjoint( std::vector<Real> &Hv, const std::vector<Real> &v, Real &tol ) const {
+    int LDA = N_;
+
+    blas_.GEMV(Teuchos::TRANS,N_,N_,1.0,&(*A_)[0],LDA,&(v)[0],1,0.0,&(Hv)[0],1);
+  }
+  
 
   // Solve the system
 
@@ -160,9 +166,46 @@ public:
       "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
 
     // Solve factored system
-    lapack_.GETRS(TRANS_,N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
+    lapack_.GETRS('N',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
 
     TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+      "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
+  
+  }
+
+  // Solve the system with transposed matrix
+
+  using LinearOperator<Real>::applyAdjointInverse;
+  void applyAdjointInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const { 
+    using Teuchos::dyn_cast;
+    RCP<vector> Hvp = dyn_cast<SV>(Hv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    applyAdjointInverse(*Hvp,*vp,tol);
+  }
+
+  virtual void applyAdjointInverse( std::vector<Real> &Hv, const std::vector<Real> &v, Real &tol ) const {
+
+    const int LDA = N_;
+    const int LDB = N_;
+    int INFO;
+    int NRHS = 1;
+ 
+    Hv = v;
+    PLU_  = *A_;
+
+    // Do LU factorization
+    lapack_.GETRF(N_,N_,&PLU_[0],LDA,&ipiv_[0],&INFO);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+      "Zero diagonal element encountered in matrix factor U(" << INFO << "," << INFO << ").");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+      "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
+
+    // Solve factored system
+    lapack_.GETRS('T',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
   
   }

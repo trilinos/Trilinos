@@ -131,11 +131,11 @@ public:
       // Create partitioned lagrange multiplier and composite constraint
       if( eqcon == Teuchos::null ) {
         mul_ = CreatePartitionedVector(li);
-        con_ = rcp( new CCON(incon) );
+        con_ = rcp( new CCON(incon,x) );
       }
       else {
         mul_ = CreatePartitionedVector(li,le);
-        con_ = rcp( new CCON(incon,eqcon) );
+        con_ = rcp( new CCON(incon,eqcon,x) );
       }
 
       obj_ = rcp( new SLOBJ(obj) );
@@ -268,27 +268,43 @@ public:
   void check( std::ostream &outStream = std::cout, const int numSteps = ROL_NUM_CHECKDERIV_STEPS, const int order = 1 ) {
 
     Teuchos::RCP<V> x = sol_->clone();
+    Teuchos::RCP<V> y = sol_->clone();
     Teuchos::RCP<V> u = sol_->clone();
     Teuchos::RCP<V> v = sol_->clone();
     Teuchos::RCP<V> c = mul_->dual().clone();
     Teuchos::RCP<V> l = mul_->clone();
-    
+    Teuchos::RCP<V> w = mul_->clone();    
+    Teuchos::RCP<V> q = mul_->clone();    
+
     RandomizeVector(*x);
+    RandomizeVector(*y);
     RandomizeVector(*u);
     RandomizeVector(*v);
     RandomizeVector(*c);
     RandomizeVector(*l);
-   
-    outStream << "\nChecking OptimizationProblem for accuracy of derivatives and consistency.\n" << std::endl;
+    RandomizeVector(*w);
+    RandomizeVector(*q);   
+
+    outStream << "\nPerforming OptimizationProblem diagnostics.\n\n";
+
+    outStream << "Checking vector operations in optimization vector space X." << std::endl;
+    x->checkVector(*y,*u,true,outStream);
+
+    outStream << "Checking vector operations in constraint multiplier space C*." << std::endl;
+    l->checkVector(*q,*w,true,outStream);
  
+    outStream << "Checking objective function." << std::endl;
+
     obj_->checkGradient(*x,*v,true,outStream,numSteps,order);                     outStream << std::endl;
     obj_->checkHessVec(*x,*u,true,outStream,numSteps,order);                      outStream << std::endl;
     obj_->checkHessSym(*x,*u,*v,true,outStream);                                  outStream << std::endl;
     
-    con_->checkApplyJacobian(*x,*v,*c,true,outStream,numSteps,order);             outStream << std::endl;
-    con_->checkAdjointConsistencyJacobian(*l,*u,*x,true,outStream);               outStream << std::endl;
-    con_->checkApplyAdjointHessian(*x,*l,*v,*u,true,outStream,numSteps,order);    outStream << std::endl;  
-
+    if(con_ != Teuchos::null) {
+      outStream << "Checking equality constraint." << std::endl;
+      con_->checkApplyJacobian(*x,*v,*c,true,outStream,numSteps,order);             outStream << std::endl;
+      con_->checkAdjointConsistencyJacobian(*l,*u,*x,true,outStream);               outStream << std::endl;
+      con_->checkApplyAdjointHessian(*x,*l,*v,*u,true,outStream,numSteps,order);    outStream << std::endl;  
+    }
 
   }
   
