@@ -299,7 +299,7 @@ Epetra_Map* Epetra_Map::ReplaceCommWithSubset(const Epetra_Comm * theComm) const
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(GlobalIndicesLongLong()) {
-      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements64(),IndexBase(),*theComm);
+      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements64(),IndexBase64(),*theComm);
     }
     else
 #endif
