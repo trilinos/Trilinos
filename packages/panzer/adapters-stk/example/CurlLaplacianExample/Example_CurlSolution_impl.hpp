@@ -58,12 +58,18 @@ CurlSolution<EvalT,Traits>::CurlSolution(const std::string & name,
 {
   using Teuchos::RCP;
 
-  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
+  Teuchos::RCP<PHX::DataLayout> dl_vector = ir.dl_vector;
+  Teuchos::RCP<PHX::DataLayout> dl_scalar = ir.dl_scalar;
   ir_degree = ir.cubature_degree;
 
-  solution = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
+  solution      = PHX::MDField<ScalarT,Cell,Point,Dim>(name, dl_vector);
+  solution_curl = PHX::MDField<ScalarT,Cell,Point>("CURL_"+name, dl_scalar);
+
+  // only thing that works
+  TEUCHOS_ASSERT(ir.spatial_dimension==2);
 
   this->addEvaluatedField(solution);
+  this->addEvaluatedField(solution_curl);
   
   std::string n = "Curl Solution";
   this->setName(n);
@@ -74,9 +80,6 @@ template <typename EvalT,typename Traits>
 void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
                                                        PHX::FieldManager<Traits>& fm)
 {
-
-  this->utils.setFieldData(solution,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
@@ -91,11 +94,10 @@ void CurlSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      solution(cell,point,0) = -(y-1.0)*y;
-      solution(cell,point,1) = -(x-1.0)*x;
+      solution(cell,point,0) = -(y-1.0)*y + cos(2.0*M_PI*x)*sin(2.0*M_PI*y);
+      solution(cell,point,1) = -(x-1.0)*x + sin(2.0*M_PI*x)*cos(2.0*M_PI*y);
 
-      if(solution.dimension(2)==3)
-        solution(cell,point,2) = 0.0;
+      solution_curl(cell,point) = -2.0*x+2.0*y;
     }
   }
 }
