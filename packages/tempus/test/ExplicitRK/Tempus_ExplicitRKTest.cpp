@@ -10,6 +10,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_IntegratorBasic.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -127,10 +129,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
           RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
           x_exact_plot = model->getExactSolution(time).get_x();
           ftmp << time << "   "
-               << get_ele(*(x_plot), 0) << "   "
-               << get_ele(*(x_plot), 1) << "   "
-               << get_ele(*(x_exact_plot), 0) << "   "
-               << get_ele(*(x_exact_plot), 1) << std::endl;
+               << Thyra::get_ele(*(x_plot), 0) << "   "
+               << Thyra::get_ele(*(x_plot), 1) << "   "
+               << Thyra::get_ele(*(x_exact_plot), 0) << "   "
+               << Thyra::get_ele(*(x_exact_plot), 1) << std::endl;
         }
         ftmp.close();
       }
