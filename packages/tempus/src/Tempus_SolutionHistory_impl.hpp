@@ -82,7 +82,6 @@ void SolutionHistory<Scalar>::addState(
     case STORAGE_TYPE_INVALID: {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - Storage type is STORAGE_TYPE_INVALID.\n");
-      break;
     }
     case STORAGE_TYPE_STATIC:
     case STORAGE_TYPE_KEEP_NEWEST:
@@ -299,7 +298,7 @@ void SolutionHistory<Scalar>::describe(
   } else if (Teuchos::as<int>(verbLevel) >=
              Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "SolutionStates: " << std::endl;
-    for (Teuchos::Ordinal i=0; i<history_->size() ; ++i) {
+    for (int i=0; i<(int)history_->size() ; ++i) {
       out << "SolutionState[" << i << "] = " << std::endl;
       (*history_)[i]->describe(out,this->getVerbLevel());
     }

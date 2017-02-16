@@ -103,7 +103,6 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepper);
     }
-    return Teuchos::null; // Should never get here!
   }
 
 };

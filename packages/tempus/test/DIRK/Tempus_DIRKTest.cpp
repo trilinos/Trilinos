@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
     std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos-Error.dat");
     double error0 = 0.8*ErrorNorm[0];
-    for (int n=0; n<StepSize.size(); n++) {
+    for (int n=0; n<(int)StepSize.size(); n++) {
       ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
            << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
     }

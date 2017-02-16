@@ -56,7 +56,7 @@ class RKButcherTableau :
 {
   public:
     /** \brief Return the number of stages */
-    virtual int numStages() const { return A_.numRows(); }
+    virtual std::size_t numStages() const { return A_.numRows(); }
     /** \brief Return the matrix coefficients */
     virtual const Teuchos::SerialDenseMatrix<int,Scalar>& A() const
       { return A_; }
@@ -301,7 +301,7 @@ class GeneralExplicit_RKBT :
     this->setDescription(pl->get<std::string>("Description"));
 
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = sublist(pl,"Tableau",true);
-    std::size_t numStages = -1;
+    std::size_t numStages = 0;
     int order = tableauPL->get<int>("order");
     Teuchos::SerialDenseMatrix<int,Scalar> A;
     Teuchos::SerialDenseVector<int,Scalar> b;

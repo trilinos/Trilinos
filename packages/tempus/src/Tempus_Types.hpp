@@ -34,7 +34,6 @@ const char* toString(const Status status)
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
   }
-  return 0; // Should never get here!
 }
 
 
