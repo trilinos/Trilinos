@@ -112,7 +112,7 @@ public:
     const StdVector<Real> vs = Teuchos::dyn_cast<const StdVector<Real> >(v);
     const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
     try {
-       applyJacobian(*(ajvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);      
+       applyAdjointJacobian(*(ajvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);      
     } 
     catch (std::exception &e ){
       EqualityConstraint<Real>::applyAdjointJacobian(ajv,v,x,tol);

@@ -234,7 +234,6 @@ public:
         
         // A = Q'*D*Q
         multiply(*Ap,Q,*Ap,true);
-
       }
       break; 
 
@@ -244,17 +243,55 @@ public:
       } 
   
       case MATRIX_SINGULAR_S: {
+        vector d(size);
+        randomize(d);
+  
+        d[0] = 0;
 
-      }
+        // A = D
+        diagonal(*Ap,d);
+        
+        vector Q(n2);
+        randomize(Q,-1.0,1.0);        
+        orthogonalize(Q);
+ 
+        // A = D*Q
+        multiply(*Ap,*Ap,Q);
+        
+        // A = Q'*D*Q
+        multiply(*Ap,Q,*Ap,true);
+      
 
       case MATRIX_SINGULAR_N: {
 
+        vector d(size);
+        randomize(d,0.0,1.0);
+  
+        d[0] = 0;
+
+        // A = D
+        diagonal(*Ap,d);
+
+        vector V(n2);
+        randomize(V,-1.0,1.0);        
+        orthogonalize(V);
+
+        // A = D*V'
+        multiply(*Ap,*Ap,Q,false,true);
+       
+        vector U(n2);
+        randomize(U,-1.0,1.0);        
+        orthogonalize(U);
+
+        // A = U*D*V'
+        multiply(*Ap,U,*Ap);
+ 
       }
 
-      case MATRIX_DEFAULT: {
+      case MATRIX_DEFAULT: 
+      default: {
         randomize(*Ap);
       }   
-      default: 
 
     }
     return rcp( new StdOP(Ap) );

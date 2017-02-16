@@ -58,6 +58,8 @@
     The user may also implement:
     \li #update -- update the state of the linear operator.
     \li #applyInverse -- apply the inverse operator to a vector.
+    \li #applyAdjoint -- apply the adjoint of the operator to a vector.
+    \li #applyAdjointInverse -- apply the adjoint of the inverse operator to a vector.
 
     ---
 */
@@ -98,6 +100,32 @@ public:
   */
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     Hv.set(v);
+  }
+
+  /** \brief Apply adjoint of linear operator.
+
+      This function applies the adjoint of a linear operator to a vector. Default behavior
+      assumes operator is self-adjoint.
+
+      @param[out]         Hv  is the output vector.
+      @param[in]          v   is the input vector.
+      @param[in]          tol is a tolerance for inexact linear operator application.
+  */
+  virtual void applyAdjoint( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    apply(Hv,v,tol);
+  }
+
+  /** \brief Apply adjoint of the inverse linear operator.
+
+      This function applies the adjoint of the inverse linear operator to a vector.
+      Default behavior assumes operator is self-adjoint.
+      @param[out]         Hv  is the output vector.
+      @param[in]          v   is the input vector.
+      @param[in]          tol is a tolerance for inexact linear operator application. 
+
+  */
+  virtual void applyAdjointInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    applyInverse(Hv,v,tol);
   }
 
 }; // class LinearOperator

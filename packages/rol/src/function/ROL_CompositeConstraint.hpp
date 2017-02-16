@@ -70,6 +70,8 @@ private:
   Teuchos::RCP<InequalityConstraint<Real> > incon_;
   Teuchos::RCP<EqualityConstraint<Real> >   eqcon_;
 
+  Teuchos::RCP<Vector<Real> > scratch_;
+
   bool hasEquality_;         // True if an equality constraint is present
   int  ncval_;               // Number of constraint evaluations
 
@@ -78,14 +80,24 @@ public:
 
   // Constructor with inequality and equality constraints
   CompositeConstraint( const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<EqualityConstraint<Real> > &eqcon ) :
-                       incon_(incon), eqcon_(eqcon),
-                       hasEquality_(true), ncval_(0) { }
+                       const Teuchos::RCP<EqualityConstraint<Real> > &eqcon,
+                       const Teuchos::RCP<Vector<Real> > &x = Teuchos::null ) :
+                       incon_(incon), eqcon_(eqcon), scratch_(Teuchos::null),
+                       hasEquality_(true), ncval_(0) {
+    if( x != Teuchos::null ) {
+      scratch_ = x->dual().clone();
+    }
+  }
 
   // Constructor with inequality constraint only
-  CompositeConstraint( const Teuchos::RCP<InequalityConstraint<Real> > &incon ) :
-                       incon_(incon), eqcon_(Teuchos::null),
-                       hasEquality_(false), ncval_(0) { }
+  CompositeConstraint( const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       const Teuchos::RCP<Vector<Real> > &x = Teuchos::null ) :
+                       incon_(incon), eqcon_(Teuchos::null), scratch_(Teuchos::null),
+                       hasEquality_(false), ncval_(0) { 
+    if( x != Teuchos::null ) {
+      scratch_ = x->dual().clone();
+    }
+  }
 
 
   int getNumberConstraintEvaluations(void) {
@@ -189,9 +201,12 @@ public:
     if(hasEquality_) {
 
       RCP<const V> ve = vpv.get(EQUAL);
-      RCP<V> temp = ajvo->clone();
-      eqcon_->applyAdjointJacobian(*temp,*ve,*xo,tol);
-      ajvo->plus(*temp);
+
+      if( scratch_ == Teuchos::null ) {
+        scratch_ = ajvo->clone(); 
+      }
+      eqcon_->applyAdjointJacobian(*scratch_,*ve,*xo,tol);
+      ajvo->plus(*scratch_);
 
     }
 
@@ -217,7 +232,9 @@ public:
     RCP<V> ahuvo = ahuvpv.get(OPT);
     RCP<V> ahuvs = ahuvpv.get(SLACK);
 
-    RCP<V> temp = ahuvo->clone();
+    if( scratch_ == Teuchos::null ) {
+      scratch_ = ahuvo->clone();
+    }
 
     const PV &upv = dyn_cast<const PV>(u);
 
@@ -228,8 +245,8 @@ public:
 
     if(hasEquality_) {
       RCP<const V> ue   = upv.get(EQUAL);
-      eqcon_->applyAdjointHessian(*temp,*ue,*vo,*xo,tol);
-      ahuvo->plus(*temp);
+      eqcon_->applyAdjointHessian(*scratch_,*ue,*vo,*xo,tol);
+      ahuvo->plus(*scratch_);
     }
 
   }

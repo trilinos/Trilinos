@@ -55,6 +55,7 @@
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_DotProduct.hpp"
+#include "Panzer_Product.hpp"
 
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -167,7 +168,7 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
-      else if(type=="ERROR_CALC") {
+      else if(type=="L2 ERROR_CALC") {
         {
           std::vector<std::string> values(2);
           values[0] = plist.get<std::string>("Field A");
@@ -206,6 +207,102 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
+      else if(type=="HCurl ERROR_CALC") {
+        // Compute L2 contribution
+        {
+          std::vector<std::string> values(2);
+          values[0] = plist.get<std::string>("Field A");
+          values[1] = plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key+"_HCurl_ValueDiff"); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars",Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout",ir->dl_vector);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          Teuchos::RCP<const panzer::PointRule> pr = ir;
+  
+          Teuchos::ParameterList p;
+          p.set("Result Name",key+"_L2");
+          p.set("Vector A Name",key+"_HCurl_ValueDiff");
+          p.set("Vector B Name",key+"_HCurl_ValueDiff");
+          p.set("Point Rule",pr);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::DotProduct<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        // Compute HCurl contribution
+        {
+          std::vector<std::string> values(2);
+          values[0] = "CURL_" + plist.get<std::string>("Field A");
+          values[1] = "CURL_" + plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key+"_HCurl_CurlDiff"); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars",Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          Teuchos::RCP<const panzer::PointRule> pr = ir;
+          std::vector<std::string> values(2);
+          values[0] = key+"_HCurl_CurlDiff";
+          values[1] = key+"_HCurl_CurlDiff";
+  
+          Teuchos::ParameterList p;
+          p.set("Product Name",key+"_HCurlSemi");
+          p.set("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Product<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        {
+          std::vector<std::string> values(2);
+          values[0] = key+"_L2";
+          values[1] = key+"_HCurlSemi";
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name",key); // Name of sum
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP< Evaluator<panzer::Traits> > e = 
+                   rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  
+          evaluators->push_back(e);
+        }
+
+        found = true;
+      }
+
 
       // none found!
     }

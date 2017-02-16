@@ -84,6 +84,7 @@ private:
 
   // Simulation solution
   PHX::MDField<ScalarT,Cell,Point,Dim> solution;
+  PHX::MDField<ScalarT,Cell,Point>     solution_curl;
   int ir_degree, ir_index;
 };
 
