@@ -34,48 +34,9 @@ namespace Tempus_Test {
   *    \f[ 
   *    x(t) = t(1-0.5t)
   *    \f]
-  * We consider the problem for \f$t\in [0,2]\f$ .  
-
-  * Therefore this model has three model parameters and two initial conditions
-  * which effect the exact solution as above.
-  * \f[
-  *   \mathbf{p}=(a,f,L)
-  * \f]
-  * \f[
-  *   \dot{\mathbf{x}}=\mathbf{F}(\mathbf{x},t,\mathbf{p})
-  * \f]
-  * where
-  * \f{eqnarray*}{
-  *   F_{0} & = & x_{1}\\
-  *   F_{1} & = & \left(\frac{f}{L}\right)^{2}(a-x_{0})
-  * \f}
-
-  * The exact sensitivities, \f$\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}\f$,
-  * for the problem are specified as
-  * \f[
-  *   \mathbf{s}(t)=\left[\begin{array}{cc}
-  *   1 & 0\\
-  *   \left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
-  *   -\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
-  *   \end{array}\right]
-  * \f]
-  * and for the default initial conditions, \f$\phi=0\f$ and \f$b=1\f$
-  * \f[
-  *   \mathbf{s}(t=0)=\left[\begin{array}{cc}
-  *   1 & 0\\
-  *   0 & \frac{b}{L}\\
-  *   0 & -\frac{f}{L^{2}}
-  *   \end{array}\right]
-  * \f]
-  * The time differentiated sensitivities, \f$\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)\f$
-  * are
-  * \f[
-  *   \dot{\mathbf{s}}(t)=\left[\begin{array}{cc}
-  *   0 & 0\\
-  *   \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
-  *   -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
-  *   \end{array}\right]
-  * \f]
+  * We consider the problem for \f$t\in [0,2]\f$ .  An EpetraExt version of this test is implemented in 
+  * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
+  * Newmark-Beta scheme (see input_Solver_NB.xml input file).  
   */
 
 template<class Scalar>
@@ -90,9 +51,6 @@ class BallParabolicModel
 
   // Exact solution
   ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
-
-  // Exact sensitivity solution
-  ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
@@ -131,40 +89,23 @@ private:
   //@}
 
 private:
-  int dim_;         ///< Number of state unknowns (2)
-  int Np_;          ///< Number of parameter vectors (1)
-  int np_;          ///< Number of parameters in this vector (2)
-  int Ng_;          ///< Number of observation functions (1)
-  int ng_;          ///< Number of elements in this observation function (1)
-  bool haveIC_;     ///< false => no nominal values are provided (default=true)
-  bool acceptModelParams_; ///< Changes inArgs to require parameters
-  mutable bool isInitialized_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_vec_;  
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_vec_;  
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_dot_vec_;  
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > p_init_;  
+  int vecLength_; //Number of state unknowns (1)  
+  int numResponses_; //Number of responses (1) 
+  int numParameters_; //Number of parameters (1) 
   mutable ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
   mutable ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
-
-  // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
-  //                            x_1(t) = b*f*cos(f*t+phi)
-  Scalar a_;     ///< Model parameter
-  Scalar f_;     ///< Model parameter
-  Scalar L_;     ///< Model parameter
-  Scalar phi_;   ///< Parameter determined from the IC
-  Scalar b_;     ///< Parameter determined from the IC
-  Scalar t0_ic_; ///< Time value where the initial condition is specified
+  mutable bool isInitialized_;
+  
 };
 
-
-/// Non-member constructor
-//Teuchos::RCP<BallParabolicModel> sineCosineModel(
-//  Teuchos::RCP<Teuchos::ParameterList> pList_)
-//{
-//  Teuchos::RCP<BallParabolicModel> model = rcp(new BallParabolicModel(pList_));
-//  return(model);
-//}
 
 
 } // namespace Tempus_Test
