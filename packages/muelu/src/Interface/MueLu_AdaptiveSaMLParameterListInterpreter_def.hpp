@@ -159,10 +159,10 @@ namespace MueLu {
       CoupledAggFact = CoupledAggFact2;
     }
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
-      *out << "========================= Aggregate option summary  =========================" << std::endl;
-      *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
+      *out << "========================= Aggregate option summary =========================" << std::endl;
+      *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-      *out << "aggregate ordering :                    natural" << std::endl;
+      *out << "aggregate ordering :                    natural" << std::endl;
       *out << "=============================================================================" << std::endl;
     }
 
