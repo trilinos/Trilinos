@@ -266,14 +266,14 @@ int main(int argc, char *argv[]) {
     //dropFact->SetPreDropFunction(predrop);
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetFactory("Graph", dropFact);
-    *out << "========================= Aggregate option summary  =========================" << std::endl;
-    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "========================= Aggregate option summary =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
     *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
     CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
     CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
     std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
     if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
-      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
       CoupledAggFact->SetOrdering(aggOrdering);
     } else {
       std::string msg = "main: bad aggregation option """ + aggOrdering + """.";

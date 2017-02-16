@@ -1,7 +1,7 @@
-========================= Aggregate option summary  =========================
-min Nodes per aggregate :               1
+========================= Aggregate option summary =========================
+min Nodes per aggregate :               1
 min # of root nbrs already aggregated : 0
-aggregate ordering :                    natural
+aggregate ordering :                    natural
 =============================================================================
 Clearing old data (if any)
 Level 0
