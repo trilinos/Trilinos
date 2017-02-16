@@ -32,7 +32,7 @@ StepperNewmarkImplicit<Scalar>::xDotFunction(
                    Thyra::VectorBase<Scalar> & x_dot)
     {
       // this is the Euler x dot vector
-      Thyra::V_StVpStV(ptrFromRef(x_dot),1.0/dt,x,-1.0/dt,*x_old);
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(x_dot),1.0/dt,x,-1.0/dt,*x_old);
     };
 }
 
@@ -43,7 +43,7 @@ void StepperNewmarkImplicit<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& 
                                                  const Scalar dt) const
 {
   //vPred = v + dt*(1.0-gamma_)*a 
-  Thyra::V_StVpStV(ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);  
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);  
 }
     
 template<class Scalar>
@@ -56,9 +56,9 @@ void StepperNewmarkImplicit<Scalar>::predictDisplacement(Thyra::VectorBase<Scala
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp = Thyra::createMember<Scalar>(dPred.space());
   //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a 
   Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_); 
-  Thyra::V_StVpStV(ptrFromRef(dPred), dt, v, aConst, a); 
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a); 
   //dPred += d; 
-  Thyra::Vp_V(ptrFromRef(dPred), d, 1.0); 
+  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0); 
 }
     
 template<class Scalar>
@@ -68,7 +68,7 @@ void StepperNewmarkImplicit<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& 
                                                  const Scalar dt) const
 {
   //v = vPred + dt*gamma_*a 
-  Thyra::V_StVpStV(ptrFromRef(v), 1.0, vPred, dt*gamma_, a);  
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);  
 }
 
 template<class Scalar>
@@ -78,7 +78,7 @@ void StepperNewmarkImplicit<Scalar>::correctDisplacement(Thyra::VectorBase<Scala
                                                    const Scalar dt) const
 {
   //d = dPred + beta_*dt*dt*a 
-  Thyra::V_StVpStV(ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a); 
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a); 
 }
 
 

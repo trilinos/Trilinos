@@ -31,7 +31,7 @@ StepperBackwardEuler<Scalar>::xDotFunction(
                    Thyra::VectorBase<Scalar> & x_dot)
     {
       // this is the Euler x dot vector
-      Thyra::V_StVpStV(ptrFromRef(x_dot),1.0/dt,x,-1.0/dt,*x_old);
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(x_dot),1.0/dt,x,-1.0/dt,*x_old);
     };
 }
 
