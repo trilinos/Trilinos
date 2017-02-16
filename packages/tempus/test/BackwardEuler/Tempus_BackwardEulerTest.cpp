@@ -31,6 +31,8 @@
 #include <sstream>
 #include <limits>
 
+namespace Tempus_Test {
+
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
@@ -39,8 +41,6 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
-
-namespace Tempus_Test {
 
 TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 {

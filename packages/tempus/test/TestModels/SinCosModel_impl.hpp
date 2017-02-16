@@ -21,17 +21,12 @@
 
 #include <iostream>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
-using Thyra::VectorBase;
-
 
 namespace Tempus_Test {
 
 template<class Scalar>
 SinCosModel<Scalar>::
-SinCosModel(RCP<ParameterList> pList_)
+SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
   dim_ = 2;
@@ -59,23 +54,23 @@ SinCosModel(RCP<ParameterList> pList_)
 }
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel<Scalar>::
 getExactSolution(double t) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
-  ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
-  RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
     exact_x_view[0] = a_+b_*sin((f_/L_)*t+phi_);
     exact_x_view[1] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
   }
   inArgs.set_x(exact_x);
-  RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     exact_x_dot_view[0] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
@@ -92,13 +87,13 @@ getExactSolution(double t) const
 // sdot(0) = [0;0] sdot(1) = [0;-3*f*f*b/(L*L*L)] sdot(2) = [0;3*f*f*f*b/(L*L*L*L)]
 //
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel<Scalar>::
 getExactSensSolution(int j, double t) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
-  ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
   if (!acceptModelParams_) {
     return inArgs;
   }
@@ -109,7 +104,7 @@ getExactSensSolution(int j, double t) const
   Scalar L = L_;
   Scalar phi = phi_;
   inArgs.set_t(exact_t);
-  RCP<VectorBase<Scalar> > exact_s = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_s = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_s_view(*exact_s);
     if (j == 0) { // dx/da
@@ -124,7 +119,7 @@ getExactSensSolution(int j, double t) const
     }
   }
   inArgs.set_x(exact_s);
-  RCP<VectorBase<Scalar> > exact_s_dot = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_s_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_s_dot_view(*exact_s_dot);
     if (j == 0) { // dxdot/da
@@ -143,7 +138,7 @@ getExactSensSolution(int j, double t) const
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel<Scalar>::
 get_x_space() const
 {
@@ -152,7 +147,7 @@ get_x_space() const
 
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel<Scalar>::
 get_f_space() const
 {
@@ -161,7 +156,7 @@ get_f_space() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel<Scalar>::
 getNominalValues() const
 {
@@ -172,10 +167,11 @@ getNominalValues() const
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 SinCosModel<Scalar>::
 create_W() const
 {
+  using Teuchos::RCP;
   RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
   RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
   {
@@ -186,7 +182,7 @@ create_W() const
     // optimized mode due to the matrix being rank deficient unless I do this.
     RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
     {
-      RCP<VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
       {
         Thyra::DetachedVectorView<Scalar> vec_view( *vec );
         vec_view[0] = 0.0;
@@ -208,7 +204,7 @@ create_W() const
       );
   return W;
 }
-//RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+//Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 //SinCosModel<Scalar>::
 //create_W() const
 //{
@@ -217,26 +213,26 @@ create_W() const
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 SinCosModel<Scalar>::
 create_W_op() const
 {
-  RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
   return(matrix);
 }
 
 
 template<class Scalar>
-RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 SinCosModel<Scalar>::
 get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
-//  RCP<const Thyra::LinearOpBase<Scalar> > fwdOp = this->create_W_op();
-//  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
+//  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > fwdOp = this->create_W_op();
+//  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
 //    Thyra::linearOpWithSolve<Scalar>(
 //      *W_factory,
 //      fwdOp
@@ -249,7 +245,7 @@ get_W_factory() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel<Scalar>::
 createInArgs() const
 {
@@ -262,7 +258,7 @@ createInArgs() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::OutArgs<Scalar>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 SinCosModel<Scalar>::
 createOutArgsImpl() const
 {
@@ -275,10 +271,12 @@ template<class Scalar>
 void
 SinCosModel<Scalar>::
 evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+  using Teuchos::RCP;
+  using Thyra::VectorBase;
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
@@ -370,7 +368,7 @@ evalModelImpl(
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel<Scalar>::
 get_p_space(int l) const
 {
@@ -382,7 +380,7 @@ get_p_space(int l) const
 }
 
 template<class Scalar>
-RCP<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 SinCosModel<Scalar>::
 get_p_names(int l) const
 {
@@ -390,8 +388,8 @@ get_p_names(int l) const
     return Teuchos::null;
   }
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
-  RCP<Teuchos::Array<std::string> > p_strings =
-    rcp(new Teuchos::Array<std::string>());
+  Teuchos::RCP<Teuchos::Array<std::string> > p_strings =
+    Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient:  a");
   p_strings->push_back("Model Coefficient:  f");
   p_strings->push_back("Model Coefficient:  L");
@@ -399,7 +397,7 @@ get_p_names(int l) const
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel<Scalar>::
 get_g_space(int j) const
 {
@@ -420,13 +418,13 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical InArgs
-    ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
+    Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_t );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x_dot );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_alpha );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
     if (acceptModelParams_) {
       inArgs.set_Np(Np_);
     }
@@ -435,13 +433,13 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical OutArgs
-    ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
+    Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_f );
-    outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
     if (acceptModelParams_) {
       outArgs.set_Np_Ng(Np_,Ng_);
-      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_DfDp,0,
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
                            Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
     }
     outArgs_ = outArgs;
@@ -452,7 +450,7 @@ setupInOutArgs_() const
   if (haveIC_)
   {
     nominalValues_.set_t(t0_ic_);
-    const RCP<VectorBase<Scalar> > x_ic = createMember(x_space_);
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
@@ -460,7 +458,7 @@ setupInOutArgs_() const
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
-      const RCP<VectorBase<Scalar> > p_ic = createMember(p_space_);
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = a_;
@@ -469,7 +467,7 @@ setupInOutArgs_() const
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const RCP<VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
@@ -485,14 +483,15 @@ setupInOutArgs_() const
 template<class Scalar>
 void
 SinCosModel<Scalar>::
-setParameterList(RCP<ParameterList> const& paramList)
+setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   using Teuchos::get;
-  RCP<ParameterList> tmpPL = rcp(new ParameterList("SinCosModel"));
+  using Teuchos::ParameterList;
+  Teuchos::RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("SinCosModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
-  RCP<ParameterList> pl = this->getMyNonconstParamList();
+  Teuchos::RCP<ParameterList> pl = this->getMyNonconstParamList();
   bool acceptModelParams = get<bool>(*pl,"Accept model parameters");
   bool haveIC = get<bool>(*pl,"Provide nominal values");
   if ( (acceptModelParams != acceptModelParams_) ||
@@ -513,13 +512,13 @@ setParameterList(RCP<ParameterList> const& paramList)
 }
 
 template<class Scalar>
-RCP<const ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 SinCosModel<Scalar>::
 getValidParameters() const
 {
-  static RCP<const ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters", false);
     pl->set("Provide nominal values", true);
     Teuchos::setDoubleParameter(

@@ -20,67 +20,63 @@
 #include "Thyra_VectorStdOps.hpp"
 #include <iostream>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
-using Thyra::VectorBase;
-
 
 namespace Tempus_Test {
 
 template<class Scalar>
 BallParabolicModel<Scalar>::
-BallParabolicModel(RCP<ParameterList> pList_)
+BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
 
   //Set up space and initial guess for solution vector
-  vecLength_ = 1; 
+  vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
   x_vec_ = createMember(x_space_);
-  Thyra::put_scalar(0.0, x_vec_.ptr());  
+  Thyra::put_scalar(0.0, x_vec_.ptr());
   x_dot_vec_ = createMember(x_space_);
-  Thyra::put_scalar(1.0, x_dot_vec_.ptr()); 
+  Thyra::put_scalar(1.0, x_dot_vec_.ptr());
   x_dot_dot_vec_ = createMember(x_space_);
-  Thyra::put_scalar(0.0, x_dot_dot_vec_.ptr()); 
+  Thyra::put_scalar(0.0, x_dot_dot_vec_.ptr());
 
-  //Set up responses 
-  numResponses_ = 1; 
+  //Set up responses
+  numResponses_ = 1;
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(numResponses_);
-    
+
   //Set up parameters
-  //IKT: do we need parameters?  What do they mean? 
-  numParameters_ = 1; 
+  //IKT: do we need parameters?  What do they mean?
+  numParameters_ = 1;
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(numParameters_);
-  p_init_ = createMember(p_space_); 
-  Thyra::put_scalar(1.0, p_init_.ptr());   
+  p_init_ = createMember(p_space_);
+  Thyra::put_scalar(1.0, p_init_.ptr());
 
   setParameterList(pList_);
 }
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 BallParabolicModel<Scalar>::
 getExactSolution(double t) const
 {
+  using Thyra::VectorBase;
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
-  ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
-  RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
+  Teuchos::RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    exact_x_view[0] = t*(1.0-0.5*t);  
+    exact_x_view[0] = t*(1.0-0.5*t);
   }
   inArgs.set_x(exact_x);
-  RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
+  Teuchos::RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     exact_x_dot_view[0] = 1.0-t;
   }
   inArgs.set_x_dot(exact_x_dot);
-  RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
+  Teuchos::RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
     exact_x_dot_dot_view[0] = -1.0;
@@ -90,7 +86,7 @@ getExactSolution(double t) const
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_x_space() const
 {
@@ -99,7 +95,7 @@ get_x_space() const
 
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_f_space() const
 {
@@ -108,7 +104,7 @@ get_f_space() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 BallParabolicModel<Scalar>::
 getNominalValues() const
 {
@@ -119,45 +115,45 @@ getNominalValues() const
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 BallParabolicModel<Scalar>::
 create_W() const
 {
-  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
-  RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
-  RCP<Thyra::MultiVectorBase<Scalar> > matrix_mv = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix_mv = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
   Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix_mv );
-  //IKT: is it necessary for W to be non-singular when initialized? 
-  matrix_view(0,0) = 1.0; 
-  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
+  //IKT: is it necessary for W to be non-singular when initialized?
+  matrix_view(0,0) = 1.0;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
     Thyra::linearOpWithSolve<Scalar>(*W_factory, matrix );
   return W;
 }
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 BallParabolicModel<Scalar>::
 create_W_op() const
 {
-  RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, vecLength_);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, vecLength_);
   return(matrix);
 }
 
 
 template<class Scalar>
-RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 BallParabolicModel<Scalar>::
 createInArgs() const
 {
@@ -170,7 +166,7 @@ createInArgs() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::OutArgs<Scalar>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 BallParabolicModel<Scalar>::
 createOutArgsImpl() const
 {
@@ -183,10 +179,12 @@ template<class Scalar>
 void
 BallParabolicModel<Scalar>::
 evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+  using Teuchos::RCP;
+  using Thyra::VectorBase;
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
@@ -194,11 +192,11 @@ evalModelImpl(
   RCP<const VectorBase<Scalar> > p_in = inArgs.get_p(0);
   if (!p_in.get()) std::cout << "\n ERROR: BallParabolicModel requires p as InArgs. \n";
   Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
-  
+
   RCP<const VectorBase<Scalar> > x_in = inArgs.get_x();
   if (!x_in.get()) std::cout << "\n ERROR: BallParabolicModel requires x as InArgs.  \n";
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
-  //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView 
+  //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView
   auto myVecLength  = x_in_view.subDim();
 
   RCP<const VectorBase<Scalar> > x_dot_in = inArgs.get_x_dot();
@@ -212,10 +210,10 @@ evalModelImpl(
   //Parse OutArgs
   RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
   RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
-  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op(); 
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
   //Populate residual and Jacobian
-  //IKT: what is damping for?? 
+  //IKT: what is damping for??
   double damping = 0.0;
   if (f_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
@@ -239,23 +237,23 @@ evalModelImpl(
     RCP<Thyra::MultiVectorBase<Scalar> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
     Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
     if (omega == 0.0) throw "omega = 0.0";
-    matrix_view(0,0) = omega; 
+    matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
       double da = damping*alpha;
-      matrix_view(0,0) += da; 
+      matrix_view(0,0) += da;
     }
   }
 
   //Calculated response(s) g
-  //g = mean value of x  
+  //g = mean value of x
   if (g_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> g_out_view(*g_out);
-    g_out_view[0] = Thyra::sum(*x_in)/vecLength_; 
+    g_out_view[0] = Thyra::sum(*x_in)/vecLength_;
   }
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_p_space(int l) const
 {
@@ -267,7 +265,7 @@ get_p_space(int l) const
 }
 
 template<class Scalar>
-RCP<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 BallParabolicModel<Scalar>::
 get_p_names(int l) const
 {
@@ -277,10 +275,10 @@ get_p_names(int l) const
                      l << "\n");
 
   Thyra::ConstDetachedVectorView<Scalar> p_init_view( *p_init_ );
-  //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView 
+  //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView
   auto num_p  = p_init_view.subDim();
-  RCP<Teuchos::Array<std::string> > p_names =
-      rcp(new Teuchos::Array<std::string>(num_p) );
+  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
+      Teuchos::rcp(new Teuchos::Array<std::string>(num_p) );
   for (int i=0; i<num_p; i++) {
     std::stringstream ss;
     ss << "Parameter " << i;
@@ -291,7 +289,7 @@ get_p_names(int l) const
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_g_space(int j) const
 {
@@ -310,51 +308,53 @@ BallParabolicModel<Scalar>::
 setupInOutArgs_() const
 {
   if (isInitialized_) return;
-  
-  //Set up InArgs 
-  ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
+
+  //Set up InArgs
+  Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(numParameters_);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_x);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_x_dot);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_x_dot_dot);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_t);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_W_x_dot_dot_coeff);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_alpha);
-  inArgs.setSupports(ModelEvaluatorBase::IN_ARG_beta);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_t);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_W_x_dot_dot_coeff);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_alpha);
+  inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_beta);
   inArgs_ = inArgs;
 
   //Set up OutArgs
-  ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
+  Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(numParameters_, numResponses_);
 
-  outArgs.setSupports(ModelEvaluatorBase::OUT_ARG_f);
-  outArgs.setSupports(ModelEvaluatorBase::OUT_ARG_W_op);
+  outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f);
+  outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_W_op);
   //outArgs.setSupports(OUT_ARG_W,true);
-  //IKT, what is the following supposed to do?? 
+  //IKT, what is the following supposed to do??
   //outArgs.set_W_properties( DerivativeProperties(
   //    DERIV_LINEARITY_UNKNOWN, DERIV_RANK_FULL, true));
-  outArgs_ = outArgs; 
- 
+  outArgs_ = outArgs;
+
   // Set up nominal values
   nominalValues_ = inArgs_;
   nominalValues_.set_t(0.0);
   nominalValues_.set_x(x_vec_);
   nominalValues_.set_x_dot(x_dot_vec_);
   nominalValues_.set_x_dot_dot(x_dot_dot_vec_);
-  
-  isInitialized_ = true; 
+
+  isInitialized_ = true;
 
 }
 
 template<class Scalar>
 void
 BallParabolicModel<Scalar>::
-setParameterList(RCP<ParameterList> const& paramList)
+setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   using Teuchos::get;
-  RCP<ParameterList> tmpPL = rcp(new ParameterList("BallParabolicModel"));
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("BallParabolicModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
@@ -363,13 +363,13 @@ setParameterList(RCP<ParameterList> const& paramList)
 }
 
 template<class Scalar>
-RCP<const ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 BallParabolicModel<Scalar>::
 getValidParameters() const
 {
-  static RCP<const ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     validPL = pl;
   }
   return validPL;

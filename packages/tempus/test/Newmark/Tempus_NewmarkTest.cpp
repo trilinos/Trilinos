@@ -13,8 +13,8 @@
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
-//IKT, FIXME: replace the following with Newmark test case model, 
-//to be implemented 
+//IKT, FIXME: replace the following with Newmark test case model,
+//to be implemented
 #include "../TestModels/BallParabolicModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
@@ -31,6 +31,8 @@
 #include <sstream>
 #include <limits>
 
+namespace Tempus_Test {
+
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
@@ -39,8 +41,6 @@ using Teuchos::getParametersFromXmlFile;
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
-
-namespace Tempus_Test {
 
 TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 {
