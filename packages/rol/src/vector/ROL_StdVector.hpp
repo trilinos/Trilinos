@@ -195,6 +195,13 @@ public:
     return result;
   }
 
+  void print( std::ostream &outStream ) const {
+    uint dim = std_vec_->size();
+    for(uint i=0; i<dim; ++i) {
+      outStream << (*std_vec_)[i] << " ";
+    }
+    outStream << std::endl;
+  }
 
 }; // class StdVector
 

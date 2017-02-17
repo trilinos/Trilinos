@@ -328,6 +328,10 @@ public:
     return gblValue; 
   }
 
+  void print( std::ostream &outStream ) const {
+    tpetra_vec_->print(outStream);
+  }
+
 }; // class TpetraMultiVector
 
 
