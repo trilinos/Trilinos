@@ -1380,6 +1380,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Partition, FadType, Layout, Device )
 {
+#if !defined(SACADO_VIEW_CUDA_HIERARCHICAL) && !defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
   typedef Kokkos::View<FadType**,Layout,Device> ViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
@@ -1428,6 +1429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
       success = success && checkFads(f2, h_v2(i,j), out);
     }
   }
+#endif
 }
 
 #else
