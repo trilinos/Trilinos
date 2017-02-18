@@ -235,6 +235,10 @@ public:
     functionCalls_.reduce_++;
     return v_->reduce(r);
   }
+
+  void print( std::ostream &outStream ) const {
+    v_->print(outStream); 
+  }
     
   friend VectorFunctionCalls<Ordinal> getVectorFunctionCalls<>( const ProfiledVector<Ordinal,Real> & );
   friend void printVectorFunctionCalls<>( const ProfiledVector<Ordinal,Real> &, std::ostream & );  
