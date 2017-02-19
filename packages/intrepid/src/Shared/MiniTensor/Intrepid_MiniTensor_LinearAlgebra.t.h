@@ -875,10 +875,8 @@ log_rotation_pi(Tensor<T, N> const & R)
   Index const
   dimension = R.get_dimension();
 
-  T
-  cosine = 0.5*(trace(R) - 1.0);
   // set firewall to make sure the rotation is indeed 180 degrees
-  assert(std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
+  assert(std::abs(0.5*(trace(R) - 1.0) + 1.0) < 10.0 * machine_epsilon<T>());
 
   Tensor<T, N>
   r(dimension);
