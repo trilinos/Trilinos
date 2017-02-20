@@ -142,6 +142,12 @@ namespace Amesos2 {
     ARBITRARY                   /**< index order can be arbitrary */
   } EStorage_Ordering;
 
+  // NDE: new, possible addition for returning Epetra vs Tpetra matrix type
+  typedef enum {
+    EPETRA,             /**< Epetra_CrsMatrix type*/
+    TPETRA              /**< Tpetra_CrsMatrix type*/
+  } EMatrix_Type;
+
 }
 
 #endif	// AMESOS2_TYPEDECL_HPP

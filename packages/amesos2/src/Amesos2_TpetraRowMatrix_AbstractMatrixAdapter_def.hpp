@@ -221,6 +221,78 @@ namespace Amesos2 {
     return this->mat_->getNumEntriesInGlobalRow(row);
   }
 
+  // NDE: Experiment for now...
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_ptr_t
+//    ::super_t::matrix_t::local_matrix_type::row_map_type
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseRowPtr() const
+  {
+    //quick experiment...
+    //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.row_map;
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_idx_t
+//    ::super_t::matrix_t::local_matrix_type::index_type
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseColInd() const
+  {
+    //quick experiment...
+    //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.entries;
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_vals_t
+//    ::super_t::matrix_t::local_matrix_type::value_type
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseValues() const
+  {
+    //quick experiment...
+    //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.values;
+  }
+// end quick exp
+
+
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -368,6 +440,22 @@ namespace Amesos2 {
     return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
 #endif
   }
+
+  // NDE: To help with identifying type of matrix
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  //int 
+  EMatrix_Type
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    //DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return 2; }
+    DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return TPETRA; }
 
 } // end namespace Amesos2
 

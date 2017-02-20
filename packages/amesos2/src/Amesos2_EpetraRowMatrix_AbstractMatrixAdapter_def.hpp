@@ -298,6 +298,33 @@ namespace Amesos2 {
 #endif
   }
 
+  // NDE: To help with identifying type of matrix
+  template <class DerivedMat>
+  //int
+  //AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return 1; }
+  EMatrix_Type
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return EPETRA; }
+
+
+  // NDE: Stubs to be filled in
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_ptr_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 
+  { return 0; }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_idx_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const 
+  { return 0; }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_vals_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const 
+  { return 0; }
+
 } // end namespace Amesos2
 
 #endif  // AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
