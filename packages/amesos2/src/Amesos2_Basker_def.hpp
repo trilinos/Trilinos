@@ -534,10 +534,19 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     EMatrix_Type enum_type = this->matrixA_->get_matrix_type_info_as_int() ;
     std::cout << "  check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl; //output test
 
+      auto sp_rowptr = this->matrixA_->returnRowPtr();
+      auto sp_colind = this->matrixA_->returnColInd();
+      auto sp_values = this->matrixA_->returnValues();
+
     if ( enum_type == TPETRA ) {
       std::cout << "  check matrix type by enum returned tpetra: " << enum_type << std::endl;
 
-      auto test = this->matrixA_->returnRowPtr();
+      if ( sp_rowptr == 0 ) {
+        std::cout << " tpetra null " << std::endl;
+      }
+      else {
+        std::cout << " tpetra not null" << std::endl;
+      }
 
       // call numericFactorization_impl by simply passing the Tpetra views
 
@@ -573,7 +582,12 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     else if ( enum_type == EPETRA ) {
       std::cout << "  check matrix type by enum returned epetra: " << enum_type << std::endl;
 
-      auto test = this->matrixA_->returnRowPtr();
+      if ( sp_rowptr == 0 ) {
+        std::cout << " epetra null " << std::endl;
+      }
+      else {
+        std::cout << " epetra not null" << std::endl;
+      }
       // call numericFactorization_impl by simply passing the raw Epetra pointers
       // Should all of this be moved to numericFactorization, and short-circuit call to loadA and loadA_impl altogether? 
       // Or should local ArrayViews wrap the CRS pointers/views from the matrices??
@@ -589,6 +603,9 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     std::cout << "  Epetra: check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl;
   #endif
 */
+
+
+
   } // end special case
   // else {    // wrap the alternative code path once the special case impl is complete
 

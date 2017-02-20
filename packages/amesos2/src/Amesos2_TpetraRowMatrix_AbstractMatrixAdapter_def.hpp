@@ -221,6 +221,7 @@ namespace Amesos2 {
     return this->mat_->getNumEntriesInGlobalRow(row);
   }
 
+
   // NDE: Experiment for now...
   template <typename Scalar,
             typename LocalOrdinal,
@@ -242,7 +243,8 @@ namespace Amesos2 {
     //quick experiment...
     //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
     typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
-    return lm.graph.row_map;
+    return lm.graph.row_map.data();
+//    return lm.graph.row_map;
   }
 
   template <typename Scalar,
@@ -265,7 +267,8 @@ namespace Amesos2 {
     //quick experiment...
     //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
     typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
-    return lm.graph.entries;
+    return lm.graph.entries.data();
+//    return lm.graph.entries;
   }
 
   template <typename Scalar,
@@ -288,7 +291,8 @@ namespace Amesos2 {
     //quick experiment...
     //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
     typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
-    return lm.values;
+    return lm.values.data();
+//    return lm.values;
   }
 // end quick exp
 
