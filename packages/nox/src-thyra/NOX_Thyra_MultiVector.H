@@ -116,6 +116,8 @@ namespace NOX {
       //! Copy source multi-vector \c source into this multi-vector.
       virtual NOX::Abstract::MultiVector&
       operator=(const NOX::Abstract::MultiVector& source);
+      NOX::Abstract::MultiVector&
+      operator=(const NOX::Thyra::MultiVector& source);
 
       /*!
        * \brief Copy the vectors in \c source to a set of vectors in \c *this.
