@@ -193,6 +193,7 @@ private:
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
 
 
+  int transpose_needed; // NDE: new, added for special case with ShyLUBasker where the Tpetra CRS info is passed directly to Basker - will need transpose after received
 
 
     /*Handle for Basker object*/

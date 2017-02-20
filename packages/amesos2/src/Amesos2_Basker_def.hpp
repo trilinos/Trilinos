@@ -84,6 +84,9 @@ Basker<Matrix,Vector>::Basker(
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
+
+  transpose_needed = 0; // NDE: New, will pass 'true' to ShyLUBasker if passing CRS matrix pointers rather than CCS
+
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental Basker Amesos2");
@@ -457,11 +460,137 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE) return (false);
 
+#ifdef SHYLUBASKER
+
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
+    // NDE: Purpose of this function is to copy SolverCopy matrixA_ to
+    // CCS members in the Basker ConcreteSolver (in CCS format)
+    // In the existing implementation, this is required for case of reusing
+    // symbolic structure of a matrix but with different values in the matrix
+    // i.e. after first run, skip the symbolicFactorization stage and
+    // call numericFactorization followed by the solve.
+    // 
+    // This is required because the internal ArrayViews, after being initialized from
+    // matrixA_, are dereferenced and then passed to ShyLUBasker or Basker 
+    // (via raw pointer) which make a copy of the data prior to performing their own 
+    // operations on/with the data.
+    //
+    // Amesos2 Basker, to stay consistent with design, should it get a copy of the 
+    // matrixA_ data? Or can it just access/pass the data from matrixA_ directly
+    // (as dereferenced raw pointers or Views) to ShyLUBasker, which then makes its
+    // own copy? 
+    // It does not appear that the copy to the Basker ConcreteSolver is necessary, as
+    // the CRS -> CCS conversion can happen within Basker itself via matrix transpose
+    // (and additional sort, if sorted row indices is desired).
+    //
+    // During the call to symbolic or numeric, a new matrix will be received/copied 
+    // to matrixA_ (as Epetra or Tpetra CRS matrix). 
+    //
 
+    // NDE: Goal - 'short-circuit' this for SHYLUBASKER
+    // pass the Tpetra CRS views (p,i,val) to Basker then transpose there
+    // At this point, matrixA_ is already defined and part of SolverCore
+    // nzvals_, rowind_, colptr_ are members of this Basker ConcreteSolver
+    //
+    // Would like to pass the Tpetra Views to ShyLUBasker directly 
+    // - what are consequences of not storing/recopying from matrixA_ to cp,ri,val???
+    //
+    // Important to ensure these aspects are properly updated; however, this should be done in SolverCore, not here, 
+    // thus the responsibility should already be properly handled...
+    // 1. After preordering:
+    // ++status_.numPreOrder_;
+    // status_.last_phase_ = PREORDERING;
+    //
+    // 2. After Symbolic
+    // ++status_.numSymbolicFact_;
+    // status_.last_phase_ = SYMBFACT;
+    //   Skipping loadA depends on status.preOrderingDone() and matrix_loaded_ values
+    //   May call loadA(SYMFBACT)
+    //
+    // 3. After numericFactorization
+    // ++status_.numNumericFact_;
+    // status_.last_phase_ = NUMFACT;
+    //   Skipping loadA depends on status.symbolicFactorizationDone() and matrix_loaded_ values
+    //   May call loadA(NUMFACT)
+    //
+    // Concerns: 
+    // 1. What if row index begins at 1, not 0? In do_getCrs, the col indices are adjusted - should 
+    // this info be passed along to Basker to deal with this before/after transpose? Or if the starting index
+    // is 1, should it be adjusted here???
+
+// NDE: New code attempt
+    // This special case will work if rank == 1, numproc = 1, and this->root_ is true...
+
+
+// NDE: Pre-existing functionality below - try and reduce code duplication...
+
+  if ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) {
+
+    transpose_needed = 1; // Basker responsible for transposing the matrix to convert CRS to CCS
+
+    EMatrix_Type enum_type = this->matrixA_->get_matrix_type_info_as_int() ;
+    std::cout << "  check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl; //output test
+
+    if ( enum_type == TPETRA ) {
+      std::cout << "  check matrix type by enum returned tpetra: " << enum_type << std::endl;
+
+      auto test = this->matrixA_->returnRowPtr();
+
+      // call numericFactorization_impl by simply passing the Tpetra views
+
+      // next steps - probably in the AbstractConcreteMatrixAdapter classes (like for get_matrix_type_info) add routines to return pointers/views of 
+      // can't do this now, since can't access the underlying matrix directly
+      // rowptr, colind, values - try using auto to get the return type right
+      // Experiment doing this with Tpetra; may need to use auto
+      //
+      // NOTE: This syntax seems to work in the ACMA Tpetra impl functions (which have access to mat_)
+      //quick experiment...
+      //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
+      //
+      // With Tpetra, looks like the local_graph contains the rowptr and colind views, and the local_matrix contains the values - need to figure out 
+      // proper function calls to extract these (and return)
+      // However, return type of view (tpetra) and raw pointer (epetra) may cause a conflict for generic routine
+      //
+      // In Basker, new routine will need to take Views directly, or raw pointers (to be wrapped in views) and transposed...
+      /*
+      size_t rowNNZ = get_mat->getGlobalRowNNZ(*row_it);
+      size_t nnzRet = OrdinalTraits<size_t>::zero();
+      ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ); 
+        // this gives colind_view access (locally indexed from 0) to colind, starting at rowInd through rowInd+rowNNZ
+      ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
+      
+      get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet); //this copies, for row # row_it, values from the Tpetra matrix identified with get_map (from rowmap input) into the ArrayViews colind_view and nzval_view, and returns the number of nonzeros nnzRet copied into each of those. 
+      for (size_t rr = 0; rr < nnzRet ; rr++)
+      {
+          colind_view[rr] = colind_view[rr] - rmap->getIndexBase();
+      }
+      */
+
+    }
+    else if ( enum_type == EPETRA ) {
+      std::cout << "  check matrix type by enum returned epetra: " << enum_type << std::endl;
+
+      auto test = this->matrixA_->returnRowPtr();
+      // call numericFactorization_impl by simply passing the raw Epetra pointers
+      // Should all of this be moved to numericFactorization, and short-circuit call to loadA and loadA_impl altogether? 
+      // Or should local ArrayViews wrap the CRS pointers/views from the matrices??
+
+      // Will skip this for now...
+
+    }
+
+/*
+  #ifdef HAVE_AMESOS2_EPETRA // is this sufficient? Either Epetra or Tpetra should be used, never a mix, write? Also, if this is activated, does it mean epetra is used or simply enabled???
+    std::cout << "  Have Epetra - is this setting detected by enabling epetra during trilinos configuration, or manually set?? " << std::endl;
+    //this->matrixA_->description(); // Does not seem to be defined properly for Epetra_CrsMatrix types...
+    std::cout << "  Epetra: check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl;
+  #endif
+*/
+  } // end special case
+  // else {    // wrap the alternative code path once the special case impl is complete
 
   // Only the root image needs storage allocated
   if( this->root_ ){
@@ -475,20 +604,52 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
-
+    std::cout << "  Amesos2 Basker: Cal get_ccs_helper for loadA_impl" << std::endl;
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
     ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-             nnz_ret, ROOTED, ARBITRARY);
+             nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
   }
 
-
+  // NDE: If skipping do_get call above, this check should be skipped as well as nnz_ret will not be updated
   if( this->root_ ){
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
   }
 
+  //} //end alternative path 
+#else // Not ShyLU Basker
+
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
+
+  // Only the root image needs storage allocated
+  if( this->root_ ){
+    nzvals_.resize(this->globalNumNonZeros_);
+    rowind_.resize(this->globalNumNonZeros_);
+    colptr_.resize(this->globalNumCols_ + 1);
+  }
+
+  local_ordinal_type nnz_ret = 0;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+    std::cout << "  Amesos2 Basker: Cal get_ccs_helper for loadA_impl" << std::endl;
+    Util::get_ccs_helper<
+    MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+    ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+             nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+  }
+
+  if( this->root_ ){
+    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+                        std::runtime_error,
+                        "Did not get the expected number of non-zero vals");
+  }
+#endif
   return true;
 }
 

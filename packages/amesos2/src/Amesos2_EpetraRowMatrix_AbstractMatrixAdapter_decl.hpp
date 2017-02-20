@@ -169,6 +169,14 @@ namespace Amesos2 {
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 
+    // NDE: To help with identifying type of matrix
+    //int getMatrixTypeInfoAsInt_impl() const;
+    EMatrix_Type getMatrixTypeInfoAsInt_impl() const;
+
+    typename super_t::spmtx_ptr_t  getSparseRowPtr() const;
+    typename super_t::spmtx_idx_t  getSparseColInd() const;
+    typename super_t::spmtx_vals_t getSparseValues() const;
+
   };
 
 } // end namespace Amesos2
