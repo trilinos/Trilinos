@@ -89,9 +89,12 @@ namespace Amesos2 {
 
     typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
     typedef typename matrix_type::local_matrix_type  local_matrix_type;
-    typedef typename matrix_type::local_matrix_type::row_map_type  sparse_ptr_type;
-    typedef typename matrix_type::local_matrix_type::index_type sparse_idx_type;
-    typedef typename matrix_type::local_matrix_type::values_type sparse_values_type;
+    typedef typename matrix_type::local_matrix_type::row_map_type  view_sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type view_sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type view_sparse_values_type;
+    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
 
     typedef row_access major_access;
   };
@@ -112,9 +115,12 @@ namespace Amesos2 {
 
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
     typedef typename matrix_type::local_matrix_type  local_matrix_type;
-    typedef typename matrix_type::local_matrix_type::row_map_type  sparse_ptr_type;
-    typedef typename matrix_type::local_matrix_type::index_type sparse_idx_type;
-    typedef typename matrix_type::local_matrix_type::values_type sparse_values_type;
+    typedef typename matrix_type::local_matrix_type::row_map_type  view_sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type view_sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type view_sparse_values_type;
+    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
 
     typedef row_access major_access;
   };
@@ -132,9 +138,9 @@ namespace Amesos2 {
 
     typedef Epetra_RowMatrix matrix_type;
     typedef matrix_type local_matrix_type;
-    typedef int sparse_ptr_type;
-    typedef int sparse_idx_type;
-    typedef double sparse_values_type;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
 
     typedef row_access major_access;
   };
@@ -148,9 +154,9 @@ namespace Amesos2 {
 
     typedef Epetra_CrsMatrix matrix_type;
     typedef matrix_type local_matrix_type;
-    typedef int sparse_ptr_type;
-    typedef int sparse_idx_type;
-    typedef double sparse_values_type;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
 
     typedef row_access major_access;
   };
@@ -174,9 +180,9 @@ namespace Amesos2 {
 
     typedef Epetra_VbrMatrix matrix_type;
     typedef matrix_type local_matrix_type;
-    typedef int sparse_ptr_type;
-    typedef int sparse_idx_type;
-    typedef double sparse_values_type;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
 
     typedef row_access major_access;
   };

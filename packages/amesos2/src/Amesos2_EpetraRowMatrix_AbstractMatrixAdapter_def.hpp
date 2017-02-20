@@ -311,19 +311,46 @@ namespace Amesos2 {
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_ptr_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 
-  { return 0; }
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_rowptr;
+    //return 0; 
+  }
 
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_idx_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const 
-  { return 0; }
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_colind;
+    //return 0; 
+  }
 
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_vals_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const 
-  { return 0; }
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_values;
+    //return 0; 
+  }
 
 } // end namespace Amesos2
 
