@@ -379,6 +379,57 @@ mvMultiReductApplyOpImpl(
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+acquireDetachedMultiVectorViewImpl(
+  const Range1D &rowRng,
+  const Range1D &colRng,
+  RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+  ) const
+{
+  // Only viewing data, so just sync dual view to host space
+  typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+  Teuchos::rcp_const_cast<TMV>(
+    tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+
+  SpmdMultiVectorDefaultBase<Scalar>::
+    acquireDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+acquireNonconstDetachedMultiVectorViewImpl(
+  const Range1D &rowRng,
+  const Range1D &colRng,
+  RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+  )
+{
+  // Sync to host and mark as modified
+  tpetraMultiVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+  tpetraMultiVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+
+  SpmdMultiVectorDefaultBase<Scalar>::
+    acquireNonconstDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+commitNonconstDetachedMultiVectorViewImpl(
+  RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+  )
+{
+  SpmdMultiVectorDefaultBase<Scalar>::
+    commitNonconstDetachedMultiVectorViewImpl(sub_mv);
+
+  // Sync changes from host view to execution space
+  typedef typename Tpetra::MultiVector<
+    Scalar,LocalOrdinal,GlobalOrdinal,Node>::execution_space execution_space;
+  tpetraMultiVector_.getNonconstObj()->template sync<execution_space>();
+}
+
+
 /* ToDo: Implement these?
 
 
@@ -475,7 +526,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
     typedef typename TMV::execution_space execution_space;
     Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<execution_space>();
     Y_tpetra->template sync<execution_space>();
-    Teuchos::rcp_const_cast<TMV>(tpetraMultiVector_.getConstObj())->template sync<execution_space>();
+    Teuchos::rcp_const_cast<TMV>(
+      tpetraMultiVector_.getConstObj())->template sync<execution_space>();
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
     TEUCHOS_TEST_FOR_EXCEPTION(ST::isComplex && (M_trans == CONJ),
@@ -501,7 +553,8 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
     Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraMultiVector_.getConstObj(), *X_tpetra, beta);
   } else {
-    Teuchos::rcp_const_cast<TMV>(tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+    Teuchos::rcp_const_cast<TMV>(
+      tpetraMultiVector_.getConstObj())->template sync<Kokkos::HostSpace>();
     SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(M_trans, X, Y, alpha, beta);
   }
 

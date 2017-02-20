@@ -165,6 +165,24 @@ protected:
     const Ordinal primary_global_offset
     ) const;
 
+  /** \brief . */
+  void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
+
+  /** \brief . */
+  void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
+
+  /** \brief . */
+  void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
 
 //  /** \brief . */
 //  RCP<const MultiVectorBase<Scalar> >

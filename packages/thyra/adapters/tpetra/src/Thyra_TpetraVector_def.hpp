@@ -324,6 +324,52 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+acquireDetachedVectorViewImpl(
+  const Range1D& rng,
+  RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+  ) const
+{
+  // Only viewing data, so just sync dual view to host space
+  typedef typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  Teuchos::rcp_const_cast<TV>(
+    tpetraVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+
+  SpmdVectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng, sub_vec);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+acquireNonconstDetachedVectorViewImpl(
+  const Range1D& rng,
+  RTOpPack::SubVectorView<Scalar>* sub_vec 
+  )
+{
+  // Sync to host and mark as modified
+  tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+  tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+
+  SpmdVectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(rng, sub_vec);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+commitNonconstDetachedVectorViewImpl(
+  RTOpPack::SubVectorView<Scalar>* sub_vec
+  )
+{
+  SpmdVectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(sub_vec);
+
+  // Sync changes from host view to execution space
+  typedef typename Tpetra::Vector<
+    Scalar,LocalOrdinal,GlobalOrdinal,Node>::execution_space execution_space;
+  tpetraVector_.getNonconstObj()->template sync<execution_space>();
+}
+
+
 // Overridden protected functions from MultiVectorBase
 
 

@@ -163,6 +163,23 @@ protected:
     const Ordinal global_offset
     ) const;
 
+  /** \brief . */
+  void acquireDetachedVectorViewImpl(
+    const Range1D& rng,
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
+
+  /** \brief . */
+  void acquireNonconstDetachedVectorViewImpl(
+    const Range1D& rng,
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
+
+  /** \brief . */
+  void commitNonconstDetachedVectorViewImpl(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
+
   //@}
 
   /** @name Overridden protected functions from MultiVectorBase */
