@@ -386,6 +386,30 @@ namespace Intrepid2 {
       return basisCoordinates_;
     }
 
+    /** \brief  DoF count for specified subcell
+     
+     \param  subcDim           [in]  - tag field 0: dimension of the subcell associated with the DoFs
+     \param  subcOrd           [in]  - tag field 1: ordinal of the subcell defined by cell topology
+     
+     \return the number of DoFs associated with the specified subcell.
+     */
+    ordinal_type
+    getDofCount( const ordinal_type subcDim,
+                 const ordinal_type subcOrd ) const {
+      if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
+           subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) )
+      {
+        int firstDofOrdinal = tagToOrdinal_(subcDim, subcOrd, 0); // will be -1 if no dofs for subcell
+        if (firstDofOrdinal == -1) return static_cast<ordinal_type>(0);
+        // otherwise, lookup its tag and return the dof count stored there
+        return static_cast<ordinal_type>(this->getDofTag(firstDofOrdinal)[3]);
+      }
+      else
+      {
+        // subcDim and/or subcOrd out of bounds -> no dofs associated with subcell
+        return static_cast<ordinal_type>(0);
+      }
+    }
 
     /** \brief  DoF tag to ordinal lookup.
 
