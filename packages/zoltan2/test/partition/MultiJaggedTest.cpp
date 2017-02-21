@@ -1315,12 +1315,6 @@ int main(int argc, char *argv[])
             }
             throw s;
         }
-        catch(char const * s){
-            if(tcomm->getRank() == 0){
-                print_usage(argv[0]);
-            }
-            throw s;
-        }
 
         int ierr = 0;
 
@@ -1370,11 +1364,6 @@ int main(int argc, char *argv[])
     }
 
     catch(char * s){
-        if (rank == 0)
-            cerr << s << endl;
-    }
-
-    catch(char const* s){
         if (rank == 0)
             cerr << s << endl;
     }
