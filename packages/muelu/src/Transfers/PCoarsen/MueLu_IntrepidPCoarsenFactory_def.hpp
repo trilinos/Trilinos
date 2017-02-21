@@ -104,16 +104,29 @@ inline std::string tolower(const std::string & str) {
   template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
                                  std::vector<std::vector<LocalOrdinal>> &seeds,
-                                 Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowMap,
-                                 Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> columnMap)
+                                 const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap,
+                                 const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &columnMap)
   {
+    
+    // For each subcell represented by the elements in elementToNodeMap, we want to identify a globally
+    // unique degree of freedom.  Because the other "seed" interfaces in MueLu expect a local ordinal, we
+    // store local ordinals in the resulting seeds container.
+    
+    // The approach is as follows.  For each element, we iterate through the subcells of the domain topology.
+    // We determine which, if any, of these has the lowest global ID owned that is locally owned.  We then insert
+    // the local ID corresponding to this in a vector<set<int>> container whose outer index is the spatial dimension
+    // of the subcell.  The set lets us conveniently enforce uniqueness of the stored LIDs.
+    
     shards::CellTopology cellTopo = basis->getBaseCellTopology();
     int spaceDim = cellTopo.getDimension();
     seeds.clear();
     seeds.resize(spaceDim + 1);
+    typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO;
     
-    LocalOrdinal lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    GlobalOrdinal go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
+    
     
     std::vector<std::set<LocalOrdinal>> seedSets(spaceDim+1);
     
@@ -127,33 +140,31 @@ inline std::string tolower(const std::string & str) {
         {
           int dofCount = basis->getDofCount(d,subcord);
           if (dofCount == 0) continue;
-          // otherwise, we want to insert the least locally-owned dof ordinal
-          LO leastLocalDofOrdinal = lo_invalid;
+          // otherwise, we want to insert the LID corresponding to the least globalID that is locally owned
+          GO leastGlobalDofOrdinal = go_invalid;
+          LO LID_leastGlobalDofOrdinal = lo_invalid;
           for (int basisOrdinalOrdinal=0; basisOrdinalOrdinal<dofCount; basisOrdinalOrdinal++)
           {
             int basisOrdinal = basis->getDofOrdinal(d,subcord,basisOrdinalOrdinal);
             int colLID = elementToNodeMap(cellOrdinal,basisOrdinal);
             if (colLID != Teuchos::OrdinalTraits<LO>::invalid())
             {
-              GlobalOrdinal colGID = columnMap->getGlobalElement(colLID);
-              LocalOrdinal rowLID = rowMap->getLocalElement(colGID);
+              GlobalOrdinal colGID = columnMap.getGlobalElement(colLID);
+              LocalOrdinal rowLID = rowMap.getLocalElement(colGID);
               if (rowLID != lo_invalid)
               {
-                if (leastLocalDofOrdinal == lo_invalid)
+                if ((leastGlobalDofOrdinal == go_invalid) || (colGID < leastGlobalDofOrdinal))
                 {
                   // replace with rowLID
-                  leastLocalDofOrdinal = rowLID;
-                }
-                else
-                {
-                  leastLocalDofOrdinal = (rowLID < leastLocalDofOrdinal) ? rowLID : leastLocalDofOrdinal;
+                  leastGlobalDofOrdinal = colGID;
+                  LID_leastGlobalDofOrdinal = rowLID;
                 }
               }
             }
           }
-          if (leastLocalDofOrdinal != lo_invalid)
+          if (leastGlobalDofOrdinal != go_invalid)
           {
-            seedSets[d].insert(leastLocalDofOrdinal);
+            seedSets[d].insert(LID_leastGlobalDofOrdinal);
           }
         }
       }

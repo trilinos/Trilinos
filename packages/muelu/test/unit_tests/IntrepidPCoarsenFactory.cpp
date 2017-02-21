@@ -941,8 +941,7 @@ namespace MueLuTests {
     RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
     typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP, rowMapRCP, colMapRCP;
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-    //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     
     for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
     {
@@ -1090,7 +1089,7 @@ namespace MueLuTests {
         }
         
         MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, rankLocalElementToNodeMap,
-                                                                                                   seeds, rowMapRCP.ptr(), colMapRCP.ptr());
+                                                                                                   seeds, *rowMapRCP, *colMapRCP);
         
         if (seeds.size() != spaceDim + 1)
         {
@@ -1171,7 +1170,7 @@ namespace MueLuTests {
       Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMap = serialMapRCP.ptr();
       
       MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, elementToNodeMap,
-                                                                                                 seeds, serialMap, serialMap);
+                                                                                                 seeds, *serialMapRCP, *serialMapRCP);
       
       int spaceDim = basis->getBaseCellTopology().getDimension();
       if (seeds.size() != spaceDim + 1)
