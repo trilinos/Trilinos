@@ -11,51 +11,56 @@
 
 #include "Epetra_Vector.h"
 
+namespace panzer {
+namespace kokkos_utils {
+
 /** Convert a non-blocked thyra vector into a Kokkos view 
   */
 
 template <typename V>
-class Traits { };
+class VectorToViewTraits { };
 
 template < >
-class Traits<Epetra_Vector> {
+class VectorToViewTraits<Epetra_Vector> {
 public:
   typedef Kokkos::View<double*,Kokkos::HostSpace ,Kokkos::MemoryTraits<Kokkos::Unmanaged > > View;
   typedef Thyra::VectorBase<double> ThyraVector;
 };
 
 template < >
-class Traits<const Epetra_Vector> {
+class VectorToViewTraits<const Epetra_Vector> {
 public:
   typedef Kokkos::View<const double*,Kokkos::HostSpace ,Kokkos::MemoryTraits<Kokkos::Unmanaged > > View;
   typedef const Thyra::VectorBase<double> ThyraVector;
 };
 
 template <typename VectorType>
-typename Traits<VectorType>::View
-getKokkosView(typename Traits<VectorType>::ThyraVector & v);
-
+typename VectorToViewTraits<VectorType>::View
+getView(typename VectorToViewTraits<VectorType>::ThyraVector & v);
  
 template < >
-typename Traits<Epetra_Vector>::View
-getKokkosView<Epetra_Vector>(typename Traits<Epetra_Vector>::ThyraVector & v)
+typename VectorToViewTraits<Epetra_Vector>::View
+getView<Epetra_Vector>(typename VectorToViewTraits<Epetra_Vector>::ThyraVector & v)
 {
   auto values = Teuchos::ptr_dynamic_cast<Thyra::DefaultSpmdVector<double> >(Teuchos::ptrFromRef(v))->getRCPtr();
 
-  Traits<Epetra_Vector>::View view(values.get(),values.size());
+  VectorToViewTraits<Epetra_Vector>::View view(values.get(),values.size());
  
   return view;
 }
 
 template < >
-typename Traits<const Epetra_Vector>::View
-getKokkosView<const Epetra_Vector>(typename Traits<const Epetra_Vector>::ThyraVector & v)
+typename VectorToViewTraits<const Epetra_Vector>::View
+getView<const Epetra_Vector>(typename VectorToViewTraits<const Epetra_Vector>::ThyraVector & v)
 {
   auto values = Teuchos::ptr_dynamic_cast<const Thyra::DefaultSpmdVector<double> >(Teuchos::ptrFromRef(v))->getRCPtr();
 
-  Traits<const Epetra_Vector>::View view(values.get(),values.size());
+  VectorToViewTraits<const Epetra_Vector>::View view(values.get(),values.size());
  
   return view;
+}
+
+}
 }
 
 #endif
