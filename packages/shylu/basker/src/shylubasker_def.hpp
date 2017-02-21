@@ -147,6 +147,7 @@ namespace BaskerNS
 
     //NDE: sfactor_copy2 replacement
     FREE_INT_1DARRAY(vals_perm_composition);
+    FREE_INT_1DARRAY(vals_crs_transpose);
     //FREE_ENTRY_1DARRAY(input_vals_unordered);
 
     //NDE: Free workspace and permutation arrays
@@ -313,12 +314,13 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Symbolic
   (
-   Int nrow, 
+   Int nrow,  // NDE: Possible error here for non-square matrix - passed in as nrow of *petra CRS matrix, NOT the same as nrow of CCS (i.e. transpose of CRS)
    Int ncol,
    Int nnz, 
    Int *col_ptr, 
    Int *row_idx, 
-   Entry *val
+   Entry *val,
+   bool crs_transpose_needed
   )
   {
     #ifdef BASKER_TIMER 
@@ -329,6 +331,23 @@ namespace BaskerNS
     double time = 0.0;
     Kokkos::Timer timer;
     #endif
+
+//NDE: For testing...
+//    BASKER_MATRIX Atemp;
+//    Atemp.init_matrix("Test Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+
+    // Now check transpose Atemp compared to input val + perm
+    /*
+    for ( Int i = 0; i < nnz; ++i ) {
+      //if ( val[ vals_crs_transpose(i) ] != Atemp.val(i) ) 
+      if ( Atemp.val( vals_crs_transpose(i) ) != val[i] ) {
+        std::cout << "  val with transpose input and Atemp.val do not agree " << std::endl;
+        std::cout << "  val at (i,vt(i)) = " << i <<","<< vals_crs_transpose(i) << " is " << val[vals_crs_transpose(i)] << "   Atemp.val = " << Atemp.val(i) << std::endl;
+      }
+    }
+    std::cout << "  FIRST transpose check done... " << std::endl;
+    */
+
 
     /*
     // used for testing and comparison
@@ -356,16 +375,246 @@ namespace BaskerNS
       Kokkos::Timer timer_init;
       #endif
 
+      // NDE: New for Amesos2 CRS mods
+      MALLOC_INT_1DARRAY(vals_crs_transpose,nnz);
+      for( Int i = 0; i < nnz; ++i ){
+        vals_crs_transpose(i) = i; // init vals permutation due to transpose
+      }
+
       if(Options.transpose == BASKER_FALSE)
       {
         A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
         A.scol = 0;
         A.srow = 0;
+
+        // NDE: New for Amesos2 CRS mods
+        if ( crs_transpose_needed ) {
+          matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose); //NDE: TODO Change Atemp to A
+        }
       }
       else
       {
         //Will transpose and put in A using little extra
         matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
+        // NDE: How should transpose be handled special case (when CRS format comes in)? null op, i.e. transpose of transpose yields original input?
+      }
+      sort_matrix(A);
+
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker Matrix Loaded \n");
+      }
+
+      if(Options.verbose_matrix_out == BASKER_TRUE)
+      {
+        printMTX("A_Symbolic.mtx", A);
+      }
+
+      matrix_flag = BASKER_TRUE;
+
+      #ifdef BASKER_TIMER
+      init_time += timer_init.seconds();
+      std::cout << "Basker Symbolic matrix init time: " << init_time << std::endl;
+      #endif
+    }
+
+    //Init Ordering
+    //Always will do btf_ordering
+    //This should also call create tree
+    if(order_flag == BASKER_TRUE)
+    {
+      printf("BASKER: YOU CANNOT RERUN ORDER\n");
+      return BASKER_ERROR;
+    }
+    else
+    {
+      //btf_order();
+      #ifdef BASKER_TIMER
+      double order_time = 0.0;
+      Kokkos::Timer timer_order;
+      #endif
+      /*
+         if(Options.incomplete == BASKER_TRUE)
+         {
+           order_incomplete();
+         }
+         else
+         {
+           btf_order2();
+         }
+      */
+
+      btf_order2(); // NDE: this seems to always be called - does there need to be a case when btf is not enabled?
+
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker Ordering Found \n");
+      }
+
+      if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
+      {
+        basker_barrier.init(num_threads, 16, tree.nlvls );
+      }
+      order_flag = BASKER_TRUE;
+
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker P2P Thread Barriers Init\n");
+      }
+
+      #ifdef BASKER_TIMER
+      order_time += timer_order.seconds();
+      std::cout << "Basker Symbolic order arrays time: " << order_time << std::endl;
+      #endif
+    }
+
+    if(symb_flag == BASKER_TRUE)
+    {
+      printf("BASKER: YOU CANNOT RERUN SFACTOR\n");
+      return BASKER_ERROR;
+    }
+    else
+    {
+      #ifdef BASKER_TIMER
+      double sfactor_time = 0.0;
+      Kokkos::Timer timer_sfactor;
+      #endif
+      if(Options.incomplete == BASKER_FALSE)
+      {
+        sfactor();
+      }
+      else
+      {
+        sfactor_inc();
+      }
+      #ifdef BASKER_TIMER
+      sfactor_time += timer_sfactor.seconds();
+      std::cout << "Basker Symbolic sfactor time: " << sfactor_time << std::endl;
+      #endif
+
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker Nonzero Counts Found \n");
+      }
+      symb_flag = BASKER_TRUE;
+    }
+
+
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("Basker Symbolic Done \n");
+    }
+
+    #ifdef BASKER_TIMER
+    time = timer.seconds();
+    stats.time_sfactor += time;
+    std::cout << "Basker Symbolic total time: " << time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
+
+    // NDE store matrix dims here
+    sym_gn = A.ncol;
+    sym_gm = A.nrow;
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+    MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
+    MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
+
+    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, sym_gn); 
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
+    permute_composition_for_solve(sym_gn);
+
+    return 0;
+  }//end Symbolic()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::Symbolic
+  (
+   Int nrow,  // NDE: Possible error here for non-square matrix - passed in as nrow of *petra CRS matrix, NOT the same as nrow of CCS (i.e. transpose of CRS)
+   Int ncol,
+   Int nnz, 
+   const unsigned long *col_ptr, 
+   Int *row_idx, 
+   Entry *val,
+   bool crs_transpose_needed
+  )
+  {
+    #ifdef BASKER_TIMER 
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double time = 0.0;
+    Kokkos::Timer timer;
+    #endif
+
+//NDE: For testing...
+//    BASKER_MATRIX Atemp;
+//    Atemp.init_matrix("Test Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+
+    // Now check transpose Atemp compared to input val + perm
+    /*
+    for ( Int i = 0; i < nnz; ++i ) {
+      //if ( val[ vals_crs_transpose(i) ] != Atemp.val(i) ) 
+      if ( Atemp.val( vals_crs_transpose(i) ) != val[i] ) {
+        std::cout << "  val with transpose input and Atemp.val do not agree " << std::endl;
+        std::cout << "  val at (i,vt(i)) = " << i <<","<< vals_crs_transpose(i) << " is " << val[vals_crs_transpose(i)] << "   Atemp.val = " << Atemp.val(i) << std::endl;
+      }
+    }
+    std::cout << "  FIRST transpose check done... " << std::endl;
+    */
+
+
+    /*
+    // used for testing and comparison
+    MALLOC_ENTRY_1DARRAY(input_vals_unordered,nnz);
+    for( Int i = 0; i < nnz; ++i ) { //sfactor_copy2 replacement: setup for testing success of perms
+      input_vals_unordered(i) = val[i];
+    } 
+    */
+
+    if(Options.verbose == BASKER_TRUE)
+    {
+      std::cout << "Basker Symbolic" << std::endl;
+      std::cout << "Matrix dims: " << nrow << " " << ncol << " " << nnz << std::endl;
+    }
+    //Init Matrix A.
+    if(matrix_flag == BASKER_TRUE)
+    {
+      printf("BASKER: YOU CANNOT RERUN SYMBOLIC\n");
+      return BASKER_ERROR;
+    }
+    else
+    {
+      #ifdef BASKER_TIMER
+      double init_time = 0.0;
+      Kokkos::Timer timer_init;
+      #endif
+
+      // NDE: New for Amesos2 CRS mods
+      MALLOC_INT_1DARRAY(vals_crs_transpose,nnz);
+      for( Int i = 0; i < nnz; ++i ){
+        vals_crs_transpose(i) = i; // init vals permutation due to transpose
+      }
+
+      if(Options.transpose == BASKER_FALSE)
+      {
+        A.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+        A.scol = 0;
+        A.srow = 0;
+
+        // NDE: New for Amesos2 CRS mods
+        if ( crs_transpose_needed ) {
+          matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose); //NDE: TODO Change Atemp to A
+        }
+      }
+      else
+      {
+        //Will transpose and put in A using little extra
+        matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
+        // NDE: How should transpose be handled special case (when CRS format comes in)? null op, i.e. transpose of transpose yields original input?
       }
       sort_matrix(A);
 
@@ -582,7 +831,7 @@ namespace BaskerNS
             BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
-        //      if ( BTF_C.nnz != 0 ) {// this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+        //      if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
         if ( btfc_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
             BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
@@ -673,6 +922,300 @@ namespace BaskerNS
     return 0;
   }//end Factor()
 
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::Factor
+  (
+   Int nrow,
+   Int ncol,
+   Int nnz, 
+   const unsigned long *col_ptr, // Added for changes to Ameso2 interface with Basker
+   Int *row_idx, 
+   Entry *val
+  ) 
+  {
+    #ifdef BASKER_TIMER
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double time = 0.0;
+    Kokkos::Timer timer;
+    #endif
+
+    int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
+
+    //sfactor_copy2 stuff
+    // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
+    // WARNING! This may require a sort step first if CRS matrix input - make sure Symbolic matches input pattern ie CCS vs CRS
+    //BASKER_MATRIX M;
+    //M.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+    //sort_matrix(M);
+    //MALLOC_ENTRY_1DARRAY(input_vals_unordered,nnz);
+    //for( Int i = 0; i < nnz; ++i ) { //sfactor_copy2 replacement: setup for testing success of perms
+    //  input_vals_unordered(i) = M.val(i);
+    //}
+
+    // new vars needed
+    //inv_vals_order_ndbtfa_array, inv_vals_order_ndbtfb_array, inv_vals_order_ndbtfc_array
+    //vals_block_map_perm_pair, vals_perm_composition
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer copyperm_timer;
+    #endif
+    if ( btf_nblks > 1 ) { //non-single block case
+      for( Int i = 0; i < nnz; ++i ) {
+        A.val(i) = val[ vals_perm_composition(i) ];
+        if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label should account for this anyway?
+          if ( vals_block_map_perm_pair(i).first == 0 ) { //in BTF_A
+            BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+        if ( btfb_nnz != 0 ) {
+          if ( vals_block_map_perm_pair(i).first == 1 ) { //in BTF_B
+            BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+        //      if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+        if ( btfc_nnz != 0 ) {
+          if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
+            BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+      } //end for
+    } //end if
+    else if ( btf_nblks == 1 )
+    {
+      for( Int i = 0; i < nnz; ++i ) {
+//        A.val(i) = val[ i ]; //this along with BTF_A = A (without permuting)  works with the SolverFactory test matrix... - maybe the btf ordering and nd ordering turned out to be inverses for that matrix...
+        BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ]; // BTF_A = A assigned during Symbolic (break_into_parts2) for this case; thus, identity map between A.val indices and BTF_A.val indices
+        // for btf_nblks = 1 case, btf_tabs_offset set to 1 and possible to still apply nested dissection on BTF_A (i.e. A itself)
+      }
+//      BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
+    } //end single block case
+    else {
+      std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
+        //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
+      return BASKER_ERROR;
+    }
+
+    #ifdef BASKER_TIMER
+    std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
+    #endif
+    //end sfactor_copy2 replacement stuff
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_sfactorcopy;
+    double sfactorcopy_time = 0.0;
+    #endif
+
+    // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
+    err = sfactor_copy2();
+
+    #ifdef BASKER_TIMER
+    sfactorcopy_time += timer_sfactorcopy.seconds();
+    std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+    #endif
+    if(err == BASKER_ERROR)
+    { return BASKER_ERROR; }
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_factornotoken;
+    double fnotoken_time = 0.0;
+    #endif
+
+    if(Options.incomplete == BASKER_FALSE)    
+    {
+      err = factor_notoken(0);
+    }
+    else
+    {
+      err = factor_inc_lvl(0);
+    }
+
+    #ifdef BASKER_TIMER
+    fnotoken_time += timer_factornotoken.seconds();
+    std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
+    #endif
+
+    if(err == BASKER_ERROR)
+    { 
+      printf("ShyLUBasker factor_notoken/inc_lvl error returned\n");
+      return BASKER_ERROR; 
+    }
+
+    if ( sym_gn != gn || sym_gm != gm ) {
+      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree - Symbolic reordered structure will not apply.\n");
+      exit(EXIT_FAILURE);
+      //return BASKER_ERROR; 
+    }
+
+    if(Options.verbose == BASKER_TRUE)
+    { printf("Basker Factor Done \n"); }
+
+    //DEBUG_PRINT();
+
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Factor total time: " << time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
+
+    factor_flag = BASKER_TRUE;
+
+    return 0;
+  }//end Factor()
+
+
+/*
+  template <class Int, class Entry, class Exe_Space, class CPtrInt, class IdxInt>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::Factor
+  (
+   Int nrow, 
+   Int ncol,
+   Int nnz, 
+   CPtrInt *col_ptr, 
+   IdxInt *row_idx, 
+   Entry *val,
+   Int need_transpose
+  ) 
+  {
+    #ifdef BASKER_TIMER
+    std::ios::fmtflags old_settings = cout.flags();
+    int old_precision = std::cout.precision();
+    std::cout.setf(ios::fixed, ios::floatfield);
+    std::cout.precision(8);
+    double time = 0.0;
+    Kokkos::Timer timer;
+    #endif
+
+    int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
+
+    //sfactor_copy2 stuff
+    // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
+    // WARNING! This may require a sort step first if CRS matrix input - make sure Symbolic matches input pattern ie CCS vs CRS
+    //BASKER_MATRIX M;
+    //M.init_matrix("Original Matrix", nrow, ncol, nnz, col_ptr, row_idx, val);
+    //sort_matrix(M);
+    //MALLOC_ENTRY_1DARRAY(input_vals_unordered,nnz);
+    //for( Int i = 0; i < nnz; ++i ) { //sfactor_copy2 replacement: setup for testing success of perms
+    //  input_vals_unordered(i) = M.val(i);
+    //}
+
+    // new vars needed
+    //inv_vals_order_ndbtfa_array, inv_vals_order_ndbtfb_array, inv_vals_order_ndbtfc_array
+    //vals_block_map_perm_pair, vals_perm_composition
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer copyperm_timer;
+    #endif
+    if ( btf_nblks > 1 ) { //non-single block case
+      for( Int i = 0; i < nnz; ++i ) {
+        A.val(i) = val[ vals_perm_composition(i) ];
+        if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label should account for this anyway?
+          if ( vals_block_map_perm_pair(i).first == 0 ) { //in BTF_A
+            BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+        if ( btfb_nnz != 0 ) {
+          if ( vals_block_map_perm_pair(i).first == 1 ) { //in BTF_B
+            BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+        //      if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+        if ( btfc_nnz != 0 ) {
+          if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
+            BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
+          }
+        }
+      } //end for
+    } //end if
+    else if ( btf_nblks == 1 )
+    {
+      for( Int i = 0; i < nnz; ++i ) {
+//        A.val(i) = val[ i ]; //this along with BTF_A = A (without permuting)  works with the SolverFactory test matrix... - maybe the btf ordering and nd ordering turned out to be inverses for that matrix...
+        BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ]; // BTF_A = A assigned during Symbolic (break_into_parts2) for this case; thus, identity map between A.val indices and BTF_A.val indices
+        // for btf_nblks = 1 case, btf_tabs_offset set to 1 and possible to still apply nested dissection on BTF_A (i.e. A itself)
+      }
+//      BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
+    } //end single block case
+    else {
+      std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
+        //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
+      return BASKER_ERROR;
+    }
+
+    #ifdef BASKER_TIMER
+    std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
+    #endif
+    //end sfactor_copy2 replacement stuff
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_sfactorcopy;
+    double sfactorcopy_time = 0.0;
+    #endif
+
+    // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
+    err = sfactor_copy2();
+
+    #ifdef BASKER_TIMER
+    sfactorcopy_time += timer_sfactorcopy.seconds();
+    std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+    #endif
+    if(err == BASKER_ERROR)
+    { return BASKER_ERROR; }
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_factornotoken;
+    double fnotoken_time = 0.0;
+    #endif
+
+    if(Options.incomplete == BASKER_FALSE)    
+    {
+      err = factor_notoken(0);
+    }
+    else
+    {
+      err = factor_inc_lvl(0);
+    }
+
+    #ifdef BASKER_TIMER
+    fnotoken_time += timer_factornotoken.seconds();
+    std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
+    #endif
+
+    if(err == BASKER_ERROR)
+    { 
+      printf("ShyLUBasker factor_notoken/inc_lvl error returned\n");
+      return BASKER_ERROR; 
+    }
+
+    if ( sym_gn != gn || sym_gm != gm ) {
+      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree - Symbolic reordered structure will not apply.\n");
+      exit(EXIT_FAILURE);
+      //return BASKER_ERROR; 
+    }
+
+    if(Options.verbose == BASKER_TRUE)
+    { printf("Basker Factor Done \n"); }
+
+    //DEBUG_PRINT();
+
+    #ifdef BASKER_TIMER
+    time += timer.seconds();
+    std::cout << "Basker Factor total time: " << time << std::endl;
+    std::cout.precision(old_precision);
+    std::cout.flags(old_settings);
+    #endif
+
+    factor_flag = BASKER_TRUE;
+
+    return 0;
+  }//end Factor()
+*/
 
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)

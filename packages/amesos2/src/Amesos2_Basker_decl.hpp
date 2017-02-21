@@ -103,8 +103,10 @@ public:
 
   typedef FunctionMap<Amesos2::Basker,slu_type>               function_map;
 
+  typedef Matrix  matrix_type;
 
-  Basker(Teuchos::RCP<const Matrix> A,
+
+  Basker( Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
    ~Basker( );
@@ -191,10 +193,6 @@ private:
   mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
   /// Persisting 1D store for B
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
-
-
-  int transpose_needed; // NDE: new, added for special case with ShyLUBasker where the Tpetra CRS info is passed directly to Basker - will need transpose after received
-
 
     /*Handle for Basker object*/
  

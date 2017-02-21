@@ -84,9 +84,6 @@ Basker<Matrix,Vector>::Basker(
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
-
-  transpose_needed = 0; // NDE: New, will pass 'true' to ShyLUBasker if passing CRS matrix pointers rather than CCS
-
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental Basker Amesos2");
@@ -152,25 +149,61 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
   
 #ifdef SHYLUBASKER
+
   if(this->root_)
     {     
+      int info = 0;
+
       //std::cout << "setting number of threads " 
       //	<< num_threads << std::endl;
       basker->SetThreads(num_threads); 
       //std::cout << "Set Threads Done" << std::endl;
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+
+    #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before symbolic factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+    #endif
+
+      // NDE: Special case 
+      // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
+      // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
+      //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
+      if ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) {
+
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
+        auto sp_colind = this->matrixA_->returnColInd();
+        auto sp_values = this->matrixA_->returnValues();
+
+        // This will require mods and extra impl of Symbolic
+  //TODO: SWITCH THIS ONCE CONVERSION COMPLETE!!!!
+#if 0
+        info = basker->Symbolic(this->globalNumRows_, 
+                                this->globalNumCols_, 
+                                this->globalNumNonZeros_, 
+                                colptr_.getRawPtr(), 
+                                rowind_.getRawPtr(), 
+                                nzvals_.getRawPtr(),true);
+#else
+        info = basker->Symbolic(this->globalNumRows_, 
+                               this->globalNumCols_, 
+                               this->globalNumNonZeros_, 
+                               sp_rowptr,
+                               sp_colind,
+                               sp_values,
+                               true);
 #endif
-      int info;
-      info =basker->Symbolic(this->globalNumRows_, 
-                            this->globalNumCols_, 
-                            this->globalNumNonZeros_, 
-                            colptr_.getRawPtr(), 
-                            rowind_.getRawPtr(), 
-                            nzvals_.getRawPtr());
+      }
+      else { //follow original code path if conditions not met
+
+        info =basker->Symbolic(this->globalNumRows_, 
+                               this->globalNumCols_, 
+                               this->globalNumNonZeros_, 
+                               colptr_.getRawPtr(), 
+                               rowind_.getRawPtr(), 
+                               nzvals_.getRawPtr());
+      }
       //std::cout << "Symbolic Factorization Done" << std::endl; 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
 				 std::runtime_error,
@@ -193,26 +226,85 @@ Basker<Matrix,Vector>::numericFactorization_impl()
   int info = 0;
   if ( this->root_ ){
     { // Do factorization
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
-#endif
+  #endif
 
- #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+  #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before numeric factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-     std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-    #endif
+      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+  #endif
 
      
 #ifdef SHYLUBASKER
+      // NDE: Special case 
+      // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
+      // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
+      //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
+      if ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) { // outer if check if this is root_
+
+#if 1
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
+        auto sp_colind = this->matrixA_->returnColInd();
+        auto sp_values = this->matrixA_->returnValues();
+#else
+        // NDE: Issues trying cast away const_ness... 
+        //using const_rowptr_type = typename super_type::matrix_adapter_type::spmtx_ptr_t;
+        //using nonconst_rowptr_type = typename std::remove_const<const_rowptr_type>::type;
+        //nonconst_rowptr_type sp_rowptr= const_cast<nonconst_rowptr_type>( this->matrixA_->returnRowPtr );
+        //nonconst_rowptr_type ncsp_rowptr = const_cast<nonconst_rowptr_type>( this->matrixA_->returnRowPtr );
+        //int* sp_rowptr = static_cast<int*>(ncsp_rowptr);
+//        int* sp_rowptr = static_cast<int*>(const_cast<nonconst_rowptr_type>( this->matrixA_->returnRowPtr()) ); // NDE: this forces match with Basker's expected input, but not right way to do this
+        //int* sp_rowptr = static_cast<int*>(const_cast<typename super_type::matrix_adapter_type::spmtx_ptr_t>( this->matrixA_->returnRowPtr()) ); 
+
+
+//        int* sp_rowptr = this->matrixA_->returnRowPtr(); 
+//        const long* sp_rowptr = static_cast<const long*>(this->matrixA_->returnRowPtr()); 
+
+        using sp_ptr_type = typename MatrixTraits<matrix_type>::sparse_ptr_type ;
+        using nonconst_rowptr_type = typename std::remove_const<sp_ptr_type>::type;
+
+        nonconst_rowptr_type sp_rowptr = const_cast<nonconst_rowptr_type>(this->matrixA_->returnRowPtr() ); //NDE - this works, but no match in Basker
+//        const int* sp_rowptr = static_cast<const int*>(this->matrixA_->returnRowPtr() ); //NDE - does not work.. 
+        //const long* sp_rowptr = static_cast<const long*>(this->matrixA_->returnRowPtr() ); //NDE - many type conversion problems when trying to pass to Basker
+        // Can I wrap this in an ArrayView????
+
+        int* sp_colind = static_cast<int*>( this->matrixA_->returnColInd() ); // NDE: Create Basker overload that receives const pointers
+        double* sp_values = static_cast<double*>( this->matrixA_->returnValues() );
+#endif
+        // At this point, dealing with CRS, will need transpose
+        //std::cout << "Calling Basker modded Factor...."<<std::endl;
+
+  //TODO: SWITCH THIS ONCE CONVERSION COMPLETE!!!!
+#if 1
+        info = basker->Factor( this->globalNumRows_,
+            this->globalNumCols_, 
+            this->globalNumNonZeros_, 
+            sp_rowptr,  // type does not match what Basker is expecting - tpetra returns const long unsigned int*, not int*; what is best thing to do? 
+            sp_colind,
+            sp_values);
+#else
+        info = basker->Factor(this->globalNumRows_,
+                            this->globalNumCols_, 
+                            this->globalNumNonZeros_, 
+                            colptr_.getRawPtr(), 
+                            rowind_.getRawPtr(), 
+                            nzvals_.getRawPtr()); // NDE: Add defaulted parameter to Factor() to indicate transpose needed
+
+#endif
+      }
+      else { // prep for calling the original way if these conditions are not met
+
       info = basker->Factor(this->globalNumRows_,
-                           this->globalNumCols_, 
-                           this->globalNumNonZeros_, 
-                           colptr_.getRawPtr(), 
-                           rowind_.getRawPtr(), 
-                           nzvals_.getRawPtr());
+                            this->globalNumCols_, 
+                            this->globalNumNonZeros_, 
+                            colptr_.getRawPtr(), 
+                            rowind_.getRawPtr(), 
+                            nzvals_.getRawPtr()); // NDE: Add defaulted parameter to Factor() to indicate transpose needed
       //We need to handle the realloc options
+      }
 
       //basker->DEBUG_PRINT();
 
@@ -221,9 +313,8 @@ Basker<Matrix,Vector>::numericFactorization_impl()
 				 "Error Basker Factor");
 
 #else
-     
       info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
-     #endif
+#endif
 
     }
 
@@ -460,11 +551,12 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE) return (false);
 
-#ifdef SHYLUBASKER
-
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
+  #endif
+
+#ifdef SHYLUBASKER
+  // NDE: Once ready to pass CRS pointers to Basker, skip this routine and simply return 'true'
 
     // NDE: Purpose of this function is to copy SolverCopy matrixA_ to
     // CCS members in the Basker ConcreteSolver (in CCS format)
@@ -525,122 +617,69 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     // This special case will work if rank == 1, numproc = 1, and this->root_ is true...
 
 
-// NDE: Pre-existing functionality below - try and reduce code duplication...
-
   if ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) {
-
-    transpose_needed = 1; // Basker responsible for transposing the matrix to convert CRS to CCS
-
-    EMatrix_Type enum_type = this->matrixA_->get_matrix_type_info_as_int() ;
-    std::cout << "  check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl; //output test
-
-      auto sp_rowptr = this->matrixA_->returnRowPtr();
-      auto sp_colind = this->matrixA_->returnColInd();
-      auto sp_values = this->matrixA_->returnValues();
-
-    if ( enum_type == TPETRA ) {
-      std::cout << "  check matrix type by enum returned tpetra: " << enum_type << std::endl;
-
-      if ( sp_rowptr == 0 ) {
-        std::cout << " tpetra null " << std::endl;
-      }
-      else {
-        std::cout << " tpetra not null" << std::endl;
-      }
-
-      // call numericFactorization_impl by simply passing the Tpetra views
-
-      // next steps - probably in the AbstractConcreteMatrixAdapter classes (like for get_matrix_type_info) add routines to return pointers/views of 
-      // can't do this now, since can't access the underlying matrix directly
-      // rowptr, colind, values - try using auto to get the return type right
-      // Experiment doing this with Tpetra; may need to use auto
-      //
-      // NOTE: This syntax seems to work in the ACMA Tpetra impl functions (which have access to mat_)
-      //quick experiment...
-      //typename super_t::matrix_t::local_matrix_type lm = this->mat_->getLocalMatrix();
-      //
-      // With Tpetra, looks like the local_graph contains the rowptr and colind views, and the local_matrix contains the values - need to figure out 
-      // proper function calls to extract these (and return)
-      // However, return type of view (tpetra) and raw pointer (epetra) may cause a conflict for generic routine
-      //
-      // In Basker, new routine will need to take Views directly, or raw pointers (to be wrapped in views) and transposed...
-      /*
-      size_t rowNNZ = get_mat->getGlobalRowNNZ(*row_it);
-      size_t nnzRet = OrdinalTraits<size_t>::zero();
-      ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ); 
-        // this gives colind_view access (locally indexed from 0) to colind, starting at rowInd through rowInd+rowNNZ
-      ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
-      
-      get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet); //this copies, for row # row_it, values from the Tpetra matrix identified with get_map (from rowmap input) into the ArrayViews colind_view and nzval_view, and returns the number of nonzeros nnzRet copied into each of those. 
-      for (size_t rr = 0; rr < nnzRet ; rr++)
-      {
-          colind_view[rr] = colind_view[rr] - rmap->getIndexBase();
-      }
-      */
-
-    }
-    else if ( enum_type == EPETRA ) {
-      std::cout << "  check matrix type by enum returned epetra: " << enum_type << std::endl;
-
-      if ( sp_rowptr == 0 ) {
-        std::cout << " epetra null " << std::endl;
-      }
-      else {
-        std::cout << " epetra not null" << std::endl;
-      }
-      // call numericFactorization_impl by simply passing the raw Epetra pointers
-      // Should all of this be moved to numericFactorization, and short-circuit call to loadA and loadA_impl altogether? 
-      // Or should local ArrayViews wrap the CRS pointers/views from the matrices??
-
-      // Will skip this for now...
-
+  // NDE: Should full code get run during symbolicFactorization???
+  //TODO: REMOVE ALL THIS ONCE CONVERSION COMPLETE!!!!
+#if 1
+#else
+    if( this->root_ ){
+      nzvals_.resize(this->globalNumNonZeros_);
+      rowind_.resize(this->globalNumNonZeros_);
+      colptr_.resize(this->globalNumCols_ + 1);
     }
 
-/*
-  #ifdef HAVE_AMESOS2_EPETRA // is this sufficient? Either Epetra or Tpetra should be used, never a mix, write? Also, if this is activated, does it mean epetra is used or simply enabled???
-    std::cout << "  Have Epetra - is this setting detected by enabling epetra during trilinos configuration, or manually set?? " << std::endl;
-    //this->matrixA_->description(); // Does not seem to be defined properly for Epetra_CrsMatrix types...
-    std::cout << "  Epetra: check matrix type by value call: " << this->matrixA_->get_matrix_type_info_as_int() << std::endl;
-  #endif
-*/
+    local_ordinal_type nnz_ret = 0;
+    {
+    #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+    #endif
+      std::cout << "  Amesos2 Basker: Cal get_ccs_helper for loadA_impl" << std::endl;
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+    }
 
-
-
-  } // end special case
-  // else {    // wrap the alternative code path once the special case impl is complete
-
-  // Only the root image needs storage allocated
-  if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    rowind_.resize(this->globalNumNonZeros_);
-    colptr_.resize(this->globalNumCols_ + 1);
-  }
-
-  local_ordinal_type nnz_ret = 0;
-  {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+    // NDE: If skipping do_get call above, this check should be skipped as well as nnz_ret will not be updated
+    if( this->root_ ){
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+          std::runtime_error,
+          "Did not get the expected number of non-zero vals");
+    }
 #endif
-    std::cout << "  Amesos2 Basker: Cal get_ccs_helper for loadA_impl" << std::endl;
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-    ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-             nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
   }
+  else {
 
-  // NDE: If skipping do_get call above, this check should be skipped as well as nnz_ret will not be updated
-  if( this->root_ ){
-    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
-                        std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
-  }
+    // Only the root image needs storage allocated
+    if( this->root_ ){
+      nzvals_.resize(this->globalNumNonZeros_);
+      rowind_.resize(this->globalNumNonZeros_);
+      colptr_.resize(this->globalNumCols_ + 1);
+    }
 
-  //} //end alternative path 
+    local_ordinal_type nnz_ret = 0;
+    {
+    #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+    #endif
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+    }
+
+    if( this->root_ ){
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+          std::runtime_error,
+          "Did not get the expected number of non-zero vals");
+    }
+
+  } //end alternative path 
 #else // Not ShyLU Basker
 
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
+  #endif
 
   // Only the root image needs storage allocated
   if( this->root_ ){
@@ -651,10 +690,9 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   local_ordinal_type nnz_ret = 0;
   {
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-#endif
-    std::cout << "  Amesos2 Basker: Cal get_ccs_helper for loadA_impl" << std::endl;
+  #endif
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
     ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
@@ -666,7 +704,7 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
   }
-#endif
+#endif //SHYLUBASKER
   return true;
 }
 

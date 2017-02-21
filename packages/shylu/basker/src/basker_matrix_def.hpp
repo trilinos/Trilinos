@@ -154,6 +154,20 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   void BaskerMatrix<Int, Entry, Exe_Space>::copy_vec
   (
+   const unsigned long* ptr, Int size, INT_1DARRAY a
+  )
+  {
+    //Does Kokkos have a copy function
+    for(Int i=0; i < size; i++)
+    {
+      a(i) = ptr[i];
+    }
+
+  }//end copy_vec(Int*, 1d)
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int, Entry, Exe_Space>::copy_vec
+  (
    Entry* ptr, Int size, ENTRY_1DARRAY a
   )
   {
@@ -274,6 +288,23 @@ namespace BaskerNS
 
     init_vectors(_m, _n, _nnz);
   }//end init_matrix(Int, Int, Int, Int, Int)//srow and scol
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_matrix
+  (
+   string _label, Int _m, Int _n, Int _nnz,
+   const unsigned long*_col_ptr, Int *_row_idx, Entry *_val
+  )
+  {
+    label = _label;
+    init_vectors(_m, _n, _nnz);
+    copy_vec(_col_ptr, _n+1,  col_ptr);
+    copy_vec(_row_idx, _nnz, row_idx);
+    copy_vec(_val,_nnz,     val);
+  }//end init_matrix(string with ptrs)
+
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

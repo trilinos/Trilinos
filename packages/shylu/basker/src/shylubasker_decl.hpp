@@ -64,7 +64,10 @@ namespace BaskerNS
     int Symbolic(Int option);
 
     BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
+    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
+
+    BASKER_INLINE
+    int Symbolic(Int nrow, Int ncol, Int nnz, const unsigned long *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
     int Symbolic(Int nrow, Int ncol, Int nnz, size_t *col_ptr, Int *row_idx, Entry *val);
@@ -74,6 +77,12 @@ namespace BaskerNS
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
+
+    BASKER_INLINE
+    int Factor(Int nrow, Int ncol, Int nnz, const unsigned long *col_ptr, Int *row_idx, Entry *val);
+
+//    BASKER_INLINE
+//    int Factor(Int nrow, Int ncol, Int nnz, PtrInt *col_ptr, IdxInt *row_idx, Entry *val, Int need_transpose = 0);
 
     BASKER_INLINE
     int Factor_Inc(Int option);
@@ -1137,7 +1146,8 @@ namespace BaskerNS
     void matrix_transpose(BASKER_MATRIX_VIEW &, BASKER_MATRIX &);
 
     BASKER_INLINE
-    void matrix_transpose(const Int sm_, 
+    void matrix_transpose(
+        const Int sm_, 
         const Int m_,
 			  const Int sn_, 
         const Int n_,
@@ -1146,6 +1156,44 @@ namespace BaskerNS
 			  Int *row_idx,
 			  Entry *val,
 			  BASKER_MATRIX &AT);
+
+    BASKER_INLINE
+    void matrix_transpose(
+        const Int sm_, 
+        const Int m_,
+			  const Int sn_, 
+        const Int n_,
+			  const Int nnz_,
+			  const unsigned long *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT);
+
+    BASKER_INLINE
+    void matrix_transpose(
+        const Int sm_, 
+        const Int m_,
+			  const Int sn_, 
+        const Int n_,
+			  const Int nnz_,
+			  Int *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT,
+        INT_1DARRAY &vals_transpose_local);
+
+    BASKER_INLINE
+    void matrix_transpose(
+        const Int sm_, 
+        const Int m_,
+			  const Int sn_, 
+        const Int n_,
+			  const Int nnz_,
+			  const unsigned long *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT,
+        INT_1DARRAY &vals_transpose_local);
    
     //basker_solve_rhs.hpp
     BASKER_INLINE
@@ -1290,6 +1338,9 @@ namespace BaskerNS
     INT_1DARRAY inv_vals_order_ndbtfa_array;
     INT_1DARRAY inv_vals_order_ndbtfb_array;
     INT_1DARRAY inv_vals_order_ndbtfc_array;
+
+    // For transpose
+    INT_1DARRAY vals_crs_transpose; //this will store shuffling and sort of vals due to transpose
 
     // To hold the nnz and avoid some compiler errors if BTF_A.nnz undefined, for example
     Int btfa_nnz; 
