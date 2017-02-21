@@ -71,7 +71,6 @@ namespace Amesos2 {
 				const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
 				EStorage_Ordering ordering) const
   {
-    std::cout << "  getCrs 1" << std::endl;
     help_getCrs(nzval, colind, rowptr,
 		nnz, rowmap, ordering,
 		typename adapter_t::get_crs_spec());
@@ -86,7 +85,6 @@ namespace Amesos2 {
 				EDistribution distribution,
 				EStorage_Ordering ordering) const
   {
-    std::cout << "  getCrs 2" << std::endl;
     const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
 											this->getGlobalNumRows(),
@@ -300,7 +298,6 @@ namespace Amesos2 {
 				   EStorage_Ordering ordering,
 				   row_access ra) const
   {
-    std::cout << "  do_getCrs 1" << std::endl;
     using Teuchos::rcp;
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -329,8 +326,6 @@ namespace Amesos2 {
     ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
     if( node_elements.size() == 0 ) return; // no more contribution
     
-    std::cout << "  do_getCrs  node_elements.size = " << node_elements.size() << std::endl;
-
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
     row_end = node_elements.end();
 
@@ -377,7 +372,6 @@ namespace Amesos2 {
 				   EStorage_Ordering ordering,
 				   col_access ca) const
   {
-    std::cout << "  do_getCrs 2" << std::endl;
     using Teuchos::Array;
     // get the ccs and transpose
 
@@ -431,7 +425,6 @@ namespace Amesos2 {
 				   EStorage_Ordering ordering,
 				   row_access ra) const
   {
-    std::cout << "  calling do_getCcs 1" << std::endl;
     using Teuchos::Array;
     // get the crs and transpose
    
@@ -456,7 +449,6 @@ namespace Amesos2 {
 				   EStorage_Ordering ordering,
 				   col_access ca) const
   {
-    std::cout << "  calling do_getCcs 2" << std::endl;
     using Teuchos::RCP;
     using Teuchos::ArrayView;
     using Teuchos::OrdinalTraits;
@@ -483,7 +475,6 @@ namespace Amesos2 {
     global_ordinal_t colInd = OrdinalTraits<global_ordinal_t>::zero();
     int col_it_count = 0;
     for( col_it = node_elements.begin(); col_it != col_end; ++col_it ){
-        std::cout << "  do_getCcs: node_element # " << col_it_count << std::endl;
         ++col_it_count;
       colptr[colptr_ind++] = colInd;
       size_t colNNZ = getGlobalColNNZ(*col_it);

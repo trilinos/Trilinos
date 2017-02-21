@@ -222,6 +222,11 @@ namespace BaskerNS
     for( Int i = 0; i < A.nnz; ++i ){
       vals_perm_composition(i) = i; //this will store the composition of permutations and sorts due to btf with respect to the full val array
     }
+
+    // NDE: New for Amesos2 CRS changes
+    // compose the transpose+sort permutations with the running 'total' composition
+    // Note: This is wasted work if the 'special case' is not hit
+    permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
     //sort_matrix(A); //(need)
     sort_matrix_store_valperms(A, vals_perm_composition);
     match_ordering(0);
