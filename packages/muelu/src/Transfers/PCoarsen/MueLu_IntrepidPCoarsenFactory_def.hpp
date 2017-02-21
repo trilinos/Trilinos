@@ -101,7 +101,69 @@ inline std::string tolower(const std::string & str) {
   return data;
 }
 
-
+  template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
+                                 std::vector<std::vector<LocalOrdinal>> &seeds,
+                                 Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowMap,
+                                 Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> columnMap)
+  {
+    shards::CellTopology cellTopo = basis->getBaseCellTopology();
+    int spaceDim = cellTopo.getDimension();
+    seeds.clear();
+    seeds.resize(spaceDim + 1);
+    typedef LocalOrdinal LO;
+    
+    LocalOrdinal lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    
+    std::vector<std::set<LocalOrdinal>> seedSets(spaceDim+1);
+    
+    int numCells = elementToNodeMap.dimension(0);
+    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    {
+      for (int d=0; d<=spaceDim; d++)
+      {
+        int subcellCount = cellTopo.getSubcellCount(d);
+        for (int subcord=0; subcord<subcellCount; subcord++)
+        {
+          int dofCount = basis->getDofCount(d,subcord);
+          if (dofCount == 0) continue;
+          // otherwise, we want to insert the least locally-owned dof ordinal
+          LO leastLocalDofOrdinal = lo_invalid;
+          for (int basisOrdinalOrdinal=0; basisOrdinalOrdinal<dofCount; basisOrdinalOrdinal++)
+          {
+            int basisOrdinal = basis->getDofOrdinal(d,subcord,basisOrdinalOrdinal);
+            int colLID = elementToNodeMap(cellOrdinal,basisOrdinal);
+            if (colLID != Teuchos::OrdinalTraits<LO>::invalid())
+            {
+              GlobalOrdinal colGID = columnMap->getGlobalElement(colLID);
+              LocalOrdinal rowLID = rowMap->getLocalElement(colGID);
+              if (rowLID != lo_invalid)
+              {
+                if (leastLocalDofOrdinal == lo_invalid)
+                {
+                  // replace with rowLID
+                  leastLocalDofOrdinal = rowLID;
+                }
+                else
+                {
+                  leastLocalDofOrdinal = (rowLID < leastLocalDofOrdinal) ? rowLID : leastLocalDofOrdinal;
+                }
+              }
+            }
+          }
+          if (leastLocalDofOrdinal != lo_invalid)
+          {
+            seedSets[d].insert(leastLocalDofOrdinal);
+          }
+        }
+      }
+    }
+    for (int d=0; d<=spaceDim;d++)
+    {
+      seeds[d] = std::vector<LocalOrdinal>(seedSets[d].begin(),seedSets[d].end());
+    }
+  }
+  
 /*********************************************************************************************************/
 // Syntax [HGRAD|HCURL|HDIV][_| ][HEX|LINE|POLY|PYR|QUAD|TET|TRI|WEDGE][_| ][C|I][1|2|n]
 // Inputs:

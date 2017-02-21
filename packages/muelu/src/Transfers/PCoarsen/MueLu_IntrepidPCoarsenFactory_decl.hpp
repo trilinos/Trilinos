@@ -250,6 +250,16 @@ namespace MueLu {
     template<class Basis, class SCFieldContainer>
     void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold, std::vector<std::vector<size_t> > & representative_node_candidates);
 
+    // ! Given an element to (global) node map and a basis, determine one global ordinal per geometric entity (vertex, edge, face,
+    // ! interior).  On exit, seeds container is of dimension (spaceDim+1), and contains a sorted vector of local ordinals
+    // ! belonging to entities of that dimension.  Only locally-owned degrees of freedom (as determined by rowMap and columnMap)
+    // ! will be stored in seeds.
+    template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
+                                   std::vector<std::vector<LocalOrdinal>> &seeds,
+                                   Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowMap,
+                                   Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> columnMap);
+
 
   }//namespace MueLuIntrepid
 } //namespace MueLu
