@@ -1243,7 +1243,7 @@ protected:
       // Trick to get around const DualView& being const.
       {
         using ::Kokkos::DualView;
-        DualView<const size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
+        DualView<size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
         numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
         numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
       }
@@ -1279,7 +1279,7 @@ protected:
     // Trick to get around const DualView& being const.
     {
       using ::Kokkos::DualView;
-      DualView<const size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
+      DualView<size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
       numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
       numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
     }
@@ -1404,10 +1404,13 @@ protected:
                        ::Tpetra::Distributor& /* distor */,
                        const ::Tpetra::CombineMode /* CM */)
   {
+    using ::Kokkos::DualView;
     using ::Teuchos::Comm;
     using ::Teuchos::RCP;
     using std::endl;
     //typedef ::Kokkos::DualView<const packet_type*, device_type> in_buf_dv_type;
+    typedef typename device_type::memory_space DMS;
+    typedef ::Kokkos::HostSpace HMS;
     const char prefix[] = "Tpetra::Details::CooMatrix::unpackAndCombineNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
@@ -1418,11 +1421,20 @@ protected:
     }
     else if (imports.dimension_0 () == 0) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      // Trick to get around const DualView& being const.
+      typename DualView<const LO*, device_type>::t_host importLIDs_h;
       {
-        using ::Kokkos::DualView;
-        DualView<const LO*, device_type> importLIDs_tmp = importLIDs;
-        importLIDs_tmp.template sync<Kokkos::HostSpace> ();
+        if (importLIDs.template need_sync<HMS> ()) {
+          // Device version of the DualView is the most recently updated.
+          // It's forbidden to sync a DualView<const T>, so we must copy.
+          auto importLIDs_d = importLIDs.template view<DMS> ();
+          typedef typename decltype (importLIDs_h)::non_const_type HVNC;
+          HVNC importLIDs_h_nc (importLIDs_d.label (), importLIDs.dimension_0 ());
+          Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
+          importLIDs_h = importLIDs_h_nc;
+        }
+        else { // host version of the DualView is up-to-date
+          importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
+        }
       }
       err << prefix << "importLIDs.dimension_0() = " << numImports << " != 0, "
           << "but imports.dimension_0() = 0.  This doesn't make sense, because "
@@ -1467,16 +1479,51 @@ protected:
     }
     const int inBufSize = static_cast<int> (imports.dimension_0 ());
 
-    // Trick to get around const DualView& being const.
-    {
-      using ::Kokkos::DualView;
-      DualView<const LO*, device_type> importLIDs_tmp = importLIDs;
-      DualView<const packet_type*, device_type> imports_tmp = imports;
-      DualView<const size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
+    // It's forbidden to sync a DualView<const T>, so if the input
+    // DualView are not in sync on host, we must make copies.
 
-      numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
-      importLIDs_tmp.template sync<Kokkos::HostSpace> ();
-      imports_tmp.template sync<Kokkos::HostSpace> ();
+    typename std::decay<decltype (importLIDs)>::type::t_host importLIDs_h;
+    typename std::decay<decltype (imports)>::type::t_host imports_h;
+    typename std::decay<decltype (numPacketsPerLID)>::type::t_host numPacketsPerLID_h;
+    {
+      if (importLIDs.template need_sync<HMS> ()) {
+        // Device version of the DualView is the most recently updated.
+        auto importLIDs_d = importLIDs.template view<DMS> ();
+        typedef typename decltype (importLIDs_h)::non_const_type HVNC;
+        HVNC importLIDs_h_nc (importLIDs_d.label (),
+                              importLIDs.dimension_0 ());
+        Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
+        importLIDs_h = importLIDs_h_nc;
+      }
+      else { // host version of the DualView is up-to-date
+        importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
+      }
+
+      if (imports.template need_sync<HMS> ()) {
+        // Device version of the DualView is the most recently updated.
+        auto imports_d = imports.template view<DMS> ();
+        typedef typename decltype (imports_h)::non_const_type HVNC;
+        HVNC imports_h_nc (imports_d.label (),
+                           imports.dimension_0 ());
+        Kokkos::deep_copy (imports_h_nc, imports_d);
+        imports_h = imports_h_nc;
+      }
+      else { // host version of the DualView is up-to-date
+        imports_h = imports.h_view; // imports.template view<HMS> ();
+      }
+
+      if (numPacketsPerLID.template need_sync<HMS> ()) {
+        // Device version of the DualView is the most recently updated.
+        auto numPacketsPerLID_d = numPacketsPerLID.template view<DMS> ();
+        typedef typename decltype (numPacketsPerLID_h)::non_const_type HVNC;
+        HVNC numPacketsPerLID_h_nc (numPacketsPerLID_d.label (),
+                                    numPacketsPerLID.dimension_0 ());
+        Kokkos::deep_copy (numPacketsPerLID_h_nc, numPacketsPerLID_d);
+        numPacketsPerLID_h = numPacketsPerLID_h_nc;
+      }
+      else { // host version of the DualView is up-to-date
+        numPacketsPerLID_h = numPacketsPerLID.h_view; // numPacketsPerLID.template view<HMS> ();
+      }
     }
 
     // FIXME (mfh 17,24 Jan 2017) packTriples wants three arrays, not a
@@ -1485,13 +1532,13 @@ protected:
     std::vector<GO> gblColInds;
     std::vector<SC> vals;
 
-    const packet_type* inBuf = imports.h_view.ptr_on_device ();
+    const packet_type* inBuf = imports_h.ptr_on_device ();
     int inBufCurPos = 0;
     size_t numInvalidRowInds = 0;
     int errCode = 0;
     std::ostringstream errStrm; // for unpack* error output.
     for (size_t k = 0; k < numImports; ++k) {
-      const LO lclRow = importLIDs.h_view[k];
+      const LO lclRow = importLIDs_h(k);
       const GO gblRow = this->map_->getGlobalElement (lclRow);
       if (gblRow == ::Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
         ++numInvalidRowInds;
@@ -1581,7 +1628,7 @@ protected:
 
       std::vector<std::pair<LO, GO> > invalidRowInds;
       for (size_t k = 0; k < numImports; ++k) {
-        const LO lclRow = importLIDs.h_view[k];
+        const LO lclRow = importLIDs_h(k);
         const GO gblRow = this->map_->getGlobalElement (lclRow);
         if (gblRow == ::Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
           invalidRowInds.push_back ({lclRow, gblRow});
