@@ -205,6 +205,9 @@ namespace MueLu {
 
     //@}
 
+    //! For diagnostic purposes
+    RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getPreconditioner(){return prec_;}
+
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
