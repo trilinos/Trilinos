@@ -1032,18 +1032,19 @@ namespace MueLuTests {
           typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
           typedef RCP<const Map> MapRCP;
           MapRCP rowMapTpetra, colMapTpetra;
-          rowMapTpetra = rcp( new Map(numElements, myRowGIDs, indexBase, serialComm) );
+          rowMapTpetra = rcp( new Map(Tpetra::global_size_t(myRowGIDs.size()), myRowGIDs, indexBase, serialComm) );
           rowMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(rowMapTpetra);
-          colMapTpetra = rcp( new Map(numElements, myColGIDs, indexBase, serialComm) );
+          colMapTpetra = rcp( new Map(Tpetra::global_size_t(myColGIDs.size()), myColGIDs, indexBase, serialComm) );
           colMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(colMapTpetra);
         }
         else
         {
           GlobalOrdinal indexBase = 0;
           Epetra_SerialComm Comm;
-          Epetra_Map rowMapEpetra(numElements, int(myRowGIDs.size()), &myRowGIDs[0], indexBase, Comm);
+          int computeNumGlobals = -1;
+          Epetra_Map rowMapEpetra(int(myRowGIDs.size()), int(myRowGIDs.size()), &myRowGIDs[0], indexBase, Comm);
           rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(rowMapEpetra);
-          Epetra_Map colMapEpetra(numElements, int(myColGIDs.size()), &myColGIDs[0], indexBase, Comm);
+          Epetra_Map colMapEpetra(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], indexBase, Comm);
           colMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(colMapEpetra);
         }
         
