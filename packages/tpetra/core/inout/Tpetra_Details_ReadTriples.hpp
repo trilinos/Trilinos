@@ -114,7 +114,7 @@ readComplexData (std::istream& istr,
                  OrdinalType& colIndex,
                  RealType& realPart,
                  RealType& imagPart,
-                 const size_t lineNumber,
+                 const std::size_t lineNumber,
                  const bool tolerant)
 {
   using ::Teuchos::MatrixMarket::readRealData;
@@ -452,6 +452,7 @@ readTriples (std::istream& inputStream,
 {
   using Teuchos::MatrixMarket::checkCommentLine;
   using std::endl;
+  using std::size_t;
 
   numTriplesRead = 0; // output argument only
   if (inputStream.eof ()) {
@@ -466,7 +467,7 @@ readTriples (std::istream& inputStream,
   }
 
   std::string line;
-  std::vector<std::size_t> badLineNumbers;
+  std::vector<size_t> badLineNumbers;
   int errCode = 0; // 0 means success
 
   bool inputStreamCanStillBeRead = std::getline (inputStream, line).good ();
@@ -507,11 +508,11 @@ readTriples (std::istream& inputStream,
   } // while there are lines to read and we need more triples
 
   if (errCode != 0 && errStrm != NULL) {
-    const std::size_t numBadLines = badLineNumbers.size ();
+    const size_t numBadLines = badLineNumbers.size ();
     *errStrm << "Encountered " << numBadLines << " bad line"
-             << (numBadLines != std::size_t (1) ? "s" : "")
+             << (numBadLines != size_t (1) ? "s" : "")
              << ": [";
-    for (std::size_t k = 0; k < numBadLines; ++k) {
+    for (size_t k = 0; k < numBadLines; ++k) {
       *errStrm << badLineNumbers[k];
       if (k + 1 < numBadLines) {
         *errStrm << ", ";
@@ -947,6 +948,8 @@ readAndDealOutTriples (std::istream& inputStream, // only valid on Proc 0
 {
   using Kokkos::ArithTraits;
   using std::endl;
+  using std::size_t;
+
   constexpr int srcRank = 0;
   //constexpr int sizeTag = 42 + (ArithTraits<SC>::is_complex ? 100 : 0);
   ////constexpr int msgTag = 43 + (ArithTraits<SC>::is_complex ? 100 : 0);
@@ -978,7 +981,7 @@ readAndDealOutTriples (std::istream& inputStream, // only valid on Proc 0
           ! inputStream.eof () && errCode == 0;
          destRank = (destRank + 1) % numProcs) {
 
-      std::size_t curNumEntRead = 0; // output argument of below
+      size_t curNumEntRead = 0; // output argument of below
       if (destRank == srcRank) {
         // We can read and process the triples directly.  We don't
         // need to use intermediate storage, because we don't need to
@@ -1097,9 +1100,9 @@ readAndDealOutTriples (std::istream& inputStream, // only valid on Proc 0
       }
       errCode = (recvErrCode != 0) ? recvErrCode : errCode;
 
-      if (static_cast<std::size_t> (numEnt != rowInds.size ()) ||
-          static_cast<std::size_t> (numEnt != colInds.size ()) ||
-          static_cast<std::size_t> (numEnt != vals.size ())) {
+      if (numEnt != static_cast<int> (rowInds.size ()) ||
+          numEnt != static_cast<int> (colInds.size ()) ||
+          numEnt != static_cast<int> (vals.size ())) {
         errCode = (errCode == 0) ? -1 : errCode;
         if (errStrm != NULL) {
           *errStrm << "recvOneBatchOfTriples produced inconsistent data sizes.  "
