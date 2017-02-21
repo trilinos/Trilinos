@@ -46,6 +46,7 @@
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_componentMetrics.hpp>
 
 // Teuchos includes
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -142,6 +143,20 @@ int main(int narg, char *arg[]) {
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
+
+  // Exercise the componentMetrics on the input; make sure the adapter works
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia, *CommT);
+    std::cout << me << " Region-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Region-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Region-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Region-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
+  }
+
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
 
@@ -236,6 +251,19 @@ int main(int narg, char *arg[]) {
   else{
     std::cout << "Adjacencies not available" << std::endl;
     return 1;
+  }
+
+  ia2.print(me);
+  {
+    Zoltan2::perProcessorComponentMetrics<inputAdapter_t> cc(ia2, *CommT);
+    std::cout << me << " Vertex-based: Number of components on processor = "
+              << cc.getNumComponents() << std::endl;
+    std::cout << me << " Vertex-based: Max component size on processor = "
+              << cc.getMaxComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Min component size on processor = "
+              << cc.getMinComponentSize() << std::endl;
+    std::cout << me << " Vertex-based: Avg component size on processor = "
+              << cc.getAvgComponentSize() << std::endl;
   }
 
   primaryEType = ia2.getPrimaryEntityType();

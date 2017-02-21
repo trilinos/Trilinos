@@ -43,12 +43,15 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_connectedComponents.hpp
+/*! \file Zoltan2_componentMetrics.hpp
     \brief Identify and compute the number of connected components in a processor's input
+    Note that this routine works with respect to the MPI PROCESS, not with 
+    respect to part numbers.  It works with the MPI Process' LOCAL graph; 
+    statistics reported are for the local graph, not the global graph.
 */
 
-#ifndef _ZOLTAN2_CONNECTEDCOMPONENTS_HPP_
-#define _ZOLTAN2_CONNECTEDCOMPONENTS_HPP_
+#ifndef _ZOLTAN2_COMPONENTMETRICS_HPP_
+#define _ZOLTAN2_COMPONENTMETRICS_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_GraphModel.hpp>
@@ -73,7 +76,7 @@ public:
   inline size_t getNumComponents() {return nComponent;}
   inline size_t getMaxComponentSize() {return maxComponentSize;}
   inline size_t getMinComponentSize() {return minComponentSize;}
-  inline size_t getAvgComponentSize() {return avgComponentSize;}
+  inline double getAvgComponentSize() {return avgComponentSize;}
 
 private:
   size_t nComponent;    // number of components
@@ -81,17 +84,21 @@ private:
   size_t minComponentSize;  // size of smalled component
   double avgComponentSize;  // average component size
 
-  inline void markAndEnqueue(std::queue<gno_t> q, bool *mark,
-                             size_t &nUnmarkedVtx, gno_t vtx) {
+  inline void markAndEnqueue(std::queue<gno_t> &q, bool *mark,
+                             size_t &nUnmarkedVtx, size_t &cSize, gno_t vtx) {
     // insert vtx into the queue
     q.push(vtx);
 
     // mark vtx
     nUnmarkedVtx--;
     mark[vtx] = true;
+
+    // increment component size
+    cSize++;
   }
 };
 
+///////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
   const Adapter &ia, const Teuchos::Comm<int> &comm) :
@@ -136,8 +143,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
 
     // Find an unmarked vertex; put it in the queue
     while (mark[startVtx]) startVtx++;
-    markAndEnqueue(q, mark, nUnmarkedVtx, startVtx);
-    cSize++;
+    markAndEnqueue(q, mark, nUnmarkedVtx, cSize, startVtx);
 
     while (!q.empty()) {
       gno_t vtx = q.front();
@@ -146,8 +152,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
       // Add neighbors of vtx to queue.
       for (lno_t j = offset[vtx]; j < offset[vtx+1]; j++) {
         if (!mark[adj[j]]) {
-          markAndEnqueue(q, mark, nUnmarkedVtx, adj[j]);
-          cSize++;
+          markAndEnqueue(q, mark, nUnmarkedVtx, cSize, adj[j]);
         }
       }
     }
@@ -162,7 +167,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
     }
   }
 
-  if (nComponent) avgComponentSize = nVtx / nComponent;
+  if (nComponent) avgComponentSize = double(nVtx) / double(nComponent);
 
   delete [] mark;
 }
