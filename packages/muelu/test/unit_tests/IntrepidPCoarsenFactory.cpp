@@ -922,7 +922,7 @@ namespace MueLuTests {
     }
   }
   
-  template<class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
   void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
   {
     // "numRanks" is for emulated parallel execution: we set up several maps, one corresponding to each emulated MPI rank.
@@ -930,8 +930,6 @@ namespace MueLuTests {
     typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
     typedef ArrayScalar FC;
     typedef ArrayOrdinal FCO;
-    typedef int LocalOrdinal;  // just hard-coding this here for now...
-    typedef int GlobalOrdinal; // just hard-coding this here for now...
     
     FCO elementToNodeMap;
     vector<vector<int>> ordinalsForSubcellDimension;
@@ -1028,6 +1026,7 @@ namespace MueLuTests {
         
         if (lib==Xpetra::UseTpetra)
         {
+#ifdef HAVE_MUELU_TPETRA
           GlobalOrdinal indexBase = 0;
           typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
           typedef RCP<const Map> MapRCP;
@@ -1036,9 +1035,15 @@ namespace MueLuTests {
           rowMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(rowMapTpetra);
           colMapTpetra = rcp( new Map(Tpetra::global_size_t(myColGIDs.size()), myColGIDs, indexBase, serialComm) );
           colMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(colMapTpetra);
+#else
+          out << "lib==Xpetra::UseTpetra, but HAVE_MUELU_TPETRA is not defined...\n";
+          success = false;
+          return;
+#endif
         }
         else
         {
+#ifdef HAVE_MUELU_EPETRA
           GlobalOrdinal indexBase = 0;
           Epetra_SerialComm Comm;
           int computeNumGlobals = -1;
@@ -1046,6 +1051,11 @@ namespace MueLuTests {
           rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(rowMapEpetra);
           Epetra_Map colMapEpetra(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], indexBase, Comm);
           colMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(colMapEpetra);
+#else
+          out << "lib==Xpetra::UseEpetra, but HAVE_MUELU_EPETRA is not defined...\n";
+          success = false;
+          return;
+#endif
         }
         
         // rewrite elementToNodeMap to contain only LIDs, and determine expected seeds
@@ -1128,14 +1138,12 @@ namespace MueLuTests {
     }
   }
   
-  template<class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
   void testFindSeedsSerial(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
   {
     typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
     typedef ArrayScalar FC;
     typedef ArrayOrdinal FCO;
-    typedef int LocalOrdinal;  // just hard-coding this here for now...
-    typedef int GlobalOrdinal; // just hard-coding this here for now...
     
     FCO elementToNodeMap;
     vector<vector<int>> ordinalsForSubcellDimension;
@@ -1215,7 +1223,7 @@ namespace MueLuTests {
     }
   }
   
-  template<class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
   void testFindSeedsParallel(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
   {
     typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
@@ -1225,7 +1233,7 @@ namespace MueLuTests {
     for (int rankCount=1; rankCount<=MAX_RANK_COUNT; rankCount++)
     {
       out << "running testFindSeedsParallel on " << rankCount << " emulated MPI ranks\n";
-      testFindSeeds<Node, Basis, ExecutionSpace, ArrayScalar, ArrayOrdinal>(max_degree, ptype, rankCount, out, success);
+      testFindSeeds<LocalOrdinal, GlobalOrdinal, Node, Basis, ExecutionSpace, ArrayScalar, ArrayOrdinal>(max_degree, ptype, rankCount, out, success);
     }
   }
   
@@ -1255,15 +1263,15 @@ namespace MueLuTests {
   out << "version: " << MueLu::Version() << std::endl;\
 if (CellTopo::key == shards::Line<2>::key)\
   {\
-    whichTest<Node,LineBasis,ES,FC,FCO>(MAX_LINE_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>(MAX_LINE_DEGREE, ptype, out, success);\
   }\
   else if (CellTopo::key == shards::Quadrilateral<4>::key)\
   {\
-    whichTest<Node,QuadBasis,ES,FC,FCO>(MAX_QUAD_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>(MAX_QUAD_DEGREE, ptype, out, success);\
   }\
   else if (CellTopo::key == shards::Hexahedron<8>::key)\
   {\
-    whichTest<Node,HexBasis,ES,FC,FCO>(MAX_HEX_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>(MAX_HEX_DEGREE, ptype, out, success);\
   }\
   else\
   {\
