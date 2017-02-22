@@ -71,6 +71,16 @@ public:
 
   perProcessorComponentMetrics(const Adapter &ia,
                                const Teuchos::Comm<int> &comm);
+
+#ifdef HAVE_ZOLTAN2_MPI
+  // Wrap MPI_Comm as a Teuchos::Comm, then call Teuchos::Comm constructor
+  // Uses delegating constructor feature of C++11.
+  perProcessorComponentMetrics(const Adapter &ia, const MPI_Comm mpicomm) :
+  perProcessorComponentMetrics(ia, 
+                       Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpicomm)))
+  {}
+#endif
+
   ~perProcessorComponentMetrics() {}
 
   inline size_t getNumComponents() {return nComponent;}
@@ -135,6 +145,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
 
   std::queue<gno_t> q;
 
+  // until all vertices are marked...
   while (nUnmarkedVtx > 0) {
 
     // Find the next component
@@ -157,6 +168,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
       }
     }
 
+    // update stats
     if (nComponent == 1) {
       maxComponentSize = cSize;
       minComponentSize = cSize;
@@ -167,6 +179,7 @@ perProcessorComponentMetrics<Adapter>::perProcessorComponentMetrics(
     }
   }
 
+  // update stats
   if (nComponent) avgComponentSize = double(nVtx) / double(nComponent);
 
   delete [] mark;

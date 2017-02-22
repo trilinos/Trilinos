@@ -115,6 +115,7 @@ int checkResult(
 int test_every_third(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   // Testing a graph with every third vertex in the same component
+  // Test using a GraphAdapter.
 
   std::ostringstream namestream;
   namestream << comm->getRank() << " every_third "; 
@@ -169,6 +170,7 @@ int test_every_third(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int test_dist_component(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   // Testing a graph with single component, distributed among procs
+  // Test using a GraphAdapter.
 
   std::ostringstream namestream;
   namestream << comm->getRank() << " dist_component ";
@@ -223,6 +225,7 @@ int test_dist_component(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int test_one_proc(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   // Testing a graph with all vertices and edges on a single proc
+  // Test using a MatrixAdapter.
 
   std::ostringstream namestream;
   namestream << comm->getRank() << " one_proc "; 
@@ -294,6 +297,8 @@ int test_one_proc(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   // Testing a graph with no edges
+  // Test using a MatrixAdapter.
+  // Test using an MPI communicator rather than Teuchos::Comm, if appropriate.
 
   std::ostringstream namestream;
   namestream << comm->getRank() << " no_graph "; 
@@ -315,9 +320,19 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   // Create a Zoltan2 XpetraMatrixAdapter
   matrixAdapter_t ia(matrix, 0);
 
+#ifdef HAVE_ZOLTAN2_MPI
+  // For testing only, extract MPI communicator from Teuchos::Comm
+  // There's no need to do this in real life; use Teuchos::Comm if you have it.
+  // We just want to exercise the MPI_Comm interface here.
+  if (comm->getRank() == 0) std::cout << "  using MPI_Comm " << std::endl;
+  MPI_Comm useThisComm =  Teuchos::getRawMpiComm(*comm);
+#else
+  const Teuchos::Comm<int> &useThisComm = *comm;
+#endif
+
   // Call connected components utility
   typedef Zoltan2::perProcessorComponentMetrics<matrixAdapter_t> cc_t;
-  cc_t cc(ia, *comm);
+  cc_t cc(ia, useThisComm);
 
   // Check result:  
   // With no edges, every vertex should be a component
