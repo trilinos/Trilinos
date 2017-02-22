@@ -298,15 +298,11 @@ namespace Amesos2 {
 #endif
   }
 
-  // NDE: To help with identifying type of matrix
   template <class DerivedMat>
-  //int
-  //AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return 1; }
   EMatrix_Type
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return EPETRA; }
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const 
+  { return EPETRA; }
 
-
-  // NDE: Stubs to be filled in
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_ptr_t
@@ -319,7 +315,6 @@ namespace Amesos2 {
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 
     return sp_rowptr;
-    //return 0; 
   }
 
   template <class DerivedMat>
@@ -334,7 +329,6 @@ namespace Amesos2 {
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 
     return sp_colind;
-    //return 0; 
   }
 
   template <class DerivedMat>
@@ -349,7 +343,6 @@ namespace Amesos2 {
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 
     return sp_values;
-    //return 0; 
   }
 
 } // end namespace Amesos2

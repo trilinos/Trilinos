@@ -2009,6 +2009,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
+  template <typename T2>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
@@ -2017,7 +2018,7 @@ namespace BaskerNS
    const Int sn_ ,
    const Int n_,
    const Int nnz_, 
-   const unsigned long *col_ptr,
+   T2 *col_ptr,
    Int *row_idx,
    Entry *val,
    BASKER_MATRIX &AT
@@ -2242,6 +2243,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
+  template <typename T2>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
@@ -2250,7 +2252,7 @@ namespace BaskerNS
    const Int sn_ ,
    const Int n_,
    const Int nnz_, 
-   const unsigned long *col_ptr,
+   T2 *col_ptr,
    Int *row_idx,
    Entry *val,
    BASKER_MATRIX &AT,

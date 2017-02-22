@@ -62,7 +62,6 @@
 
 namespace Amesos2 {
 
-
 /** \brief Amesos2 interface to the Baker package.
  *
  * See the \ref Basker_parameters "summary of Basker parameters"
@@ -82,10 +81,9 @@ public:
   static const char* name;      // declaration. Initialization outside.
 
 
-  typedef Basker<Matrix,Vector>                                       type;
+  typedef Basker<Matrix,Vector>                                        type;
 
-
-  typedef SolverCore<Amesos2::Basker,Matrix,Vector>             super_type;
+  typedef SolverCore<Amesos2::Basker,Matrix,Vector>              super_type;
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
@@ -94,16 +92,14 @@ public:
   typedef typename super_type::global_size_type            global_size_type;
   typedef typename super_type::node_type                          node_type;
 
-
-  typedef TypeMap<Amesos2::Basker,scalar_type>                    type_map;
-
+  typedef TypeMap<Amesos2::Basker,scalar_type>                     type_map;
 
   typedef typename type_map::type                                  slu_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
-  typedef FunctionMap<Amesos2::Basker,slu_type>               function_map;
+  typedef FunctionMap<Amesos2::Basker,slu_type>                function_map;
 
-  typedef Matrix  matrix_type;
+  typedef Matrix                                                matrix_type;
 
 
   Basker( Teuchos::RCP<const Matrix> A,
@@ -178,7 +174,7 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
-
+  // Members
   int num_threads;
 
   // The following Arrays are persisting storage arrays for A, X, and B
