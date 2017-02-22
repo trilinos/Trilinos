@@ -130,11 +130,13 @@ namespace MueLu {
       if(pL.isSublist("matrixmatrix: kernel params")) APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
       else APparams= rcp(new ParameterList);
 
+      APparams->set("compute global constants",false);// We don't need global constants for A*P
+      
       if (coarseLevel.IsAvailable("AP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
-
+        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);	
+	
         if (APparams->isParameter("graph"))
           AP = APparams->get< RCP<Matrix> >("graph");
       }
