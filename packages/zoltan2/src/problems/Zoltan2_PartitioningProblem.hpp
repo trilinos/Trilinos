@@ -112,48 +112,34 @@ public:
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
-  /*! \brief Constructor where MPI communicator can be specified
-   */
-  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm comm):
-      Problem<Adapter>(A,p,comm), solution_(),
-      inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(),
-      partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false)
-  {
-    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
-  }
-#endif
-
-  //! \brief Constructor where communicator is the Teuchos default.
-  PartitioningProblem(Adapter *A, ParameterList *p):
-      Problem<Adapter>(A,p), solution_(),
-      inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(),
-      partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false)
-  {
-    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
-  }
-
   //! \brief Constructor where Teuchos communicator is specified
   PartitioningProblem(Adapter *A, ParameterList *p,
                       const RCP<const Teuchos::Comm<int> > &comm):
-      Problem<Adapter>(A,p,comm), solution_(),
+      Problem<Adapter>(A,p,comm), 
+      solution_(),
       inputType_(InvalidAdapterType),
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), partIds_(), partSizes_(),
+      graphFlags_(), idFlags_(), coordFlags_(),
+      algName_(), numberOfWeights_(), partIds_(), partSizes_(),
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
   }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor where MPI communicator can be specified
+   */
+  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm):
+  PartitioningProblem(A, p, 
+                      rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
+#endif
+
+  //! \brief Constructor where communicator is the Teuchos default.
+  PartitioningProblem(Adapter *A, ParameterList *p):
+  PartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  {}
 
   /*! \brief Destructor
    */

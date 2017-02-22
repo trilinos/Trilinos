@@ -61,8 +61,6 @@
 
 #include <bitset>
 
-using Teuchos::rcp_dynamic_cast;
-
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
@@ -105,25 +103,31 @@ public:
    */
   virtual ~ColoringProblem() {};
 
+  /*! \brief Constructor that uses a Teuchos::Comm
+   */
+  ColoringProblem(Adapter *A, ParameterList *p,
+                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm) :
+    Problem<Adapter>(A, p, comm) 
+  {
+    HELLO;
+    createColoringProblem();
+  };
 
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm) 
-  {
-    HELLO;
-    createColoringProblem();
-  };
+  ColoringProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm) :
+  ColoringProblem(A, p,
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
-  {
-    HELLO;
-    createColoringProblem();
-  };
+  ColoringProblem(Adapter *A, ParameterList *p) :
+  ColoringProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  {}
 
   /*! \brief Set up validators specific to this Problem
   */
