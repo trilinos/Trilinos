@@ -195,13 +195,6 @@ namespace Amesos2 {
 				  const Teuchos::EVerbosityLevel verbLevel) const
   {}
   
-  // NDE: Attempt to add routine that returns info regarding the Matrix type - Tpetra vs Epetra
-  // Make this call an impl version, defined to return a different value depending on Epetra vs Tpetra???
-//#ifdef HAVE_AMESOS2_EPETRA
-    // Do nothing if Epetra for now...
-//#else
-  // Issue here using the local_matrix_type's types - Epetra does not match this, will break if trying to compile
-
   template < class Matrix >
   typename MatrixAdapter<Matrix>::spmtx_ptr_t
   MatrixAdapter<Matrix>::returnRowPtr() const
@@ -223,30 +216,9 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->getSparseValues();
   }
 
-//#endif
-
   template < class Matrix >
-//  int MatrixAdapter<Matrix>::get_matrix_type_info_as_int() const
   EMatrix_Type MatrixAdapter<Matrix>::get_matrix_type_info_as_int() const
   {
-/*
-    //int matrix_type_as_int = 0; // 0 - unknown,  1 - epetra,  2 - tpetra
-
-  #ifdef HAVE_TPETRA_INST_INT_INT
-  #ifdef HAVE_AMESOS2_EPETRA // is this sufficient? Either Epetra or Tpetra should be used, never a mix, write? Also, if this is activated, does it mean epetra is used or simply enabled???
-    if ( std::is_same< Matrix,Epetra_CrsMatrix >::value ) { 
-      //matrix_type_as_int = 1;
-      return 1;
-    }
-    else { 
-      //matrix_type_as_int = 2; // Tpetra is the default
-      return 2; 
-    }
-  #endif
-  #endif
-    //return matrix_type_as_int;
-    return 2; // Assume Tpetra
-*/
     return static_cast<const adapter_t*>(this)->getMatrixTypeInfoAsInt_impl();
   }
 
@@ -336,10 +308,9 @@ namespace Amesos2 {
       size_t rowNNZ = get_mat->getGlobalRowNNZ(*row_it);
       size_t nnzRet = OrdinalTraits<size_t>::zero();
       ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ); 
-        // this gives colind_view access (locally indexed from 0) to colind, starting at rowInd through rowInd+rowNNZ
       ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
       
-      get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet); //this copies, for row # row_it, values from the Tpetra matrix identified with get_map (from rowmap input) into the ArrayViews colind_view and nzval_view, and returns the number of nonzeros nnzRet copied into each of those. 
+      get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
       for (size_t rr = 0; rr < nnzRet ; rr++)
       {
           colind_view[rr] = colind_view[rr] - rmap->getIndexBase();
@@ -473,9 +444,7 @@ namespace Amesos2 {
 
     size_t colptr_ind = OrdinalTraits<size_t>::zero();
     global_ordinal_t colInd = OrdinalTraits<global_ordinal_t>::zero();
-    int col_it_count = 0;
     for( col_it = node_elements.begin(); col_it != col_end; ++col_it ){
-        ++col_it_count;
       colptr[colptr_ind++] = colInd;
       size_t colNNZ = getGlobalColNNZ(*col_it);
       size_t nnzRet = 0;

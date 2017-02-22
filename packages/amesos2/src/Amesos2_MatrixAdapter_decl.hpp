@@ -87,10 +87,10 @@ namespace Amesos2 {
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
 
-    typedef typename MatrixTraits<Matrix>::local_matrix_type  local_matrix_t;
+    typedef typename MatrixTraits<Matrix>::local_matrix_t     local_matrix_t;
     typedef typename MatrixTraits<Matrix>::sparse_ptr_type       spmtx_ptr_t;
     typedef typename MatrixTraits<Matrix>::sparse_idx_type       spmtx_idx_t;
-    typedef typename MatrixTraits<Matrix>::sparse_values_type    spmtx_vals_t;
+    typedef typename MatrixTraits<Matrix>::sparse_values_type   spmtx_vals_t;
 
     // template<typename S, typename GO, typename GS, typename Op>
     // friend class Util::get_cxs_helper<MatrixAdapter<Matrix>,S,GO,GS,Op>;
@@ -243,27 +243,17 @@ namespace Amesos2 {
     void describe(Teuchos::FancyOStream &out,
 		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
-    /// NDE: Added method to try and return info as an int regarding matrix type - epetra vs tpetra
-    //int get_matrix_type_info_as_int() const;
+    /// Method to return info as an enum regarding matrix type - epetra vs tpetra
     EMatrix_Type get_matrix_type_info_as_int() const;
 
-//#ifdef HAVE_AMESOS2_EPETRA
-    // Do nothing if Epetra for now...
-//#else
-    //    Error: due to Epetra - no type named 'local_matrix_type'
-    // Instead of typedef from matrix_t, would like to do this from the concrete matrix adapter, but issues since it is an incomplete type...
-    // As alternative, return the raw data pointer??? Might be the only generic way...
-    // To do that, what would the type be - generically...
-    // Can trailing return type be use???
-    // Maybe go through the MatrixTraits???
-    
+    /// Return raw pointer from CRS row pointer of matrixA_
     spmtx_ptr_t returnRowPtr() const;
 
+    /// Return raw pointer from CRS column indices of matrixA_
     spmtx_idx_t returnColInd() const;
 
+    /// Return raw pointer from CRS values of matrixA_
     spmtx_vals_t returnValues() const;
-
-//#endif
 
   private:
 
