@@ -88,9 +88,9 @@ namespace MueLu {
   LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   LWGraph_kokkos(const local_graph_type&    graph,
                  const RCP<const map_type>& domainMap,
-                 const RCP<const map_type>& rangeMap,
+                 const RCP<const map_type>& importMap,
                  const std::string&         objectLabel)
-    : graph_(graph), domainMap_(domainMap), importMap_(rangeMap), objectLabel_(objectLabel)
+    : graph_(graph), domainMap_(domainMap), importMap_(importMap), objectLabel_(objectLabel)
   {
     minLocalIndex_ = domainMap_->getMinLocalIndex();
     maxLocalIndex_ = domainMap_->getMaxLocalIndex();
