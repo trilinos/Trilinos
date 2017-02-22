@@ -5399,7 +5399,15 @@ namespace Tpetra {
                                     sorted);
     }
     else {
+      // NOTE (mfh 22 Feb 2017): We have to run this code on host,
+      // since the graph is not fill complete.  The previous version
+      // of this code assumed UVM; this version does not.
+      auto offsets_h = Kokkos::create_mirror_view (offsets);
+
       for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {
+        // Find the diagonal entry.  Since the row Map and column Map
+        // may differ, we have to compare global row and column
+        // indices, not local.
         const GO gblRowInd = lclRowMap.getGlobalElement (lclRowInd);
         const GO gblColInd = gblRowInd;
         const LO lclColInd = lclColMap.getLocalElement (gblColInd);
@@ -5408,7 +5416,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
           allRowMapDiagEntriesInColMap = false;
 #endif // HAVE_TPETRA_DEBUG
-          offsets[lclRowInd] = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+          offsets_h(lclRowInd) = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
         }
         else {
           const RowInfo rowInfo = this->getRowInfo (lclRowInd);
@@ -5420,7 +5428,7 @@ namespace Tpetra {
             const size_t offset =
               KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
                                            lclColInd, hint, sorted);
-            offsets(lclRowInd) = offset;
+            offsets_h(lclRowInd) = offset;
 
 #ifdef HAVE_TPETRA_DEBUG
             // Now that we have what we think is an offset, make sure
@@ -5453,15 +5461,17 @@ namespace Tpetra {
             }
 #endif // HAVE_TPETRA_DEBUG
           }
-          else {
-            offsets(lclRowInd) = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+          else { // either row is empty, or something went wrong w/ getRowInfo()
+            offsets_h(lclRowInd) = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 #ifdef HAVE_TPETRA_DEBUG
             allDiagEntriesFound = false;
 #endif // HAVE_TPETRA_DEBUG
           }
-        }
-      }
-    }
+        } // whether lclColInd is a valid local column index
+      } // for each local row
+
+      Kokkos::deep_copy (offsets, offsets_h);
+    } // whether the graph is fill complete
 
 #ifdef HAVE_TPETRA_DEBUG
     if (wrongOffsets.size () != 0) {
