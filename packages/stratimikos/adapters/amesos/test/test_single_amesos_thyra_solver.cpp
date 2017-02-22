@@ -52,7 +52,11 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif
 
 #endif // SUN_CXX
 
@@ -105,7 +109,11 @@ bool Thyra::test_single_amesos_thyra_solver(
   
   if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
   
+#ifdef EPETRA_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
   Epetra_SerialComm comm;
+#endif
   RCP<Epetra_CrsMatrix> epetra_A;
   EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
