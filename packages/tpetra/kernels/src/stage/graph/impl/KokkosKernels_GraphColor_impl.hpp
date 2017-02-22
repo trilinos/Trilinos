@@ -1293,7 +1293,7 @@ private:
       }
       // color vertex i with smallest available color
       int c=1;
-      while ((forbidden[c]==i)) c++;
+      while (forbidden[c]==i) c++;
       h_colors(i) = c;
     }
     Kokkos::deep_copy (vertex_colors_, h_colors);
