@@ -75,7 +75,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Scotch          "cmake/TPLs/"    ST
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
-  CGNS            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    PT
   PuLP            "cmake/TPLs/"    EX
@@ -92,7 +91,9 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   XDMF            "cmake/TPLs/"    TS
   Zlib            "cmake/TPLs/"    PT
   HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
-  Netcdf          "cmake/TPLs/"    PT
+  CGNS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+  Pnetcdf         "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+  Netcdf          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   y12m            "cmake/TPLs/"    ST
   SuperLUDist     "cmake/TPLs/"    ST
   SuperLUMT	  "cmake/TPLs/"	   ST
@@ -130,7 +131,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   BGQPAMI         "cmake/TPLs/"    ST
   Pablo           "cmake/TPLs/"    ST
   HPCToolkit      "cmake/TPLs/"    ST
-  Pnetcdf         "cmake/TPLs/"    ST
   Clp             "cmake/TPLs/"    EX
   GLPK            "cmake/TPLs/"    EX
   qpOASES         "cmake/TPLs/"    EX
