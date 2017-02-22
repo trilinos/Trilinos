@@ -44,9 +44,17 @@
 #include "test_single_amesos_thyra_solver.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Epetra_ConfigDefs.h"
+#ifdef EPETRA_MPI
+#include <mpi.h>
+#endif
 
 int main(int argc, char* argv[])
 {
+
+#ifdef EPETRA_MPI
+  MPI_Init(&argc, &argv);
+#endif
   
   using Teuchos::CommandLineProcessor;
 
@@ -129,6 +137,10 @@ int main(int argc, char* argv[])
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
+
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
 
   return ( success ? 0 : 1 );
 }
