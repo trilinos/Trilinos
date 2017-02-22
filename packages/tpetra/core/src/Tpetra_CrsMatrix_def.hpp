@@ -4063,8 +4063,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
 #endif
-
-    computeGlobalConstants ();
+    if(params.is_null() || params->get("compute global constants",true))
+      computeGlobalConstants ();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM"))));
@@ -7376,6 +7376,8 @@ namespace Tpetra {
 
     esfc_params.set("Timer Label",prefix + std::string("TAFC"));
 #endif
+    if(!params.is_null())
+      esfc_params.set("compute global constants",params->get("compute global constants",true));
 
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
   }

@@ -229,13 +229,13 @@ void Multiply(
 
   // Call the appropriate method to perform the actual multiplication.
   if (use_optimized_ATB) {
-    MMdetails::mult_AT_B_newmatrix(A, B, C, label);
+    MMdetails::mult_AT_B_newmatrix(A, B, C, label,params);
 
   } else if (call_FillComplete_on_result && newFlag) {
-    MMdetails::mult_A_B_newmatrix(Aview, Bview, C, label);
+    MMdetails::mult_A_B_newmatrix(Aview, Bview, C, label,params);
 
   } else if (call_FillComplete_on_result) {
-    MMdetails::mult_A_B_reuse(Aview, Bview, C, label);
+    MMdetails::mult_A_B_reuse(Aview, Bview, C, label,params);
 
   } else {
     // mfh 27 Sep 2016: Is this the "slow" case?  This
@@ -243,7 +243,7 @@ void Multiply(
     // thread-parallel inserts, but that may take some effort.
     CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
-    MMdetails::mult_A_B(Aview, Bview, crsmat, label);
+    MMdetails::mult_A_B(Aview, Bview, crsmat, label,params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete"))));
@@ -1002,7 +1002,7 @@ void mult_AT_B_newmatrix(
     Ctemp = rcp(&C,false);// don't allow deallocation
 
   // Multiply
-  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label);
+  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label,params);
 
   /*************************************************************/
   /* 4) exportAndFillComplete matrix                           */
@@ -1015,6 +1015,8 @@ void mult_AT_B_newmatrix(
   if (needs_final_export) {
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
+    if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
+
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
@@ -1634,7 +1636,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   // Import object.  We should be able to do this without interfering
   // with the implementation of the local part of sparse matrix-matrix
   // multply above.
-  C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport);
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+  RCP<const Export<LO,GO,NO> > dummyExport;
+  C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
 }
 
@@ -1827,7 +1832,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #endif
 
   // Final Fillcomplete
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport);
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+  RCP<const Export<LO,GO,NO> > dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
 #if 0
   {
@@ -2356,8 +2364,11 @@ void jacobi_A_B_newmatrix(
   // lots of communication) by taking the previously constructed
   // Import object.  We should be able to do this without interfering
   // with the implementation of the local part of sparse matrix-matrix
-  // multply above.
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport);
+  // multply above
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+  RCP<const Export<LO,GO,NO> > dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 }
 
 
@@ -2702,6 +2713,7 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
+    labelList.set("compute global constants", false); // Minor speedup tweak - avoid computing the global constants
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
