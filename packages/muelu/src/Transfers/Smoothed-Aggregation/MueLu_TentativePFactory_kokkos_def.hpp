@@ -49,8 +49,13 @@
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialQRDenseSolver.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>   // TODO remove me
+#include <Teuchos_SerialQRDenseSolver.hpp> // TODO remove me
+
+#include <Teuchos_LAPACK.hpp>
+
+//#include <Tsqr_Matrix.hpp>
+
 
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
 
@@ -82,6 +87,73 @@ namespace MueLu {
     private:
       RowType rows_;
     };
+
+    typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
+
+    // collect number nonzeros of blkSize rows in nnz_(row+1)
+    template<class MatrixType>
+    class TestFunctor {
+    private:
+      //typedef typename MatrixType::ordinal_type LO;
+      //typedef typename MatrixType::value_type SC;
+
+      typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
+      //typedef typename MatrixType::execution_space::scratch_memory_space shared_space;
+      typedef Kokkos::View<int*,shared_space,Kokkos::MemoryUnmanaged> shared_1d_int;
+      typedef Kokkos::View<double*,shared_space,Kokkos::MemoryUnmanaged> shared_1d_double;
+      typedef Kokkos::View<double[3][3],shared_space,Kokkos::MemoryUnmanaged> shared_matrix;
+
+    private:
+      //MatrixType kokkosMatrix; //< local matrix part
+      //NnzType nnz;             //< View containing number of nonzeros for current row
+      //blkSizeType blkSize;     //< block size (or partial block size in strided maps)
+
+    public:
+      TestFunctor(/*MatrixType kokkosMatrix_, NnzType nnz_, blkSizeType blkSize_*/) //:
+        //kokkosMatrix(kokkosMatrix_),
+        //nnz(nnz_),
+        //blkSize(blkSize_)
+        { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator() ( const team_member & thread) const {
+        int i = thread.league_rank();
+
+        printf("Team no: %i, thread no: %i\n", thread.league_rank(), thread.team_rank());
+
+        // Allocate a shared array for the team.
+        shared_1d_int testint(thread.team_shmem(),100);
+        shared_1d_double testdouble1(thread.team_shmem(),3);
+        shared_1d_double testdouble2(thread.team_shmem(),3);
+        shared_1d_double testdouble3(thread.team_shmem(),3);
+
+        shared_matrix mat(thread.team_shmem());
+        mat(0,0) = 12.0;
+        mat(0,1) = -51.0;
+        mat(0,2) = 4.0;
+        mat(1,0) = 6.0;
+        mat(1,1) = 167.0;
+        mat(1,2) = -68.0;
+        mat(2,0) = -4.0;
+        mat(2,1) = 24.0;
+        mat(2,2) = -41.0;
+
+        int info = 0;
+        //Teuchos::LAPACK<int,double> lapack;
+        //lapack.GEQRF(10,10,mat.ptr_on_device(),10,testdouble2.ptr_on_device(),testdouble3.ptr_on_device(),10,&info);
+
+        for(int i=0; i<3; i++) {
+          for(int j=0; j<3; j++) {
+            printf(" &d ",mat(i,j));
+          }
+          printf("\n");
+        }
+
+      }
+
+
+    };
+
 
   }
 
@@ -177,8 +249,7 @@ namespace MueLu {
     // same as LIDs in column map
     bool goodMap = isGoodMap(*rowMap, *colMap);
 #if 1
-    TEUCHOS_TEST_FOR_EXCEPTION(!goodMap,                    Exceptions::RuntimeError, "For now, need matching row and col maps");
-    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError, "For now, only block size 1");
+    //TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError, "For now, only block size 1");
 
     // For now, do a simple translation
     // FIXME: only type is correct here, everything else is not
@@ -194,20 +265,29 @@ namespace MueLu {
         }
     }
 #else
+
+    // temporarely keep the unamalgamation code until we have a kokkos version of it
     ArrayRCP<LO> aggStart;
-    ArrayRCP<LO> aggToRowMapLO;
-    ArrayRCP<GO> aggToRowMapGO;
+    ArrayRCP<LO> array_aggToRowMapLO;
+    ArrayRCP<GO> array_aggToRowMapGO;
     if (goodMap) {
-      amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
+      amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, array_aggToRowMapLO);
       GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
 
     } else {
-      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMapGO);
+      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, array_aggToRowMapGO);
       GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
                             << "using GO->LO conversion with performance penalty" << std::endl;
     }
-#endif
 
+    // TAW: at the momemt only support for matching row and col maps
+    TEUCHOS_TEST_FOR_EXCEPTION(!goodMap,                    Exceptions::RuntimeError, "For now, need matching row and col maps");
+
+    Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", array_aggToRowMapLO.size());
+    for(size_t i = 0; i < array_aggToRowMapLO.size(); i++) {
+      agg2RowMapLO(i) = array_aggToRowMapLO[i];
+    }
+#endif
     // TODO
     // Use TeamPolicy with scratch_memory_space for local QR
     // Something along the lines:
@@ -325,7 +405,24 @@ namespace MueLu {
         }
 
     } else {
+
+      const Kokkos::TeamPolicy<> policy( 10 , 1); // 10 teams a 1 thread
+
+      Kokkos::parallel_for( policy, TestFunctor<int>());
+
+      // Each team handles a slice of the data
+      // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes.
+      // Kokkos::AUTO will determine the number of threads
+      // The maximum vector length is hardware dependent but can always be smaller than the hardware allows.
+      // The vector length must be a power of 2.
+
+      //const Kokkos::TeamPolicy<> policy( 512 , Kokkos::AUTO , 16);
+
+      //Kokkos::parallel_for( policy , SomeCorrelation(data,gsum) );
+
       throw Exceptions::RuntimeError("Ignore NSDim > 1 for now");
+
+
 #if 0
       Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& nnz) {
         LO aggSize = aggRows(agg+1) - aggRows(agg);
