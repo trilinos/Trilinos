@@ -115,6 +115,11 @@ public:
     // Initialize basis vector
     p_->set(*v_); p_->scale(-one);
     Real pnorm2 = v_->dot(g_->dual());
+    if ( pnorm2 <= zero ) {
+      iflag = 4;
+      iter  = 0;
+      return;
+    }
     // Initialize scalar storage
     iter = 0; iflag = 0;
     Real kappa(0), beta(0), sigma(0), alpha(0), tmp(0), sMp(0);
