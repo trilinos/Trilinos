@@ -543,9 +543,9 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    if(useTpetra)
-      std::cout << "ALL PASSED: Tpetra" << std::endl;
+      out << "ALL PASSED: Tpetra" << std::endl;
    else
-      std::cout << "ALL PASSED: Epetra" << std::endl;
+      out << "ALL PASSED: Epetra" << std::endl;
 
    return 0;
 }
