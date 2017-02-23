@@ -153,7 +153,7 @@ namespace PHX {
     typedef typename array_type::execution_space execution_space;
  
     KOKKOS_FORCEINLINE_FUNCTION
-    MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
+    MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
     
     KOKKOS_FORCEINLINE_FUNCTION
     MDField(const PHX::Tag<DataT>& v);

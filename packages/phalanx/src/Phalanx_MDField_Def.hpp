@@ -91,7 +91,7 @@ template<typename DataT,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
+MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t) :
   m_tag(name,t)
 #ifdef PHX_DEBUG
   , m_tag_set(true),
