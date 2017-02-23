@@ -45,6 +45,8 @@
 \author Created by Kyungjoo Kim
 */
 
+#include <iomanip>
+
 #include "Kokkos_Core.hpp"
 #include <impl/Kokkos_Timer.hpp>
 
@@ -52,6 +54,13 @@
 
 #include "Intrepid2_Types.hpp"
 #include "test_hgrad.hpp"
+
+//#define __INTREPID2_USE_KOKKOSKERNELS__
+#if defined(__INTREPID2_USE_KOKKOSKERNELS__)
+#if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
+#include "test_hgrad_vector.hpp"
+#endif
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -82,12 +91,34 @@ int main(int argc, char *argv[]) {
 
   if (verbose) 
     std::cout << "Testing datatype double\n";
+
   const int r_val_double = Intrepid2::Test::ComputeBasis_HGRAD
     <double,Kokkos::Serial>(nworkset,
                             C,
                             order,
                             verbose);
+#if defined(__INTREPID2_USE_KOKKOSKERNELS__)  
+#if defined(__AVX512F__)
+  typedef KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8> VectorTagType;
+  const int r_val_double_vector = Intrepid2::Test::ComputeBasis_HGRAD_Vector
+    <VectorTagType,Kokkos::Serial>(nworkset,
+                                   C,
+                                   order,
+                                   verbose);
+#elif defined(__AVX2__) || defined(__AVX__)
+  typedef KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4> VectorTagType;
+  const int r_val_double_vector = Intrepid2::Test::ComputeBasis_HGRAD_Vector
+    <VectorTagType,Kokkos::Serial>(nworkset,
+                                   C,
+                                   order,
+                                   verbose);
+#endif
+#endif
   Kokkos::finalize();
-  
+#if defined(__INTREPID2_USE_KOKKOSKERNELS__)  
+  return r_val_double + r_val_double_vector;
+#else
   return r_val_double;
+#endif
+
 }

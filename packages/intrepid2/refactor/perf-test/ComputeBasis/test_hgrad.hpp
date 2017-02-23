@@ -356,7 +356,7 @@ namespace Intrepid2 {
 
       
       Kokkos::Impl::Timer timer;
-      double t_horizontal = 0, t_vertical = 0, t_vectorize = 0;
+      double t_horizontal = 0, t_vertical = 0;
       int errorFlag = 0;
 
       BasisTypeHost hostBasis;
@@ -545,7 +545,6 @@ namespace Intrepid2 {
         << "TEST HGRAD " 
         << ": t_horizontal = " << (t_horizontal/nworkset) 
         << ", t_vertical = " << (t_vertical/nworkset)
-        << ", t_vectorize = " << (t_vectorize/nworkset)
         << std::endl;
       
       if (errorFlag != 0)
