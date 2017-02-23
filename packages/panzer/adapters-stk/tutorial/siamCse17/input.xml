@@ -1,8 +1,8 @@
 <ParameterList>
 
   <!--
-       Any string below that begin with "My" are ones that you can feel free to
-       choose your own names for.
+       Note that any strings below that begin with "My" are ones that you can
+       feel free to choose your own names for.
   -->
 
   <!--
@@ -71,6 +71,43 @@
       </ParameterList> <!--U_SOURCE-->
     </ParameterList> <!--MyClosureModel-->
   </ParameterList> <!--Closure Models-->
+
+  <!--
+       Here we're setting "Dirichlet" boundary conditions on the "top",
+       "bottom", "left", and "right" sides of our element block ("eblock-0_0").
+       We're specifying "U" as the degree of freedom to which these BCs apply,
+       and the "MyBCStrategy" class is going to actually create the BC itself.
+  -->
+  <ParameterList name="Boundary Conditions">
+    <ParameterList>
+      <Parameter name="Type"              type="string" value="Dirichlet"   />
+      <Parameter name="Sideset ID"        type="string" value="top"         />
+      <Parameter name="Element Block ID"  type="string" value="eblock-0_0"  />
+      <Parameter name="Equation Set Name" type="string" value="U"           />
+      <Parameter name="Strategy"          type="string" value="MyBCStrategy"/>
+    </ParameterList> <!--(Unnamed)-->
+    <ParameterList>
+      <Parameter name="Type"              type="string" value="Dirichlet"   />
+      <Parameter name="Sideset ID"        type="string" value="bottom"      />
+      <Parameter name="Element Block ID"  type="string" value="eblock-0_0"  />
+      <Parameter name="Equation Set Name" type="string" value="U"           />
+      <Parameter name="Strategy"          type="string" value="MyBCStrategy"/>
+    </ParameterList> <!--(Unnamed)-->
+    <ParameterList>
+      <Parameter name="Type"              type="string" value="Dirichlet"   />
+      <Parameter name="Sideset ID"        type="string" value="left"        />
+      <Parameter name="Element Block ID"  type="string" value="eblock-0_0"  />
+      <Parameter name="Equation Set Name" type="string" value="U"           />
+      <Parameter name="Strategy"          type="string" value="MyBCStrategy"/>
+    </ParameterList> <!--(Unnamed)-->
+    <ParameterList>
+      <Parameter name="Type"              type="string" value="Dirichlet"   />
+      <Parameter name="Sideset ID"        type="string" value="right"       />
+      <Parameter name="Element Block ID"  type="string" value="eblock-0_0"  />
+      <Parameter name="Equation Set Name" type="string" value="U"           />
+      <Parameter name="Strategy"          type="string" value="MyBCStrategy"/>
+    </ParameterList> <!--(Unnamed)-->
+  </ParameterList> <!--Boundary Conditions-->
 
   <!--
        This is information on what we should use to actually solve the system

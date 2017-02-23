@@ -79,12 +79,12 @@ MySourceTerm(
 
   // This is the field that will be storing the values of our source function
   // at every cell and integration point.
-  result = MDField<ScalarT, Cell, Point>(name, ir.dl_scalar);
+  result_ = MDField<ScalarT, Cell, Point>(name, ir.dl_scalar);
 
   // This specifies the field that this Evaluator will be evaluating.  Since
   // our source term is an analytic function of x and y, it has no
   // dependencies, so we have no need to call addDependentField().
-  this->addEvaluatedField(result);
+  this->addEvaluatedField(result_);
 
   // Multiple instances of the same Evaluator can be created with different 
   // "name"s passed into the constructor.  This is admittedly not useful, in
@@ -128,7 +128,7 @@ evaluateFields(
   parallel_for(workset.num_cells, [=] (const index_t cell)
   {
     // Loop over the integration points in the cell.
-    for (int point(0); point < result.extent_int(1); ++point)
+    for (int point(0); point < result_.extent_int(1); ++point)
     {
       // Get the (x,y) location corresponding to this integration point in this
       // cell.
@@ -137,7 +137,7 @@ evaluateFields(
         y(workset.int_rules[irIndex_]->ip_coordinates(cell, point, 1));
 
       // Compute the value of the source term at this (x,y) location.
-      result(cell, point) = sin(2 * M_PI * x) * sin(2 * M_PI * y);
+      result_(cell, point) = sin(2 * M_PI * x) * sin(2 * M_PI * y);
     } // end loop over the integration points
   }); // end loop over the cells in the workset
 } // end of evaluateFields()

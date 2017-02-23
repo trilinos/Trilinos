@@ -53,9 +53,9 @@
 #include "Panzer_ClosureModel_Factory.hpp"
 
 /**
- *  \brief Description.                                                          // JMG:  Fill this out.                          
- *                                                                               //                                               
- *  Detailed description.                                                        //                                               
+ *  \brief Our closure model factory.
+ *
+ *  This class is used to build our closure models.
  */
 template<typename EvalT>
 class MyClosureModelFactory
@@ -65,20 +65,32 @@ class MyClosureModelFactory
   public:
     
     /**
-     *  \brief Description.                                                      // JMG:  Fill this out.                          
-     *                                                                           //                                               
-     *  Detailed description.                                                    //                                               
-     *                                                                           //                                               
-     *  \param[?] modelId       Description.                                     //                                               
-     *  \param[?] models        Description.                                     //                                               
-     *  \param[?] fl            Description.                                     //                                               
-     *  \param[?] ir            Description.                                     //                                               
-     *  \param[?] defaultParams Description.                                     //                                               
-     *  \param[?] userData      Description.                                     //                                               
-     *  \param[?] globalData    Description.                                     //                                               
-     *  \param[?] fm            Description.                                     //                                               
-     *                                                                           //                                               
-     *  \returns Something.                                                      //                                               
+     *  \brief Build the closure models.
+     *
+     *  This routine builds all the evaluators for all the various closure
+     *  models we'll support.  In our case, there is only one, corresponding to
+     *  our source term.
+     *
+     *  \param[in] modelId       The closure model ID, which is the "name" of a
+     *                           `ParameterList` in the "Closure Models"
+     *                           `ParameterList` in the input XML file.
+     *  \param[in] models        The "Closure Models" `ParameterList` from the
+     *                           input XML file.
+     *  \param[in] fl            This is unused in this routine, though it is
+     *                           part of the `ClosureModelFactory` interface.
+     *  \param[in] ir            The integration rule that is used in creating
+     *                           our closure model objects.
+     *  \param[in] defaultParams This is unused in this routine, though it is
+     *                           part of the `ClosureModelFactory` interface.
+     *  \param[in] userData      This is unused in this routine, though it is
+     *                           part of the `ClosureModelFactory` interface.
+     *  \param[in] globalData    This is unused in this routine, though it is
+     *                           part of the `ClosureModelFactory` interface.
+     *  \param[in] fm            This is unused in this routine, though it is
+     *                           part of the `ClosureModelFactory` interface.
+     *
+     *  \returns A list of evaluators corresponding to all the various closure
+     *           models we support.
      */
     Teuchos::RCP<std::vector<Teuchos::RCP<PHX::Evaluator<panzer::Traits>>>>
     buildClosureModels(

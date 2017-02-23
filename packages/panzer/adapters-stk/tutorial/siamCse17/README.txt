@@ -1,7 +1,32 @@
-In Step 1 of this tutorial we will:
+The files in this directory solve the following problem:
 
-Starting with this code, all it does now is project ‘1’ onto the basis which yields ‘1’. Please modify this example to be a (positive definite) Helmholtz example. With a source term that is equal to sin(2pi*x)*sin(2pi*y). This can be done in two steps.
+  -\Delta u(x, y) + (1 - 8 \pi^2) u(x, y) = \sin(2 \pi x) \sin(2 \pi y),
+    (x,y) \in \Omega = (0,1) \times (0,1),
+  u(x, y) = 0, (x,y) \in \partial\Omega.
 
-1. Add the (grad u, grad v) term to the equation set
+The following is an explanation of all the files in this directory.
 
-2. Implement the sin(2pi*x)*sin(2pi*y) evaluator
+CMakeLists.txt:
+  This file tell CMake how to build this example with the rest of Trilinos.
+
+input.xml:
+  An input file in which we specify the mesh, physics blocks, closure models,
+  boundary conditions, and solver options.
+
+main.cpp:
+  This runs the example.  There's an awful lot here that new users aren't
+  intended to understand -- instead focus on the files below.
+
+myBCStrategy*:
+  All the files needed to implement the zero Dirichlet boundary condition.
+
+myClosureModelFactory*, mySourceTerm*:
+  All the files needed to account for the source term,
+  \sin(2 \pi x) \sin(2 \pi y).
+
+myEquationSet*:
+  All the files needed to construct our equation set, or rather, the residual
+  corresponding to our partial differential equation above.
+
+README.txt:
+  This file, obviously.

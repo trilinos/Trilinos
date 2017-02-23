@@ -62,20 +62,18 @@
 #include "myClosureModelFactory.hpp"
 
 /**
- * 	\brief Description.                                                          // JMG:  Fill this out.                          
- *                                                                               //                                               
- * 	Detailed description.                                                        //                                               
+ * 	\brief A means of building the closure model factory.
+ *
+ * 	This class allows us to build our closure model factory.
  */
 class MyClosureModelFactory_TemplateBuilder
 {
   public:
     
     /**
-     * 	\brief Description.                                                      // JMG:  Fill this out.                          
-     * 	                                                                         //                                               
-     * 	Detailed description.                                                    //                                               
-     *                                                                           //                                               
-     * 	\returns Something.                                                      //                                               
+     * 	\brief Build the closure model factory.
+     *
+     * 	\returns A pointer to our built closure model factory.
      */
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase>
@@ -90,16 +88,6 @@ class MyClosureModelFactory_TemplateBuilder
       return rcp_static_cast<ClosureModelFactoryBase>(closureFactory);
     } // end of build()
 
-  private:
-    
-    /**
-     * 	\brief Description.                                                      // JMG:  Fill this out.                          
-     *                                                                           //                                               
-     * 	Detailed description.                                                    //                                               
-     */
-    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>>
-      distrParamLof;
-  
 }; // end of class MyClosureModelFactory_TemplateBuilder
 
 #endif // __myClosureModelFactory_TemplateBuilder_hpp__
