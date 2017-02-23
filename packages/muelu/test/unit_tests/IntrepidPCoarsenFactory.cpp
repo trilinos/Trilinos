@@ -1046,7 +1046,6 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
           GlobalOrdinal indexBase = 0;
           Epetra_SerialComm Comm;
-          int computeNumGlobals = -1;
           Epetra_Map rowMapEpetra(int(myRowGIDs.size()), int(myRowGIDs.size()), &myRowGIDs[0], indexBase, Comm);
           rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(rowMapEpetra);
           Epetra_Map colMapEpetra(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], indexBase, Comm);
@@ -1102,7 +1101,7 @@ namespace MueLuTests {
         MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, rankLocalElementToNodeMap,
                                                                                                    seeds, *rowMapRCP, *colMapRCP);
         
-        if (seeds.size() != spaceDim + 1)
+        if (int(seeds.size()) != spaceDim + 1)
         {
           success = false;
           out << "seeds should have dimension = spaceDim + 1; ";
@@ -1182,7 +1181,7 @@ namespace MueLuTests {
                                                                                                  seeds, *serialMapRCP, *serialMapRCP);
       
       int spaceDim = basis->getBaseCellTopology().getDimension();
-      if (seeds.size() != spaceDim + 1)
+      if (int(seeds.size()) != spaceDim + 1)
       {
         success = false;
         out << "seeds should have dimension = spaceDim + 1; ";
@@ -1261,15 +1260,15 @@ namespace MueLuTests {
   FC_FCO_DEFINE\
   CELL_TOPO_DEFINE\
   out << "version: " << MueLu::Version() << std::endl;\
-if (CellTopo::key == shards::Line<2>::key)\
+  if (unsigned(CellTopo::key) == unsigned(shards::Line<2>::key))\
   {\
     whichTest<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>(MAX_LINE_DEGREE, ptype, out, success);\
   }\
-  else if (CellTopo::key == shards::Quadrilateral<4>::key)\
+  else if (unsigned(CellTopo::key) == unsigned(shards::Quadrilateral<4>::key))\
   {\
     whichTest<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>(MAX_QUAD_DEGREE, ptype, out, success);\
   }\
-  else if (CellTopo::key == shards::Hexahedron<8>::key)\
+  else if (unsigned(CellTopo::key) == unsigned(shards::Hexahedron<8>::key))\
   {\
     whichTest<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>(MAX_HEX_DEGREE, ptype, out, success);\
   }\

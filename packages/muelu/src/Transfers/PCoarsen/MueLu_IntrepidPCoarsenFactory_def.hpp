@@ -795,9 +795,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     typedef Intrepid2::FieldContainer<double> FC;
 #endif
 
-    GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
-    LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
-
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> >(fineLevel, "Nullspace");

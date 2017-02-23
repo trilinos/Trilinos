@@ -95,7 +95,6 @@ namespace MueLuTests {
       using Teuchos::rcp_implicit_cast;
       using Teuchos::rcpFromRef;
       GO go_invalid=Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
-      LO lo_invalid=Teuchos::OrdinalTraits<LO>::invalid();
 
       Teuchos::ParameterList matrixList;
       matrixList.set("nx", nx);
