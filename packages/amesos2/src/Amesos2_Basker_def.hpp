@@ -167,7 +167,8 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
-      if ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) {
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+      if ( case_check ) {
 
         auto sp_rowptr = this->matrixA_->returnRowPtr();
         auto sp_colind = this->matrixA_->returnColInd();
@@ -230,7 +231,8 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
-      if ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) { // outer if check if this is root_
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+      if ( case_check ) {
 
         auto sp_rowptr = this->matrixA_->returnRowPtr();
         auto sp_colind = this->matrixA_->returnColInd();
@@ -505,7 +507,8 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 #ifdef SHYLUBASKER
   // NDE: Can clean up duplicated code with the #ifdef guards
-  if ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) {
+  bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+  if ( case_check ) {
   // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
   }
   else {

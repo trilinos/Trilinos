@@ -243,9 +243,6 @@ namespace Amesos2 {
     void describe(Teuchos::FancyOStream &out,
 		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
-    /// Method to return info as an enum regarding matrix type - epetra vs tpetra
-    EMatrix_Type get_matrix_type_info_as_int() const;
-
     /// Return raw pointer from CRS row pointer of matrixA_
     spmtx_ptr_t returnRowPtr() const;
 

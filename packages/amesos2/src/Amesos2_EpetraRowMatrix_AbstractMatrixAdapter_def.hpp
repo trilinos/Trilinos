@@ -299,11 +299,6 @@ namespace Amesos2 {
   }
 
   template <class DerivedMat>
-  EMatrix_Type
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMatrixTypeInfoAsInt_impl() const 
-  { return EPETRA; }
-
-  template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
   ::super_t::spmtx_ptr_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 

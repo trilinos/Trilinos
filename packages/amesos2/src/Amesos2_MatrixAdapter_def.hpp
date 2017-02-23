@@ -216,12 +216,6 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->getSparseValues();
   }
 
-  template < class Matrix >
-  EMatrix_Type MatrixAdapter<Matrix>::get_matrix_type_info_as_int() const
-  {
-    return static_cast<const adapter_t*>(this)->getMatrixTypeInfoAsInt_impl();
-  }
-
 
   /******************************
    * Private method definitions *

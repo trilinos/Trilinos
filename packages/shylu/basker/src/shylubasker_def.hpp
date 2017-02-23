@@ -494,7 +494,7 @@ namespace BaskerNS
     // NDE store matrix dims here for comparison in Factor
     sym_gn = A.ncol;
     sym_gm = A.nrow;
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs
     MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
     MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
@@ -580,7 +580,7 @@ namespace BaskerNS
         //  matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A, vals_crs_transpose);
         //}
         matrix_transpose(0, nrow, 0, ncol, nnz, col_ptr, row_idx, val, A);
-        // NDE: How should transpose be handled special case (when CRS format comes in)? null op, i.e. transpose of transpose yields original input?
+        // NDE: How should transpose be handled with special case (ie when CRS format comes in but user wants to use matrix transpose)? null op, i.e. transpose of transpose yields original input?
       }
       sort_matrix(A);
 
@@ -784,7 +784,11 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     Kokkos::Timer copyperm_timer;
     #endif
+
     if ( btf_nblks > 1 ) { //non-single block case
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
         if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label account for this anyway?
@@ -807,6 +811,9 @@ namespace BaskerNS
     } //end if
     else if ( btf_nblks == 1 )
     {
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for( Int i = 0; i < nnz; ++i ) {
 //        A.val(i) = val[ i ]; //this along with BTF_A = A (without permuting)  works with the SolverFactory test matrix... - maybe the btf ordering and nd ordering turned out to be inverses for that matrix...
         BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ]; // BTF_A = A assigned during Symbolic (break_into_parts2) for this case; thus, identity map between A.val indices and BTF_A.val indices
@@ -932,6 +939,9 @@ namespace BaskerNS
     Kokkos::Timer copyperm_timer;
     #endif
     if ( btf_nblks > 1 ) { //non-single block case
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
         if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label should account for this anyway?
@@ -954,6 +964,9 @@ namespace BaskerNS
     } //end if
     else if ( btf_nblks == 1 )
     {
+    #ifdef KOKKOS_HAVE_OPENMP
+    #pragma omp parallel for
+    #endif
       for( Int i = 0; i < nnz; ++i ) {
 //        A.val(i) = val[ i ]; //this along with BTF_A = A (without permuting)  works with the SolverFactory test matrix... - maybe the btf ordering and nd ordering turned out to be inverses for that matrix...
         BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ]; // BTF_A = A assigned during Symbolic (break_into_parts2) for this case; thus, identity map between A.val indices and BTF_A.val indices
@@ -1014,8 +1027,8 @@ namespace BaskerNS
 
     if ( sym_gn != gn || sym_gm != gm ) {
       printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree - Symbolic reordered structure will not apply.\n");
-      exit(EXIT_FAILURE);
-      //return BASKER_ERROR; 
+      //exit(EXIT_FAILURE);
+      return BASKER_ERROR; 
     }
 
     if(Options.verbose == BASKER_TRUE)

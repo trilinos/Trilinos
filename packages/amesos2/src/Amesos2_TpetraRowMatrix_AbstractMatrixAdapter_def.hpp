@@ -431,19 +431,6 @@ namespace Amesos2 {
 #endif
   }
 
-  template <typename Scalar,
-            typename LocalOrdinal,
-            typename GlobalOrdinal,
-            typename Node,
-            class DerivedMat>
-  EMatrix_Type
-  AbstractConcreteMatrixAdapter<
-    Tpetra::RowMatrix<Scalar,
-                      LocalOrdinal,
-                      GlobalOrdinal,
-                      Node>,
-    DerivedMat>::getMatrixTypeInfoAsInt_impl() const { return TPETRA; }
-
 } // end namespace Amesos2
 
 #endif  // AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
