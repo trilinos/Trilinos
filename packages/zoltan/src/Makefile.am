@@ -276,6 +276,7 @@ PHG = \
 	$(srcdir)/phg/phg_serialpartition.c \
 	$(srcdir)/phg/phg_util.c \
 	$(srcdir)/phg/phg_tree.c \
+	$(srcdir)/phg/phg_partition_tree.c \
 	$(srcdir)/phg/phg_Vcycle.c
 
 RCB_H = \

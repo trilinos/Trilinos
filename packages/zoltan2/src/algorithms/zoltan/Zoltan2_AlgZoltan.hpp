@@ -216,7 +216,7 @@ private:
   //! \brief  rcb is always binary
   virtual bool isPartitioningTreeBinary() const
   {
-    return true; // needs proper implementation for phg
+    return true;
   }
 
   //! \brief  handles the building of the splitRangeBeg and splitRangeEnd arrays
@@ -365,20 +365,91 @@ private:
                         std::vector<part_t> & splitRangeEnd,
                         std::vector<part_t> & treeVertParents) const
   {
-    throw std::logic_error( "PHG not implemented yet" );
-  }
-
-  //! \brief  access the zoltan parameter LB_METHOD
-  std::string getPartitionMethod() const
-  {
-    const Teuchos::ParameterList &pl = env->getParameters();
-    const Teuchos::ParameterList & zoltan_pl = pl.sublist("zoltan_parameters");
-    std::string lb_method;
-    const Teuchos::ParameterEntry * pe = zoltan_pl.getEntryPtr("LB_METHOD");
-    if(pe) {
-      lb_method = pe->getValue(&lb_method);
+    // First thing is to get the length of the tree from zoltan.
+    // The tree is a list of pairs (lo,hi) for each node.
+    // Here tree_array_size is the number of pairs.
+    // In phg indexing the first pairt (i=0) is empty garbage.
+    // The second pair (index 1) will be the root.
+    // Some nodes will be empty nodes, determined by hi = -1.
+    int tree_array_size = -1; // will be set by Zoltan_PHG_Partition_Tree_Size
+    int err = Zoltan_PHG_Partition_Tree_Size(
+      zz->Get_C_Handle(), &tree_array_size);
+    if(err != 0) {
+      throw std::logic_error("Zoltan_PHG_Partition_Tree_Size returned error.");
     }
-    return lb_method;
+    // Determine the number of valid nodes (PHG will have empty slots)
+    // We scan the list of pairs and count each node which does not have hi = -1
+    // During the loop we will also construct mapIndex which maps initial n
+    // to final n due to some conversions we apply to meet the design specs.
+    // The conversions implemented by mapIndex are:
+    //    Move all terminals to the beginning (terminals have hi = lo)
+    //    Resort the terminals in order (simply map to index lo works)
+    //    Move non-terminals after the terminals (they start at index numParts)
+    //    Map the first pair (root) to the be last to meet the design spec
+    part_t numTreeNodes = 0;
+    std::vector<part_t> mapIndex(tree_array_size); // maps n to final index
+    part_t trackNonTerminalIndex = numParts; // starts after terminals
+    for(part_t n = 0; n < static_cast<part_t>(tree_array_size); ++n) {
+      part_t phgIndex = n + 1; // phg indexing starts at 1
+      int lo_index = -1;
+      int hi_index = -1;
+      err = Zoltan_PHG_Partition_Tree(
+        zz->Get_C_Handle(), phgIndex, &lo_index, &hi_index);
+      if(hi_index != -1) { // hi -1 means it's an unused node
+        ++numTreeNodes; // increase the total count because this is a real node
+        if(n != 0) { // the root is mapped last but we don't know the length yet
+          mapIndex[n] = (lo_index == hi_index) ? // is it a terminal?
+            lo_index : // terminals map in sequence - lo_index is correct
+            (trackNonTerminalIndex++); // set then bump trackNonTerminalIndex +1
+        }
+      }
+    }
+    // now complete the map by setting root to the length-1 for the design specs
+    mapIndex[0] = numTreeNodes - 1;
+    // CALCULATE: numTreeVerts
+    numTreeVerts = numTreeNodes - 1; // this is the design - root not included
+    // CALCULATE: permPartNums
+    permPartNums.resize(numParts);
+    for(part_t n = 0; n < numParts; ++n) {
+      permPartNums[n] = n; // for phg we can assume this is trivial and in order
+    }
+    // CALCULATE: treeVertParents, splitRangeBeg, splitRangeEnd
+    // we will determine all of these in this second loop using mapIndex
+    // First set the arrays to have the proper length
+    treeVertParents.resize(numTreeNodes);
+    splitRangeBeg.resize(numTreeNodes);
+    splitRangeEnd.resize(numTreeNodes);
+    // Now loop a second time
+    for(part_t n = 0; n < tree_array_size; ++n) {
+      part_t phgIndex = n + 1; // phg indexing starts at 1
+      int lo_index = -1; // zoltan Zoltan_PHG_Partition_Tree will set this
+      int hi_index = -1; // zoltan Zoltan_PHG_Partition_Tree will set this
+      err = Zoltan_PHG_Partition_Tree( // access zoltan phg tree data
+        zz->Get_C_Handle(), phgIndex, &lo_index, &hi_index);
+      if(err != 0) {
+        throw std::logic_error("Zoltan_PHG_Partition_Tree returned in error.");
+      }
+      if(hi_index != -1) { // hi -1 means it's an unused node (a gap)
+        // get final index using mapIndex - so convert from phg to design plan
+        part_t finalIndex = mapIndex[n]; // get the index for the final output
+        // now determine the parent
+        // In the original phg indexing, the parent can be directly calculated
+        // from the pair index using the following rules:
+        // if phgIndex even, then parent is phgIndex/2
+        //   here we determine even by ((phgIndex%2) == 0)
+        // if phgIndex odd, then parent is (phgIndex-1)/2
+        // but after getting parentPHGIndex we convert back to this array
+        // indexing by subtracting 1
+        part_t parentPHGIndex =
+          ((phgIndex%2) == 0) ? (phgIndex/2) : ((phgIndex-1)/2);
+        // map the parent phg index to the final parent index
+        // however, for the special case of the root (n=1), set the parent to -1
+        treeVertParents[finalIndex] = (n==0) ? -1 : mapIndex[parentPHGIndex-1];
+        // set begin (inclusive) and end (non-inclusive), so end is hi+1
+        splitRangeBeg[finalIndex] = static_cast<part_t>(lo_index);
+        splitRangeEnd[finalIndex] = static_cast<part_t>(hi_index+1);
+      }
+    }
   }
 
   //! \brief  fill arrays with partition tree info
@@ -403,8 +474,12 @@ private:
 
     // now call the appropriate method based on LB_METHOD in the zoltan
     // parameters list.
-    std::string lb_method = getPartitionMethod();
-
+    const Teuchos::ParameterList & zoltan_pl = pl.sublist("zoltan_parameters");
+    std::string lb_method;
+    pe = zoltan_pl.getEntryPtr("LB_METHOD");
+    if(pe) {
+      lb_method = pe->getValue(&lb_method);
+    }
     if(lb_method == "phg") {
       phg_getPartitionTree(numParts, numTreeVerts, permPartNums,
           splitRangeBeg, splitRangeEnd, treeVertParents);

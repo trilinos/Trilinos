@@ -203,22 +203,117 @@ int main(int argc, char** argv)
   matAdapter.setCoordinateInput(ca);
   //////////////////////////////////////////////////////////////////////
 
-  // MDM - disabled the other tests - just did rcb so far...
-//  int err = testForMJ(matAdapter, me, numParts, coords, comm);
-  int err = testForRCB(matAdapter, me, numParts, coords, comm);
- // int err = testForPHG(matAdapter, me, numParts, coords, comm);
+  // MDM - MJ disabled - not implemented yet
+  // int errMJ  = testForMJ(matAdapter, me, numParts, coords, comm); -check err
+  int errRCB = testForRCB(matAdapter, me, numParts, coords, comm);
+  int errPHG = testForPHG(matAdapter, me, numParts, coords, comm);
 
-
+  // Currently just for internal development - sweep from 1 - 25 numParts
+  // and validate each to check for any bad results.
+  // #define BRUTE_FORCE_SEARCH
+  #ifdef BRUTE_FORCE_SEARCH
+  for(int setParts = 1; setParts <= 25; ++setParts) {
+    // numParts is a parameter so should not be set like for for production
+    // code - this is just a 2nd development check to run try a bunch of tests
+    numParts = setParts;
+    std::cout << "Brute force testing num parts: " << numParts << std::endl;
+    // MJ not implemented yet
+    // if(testForMJ(matAdapter, me, numParts, coords, comm) != 0) { return 1; }
+    if(testForRCB(matAdapter, me, numParts, coords, comm) != 0) { return 1; }
+    if(testForPHG(matAdapter, me, numParts, coords, comm) != 0) { return 1; }
+  }
+  #endif
 
   delete ca;
 
-
-  if(err==0)
+  // if(errMJ==0)
+  if(errRCB==0)
+  if(errPHG==0)
   {
     std::cout << "PASS" << std::endl;
     return success;
   }
   return 1;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+// General test function to analyze solution and print out some information
+////////////////////////////////////////////////////////////////////////////////
+bool validate(part_t numTreeVerts,
+  std::vector<part_t> permPartNums,
+  std::vector<part_t> splitRangeBeg,
+  std::vector<part_t> splitRangeEnd,
+  std::vector<part_t> treeVertParents
+)
+{
+  // by design numTreeVerts does not include the root
+  if(numTreeVerts != splitRangeBeg.size() - 1) {
+    return false;
+  }
+  if(numTreeVerts != splitRangeEnd.size() - 1) {
+    return false;
+  }
+  if(numTreeVerts != treeVertParents.size() - 1) {
+    return false;
+  }
+  // now search every node and validate it's properties
+  for(part_t n = 0; n <= numTreeVerts; ++n) {
+    if(n < permPartNums.size()) {
+      // terminal so children should just be range 1
+      if(splitRangeEnd[n] != splitRangeBeg[n] + 1) {
+        std::cout << "Invalid terminal - range should be 1" << std::endl;
+        return false;
+      }
+      if(splitRangeBeg[n] != n) {
+        std::cout << "Invalid terminal - not pointing to myself!" << std::endl;
+        return false;
+      }
+    }
+    else {
+      part_t beg = splitRangeBeg[n];
+      part_t end = splitRangeEnd[n];
+      part_t count = end - beg;
+      std::vector<bool> findChildren(count, false);
+      for(part_t n2 = 0; n2 <= numTreeVerts; ++n2) {
+        if(treeVertParents[n2] == n) {
+          part_t beg2 = splitRangeBeg[n2];
+          part_t end2 = splitRangeEnd[n2];
+          for(part_t q = beg2; q < end2; ++q) {
+            part_t setIndex = q - beg; // rel to parent so beg, not beg2
+            if(setIndex < 0 || setIndex >= count) {
+              std::cout << "Found bad child index - invalid results!" << std::endl;
+              return false;
+            }
+            if(findChildren[setIndex]) {
+              std::cout << "Found child twice - invalid results!" << std::endl;
+              return false;
+            }
+            findChildren[setIndex] = true;
+          }
+        }
+      }
+      for(part_t q = 0; q < count; ++q) {
+        if(!findChildren[q]) {
+          std::cout << "Did not find all children. Invalid results!" << std::endl;
+          return false;
+        }
+      }
+    }
+    if(n == numTreeVerts) {
+      // this is the root
+      if(splitRangeBeg[n] != 0) {
+        std::cout << "Root must start at 0!" << std::endl;
+        return false;
+      }
+      if(splitRangeEnd[n] != permPartNums.size()) {
+        std::cout << "Root must contain all parts!" << std::endl;
+        return false;
+      }
+    }
+  }
+  return true;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -295,6 +390,11 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     cout << endl << endl;
   }
   comm->barrier(); // for tidy output...
+
+  if(!validate(numTreeVerts, permPartNums, splitRangeBeg, splitRangeEnd,
+    treeVertParents)) {
+    return 1;
+  }
 
   return 0;
 }
