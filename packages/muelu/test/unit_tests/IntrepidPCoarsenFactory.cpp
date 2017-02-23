@@ -1152,8 +1152,7 @@ namespace MueLuTests {
     RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
     typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP;
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-    //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     
     for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
     {
@@ -1175,7 +1174,6 @@ namespace MueLuTests {
       }
       int numElements = maxLID + 1;
       serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
-      Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMap = serialMapRCP.ptr();
       
       MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, elementToNodeMap,
                                                                                                  seeds, *serialMapRCP, *serialMapRCP);
