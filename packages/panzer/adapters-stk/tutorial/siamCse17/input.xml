@@ -1,0 +1,86 @@
+<ParameterList>
+
+  <!--
+       Any string below that begin with "My" are ones that you can feel free to
+       choose your own names for.
+  -->
+
+  <!--
+       Our domain is 0 <= x <= 1 and 0 <= y <= 1, and we'll use a single
+       element block for the whole domain.  We'll subdivide the domain up 20
+       times in both the x- and y-directions to break it up into elements.
+  -->
+  <ParameterList name="Mesh">
+    <Parameter name="X Blocks"   type="int"    value="1"  />
+    <Parameter name="Y Blocks"   type="int"    value="1"  />
+    <Parameter name="X Elements" type="int"    value="20" />
+    <Parameter name="Y Elements" type="int"    value="20" />
+    <Parameter name="X0"         type="double" value="0.0"/>
+    <Parameter name="Y0"         type="double" value="0.0"/>
+    <Parameter name="Xf"         type="double" value="1.0"/>
+    <Parameter name="Yf"         type="double" value="1.0"/>
+  </ParameterList> <!--Mesh-->
+
+  <!--
+       We only have a single element block ("eblock-0_0"), and we'll map that
+       to a single physics block ("MyPhysicsBlock").
+  -->
+  <ParameterList name="Block ID to Physics ID Mapping">
+    <Parameter name="eblock-0_0" type="string" value="MyPhysicsBlock"/>
+  </ParameterList> <!--Block ID to Physics ID Mapping-->
+
+  <ParameterList name="Physics Blocks">
+    <!--
+         For each of our physics blocks, we need to specify:
+           * which equation set to use ("MyEquationSet" below),
+           * what kind of basis functions (e.g., "HGrad", "HCurl", or "HDiv"),
+           * the order of the basis (1 for linear, 2 for quadratic, etc.),
+           * the order of the integrations (quadrature rules) to be used,
+           * the closure model ID ("MyClosureModel" below), and
+           * optionally a prefix if you'd like to use multiple instantiations
+             of the same equation set.
+         Each unnamed ParameterList corresponds to an equation set, so if you
+         wanted to associate another equation set with this same physics block,
+         you could just copy and paste the block below and fill out different
+         "value"s.
+    -->
+    <ParameterList name="MyPhysicsBlock">
+      <ParameterList>
+        <Parameter name="Type"              type="string" value="MyEquationSet" />
+        <Parameter name="Basis Type"        type="string" value="HGrad"         />
+        <Parameter name="Basis Order"       type="int"    value="1"             />
+        <Parameter name="Integration Order" type="int"    value="2"             />
+        <Parameter name="Model ID"          type="string" value="MyClosureModel"/>
+        <Parameter name="Prefix"            type="string" value=""              />
+      </ParameterList> <!--(Unnamed)-->
+    </ParameterList> <!--MyPhysicsBlock-->
+  </ParameterList> <!--Physics Blocks-->
+
+  <ParameterList name="Closure Models">
+    <!--
+         Here we're creating our closure model, and we're only specifying a
+         single term in it (the source term, f).  The name ("U_SOURCE") needs
+         to match the "Value Name" in creating the residual source term in
+         MyEquationSet::buildAndRegisterEquationSetEvaluators().  The "Type"
+         ("MySourceTerm") needs to match the "Type" that we're checking in
+         MyClosureModelFactory::buildClosureModels().
+    -->
+    <ParameterList name="MyClosureModel">
+      <ParameterList name="U_SOURCE">
+        <Parameter name="Type"  type="string" value="MySourceTerm"/>
+      </ParameterList> <!--U_SOURCE-->
+    </ParameterList> <!--MyClosureModel-->
+  </ParameterList> <!--Closure Models-->
+
+  <!--
+       This is information on what we should use to actually solve the system
+       we're setting up.  Since it's not Panzer-specific, don't worry about it.
+       Check out the various Trilinos solver packages such as Amesos if you're
+       interested.
+  -->
+  <ParameterList name="Linear Solver">
+    <Parameter name="Linear Solver Type"  type="string" value="Amesos"/>
+    <Parameter name="Preconditioner Type" type="string" value="None"  />
+  </ParameterList> <!--Linear Solver-->
+
+</ParameterList> <!--(Unnamed)-->
