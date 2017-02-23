@@ -203,10 +203,22 @@ int main (int argc, char **argv)
       std::cout << std::endl;
 
       std::cout << "Checking some read and written data..." << std::endl;
-      for (int i = 0; i < 3; ++i)
+      for (int i = 0; i < 3; ++i) {
         std::cout << "iarray[" << i << "] = " << iarray[i] << " should be " << new_iarray[i] << std::endl;
-      for (int i = 0; i < 3; ++i)
+        if(iarray[i] != new_iarray[i]) {
+          std::cout << "Test failed." << std::endl;
+          return EXIT_FAILURE;
+        }
+      }
+
+      for (int i = 0; i < 3; ++i) {
         std::cout << "darray[" << i << "] = " << darray[i] << " should be " << new_darray[i] << std::endl;
+        if(darray[i] != new_darray[i]) {
+          std::cout << "Test failed." << std::endl;
+          return EXIT_FAILURE;
+        }
+      }
+
       std::cout << std::endl;
       std::cout << "Try to print out the content of myfile.h5 using the command" << std::endl;
       std::cout << "    h5dump myfile.h5" << std::endl;
@@ -226,12 +238,13 @@ int main (int argc, char **argv)
   catch(EpetraExt::Exception& rhs) 
   {
     rhs.Print();
+    return EXIT_FAILURE;
   }
   catch (...) 
   {
     std::cerr << "Caught generic std::exception" << std::endl;
+    return EXIT_FAILURE;
   }
-
 
 #ifdef HAVE_MPI
   MPI_Finalize();
