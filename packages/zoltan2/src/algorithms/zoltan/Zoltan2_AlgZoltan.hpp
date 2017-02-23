@@ -54,8 +54,8 @@
 #include <Zoltan2_Model.hpp>
 
 #include <Zoltan2_AlgZoltanCallbacks.hpp>
-
-#include <rcb_partition_tree.h>
+#include <zoltan_cpp.h>
+#include <zoltan_partition_tree.h>
 
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltan.hpp
@@ -357,7 +357,6 @@ private:
                         std::vector<part_t> & treeVertParents) const
   {
     throw std::logic_error( "PHG not implemented yet" );
-    // Zoltan_PHG_Tree * pTree = Zoltan_PHG_LB_Data_tree(zz->Get_C_Handle());
   }
 
   //! \brief  access the zoltan parameter LB_METHOD
@@ -490,8 +489,6 @@ public:
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   // void color(const RCP<ColoringSolution<Adapter> > &solution);
-
-private:
 };
 
 /////////////////////////////////////////////////////////////////////////////

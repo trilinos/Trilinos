@@ -51,6 +51,7 @@ extern "C" {
 
 #include "zz_const.h"
 #include "rcb.h"
+#include "zoltan_partition_tree.h"
 
 /****************************************************************************/
 
