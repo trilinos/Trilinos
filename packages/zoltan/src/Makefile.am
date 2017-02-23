@@ -114,6 +114,7 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_timer.h \
 	$(srcdir)/include/zoltan_dd.h \
 	$(srcdir)/include/zoltan_dd_cpp.h \
+	$(srcdir)/include/zoltan_partition_tree.h \
 	$(srcdir)/include/zoltan_mem.h
 
 #       $(srcdir)/Zoltan_ConfigDefs.h

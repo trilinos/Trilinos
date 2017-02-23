@@ -44,17 +44,8 @@
  * @HEADER
  */
 
-// ************************************************************************
-// C++ class representing a Zoltan_Struct object.
-//
-// Assumption: Zoltan_Initialize has been called prior to creating
-// a Zoltan object.
-// ************************************************************************
-
-#ifndef RCB_PARTITION_TREE_H_
-#define RCB_PARTITION_TREE_H_
-
-#include "zoltan_cpp.h"
+#ifndef ZOLTAN_PARTITION_TREE_H
+#define ZOLTAN_PARTITION_TREE_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -75,7 +66,7 @@ extern "C" {
  *  Returned value:       --  Error code
  */
 int Zoltan_RCB_Partition_Tree(
-  Zoltan_Struct     *zz,
+  struct Zoltan_Struct     *zz,
   int    treeNodeIndex,
   int    *parent,
   int    *left_leaf,
