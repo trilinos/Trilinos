@@ -756,6 +756,7 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/belos/Belos_Tpetra_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_SolverManager_MP_Vector.hpp
+          sacado/kokkos/vector/belos/Belos_PseudoBlockCGIter_MP_Vector.hpp
           sacado/kokkos/vector/belos/Belos_StatusTest_GenResNorm_MP_Vector.hpp
           )
       ENDIF()
