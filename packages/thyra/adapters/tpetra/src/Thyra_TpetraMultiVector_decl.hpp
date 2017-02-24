@@ -151,10 +151,16 @@ protected:
 
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
-  contigSubViewImpl( const Range1D& colRng ) const;
+  contigSubViewImpl(const Range1D& colRng) const;
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& colRng );
+  nonconstContigSubViewImpl(const Range1D& colRng);
+  /** \brief . */
+  RCP<const MultiVectorBase<Scalar> >
+  nonContigSubViewImpl(const ArrayView<const int>& cols_in) const;
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstNonContigSubViewImpl(const ArrayView<const int>& cols_in);
 
   /** \brief . */
   virtual void mvMultiReductApplyOpImpl(

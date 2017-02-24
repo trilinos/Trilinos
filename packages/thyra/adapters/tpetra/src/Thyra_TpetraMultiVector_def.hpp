@@ -344,6 +344,74 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstContigSubView
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVectorBase<Scalar> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonContigSubViewImpl(
+  const ArrayView<const int>& cols_in
+  ) const
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nTpetraMultiVector::subView(ArrayView) const called!\n";
+#endif
+  // Tpetra wants col indices as size_t
+  Array<std::size_t> cols(cols_in.size());
+  for (Array<std::size_t>::size_type i = 0; i < cols.size(); ++i)
+    cols[i] = static_cast<std::size_t>(cols_in[i]);
+
+  const RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraView =
+    this->getConstTpetraMultiVector()->subView(cols());
+
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
+    tpetraVectorSpace<Scalar>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+          tpetraView->getNumVectors(),
+          tpetraView->getMap()->getComm(),
+          tpetraView->getMap()->getNode()
+          )
+        );
+
+  return constTpetraMultiVector(
+      tpetraVectorSpace_,
+      viewDomainSpace,
+      tpetraView
+      );
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MultiVectorBase<Scalar> >
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstNonContigSubViewImpl(
+  const ArrayView<const int>& cols_in
+  )
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nTpetraMultiVector::subView(ArrayView) called!\n";
+#endif
+  // Tpetra wants col indices as size_t
+  Array<std::size_t> cols(cols_in.size());
+  for (Array<std::size_t>::size_type i = 0; i < cols.size(); ++i)
+    cols[i] = static_cast<std::size_t>(cols_in[i]);
+
+  const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraView =
+    this->getTpetraMultiVector()->subViewNonConst(cols());
+
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
+    tpetraVectorSpace<Scalar>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+          tpetraView->getNumVectors(),
+          tpetraView->getMap()->getComm(),
+          tpetraView->getMap()->getNode()
+          )
+        );
+
+  return tpetraMultiVector(
+      tpetraVectorSpace_,
+      viewDomainSpace,
+      tpetraView
+      );
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 mvMultiReductApplyOpImpl(
   const RTOpPack::RTOpT<Scalar> &primary_op,
