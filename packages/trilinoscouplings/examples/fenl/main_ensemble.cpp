@@ -32,7 +32,7 @@
 
 #include <fstream>
 
-//#include <fenv.h>
+// #include <fenv.h>
 
 //----------------------------------------------------------------------------
 
@@ -319,6 +319,16 @@ void run_stokhos(
     std::cout << "Total samples = " << perf_total.uq_count << std::endl;
     std::cout << "Total solve time (s) = " << perf_total.cg_total_time
               << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
   }
 }
 
@@ -480,6 +490,19 @@ void run_dakota(
   dakota_interface.assign_rep(interface, false);
 
   dakota_env.execute();
+
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total tangent time (s) = " << perf_total.tangent_fill_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+  }
 
 #else
 
@@ -643,6 +666,14 @@ void run_tasmanian(
     std::cout << "Warning:  Tasmanian did not achieve refinement tolerance "
               << tol << std::endl;
 
+  // Compute mean and standard deviation of response
+  double s[qoi];
+  sparseGrid.integrate(s);
+  const double weight = std::pow(0.5, dim); // uniform measure in dim dimensions
+  s[0] *= weight; s[1] *= weight;
+  perf_total.response_mean = s[0];
+  perf_total.response_std_dev = std::sqrt(s[1]-s[0]*s[0]);
+
   if (cmd.PRINT_ITS && 0 == comm.getRank()) {
     std::cout << "R_level = ";
     for (int l=0; l<level-1; ++l)
@@ -651,15 +682,17 @@ void run_tasmanian(
     std::cout << "Total samples = " << perf_total.uq_count << std::endl;
     std::cout << "Total solve time (s) = " << perf_total.cg_total_time
               << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
   }
-
-  // Compute mean and standard deviation of response
-  double s[qoi];
-  sparseGrid.integrate(s);
-  const double weight = std::pow(0.5, dim); // uniform measure in dim dimensions
-  s[0] *= weight; s[1] *= weight;
-  perf_total.response_mean = s[0];
-  perf_total.response_std_dev = std::sqrt(s[1]-s[0]*s[0]);
 
 #else
 

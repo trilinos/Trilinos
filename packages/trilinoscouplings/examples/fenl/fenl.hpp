@@ -92,6 +92,7 @@ struct Perf {
   double fill_element_graph ;
   double create_sparse_matrix ;
   double fill_time ;
+  double tangent_fill_time ;
   double import_time ;
   double bc_time ;
   double mat_vec_time ;
@@ -99,6 +100,7 @@ struct Perf {
   double prec_setup_time ;
   double prec_apply_time ;
   double cg_total_time ;
+  double newton_total_time ;
   double newton_residual ;
   double error_max ;
   double response_mean ;
@@ -119,6 +121,7 @@ struct Perf {
            fill_element_graph(0) ,
            create_sparse_matrix(0) ,
            fill_time(0) ,
+           tangent_fill_time(0) ,
            import_time(0) ,
            bc_time(0) ,
            mat_vec_time(0) ,
@@ -126,6 +129,7 @@ struct Perf {
            prec_setup_time(0) ,
            prec_apply_time(0) ,
            cg_total_time(0) ,
+           newton_total_time(0) ,
            newton_residual(0) ,
            error_max(0) ,
            response_mean(0) ,
@@ -146,8 +150,10 @@ struct Perf {
     fill_element_graph   += p.fill_element_graph;
     create_sparse_matrix += p.create_sparse_matrix;
     fill_time            += p.fill_time;
+    tangent_fill_time    += p.tangent_fill_time;
     import_time          += p.import_time;
     bc_time              += p.bc_time ;
+    newton_total_time    += p.newton_total_time ;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
 
@@ -182,12 +188,14 @@ struct Perf {
     create_sparse_matrix= std::min( create_sparse_matrix , p.create_sparse_matrix );
     import_time         = std::min( import_time , p.import_time );
     fill_time           = std::min( fill_time , p.fill_time );
+    tangent_fill_time   = std::min( tangent_fill_time , p.tangent_fill_time );
     bc_time             = std::min( bc_time , p.bc_time );
     mat_vec_time        = std::min( mat_vec_time , p.mat_vec_time );
     cg_iter_time        = std::min( cg_iter_time , p.cg_iter_time );
     prec_setup_time     = std::min( prec_setup_time , p.prec_setup_time );
     prec_apply_time     = std::min( prec_apply_time , p.prec_apply_time );
     cg_total_time       = std::min( cg_total_time , p.cg_total_time );
+    newton_total_time   = std::min( newton_total_time , p.newton_total_time );
   }
 
   void reduceMax(const Teuchos::Comm<int>& comm) {
@@ -200,12 +208,14 @@ struct Perf {
     create_sparse_matrix = maximum( comm , create_sparse_matrix);
     import_time          = maximum( comm , import_time );
     fill_time            = maximum( comm , fill_time );
+    tangent_fill_time    = maximum( comm , tangent_fill_time );
     bc_time              = maximum( comm , bc_time );
     mat_vec_time         = maximum( comm , mat_vec_time );
     cg_iter_time         = maximum( comm , cg_iter_time  );
     prec_setup_time      = maximum( comm , prec_setup_time );
     prec_apply_time      = maximum( comm , prec_apply_time );
     cg_total_time        = maximum( comm , cg_total_time );
+    newton_total_time    = maximum( comm , newton_total_time );
   }
 };
 
