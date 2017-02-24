@@ -93,6 +93,24 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector() con
 }
 
 
+// Overridden from VectorDefaultBase
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const VectorSpaceBase<Scalar> >
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domain() const
+{
+  if (domainSpace_.is_null()) {
+    domainSpace_ = tpetraVectorSpace<Scalar>(
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+        1,
+        tpetraVector_.getConstObj()->getMap()->getComm(),
+        tpetraVector_.getConstObj()->getMap()->getNode()
+        )
+      );
+  }
+  return domainSpace_;
+}
+
+
 // Overridden from SpmdMultiVectorBase
 
 

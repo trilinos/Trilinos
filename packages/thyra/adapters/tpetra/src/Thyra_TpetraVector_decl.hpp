@@ -90,6 +90,12 @@ public:
 
   //@}
 
+  /** @name Overridden from VectorDefaultBase */
+  //@{
+  /** \brief . */
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
+  //@}
+
   // Should these Impl functions should alsp be protected???
 //protected:
 
@@ -244,6 +250,9 @@ private:
   
   RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   tpetraVectorSpace_;
+
+  mutable RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  domainSpace_;
   
   Teuchos::ConstNonconstObjectContainer<Tpetra::Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> >
   tpetraVector_;
