@@ -94,8 +94,11 @@ namespace Intrepid2 {
       using ImplBasisType = Impl::Basis_HGRAD_HEX_C1_FEM;
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
+      typedef typename DeviceSpaceType::array_layout DeviceArrayLayout;
+      typedef typename HostSpaceType::array_layout HostArrayLayout;
+
       constexpr size_t LLC_CAPACITY = 32*1024*1024;
-      Intrepid2::Test::Flush<LLC_CAPACITY> flush;
+      Intrepid2::Test::Flush<LLC_CAPACITY,DeviceSpaceType> flush;
       
       Kokkos::Impl::Timer timer;
       double t_horizontal = 0, t_vertical = 0;
@@ -113,12 +116,14 @@ namespace Intrepid2 {
         numPoints = cubature->getNumPoints(), 
         spaceDim = cubature->getDimension();
 
-      Kokkos::DynRankView<ValueType,HostSpaceType> dofCoordsHost("dofCoordsHost", numDofs, spaceDim);
+      Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> 
+	dofCoordsHost("dofCoordsHost", numDofs, spaceDim);
       hostBasis.getDofCoords(dofCoordsHost);
       const auto refNodesHost = Kokkos::subview(dofCoordsHost, range_type(0, numVerts), Kokkos::ALL());
       
       // pertub nodes
-      Kokkos::DynRankView<ValueType,HostSpaceType> worksetCellsHost("worksetCellsHost", numCells, numVerts, spaceDim);
+      Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> 
+	worksetCellsHost("worksetCellsHost", numCells, numVerts, spaceDim);
       for (ordinal_type cell=0;cell<numCells;++cell) {
         for (ordinal_type i=0;i<numVerts;++i)
           for (ordinal_type j=0;j<spaceDim;++j) {
@@ -129,8 +134,10 @@ namespace Intrepid2 {
 
       auto worksetCells = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), worksetCellsHost);
       Kokkos::deep_copy(worksetCells, worksetCellsHost);
-
-      Kokkos::DynRankView<ValueType,DeviceSpaceType> refPoints("refPoints", numPoints, spaceDim), refWeights("refWeights", numPoints);
+      
+      Kokkos::DynRankView<ValueType,DeviceSpaceType> 
+	refPoints("refPoints", numPoints, spaceDim), 
+	refWeights("refWeights", numPoints);
       cubature->getCubature(refPoints, refWeights);
 
       std::cout
@@ -147,14 +154,14 @@ namespace Intrepid2 {
         << "===============================================================================\n";
       
       try {
-
-        
         Kokkos::DynRankView<ValueType,DeviceSpaceType> 
           refBasisValues("refBasisValues", numDofs, numPoints),
           refBasisGrads ("refBasisGrads",  numDofs, numPoints, spaceDim);
         
         ImplBasisType::getValues<DeviceSpaceType>(refBasisValues, refPoints, OPERATOR_VALUE);
         ImplBasisType::getValues<DeviceSpaceType>(refBasisGrads,  refPoints, OPERATOR_GRAD);
+
+	std::cout << " Ref completed\n";
         
         const ordinal_type ibegin = -3;
         // testing sequential appraoch
@@ -171,7 +178,6 @@ namespace Intrepid2 {
           
           typedef CellTools<DeviceSpaceType> cts;
           typedef FunctionSpaceTools<DeviceSpaceType> fts;
-
 
           for (ordinal_type iwork=ibegin;iwork<nworkset;++iwork) {
             
@@ -194,7 +200,6 @@ namespace Intrepid2 {
             DeviceSpaceType::fence();
             t_horizontal += (iwork >= 0)*timer.seconds();
           }
-
         }
 
         // testing vertical approach
@@ -238,7 +243,7 @@ namespace Intrepid2 {
         *verboseStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       }
-
+      
       std::cout 
         << "TEST HGRAD " 
         << ": t_horizontal = " << (t_horizontal/nworkset) 

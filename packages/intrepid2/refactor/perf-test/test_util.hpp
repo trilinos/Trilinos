@@ -51,12 +51,12 @@ namespace Intrepid2 {
   
   namespace Test {
     
-    template<size_t BufSize>
+    template<size_t BufSize, typename ExecSpaceType>
     struct Flush {
       typedef double value_type;
 
       // flush a large host buffer
-      Kokkos::View<value_type*,Kokkos::DefaultHostExecutionSpace> _buf;
+      Kokkos::View<value_type*,ExecSpaceType> _buf;
       Flush() : _buf("Flush::buf", BufSize) {
         Kokkos::deep_copy(_buf, 1);
       }
@@ -79,7 +79,10 @@ namespace Intrepid2 {
       
       void run() {
         double sum = 0;
-        Kokkos::parallel_reduce(BufSize/sizeof(double), *this, sum);
+
+	Kokkos::RangePolicy<ExecSpaceType> policy(0, BufSize/sizeof(double));
+        Kokkos::parallel_reduce(policy, *this, sum);
+
         FILE *fp = fopen("/dev/null", "w");
         fprintf(fp, "%f\n", sum);
         fclose(fp);

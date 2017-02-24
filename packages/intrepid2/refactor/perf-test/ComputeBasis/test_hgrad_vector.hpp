@@ -103,7 +103,7 @@ namespace Intrepid2 {
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
       constexpr size_t LLC_CAPACITY = 32*1024*1024;
-      Intrepid2::Test::Flush<LLC_CAPACITY> flush;
+      Intrepid2::Test::Flush<LLC_CAPACITY,DeviceSpaceType> flush;
       
       Kokkos::Impl::Timer timer;
       double t_vectorize = 0;
