@@ -49,7 +49,6 @@
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_UnorderedMap.hpp>
 
 #include "Xpetra_Matrix.hpp"
 
@@ -405,6 +404,7 @@ struct StableSortByKeyView< Kokkos::Cuda > {
     class Stage1dVectorFunctor {
     private:
       typedef typename MatrixType::ordinal_type LO;
+      typedef typename MatrixType::value_type SC;
 
     private:
       ColDofType     coldofs;    //< view containing mixed node and dof indices (only input)
@@ -728,69 +728,6 @@ struct StableSortByKeyView< Kokkos::Cuda > {
 
     Set(currentLevel, "DofsPerNode",  dofsPerNode);
     Set(currentLevel, "Graph",        graph);
-  }
-
-  // this must go to the functor
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::MergeRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const LocalOrdinal row, Teuchos::Array<LocalOrdinal>& cols, const Teuchos::Array<LocalOrdinal>& translation) const {
-    typedef typename ArrayView<const LO>::size_type size_type;
-
-    // extract striding information
-    LO blkSize = A.GetFixedBlockSize();  //< stores the size of the block within the strided map
-    if (A.IsView("stridedMaps") == true) {
-      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
-      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
-      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-      if (strMap->getStridedBlockId() > -1)
-        blkSize = Teuchos::as<LO>(strMap->getStridingData()[strMap->getStridedBlockId()]);
-    }
-
-    // count nonzero entries in all dof rows associated with node row
-    size_t nnz = 0, pos = 0;
-    for (LO j = 0; j < blkSize; j++)
-      nnz += A.getNumEntriesInLocalRow(row*blkSize+j);
-
-    if (nnz == 0) {
-      cols.resize(0);
-      return;
-    }
-
-    cols.resize(nnz);
-
-
-    Kokkos::UnorderedMap<LocalOrdinal,LocalOrdinal,DeviceType> colsKokkosMap ( nnz );
-
-    // loop over all local dof rows associated with local node "row"
-    ArrayView<const LO> inds;
-    ArrayView<const SC> vals;
-    for (LO j = 0; j < blkSize; j++) {
-      A.getLocalRowView(row*blkSize+j, inds, vals);
-      size_type numIndices = inds.size();
-
-      if (numIndices == 0) // skip empty dof rows
-        continue;
-
-      // cols: stores all local node ids for current local node id "row"
-      cols[pos++] = translation[inds[0]];
-      for (size_type k = 1; k < numIndices; k++) {
-        LO nodeID = translation[inds[k]];
-        // Here we try to speed up the process by reducing the size of an array
-        // to sort. This works if the column nonzeros belonging to the same
-        // node are stored consequently.
-        if (nodeID != cols[pos-1])
-          cols[pos++] = nodeID;
-      }
-    }
-    cols.resize(pos);
-    nnz = pos;
-
-    // Sort and remove duplicates
-    std::sort(cols.begin(), cols.end());
-    pos = 0;
-    for (size_t j = 1; j < nnz; j++)
-      if (cols[j] != cols[pos])
-        cols[++pos] = cols[j];
-    cols.resize(pos+1);
   }
 }
 #endif // HAVE_MUELU_KOKKOS_REFACTOR

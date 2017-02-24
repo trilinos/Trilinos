@@ -118,10 +118,6 @@ buildClosureModels(
       "model:  \"" << modelId << "\"." << endl)
   } // end if (not models.isSublist(modelId)
 
-  // Description.                                                                // JMG:  Fill this out.                          
-  vector<RCP<const PureBasis>> bases;
-  fl.uniqueBases(bases);
-
   // Loop over all the closure models that correspond to the given model ID.
   const ParameterList& myModels = models.sublist(modelId);
   for (ParamIter itr = myModels.begin(); itr != myModels.end(); ++itr)

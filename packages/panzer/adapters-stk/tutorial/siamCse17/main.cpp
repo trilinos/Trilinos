@@ -98,20 +98,32 @@
 #include "myEquationSetFactory.hpp"
 
 /**
- * 	\brief Description.                                                          // JMG:  Fill this out.                          
- *                                                                               //                                               
- * 	Detailed description.                                                        //                                               
- *                                                                               //                                               
- * 	\param[?] physicsBlocks  Description.                                        //                                               
- * 	\param[?] linObjFactory  Description.                                        //                                               
- * 	\param[?] wkstContainer  Description.                                        //                                               
- * 	\param[?] globalIndexer  Description.                                        //                                               
- * 	\param[?] cmFactory      Description.                                        //                                               
- * 	\param[?] mesh           Description.                                        //                                               
- * 	\param[?] closureModelPl Description.                                        //                                               
- * 	\param[?] userData       Description.                                        //                                               
- *                                                                               //                                               
- *  \returns Something.                                                          //                                               
+ * 	\brief Build the STK I/O Response Library.
+ *
+ * 	Create a `ResponseLibrary` and add a response for the field to output, then
+ * 	build the corresponding response `Evaluators`.
+ *
+ * 	\param[in] physicsBlocks  A list of all the physics blocks for our problem
+ * 	                          (of which there is only one).
+ * 	\param[in] linObjFactory  The linear object factory, which keeps track of
+ * 	                          all the linear algebra pieces (vectors/matrices)
+ * 	                          of our problem.
+ * 	\param[in] wkstContainer  A container holding all of our worksets, which
+ * 	                          are groups of cells (elements) that live on the
+ * 	                          same process.
+ * 	\param[in] globalIndexer  Think of this as our degree of freedom manager,
+ * 	                          which handles all the indexing of our unknowns.
+ * 	\param[in] cmFactory      The closure model factory, through which we'll
+ * 	                          specify our source term.
+ * 	\param[in] mesh           Our mesh data structure; that is, our concrete
+ * 	                          implementation of our connection manager.
+ * 	\param[in] closureModelPl The "Closure Models" `ParameterList` from the
+ * 	                          input XML file.
+ * 	\param[in] userData       The "User Data" `ParameterList`, which holds the
+ * 	                          MPI communicator.
+ *
+ *  \returns The `ResponseLibrary`, which will allow us to write out the
+ *           results at the end of the run.
  */
 Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits>>
 buildSTKIOResponseLibrary(
@@ -125,14 +137,18 @@ buildSTKIOResponseLibrary(
   const Teuchos::ParameterList&                                 userData);
 
 /**
- * 	\brief Description.                                                          // JMG:  Fill this out.                          
- *                                                                               //                                               
- * 	Detailed description.                                                        //                                               
- *                                                                               //                                               
- * 	\param[?] x                    Description.                                  //                                               
- * 	\param[?] model                Description.                                  //                                               
- * 	\param[?] stkIOResponseLibrary Description.                                  //                                               
- * 	\param[?] mesh                 Description.                                  //                                               
+ * 	\brief Write the results to an Exodus file.
+ *
+ * 	Get the responses, evaluate the model, and write out the results to an
+ * 	Exodus file, which can be viewed with ParaView (www.paraview.org).
+ *
+ * 	\param[in]     x                    The solution vector.
+ * 	\param[in]     model                The `ModelEvaluator` representing the
+ * 	                                    problem we're solving.
+ * 	\param[in/out] stkIOResponseLibrary Our response library, which is able to
+ * 	                                    evaluate the fields we want to output.
+ * 	\param[in/out] mesh                 Our mesh database, which does the
+ * 	                                    actual writing to file.
  */
 void
 writeToExodus(
@@ -176,6 +192,7 @@ main(
   using   panzer_stk::STK_Interface;
   using   panzer_stk::STK_MeshFactory;
   using   panzer_stk::WorksetFactory;
+  using   PHX::InitializeKokkosDevice;
   using   shards::CellTopology;
   using   std::cout;
   using   std::endl;
@@ -215,7 +232,7 @@ main(
   int status(0);
 
   // Initialize Kokkos/MPI.
-  PHX::InitializeKokkosDevice();
+  InitializeKokkosDevice();
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
@@ -242,7 +259,7 @@ main(
     string inputFileName("input.xml");
     {
       CommandLineProcessor clp;
-      clp.setOption("i", &inputFileName, "Input xml filename");
+      clp.setOption("i", &inputFileName, "Input XML filename");
       CommandLineProcessor::EParseCommandLineReturn parseReturn =
         clp.parse(argc, argv, &std::cerr);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -320,20 +337,9 @@ main(
 
       // Loop over the degrees of freedom, adding their bases to the mesh
       // database.
-      vector<string> dimenStr{"X", "Y", "Z"};
       set<StrPureBasisPair, StrPureBasisComp>::const_iterator field;
       for (field = fieldNames.begin(); field != fieldNames.end(); ++field)
-      {
-        RCP<const PureBasis> basis = field->second;
-        if (basis->getElementSpace() == PureBasis::HGRAD)
-          mesh->addSolutionField(field->first, pb->elementBlockID());
-        else if (basis->getElementSpace() == PureBasis::HCURL)
-        {
-          for (int i(0); i < basis->dimension(); ++i)
-            mesh->addCellField(field->first + dimenStr[i],
-              pb->elementBlockID());
-        } // end if this is a HGRAD or HCURL basis
-      } // end loop over fieldNames
+        mesh->addSolutionField(field->first, pb->elementBlockID());
       meshFactory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
     } // end loop over physicsBlocks
 
@@ -405,6 +411,8 @@ main(
     // Write the results to an Exodus file.
     writeToExodus(solutionVec, *physics, *stkIOResponseLibrary, *mesh);
   } // end of try
+
+  // Catch any exceptions that were thrown along the way.
   catch (exception& e)
   {
     *out << "*********** Caught Exception: Begin Error Report ***********"
@@ -435,7 +443,7 @@ main(
 
   // Print out if we were successful.
   if (status == 0)
-    *out << "panzer::MainDriver run completed." << endl;
+    *out << "Run completed." << endl;
 
   // Shut things down.
   PHX::FinalizeKokkosDevice();

@@ -64,9 +64,13 @@
 #include "Teuchos_RCP.hpp"
 
 /**
- * 	\brief Description.                                                          // JMG:  Fill this out.                          
- *                                                                               //                                               
- * 	Detailed description.                                                        //                                               
+ * 	\brief Our equation set.
+ *
+ * 	This class represents our equation set, which contains only a single
+ * 	equation:
+ * 	\f[
+ * 	  -\Delta u(x, y) + (1 - 8 \pi^2) u(x, y) = \sin(2 \pi x) \sin(2 \pi y).
+ * 	\f]
  */
 template <typename EvalT>
 class MyEquationSet
@@ -76,15 +80,28 @@ class MyEquationSet
   public:
     
     /**
-     * 	\brief Description.                                                      // JMG:  Fill this out.                          
-     *                                                                           //                                               
-     * 	Detailed description.                                                    //                                               
-     *                                                                           //                                               
-     * 	\param[?] params                  Description.                           //                                               
-     * 	\param[?] defaultIntegrationOrder Description.                           //                                               
-     * 	\param[?] cellData                Description.                           //                                               
-     * 	\param[?] gd                      Description.                           //                                               
-     * 	\param[?] buildTransientSupport   Description.                           //                                               
+     * 	\brief Default Constructor.
+     *
+     * 	This first validates the parameters that are passed in (params), and
+     * 	then creates the degree of freedom ("U") and its gradient, and finally
+     * 	adds the ID of the closure model that will be used to supply the source
+     * 	term.
+     *
+     * 	\param[in] params                  An unnamed `ParameterList` that is
+     * 	                                   an entry of our physics block
+     * 	                                   `ParameterList` in the input XML
+     * 	                                   file.
+     * 	\param[in] defaultIntegrationOrder The integration order to use if none
+     * 	                                   is supplied in the input XML file.
+     * 	\param[in] cellData                This is passed to the
+     * 	                                   `EquationSet_DefaultImpl`
+     * 	                                   constructor.
+     * 	\param[in] gd                      This is passed to the
+     * 	                                   `EquationSet_DefaultImpl`
+     * 	                                   constructor.
+     * 	\param[in] buildTransientSupport   This is passed to the
+     * 	                                   `EquationSet_DefaultImpl`
+     * 	                                   constructor.
      */
     MyEquationSet(
       const Teuchos::RCP<Teuchos::ParameterList>& params,
@@ -94,13 +111,24 @@ class MyEquationSet
       const bool                                  buildTransientSupport);
 
     /**
-     * 	\brief Description.                                                      // JMG:  Fill this out.                          
-     *                                                                           //                                               
-     * 	Detailed description.                                                    //                                               
-     *                                                                           //                                               
-     * 	\param[?] fm           Description.                                      //                                               
-     * 	\param[?] fieldLibrary Description.                                      //                                               
-     * 	\param[?] userData     Description.                                      //                                               
+     * 	\brief Build and register the equation set evaluators.
+     *
+     * 	This routine builds up the directed acyclic graph bit by bit.  We'll
+     * 	add an `Integrator_GradBasisDotVector` for the Laplacian term, and then
+     * 	two `Integrator_BasisTimesScalar`s for the Helmholtz and source terms.
+     * 	These three integrals will then be summed up to give us the residual
+     * 	representation of our equation.
+     *
+     * 	\param[in/out] fm           The object that stores all the fields we
+     * 	                            have available to build up the directed
+     * 	                            acylcic graph, to which we'll add all the
+     * 	                            evaluators that make up this equation set.
+     * 	\param[in]     fieldLibrary This is unused in this routine, though it
+     * 	                            is part of the `EquationSet_DefaultImpl`
+     * 	                            interface.
+     * 	\param[in]     userData     This is unused in this routine, though it
+     * 	                            is part of the `EquationSet_DefaultImpl`
+     * 	                            interface.
      */
     void
     buildAndRegisterEquationSetEvaluators(
@@ -111,9 +139,7 @@ class MyEquationSet
   private:
     
     /**
-     * 	\brief Description.                                                      // JMG:  Fill this out.                          
-     *                                                                           //                                               
-     * 	Detailed description.                                                    //                                               
+     * 	\brief The name of the degree of freedom.
      */
     std::string dofName_;
 

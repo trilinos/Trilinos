@@ -165,10 +165,6 @@ namespace MueLu {
 
     void Build(Level& currentLevel) const;
 
-  public: //check whether CUDA allows to have private member functions
-    //! Method to merge rows of matrix for systems of PDEs.
-    void MergeRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const LocalOrdinal row, Teuchos::Array<LocalOrdinal>& cols, const Teuchos::Array<LocalOrdinal>& translation) const;
-
   };
 
 } //namespace MueLu

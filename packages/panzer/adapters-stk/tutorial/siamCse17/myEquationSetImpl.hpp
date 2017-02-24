@@ -157,8 +157,8 @@ buildAndRegisterEquationSetEvaluators(
     p.set("Flux Name",     "GRAD_" + dofName_);
     p.set("IR",            ir                );
     p.set("Basis",         basis             );
-    p.set("Multiplier",    -1.0              );                                  // JMG:  Why does this minus sign need to be     
-    RCP<Evaluator<Traits>> op =                                                  //       here?                                   
+    p.set("Multiplier",    1.0               );
+    RCP<Evaluator<Traits>> op =
       rcp(new Integrator_GradBasisDotVector<EvalT, Traits>(p));
     this->template registerEvaluator<EvalT>(fm, op);
   }

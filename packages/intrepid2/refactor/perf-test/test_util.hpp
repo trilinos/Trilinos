@@ -1,8 +1,8 @@
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,17 +34,57 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
-#ifndef BELOS_TPETRA_MP_VECTOR_HPP
-#define BELOS_TPETRA_MP_VECTOR_HPP
+/** \file test_util.cpp
+    \brief  Performance test comparing dynrankview overhead
+    \author Created by Kyungjoo Kim.
+*/
+#include "Kokkos_Core.hpp"
+#include <impl/Kokkos_Timer.hpp>
 
-#include "Belos_TpetraAdapter_MP_Vector.hpp"
-#include "Belos_SolverManager_MP_Vector.hpp"
-#include "Belos_StatusTest_GenResNorm_MP_Vector.hpp"
-#include "Belos_PseudoBlockCGIter_MP_Vector.hpp"
+namespace Intrepid2 {
+  
+  namespace Test {
+    
+    template<size_t BufSize>
+    struct Flush {
+      typedef double value_type;
 
-#endif
+      // flush a large host buffer
+      Kokkos::View<value_type*,Kokkos::DefaultHostExecutionSpace> _buf;
+      Flush() : _buf("Flush::buf", BufSize) {
+        Kokkos::deep_copy(_buf, 1);
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void init(value_type &update) {
+        update = 0;
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void join(volatile value_type &update,
+                const volatile value_type &input) {
+        update += input;
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const int i, value_type &update) const {
+        update += _buf[i];
+      }
+      
+      void run() {
+        double sum = 0;
+        Kokkos::parallel_reduce(BufSize/sizeof(double), *this, sum);
+        FILE *fp = fopen("/dev/null", "w");
+        fprintf(fp, "%f\n", sum);
+        fclose(fp);
+      }
+    };
+
+  } // end of namespace TEST
+} // end of namespace Intrepid2

@@ -96,9 +96,16 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
+
+    //! LWGraph constructor
+    //
+    // @param[in] graph: local graph of type Kokkos::CsrStaticGraph containing CSR data
+    // @param[in] domainMap: non-overlapping (domain) map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] importMap: overlapping map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
+    // @param[in] objectLabel: label string
     LWGraph_kokkos(const local_graph_type&    graph,
                    const RCP<const map_type>& domainMap,
-                   const RCP<const map_type>& rangeMap,
+                   const RCP<const map_type>& importMap,
                    const std::string&         objectLabel = "");
 
     ~LWGraph_kokkos() { }
