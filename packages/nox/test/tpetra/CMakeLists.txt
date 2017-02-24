@@ -13,10 +13,10 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     NOX_ENABLE_Stratimikos AND
     Stratimikos_ENABLE_Belos)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Tpetra_1DFEM
-    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.cpp
-    )
+  #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  #  Tpetra_GroupTests
+  #  SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_GroupTests.cpp
+  #  )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_VectorOpsTests
@@ -26,6 +26,31 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_MultiVectorOpsTests
     SOURCES  ${UNIT_TEST_DRIVER} Tpetra_MultiVectorOpsTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_OperatorTests
+    SOURCES  ${UNIT_TEST_DRIVER} Tpetra_OperatorTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Belos_MultiVecTraitsTests
+    SOURCES  ${UNIT_TEST_DRIVER} Belos_MultiVecTraitsTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Belos_OperatorTraitsTests
+    SOURCES  ${UNIT_TEST_DRIVER} Belos_OperatorTraitsTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Belos_LOWSTests
+    SOURCES  ${UNIT_TEST_DRIVER} Belos_LOWSTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_1DFEM
+    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.cpp
     )
 
 ENDIF()
