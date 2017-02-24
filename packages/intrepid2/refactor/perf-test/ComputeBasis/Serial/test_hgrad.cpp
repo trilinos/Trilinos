@@ -100,21 +100,17 @@ int main(int argc, char *argv[]) {
 #if defined(__INTREPID2_USE_KOKKOSKERNELS__)  
 #if defined(__AVX512F__)
   typedef KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8> VectorTagType;
-  const int r_val_double_vector = Intrepid2::Test::ComputeBasis_HGRAD_Vector
-    <VectorTagType,Kokkos::Serial>(nworkset,
-                                   C,
-                                   order,
-                                   verbose);
 #elif defined(__AVX2__) || defined(__AVX__)
   typedef KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4> VectorTagType;
+#endif
   const int r_val_double_vector = Intrepid2::Test::ComputeBasis_HGRAD_Vector
     <VectorTagType,Kokkos::Serial>(nworkset,
                                    C,
                                    order,
                                    verbose);
 #endif
-#endif
   Kokkos::finalize();
+
 #if defined(__INTREPID2_USE_KOKKOSKERNELS__)  
   return r_val_double + r_val_double_vector;
 #else
