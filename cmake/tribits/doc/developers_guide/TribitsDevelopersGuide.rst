@@ -7615,6 +7615,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
 * `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
 * `${PROJECT_NAME}_USES_PYTHON`_
+* `DART_TESTING_TIMEOUT`_
 * `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
@@ -8056,6 +8057,20 @@ These options are described below.
 
     SET(${PROJECT_NAME}_USES_PYTHON  FALSE)
 
+.. _DART_TESTING_TIMEOUT:
+
+**DART_TESTING_TIMEOUT**
+
+  The cache variable ``DART_TESTING_TIMEOUT`` is a built-in CMake variable
+  that provides a default timeout for all tests (see `Setting test timeouts at
+  configure time`_).  By default, TriBITS defines this to be 1500 seconds
+  (which is also the raw CMake default) but the project can change this
+  default, from 1500 to 300 for example, by setting the following in the
+  project's `<projectDir>/ProjectName.cmake`_ or
+  `<projectDir>/CMakeLists.txt`_ file::
+
+    SET(DART_TESTING_TIMEOUT_DEFAULT 300)
+
 .. _CMAKE_INSTALL_RPATH_USE_LINK_PATH:
 
 **CMAKE_INSTALL_RPATH_USE_LINK_PATH**
@@ -8431,7 +8446,11 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
 
+.. _Setting test timeouts at configure time: TribitsBuildReference.html#dart-testing-timeout
+
 .. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: TribitsBuildReference.html#project-scale-test-timeout-testing-timeout
+
+.. _Overriding test timeouts: TribitsBuildReference.html#overriding-test-timeouts
 
 .. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
