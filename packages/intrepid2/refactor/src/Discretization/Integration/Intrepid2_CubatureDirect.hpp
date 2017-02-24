@@ -156,13 +156,13 @@ namespace Intrepid2 {
       range_type dimRange  (0, this->getDimension());
       {
         const auto src = Kokkos::subdynrankview(cubData.points_, pointRange, dimRange);
-        /**/  auto dst = Kokkos::subdynrankview(cubPoints,       pointRange, dimRange);
+              auto dst = Kokkos::subdynrankview(cubPoints,       pointRange, dimRange);
 
         Kokkos::deep_copy( dst, src );
       }
       {
         const auto src = Kokkos::subdynrankview(cubData.weights_, pointRange);
-        /**/  auto dst = Kokkos::subdynrankview(cubWeights,       pointRange);
+              auto dst = Kokkos::subdynrankview(cubWeights,       pointRange);
 
         Kokkos::deep_copy(dst ,src);
       }

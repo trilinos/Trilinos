@@ -55,7 +55,7 @@
 
 namespace Intrepid2 {
 
-  /** \struct Intrepid2::CubatureTemplate
+  /* \struct Intrepid2::CubatureTemplate
       \brief  Template for the cubature rules used by Intrepid. Cubature template consists of
               cubature points and cubature weights. Intrepid provides a collection of cubature
               templates for most standard cell topologies. The templates are defined in reference
@@ -202,33 +202,19 @@ namespace Intrepid2 {
 }// end namespace Intrepid2
 
 
-/*! \mainpage INTREPID Documentation (Development Version)
-
-  \image html intrepid.png
-  \image latex intrepid.jpg "Reconnaissance balloon ``Intrepid''" width=1in
+/*! \mainpage INTREPID2 Documentation (Development Version)
 
   \section intro_sec Introduction
 
-  %Intrepid is a library of interoperable tools for compatible discretizations of
-  Partial Differential Equations (PDEs). Included with the Trilinos 10.0 release
-  is the &quot;<em>expert version</em>&quot; of %Intrepid. This version is intended
-  primarily for application developers who want to reuse large parts of their existing
-  code frameworks such as I/O, data structures, assembly routines, etc. while gaining
-  access to advanced discretization capabilities provided by %Intrepid. In such cases
-  the bulk of the data is owned and managed by the user rather than by %Intrepid.
-  To avoid unnecessary and possibly expensive copying of data to and from %Intrepid,
-  the expert version of the package comprises of mostly stateless classes operating on
-  user-owned data. Virtually all numerical data required by PDE codes can be represented
-  as a multi-dimensional array of scalar values. For this reason, and to enhance
-  interoprability, %Intrepid classes are templated on generic multi-dimensional arrays.
-  The <a href="http://trilinos.sandia.gov/packages/shards/">Shards</a> package provides
-  an implementation of a multi-dimensional array that can be used for that purpose, or
-  users can write their own multi-dimensional arrays as long as a minimal interface
-  is supported.
+  Intrepid2 is an extension of <a href="https://trilinos.org/packages/intrepid/">Intrepid</a>, 
+  a library of interoperable tools for compatible discretizations of Partial
+  Differential Equations (PDEs). Intrepid2 utilizes <a href="https://github.com/kokkos/">Kokkos</a>
+  dynamic rank views as the default multidimensional array type, which enables the
+  use of Intrepid2 on heterogeneous architectures. 
 
   \section overview_sec Overview
 
-  Current release of %Intrepid includes the following features:
+  Current release of %Intrepid2 includes the following features:
   \li Default finite element basis functions for <em>H(grad)</em>, <em>H(curl)</em>,
        <em>H(div)</em> and <em>L2</em> spaces of orders up to 2 on standard cell
        topologies in 1D, 2D and 3D</li>
@@ -239,17 +225,13 @@ namespace Intrepid2 {
   \li Pullbacks of gradient, curl and divergence of <em>H(grad)</em>, <em>H(curl)</em>,
        <em>H(div)</em> fields</li>
   \li Cubature rules of orders up to 20 on most standard 1D, 2D and 3D cell topologies</li>
-  \li Implementation of multi-diumensional arrays and algebraic operations on them</li>
-  \li Examples showing solution of basic 2nd order elliptic boundary value problems
-       (Poisson, div-curl, and curl-curl systems) using %Intrepid</li>
 
   \section quickstart_sec Quick Start
 
   Familiarity with with the following concepts, objects, and tools is required:
-  \li <a href="http://trilinos.sandia.gov/packages/shards/">Shards</a> cell topologies,
+  \li <a href="https://trilinos.org/packages/shards/">Shards</a> cell topologies,
   \li numerical integration / Intrepid2::Cubature,
   \li discrete (e.g. finite element) bases / Intrepid2::Basis / \ref basis_page,
-  \li multi-dimensional arrays / Intrepid2::DynRankView / \ref md_array_page,
   \li cell mappings and transformations / Intrepid2::CellTools / \ref cell_tools_page, and
   \li function mappings (pullbacks) / Intrepid2::FunctionSpaceTools / \ref function_space_tools_page.
 
@@ -261,8 +243,8 @@ namespace Intrepid2 {
 
   \code
       shards::CellTopology cellType = shards::getCellTopologyData< shards::Tetrahedron<> >(); // cell type: tetrahedron
-      ordinal_type spaceDim = cellType->getDimension();                                                // retrieve spatial dimension
-      ordinal_type numNodes = cellType->getNodeCount();                                                // retrieve number of 0-cells (nodes)
+      ordinal_type spaceDim = cellType->getDimension();                                       // retrieve spatial dimension
+      ordinal_type numNodes = cellType->getNodeCount();                                       // retrieve number of 0-cells (nodes)
   \endcode
 
   We additionally set the number of computational cells \c numCells.
@@ -272,17 +254,17 @@ namespace Intrepid2 {
 
   \code
       DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
-      ordinal_type cubDegree = 2;                                                                      // set cubature degree, e.g. 2
+      ordinal_type cubDegree = 2;                                                             // set cubature degree, e.g. 2
       Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);         // create default cubature
-      ordinal_type numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
+      ordinal_type numCubPoints = myCub->getNumPoints();                                      // retrieve number of cubature points
   \endcode
 
 
   \subsection bases_qs_sec Step 3: Select discrete basis
 
   \code
-      Basis_HGRAD_TET_C1_FEM<double, DynRankView<double> > tetBasis;                       // create tet basis
-      ordinal_type numFields = tetBasis.getCardinality();                                              // get basis cardinality
+      Basis_HGRAD_TET_C1_FEM<double, DynRankView<double> > tetBasis;                          // create tet basis
+      ordinal_type numFields = tetBasis.getCardinality();                                     // get basis cardinality
   \endcode
 
 
@@ -348,12 +330,6 @@ namespace Intrepid2 {
   \subsection doen_qs_sec Done!
 
 
-  \section devplans_sec Development Plans
-
-  The next release of %Intrepid is expected to support Finite Difference and Finite Volume
-  discretizations on standard and non-standard (polygon and polyhedron) cell topologies.
-  A &quot;<em>user-friendly</em>&quot; version for rapid development of PDE codes is also
-  under development.
 */
 
 #endif

@@ -88,9 +88,9 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0>:
   auto jrc = [](const value_type alpha,
       const value_type beta ,
       const ordinal_type n ,
-      /**/  value_type  &an,
-      /**/  value_type  &bn,
-      /**/  value_type  &cn) {
+            value_type  &an,
+            value_type  &bn,
+            value_type  &cn) {
     an = ( (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) /
         (2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) ) );
     bn = ( (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) /
@@ -296,7 +296,7 @@ typename inputViewType>
 KOKKOS_INLINE_FUNCTION
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<opType>::
-getValues( /**/  outputViewType output,
+getValues(       outputViewType output,
     const inputViewType  input,
     const ordinal_type   order) {
   constexpr ordinal_type maxOrder = Parameters::MaxOrder;
@@ -365,7 +365,7 @@ typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties>
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::
-getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+getValues(Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const ordinal_type order,
     const EOperator operatorType ) {

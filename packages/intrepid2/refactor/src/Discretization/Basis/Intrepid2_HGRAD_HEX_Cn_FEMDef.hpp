@@ -62,9 +62,9 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_HEX_Cn_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType  input,
-               /**/  workViewType   work,
+                     workViewType   work,
                const vinvViewType   vinv,
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
@@ -222,7 +222,7 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HGRAD_HEX_Cn_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                const EOperator operatorType ) {

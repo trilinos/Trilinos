@@ -139,7 +139,7 @@ namespace Intrepid2 {
                  typename inputViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues( /**/  outputViewType output,
+        getValues(       outputViewType output,
                    const inputViewType  input,
                    const ordinal_type   order,
                    const double         alpha,
@@ -151,7 +151,7 @@ namespace Intrepid2 {
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const ordinal_type order,
                   const double alpha,
@@ -163,15 +163,15 @@ namespace Intrepid2 {
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
-        /**/  outputValueViewType _outputValues;
+              outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const ordinal_type        _order;
         const double              _alpha, _beta;
         const ordinal_type        _opDn;
         
         KOKKOS_INLINE_FUNCTION
-        Functor( /**/  outputValueViewType outputValues_,
-                 /**/  inputPointViewType  inputPoints_,
+        Functor(       outputValueViewType outputValues_,
+                       inputPointViewType  inputPoints_,
                  const ordinal_type        order_,
                  const double              alpha_,
                  const double              beta_,
@@ -238,7 +238,7 @@ namespace Intrepid2 {
     
     virtual
     void
-    getValues( /**/  outputViewType outputValues,
+    getValues(       outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG

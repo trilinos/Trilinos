@@ -73,8 +73,8 @@ namespace Intrepid2{
              typename subcvSideNormalViewType,
              typename mapViewType>
     struct Functor {
-      /**/  cubPointViewType        _cubPoints;
-      /**/  cubWeightViewType       _cubWeights;
+            cubPointViewType        _cubPoints;
+            cubWeightViewType       _cubWeights;
       const subcvCoordViewType      _subcvCoords;
       const subcvSideNormalViewType _subcvSideNormals;
       const mapViewType             _sideMap;

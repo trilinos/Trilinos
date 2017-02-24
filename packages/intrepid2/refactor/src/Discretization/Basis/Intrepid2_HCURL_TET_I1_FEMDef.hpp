@@ -60,7 +60,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HCURL_TET_I1_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,                                                                           
+    getValues(       outputViewType output,                                                                           
                const inputViewType input ) {  
       switch (opType) {
       case OPERATOR_VALUE: {
@@ -134,7 +134,7 @@ namespace Intrepid2 {
              typename inputPointValueType,  class ...inputPointProperties>
     void
     Basis_HCURL_TET_I1_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;

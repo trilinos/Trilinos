@@ -71,7 +71,7 @@ typename inputViewType, bool hasDeriv, ordinal_type n>
 struct OrthPolynomial {
   KOKKOS_INLINE_FUNCTION
   static void
-  generate( /**/  outputViewType output,
+  generate( outputViewType output,
       const inputViewType input,
       const ordinal_type p );
 };
@@ -113,7 +113,7 @@ public:
     typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     static void
-    getValues( /**/  outputViewType output,
+    getValues( outputViewType output,
         const inputViewType  input,
         const ordinal_type   order);
   };
@@ -122,7 +122,7 @@ public:
   typename outputValueValueType, class ...outputValueProperties,
   typename inputPointValueType,  class ...inputPointProperties>
   static void
-  getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+  getValues(  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
       const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
       const ordinal_type order,
       const EOperator operatorType );
@@ -132,14 +132,14 @@ public:
   EOperator opType,
   ordinal_type numPtsEval>
   struct Functor {
-    /**/  outputValueViewType _outputValues;
+          outputValueViewType _outputValues;
     const inputPointViewType  _inputPoints;
     const ordinal_type        _order;
     const ordinal_type        _opDn;
 
     KOKKOS_INLINE_FUNCTION
-    Functor( /**/  outputValueViewType outputValues_,
-        /**/  inputPointViewType  inputPoints_,
+    Functor(  outputValueViewType outputValues_,
+              inputPointViewType  inputPoints_,
         const ordinal_type        order_,
         const ordinal_type        opDn_ = 0 )
     : _outputValues(outputValues_), _inputPoints(inputPoints_), _order(order_), _opDn(opDn_) {}
@@ -217,7 +217,7 @@ class Basis_HGRAD_TRI_Cn_FEM_ORTH
 
   virtual
   void
-  getValues( /**/  outputViewType outputValues,
+  getValues( outputViewType outputValues,
       const pointViewType  inputPoints,
       const EOperator operatorType = OPERATOR_VALUE ) const {
     //#ifdef HAVE_INTREPID2_DEBUG

@@ -79,7 +79,7 @@ namespace Intrepid2 {
   public:
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>input</b></var>
-        and indexed by (F,P), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P), into the output container <var><b>output</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
    
         Computes pullback of \e HGRAD functions \f$\Phi^*(\widehat{u}_f) = \widehat{u}_f\circ F^{-1}_{c} \f$ 
@@ -95,7 +95,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p) 
+        output(c,f,p) 
         = \widehat{u}_f\circ F^{-1}_{c}(x_{c,p}) 
         = \widehat{u}_f(\widehat{x}_p) =  input(f,p) \qquad 0\le c < C \,,
         \f]
@@ -111,18 +111,20 @@ namespace Intrepid2 {
         |   P  |         point        |  0 <= P < num. integration points                |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  output       [out] - Output array with transformed values
+        \param  input        [in]  - Input array of reference HGRAD values.
+
     */
-    // output : CFP
-    // input  :  FP
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,     class ...inputProperties>
     static void 
-    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    HGRADtransformVALUE(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                          const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
         Computes pullback of gradients of \e HGRAD functions 
@@ -139,7 +141,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
         = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\nabla\widehat{u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
         \f]
@@ -155,21 +157,23 @@ namespace Intrepid2 {
         |   D  |         space dim    |  0 <= D < spatial dimension                      |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals       [out] - Output array with transformed values
+        \param  jacobianInverse  [in]  - Input array containing cell Jacobian inverses.
+        \param  inputVals        [in]  - Input array of reference HGRAD gradients.
+
     */
-    // outputVals     : CFPD
-    // jacobianInverse: C PDD 
-    // inputVals      :  FPD
     template<typename outputValValueType,       class ...outputValProperties,
              typename jacobianInverseValueType, class ...jacobianInverseProperties,
              typename inputValValueType,        class ...inputValProperties>
     static void 
-    HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
+    HGRADtransformGRAD(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                         const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                         const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
         Computes pullback of \e HCURL functions 
@@ -186,7 +190,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left((DF_c)^{-{\sf T}}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
         = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
         \f]
@@ -201,19 +205,23 @@ namespace Intrepid2 {
         |   D  |         space dim    |  0 <= D < spatial dimension                      |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals       [out] - Output array with transformed values
+        \param  jacobianInverse  [in]  - Input array containing cell Jacobian inverses.
+        \param  inputVals        [in]  - Input array of reference HCURL values.
+
     */
-    
     template<typename outputValValueType,       class ...outputValProperties,
              typename jacobianInverseValueType, class ...jacobianInverseProperties,
              typename inputValValueType,        class ...inputValProperties>
     static void 
-    HCURLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
+    HCURLtransformVALUE(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                          const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                          const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
     
     /** \brief Transformation of a curl field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
         Computes pullback of curls of \e HCURL functions 
@@ -230,7 +238,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left(J^{-1}_{c} DF_{c}\cdot\nabla\times\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
         = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\nabla\times\widehat{\bf u}_f(\widehat{x}_p)
         \qquad 0\le c < C \,.
@@ -247,20 +255,26 @@ namespace Intrepid2 {
         |   D  |         space dim    |  0 <= D < spatial dimension                      |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobian     [in]  - Input array containing cell Jacobians.
+        \param  jacobianDet  [in]  - Input array containing cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HCURL curls.
+
     */
     template<typename outputValValueType,      class ...outputValProperties,
              typename jacobianValueType,    class ...jacobianProperties,
              typename jacobianDetValueType, class ...jacobianDetProperties,
              typename inputValValueType,       class ...inputValProperties>
     static void 
-    HCURLtransformCURL( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+    HCURLtransformCURL(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                         const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
         Computes pullback of \e HDIV functions 
@@ -277,7 +291,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left(J^{-1}_{c} DF_{c}\cdot \widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
         = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p)
         \qquad 0\le c < C \,.
@@ -294,20 +308,26 @@ namespace Intrepid2 {
         |   D  |         space dim    |  0 <= D < spatial dimension                      |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobian     [in]  - Input array containing cell Jacobians.
+        \param  jacobianDet  [in]  - Input array containing cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HDIV values.
+
     */
     template<typename outputValValueType,      class ...outputValProperties,
-             typename jacobianValueType,    class ...jacobianProperties,
-             typename jacobianDetValueType, class ...jacobianDetProperties,
+             typename jacobianValueType,       class ...jacobianProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
              typename inputValValueType,       class ...inputValProperties>
     static void 
-    HDIVtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+    HDIVtransformVALUE(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                         const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a divergence field in the H-div space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
 
         Computes pullback of the divergence of \e HDIV functions 
@@ -324,7 +344,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left(J^{-1}_{c}\nabla\cdot\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} (x_{c,p}) 
         = J^{-1}_{c}(\widehat{x}_p) \nabla\cdot\widehat{\bf u}_{f} (\widehat{x}_p)
         \qquad 0\le c < C \,.
@@ -340,18 +360,23 @@ namespace Intrepid2 {
         |   P  |         point        |  0 <= P < num. integration points                |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobianDet  [in]  - Input array containing cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HDIV divergences.
+
     */
     template<typename outputValValueType,      class ...outputValProperties,
-             typename jacobianDetValueType, class ...jacobianDetProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
              typename inputValValueType,       class ...inputValProperties>
     static void 
-    HDIVtransformDIV( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+    HDIVtransformDIV(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                       const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-        and indexed by (F,P), into the output container <var><b>outVals</b></var>,
+        and indexed by (F,P), into the output container <var><b>outputVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
 
         Computes pullback of \e HVOL functions 
@@ -368,7 +393,7 @@ namespace Intrepid2 {
         \f]
         The method returns   
         \f[
-        outVals(c,f,p,*) 
+        outputVals(c,f,p,*) 
         = \left(J^{-1}_{c}\widehat{u}_{f}\right) \circ F^{-1}_{c} (x_{c,p}) 
         = J^{-1}_{c}(\widehat{x}_p) \widehat{u}_{f} (\widehat{x}_p)
         \qquad 0\le c < C \,.
@@ -384,12 +409,16 @@ namespace Intrepid2 {
         |   P  |         point        |  0 <= P < num. integration points                |
         |------|----------------------|--------------------------------------------------|
         \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobianDet  [in]  - Input array containing cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HVOL values.
     */
     template<typename outputValValueType,      class ...outputValProperties,
-             typename jacobianDetValueType, class ...jacobianDetProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
              typename inputValValueType,       class ...inputValProperties>
     static void 
-    HVOLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+    HVOLtransformVALUE(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                         const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
@@ -411,28 +440,28 @@ namespace Intrepid2 {
              typename leftValueValueType,   class ...leftValueProperties,
              typename rightValueValueType,  class ...rightValueProperties>
     static void 
-    integrate( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    integrate(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<leftValueValueType,  leftValueProperties...>   leftValues,
                const Kokkos::DynRankView<rightValueValueType, rightValueProperties...>  rightValues,
                const bool sumInto = false);
     
 
-    /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
+    /** \brief   Returns the weighted integration measures \a <b>outputVals</b> with dimensions
         (C,P) used for the computation of cell integrals, by multiplying absolute values 
-        of the user-provided cell Jacobian determinants \a <b>inDet</b> with dimensions (C,P) 
-        with the user-provided integration weights \a <b>inWeights</b> with dimensions (P).
+        of the user-provided cell Jacobian determinants \a <b>inputDet</b> with dimensions (C,P) 
+        with the user-provided integration weights \a <b>inputWeights</b> with dimensions (P).
 
         Returns a rank-2 array (C, P) array such that
         \f[
-        \mbox{outVals}(c,p)   = |\mbox{det}(DF_{c}(\widehat{x}_p))|\omega_{p} \,,
+        \mbox{outputVals}(c,p)   = |\mbox{det}(DF_{c}(\widehat{x}_p))|\omega_{p} \,,
         \f]
         where \f$\{(\widehat{x}_p,\omega_p)\}\f$ is a cubature rule defined on a reference cell
         (a set of integration points and their associated weights; see
         Intrepid2::Cubature::getCubature for getting cubature rules on reference cells). 
         \warning 
         The user is responsible for providing input arrays with consistent data: the determinants
-        in \a <b>inDet</b> should be evaluated at integration points on the <b>reference cell</b> 
-        corresponding to the weights in \a <b>inWeights</b>.
+        in \a <b>inputDet</b> should be evaluated at integration points on the <b>reference cell</b> 
+        corresponding to the weights in \a <b>inputWeights</b>.
  
         \remark
         See Intrepid2::CellTools::setJacobian for computation of \e DF and 
@@ -443,29 +472,26 @@ namespace Intrepid2 {
         P - num. integration points                      dim1 in all containers
         \endcode
 
-        \param  outVals     [out] - Output array with weighted cell measures.
-        \param  inDet        [in] - Input array containing determinants of cell Jacobians.
-        \param  inWeights    [in] - Input integration weights.
+        \param  outputVals   [out] - Output array with weighted cell measures.
+        \param  inputDet      [in] - Input array containing determinants of cell Jacobians.
+        \param  inputWeights  [in] - Input integration weights.
     */
-    // outputVals   : CP
-    // intputDet    : CP
-    // inputWeights :  P
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputDetValueType,    class ...inputDetPropertes,
              typename inputWeightValueType, class ...inputWeightPropertes>
     static bool 
-    computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+    computeCellMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights );
     
-    /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
+    /** \brief   Returns the weighted integration measures \a <b>outputVals</b> with dimensions
         (C,P) used for the computation of face integrals, based on the provided
-        cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
-        provided integration weights \a <b>inWeights</b> with dimensions (P). 
+        cell Jacobian array \a <b>inputJac</b> with dimensions (C,P,D,D) and the
+        provided integration weights \a <b>inputWeights</b> with dimensions (P). 
 
         Returns a rank-2 array (C, P) array such that
         \f[
-        \mbox{outVals}(c,p)   = 
+        \mbox{outputVals}(c,p)   = 
         \left\|\frac{\partial\Phi_c(\widehat{x}_p)}{\partial u}\times 
         \frac{\partial\Phi_c(\widehat{x}_p)}{\partial v}\right\|\omega_{p} \,,
         \f]
@@ -477,8 +503,9 @@ namespace Intrepid2 {
     
         \warning 
         The user is responsible for providing input arrays with consistent data: the Jacobians
-        in \a <b>inJac</b> should be evaluated at integration points on the <b>reference face</b>
-        corresponding to the weights in \a <b>inWeights</b>.
+        in \a <b>inputJac</b> should be evaluated at integration points on the <b>reference face</b>
+        corresponding to the weights in \a <b>inputWeights</b>. Additionally, the user is responsible 
+        for providing a scratch array of the same dimension as the <b>inputJac</b> array.
     
         \remark 
         Cubature rules on reference faces are defined by a two-step process:
@@ -493,21 +520,22 @@ namespace Intrepid2 {
         \code
         C - num. integration domains                     dim0 in all input containers
         P - num. integration points                      dim1 in all input containers
-        D - spatial dimension                            dim2 and dim3 in Jacobian container
+        D - spatial dimension                            dim2 and dim3 in Jacobian and scratch containers
         \endcode
 
-        \param  outVals     [out] - Output array with weighted face measures.
-        \param  inJac        [in] - Input array containing cell Jacobians.
-        \param  inWeights    [in] - Input integration weights.
-        \param  whichFace    [in] - Index of the face subcell relative to the parent cell; defines the domain of integration.
-        \param  parentCell   [in] - Parent cell topology.
+        \param  outputVals   [out] - Output array with weighted face measures.
+        \param  inputJac     [in]  - Input array containing cell Jacobians.
+        \param  inputWeights [in]  - Input integration weights.
+        \param  whichFace    [in]  - Index of the face subcell relative to the parent cell; defines the domain of integration.
+        \param  parentCell   [in]  - Parent cell topology.
+        \param  scratch      [in]  - Scratch space, sized like inputJac
     */
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputJacValueType,    class ...inputJacProperties,
              typename inputWeightValueType, class ...inputWeightPropertes,
              typename scratchValueType,     class ...scratchProperties>
     static void 
-    computeFaceMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+    computeFaceMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>   inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
                         const int                   whichFace,
@@ -516,7 +544,7 @@ namespace Intrepid2 {
 
     /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
         (C,P) used for the computation of edge integrals, based on the provided
-        cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
+        cell Jacobian array \a <b>inputJac</b> with dimensions (C,P,D,D) and the
         provided integration weights \a <b>inWeights</b> with dimensions (P). 
 
         Returns a rank-2 array (C, P) array such that
@@ -532,8 +560,9 @@ namespace Intrepid2 {
     
         \warning 
         The user is responsible for providing input arrays with consistent data: the Jacobians
-        in \a <b>inJac</b> should be evaluated at integration points on the <b>reference edge</b>
-        corresponding to the weights in \a <b>inWeights</b>.
+        in \a <b>inputJac</b> should be evaluated at integration points on the <b>reference edge</b>
+        corresponding to the weights in \a <b>inputWeights</b>. Additionally, the user is responsible 
+        for providing a scratch array of the same dimension as the <b>inputJac</b> array.
     
         \remark 
         Cubature rules on reference edges are defined by a two-step process:
@@ -550,37 +579,38 @@ namespace Intrepid2 {
         D - spatial dimension                            dim2 and dim3 in Jacobian container
         \endcode
 
-        \param  outVals     [out] - Output array with weighted edge measures.
-        \param  inJac        [in] - Input array containing cell Jacobians.
-        \param  inWeights    [in] - Input integration weights.
-        \param  whichEdge    [in] - Index of the edge subcell relative to the parent cell; defines the domain of integration.
-        \param  parentCell   [in] - Parent cell topology.
+        \param  outputVals    [out] - Output array with weighted edge measures.
+        \param  inputJac      [in] - Input array containing cell Jacobians.
+        \param  inputWeights  [in] - Input integration weights.
+        \param  whichEdge     [in] - Index of the edge subcell relative to the parent cell; defines the domain of integration.
+        \param  parentCell    [in] - Parent cell topology.
+        \param  scratch       [in] - Scratch space, sized like inputJac
     */
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputJacValueType,    class ...inputJacProperties,
              typename inputWeightValueType, class ...inputWeightProperties,
              typename scratchValueType,     class ...scratchProperties>
     static void 
-    computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+    computeEdgeMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>    inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
                         const int                   whichEdge,
                         const shards::CellTopology  parentCell,
                         const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch );
 
-    /** \brief   Multiplies fields \a <b>inputVals</b> by weighted measures \a <b>inMeasure</b> and
-        returns the field array \a <b>outVals</b>; this is a simple redirection to the call
+    /** \brief   Multiplies fields \a <b>inputVals</b> by weighted measures \a <b>inputMeasure</b> and
+        returns the field array \a <b>outputVals</b>; this is a simple redirection to the call
         FunctionSpaceTools::scalarMultiplyDataField.
 
-        \param  outVals     [out] - Output array with scaled field values.
-        \param  inMeasure   [in]  - Input array containing weighted measures.
-        \param  inputVals   [in]  - Input fields.
+        \param  outputVals     [out] - Output array with scaled field values.
+        \param  inputMeasure   [in]  - Input array containing weighted measures.
+        \param  inputVals      [in]  - Input fields.
     */
     template<typename outputValValueType,    class ...outputValProperties,
              typename inputMeasureValueType, class ...inputMeasureProperties,
              typename inputValValueType,     class ...inputValProperteis>
     static void 
-    multiplyMeasure( /**/  Kokkos::DynRankView<outputValValueType,   outputValProperties...>    outputVals,
+    multiplyMeasure(       Kokkos::DynRankView<outputValValueType,   outputValProperties...>    outputVals,
                      const Kokkos::DynRankView<inputMeasureValueType,inputMeasureProperties...> inputMeasure,
                      const Kokkos::DynRankView<inputValValueType,    inputValProperteis...>     inputVals );
 
@@ -621,7 +651,7 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataPropertes,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+    scalarMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataPropertes...>    inputData,
                              const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const bool reciprocal = false );
@@ -662,7 +692,7 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValuetype,    outputDataProperties...>     outputData,
+    scalarMultiplyDataData(       Kokkos::DynRankView<outputDataValuetype,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                             const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool reciprocal = false );
@@ -702,7 +732,7 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+    dotMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                           const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                           const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
     
@@ -740,7 +770,7 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+    dotMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                          const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                          const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
     
@@ -782,7 +812,7 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    vectorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+    vectorMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                              const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
 
@@ -824,7 +854,7 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    vectorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+    vectorMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                             const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
 
@@ -882,7 +912,7 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    tensorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+    tensorMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                              const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const char transpose = 'N');
@@ -940,7 +970,7 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    tensorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+    tensorMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                             const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const char transpose = 'N' );
@@ -974,7 +1004,7 @@ namespace Intrepid2 {
     template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
     static void 
-    applyLeftFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
+    applyLeftFieldSigns(       Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                          const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
     
     /** \brief Applies right (column) signs, stored in the user-provided container
@@ -1006,7 +1036,7 @@ namespace Intrepid2 {
     template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
     static void 
-    applyRightFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
+    applyRightFieldSigns(       Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                           const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
 
     
@@ -1035,7 +1065,7 @@ namespace Intrepid2 {
     template<typename inoutFunctionValueType, class ...inoutFunctionProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
     static void 
-    applyFieldSigns( /**/  Kokkos::DynRankView<inoutFunctionValueType,inoutFunctionProperties...> inoutFunction,
+    applyFieldSigns(       Kokkos::DynRankView<inoutFunctionValueType,inoutFunctionProperties...> inoutFunction,
                      const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
 
 
@@ -1070,15 +1100,15 @@ namespace Intrepid2 {
         D2   - spatial dimension
         \endcode
 
-        \param  outPointVals [out] - Output point values of a discrete function.
-        \param  inCoeffs      [in] - Coefficients associated with the fields (basis) array.
-        \param  inFields      [in] - Field (basis) values.
+        \param  outputPointVals [out] - Output point values of a discrete function.
+        \param  inputCoeffs      [in] - Coefficients associated with the fields (basis) array.
+        \param  inputFields      [in] - Field (basis) values.
     */
     template<typename outputPointValueType, class ...outputPointProperties,
              typename inputCoeffValueType,  class ...inputCoeffProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void
-    evaluate( /**/  Kokkos::DynRankView<outputPointValueType,outputPointProperties...> outputPointVals,
+    evaluate(       Kokkos::DynRankView<outputPointValueType,outputPointProperties...> outputPointVals,
               const Kokkos::DynRankView<inputCoeffValueType, inputCoeffProperties...>  inputCoeffs,
               const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
     
