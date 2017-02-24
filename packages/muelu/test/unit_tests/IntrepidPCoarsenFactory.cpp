@@ -922,7 +922,37 @@ namespace MueLuTests {
     }
   }
   
-  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
+  class TpetraMapMaker
+  {
+  public:
+    typedef Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> MapRCP;
+    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm);
+  };
+  
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class TpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
+  public:
+    typedef Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> MapRCP;
+    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm)
+    {
+      // for UseEpetra, we don't actually need to create any Tpetra Maps
+      return Teuchos::null;
+    }
+  };
+  
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class TpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseTpetra> {
+  public:
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+    typedef Teuchos::RCP<Map> MapRCP;
+    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm)
+    {
+      return Teuchos::rcp( new Map(numElements, elements, indexBase, comm ) );
+    }
+  };
+  
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
   {
     // "numRanks" is for emulated parallel execution: we set up several maps, one corresponding to each emulated MPI rank.
@@ -939,7 +969,6 @@ namespace MueLuTests {
     RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
     typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP, rowMapRCP, colMapRCP;
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     
     for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
     {
@@ -1030,10 +1059,13 @@ namespace MueLuTests {
           GlobalOrdinal indexBase = 0;
           typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
           typedef RCP<const Map> MapRCP;
+          typedef TpetraMapMaker<LocalOrdinal,GlobalOrdinal,Node,lib> MapMaker;
           MapRCP rowMapTpetra, colMapTpetra;
-          rowMapTpetra = rcp( new Map(Tpetra::global_size_t(myRowGIDs.size()), myRowGIDs, indexBase, serialComm) );
+          Tpetra::global_size_t rowCount = Tpetra::global_size_t(myRowGIDs.size());
+          rowMapTpetra = MapMaker::makeMap(rowCount, myRowGIDs, indexBase, serialComm);
           rowMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(rowMapTpetra);
-          colMapTpetra = rcp( new Map(Tpetra::global_size_t(myColGIDs.size()), myColGIDs, indexBase, serialComm) );
+          Tpetra::global_size_t columnCount = Tpetra::global_size_t(myColGIDs.size());
+          colMapTpetra = MapMaker::makeMap(columnCount, myColGIDs, indexBase, serialComm);
           colMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(colMapTpetra);
 #else
           out << "lib==Xpetra::UseTpetra, but HAVE_MUELU_TPETRA is not defined...\n";
@@ -1137,7 +1169,8 @@ namespace MueLuTests {
     }
   }
   
-  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeedsSerial(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
   {
     typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
@@ -1152,7 +1185,6 @@ namespace MueLuTests {
     RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
     typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP;
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     
     for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
     {
@@ -1220,7 +1252,8 @@ namespace MueLuTests {
     }
   }
   
-  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeedsParallel(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
   {
     typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
@@ -1230,7 +1263,7 @@ namespace MueLuTests {
     for (int rankCount=1; rankCount<=MAX_RANK_COUNT; rankCount++)
     {
       out << "running testFindSeedsParallel on " << rankCount << " emulated MPI ranks\n";
-      testFindSeeds<LocalOrdinal, GlobalOrdinal, Node, Basis, ExecutionSpace, ArrayScalar, ArrayOrdinal>(max_degree, ptype, rankCount, out, success);
+      testFindSeeds<LocalOrdinal, GlobalOrdinal, Node, Basis, ExecutionSpace, ArrayScalar, ArrayOrdinal, lib>(max_degree, ptype, rankCount, out, success);
     }
   }
   
@@ -1251,7 +1284,7 @@ namespace MueLuTests {
         typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> QuadBasis;\
         typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC> HexBasis;
 #endif
-#define TEST_FIND_SEEDS(whichTest,ptype) MUELU_TESTING_SET_OSTREAM;\
+#define TEST_FIND_SEEDS(whichTest,ptype,X) MUELU_TESTING_SET_OSTREAM;\
   MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);\
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;\
   typedef typename Node::device_type::execution_space ES;\
@@ -1260,15 +1293,15 @@ namespace MueLuTests {
   out << "version: " << MueLu::Version() << std::endl;\
   if (unsigned(CellTopo::key) == unsigned(shards::Line<2>::key))\
   {\
-    whichTest<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO>(MAX_LINE_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_LINE_DEGREE, ptype, out, success);\
   }\
   else if (unsigned(CellTopo::key) == unsigned(shards::Quadrilateral<4>::key))\
   {\
-    whichTest<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO>(MAX_QUAD_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_QUAD_DEGREE, ptype, out, success);\
   }\
   else if (unsigned(CellTopo::key) == unsigned(shards::Hexahedron<8>::key))\
   {\
-    whichTest<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO>(MAX_HEX_DEGREE, ptype, out, success);\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_HEX_DEGREE, ptype, out, success);\
   }\
   else\
   {\
@@ -1278,40 +1311,76 @@ namespace MueLuTests {
   
   /******* End typedefs for FindSeeds tests by Nate ********/
   
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
   {
 #   include "MueLu_UseShortNames.hpp"
     
     Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
     
-    TEST_FIND_SEEDS(testFindSeedsParallel,ptype)
+    TEST_FIND_SEEDS(testFindSeedsParallel,ptype,E)
   }
   
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
   {
 #   include "MueLu_UseShortNames.hpp"
     
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     
-    TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL)
+    TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL,E)
   }
   
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
   {
 #   include "MueLu_UseShortNames.hpp"
     
     Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
     
-    TEST_FIND_SEEDS(testFindSeedsSerial,ptype)
+    TEST_FIND_SEEDS(testFindSeedsSerial,ptype,E)
   }
   
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
   {
 #   include "MueLu_UseShortNames.hpp"
     
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     
-    TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL)
+    TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL,E)
+  }
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+    
+    TEST_FIND_SEEDS(testFindSeedsParallel,ptype,T)
+  }
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+    
+    TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL,T)
+  }
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+    
+    TEST_FIND_SEEDS(testFindSeedsSerial,ptype,T)
+  }
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+    
+    TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL,T)
   }
   
   /*********************************************************************************************************************/
@@ -3157,9 +3226,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
   /*********************************************************************************************************************/
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      typedef shards::Line<2> Line; \
-      typedef shards::Quadrilateral<4> Quad; \
-      typedef shards::Hexahedron<8> Hexahedron; \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetP1NodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
@@ -3171,18 +3237,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced, Scalar, LO, GO, Node, Line) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced, Scalar, LO, GO, Node, Quad) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced, Scalar, LO, GO, Node, Hexahedron) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral, Scalar, LO, GO, Node, Line) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral, Scalar, LO, GO, Node, Quad) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral, Scalar, LO, GO, Node, Hexahedron) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced, Scalar, LO, GO, Node, Line) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced, Scalar, LO, GO, Node, Quad) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced, Scalar, LO, GO, Node, Hexahedron) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral, Scalar, LO, GO, Node, Line) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral, Scalar, LO, GO, Node, Quad) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral, Scalar, LO, GO, Node, Hexahedron) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced,Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced,Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral,  Scalar, LO,GO,Node) \
@@ -3199,9 +3253,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node)
 
-
 #include <MueLu_ETI_4arg.hpp>
-
+  
+#define MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, X)\
+  typedef shards::Line<2> Line; \
+  typedef shards::Quadrilateral<4> Quad; \
+  typedef shards::Hexahedron<8> Hexahedron; \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Hexahedron)
+  
+#  define MUELU_ETI_GROUP_EPETRA(Scalar, LO, GO, Node) \
+  MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, E)
+  
+#  define MUELU_ETI_GROUP_TPETRA(Scalar, LO, GO, Node) \
+  MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, T)
+  
+#include <MueLu_ETI_4arg_Xpetra.hpp>
 
 } // namespace MueLuTests
 #endif
