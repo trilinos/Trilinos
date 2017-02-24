@@ -150,10 +150,19 @@ namespace MueLu {
     GO ComputeGlobalDOF(GO const &gNodeID, LO const &k=0) const;
 
     /*! Access routines */
-    
+
     /// returns offset of global dof ids
     GO GlobalOffset() { return offset_; }
-    
+
+    /// returns striding information
+    void GetStridingInformation(LO& fullBlockSize, LO& blockID, LO& stridingOffset, LO& stridedBlockSize, GO& indexBase) {
+      fullBlockSize = fullblocksize_;
+      blockID = blockid_;
+      stridingOffset = nStridedOffset_;
+      stridedBlockSize = stridedblocksize_;
+      indexBase = indexBase_;
+    }
+
   private:
 
     //! @name amalgamation information variables
