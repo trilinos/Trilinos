@@ -251,6 +251,35 @@ namespace MueLu {
 #if 1
     //TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError, "For now, only block size 1");
 
+    LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
+    GO indexBase;
+    amalgInfo->GetStridingInformation(fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase);
+    std::cout << "fullBlockSize " << fullBlockSize << " blockID " << blockID << " stridingOffset " << stridingOffset << " stridedBlockSize " << stridedBlockSize << std::endl;
+
+    // do unamalgamation
+
+    // (overlapping) local node Ids belonging to aggregates on current processor
+    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates->GetMap()->getNodeElementList();
+
+    // TODO we have to create a view out of it
+
+    //Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst();
+    auto procWinner   = aggregates->GetProcWinner()->getHostLocalView();
+    auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView();
+    const GO numAggregates = aggregates->GetNumAggregates();
+
+    std::cout << "numAggregates = " << numAggregates << " vertex2AggId.dim0=" << vertex2AggId.dimension_0()<< " vertex2AggId.dim1=" << vertex2AggId.dimension_1() << std::endl;
+
+    for(decltype(vertex2AggId.dimension_0()) i = 0; i < vertex2AggId.dimension_0(); i++) {
+      std::cout << vertex2AggId(i,0) << " ";
+    }
+    std::cout << std::endl;
+
+    // create a unordered map GID -> isGlobalElement in colMap of A (available from above)
+    // fill it on the host
+    // use it within the parallel for kernel
+    // write parallel kernel to detect size of aggregates
+
     // For now, do a simple translation
     // FIXME: only type is correct here, everything else is not
     Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", NSDim*aggCols.size()); // initialized to 0
@@ -264,6 +293,7 @@ namespace MueLu {
           agg2RowMapLO(i*NSDim+k) = aggCols(i)*NSDim+k;
         }
     }
+
 #else
 
     // temporarely keep the unamalgamation code until we have a kokkos version of it
