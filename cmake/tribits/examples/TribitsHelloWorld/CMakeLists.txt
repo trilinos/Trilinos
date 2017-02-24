@@ -25,8 +25,6 @@ INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 SET(TPL_ENABLE_MPI OFF CACHE BOOL "" FORCE)
 # Turn off Fortran support by default
 SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
-# Turn of export makefiles and the like
-SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
 # Only one package in this simple project so just enable it :-)
 SET(${PROJECT_NAME}_ENABLE_HelloWorld ON CACHE BOOL "" FORCE)
 

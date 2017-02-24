@@ -2,7 +2,7 @@
 # ************************************************************************
 #
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
+#                    Copyright 2016 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
@@ -37,4 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-ADD_SUBDIRECTORY(UnitTests)
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Pnetcdf
+  REQUIRED_HEADERS pnetcdf.h
+  REQUIRED_LIBS_NAMES pnetcdf
+  )
