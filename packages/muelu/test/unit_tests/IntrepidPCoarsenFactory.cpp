@@ -779,7 +779,7 @@ namespace MueLuTests {
     // simple test with dof coords corresponding to our sample three-element quad mesh with a quadratic basis
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::Serial, typename Kokkos::HostSpace> Node;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::DefaultExecutionSpace, typename Kokkos::HostSpace> Node;
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
@@ -854,7 +854,7 @@ namespace MueLuTests {
     
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::Serial, typename Kokkos::HostSpace> Node;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::DefaultExecutionSpace, typename Kokkos::HostSpace> Node;
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
