@@ -61,23 +61,19 @@ private:
   std::vector<Real> d_;
 
   Real erfi(const Real p) const {
-    Real val = 0., z = 0.;
-    if ( p < -0.7 ) {
-      z   = std::sqrt(-std::log((1.+p)*0.5));
-      val = -(((c_[3]*z+c_[2])*z+c_[1])*z + c_[0])/((d_[1]*z+d_[0])*z + 1.);
+    const Real zero(0), half(0.5), one(1), two(2), pi(M_PI);
+    Real val(0), z(0);
+    if ( std::abs(p) > static_cast<Real>(0.7) ) {
+      Real sgn = (p < zero) ? -one : one;
+      z   = std::sqrt(-std::log((one-sgn*p)*half));
+      val = sgn*(((c_[3]*z+c_[2])*z+c_[1])*z + c_[0])/((d_[1]*z+d_[0])*z + one);
     }
     else {
-      if ( p < 0.7 ) {
-        z   = p*p;
-        val = p*(((a_[3]*z+a_[2])*z+a_[1])*z + a_[0])/((((b_[3]*z+b_[2])*z+b_[1])*z+b_[0])*z+1.);
-      }
-      else {
-        z   = std::sqrt(-std::log((1.-p)*0.5));
-        val = (((c_[3]*z+c_[2])*z+c_[1])*z+c_[0])/((d_[1]*z+d_[0])*z+1.);
-      }
+      z   = p*p;
+      val = p*(((a_[3]*z+a_[2])*z+a_[1])*z + a_[0])/((((b_[3]*z+b_[2])*z+b_[1])*z+b_[0])*z+one);
     }
-    val -= (erf(val)-p)/(2.0/std::sqrt(M_PI) * std::exp(-val*val));
-    val -= (erf(val)-p)/(2.0/std::sqrt(M_PI) * std::exp(-val*val));
+    val -= (erf(val)-p)/(two/std::sqrt(pi) * std::exp(-val*val));
+    val -= (erf(val)-p)/(two/std::sqrt(pi) * std::exp(-val*val));
     return val;
   }
 
@@ -110,7 +106,8 @@ public:
   }
 
   Real evaluateCDF(const Real input) const {
-    return 0.5*(1.+erf((input-mean_)/std::sqrt(2.*variance_)));
+    const Real half(0.5), one(1), two(2);
+    return half*(one+erf((input-mean_)/std::sqrt(two*variance_)));
   }
 
   Real integrateCDF(const Real input) const {
@@ -120,7 +117,30 @@ public:
   }
 
   Real invertCDF(const Real input) const {
-    return std::sqrt(2.*variance_)*erfi(2.*input-1.) + mean_;
+    //return std::sqrt(2.*variance_)*erfi(2.*input-1.) + mean_;
+    const Real zero(0), half(0.5), one(1), eps(ROL_EPSILON<Real>());
+    if ( input <= eps ) {
+      return zero;
+    }
+    if ( input >= one-eps ) {
+      return one;
+    }
+    Real a  = eps, b = one-eps, c = zero;
+    Real fa = evaluateCDF(a) - input;
+    Real fc = zero;
+    Real sa = ((fa < zero) ? -one : ((fa > zero) ? one : zero));
+    Real sc = zero;
+    for (size_t i = 0; i < 100; i++) {
+      c  = (a+b)*half;
+      fc = evaluateCDF(c) - input;
+      sc = ((fc < zero) ? -one : ((fc > zero) ? one : zero));
+      if ( fc == zero || (b-a)*half < eps ) {
+        break;
+      }
+      if ( sc == sa ) { a = c; fa = fc; sa = sc; }
+      else            { b = c; }
+    }
+    return c;
   }
 
   Real moment(const size_t m) const {
