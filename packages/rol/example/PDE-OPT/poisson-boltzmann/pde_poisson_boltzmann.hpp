@@ -77,7 +77,7 @@ private:
 public:
   PDE_Poisson_Boltzmann(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Poisson Boltzmann").get("Basis Order",1);
+    int basisOrder = parlist.sublist("Problem").get("Order of FE discretization",1);
     if (basisOrder == 1) {
       basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
     }
