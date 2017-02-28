@@ -2792,8 +2792,9 @@ namespace Tpetra {
 
     void staticAssertions() const;
     void clearGlobalConstants();
+  public:
     void computeGlobalConstants();
-
+  protected:
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const LocalOrdinal myRow) const;
