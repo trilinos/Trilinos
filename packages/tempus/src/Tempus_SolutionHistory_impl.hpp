@@ -317,8 +317,6 @@ void SolutionHistory<Scalar>::setParameterList(
     pList_->validateParameters(*this->getValidParameters());
   }
 
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
-
   //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
 
@@ -375,7 +373,6 @@ SolutionHistory<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     pl->set(Storage_name, Storage_default,
       "'Storage Type' sets the memory storage.  "

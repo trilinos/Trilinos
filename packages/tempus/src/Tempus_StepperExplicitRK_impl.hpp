@@ -203,8 +203,6 @@ void StepperExplicitRK<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
 
 
@@ -217,7 +215,6 @@ StepperExplicitRK<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     // pl->set("Stepper Type", "RK Forward Euler",
     //   "'Stepper Type' sets the stepper method.\n"

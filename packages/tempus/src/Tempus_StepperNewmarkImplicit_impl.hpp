@@ -42,10 +42,10 @@ void StepperNewmarkImplicit<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& 
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
 {
-  //vPred = v + dt*(1.0-gamma_)*a 
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);  
+  //vPred = v + dt*(1.0-gamma_)*a
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
 }
-    
+
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
                                                    const Thyra::VectorBase<Scalar>& d,
@@ -54,21 +54,21 @@ void StepperNewmarkImplicit<Scalar>::predictDisplacement(Thyra::VectorBase<Scala
                                                    const Scalar dt) const
 {
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp = Thyra::createMember<Scalar>(dPred.space());
-  //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a 
-  Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_); 
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a); 
-  //dPred += d; 
-  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0); 
+  //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a
+  Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_);
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
+  //dPred += d;
+  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
 }
-    
+
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& v,
                                                  const Thyra::VectorBase<Scalar>& vPred,
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
 {
-  //v = vPred + dt*gamma_*a 
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);  
+  //v = vPred + dt*gamma_*a
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);
 }
 
 template<class Scalar>
@@ -77,8 +77,8 @@ void StepperNewmarkImplicit<Scalar>::correctDisplacement(Thyra::VectorBase<Scala
                                                    const Thyra::VectorBase<Scalar>& a,
                                                    const Scalar dt) const
 {
-  //d = dPred + beta_*dt*dt*a 
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a); 
+  //d = dPred + beta_*dt*dt*a
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a);
 }
 
 
@@ -104,8 +104,8 @@ void StepperNewmarkImplicit<Scalar>::setModel(
 {
   this->validImplicitSecondOrderODE_DAE(transientModel);
   if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
-  //IKT, 1/25/16: it is important to set 2nd argument of SecondOrderResidualModelEvaluator to true! 
-  //This tells the code that it is a second order time integration scheme, and therefore 
+  //IKT, 1/25/16: it is important to set 2nd argument of SecondOrderResidualModelEvaluator to true!
+  //This tells the code that it is a second order time integration scheme, and therefore
   //to use xdotdot support.
   residualModel_ =
     Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel));
@@ -245,62 +245,62 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
-  
+
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
-  { 
+  {
     RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
-    //IKT, FIXME, 1/25/17: replace the following code, cut/paste from Backward Euler, 
+    //IKT, FIXME, 1/25/17: replace the following code, cut/paste from Backward Euler,
     //with code for Newmark Beta Implicit scheme.
-   
+
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
-    
+
     computePredictor(solutionHistory);
     if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
-    
+
     //typedef Thyra::ModelEvaluatorBase MEB;
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
-    
+
     //IKT, compute predictor disp and vel using predictDisplacement
-    //and predictVelocity routines 
+    //and predictVelocity routines
 
     // constant variable capture of xOld pointer
     auto computeXDot = xDotFunction(dt, xOld);
-    
-    //IKT, FIXME: replace the following with values for NewmarkImplicit-Beta. 
-    //See Piro::Epetra::NewmarkImplicitDecorator::evalModel 
+
+    //IKT, FIXME: replace the following with values for NewmarkImplicit-Beta.
+    //See Piro::Epetra::NewmarkImplicitDecorator::evalModel
     Scalar alpha = 1.0/dt;
     Scalar beta = 1.0;
-    Scalar omega = 0.0; //FIXME set to correct value 
+    Scalar omega = 0.0; //FIXME set to correct value
     Scalar t = time+dt;
-    
-    //IKT, FIXME: modify initialize to take in disp_pred and vel_pred 
-    //(predictors), if possible.  We don't want to compute disp_pred 
-    //and vel_pred in SecondOrderResidualModelEvaluator::evalModelImpl, but rather save it 
-    //and use it there.  Will not need to pass in computeXDot. 
+
+    //IKT, FIXME: modify initialize to take in disp_pred and vel_pred
+    //(predictors), if possible.  We don't want to compute disp_pred
+    //and vel_pred in SecondOrderResidualModelEvaluator::evalModelImpl, but rather save it
+    //and use it there.  Will not need to pass in computeXDot.
 
     residualModel_->initialize(computeXDot, t, alpha, beta, omega);
-   
-    //IKT, FIXME: x will need to be replaced below, I believe with acceleration. 
+
+    //IKT, FIXME: x will need to be replaced below, I believe with acceleration.
     const Thyra::SolveStatus<double> sStatus =
       this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
-   
-    //IKT, FIXME: replace the following with computation of corrector 
+
+    //IKT, FIXME: replace the following with computation of corrector
     //disp and vel using correctDisplacement and correctVelocity
-    //routines. 
+    //routines.
 
     computeXDot(*x, *xDot);
-    
+
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->stepperState_->stepperStatus_ = Status::PASSED;
     else
       workingState->stepperState_->stepperStatus_ = Status::FAILED;
   }
-  
+
   return;
 }
 
@@ -367,7 +367,7 @@ void StepperNewmarkImplicit<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
-  //Get beta and gamma from parameter list 
+  //Get beta and gamma from parameter list
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
 
   std::string stepperType = pList_->get<std::string>("Stepper Type");
@@ -375,13 +375,12 @@ void StepperNewmarkImplicit<Scalar>::setParameterList(
     std::logic_error,
        "Error - Stepper Type is not 'Newmark Beta Implicit'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream(); 
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
   if (pList_->isSublist("Newmark Beta Parameters")) {
     Teuchos::ParameterList &newmarkPL = pList_->sublist("Newmark Beta Parameters", true);
-    beta_ = newmarkPL.get("Beta", 0.25); 
+    beta_ = newmarkPL.get("Beta", 0.25);
     gamma_ = newmarkPL.get("Gamma", 0.5);
     if (gamma_ == 0.0) {
       TEUCHOS_TEST_FOR_EXCEPTION( true,
@@ -390,11 +389,11 @@ void StepperNewmarkImplicit<Scalar>::setParameterList(
             << " value specifies an explicit scheme.  Please run with Gamma > 0.0.  Explicit Newmark Beta \n"
             << " scheme is not yet available in Tempus. \n");
     }
-    *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n\n";  
+    *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_ << " from Newmark Beta Parameters in input file.\n\n";
   }
   else {
-    *out << "\n  \nNo Newmark Beta Parameters sublist found in input file; using default values of Beta = " 
-         << beta_ << " and Gamma = " << gamma_ << ".\n\n"; 
+    *out << "\n  \nNo Newmark Beta Parameters sublist found in input file; using default values of Beta = "
+         << beta_ << " and Gamma = " << gamma_ << ".\n\n";
   }
 }
 
@@ -407,7 +406,6 @@ StepperNewmarkImplicit<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
     pl->set("Stepper Type", this->description());

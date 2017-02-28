@@ -312,8 +312,6 @@ void TimeStepControl<Scalar>::setParameterList(
   pList->validateParametersAndSetDefaults(*this->getValidParameters());
   pList_ = pList;
 
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
-
   timeMin_     = pList_->get<double>("Initial Time");
   timeMax_     = pList_->get<double>("Final Time");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -459,7 +457,6 @@ TimeStepControl<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     const double stdMin = std::numeric_limits<double>::epsilon();
     const double stdMax = std::numeric_limits<double>::max();

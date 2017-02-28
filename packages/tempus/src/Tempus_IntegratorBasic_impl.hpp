@@ -22,39 +22,35 @@ template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
-     : tempusPL_(inputPL), integratorStatus_(WORKING)
+     : integratorStatus_(WORKING), isInitialized_(false)
+{
+  this->setParameterList(inputPL);
+  this->setStepper(model);
+  this->initialize();
+}
+
+
+template<class Scalar>
+IntegratorBasic<Scalar>::IntegratorBasic()
+     : integratorStatus_(WORKING), isInitialized_(false)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  // Get the name of the integrator to build.
-  std::string integratorName_ =tempusPL_->get<std::string>("Integrator Name");
+  // Build default Tempus ParameterList
+  RCP<ParameterList> tempusPL = Teuchos::parameterList("Tempus");
+  tempusPL->set("Integrator Name", "Integrator Default");
+  RCP<ParameterList> integratorPL =
+    Teuchos::rcp_const_cast<ParameterList>(this->getValidParameters());
+  tempusPL->set("Integrator Default", *integratorPL);
 
-  this->setParameterList(Teuchos::sublist(tempusPL_, integratorName_, true));
-  this->setStepper(model);
-  this->setTimeStepControl();
-  this->parseScreenOutput();
-  this->setSolutionHistory();
-  this->setObserver();
-  this->initialize();
-
-  if (integratorTimer_ == Teuchos::null)
-    integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
-  if (stepperTimer_ == Teuchos::null)
-    stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
-
-  if (Teuchos::as<int>(this->getVerbLevel()) >=
-      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
-    *out << this->description() << std::endl;
-  }
+  this->setParameterList(tempusPL);
 }
 
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::setStepper(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -73,7 +69,7 @@ void IntegratorBasic<Scalar>::setStepper(
 
 
 template<class Scalar>
-void IntegratorBasic<Scalar>::setStepper(
+void IntegratorBasic<Scalar>::setStepperWStepper(
   Teuchos::RCP<Stepper<Scalar> > newStepper)
 {
   using Teuchos::RCP;
@@ -204,6 +200,24 @@ void IntegratorBasic<Scalar>::setObserver(
 template<class Scalar>
 void IntegratorBasic<Scalar>::initialize()
 {
+  this->setTimeStepControl();
+  this->parseScreenOutput();
+  this->setSolutionHistory();
+  this->setObserver();
+
+  if (integratorTimer_ == Teuchos::null)
+    integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
+  if (stepperTimer_ == Teuchos::null)
+    stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
+
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
+    *out << this->description() << std::endl;
+  }
+
+  isInitialized_ = true;
 }
 
 
@@ -250,9 +264,15 @@ bool IntegratorBasic<Scalar>::advanceTime(const Scalar timeFinal)
 template <class Scalar>
 void IntegratorBasic<Scalar>::startIntegrator()
 {
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  if (isInitialized_ == false) {
+    Teuchos::OSTab ostab(out,1,"StartIntegrator");
+    *out << "Failure - IntegratorBasic is not initialized." << std::endl;
+    integratorStatus_ = FAILED;
+    return;
+  }
   std::time_t begin = std::time(nullptr);
   integratorTimer_->start();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "\nTempus - IntegratorBasic\n"
        << std::asctime(std::localtime(&begin)) << "\n"
@@ -502,12 +522,16 @@ void IntegratorBasic<Scalar>::parseScreenOutput()
 
 template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
-  const Teuchos::RCP<Teuchos::ParameterList> & tmpPL)
+  const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
-  if (tmpPL != Teuchos::null) integratorPL_ = tmpPL;
-  integratorPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  TEUCHOS_TEST_FOR_EXCEPTION(inputPL == Teuchos::null, std::logic_error,
+    "Error - Input ParameterList is null!\n");
 
-  Teuchos::readVerboseObjectSublist(&*integratorPL_,this);
+  tempusPL_ = inputPL;
+  // Get the name of the integrator to build.
+  std::string integratorName_ = tempusPL_->get<std::string>("Integrator Name");
+  integratorPL_ = Teuchos::sublist(tempusPL_, integratorName_, true);
+  integratorPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string integratorType =
     integratorPL_->get<std::string>("Integrator Type");
@@ -531,7 +555,6 @@ IntegratorBasic<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
     tmp << "'Integrator Type' must be 'Integrator Basic'.";
@@ -542,7 +565,7 @@ IntegratorBasic<Scalar>::getValidParameters() const
         << "['Minimum Time Step Index', 'Maximum Time Step Index']";
     pl->set("Screen Output Index List", "", tmp.str());
     pl->set("Screen Output Index Interval", 1000000,
-      "Screen Output Index Interval (e.g., every 100 time steps");
+      "Screen Output Index Interval (e.g., every 100 time steps)");
 
     pl->set("Stepper Name", "",
       "'Stepper Name' selects the Stepper block to construct (Required).");
@@ -586,6 +609,15 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model));
+  return(integrator);
+}
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic()
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
   return(integrator);
 }
 

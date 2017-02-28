@@ -231,8 +231,6 @@ void StepperDIRK<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
 
 
@@ -242,10 +240,7 @@ StepperDIRK<Scalar>::getValidParameters() const
 {
   static Teuchos::RCP<Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
-
     validPL = pl;
   }
   return validPL;

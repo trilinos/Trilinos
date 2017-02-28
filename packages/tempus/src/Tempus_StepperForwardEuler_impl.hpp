@@ -129,8 +129,6 @@ void StepperForwardEuler<Scalar>::setParameterList(
     std::logic_error,
        "Error - Stepper Type is not 'Forward Euler'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
 
 
@@ -143,7 +141,6 @@ StepperForwardEuler<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
 
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
     tmp << "'Stepper Type' must be 'Forward Euler'.";

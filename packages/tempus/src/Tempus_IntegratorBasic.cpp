@@ -21,6 +21,9 @@ namespace Tempus {
   integratorBasic(Teuchos::RCP<Teuchos::ParameterList>        parameterList,
                   const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
 
+  // non-member ctor
+  template Teuchos::RCP<IntegratorBasic<double> > integratorBasic();
+
 } // namespace Tempus
 
 #endif

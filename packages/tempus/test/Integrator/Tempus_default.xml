@@ -1,7 +1,7 @@
 <ParameterList name="Integrator UnitTest">
   <ParameterList name="Tempus">
-    <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
-    <ParameterList name="Demo Integrator">
+    <Parameter name="Integrator Name" type="string" value="Integrator Default"/>
+    <ParameterList name="Integrator Default">
       <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
       <Parameter name="Stepper Name"       type="string" value="Demo Stepper"/>
       <ParameterList name="Solution History">

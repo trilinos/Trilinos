@@ -1,62 +1,39 @@
-<ParameterList name="ANONYMOUS->Tempus->Demo Integrator">
-  <Parameter docString="" id="0" isDefault="false" isUsed="true" name="Integrator Type" type="string" value="Integrator Basic"/>
-  <Parameter docString="" id="1" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Demo Stepper"/>
-  <ParameterList id="7" name="Solution History">
-    <ParameterList id="4" name="VerboseObject">
-      <Parameter docString="" id="2" isDefault="true" isUsed="true" name="Output File" type="string" value="none"/>
-      <Parameter docString="" id="3" isDefault="true" isUsed="true" name="Verbosity Level" type="string" value="default"/>
+<ParameterList name="ANONYMOUS->Tempus">
+  <Parameter docString="" id="0" isDefault="false" isUsed="true" name="Integrator Name" type="string" value="Integrator Default"/>
+  <ParameterList id="28" name="Integrator Default">
+    <Parameter docString="" id="1" isDefault="false" isUsed="true" name="Integrator Type" type="string" value="Integrator Basic"/>
+    <Parameter docString="" id="2" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Demo Stepper"/>
+    <ParameterList id="5" name="Solution History">
+      <Parameter docString="" id="3" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Keep Newest"/>
+      <Parameter docString="" id="4" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="1"/>
     </ParameterList>
-    <Parameter docString="" id="5" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Keep Newest"/>
-    <Parameter docString="" id="6" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="1"/>
-  </ParameterList>
-  <ParameterList id="30" name="Time Step Control">
-    <ParameterList id="10" name="VerboseObject">
-      <Parameter docString='The verbosity level to use to override whatever is set in code.
-The value of "default" will allow the level set in code to be used.' id="8" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="0" value="default"/>
-      <Parameter docString='The file to send output to.  If the value "none" is used, then
-whatever is set in code will be used.  However, any other std::string value
-will be used to create an std::ofstream object to a file with the given name.
-Therefore, any valid file name is a valid std::string value for this parameter.' id="9" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+    <ParameterList id="25" name="Time Step Control">
+      <Parameter docString="" id="6" isDefault="true" isUsed="true" name="Initial Time" type="double" value="0.00000000000000000e+00"/>
+      <Parameter docString="" id="7" isDefault="true" isUsed="true" name="Final Time" type="double" value="1.79769313486231571e+308"/>
+      <Parameter docString="" id="8" isDefault="true" isUsed="true" name="Initial Time Index" type="int" value="0"/>
+      <Parameter docString="" id="9" isDefault="true" isUsed="true" name="Final Time Index" type="int" value="1000000"/>
+      <Parameter docString="" id="10" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-16"/>
+      <Parameter docString="" id="11" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-16"/>
+      <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
+      <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Maximum Absolute Error" type="double" value="1.00000000000000002e-08"/>
+      <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Maximum Relative Error" type="double" value="1.00000000000000002e-08"/>
+      <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="0"/>
+      <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Initial Order" type="int" value="0"/>
+      <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="0"/>
+      <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Integrator Step Type" type="string" value="Variable"/>
+      <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Output Time List" type="string" value=""/>
+      <Parameter docString="" id="20" isDefault="true" isUsed="true" name="Output Index List" type="string" value=""/>
+      <Parameter docString="" id="21" isDefault="true" isUsed="true" name="Output Time Interval" type="double" value="1.79769313486231571e+308"/>
+      <Parameter docString="" id="22" isDefault="true" isUsed="true" name="Output Index Interval" type="int" value="1000000"/>
+      <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Maximum Number of Stepper Failures" type="int" value="10"/>
+      <Parameter docString="" id="24" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
     </ParameterList>
-    <Parameter docString="" id="11" isDefault="true" isUsed="true" name="Initial Time" type="double" value="0.00000000000000000e+00"/>
-    <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Final Time" type="double" value="1.79769313486231571e+308"/>
-    <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Initial Time Index" type="int" value="0"/>
-    <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Final Time Index" type="int" value="1000000"/>
-    <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-16"/>
-    <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-16"/>
-    <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
-    <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Maximum Absolute Error" type="double" value="1.00000000000000002e-08"/>
-    <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Maximum Relative Error" type="double" value="1.00000000000000002e-08"/>
-    <Parameter docString="" id="20" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="0"/>
-    <Parameter docString="" id="21" isDefault="true" isUsed="true" name="Initial Order" type="int" value="0"/>
-    <Parameter docString="" id="22" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="0"/>
-    <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Integrator Step Type" type="string" value="Variable"/>
-    <Parameter docString="" id="24" isDefault="true" isUsed="true" name="Output Time List" type="string" value=""/>
-    <Parameter docString="" id="25" isDefault="true" isUsed="true" name="Output Index List" type="string" value=""/>
-    <Parameter docString="" id="26" isDefault="true" isUsed="true" name="Output Time Interval" type="double" value="1.79769313486231571e+308"/>
-    <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Output Index Interval" type="int" value="1000000"/>
-    <Parameter docString="" id="28" isDefault="true" isUsed="true" name="Maximum Number of Stepper Failures" type="int" value="10"/>
-    <Parameter docString="" id="29" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+    <Parameter docString="" id="26" isDefault="true" isUsed="true" name="Screen Output Index List" type="string" value=""/>
+    <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Screen Output Index Interval" type="int" value="1000000"/>
   </ParameterList>
-  <ParameterList id="33" name="VerboseObject">
-    <Parameter docString='The verbosity level to use to override whatever is set in code.
-The value of "default" will allow the level set in code to be used.' id="31" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="0" value="default"/>
-    <Parameter docString='The file to send output to.  If the value "none" is used, then
-whatever is set in code will be used.  However, any other std::string value
-will be used to create an std::ofstream object to a file with the given name.
-Therefore, any valid file name is a valid std::string value for this parameter.' id="32" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+  <ParameterList id="30" name="Demo Stepper">
+    <Parameter docString="" id="29" isDefault="false" isUsed="true" name="Stepper Type" type="string" value="Forward Euler"/>
   </ParameterList>
-  <Parameter docString="" id="34" isDefault="true" isUsed="true" name="Screen Output Index List" type="string" value=""/>
-  <Parameter docString="" id="35" isDefault="true" isUsed="true" name="Screen Output Index Interval" type="int" value="1000000"/>
-  <Validators>
-    <Validator caseSensitive="true" defaultParameterName="Verbosity Level" integralValue="Teuchos::EVerbosityLevel" type="StringIntegralValidator(Teuchos::EVerbosityLevel)" validatorId="0">
-      <String integralValue="-1" stringDoc="Use level set in code" stringValue="default"/>
-      <String integralValue="0" stringDoc="Produce no output" stringValue="none"/>
-      <String integralValue="1" stringDoc="Produce minimal output" stringValue="low"/>
-      <String integralValue="2" stringDoc="Produce a little more output" stringValue="medium"/>
-      <String integralValue="3" stringDoc="Produce a higher level of output" stringValue="high"/>
-      <String integralValue="4" stringDoc="Produce the highest level of output" stringValue="extreme"/>
-    </Validator>
-  </Validators>
+  <Validators/>
 </ParameterList>
 

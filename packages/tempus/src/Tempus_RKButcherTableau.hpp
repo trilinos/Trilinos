@@ -141,7 +141,6 @@ class RKButcherTableau :
       {
         TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
         paramList->validateParameters(*this->getValidParameters());
-        Teuchos::readVerboseObjectSublist(&*paramList,this);
         this->setMyParamList(paramList);
       }
 
@@ -155,7 +154,6 @@ class RKButcherTableau :
           Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
           pl->set("Description",this->getDescription());
           pl->set("Stepper Type",this->description());
-          Teuchos::setupVerboseObjectSublist(&*pl);
           validPL = pl;
         }
         return validPL;
@@ -291,7 +289,6 @@ class GeneralExplicit_RKBT :
 
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -437,7 +434,6 @@ class GeneralExplicit_RKBT :
       tableau->set("c", "0.0");
       tableau->set<int>("order", 1);
       pl->set("Tableau", *tableau);
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1109,7 +1105,6 @@ class SDIRK1Stage1stOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -1149,7 +1144,6 @@ class SDIRK1Stage1stOrder_RKBT :
       pl->set("Stepper Type", this->description());
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1180,7 +1174,6 @@ class SDIRK2Stage2ndOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
 
     gamma_ = pl->get<double>("gamma");
 
@@ -1236,7 +1229,6 @@ class SDIRK2Stage2ndOrder_RKBT :
         "produce an L-stable scheme, but will only be 1st order accurate.");
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1274,7 +1266,6 @@ class SDIRK2Stage3rdOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -1356,7 +1347,6 @@ class SDIRK2Stage3rdOrder_RKBT :
         "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1392,7 +1382,6 @@ class DIRK2Stage3rdOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -1448,7 +1437,6 @@ class DIRK2Stage3rdOrder_RKBT :
       pl->set("Stepper Type", this->description());
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1665,7 +1653,6 @@ class IRK1StageTheta_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     theta_ = pl->get<double>("theta",theta_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1703,7 +1690,6 @@ class IRK1StageTheta_RKBT :
         "For theta != 1/2, this method is first-order accurate, "
         "and with theta = 1/2, it is second-order accurate.  "
         "This method is A-stable, but becomes L-stable with theta=1.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -1747,7 +1733,6 @@ class IRK2StageTheta_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     theta_ = pl->get<double>("theta",theta_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1794,7 +1779,6 @@ class IRK2StageTheta_RKBT :
         "For theta != 1/2, this method is first-order accurate, "
         "and with theta = 1/2, it is second-order accurate.  "
         "This method is A-stable, but becomes L-stable with theta=1.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -2741,7 +2725,6 @@ class SDIRK5Stage5thOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -2865,7 +2848,6 @@ class SDIRK5Stage5thOrder_RKBT :
       pl->set("Stepper Type", this->description());
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -2891,7 +2873,6 @@ class SDIRK5Stage4thOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -2994,7 +2975,6 @@ class SDIRK5Stage4thOrder_RKBT :
       pl->set("Stepper Type", this->description());
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
@@ -3020,7 +3000,6 @@ class SDIRK3Stage4thOrder_RKBT :
   {
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
@@ -3094,7 +3073,6 @@ class SDIRK3Stage4thOrder_RKBT :
       pl->set("Stepper Type", this->description());
       pl->set("Solver Name", "",
         "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
     }
     return validPL;
