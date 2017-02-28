@@ -795,6 +795,7 @@ namespace Tpetra {
   getGlobalNumDiags () const
   {
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalNumDiags()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
                                           ": The matrix does not have globalConstants computed, but the user has requested them.");
 #endif
@@ -913,6 +914,7 @@ namespace Tpetra {
   getGlobalNumEntries () const
   {
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalNumEntries()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
 					  ": The matrix does not have globalConstants computed, but the user has requested them.");
 #endif
@@ -935,6 +937,7 @@ namespace Tpetra {
   getGlobalMaxNumRowEntries () const
   {
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalMaxNumRowEntries()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
                                           ": The matrix does not have globalConstants computed, but the user has requested them.");
 #endif
