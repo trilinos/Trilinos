@@ -225,6 +225,11 @@ public:
 
   //! Return a const, nonpersisting view of local indices in the given row.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
+
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -484,7 +489,14 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants(){ }
+
+
   //@}
+
+
 
   //! @name Overridden from Teuchos::Describable
   //@{
@@ -792,6 +804,11 @@ public:
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  //! Force the computation of global constants if we don't have them
+  void computeGlobalConstants() { }
+
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
