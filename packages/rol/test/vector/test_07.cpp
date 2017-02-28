@@ -46,16 +46,32 @@
 */
 
 
-#include "ROL_ScaledStdVector.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_RieszVector.hpp"
+#include "ROL_RandomVector.hpp"
+
+#include "ROL_DiagonalOperator.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef double RealT;
-typedef double ElementT;
 
 int main(int argc, char *argv[]) {
 
+  using Teuchos::RCP; using Teuchos::rcp;
+
+  typedef std::vector<RealT>    vector;
+  typedef ROL::Vector<RealT>    V;
+  typedef ROL::StdVector<RealT> SV;
+  
+  typedef ROL::LinearOperator<RealT>     LinearOperator;
+  typedef ROL::DiagonalOperator<RealT>   DiagonalOperator;  
+
+  typedef ROL::RieszPrimalVector<RealT>  PrimalVector;
+  typedef ROL::RieszDualVector<RealT>    DualVector;
+
+  
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
@@ -72,22 +88,22 @@ int main(int argc, char *argv[]) {
     int dim = 10; 
 
     // Create Tpetra::MultiVectors (single vectors) 
-    Teuchos::RCP<std::vector<ElementT> > x_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
-    Teuchos::RCP<std::vector<ElementT> > y_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
-    Teuchos::RCP<std::vector<ElementT> > W_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim,static_cast<ElementT>(2)) ); 
+    RCP<vector> x_rcp = rcp( new vector(dim) );
+    RCP<vector> y_rcp = rcp( new vector(dim) );
+    RCP<vector> w_rcp = rcp( new vector(dim,2.0) );
 
-    // Random elements
-    for (int i = 0; i < dim; i++) {
-      (*x_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*y_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-    }
+    RCP<V> xs = rcp( new SV( x_rcp ) );
+    RCP<V> ys = rcp( new SV( y_rcp ) );
+    
+    SV ws( w_rcp );
 
-    // Create ROL vectors
-    ROL::PrimalScaledStdVector<RealT,ElementT> x(x_rcp,W_rcp);
-    ROL::DualScaledStdVector<RealT,ElementT>   y(y_rcp,W_rcp);
+    ROL::RandomizeVector(*xs);
+    ROL::RandomizeVector(*ys);
+
+    RCP<LinearOperator> W = rcp( new DiagonalOperator(ws) );
+ 
+    PrimalVector x(xs,W);
+    DualVector   y(ys,W);    
 
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
@@ -142,24 +158,22 @@ int main(int argc, char *argv[]) {
     }
 
     // Standard tests.
-    Teuchos::RCP<std::vector<ElementT> > x1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
-    Teuchos::RCP<std::vector<ElementT> > y1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
-    Teuchos::RCP<std::vector<ElementT> > z1_rcp
-      = Teuchos::rcp( new std::vector<ElementT>(dim) );
+    RCP<vector> x1_rcp = rcp( new vector(dim) );
+    RCP<vector> y1_rcp = rcp( new vector(dim) );
+    RCP<vector> z1_rcp = rcp( new vector(dim) );
 
-    // Random elements
-    for (int i = 0; i < dim; i++) {
-      (*x1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*y1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-      (*z1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
-    }
+    RCP<V> x1s = rcp( new SV( x1_rcp ) );
+    RCP<V> y1s = rcp( new SV( y1_rcp ) );
+    RCP<V> z1s = rcp( new SV( z1_rcp ) );
+
+    ROL::RandomizeVector(*x1s);
+    ROL::RandomizeVector(*y1s);
+    ROL::RandomizeVector(*z1s);
 
     // Create ROL vectors
-    ROL::PrimalScaledStdVector<RealT,ElementT> x1(x1_rcp,W_rcp);
-    ROL::PrimalScaledStdVector<RealT,ElementT> y1(y1_rcp,W_rcp);
-    ROL::PrimalScaledStdVector<RealT,ElementT> z1(z1_rcp,W_rcp);
+    PrimalVector x1(x1s,W);
+    PrimalVector y1(y1s,W);
+    PrimalVector z1(z1s,W);
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
     ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
