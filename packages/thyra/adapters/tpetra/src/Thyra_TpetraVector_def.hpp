@@ -256,7 +256,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationVecI
   Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > > mv(x.size());
   for (typename Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > >::size_type i = 0; i < mv.size(); ++i)
     mv[i] = Teuchos::ptr_static_cast<const MultiVectorBase<Scalar> >(x[i]);
-  this->linearCombinationImpl(alpha, mv, beta);
+  this->linearCombinationImpl(alpha, mv(), beta);
 }
 
 
@@ -475,12 +475,34 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl
     }
   }
 
-  // If each cast succeeded, call Tpetra directly.
+  // If casts succeeded, or input arrays are size 0, call Tpetra directly.
   // Otherwise, fall back to the RTOp implementation.
-  if (allCastsSuccessful) {
+  auto len = mv.size();
+  if (len == 0) {
+    tpetraVector_.getNonconstObj()->scale(beta);
+  } else if (len == 1 && allCastsSuccessful) {
+    tpetraVector_.getNonconstObj()->update(alpha[0], *tmvs[0], beta);
+  } else if (len == 2 && allCastsSuccessful) {
+    tpetraVector_.getNonconstObj()->update(alpha[0], *tmvs[0], alpha[1], *tmvs[1], beta);
+  } else if (allCastsSuccessful) {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     auto tmvIter = tmvs.begin();
     auto alphaIter = alpha.begin();
+
+    // Check if any entry of tmvs aliases this object's wrapped vector.
+    // If so, replace that entry in the array with a copy.
+    tmv = Teuchos::null;
+    for (; tmvIter != tmvIter.end(); ++tmvIter) {
+      if (tmvIter->getRawPtr() == tpetraVector_.getConstObj().getRawPtr()) {
+        if (tmv.is_null()) {
+          tmv = Teuchos::rcp(new TpetraMultiVector_t(
+            *tpetraVector_.getConstObj(), Teuchos::Copy));
+        }
+        *tmvIter = tmv;
+      }
+    }
+    tmvIter = tmvs.begin();
+
     // We add two MVs at a time, so only scale if even num MVs,
     // and additionally do the first addition if odd num MVs.
     if ((tmvs.size() % 2) == 0) {
