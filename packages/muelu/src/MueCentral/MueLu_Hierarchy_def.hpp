@@ -1041,8 +1041,14 @@ namespace MueLu {
       }
 
       if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + suffix + ".m", *A);
-      if (!P.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
-      if (!R.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
+      if (!P.is_null()) {
+	Teuchos::rcp_const_cast<CrsGraph>(P->getCrsGraph())->computeGlobalConstants(); 
+	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
+      }
+      if (!R.is_null()) {
+	Teuchos::rcp_const_cast<CrsGraph>(R->getCrsGraph())->computeGlobalConstants(); 
+	Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
+      }
     }
   }
 

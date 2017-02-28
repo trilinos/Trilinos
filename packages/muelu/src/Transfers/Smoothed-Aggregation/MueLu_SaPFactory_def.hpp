@@ -161,6 +161,8 @@ namespace MueLu {
 
         SC omega = dampingFactor / lambdaMax;
 
+	APparams->set("compute global constants",false);// Remove unneeded syncs
+
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
