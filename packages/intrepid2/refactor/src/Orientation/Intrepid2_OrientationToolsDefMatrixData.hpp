@@ -284,8 +284,8 @@ namespace Intrepid2 {
   init_HGRAD_QUAD_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                          const ordinal_type order) {
     if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
-      Basis_HGRAD_QUAD_Cn_FEM<SpT> cellBasis(order);
+      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
+      Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
       
       const ordinal_type numEdge = 4, numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -305,8 +305,8 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_QUAD_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                          const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<SpT> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HCURL_QUAD_In_FEM<SpT> cellBasis(order);
+    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HCURL_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 4, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -325,8 +325,8 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_QUAD_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                          const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<SpT> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HCURL_QUAD_In_FEM<SpT> cellBasis(order);
+    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HCURL_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 4, numOrt = 2;
     for (ordinal_type edgeId=0;edgeId<numEdge;++edgeId)
@@ -350,9 +350,9 @@ namespace Intrepid2 {
   init_HGRAD_HEX_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
     if (order > 1) {
-      Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
-      Basis_HGRAD_QUAD_Cn_FEM<SpT> quadBasis(order);
-      Basis_HGRAD_HEX_Cn_FEM<SpT> cellBasis(order);
+      Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> lineBasis(order);
+      Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order);
+      Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
       
       const ordinal_type numEdge = 12, numFace = 6;    
       {
@@ -387,9 +387,9 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<SpT> bubbleBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HCURL_QUAD_In_FEM<SpT> quadBasis(order);
-    Basis_HCURL_HEX_In_FEM<SpT> cellBasis(order);
+    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HCURL_QUAD_In_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order);
+    Basis_HCURL_HEX_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
 
     const ordinal_type numEdge = 12, numFace = 6;    
     {
@@ -423,8 +423,8 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Basis_HGRAD_QUAD_Cn_FEM<SpT> quadBasis(order-1, POINTTYPE_GAUSS);
-    Basis_HDIV_HEX_In_FEM<SpT> cellBasis(order);
+    Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HDIV_HEX_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
 
     const ordinal_type numFace = 6;    
     {
