@@ -33,7 +33,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   "1"
   )
 
-# Enable experimental features of Tpetrakernels if set at configure
+
+
+# Enable experimental features of KokkosKernels if set at configure
 # time. Default is no.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -41,34 +43,42 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental KokkosKernels features."
   NO )
 
+# Define what execution spaces KokkosKernels enables.
+# KokkosKernels may enable fewer execution spaces than
+# Kokkos enables.  This can reduce build and test times.
 
 ASSERT_DEFINED (Kokkos_ENABLE_Cuda)
+SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA_DEFAULT ${Kokkos_ENABLE_Cuda})
+ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
+SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
+ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
+SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT ${Kokkos_ENABLE_Pthread})
+ASSERT_DEFINED (Kokkos_ENABLE_Serial)
+SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-  "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Tpetra_INST_CUDA=${Tpetra_INST_CUDA} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_CUDA is enabled will make Tpetra build times longer."
-  ${Kokkos_ENABLE_Cuda}
+  "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Kokkos_ENABLE_Cuda=${Kokkos_ENABLE_Cuda} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA_DEFAULT}}
   )
-ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-  "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Tpetra_INST_OPENMP=${Tpetra_INST_OPENMP} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_OPENMP is enabled will make Tpetra build times longer."
-  ${Kokkos_ENABLE_OpenMP}
+  "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Kokkos_ENABLE_OpenMP=${Kokkos_ENABLE_OpenMP} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
+  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP_DEFAULT}}
   )
-ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-  "Whether to build kernels for the execution space Kokkos::Threads.  This option is Tpetra_INST_PTHREAD=${Tpetra_INST_PTHREAD} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_PTHREAD is enabled will make Tpetra build times longer."
-  ${Kokkos_ENABLE_Pthread}
+  "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_Pthread=${Kokkos_ENABLE_Pthread} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Pthread is enabled may increase build times."
+  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT}}
   )
-ASSERT_DEFINED (Kokkos_ENABLE_Serial)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-  "Whether to build kernels for the execution space Kokkos::Serial.  This option is Tpetra_INST_SERIAL=${Tpetra_INST_SERIAL} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_SERIAL is enabled will make Tpetra build times longer."
-  ${Kokkos_ENABLE_Serial}
+  "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
+  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT}}
   )
 
 # ==================================================================
