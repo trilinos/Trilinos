@@ -77,9 +77,10 @@ template <class Real>
 class RieszPrimalVector : public ElementwiseVector<Real> {
 
   template<typename T> using RCP = Teuchos::RCP<T>;
-  typedef Vector<Real>          Vector;
-  typedef RieszDualVector<Real> RieszDualVector;
-  typedef LinearOperator<Real>  LinearOperator;
+
+  using Vector = Vector<Real>;
+  using RieszDualVector = RieszDualVector<Real>;
+  using LinearOperator = LinearOperator<Real>;
 
 private:
 
@@ -157,9 +158,10 @@ template<class Real>
 class RieszDualVector : public ElementwiseVector<Real> {
 
   template<typename T> using RCP = Teuchos::RCP<T>;
-  typedef Vector<Real>            Vector;
-  typedef RieszPrimalVector<Real> RieszPrimalVector;
-  typedef LinearOperator<Real>    LinearOperator;
+
+  using Vector = Vector<Real>;
+  using RieszPrimalVector = RieszPrimalVector<Real>;
+  using LinearOperator = LinearOperator<Real>;
 
 private:
 
