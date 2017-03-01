@@ -52,7 +52,9 @@
 #include "Panzer_ArrayTraits.hpp"
 
 #ifndef __KK__
+#ifndef __CUDACC__
 #define __KK__
+#endif
 #endif
 
 namespace panzer {

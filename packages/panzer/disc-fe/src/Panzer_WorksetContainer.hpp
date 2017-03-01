@@ -53,7 +53,9 @@
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
 #ifndef __KK__
+#ifndef __CUDACC__
 #define __KK__
+#endif
 #endif
 
 namespace panzer {
