@@ -1266,7 +1266,7 @@ file, just for legal purposes.  For a good open-source license, one should
 consider copying the ``TriBITS/Copyright.txt`` file which is a simple 3-clause
 BSD-like license like:
 
-.. include:: ../../../Copyright.txt
+.. include:: ../../Copyright.txt
    :literal:
 
 .. _<repoDir>/Version.cmake:
