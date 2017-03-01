@@ -338,6 +338,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       if (C == Teuchos::null) {
         double nnzPerRow = Teuchos::as<double>(0);
 
+#if 0
         if (A.getDomainMap()->lib() == Xpetra::UseTpetra) {
           // For now, follow what ML and Epetra do.
           GO numRowsA = A.getGlobalNumRows();
@@ -353,7 +354,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
           fos << "Matrix product nnz per row estimate = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
         }
-
+#endif
         if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
         else            C = MatrixFactory::Build(A.getRowMap(),    Teuchos::as<LO>(nnzPerRow));
 
