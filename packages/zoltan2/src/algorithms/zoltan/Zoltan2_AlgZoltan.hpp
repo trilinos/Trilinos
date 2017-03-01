@@ -278,24 +278,25 @@ private:
     // a single root node - but we do 2 * numParts - 1 because we are currently
     // treating all of the 'trivial' terminals as tree nodes - something we
     // discussed we may change later
-    numTreeVerts = 2 * numParts - 1;
+    part_t numTreeNodes = 2 * numParts - 1;
+    numTreeVerts = numTreeNodes - 1; // by design convention root not included
     // CALCULATE: permPartNums
     permPartNums.resize(numParts);
     for(part_t n = 0; n < numParts; ++n) {
       permPartNums[n] = n; // for rcb we can assume this is trivial and in order
     }
     // CALCULATE: treeVertParents
-    treeVertParents.resize(numTreeVerts); // allocate space for numTreeVerts array
+    treeVertParents.resize(numTreeNodes); // allocate space for numTreeNodes array
     // scan all the non terminal nodes and set all children to have us as parent
     // that will set all parents except for the root node which we will set to -1
     // track the children of the root and final node for swapping later. Couple
     // ways to do this - all seem a bit awkward but at least this is efficient.
-    part_t rootNode = -1; // tracj index of the root node for swapping
+    part_t rootNode = 0; // track index of the root node for swapping
     // a bit awkward but efficient - save the children of root and final node
     // for swap at end to satisfy convention that root is highest index node
     part_t saveRootNodeChildren[2];
     part_t saveFinalNodeChildren[2];
-    for(part_t n = numParts; n < numTreeVerts; ++n) { // scan and set all parents
+    for(part_t n = numParts; n < numTreeNodes; ++n) { // scan and set all parents
       int parent = -1;
       int left_leaf = -1;
       int right_leaf = -1;
@@ -311,41 +312,49 @@ private:
       treeVertParents[rightIndex] = n;
       // save root node for final swap
       if(parent == 1 || parent == -1) { // is it the root?
-        treeVertParents[n] = -1;; // by convnetion root is -1 parent
         rootNode = n; // remember I am the root
         saveRootNodeChildren[0] = leftIndex;
-        saveRootNodeChildren[0] = rightIndex;
+        saveRootNodeChildren[1] = rightIndex;
       }
-      else if(n == numTreeVerts-1) {
+      if(n == numTreeNodes-1) {
         saveFinalNodeChildren[0] = leftIndex;
-        saveFinalNodeChildren[0] = rightIndex;
+        saveFinalNodeChildren[1] = rightIndex;
       }
     }
+    treeVertParents[rootNode] = -1; // convention parent is root -1
     // splitRangeBeg and splitRangeEnd
-    splitRangeBeg.resize(numTreeVerts);
-    splitRangeEnd.resize(numTreeVerts);
+    splitRangeBeg.resize(numTreeNodes);
+    splitRangeEnd.resize(numTreeNodes);
     // for terminal nodes this is trivial
     for(part_t n = 0; n < numParts; ++n) {
       splitRangeBeg[n] = n;
       splitRangeEnd[n] = n + 1;
     }
-    // build the splitRangeBeg and splitRangeEnd recursively which forces the
-    // children of each node to be calculated before the parent so parent can
-    // just take the union of the two children
-    rcb_recursive_partitionTree_calculations(rootNode, numParts, splitRangeBeg,
-      splitRangeEnd);
-
-    // now as a final step handle the swap to root is the highest index node
-    // swap the parent of the two nodes
-    std::swap(treeVertParents[rootNode], treeVertParents[numTreeVerts-1]);
-    // get the children of the swapped nodes to have updated parents
-    treeVertParents[saveRootNodeChildren[0]] = numTreeVerts - 1;
-    treeVertParents[saveRootNodeChildren[1]] = numTreeVerts - 1;
-    treeVertParents[saveFinalNodeChildren[0]] = rootNode;
-    treeVertParents[saveFinalNodeChildren[1]] = rootNode;
-    // update the beg and end indices - simply swap them
-    std::swap(splitRangeBeg[rootNode], splitRangeBeg[numTreeVerts-1]);
-    std::swap(splitRangeEnd[rootNode], splitRangeEnd[numTreeVerts-1]);
+    if(numParts > 1) { // not relevant for 1 part
+      // build the splitRangeBeg and splitRangeEnd recursively which forces the
+      // children of each node to be calculated before the parent so parent can
+      // just take the union of the two children
+      rcb_recursive_partitionTree_calculations(rootNode, numParts, splitRangeBeg,
+        splitRangeEnd);
+      // now as a final step handle the swap to root is the highest index node
+      // swap the parent of the two nodes
+      std::swap(treeVertParents[rootNode], treeVertParents[numTreeNodes-1]);
+      // get the children of the swapped nodes to have updated parents
+      treeVertParents[saveFinalNodeChildren[0]] = rootNode;
+      treeVertParents[saveFinalNodeChildren[1]] = rootNode;
+      // handle case where final node is child of the root
+      if(saveRootNodeChildren[0] == numTreeNodes - 1) {
+        saveRootNodeChildren[0] = rootNode;
+      }
+      if(saveRootNodeChildren[1] == numTreeNodes - 1) {
+        saveRootNodeChildren[1] = rootNode;
+      }
+      treeVertParents[saveRootNodeChildren[0]] = numTreeNodes - 1;
+      treeVertParents[saveRootNodeChildren[1]] = numTreeNodes - 1;
+      // update the beg and end indices - simply swap them
+      std::swap(splitRangeBeg[rootNode], splitRangeBeg[numTreeNodes-1]);
+      std::swap(splitRangeEnd[rootNode], splitRangeEnd[numTreeNodes-1]);
+    }
   }
 
   //! \brief  fill arrays with rcb partition tree info
