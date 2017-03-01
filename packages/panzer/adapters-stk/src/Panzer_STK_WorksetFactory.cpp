@@ -44,6 +44,7 @@
 
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STK_SetupPartitionedWorksetUtilities.hpp"
 #include "Panzer_STK_Interface.hpp"
 
 namespace panzer_stk {
@@ -123,7 +124,10 @@ Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::WorksetNeeds & needs) const
 {
-  if(!worksetDesc.useSideset()) {
+
+  if(worksetDesc.requiresPartitioning()){
+    return panzer_stk::buildPartitionedWorksets(*mesh_,worksetDesc,needs);
+  } else if(!worksetDesc.useSideset()) {
     return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {

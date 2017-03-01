@@ -54,6 +54,9 @@
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_Dimension.hpp"
 
+#include "Panzer_IntegrationDescriptor.hpp"
+#include "Panzer_BasisDescriptor.hpp"
+
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
@@ -67,23 +70,81 @@ namespace panzer {
   struct WorksetDetails {
     typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
 
+    typedef std::size_t GO;
+    typedef int LO;
+
     Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
-    std::vector<std::size_t> cell_local_ids;
+    std::vector<GO> cell_local_ids;
     CellCoordArray cell_vertex_coordinates;
     std::string block_id;
 
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
 
     //! Value correspondes to integration order.  Use the offest for indexing.
+    //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<int> > ir_degrees;
     
+    //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
     
     //! Value corresponds to basis type.  Use the offest for indexing.
+    //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<std::string> > basis_names;
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
+    //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
+
+    /// Cells associated with a local cell
+    inline const Kokkos::View<LO*[2]> & faceToCells() const {return face_to_cells;}
+
+    /// Local face index within a local cell for a given face
+    inline const Kokkos::View<LO*[2]> & faceToLocalFaces() const {return face_to_local_faces;}
+
+    /// Faces associated with a given local cell
+    inline const Kokkos::View<LO**> & cellToFaces() const {return cell_to_faces;}
+
+    /// Given a local face this array tells us the point offset in the cell array
+    inline const Kokkos::View<LO*> & localFaceToOffset() const {return local_face_offset;}
+
+    /// Returns the global indexes of the cells associated with this workset
+    inline const std::vector<GO> & cellIndexes() const {return internal_cell_global_indexes;}
+
+    /// Returns the global indexes of the ghost cells associated with this workset (may be empty)
+    inline const std::vector<GO> & ghostCellIndexes() const {return ghost_cell_global_indexes;}
+
+    /// Returns the local indexes of the virtual cells associated with this workset (may be empty)
+    inline const std::vector<LO> & virtualCellIndexes() const {return virtual_cell_local_indexes;}
+
+    /// Grab the integration values for a given integration description (throws error if integration doesn't exist)
+    const panzer::IntegrationValues2<double> & getIntegrationValues(const panzer::IntegrationDescriptor & description);
+
+    /// Grab the integration rule (contains data layouts) for a given integration description (throws error if integration doesn't exist)
+    const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description);
+
+    /// Grab the basis values for a given basis description (throws error if basis doesn't exist)
+    const panzer::BasisValues2<double> & getBasis(const panzer::BasisDescriptor & description);
+
+    /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
+    const panzer::PureBasis & getPureBasis(const panzer::BasisDescriptor & description);
+
+  protected:
+
+    std::map<int,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
+    std::map<int,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
+
+    std::map<int,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
+    std::map<int,Teuchos::RCP<const panzer::BasisValues2<double> > > _basis_map;
+
+    std::vector<GO> internal_cell_global_indexes;
+    std::vector<GO> ghost_cell_global_indexes;
+    std::vector<LO> virtual_cell_local_indexes;
+
+    Kokkos::View<LO*[2]> face_to_cells;
+    Kokkos::View<LO*[2]> face_to_local_faces;
+    Kokkos::View<LO**> cell_to_faces;
+    Kokkos::View<LO*> local_face_offset;
+
   };
 
   /** This is the main workset object. Not that it inherits from WorksetDetails, this
