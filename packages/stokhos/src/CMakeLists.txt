@@ -531,7 +531,7 @@ IF (Stokhos_ENABLE_Sacado)
       )
   ENDIF()
 
-  IF (Stokhos_ENABLE_TpetraKernels)
+  IF (Stokhos_ENABLE_KokkosKernels)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       LIST(APPEND SACADO_HEADERS
