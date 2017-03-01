@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool distributeInput = true;
   int success = 0;
-  part_t numParts = 13;
+  part_t numParts = 8;
 
 
   //////////////////////////////////////////////////////////////////////
@@ -295,6 +295,7 @@ int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
     cout << endl << endl;
   }
   comm->barrier(); // for tidy output...
+
   return 0;
 }
 
