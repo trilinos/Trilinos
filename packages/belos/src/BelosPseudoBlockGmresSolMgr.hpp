@@ -783,7 +783,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
       params_->set("Orthogonalization", orthoType_);
 
       if (haveOrthoSublist) {
-        params_->set("OrthoManager", *orthoParams);
+        params_->set(orthoType_, *orthoParams);
       }
 
       // Create orthogonalization manager
@@ -1085,7 +1085,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
     params_->set("Orthogonalization", orthoType_);
     if (haveOrthoSublist) {
-      params_->set("OrthoManager", *orthoParams);
+      params_->set(orthoType_, *orthoParams);
     }
 
     if (orthoType_ == "DGKS") {
@@ -1232,46 +1232,50 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
     //-----------------------------------------------------------------------
     // Gather the orthoManager's default parameters
-
-    // DGKS ortho parameter list
-    {
-      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
-
-      RCP<ParameterList> orthoParams = sublist(pl, "DGKS");
-      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
-      // override the depTol using this class's defined value (legacy value)
-      orthoParams->set("depTol", orthoKappa_default_);
-    }
-    // ICGS
-    {
-      typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
-
-      RCP<ParameterList> orthoParams = sublist(pl, "ICGS");
-      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
-    }
-    // IMGS
-    {
-      typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
-
-      RCP<ParameterList> orthoParams = sublist(pl, "IMGS");
-
-      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
-    }
-    #ifdef HAVE_BELOS_TSQR
-    // TSQR
-    {
-      typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
-      RCP<ortho_type> ortho_tmp = rcp (new ortho_type ());
-
-      RCP<ParameterList> orthoParams = sublist(pl, "TSQR");
-      orthoParams->setParameters( *(ortho_tmp->getValidParameters()) );
-    }
-    #endif // HAVE_BELOS_TSQR
-    //-----------------------------------------------------------------------
+//
+//    // DGKS ortho parameter list
+//    {
+//      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "DGKS");
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//      // override the depTol using this class's defined value (legacy value)
+//      orthoParams->set("depTol", orthoKappa_default_);
+//    }
+//    // ICGS
+//    {
+//      typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "ICGS");
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//    }
+//    // IMGS
+//    {
+//      typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "IMGS");
+//
+//      orthoParams->setParameters( *(ortho_type::getDefaultParameters()) );
+//    }
+//    #ifdef HAVE_BELOS_TSQR
+//    // TSQR
+//    {
+//      typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
+//      RCP<ortho_type> ortho_tmp = rcp (new ortho_type ());
+//
+//      RCP<ParameterList> orthoParams = sublist(pl, "TSQR");
+//      orthoParams->setParameters( *(ortho_tmp->getValidParameters()) );
+//    }
+//    #endif // HAVE_BELOS_TSQR
+//    //-----------------------------------------------------------------------
 
     // legacy parameters
     pl->set("Orthogonalization", orthoType_default_,
-      "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      #ifdef HAVE_BELOS_TSQR
+        "The type of orthogonalization to use: DGKS, ICGS, IMGS, TSQR.");
+      #else
+        "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      #endif
     pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
