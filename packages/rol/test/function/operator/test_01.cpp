@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   try {
 
     RCP<vector> a_rcp  = rcp( new vector {4.0,2.0,1.0,3.0} );
-    RCP<vector> ai_rcp = rcp( new vector {4.0/10.0, -2.0/10.0, -1.0/10.0, 3.0/10.0} );
+    RCP<vector> ai_rcp = rcp( new vector {3.0/10.0, -2.0/10.0, -1.0/10.0, 4.0/10.0} );
 
     RCP<vector> x1_rcp  = rcp( new vector {1.0,-1.0} );
     RCP<vector> b1_rcp = rcp( new vector(2) );
@@ -111,8 +111,8 @@ int main(int argc, char *argv[]) {
     RCP<vector> y4_rcp = rcp( new vector(2) );
     RCP<vector> c4_rcp = rcp( new vector {-6.0,1.0} );
 
-    StdLinearOperator A(a_rcp,false);
-    StdLinearOperator At(a_rcp,true);
+    StdLinearOperator A(a_rcp);
+    StdLinearOperator Ai(ai_rcp);
 
     SV x1(x1_rcp); SV x2(x2_rcp); SV y3(y3_rcp); SV y4(y4_rcp);
     SV b1(b1_rcp); SV b2(b2_rcp); SV c3(c3_rcp); SV c4(c4_rcp);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     // Test 3
     *outStream << "\nTest 3: Transposed matrix multiplication" << std::endl;
-    At.apply(*c3_rcp,*y3_rcp,tol);
+    A.applyAdjoint(*c3_rcp,*y3_rcp,tol);
     *outStream << "y = [" << (*y3_rcp)[0] << "," << (*y3_rcp)[1] << "]" << std::endl;
     *outStream << "c = [" << (*c3_rcp)[0] << "," << (*c3_rcp)[1] << "]" << std::endl;
     c3.axpy(-1.0,c4);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 
     // Test 4
     *outStream << "\nTest 4: Linear solve with transpose" << std::endl;
-    At.applyInverse(y4,c4,tol);
+    A.applyAdjointInverse(y4,c4,tol);
     *outStream << "y = [" << (*y4_rcp)[0] << "," << (*y4_rcp)[1] << "]" << std::endl;
     *outStream << "c = [" << (*c4_rcp)[0] << "," << (*c4_rcp)[1] << "]" << std::endl;
     y4.axpy(-1.0,y3);
@@ -162,6 +162,17 @@ int main(int argc, char *argv[]) {
     RealT error4 = y4.norm();
     errorFlag += error4 > tol;
     *outStream << "Error = " << error4 << std::endl;
+
+    *outStream << "x1 = ";  x1.print(*outStream); 
+    Ai.applyInverse(b1,x1,tol);
+    *outStream << "b1 = ";  b1.print(*outStream);
+    A.apply(b1,x1,tol);
+    *outStream << "b1 = ";  b1.print(*outStream);
+    A.applyInverse(x1,b1,tol);
+    *outStream << "x1 = ";  x1.print(*outStream);
+    Ai.apply(x1,b1,tol);
+    *outStream << "x1 = ";  x1.print(*outStream);
+    
 
   }
   catch (std::logic_error err) {
