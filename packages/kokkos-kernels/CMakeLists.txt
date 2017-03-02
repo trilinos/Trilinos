@@ -56,30 +56,38 @@ SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT ${Kokkos_ENABLE_Pthre
 ASSERT_DEFINED (Kokkos_ENABLE_Serial)
 SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
 
+IF(${Kokkos_ENABLE_Cuda})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
   "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Kokkos_ENABLE_Cuda=${Kokkos_ENABLE_Cuda} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
   ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA_DEFAULT}}
   )
+ENDIF()
+IF(${Kokkos_ENABLE_OpenMP})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
   "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Kokkos_ENABLE_OpenMP=${Kokkos_ENABLE_OpenMP} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
   ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP_DEFAULT}}
   )
+ENDIF()
+IF(${Kokkos_ENABLE_Pthread})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
   "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_Pthread=${Kokkos_ENABLE_Pthread} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Pthread is enabled may increase build times."
   ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT}}
   )
+ENDIF()
+IF(${Kokkos_ENABLE_Serial})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
   ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT}}
   )
+ENDIF()
 
 # ==================================================================
 # Explicit template instantiation (ETI) and test instantiation logic
