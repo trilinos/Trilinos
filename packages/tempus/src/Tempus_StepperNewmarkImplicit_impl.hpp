@@ -85,8 +85,8 @@ void StepperNewmarkImplicit<Scalar>::correctDisplacement(Thyra::VectorBase<Scala
 // StepperNewmarkImplicit definitions:
 template<class Scalar>
 StepperNewmarkImplicit<Scalar>::StepperNewmarkImplicit(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -212,7 +212,7 @@ void StepperNewmarkImplicit<Scalar>::setPredictor(
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =
-        sf->createStepper(predPL, residualModel_->getTransientModel());
+        sf->createStepper(residualModel_->getTransientModel(), predPL);
     }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
@@ -227,7 +227,7 @@ void StepperNewmarkImplicit<Scalar>::setPredictor(
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     predictorStepper_ =
-      sf->createStepper(predPL, residualModel_->getTransientModel());
+      sf->createStepper(residualModel_->getTransientModel(), predPL);
   }
 }
 
@@ -345,7 +345,7 @@ getDefaultStepperState()
 template<class Scalar>
 std::string StepperNewmarkImplicit<Scalar>::description() const
 {
-  std::string name = "Backward Euler";
+  std::string name = "Newmark Implicit";
   return(name);
 }
 
@@ -364,9 +364,10 @@ template <class Scalar>
 void StepperNewmarkImplicit<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
+  else pList_ = pList;
+  // Can not validate because of optional Parameters.
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
 
@@ -402,18 +403,37 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  std::ostringstream tmp;
+  pl->set("Stepper Type", this->description());
+  pl->set("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
-    std::ostringstream tmp;
-    pl->set("Stepper Type", this->description());
-    pl->set("Solver Name", "",
-      "Name of ParameterList containing the solver specifications.");
-    validPL = pl;
-  }
-  return validPL;
+  return pl;
+}
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperNewmarkImplicit<Scalar>::getDefaultParameters() const
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setName("Default Newmark Implicit Stepper");
+  pl->set<std::string>("Stepper Type", this->description());
+  pl->set<std::string>("Solver Name", "Default Solver");
+  pl->set<std::string>("Predictor Name", "Default Predictor");
+
+  RCP<ParameterList> solverPL = this->defaultSolverParameters();
+  pl->set("Default Solver", *solverPL);
+
+  // Predictor ParameterList
+  RCP<ParameterList> predPL = Teuchos::parameterList();
+  predPL->set("Stepper Type", "Newmark Implicit");
+  pl->set("Default Predictor", *predPL);
+
+  return pl;
 }
 
 

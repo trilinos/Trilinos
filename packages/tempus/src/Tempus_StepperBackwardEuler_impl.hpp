@@ -39,8 +39,8 @@ StepperBackwardEuler<Scalar>::xDotFunction(
 // StepperBackwardEuler definitions:
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -163,7 +163,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =
-        sf->createStepper(predPL, residualModel_->getTransientModel());
+        sf->createStepper(residualModel_->getTransientModel(), predPL);
     }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
@@ -178,7 +178,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     predictorStepper_ =
-      sf->createStepper(predPL, residualModel_->getTransientModel());
+      sf->createStepper(residualModel_->getTransientModel(), predPL);
   }
 }
 
@@ -296,9 +296,10 @@ template <class Scalar>
 void StepperBackwardEuler<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
+  else pList_ = pList;
+  // Can not validate because of optional Parameters (e.g., Solver Name).
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string stepperType = pList_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
@@ -312,18 +313,38 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  pl->set("Stepper Type", this->description());
+  pl->set("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
-    std::ostringstream tmp;
-    pl->set("Stepper Type", this->description());
-    pl->set("Solver Name", "",
-      "Name of ParameterList containing the solver specifications.");
-    validPL = pl;
-  }
-  return validPL;
+  return pl;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperBackwardEuler<Scalar>::getDefaultParameters() const
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setName("Default BackwardEuler Stepper");
+  pl->set<std::string>("Stepper Type", this->description());
+  pl->set<std::string>("Solver Name", "Default Solver");
+  pl->set<std::string>("Predictor Name", "Default Predictor");
+
+  RCP<ParameterList> solverPL = this->defaultSolverParameters();
+  pl->set("Default Solver", *solverPL);
+
+  // Predictor ParameterList
+  RCP<ParameterList> predPL = Teuchos::parameterList();
+  predPL->set("Stepper Type", "Forward Euler");
+  pl->set("Default Predictor", *predPL);
+
+  return pl;
 }
 
 

@@ -31,6 +31,36 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ForwardEuler_SinCos.xml");
+
+  //std::ofstream ftmp("PL.txt");
+  //pList->print(ftmp);
+  //ftmp.close();
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+
+  // Setup the Integrator
+  RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(tempusPL, model);
+
+  RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+  RCP<ParameterList> defaultPL=integrator->getStepper()->getDefaultParameters();
+  TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+}
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 {
   std::vector<double> StepSize;
@@ -235,5 +265,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
+
 
 } // namespace Tempus_Test

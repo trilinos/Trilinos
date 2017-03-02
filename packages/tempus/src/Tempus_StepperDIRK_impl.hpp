@@ -26,8 +26,8 @@ template<class Scalar> class StepperFactory;
 // StepperDIRK definitions:
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   this->setParameterList(pList);
   this->setModel(transientModel);
@@ -228,9 +228,10 @@ template <class Scalar>
 void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
+  else pList_ = pList;
+  // Can not validate because of optional Parameters.
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -238,14 +239,31 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    validPL = pl;
-  }
-  return validPL;
+  //std::stringstream Description;
+  //Description << "'Stepper Type' sets the stepper method.\n"
+  //            << "For DIRK the following methods are valid:\n"
+  //            << "  SDIRK 1 Stage 1st order\n"
+  //            << "  SDIRK 2 Stage 2nd order\n"
+  //            << "  SDIRK 2 Stage 3rd order\n"
+  //            << "  SDIRK 3 Stage 4th order\n"
+  //            << "  SDIRK 5 Stage 4th order\n"
+  //            << "  SDIRK 5 Stage 5th order\n";
+
+  return DIRK_ButcherTableau_->getValidParameters();
 }
 
+template <class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperDIRK<Scalar>::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  pl->set<std::string>("Solver Name", "Default Solver");
+  Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
+  pl->set("Default Solver", *solverPL);
+
+  return pl;
+}
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>

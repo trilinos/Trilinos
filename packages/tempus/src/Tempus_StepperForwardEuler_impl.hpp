@@ -18,8 +18,8 @@ namespace Tempus {
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  Teuchos::RCP<Teuchos::ParameterList>                      pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
@@ -120,9 +120,9 @@ template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
+  else pList_ = pList;
+  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string stepperType = pList_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
@@ -136,19 +136,23 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  if (is_null(validPL)) {
+  std::ostringstream tmp;
+  tmp << "'Stepper Type' must be 'Forward Euler'.";
+  pl->set("Stepper Type", "Forward Euler", tmp.str());
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  return pl;
+}
 
-    std::ostringstream tmp;
-    tmp << "'Stepper Type' must be 'Forward Euler'.";
-    pl->set("Stepper Type", "Forward Euler", tmp.str());
 
-    validPL = pl;
-  }
-  return validPL;
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperForwardEuler<Scalar>::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(this->getValidParameters());
+  return pl;
 }
 
 
