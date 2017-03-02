@@ -504,6 +504,11 @@ void Zoltan_Print_Configuration(char *indent)
            SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
   #endif
 #endif
+
+#if defined(ZOLTAN_PARMETIS) || defined(ZOLTAN_METIS) || defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
+  printf("    sizeof indextype = %u\n", sizeof(indextype));
+  printf("    sizeof realtype = %u\n", sizeof(realtype));
+#endif
 }
 
 #ifdef __cplusplus
