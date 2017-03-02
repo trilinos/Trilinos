@@ -53,9 +53,7 @@
 #include "Panzer_IntrepidBasisFactory.hpp"
 
 #ifndef __KK__
-#ifndef __CUDACC__
 #define __KK__
-#endif
 #endif
 
 namespace panzer {
