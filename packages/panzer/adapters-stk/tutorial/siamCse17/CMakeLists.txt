@@ -5,7 +5,7 @@ SET(main_SOURCES
   mySourceTerm.cpp
   )
 
-TRIBITS_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   siamCse17
   SOURCES ${main_SOURCES}
   )

@@ -124,6 +124,8 @@ evaluateFields(
   using Kokkos::parallel_for;
   using panzer::index_t;
 
+  const auto& coords = workset.int_rules[irIndex_]->ip_coordinates;
+
   // Loop over the cells in the workset.
   parallel_for(workset.num_cells, [=] (const index_t cell)
   {
@@ -132,9 +134,8 @@ evaluateFields(
     {
       // Get the (x,y) location corresponding to this integration point in this
       // cell.
-      const double&
-        x(workset.int_rules[irIndex_]->ip_coordinates(cell, point, 0)),
-        y(workset.int_rules[irIndex_]->ip_coordinates(cell, point, 1));
+      const double& x(coords(cell, point, 0));
+      const double& y(coords(cell, point, 1));
 
       // Compute the value of the source term at this (x,y) location.
       result_(cell, point) = sin(2 * M_PI * x) * sin(2 * M_PI * y);
