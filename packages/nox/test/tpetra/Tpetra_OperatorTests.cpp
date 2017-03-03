@@ -83,9 +83,8 @@ void checkMultiVectors(const Teuchos::RCP<TMV>& a,
   b->norm2(Teuchos::arrayViewFromVector(norms));
 
   ST::magnitudeType tol = 1.0e-14;
-  ST::magnitudeType zero = ST::magnitude(ST::zero());
   for (auto norm = norms.begin(); norm != norms.end(); ++norm) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(*norm, zero, tol, out, success);
+    TEUCHOS_TEST_EQUALITY(*norm < tol, true, out, success);
   }
   a->norm2(Teuchos::arrayViewFromVector(norms));
   auto normIter = norms.begin();
@@ -225,7 +224,6 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, VecTrans)
   mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(0.5)));
   auto ans = Teuchos::tuple(val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
-
 }
 
 TEUCHOS_UNIT_TEST(Tpetra_OpTests, MultiVecTrans)
@@ -274,4 +272,3 @@ TEUCHOS_UNIT_TEST(Tpetra_OpTests, MultiVecTrans)
   auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val, 4.0*val, 5.0*val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
 }
-

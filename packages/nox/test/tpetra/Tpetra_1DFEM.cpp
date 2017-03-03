@@ -70,14 +70,13 @@
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
 #include "NOX_MatrixFree_ModelEvaluatorDecorator.hpp"
 
+const Tpetra::global_size_t numGlobalElements = 100;
+
 TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
 {
   Teuchos::TimeMonitor::zeroOutTimers();
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-
-  const std::size_t numLocalElements = 1000;
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
 
   // Get default Tpetra template types
   typedef Tpetra::Vector<>::scalar_type Scalar;
@@ -97,7 +96,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
+  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
@@ -175,9 +174,6 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  const std::size_t numLocalElements = 1000;
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
   // Get default Tpetra template types
   typedef Tpetra::Vector<>::scalar_type Scalar;
   typedef Tpetra::Vector<>::local_ordinal_type LO;
@@ -199,7 +195,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
+  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
@@ -280,9 +276,6 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  const std::size_t numLocalElements = 1000;
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
   // Get default Tpetra template types
   typedef Tpetra::Vector<>::scalar_type Scalar;
   typedef Tpetra::Vector<>::local_ordinal_type LO;
@@ -301,7 +294,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
+  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
@@ -402,9 +395,6 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  const std::size_t numLocalElements = 1000;
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
   // Get default Tpetra template types
   typedef Tpetra::Vector<>::scalar_type Scalar;
   typedef Tpetra::Vector<>::local_ordinal_type LO;
@@ -423,7 +413,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
+  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);

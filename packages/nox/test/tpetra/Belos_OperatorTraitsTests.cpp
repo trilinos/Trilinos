@@ -84,9 +84,8 @@ void checkMultiVectors(const Teuchos::RCP<TMV>& a,
   b->norm2(Teuchos::arrayViewFromVector(norms));
 
   ST::magnitudeType tol = 1.0e-14;
-  ST::magnitudeType zero = ST::magnitude(ST::zero());
   for (auto norm = norms.begin(); norm != norms.end(); ++norm) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(*norm, zero, tol, out, success);
+    TEUCHOS_TEST_EQUALITY(*norm < tol, true, out, success);
   }
   a->norm2(Teuchos::arrayViewFromVector(norms));
   auto normIter = norms.begin();

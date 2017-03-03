@@ -13,11 +13,6 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     NOX_ENABLE_Stratimikos AND
     Stratimikos_ENABLE_Belos)
 
-  #TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #  Tpetra_GroupTests
-  #  SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_GroupTests.cpp
-  #  )
-
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_VectorOpsTests
     SOURCES  ${UNIT_TEST_DRIVER} Tpetra_VectorOpsTests.cpp
@@ -28,9 +23,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     SOURCES  ${UNIT_TEST_DRIVER} Tpetra_MultiVectorOpsTests.cpp
     )
 
+  # Tpetra CrsMatrix transpose apply isn't working right on multiple procs
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_OperatorTests
     SOURCES  ${UNIT_TEST_DRIVER} Tpetra_OperatorTests.cpp
+    NUM_MPI_PROCS 1
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

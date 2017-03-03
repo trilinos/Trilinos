@@ -38,10 +38,8 @@ bool checkVectors(const Teuchos::RCP<TV>& a,
 {
   bool success = true;
   ST::magnitudeType tol = 1.0e-14;
-  ST::magnitudeType zero = ST::magnitude(ST::zero());
-  Scalar one = ST::one();
-  b->update(-1.0*one, *a, one);
-  TEUCHOS_TEST_FLOATING_EQUALITY(b->norm2(), zero, tol, out, success);
+  b->update(-1.0*ST::one(), *a, ST::one());
+  TEUCHOS_TEST_EQUALITY(b->norm2() < tol, true, out, success);
   TEUCHOS_TEST_FLOATING_EQUALITY(a->norm2(), expectedNorm, tol, out, success);
   return success;
 }

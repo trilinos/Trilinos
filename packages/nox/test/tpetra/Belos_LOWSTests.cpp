@@ -36,12 +36,7 @@ typedef Thyra::LinearOpBase<Scalar> TLOB;
 typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO,Node> TOVE;
 typedef typename TMV::mag_type mag_type;
 
-#if defined HAVE_TPETRACORE_CUDA
-#define NUM_LOCAL 100
-#else
-#define NUM_LOCAL 100
-#endif
-const std::size_t numLocalElements = NUM_LOCAL;
+const std::size_t numLocalElements = 100;
 
 // Tpetra matrix creation
 
@@ -82,10 +77,9 @@ void checkMultiVectors(const Teuchos::RCP<TMV>& a,
   std::vector<ST::magnitudeType> norms(expectedNorms.size());
   b->norm2(Teuchos::arrayViewFromVector(norms));
 
-  ST::magnitudeType tol = 1.0e-14;
-  ST::magnitudeType zero = ST::magnitude(ST::zero());
+  ST::magnitudeType tol = 1.0e-10;
   for (auto norm = norms.begin(); norm != norms.end(); ++norm) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(*norm, zero, tol, out, success);
+    TEUCHOS_TEST_EQUALITY(*norm < tol, true, out, success);
   }
   a->norm2(Teuchos::arrayViewFromVector(norms));
   auto normIter = norms.begin();
@@ -205,7 +199,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-  const std::size_t numCols = 5;
+  const std::size_t numCols = 3;
 
   Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
@@ -244,7 +238,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
   Teuchos::RCP<TMV> x_tpetra = TOVE::getTpetraMultiVector(x);
   Teuchos::RCP<TMV> y_tpetra = TOVE::getTpetraMultiVector(y);
 
-  auto scales = Teuchos::tuple(one, 2.0*one, 3.0*one, 4.0*one, 5.0*one);
+  auto scales = Teuchos::tuple(one, 2.0*one, 3.0*one);
   x_tpetra->scale(scales);
   y_tpetra->scale(scales);
 
@@ -261,7 +255,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
   }
   mag_type val = static_cast<mag_type>(static_cast<Scalar>(numGlobalElements)
     *ST::squareroot(static_cast<Scalar>(1.0) + 3.0/numGlobalElements));
-  auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val, 4.0*val, 5.0*val);
+  auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
 }
 
@@ -319,19 +313,17 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_NoPrec)
 
   // Create solve criteria
   Thyra::SolveCriteria<Scalar> criteria;
-  criteria.requestedTol = 1.0e-8;
+  criteria.requestedTol = 1.0e-12;
   criteria.solveMeasureType = Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
     Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
   // Apply the inverse op
   Thyra::SolveStatus<Scalar> status;
   status = Thyra::solve<Scalar>(*lows, Thyra::NOTRANS, *y, x.ptr(), Teuchos::constPtr(criteria));
-  //x_tpetra->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  //y_tpetra->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
   TEUCHOS_ASSERT(status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
 
   // Check for correct result
-  x_tpetra->putScalar(ST::one());
+  y_tpetra->putScalar(ST::one());
   mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements)));
   auto ans = Teuchos::tuple(val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
@@ -341,7 +333,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-  const std::size_t numCols = 5;
+  const std::size_t numCols = 3;
 
   Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
@@ -394,7 +386,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
 
   // Create solve criteria
   Thyra::SolveCriteria<Scalar> criteria;
-  criteria.requestedTol = 1.0e-8;
+  criteria.requestedTol = 1.0e-12;
   criteria.solveMeasureType = Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
     Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
@@ -404,9 +396,165 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
   TEUCHOS_ASSERT(status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
 
   // Check for correct result
-  /*x_tpetra->putScalar(ST::one());
+  for (std::size_t col = 0; col < numCols; ++col)
+    y_tpetra->getVectorNonConst(col)->putScalar(static_cast<Scalar>(col+1));
   mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements)));
-  auto ans = Teuchos::tuple(val);
-  checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);*/
+  auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val);
+  checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
 }
 
+TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_Ifpack2Prec)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
+
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+
+  // Create Belos solve strategy with Ifpack2 prec
+  typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+  typedef Thyra::Ifpack2PreconditionerFactory<CRSM> Impl;
+  Stratimikos::DefaultLinearSolverBuilder builder;
+  Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
+  p->set("Linear Solver Type", "Belos");
+  Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
+  belosList.set("Solver Type", "Pseudo Block GMRES");
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
+  belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
+  p->set("Preconditioner Type", "Ifpack2");
+  Teuchos::ParameterList& ifpackList = p->sublist("Preconditioner Types").sublist("Ifpack2");
+  ifpackList.set("Prec Type", "ILUT");
+  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+  builder.setParameterList(p);
+
+  // Create the LOWS
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > factory
+    = builder.createLinearSolveStrategy("");
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > lows = factory->createOp();
+
+  // Create operator objects
+  Teuchos::RCP<CRSM> op_tpetra = createTpetraOp(map);
+  Teuchos::RCP<TLOB> op = Thyra::tpetraLinearOp<Scalar,LO,GO,Node>(space, space, op_tpetra);
+
+  // Initialize the LOWS
+  Thyra::initializeOp<Scalar>(*factory, op, lows.ptr());
+  TEUCHOS_TEST_EQUALITY(space->isCompatible(*lows->domain()), true, out, success);
+  TEUCHOS_TEST_EQUALITY(space->isCompatible(*lows->range()), true, out, success);
+
+  // Create vector objects
+  Teuchos::RCP<TVB> x = Thyra::createMember(space);
+  Teuchos::RCP<TVB> y = Thyra::createMember(space);
+
+  Teuchos::RCP<TV> x_tpetra = TOVE::getTpetraVector(x);
+  Teuchos::RCP<TV> y_tpetra = TOVE::getTpetraVector(y);
+
+  // Setup random initial guess and RHS with known answer
+  x_tpetra->randomize(static_cast<Scalar>(-1.0), static_cast<Scalar>(1.0));
+  y_tpetra->putScalar(ST::zero());
+  if (comm()->getRank() == comm->getSize()-1) {
+    LO row = static_cast<LO>(numLocalElements-1);
+    Scalar val = static_cast<Scalar>(numGlobalElements);
+    y_tpetra->sumIntoLocalValue(row, val);
+  }
+
+  // Create solve criteria
+  Thyra::SolveCriteria<Scalar> criteria;
+  criteria.requestedTol = 1.0e-12;
+  criteria.solveMeasureType = Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+    Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
+
+  // Apply the inverse op
+  Thyra::SolveStatus<Scalar> status;
+  status = Thyra::solve<Scalar>(*lows, Thyra::NOTRANS, *y, x.ptr(), Teuchos::constPtr(criteria));
+  TEUCHOS_ASSERT(status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+
+  // Check for correct result
+  y_tpetra->putScalar(ST::one());
+  mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements)));
+  auto ans = Teuchos::tuple(val);
+  checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
+}
+
+TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_Ifpack2Prec)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
+  const std::size_t numCols = 3;
+
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+
+  // Create Belos solve strategy with Ifpack2 prec
+  typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+  typedef Thyra::Ifpack2PreconditionerFactory<CRSM> Impl;
+  Stratimikos::DefaultLinearSolverBuilder builder;
+  Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
+  p->set("Linear Solver Type", "Belos");
+  Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
+  belosList.set("Solver Type", "Pseudo Block GMRES");
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
+  belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
+  p->set("Preconditioner Type", "Ifpack2");
+  Teuchos::ParameterList& ifpackList = p->sublist("Preconditioner Types").sublist("Ifpack2");
+  ifpackList.set("Prec Type", "ILUT");
+  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+  builder.setParameterList(p);
+
+
+
+  // Create the LOWS
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > factory
+    = builder.createLinearSolveStrategy("");
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > lows = factory->createOp();
+
+  // Create operator objects
+  Teuchos::RCP<CRSM> op_tpetra = createTpetraOp(map);
+  Teuchos::RCP<TLOB> op = Thyra::tpetraLinearOp<Scalar,LO,GO,Node>(space, space, op_tpetra);
+
+  // Initialize the LOWS
+  Thyra::initializeOp<Scalar>(*factory, op, lows.ptr());
+  TEUCHOS_TEST_EQUALITY(space->isCompatible(*lows->domain()), true, out, success);
+  TEUCHOS_TEST_EQUALITY(space->isCompatible(*lows->range()), true, out, success);
+
+  // Create vector objects
+  Teuchos::RCP<TMVB> x = Thyra::createMembers(space, numCols);
+  Teuchos::RCP<TMVB> y = Thyra::createMembers(space, numCols);
+
+  Teuchos::RCP<TMV> x_tpetra = TOVE::getTpetraMultiVector(x);
+  Teuchos::RCP<TMV> y_tpetra = TOVE::getTpetraMultiVector(y);
+
+  // Setup random initial guess and RHS with known answer
+  x_tpetra->randomize(static_cast<Scalar>(-1.0), static_cast<Scalar>(1.0));
+  y_tpetra->putScalar(ST::zero());
+  if (comm()->getRank() == comm->getSize()-1) {
+    LO row = static_cast<LO>(numLocalElements-1);
+    for (std::size_t col = 0; col < numCols; ++col) {
+      Scalar val = static_cast<Scalar>((col+1)*numGlobalElements);
+      y_tpetra->sumIntoLocalValue(row, col, val);
+    }
+  }
+
+  // Create solve criteria
+  Thyra::SolveCriteria<Scalar> criteria;
+  criteria.requestedTol = 1.0e-12;
+  criteria.solveMeasureType = Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+    Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
+
+  // Apply the inverse op
+  Thyra::SolveStatus<Scalar> status;
+  status = Thyra::solve<Scalar>(*lows, Thyra::NOTRANS, *y, x.ptr(), Teuchos::constPtr(criteria));
+  TEUCHOS_ASSERT(status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+
+  // Check for correct result
+  for (std::size_t col = 0; col < numCols; ++col)
+    y_tpetra->getVectorNonConst(col)->putScalar(static_cast<Scalar>(col+1));
+  mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements)));
+  auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val);
+  checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
+}
