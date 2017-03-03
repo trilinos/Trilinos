@@ -43,6 +43,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -65,6 +66,16 @@ PureBasis(const std::string & basis_type,const int basis_order,const CellData & 
   num_cells_(cell_data.numCells())
 {
   initialize(basis_type,basis_order);
+}
+
+panzer::PureBasis::
+PureBasis(const panzer::BasisDescriptor & description,
+          const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+          const int num_cells):
+  topology_(cell_topology),
+  num_cells_(num_cells)
+{
+  initialize(description.getType(), description.getOrder());
 }
 
 void panzer::PureBasis::initialize(const std::string & in_basis_type,const int in_basis_order)

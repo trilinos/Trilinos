@@ -46,6 +46,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
+#include "Intrepid2_Cubature.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"

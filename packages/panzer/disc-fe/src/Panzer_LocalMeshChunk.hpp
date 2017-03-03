@@ -40,26 +40,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
-#define PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
+#ifndef PANZER_LOCAL_MESH_CHUNK_HPP
+#define PANZER_LOCAL_MESH_CHUNK_HPP
 
-#include "Panzer_LocalMeshChunk.hpp"
+#include "Kokkos_View.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Shards_CellTopology.hpp"
+#include "Teuchos_RCP.hpp"
 #include <vector>
 
 namespace panzer
 {
-class WorksetDescriptor;
-}
 
-namespace panzer_stk {
+template <typename LO, typename GO>
+struct LocalMeshChunk
+{
 
-class STK_Interface;
+  int num_cells;
+  std::vector<GO> owned_cell_global_indexes;
+  std::vector<GO> ghost_cell_global_indexes;
+  std::vector<LO> virtual_cell_local_indexes;
 
-template<typename LO, typename GO>
-std::vector<panzer::LocalMeshChunk<LO,GO> >
-generateLocalMeshChunks(const panzer_stk::STK_Interface & mesh,
-                        const panzer::WorksetDescriptor & description);
+  std::string element_block_name;
+  std::string sideset_name;
 
+//  // given cell index, gives starting index into local_face_indexes
+//  std::vector<int> subcell_indexes_adj;
+//
+//  // List of subcell indexes for a given
+//  std::vector<int> subcell_indexes;
+
+  Kokkos::View<double***,PHX::Device> cell_vertices;
+
+  Teuchos::RCP<const shards::CellTopology> cell_topology;
+
+  int num_faces;
+  Kokkos::View<const LO*[2],PHX::Device> face_to_cells;
+  Kokkos::View<const LO**,PHX::Device> cell_to_faces;
+  Kokkos::View<const LO*[2],PHX::Device> face_to_local_faces;
+
+};
 
 }
 

@@ -42,7 +42,133 @@
 
 #include "Panzer_Workset.hpp"
 
+#include "Phalanx_DataLayout.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+
+#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetNeeds.hpp"
+#include "Panzer_Dimension.hpp"
+#include "Panzer_LocalMeshChunk.hpp"
+
+#include "Shards_CellTopology.hpp"
+
 namespace panzer {
+
+void
+WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
+                      const panzer::WorksetNeeds & needs)
+{
+
+  const size_t num_cells = chunk.cell_vertices.dimension(0);
+  const size_t num_vertices_per_cell = chunk.cell_vertices.dimension(1);
+  const size_t num_dims_per_vertex = chunk.cell_vertices.dimension(2);
+
+  const Teuchos::RCP<const shards::CellTopology> & cell_topology = chunk.cell_topology;
+
+  // Set cell vertices
+  {
+
+    // Vertex data layout
+    Teuchos::RCP<PHX::DataLayout> data_layout = Teuchos::rcp(new PHX::MDALayout<Cell,NODE,Dim>(num_cells, num_vertices_per_cell, num_dims_per_vertex));
+
+    cell_vertex_coordinates = CellCoordArray("cell_vertices",data_layout);
+
+    for(size_t i=0;i<num_cells;++i)
+      for(size_t j=0;j<num_vertices_per_cell;++j)
+        for(size_t k=0;k<num_dims_per_vertex;++k)
+          cell_vertex_coordinates(i,j,k) = chunk.cell_vertices(i,j,k);
+
+  }
+
+  // DEPRECATED - makes sure deprecated arrays are filled with something - this will probably segfault or throw an error
+  panzer::populateValueArrays(num_cells, false, needs, *this);
+
+  const std::vector<panzer::IntegrationDescriptor> & integration_descriptors = needs.getIntegrators();
+  const std::vector<panzer::BasisDescriptor> & basis_descriptors = needs.getBases();
+
+  // Create the pure basis
+  for(const panzer::BasisDescriptor & basis_description : basis_descriptors){
+    // Create and store integration rule
+    Teuchos::RCP<panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis(basis_description, cell_topology, num_cells));
+    _pure_basis_map[basis_description.getKey()] = basis;
+  }
+
+  // Create the integration terms and basis-integrator pairs
+  for(const panzer::IntegrationDescriptor & integration_description : integration_descriptors){
+
+    // Create and store integration rule
+    Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integration_description, cell_topology, num_cells));
+    _integration_rule_map[integration_description.getKey()] = ir;
+
+    // Create and store integration values
+    Teuchos::RCP<panzer::IntegrationValues2<double> > iv = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
+    iv->setupArrays(ir);
+    iv->evaluateValues(cell_vertex_coordinates);
+    _integrator_map[integration_description.getKey()] = iv;
+
+    // We need to generate a integration rule - basis pair for each basis
+    for(const panzer::BasisDescriptor & basis_description : basis_descriptors){
+
+      // Grab the basis that was pre-calculated
+      const Teuchos::RCP<const panzer::PureBasis> & basis = _pure_basis_map[basis_description.getKey()];
+
+      // Create a basis ir layout for this pair of integrator and basis
+      Teuchos::RCP<panzer::BasisIRLayout> b_layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*ir));
+
+      // Create and store basis values
+      Teuchos::RCP<panzer::BasisValues2<double> > bv = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
+      bv->setupArrays(b_layout);
+      bv->evaluateValues(iv->cub_points,
+                         iv->jac,
+                         iv->jac_det,
+                         iv->jac_inv,
+                         iv->weighted_measure,
+                         cell_vertex_coordinates);
+      _basis_map[basis_description.getKey()][integration_description.getKey()] = bv;
+    }
+
+  }
+
+  face_to_cells = chunk.face_to_cells;
+  cell_to_faces = chunk.cell_to_faces;
+  face_to_local_faces = chunk.face_to_local_faces;
+
+}
+
+const panzer::IntegrationValues2<double> &
+WorksetDetails::getIntegrationValues(const panzer::IntegrationDescriptor & description) const
+{
+  const auto itr = _integrator_map.find(description.getKey());
+  TEUCHOS_ASSERT(itr != _integrator_map.end());
+  return *(itr->second);
+}
+
+const panzer::IntegrationRule &
+WorksetDetails::getIntegrationRule(const panzer::IntegrationDescriptor & description) const
+{
+  const auto itr = _integration_rule_map.find(description.getKey());
+  TEUCHOS_ASSERT(itr != _integration_rule_map.end());
+  return *(itr->second);
+}
+
+const panzer::BasisValues2<double> &
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, const panzer::IntegrationDescriptor & integration_description) const
+{
+  const auto itr = _basis_map.find(basis_description.getKey());
+  TEUCHOS_ASSERT(itr != _basis_map.end());
+  const auto & integration_map = itr->second;
+  const auto itr2 = integration_map.find(integration_description.getKey());
+  TEUCHOS_ASSERT(itr2 != integration_map.end());
+  return *(itr2->second);
+}
+
+const panzer::PureBasis &
+WorksetDetails::getBasis(const panzer::BasisDescriptor & description) const
+{
+  const auto itr = _pure_basis_map.find(description.getKey());
+  TEUCHOS_ASSERT(itr != _pure_basis_map.end());
+  return *(itr->second);
+}
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w)
   {

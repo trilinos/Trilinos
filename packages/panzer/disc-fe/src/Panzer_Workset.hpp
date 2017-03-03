@@ -62,9 +62,13 @@
 namespace panzer {
 
   class LinearObjContainer;
+  class WorksetNeeds;
+
+  template<typename LO, typename GO>
+  class LocalMeshChunk;
 
   /** This is used within the workset to make edge based (DG like) assembly
-    * an easier task. This basically allows seperation of the workset abstraction
+    * an easier task. This basically allows separation of the workset abstraction
     * from how it is accessed.
     */
   struct WorksetDetails {
@@ -72,6 +76,10 @@ namespace panzer {
 
     typedef std::size_t GO;
     typedef int LO;
+
+    //! Constructs the workset details from a given chunk of the mesh
+    // TODO: we should probably move to panzer::LocalMeshChunk<int,int64_t>
+    void setup(const panzer::LocalMeshChunk<int,int> & chunk, const panzer::WorksetNeeds & needs);
 
     Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
     std::vector<GO> cell_local_ids;
@@ -96,16 +104,13 @@ namespace panzer {
     std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
 
     /// Cells associated with a local cell
-    inline const Kokkos::View<LO*[2]> & faceToCells() const {return face_to_cells;}
+    inline const Kokkos::View<const LO*[2]> & faceToCells() const {return face_to_cells;}
 
     /// Local face index within a local cell for a given face
-    inline const Kokkos::View<LO*[2]> & faceToLocalFaces() const {return face_to_local_faces;}
+    inline const Kokkos::View<const LO*[2]> & faceToLocalFaces() const {return face_to_local_faces;}
 
     /// Faces associated with a given local cell
-    inline const Kokkos::View<LO**> & cellToFaces() const {return cell_to_faces;}
-
-    /// Given a local face this array tells us the point offset in the cell array
-    inline const Kokkos::View<LO*> & localFaceToOffset() const {return local_face_offset;}
+    inline const Kokkos::View<const LO**> & cellToFaces() const {return cell_to_faces;}
 
     /// Returns the global indexes of the cells associated with this workset
     inline const std::vector<GO> & cellIndexes() const {return internal_cell_global_indexes;}
@@ -117,33 +122,35 @@ namespace panzer {
     inline const std::vector<LO> & virtualCellIndexes() const {return virtual_cell_local_indexes;}
 
     /// Grab the integration values for a given integration description (throws error if integration doesn't exist)
-    const panzer::IntegrationValues2<double> & getIntegrationValues(const panzer::IntegrationDescriptor & description);
+    const panzer::IntegrationValues2<double> & getIntegrationValues(const panzer::IntegrationDescriptor & description) const;
 
     /// Grab the integration rule (contains data layouts) for a given integration description (throws error if integration doesn't exist)
-    const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description);
+    const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
 
-    /// Grab the basis values for a given basis description (throws error if basis doesn't exist)
-    const panzer::BasisValues2<double> & getBasis(const panzer::BasisDescriptor & description);
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, const panzer::IntegrationDescriptor & integration_description) const;
 
     /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
-    const panzer::PureBasis & getPureBasis(const panzer::BasisDescriptor & description);
+    const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
 
   protected:
 
-    std::map<int,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
-    std::map<int,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
+    // Each integration rule will have a different local face offset.
+    std::map<size_t,Kokkos::View<const LO*> > _local_face_offset;
 
-    std::map<int,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
-    std::map<int,Teuchos::RCP<const panzer::BasisValues2<double> > > _basis_map;
+    std::map<size_t,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
+    std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
+
+    std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
+    std::map<size_t,std::map<size_t,Teuchos::RCP<const panzer::BasisValues2<double> > > > _basis_map;
 
     std::vector<GO> internal_cell_global_indexes;
     std::vector<GO> ghost_cell_global_indexes;
     std::vector<LO> virtual_cell_local_indexes;
 
-    Kokkos::View<LO*[2]> face_to_cells;
-    Kokkos::View<LO*[2]> face_to_local_faces;
-    Kokkos::View<LO**> cell_to_faces;
-    Kokkos::View<LO*> local_face_offset;
+    Kokkos::View<const LO*[2]> face_to_cells;
+    Kokkos::View<const LO*[2]> face_to_local_faces;
+    Kokkos::View<const LO**> cell_to_faces;
 
   };
 

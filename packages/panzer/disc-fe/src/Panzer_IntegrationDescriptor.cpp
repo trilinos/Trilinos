@@ -44,20 +44,33 @@
 
 #include "Panzer_HashUtils.hpp"
 
+#include "Teuchos_Assert.hpp"
+
 namespace panzer
 {
 
-IntegrationDescriptor::IntegrationDescriptor():
-  _integration_type(NONE),
-  _cubature_order(-1)
+IntegrationDescriptor::IntegrationDescriptor()
 {
-  _key = std::hash<IntegrationDescriptor>()(*this);
+  setup(-1, NONE);
 }
 
-IntegrationDescriptor::IntegrationDescriptor(const int cubature_order, const int integration_type):
-  _integration_type(integration_type),
-  _cubature_order(cubature_order)
+IntegrationDescriptor::IntegrationDescriptor(const int cubature_order, const int integration_type, const int side)
 {
+  setup(cubature_order, integration_type, side);
+}
+
+void
+IntegrationDescriptor::setup(const int cubature_order, const int integration_type, const int side)
+{
+  _integration_type = integration_type;
+  _cubature_order = cubature_order;
+  _side = side;
+
+  if(_integration_type == SIDE or _integration_type == CV_BOUNDARY){
+    TEUCHOS_ASSERT(side >= 0);
+  } else {
+    TEUCHOS_ASSERT(side == -1);
+  }
   _key = std::hash<IntegrationDescriptor>()(*this);
 }
 
@@ -70,6 +83,7 @@ std::hash<panzer::IntegrationDescriptor>::operator()(const panzer::IntegrationDe
 
   panzer::hash_combine(seed,desc.getType());
   panzer::hash_combine(seed,desc.getOrder());
+  panzer::hash_combine(seed,desc.getSide());
 
   return seed;
 }

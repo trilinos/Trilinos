@@ -40,26 +40,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
-#define PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
+#ifndef PANZER_LOCAL_MESH_INFO_HPP
+#define PANZER_LOCAL_MESH_INFO_HPP
 
-#include "Panzer_LocalMeshChunk.hpp"
-#include <vector>
+#include "Kokkos_View.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Shards_CellTopology.hpp"
+#include "Teuchos_RCP.hpp"
+#include <string>
 
 namespace panzer
 {
-class WorksetDescriptor;
-}
 
-namespace panzer_stk {
+template <typename LO, typename GO>
+struct LocalMeshInfo {
 
-class STK_Interface;
+  std::string element_block_name;
+  std::string sideset_name;
 
-template<typename LO, typename GO>
-std::vector<panzer::LocalMeshChunk<LO,GO> >
-generateLocalMeshChunks(const panzer_stk::STK_Interface & mesh,
-                        const panzer::WorksetDescriptor & description);
+  Teuchos::RCP<const shards::CellTopology> cell_topology;
 
+  // cell ids
+  Kokkos::View<const GO*> owned_cells;
+  Kokkos::View<const GO*> ghstd_cells;
+  Kokkos::View<const LO*> virtual_cells;
+
+  // vertices - convert these to views - these are always rank 3
+  Kokkos::DynRankView<double,PHX::Device> owned_vertices;
+  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices;
+
+  // Face to neighbors
+  Kokkos::View<const LO*[2]> face_to_cells;    // this is local numbering
+                                                // that indexes first into
+                                                // the owned_cells and then
+                                                // into ghstd_cells
+  Kokkos::View<const LO*[2]> face_to_lidx;     // maps faces to the cell local
+                                                // face index
+  Kokkos::View<const LO**> cell_to_face;       // using cell local numbering,
+                                                // produce face index
+
+};
 
 }
 

@@ -53,7 +53,7 @@ PHX_EVALUATOR_CTOR(TestScatter,p)
   std::string test_name     = p.get<std::string>("Test Name");
   std::string test_name_res = p.get<std::string>("Test Name Residual");
   Teuchos::RCP<PHX::DataLayout> dl = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  value = PHX::MDField<ScalarT,Cell,NODE>(p.get<std::string>("Test Name"), dl);
+  value = PHX::MDField<const ScalarT,Cell,NODE>(p.get<std::string>("Test Name"), dl);
   scatter_value = PHX::MDField<ScalarT,Cell,NODE>(test_name_res, dl);
 
   this->addDependentField(value);

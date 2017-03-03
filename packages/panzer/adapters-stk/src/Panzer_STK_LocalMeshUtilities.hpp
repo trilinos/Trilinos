@@ -43,57 +43,39 @@
 #ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 #define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_DynRankView.hpp"
-
-#include "Phalanx_KokkosDeviceTypes.hpp"
-
-#include "Panzer_STK_Interface.hpp"
-
-#include "Tpetra_Import.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_RCP.hpp"
-#include <vector>
+#include "Panzer_LocalMeshInfo.hpp"
 #include <string>
-
-namespace panzer
-{
-
-// TODO: Move this class to disc-fe
-template <typename LO, typename GO>
-struct LocalMeshInfo {
-
-  // cell ids
-  Kokkos::View<const GO*> owned_cells;
-  Kokkos::View<const GO*> ghstd_cells;
-  Kokkos::View<const LO*> virtual_cells;
-
-  // vertices
-  Kokkos::DynRankView<double,PHX::Device> owned_vertices;
-  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices;
-
-  // Face to neighbors
-  Kokkos::View<const LO*[2]> face_to_cells;    // this is local numbering
-                                                // that indexes first into
-                                                // the owned_cells and then
-                                                // into ghstd_cells
-  Kokkos::View<const LO*[2]> face_to_lidx;     // maps faces to the cell local
-                                                // face index
-  Kokkos::View<const LO**> cell_to_face;       // using cell local numbering,
-                                                // produce face index
-
-};
-
-}
 
 namespace panzer_stk
 {
+  class STK_Interface;
 
+/** Create a structure containing information about the local portion of a given element block
+  *
+  * \param[in] mesh Reference to STK mesh interface
+  * \param[in] element_block_name Name of the element block of interest
+  *
+  * \returns Structure containing local mesh information
+  */
 template <typename LO, typename GO>
 panzer::LocalMeshInfo<LO,GO>
 generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
                       const std::string & element_block_name);
 
+
+/** Create a structure containing information about the local portion of a given element block's sideset
+  *
+  * \param[in] mesh Reference to STK mesh interface
+  * \param[in] element_block_name Name of the element block of interest
+  * \param[in] sideset_name Name of the sideset on the element block of interest
+  *
+  * \returns Structure containing local mesh information
+  */
+template <typename LO, typename GO>
+panzer::LocalMeshInfo<LO,GO>
+generateLocalSidesetInfo(const panzer_stk::STK_Interface & mesh,
+                      const std::string & element_block_name,
+                      const std::string & sideset_name);
 
 }
 #endif
