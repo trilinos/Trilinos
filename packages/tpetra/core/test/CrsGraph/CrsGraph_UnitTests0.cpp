@@ -991,6 +991,12 @@ namespace {
       out << "Calling fillComplete on result of clone" << endl;
       A2->fillComplete();
 
+      // Call computeGlobal constants multiple times to make sure nothing crashes
+      A2->computeGlobalConstants();
+      A2->computeGlobalConstants();
+      A2->computeGlobalConstants();
+
+
       out << "Testing result of clone" << endl;
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );
       TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );

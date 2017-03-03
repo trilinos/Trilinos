@@ -40,9 +40,7 @@ IntegratorBasic<Scalar>::IntegratorBasic()
   // Build default Tempus ParameterList
   RCP<ParameterList> tempusPL = Teuchos::parameterList("Tempus");
   tempusPL->set("Integrator Name", "Integrator Default");
-  RCP<ParameterList> integratorPL =
-    Teuchos::rcp_const_cast<ParameterList>(this->getValidParameters());
-  tempusPL->set("Integrator Default", *integratorPL);
+  tempusPL->set("Integrator Default", *(this->getValidParameters()));
 
   this->setParameterList(tempusPL);
 }
@@ -61,7 +59,7 @@ void IntegratorBasic<Scalar>::setStepper(
     std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
     RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createStepper(stepperPL, model);
+    stepper_ = sf->createStepper(model, stepperPL);
   } else {
     stepper_->setModel(model);
   }
@@ -550,37 +548,31 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 IntegratorBasic<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  if (is_null(validPL)) {
+  std::ostringstream tmp;
+  tmp << "'Integrator Type' must be 'Integrator Basic'.";
+  pl->set("Integrator Type", "Integrator Basic", tmp.str());
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  tmp.clear();
+  tmp << "Screen Output Index List.  Required to be in TimeStepControl range "
+      << "['Minimum Time Step Index', 'Maximum Time Step Index']";
+  pl->set("Screen Output Index List", "", tmp.str());
+  pl->set("Screen Output Index Interval", 1000000,
+    "Screen Output Index Interval (e.g., every 100 time steps)");
 
-    std::ostringstream tmp;
-    tmp << "'Integrator Type' must be 'Integrator Basic'.";
-    pl->set("Integrator Type", "Integrator Basic", tmp.str());
+  pl->set("Stepper Name", "",
+    "'Stepper Name' selects the Stepper block to construct (Required).");
 
-    tmp.clear();
-    tmp << "Screen Output Index List.  Required to be in TimeStepControl range "
-        << "['Minimum Time Step Index', 'Maximum Time Step Index']";
-    pl->set("Screen Output Index List", "", tmp.str());
-    pl->set("Screen Output Index Interval", 1000000,
-      "Screen Output Index Interval (e.g., every 100 time steps)");
+  // Solution History
+  pl->sublist("Solution History",false,"solutionHistory_docs")
+      .disableRecursiveValidation();
 
-    pl->set("Stepper Name", "",
-      "'Stepper Name' selects the Stepper block to construct (Required).");
+  // Time Step Control
+  pl->sublist("Time Step Control",false,"solutionHistory_docs")
+      .disableRecursiveValidation();
 
-    // Solution History
-    pl->sublist("Solution History",false,"solutionHistory_docs")
-        .disableRecursiveValidation();
-
-    // Time Step Control
-    pl->sublist("Time Step Control",false,"solutionHistory_docs")
-        .disableRecursiveValidation();
-
-    validPL = pl;
-  }
-  return validPL;
+  return pl;
 }
 
 

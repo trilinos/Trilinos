@@ -30,6 +30,65 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
+{
+  std::vector<std::string> RKMethods;
+  RKMethods.push_back("General ERK");
+  RKMethods.push_back("RK Forward Euler");
+  RKMethods.push_back("RK Explicit 4 Stage");
+  RKMethods.push_back("RK Explicit 3/8 Rule");
+  RKMethods.push_back("RK Explicit 4 Stage 3rd order by Runge");
+  RKMethods.push_back("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
+  RKMethods.push_back("RK Explicit 3 Stage 3rd order");
+  RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
+  RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
+  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
+  RKMethods.push_back("RK Explicit Trapezoidal");
+
+  for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
+
+    std::string RKMethod_ = RKMethods[m];
+    std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
+    std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
+
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+
+    // Setup the SinCosModel
+    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+    RCP<SinCosModel<double> > model =
+      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+
+    // Set the Stepper
+    RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
+    if (RKMethods[m] == "General ERK") {
+      tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+    } else {
+      tempusPL->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+    }
+
+    // Setup the Integrator and reset initial time step
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(tempusPL, model);
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    if (RKMethods[m] == "General ERK")
+      stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
+    RCP<ParameterList> defaultPL=integrator->getStepper()->getDefaultParameters();
+    defaultPL->remove("Description");
+    //std::cout << *stepperPL << std::endl;
+    //std::cout << *defaultPL << std::endl;
+
+    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  }
+}
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 {
   std::vector<std::string> RKMethods;
@@ -167,5 +226,6 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
+
 
 } // namespace Tempus_Test

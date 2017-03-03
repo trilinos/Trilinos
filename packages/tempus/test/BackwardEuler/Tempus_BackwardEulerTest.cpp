@@ -42,6 +42,35 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BackwardEuler_SinCos.xml");
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+
+  // Setup the Integrator
+  RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(tempusPL, model);
+
+  RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+  RCP<ParameterList> defaultPL=integrator->getStepper()->getDefaultParameters();
+  //std::cout << *stepperPL << std::endl;
+  //std::cout << *defaultPL << std::endl;
+  TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+}
+
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 {
   std::vector<double> StepSize;
@@ -69,7 +98,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Integrator")
+    pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
@@ -81,7 +110,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 
     // Test if at 'Final Time'
     double time = integrator->getTime();
-    double timeFinal =pl->sublist("Demo Integrator")
+    double timeFinal =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
@@ -414,5 +443,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
+
 
 } // namespace Tempus_Test

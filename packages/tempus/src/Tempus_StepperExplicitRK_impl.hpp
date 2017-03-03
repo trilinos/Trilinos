@@ -21,8 +21,8 @@ namespace Tempus {
 // StepperExplicitRK definitions:
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
-  Teuchos::RCP<Teuchos::ParameterList>                      pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
   this->setParameterList(pList);
   this->setModel(transientModel);
@@ -85,8 +85,8 @@ void StepperExplicitRK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
   {
-    RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
-    RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
     const Scalar time = currentState->getTime();
 
@@ -200,9 +200,10 @@ template <class Scalar>
 void StepperExplicitRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
+  else pList_ = pList;
+  // Can not validate because of optional Parameters.
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -210,30 +211,32 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperExplicitRK<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  //std::stringstream Description;
+  //Description << "'Stepper Type' sets the stepper method.\n"
+  //            << "For Explicit RK the following methods are valid:\n"
+  //            << "  General ERK\n"
+  //            << "  RK Forward Euler\n"
+  //            << "  RK Explicit 4 Stage\n"
+  //            << "  RK Explicit 3/8 Rule\n"
+  //            << "  RK Explicit 4 Stage 3rd order by Runge\n"
+  //            << "  RK Explicit 5 Stage 3rd order by Kinnmark and Gray\n"
+  //            << "  RK Explicit 3 Stage 3rd order\n"
+  //            << "  RK Explicit 3 Stage 3rd order TVD\n"
+  //            << "  RK Explicit 3 Stage 3rd order by Heun\n"
+  //            << "  RK Explicit 2 Stage 2nd order by Runge\n"
+  //            << "  RK Explicit Trapezoidal\n";
 
-  if (is_null(validPL)) {
+  return ERK_ButcherTableau_->getValidParameters();
+}
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-    // pl->set("Stepper Type", "RK Forward Euler",
-    //   "'Stepper Type' sets the stepper method.\n"
-    //   "For Explicit RK the following methods are valid:\n"
-    //   "  RK Forward Euler\n",
-    //   "  RK Explicit 4 Stage\n",
-    //   "  RK Explicit 3/8 Rule\n",
-    //   "  RK Explicit 4 Stage 3rd order by Runge\n",
-    //   "  RK Explicit 5 Stage 3rd order by Kinnmark and Gray\n",
-    //   "  RK Explicit 3 Stage 3rd order\n",
-    //   "  RK Explicit 3 Stage 3rd order TVD\n",
-    //   "  RK Explicit 3 Stage 3rd order by Heun\n",
-    //   "  RK Explicit 2 Stage 2nd order by Runge\n",
-    //   "  RK Explicit Trapezoidal\n",
-    //   StepperERKTypeValidator);
-
-    validPL = pl;
-  }
-  return validPL;
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperExplicitRK<Scalar>::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(ERK_ButcherTableau_->getValidParameters());
+  return pl;
 }
 
 

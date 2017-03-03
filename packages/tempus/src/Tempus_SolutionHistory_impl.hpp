@@ -310,12 +310,9 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) {
-    pList_->validateParametersAndSetDefaults(*this->getValidParameters());
-  } else {
-    pList_ = pList;
-    pList_->validateParameters(*this->getValidParameters());
-  }
+  if (pList == Teuchos::null) *pList_ = *(this->getValidParameters());
+  else pList_ = pList;
+  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
@@ -368,26 +365,20 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 SolutionHistory<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  if (is_null(validPL)) {
+  pl->set(Storage_name, Storage_default,
+    "'Storage Type' sets the memory storage.  "
+    "'Keep Newest' - will retain the single newest solution state.  "
+    "'Undo' - will retain two solution states in order to do a single undo.  "
+    "'Static' - will retain 'Storage Limit' number of solution states.  "
+    "'Unlimited' - will not remove any solution states!",
+    StorageTypeValidator);
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  pl->set(StorageLimit_name, StorageLimit_default,
+    "Storage limit for the solution history.");
 
-    pl->set(Storage_name, Storage_default,
-      "'Storage Type' sets the memory storage.  "
-      "'Keep Newest' - will retain the single newest solution state.  "
-      "'Undo' - will retain two solution states in order to do a single undo.  "
-      "'Static' - will retain 'Storage Limit' number of solution states.  "
-      "'Unlimited' - will not remove any solution states!",
-      StorageTypeValidator);
-
-    pl->set(StorageLimit_name, StorageLimit_default,
-      "Storage limit for the solution history.");
-
-    validPL = pl;
-  }
-  return validPL;
+  return pl;
 }
 
 
