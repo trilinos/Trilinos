@@ -2713,7 +2713,9 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
-    labelList.set("compute global constants", false); // Minor speedup tweak - avoid computing the global constants
+    // Minor speedup tweak - avoid computing the global constants
+    if(!params.is_null()) 
+      labelList.set("import: compute global constants", params->get("import: compute global constants",false)); 
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 

@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    TEST_EQUALITY(nonzeroCount,6);
 
    // loop over edges
-   char tests[] = { 1,1,-1}; // for element 2
+   char tests[] = { char(1),char(1),char(-1)}; // for element 2
    for(std::size_t e=0;e<3;e++) {
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    TEST_EQUALITY(nonzeroCount,8);
 
    // loop over edges
-   char tests[] = { 1,1,1,-1}; // for element 2
+   char tests[] = { char(1),char(1),char(1),char(-1)}; // for element 2
    for(std::size_t e=0;e<4;e++) {
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
@@ -423,7 +423,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    TEST_EQUALITY(nonzeroCount,6);
 
    // loop over faces
-   char tests[] = { 1,1,-1}; // for element 2
+   char tests[] = { char(1),char(1),char(-1)}; // for element 2
    for(std::size_t e=0;e<3;e++) {
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
@@ -537,7 +537,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    TEST_EQUALITY(nonzeroCount,8);
 
    // loop over faces
-   char tests[] = { 1,1,1,-1}; // for element 2
+   char tests[] = { char(1),char(1),char(1),char(-1)}; // for element 2
    for(std::size_t e=0;e<4;e++) {
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
