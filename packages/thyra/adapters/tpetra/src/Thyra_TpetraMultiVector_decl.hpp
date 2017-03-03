@@ -130,6 +130,12 @@ protected:
     );
 
   /** \brief . */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const;
+
+  /** \brief . */
   virtual void norms1Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
     ) const;

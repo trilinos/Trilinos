@@ -526,6 +526,27 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const
+{
+  auto tmv = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(mv));
+
+  // If the cast succeeded, call Tpetra directly.
+  // Otherwise, fall back to the RTOp implementation.
+  if (nonnull(tmv)) {
+    tpetraVector_.getConstObj()->dot(*tmv, prods);
+  } else {
+    // This version will require/modify the host view of this vector.
+    tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+    tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+    MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
+  }
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norms1Impl(
   const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
   ) const
