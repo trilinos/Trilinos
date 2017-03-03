@@ -62,8 +62,8 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<ScalarT,Cell,IP> scalar; 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  PHX::MDField<const ScalarT,Cell,IP> scalar;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_nodes;
   std::size_t num_qp;

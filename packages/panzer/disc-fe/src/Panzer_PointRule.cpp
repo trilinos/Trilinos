@@ -58,6 +58,17 @@ PointRule(const std::string & ptName,
   setup(ptName,np,cell_data);
 }
 
+panzer::PointRule::
+PointRule(const std::string & point_rule_name,
+          const int num_cells,
+          const int num_points_per_cell,
+          const int num_faces,
+          const int num_points_per_face,
+          const Teuchos::RCP<const shards::CellTopology> & cell_topology)
+{
+  setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
+}
+
 void panzer::PointRule::
 setup(const std::string & ptName,
       int np, 
@@ -67,6 +78,8 @@ setup(const std::string & ptName,
   num_points = np;
   spatial_dimension = cell_data.baseCellDimension();
   workset_size = cell_data.numCells();
+  _num_faces = -1;
+  _num_points_per_face = -1;
   
   topology = cell_data.getCellTopology();
   TEUCHOS_TEST_FOR_EXCEPTION(topology==Teuchos::null,std::runtime_error,
@@ -114,6 +127,38 @@ setup(const std::string & ptName,
 
 }
 
+
+void panzer::PointRule::
+setup(const std::string & point_rule_name,
+      const int num_cells,
+      const int num_points_per_cell,
+      const int num_faces,
+      const int num_points_per_face,
+      const Teuchos::RCP<const shards::CellTopology> & cell_topology)
+{
+
+  topology = cell_topology;
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(topology),std::runtime_error,
+                       "PointRule::setup - Cell topology cannot be null.");
+
+  point_name = point_rule_name;
+  num_points = num_points_per_cell;
+  spatial_dimension = cell_topology->getDimension();
+  workset_size = num_cells;
+  _num_faces = num_faces;
+  _num_points_per_face = num_points_per_face;
+  side = -1;
+
+  // allocate data layout objects
+  dl_scalar = Teuchos::rcp(new PHX::MDALayout<Cell,IP>(workset_size,num_points));
+  dl_vector = Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim>(workset_size, num_points,spatial_dimension));
+  dl_tensor = Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points,spatial_dimension,spatial_dimension));
+
+  dl_vector3 = Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim>(workset_size, num_points,3));
+  dl_tensor3x3 = Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points,3,3));
+
+}
+
 const std::string & panzer::PointRule::getName() const
 {
    return point_name;
@@ -146,6 +191,59 @@ Teuchos::RCP<shards::CellTopology> panzer::PointRule::getSideTopology(const Cell
   
   return sideTopo;
 }
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellDataLayout() const
+{return Teuchos::rcp(new PHX::MDALayout<Cell>(workset_size));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellDataLayout(const int dim0) const
+{return Teuchos::rcp(new PHX::MDALayout<Cell,Dim>(workset_size, dim0));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellDataLayout(const int dim0, const int dim1) const
+{return Teuchos::rcp(new PHX::MDALayout<Cell,Dim,Dim>(workset_size, dim0, dim1));}
+
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellPointDataLayout() const
+{return Teuchos::rcp(new PHX::MDALayout<Cell,IP>(workset_size, num_points));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellPointDataLayout(const int dim0) const
+{return Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim>(workset_size, num_points, dim0));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getCellPointDataLayout(const int dim0, const int dim1) const
+{return Teuchos::rcp(new PHX::MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points, dim0, dim1));}
+
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFaceDataLayout() const
+{return Teuchos::rcp(new PHX::MDALayout<Face>(_num_faces));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFaceDataLayout(const int dim0) const
+{return Teuchos::rcp(new PHX::MDALayout<Face,Dim>(_num_faces, dim0));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFaceDataLayout(const int dim0, const int dim1) const
+{return Teuchos::rcp(new PHX::MDALayout<Face,Dim,Dim>(_num_faces, dim0, dim1));}
+
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFacePointDataLayout() const
+{return Teuchos::rcp(new PHX::MDALayout<Face,IP>(_num_faces, _num_points_per_face));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFacePointDataLayout(const int dim0) const
+{return Teuchos::rcp(new PHX::MDALayout<Face,IP,Dim>(_num_faces, _num_points_per_face, dim0));}
+
+Teuchos::RCP<PHX::DataLayout>
+panzer::PointRule::getFacePointDataLayout(const int dim0, const int dim1) const
+{return Teuchos::rcp(new PHX::MDALayout<Face,IP,Dim,Dim>(_num_faces, _num_points_per_face, dim0, dim1));}
+
+
 
 void panzer::PointRule::print(std::ostream & os)
 {

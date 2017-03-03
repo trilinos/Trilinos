@@ -87,7 +87,8 @@ IntegrationRule(const panzer::CellData& cell_data, const std::string & in_cv_typ
 panzer::IntegrationRule::
 IntegrationRule(const panzer::IntegrationDescriptor& description,
                 const Teuchos::RCP<const shards::CellTopology> & cell_topology,
-                const int num_cells)
+                const int num_cells,
+                const int num_faces)
   : PointRule(), IntegrationDescriptor(description)
 {
 
@@ -105,7 +106,8 @@ IntegrationRule(const panzer::IntegrationDescriptor& description,
 
   } else if(description.getType() == panzer::IntegrationDescriptor::SURFACE){
 
-    setup_surface(cell_topology, num_cells);
+    TEUCHOS_ASSERT(num_faces!=-1);
+    setup_surface(cell_topology, num_cells, num_faces);
 
   } else if(description.getType() == panzer::IntegrationDescriptor::CV_VOLUME){
 
@@ -166,12 +168,12 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   PointRule::setup(ss.str(),intrepid_cubature->getNumPoints(),cell_data);
 }
 
-void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells)
+void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells, const int num_faces)
 {
 
   const int cell_dim = cell_topology->getDimension();
   const int subcell_dim = cell_dim-1;
-  const int num_faces = cell_topology->getSubcellCount(subcell_dim);
+  const int num_faces_per_cell = cell_topology->getSubcellCount(subcell_dim);
 
   panzer::CellData cell_data(num_cells, cell_topology);
 
@@ -184,23 +186,34 @@ void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::Cel
 
   // We can skip some steps for 1D
   if(cell_dim == 1){
-    PointRule::setup(point_rule_name,num_faces,cell_data);
+    const int num_points_per_cell = num_faces_per_cell;
+    const int num_points_per_face = 1;
+    PointRule::setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
     return;
   }
 
   Intrepid2::DefaultCubatureFactory cubature_factory;
 
   _point_offsets.resize(num_faces+1,0);
+  int test_face_size = -1;
   for(int subcell_index=0; subcell_index<num_faces; ++subcell_index){
     Teuchos::RCP<shards::CellTopology> face_topology = Teuchos::rcp(new shards::CellTopology(cell_topology->getCellTopologyData(subcell_dim,subcell_index)));
     const auto & intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*face_topology, getOrder());
     const int num_face_points = intrepid_cubature->getNumPoints();
     _point_offsets[subcell_index+1] = _point_offsets[subcell_index] + num_face_points;
+
+    // Right now we only support each face having the same number of points
+    if(test_face_size==-1){
+      test_face_size = num_face_points;
+    } else {
+      TEUCHOS_ASSERT(num_face_points == test_face_size);
+    }
   }
 
-  const int num_points = _point_offsets.back();
+  const int num_points_per_cell = _point_offsets.back();
+  const int num_points_per_face = _point_offsets[1];
 
-  PointRule::setup(point_rule_name,num_points,cell_data);
+  PointRule::setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
 
 }
 

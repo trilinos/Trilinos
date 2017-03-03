@@ -89,16 +89,15 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesScalar,p) :
       for (std::vector<std::string>::const_iterator name = 
   	     field_multiplier_names->begin(); 
   	   name != field_multiplier_names->end(); ++name) {
-        PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+        PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
         field_multipliers.push_back(tmp_field);
       }
     }
   }
 
   // add dependent field multiplers
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->addDependentField(*field);
+  for (const auto & field : field_multipliers)
+    this->addDependentField(field);
 
   std::string n = "Integrator_BasisTimesScalar: " + residual.fieldTag().name();
   this->setName(n);
@@ -110,9 +109,8 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesScalar,sd,fm)
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
+  for (auto & field : field_multipliers)
+    this->utils.setFieldData(field,fm);
 
   num_nodes = residual.dimension(1);
   num_qp = scalar.dimension(1);
@@ -139,9 +137,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
     for (int j=0; j < scalar.extent_int(1); ++j)
        tmp(i,j) = multiplier * scalar(i,j);
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field) {
-    const PHX::MDField<ScalarT,Cell,IP> & field_data = *field;
+  for (const auto & field_data : field_multipliers) {
 
     //Irina modified
     //for (int i=0; i < field_data.size(); ++i)
@@ -166,7 +162,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field)
 	tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
     }

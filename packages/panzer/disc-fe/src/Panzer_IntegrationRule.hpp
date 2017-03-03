@@ -80,8 +80,10 @@ namespace panzer {
     //TEUCHOS_DEPRECATED
     IntegrationRule(const panzer::CellData& cell_data, const std::string & cv_type);
 
-    // TODO: Get rid of this RCP, currently it is required by PointRule (it stores the cell_topology)
-    IntegrationRule(const panzer::IntegrationDescriptor& description, const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells);
+    IntegrationRule(const panzer::IntegrationDescriptor& description,
+                    const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+                    const int num_cells,
+                    const int num_faces=-1);
 
     // TODO: Move to protected
     void setup(int cubature_degree, const panzer::CellData& cell_data);
@@ -114,8 +116,9 @@ namespace panzer {
   protected:
 
     /// Setup a surface integration
-    // TODO: get rid of the RCP requirement
-    void setup_surface(const Teuchos::RCP<const shards::CellTopology> & cell_topology, const int num_cells);
+    void setup_surface(const Teuchos::RCP<const shards::CellTopology> & cell_topology,
+                       const int num_cells,
+                       const int num_faces);
 
     std::vector<int> _point_offsets;
 
