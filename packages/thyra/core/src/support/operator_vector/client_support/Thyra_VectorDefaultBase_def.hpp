@@ -290,6 +290,15 @@ void VectorDefaultBase<Scalar>::linearCombinationVecImpl(
 
 
 template<class Scalar>
+Scalar VectorDefaultBase<Scalar>::dotImpl(const VectorBase<Scalar>& x) const
+{
+  Scalar prod;
+  this->dots(x, Teuchos::arrayView(&prod, 1));
+  return prod;
+}
+
+
+template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 VectorDefaultBase<Scalar>::norm1Impl() const
 {

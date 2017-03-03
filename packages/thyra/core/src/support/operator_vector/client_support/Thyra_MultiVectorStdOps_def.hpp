@@ -49,7 +49,6 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpSum.hpp"
-#include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
 #include "Teuchos_Assert.hpp"
@@ -74,21 +73,7 @@ template<class Scalar>
 void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
   const ArrayView<Scalar> &dots )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  const int m = V1.domain()->dim();
-  RTOpPack::ROpDotProd<Scalar> dot_op;
-  Array<RCP<RTOpPack::ReductTarget> > rcp_dot_targs(m);
-  Array<Ptr<RTOpPack::ReductTarget> > dot_targs(m);
-  for( int kc = 0; kc < m; ++kc ) {
-    rcp_dot_targs[kc] = dot_op.reduct_obj_create();
-    dot_targs[kc] = rcp_dot_targs[kc].ptr();
-  }
-  applyOp<Scalar>( dot_op, tuple(ptrInArg(V1), ptrInArg(V2)),
-    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
-    dot_targs );
-  for( int kc = 0; kc < m; ++kc ) {
-    dots[kc] = dot_op(*dot_targs[kc]);
-  }
+  V2.dots(V1, dots);
 }
 
 

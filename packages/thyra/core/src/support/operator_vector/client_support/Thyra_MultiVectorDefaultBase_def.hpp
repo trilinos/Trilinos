@@ -52,7 +52,9 @@
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
 #include "RTOpPack_TOpAssignScalar.hpp"
+#include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
+#include "RTOpPack_ROpNorm2.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
 #include "RTOpPack_TOpAssignVectors.hpp"
 #include "RTOpPack_TOpAXPY.hpp"
@@ -211,6 +213,31 @@ void MultiVectorDefaultBase<Scalar>::norms2Impl(
     op_targs);
   for(int kc = 0; kc < m; ++kc) {
     norms[kc] = norm_op(*op_targs[kc]);
+  }
+}
+
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::dotsImpl(
+  const MultiVectorBase<Scalar>& mv,
+  const ArrayView<Scalar>& prods
+  ) const
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = this->domain()->dim();
+  RTOpPack::ROpDotProd<Scalar> dot_op;
+  Array<RCP<RTOpPack::ReductTarget> > rcp_dot_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > dot_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
+    rcp_dot_targs[kc] = dot_op.reduct_obj_create();
+    dot_targs[kc] = rcp_dot_targs[kc].ptr();
+  }
+  applyOp<Scalar>( dot_op,
+    tuple<Ptr<const MultiVectorBase<Scalar> > >(ptrInArg(mv), ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    dot_targs );
+  for( int kc = 0; kc < m; ++kc ) {
+    prods[kc] = dot_op(*dot_targs[kc]);
   }
 }
 

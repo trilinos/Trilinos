@@ -253,6 +253,12 @@ public:
     )
     { linearCombinationVecImpl(alpha, x, beta); }
 
+  /** \brief  Euclidean dot product: <tt>result = x^H * this</tt>.
+   *
+   */
+  Scalar dot(const VectorBase<Scalar>& x) const
+    { return dotImpl(x); }
+
   /** \brief  One (1) norm: <tt>result = ||v||1</tt>.
    *
    */
@@ -445,6 +451,11 @@ protected:
     const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
     const Scalar& beta
     ) = 0;
+
+  /** \brief Virtual implementation for NVI dot.
+   *
+   */
+  virtual Scalar dotImpl(const VectorBase<Scalar>& x) const = 0;
 
   /** \brief Virtual implementation for NVI norm_1.
    *

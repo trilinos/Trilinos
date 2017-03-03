@@ -45,7 +45,6 @@
 #include "Thyra_VectorStdOps_decl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpGetElement.hpp"
 #include "RTOpPack_TOpSetElement.hpp"
 #include "RTOpPack_ROpMin.hpp"
@@ -125,16 +124,7 @@ Thyra::norm_inf( const VectorBase<Scalar>& v_rhs )
 template<class Scalar>
 Scalar Thyra::dot( const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v_rhs2 )
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpDotProd<Scalar> dot_prod_op;
-  Teuchos::RCP<RTOpPack::ReductTarget>
-    dot_prod_targ = dot_prod_op.reduct_obj_create();
-  applyOp<Scalar>(dot_prod_op,
-    tuple(ptrInArg(v_rhs1), ptrInArg(v_rhs2))(),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    dot_prod_targ.ptr()
-    );
-  return dot_prod_op(*dot_prod_targ);
+  return v_rhs2.dot(v_rhs1);
 }
 
 

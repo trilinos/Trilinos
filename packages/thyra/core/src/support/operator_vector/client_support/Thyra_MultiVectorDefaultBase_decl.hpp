@@ -115,6 +115,12 @@ protected:
     const Scalar& beta
     );
 
+  /** \brief Default implementation of dots using RTOps. */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const;
+
   /** \brief Default implementation of norms_1 using RTOps. */
   virtual void norms1Impl(
     const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms

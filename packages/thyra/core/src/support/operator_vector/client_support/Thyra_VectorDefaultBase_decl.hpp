@@ -173,6 +173,9 @@ protected:
     const Scalar& beta
     );
 
+  /** \brief Default implementation of dot using RTOps. */
+  virtual Scalar dotImpl(const VectorBase<Scalar>& x) const;
+
   /** \brief Default implementation of norm_1 using RTOps. */
   virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   norm1Impl() const;

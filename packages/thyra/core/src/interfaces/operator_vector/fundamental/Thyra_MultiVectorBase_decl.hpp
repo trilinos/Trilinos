@@ -536,7 +536,7 @@ public:
    *
    * \param alpha [in] Scaling factor for input mv.
    *
-   * \param mv [in] Multi-vector to be added to this umti-vector.
+   * \param mv [in] Multi-vector to be added to this multi-vector.
    *
    * NVI function.
    */
@@ -578,10 +578,25 @@ public:
     )
     { linearCombinationImpl(alpha, mv, beta); }
 
+  /** \brief Column-wise Euclidean dot product
+   *
+   * \param V [in] Multi-vector with which to take the dot product.
+   *
+   * \param prods [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * dot prods <tt>prods[j] = dot(*mv.col(j))</tt>, for <tt>j=0...m-1</tt>.
+   *
+   * NVI function.
+   */
+  void dots(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const
+    { dotsImpl(mv, prods); }
+
   /** \brief Column-wise 1-norms
    *
-   * \param norms [in] Array (size <tt>m = V1->domain()->dim()</tt>) of
-   * 1-norms <tt>dot[j] = norm_1(*V.col(j))</tt>, for <tt>j=0...m-1</tt>.
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * 1-norms <tt>norms[j] = norm_1(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
    *
    * NVI function.
    */
@@ -592,8 +607,8 @@ public:
 
   /** \brief Column-wise 2-norms
    *
-   * \param norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of
-   * 2-norms <tt>dot[j] = norm_1(*V.col(j))</tt>, for <tt>j=0...m-1</tt>.
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * 2-norms <tt>norms[j] = norm_2(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
    *
    * NVI function.
    */
@@ -604,8 +619,8 @@ public:
 
   /** \brief Column-wise infinity-norms
    *
-   * \param norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of
-   * inf-norms <tt>dot[j] = norm_1(*V.col(j))</tt>, for <tt>j=0...m-1</tt>.
+   * \param norms [out] Array (size <tt>m = this->domain()->dim()</tt>) of
+   * inf-norms <tt>norms[j] = norm_inf(this->col(j))</tt>, for <tt>j=0...m-1</tt>.
    *
    * NVI function.
    */
@@ -816,6 +831,14 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
     const Scalar& beta
     ) = 0;
+
+  /** \brief Virtual implementation for NVI dots().
+   *
+   */
+  virtual void dotsImpl(
+    const MultiVectorBase<Scalar>& mv,
+    const ArrayView<Scalar>& prods
+    ) const = 0;
 
   /** \brief Virtual implementation for NVI norms_1().
    *
