@@ -55,6 +55,7 @@ public:
   /// Constructor
   StepperDIRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    std::string stepperType,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
@@ -70,7 +71,9 @@ public:
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &
       solver = Teuchos::null);
 
-    void setTableau(std::string stepperType = "");
+    void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList,
+      std::string stepperType = "");
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();

@@ -31,18 +31,28 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 
 template<class Scalar>
+IntegratorBasic<Scalar>::IntegratorBasic(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType)
+     : integratorStatus_(WORKING), isInitialized_(false)
+{
+  using Teuchos::RCP;
+  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+  RCP<Stepper<Scalar> > stepper = sf->createStepper(model, stepperType);
+
+  this->setParameterList(Teuchos::null);
+  this->setStepperWStepper(stepper);
+  this->initialize();
+}
+
+
+template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic()
      : integratorStatus_(WORKING), isInitialized_(false)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
-
-  // Build default Tempus ParameterList
-  RCP<ParameterList> tempusPL = Teuchos::parameterList("Tempus");
-  tempusPL->set("Integrator Name", "Integrator Default");
-  tempusPL->set("Integrator Default", *(this->getValidParameters()));
-
-  this->setParameterList(tempusPL);
+  this->setParameterList(Teuchos::null);
 }
 
 
@@ -76,9 +86,7 @@ void IntegratorBasic<Scalar>::setStepperWStepper(
   // Make integratorPL_ consistent with new stepper.
   RCP<ParameterList> newStepperPL = newStepper->getNonconstParameterList();
   integratorPL_->set("Stepper Name", newStepperPL->name());
-  integratorPL_->set(newStepperPL->name(), newStepperPL);
-
-  stepper_ = Teuchos::null;
+  tempusPL_->set(newStepperPL->name(), *newStepperPL);
   stepper_ = newStepper;
 }
 
@@ -522,10 +530,15 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(inputPL == Teuchos::null, std::logic_error,
-    "Error - Input ParameterList is null!\n");
+  if (inputPL == Teuchos::null) {
+    // Build default Tempus ParameterList
+    tempusPL_ = Teuchos::parameterList("Tempus");
+    tempusPL_->set("Integrator Name", "Default Integrator");
+    tempusPL_->set("Default Integrator", *(this->getValidParameters()));
+  } else {
+    tempusPL_ = inputPL;
+  }
 
-  tempusPL_ = inputPL;
   // Get the name of the integrator to build.
   std::string integratorName_ = tempusPL_->get<std::string>("Integrator Name");
   integratorPL_ = Teuchos::sublist(tempusPL_, integratorName_, true);
@@ -601,6 +614,17 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model));
+  return(integrator);
+}
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  std::string stepperType)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(model, stepperType));
   return(integrator);
 }
 

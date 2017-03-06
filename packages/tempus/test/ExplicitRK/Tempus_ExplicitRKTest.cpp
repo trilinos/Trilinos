@@ -71,19 +71,35 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
       tempusPL->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
     }
 
-    // Setup the Integrator and reset initial time step
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(tempusPL, model);
+    // Test constructor IntegratorBasic(tempusPL, model)
+    {
+      RCP<Tempus::IntegratorBasic<double> > integrator =
+        Tempus::integratorBasic<double>(tempusPL, model);
 
-    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-    if (RKMethods[m] == "General ERK")
-      stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
-    RCP<ParameterList> defaultPL=integrator->getStepper()->getDefaultParameters();
-    defaultPL->remove("Description");
-    //std::cout << *stepperPL << std::endl;
-    //std::cout << *defaultPL << std::endl;
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+      if (RKMethods[m] == "General ERK")
+        stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
+      RCP<ParameterList> defaultPL =
+        integrator->getStepper()->getDefaultParameters();
+      defaultPL->remove("Description");
 
-    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    }
+
+    // Test constructor IntegratorBasic(model, stepperType)
+    {
+      RCP<Tempus::IntegratorBasic<double> > integrator =
+        Tempus::integratorBasic<double>(model, RKMethods[m]);
+
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+      if (RKMethods[m] == "General ERK")
+        stepperPL = sublist(tempusPL, "Demo Stepper 2", true);
+      RCP<ParameterList> defaultPL =
+        integrator->getStepper()->getDefaultParameters();
+      defaultPL->remove("Description");
+
+      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    }
   }
 }
 

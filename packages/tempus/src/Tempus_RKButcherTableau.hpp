@@ -157,6 +157,7 @@ class RKButcherTableau :
       getValidParameters() const
       {
         Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+        pl->setName("Default Stepper - " + this->description());
         pl->set<std::string>("Description", this->getDescription());
         pl->set<std::string>("Stepper Type", this->description());
         return pl;
@@ -432,7 +433,7 @@ class GeneralExplicit_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->setName("Default General ERK Stepper");
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
 
@@ -1161,6 +1162,7 @@ class SDIRK1Stage1stOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",
@@ -1244,6 +1246,7 @@ class SDIRK2Stage2ndOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set("Solver Name", "",
@@ -1351,6 +1354,7 @@ class SDIRK2Stage3rdOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set("Solver Name", "",
@@ -1450,6 +1454,7 @@ class DIRK2Stage3rdOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set("Solver Name", "",
@@ -1704,6 +1709,7 @@ class IRK1StageTheta_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",
@@ -1798,6 +1804,7 @@ class IRK2StageTheta_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",
@@ -2888,6 +2895,7 @@ class SDIRK5Stage5thOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",
@@ -3012,6 +3020,7 @@ class SDIRK5Stage4thOrder_RKBT :
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",
@@ -3106,7 +3115,8 @@ class SDIRK3Stage4thOrder_RKBT :
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<std::string>("Solver Name", "",

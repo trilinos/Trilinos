@@ -404,11 +404,10 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-  std::ostringstream tmp;
+  pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
   pl->set("Solver Name", "",
-    "Name of ParameterList containing the solver specifications.");
+          "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -420,7 +419,7 @@ StepperNewmarkImplicit<Scalar>::getDefaultParameters() const
   using Teuchos::ParameterList;
 
   RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Newmark Implicit Stepper");
+  pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<std::string>("Predictor Name", "Default Predictor");

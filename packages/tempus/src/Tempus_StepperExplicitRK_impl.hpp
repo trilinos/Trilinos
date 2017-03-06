@@ -22,8 +22,10 @@ namespace Tempus {
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
+  this->setTableau(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(transientModel);
   this->initialize();
@@ -49,19 +51,29 @@ void StepperExplicitRK<Scalar>::setNonConstModel(
 }
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
+void StepperExplicitRK<Scalar>::setTableau(
+  Teuchos::RCP<Teuchos::ParameterList> pList,
+  std::string stepperType)
 {
-  if (stepperType == "")
-    stepperType = pList_->get<std::string>("Stepper Type");
+  if (stepperType == "") {
+    if (pList == Teuchos::null)
+      stepperType = "RK Explicit 4 Stage";
+    else
+      stepperType = pList->get<std::string>("Stepper Type");
+  }
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList_);
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
        "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
-    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = " << stepperType << "\n");
   description_ = ERK_ButcherTableau_->description();
+}
 
+template<class Scalar>
+void StepperExplicitRK<Scalar>::initialize()
+{
   stageX_ = Thyra::createMember(eODEModel_->get_f_space());
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
@@ -69,12 +81,6 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
   for (int i=0; i<numStages; ++i) {
     stagef_.push_back(Thyra::createMember(eODEModel_->get_f_space()));
   }
-}
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::initialize()
-{
-  this->setTableau();
 }
 
 template<class Scalar>
@@ -200,8 +206,11 @@ template <class Scalar>
 void StepperExplicitRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
-  else pList_ = pList;
+  if (pList == Teuchos::null) {
+    pList_ = this->getDefaultParameters();
+  } else {
+    pList_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }

@@ -50,9 +50,6 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction)
   RCP<ParameterList> referencePL =
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
 
-  //std::cout << *testPL << std::endl;
-  //std::cout << *referencePL << std::endl;
-
   TEST_ASSERT(haveSameValues(*testPL,*referencePL))
 }
 
@@ -70,7 +67,7 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
   //    - Add Stepper PL
   RCP<ParameterList> tempusPL = integrator->getTempusParameterList();
 
-  tempusPL->sublist("Integrator Default").set("Stepper Name", "Demo Stepper");
+  tempusPL->sublist("Default Integrator").set("Stepper Name", "Demo Stepper");
   RCP<ParameterList> stepperPL = Teuchos::parameterList();
   stepperPL->set("Stepper Type", "Forward Euler");
   tempusPL->set("Demo Stepper", *stepperPL);
@@ -92,6 +89,9 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
   // Read params from reference .xml file
   RCP<ParameterList> referencePL =
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref2.xml");
+
+  //std::cout << *testPL << std::endl;
+  //std::cout << *referencePL << std::endl;
 
   TEST_ASSERT(haveSameValues(*testPL,*referencePL))
 }

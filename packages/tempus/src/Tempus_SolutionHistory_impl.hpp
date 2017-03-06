@@ -28,10 +28,10 @@ namespace {
   static std::string Static_name     = "Static";
   static std::string Unlimited_name  = "Unlimited";
   static std::string Storage_name    = "Storage Type";
-  static std::string Storage_default = KeepNewest_name;
+  static std::string Storage_default = Unlimited_name;
 
   static std::string StorageLimit_name    = "Storage Limit";
-  static int         StorageLimit_default = 1;
+  static int         StorageLimit_default = 2;
 
   std::vector<std::string> HistoryPolicies =
     {Invalid_name, KeepNewest_name, Undo_name, Static_name, Unlimited_name};

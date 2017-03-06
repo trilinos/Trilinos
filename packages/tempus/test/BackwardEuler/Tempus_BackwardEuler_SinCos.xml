@@ -23,8 +23,8 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
@@ -106,10 +106,6 @@
 
     </ParameterList>
 
-  </ParameterList>
-
-  <ParameterList name="VerboseObject">
-    <Parameter name="Verbosity Level" type="string" value="high"/>
   </ParameterList>
 
 </ParameterList>

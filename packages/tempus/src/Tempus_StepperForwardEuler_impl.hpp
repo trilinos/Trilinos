@@ -137,10 +137,9 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-  std::ostringstream tmp;
-  tmp << "'Stepper Type' must be 'Forward Euler'.";
-  pl->set("Stepper Type", "Forward Euler", tmp.str());
+  pl->setName("Default Stepper - " + this->description());
+  pl->set("Stepper Type", "Forward Euler",
+          "'Stepper Type' must be 'Forward Euler'.");
 
   return pl;
 }

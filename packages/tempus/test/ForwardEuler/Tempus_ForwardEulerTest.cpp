@@ -49,14 +49,30 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
   RCP<SinCosModel<double> > model =
     Teuchos::rcp(new SinCosModel<double> (scm_pl));
 
-  // Setup the Integrator
   RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
-  RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(tempusPL, model);
 
-  RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-  RCP<ParameterList> defaultPL=integrator->getStepper()->getDefaultParameters();
-  TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  // Test constructor IntegratorBasic(tempusPL, model)
+  {
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(tempusPL, model);
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<ParameterList> defaultPL =
+      integrator->getStepper()->getDefaultParameters();
+    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  }
+
+  // Test constructor IntegratorBasic(model, stepperType)
+  {
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(model, "Forward Euler");
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<ParameterList> defaultPL =
+      integrator->getStepper()->getDefaultParameters();
+
+    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  }
 }
 
 // ************************************************************

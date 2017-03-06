@@ -456,39 +456,41 @@ TimeStepControl<Scalar>::getValidParameters() const
 
   const double stdMin = std::numeric_limits<double>::epsilon();
   const double stdMax = std::numeric_limits<double>::max();
-  pl->set("Initial Time"      , 0.0    , "Initial time");
-  pl->set("Final Time"        , stdMax , "Final time");
-  pl->set("Initial Time Index", 0      , "Initial time index");
-  pl->set("Final Time Index"  , 1000000, "Final time index");
-  pl->set("Minimum Time Step" , stdMin , "Minimum time step size");
-  pl->set("Initial Time Step" , stdMin , "Initial time step size");
-  pl->set("Maximum Time Step" , stdMax , "Maximum time step size");
-  pl->set("Maximum Absolute Error", 1.0e-08, "Maximum absolute error");
-  pl->set("Maximum Relative Error", 1.0e-08, "Maximum relative error");
-  pl->set("Minimum Order", 0,
+  pl->set<double>("Initial Time"      , 0.0    , "Initial time");
+  pl->set<double>("Final Time"        , stdMax , "Final time");
+  pl->set<int>   ("Initial Time Index", 0      , "Initial time index");
+  pl->set<int>   ("Final Time Index"  , 1000000, "Final time index");
+  pl->set<double>("Minimum Time Step" , stdMin , "Minimum time step size");
+  pl->set<double>("Initial Time Step" , stdMin , "Initial time step size");
+  pl->set<double>("Maximum Time Step" , stdMax , "Maximum time step size");
+  pl->set<int>   ("Minimum Order", 0,
     "Minimum time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");
-  pl->set("Initial Order", 0,
+  pl->set<int>   ("Initial Order", 0,
     "Initial time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");
-  pl->set("Maximum Order", 0,
+  pl->set<int>   ("Maximum Order", 0,
     "Maximum time-integration order.  If set to zero (default), the\n"
     "Stepper maximum order is used.");
+  pl->set<double>("Maximum Absolute Error", 1.0e-08, "Maximum absolute error");
+  pl->set<double>("Maximum Relative Error", 1.0e-08, "Maximum relative error");
 
-  pl->set("Integrator Step Type", "Variable",
+  pl->set<std::string>("Integrator Step Type", "Variable",
     "'Integrator Step Type' indicates whether the Integrator will allow "
     "the time step to be modified.\n"
     "  'Constant' - Integrator will take constant time step sizes.\n"
     "  'Variable' - Integrator will allow changes to the time step size.\n");
 
-  pl->set("Output Time List", "", "Comma deliminated list of output times");
-  pl->set("Output Index List","", "Comma deliminated list of output indices");
-  pl->set("Output Time Interval", stdMax, "Output time interval");
-  pl->set("Output Index Interval", 1000000, "Output index interval");
+  pl->set<std::string>("Output Time List", "",
+    "Comma deliminated list of output times");
+  pl->set<std::string>("Output Index List","",
+    "Comma deliminated list of output indices");
+  pl->set<double>("Output Time Interval", stdMax, "Output time interval");
+  pl->set<int>   ("Output Index Interval", 1000000, "Output index interval");
 
-  pl->set("Maximum Number of Stepper Failures", 10,
+  pl->set<int>   ("Maximum Number of Stepper Failures", 10,
     "Maximum number of Stepper failures");
-  pl->set("Maximum Number of Consecutive Stepper Failures", 5,
+  pl->set<int>   ("Maximum Number of Consecutive Stepper Failures", 5,
     "Maximum number of consecutive Stepper failures");
 
   return pl;

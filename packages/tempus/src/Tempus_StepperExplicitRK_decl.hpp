@@ -45,6 +45,7 @@ public:
   /// Constructor
   StepperExplicitRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    std::string stepperType,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
@@ -56,7 +57,9 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return eODEModel_;}
 
-    void setTableau(std::string stepperType = "");
+    void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList,
+      std::string stepperType = "");
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();

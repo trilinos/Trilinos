@@ -27,12 +27,13 @@ template<class Scalar> class StepperFactory;
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
+  this->setTableau(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(transientModel);
   this->setSolver();
-  this->setTableau();
   this->initialize();
 }
 
@@ -75,12 +76,18 @@ void StepperDIRK<Scalar>::setSolver(
 }
 
 template<class Scalar>
-void StepperDIRK<Scalar>::setTableau(std::string stepperType)
+void StepperDIRK<Scalar>::setTableau(
+  Teuchos::RCP<Teuchos::ParameterList> pList,
+  std::string stepperType)
 {
-  if (stepperType == "")
-    stepperType = pList_->get<std::string>("Stepper Type");
+  if (stepperType == "") {
+    if (pList == Teuchos::null)
+      stepperType = "Forward Euler";
+    else
+      stepperType = pList->get<std::string>("Stepper Type");
+  }
 
-  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList_);
+  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
 
   //Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
   //std::cout << " A = \n" << A << std::endl;
@@ -88,9 +95,13 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
   TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
     std::logic_error,
        "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
-    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = " << stepperType <<  "\n");
   description_ = DIRK_ButcherTableau_->description();
+}
 
+template<class Scalar>
+void StepperDIRK<Scalar>::initialize()
+{
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
   stageX_    = residualModel_->getNominalValues().get_x()->clone_v();
@@ -98,11 +109,6 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
   stageXPartial_ = Thyra::createMember(residualModel_->get_x_space());
   assign(stageXDot_.ptr(),     Teuchos::ScalarTraits<Scalar>::zero());
   assign(stageXPartial_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-}
-
-template<class Scalar>
-void StepperDIRK<Scalar>::initialize()
-{
 }
 
 template <typename Scalar>
@@ -228,8 +234,11 @@ template <class Scalar>
 void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
-  else pList_ = pList;
+  if (pList == Teuchos::null) {
+    pList_ = this->getDefaultParameters();
+  } else {
+    pList_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }

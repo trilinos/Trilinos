@@ -39,6 +39,12 @@ public:
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
+  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
+  IntegratorBasic(
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    std::string stepperType);
+
+  /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
   IntegratorBasic();
 
@@ -145,10 +151,10 @@ protected:
   Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
   Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
-  Teuchos::RCP<Teuchos::Time>  integratorTimer_;
-  Teuchos::RCP<Teuchos::Time>  stepperTimer_;
+  Teuchos::RCP<Teuchos::Time> integratorTimer_;
+  Teuchos::RCP<Teuchos::Time> stepperTimer_;
 
-  std::vector<int>    outputScreenIndices_;///< Vector of screen output indices.
+  std::vector<int> outputScreenIndices_;  ///< Vector of screen output indices.
 
   /** The integratorStatus is primarily in the WORKING Status, and
    *  PASSED/FAILED are noted at the end of the run.  A FAILED value
@@ -161,8 +167,14 @@ protected:
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model);
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType);
 
 /// Non-member constructor
 template<class Scalar>
