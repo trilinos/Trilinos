@@ -90,6 +90,12 @@
 //Intrepid_HGRAD_WEDGE_C2_FEM.hpp
 //Intrepid_HGRAD_WEDGE_I2_FEM.hpp
 
+// Helper Macro to avoid "unrequested" warnings
+#define MUELU_LEVEL_SET_IF_REQUESTED_OR_KEPT(level,ename,entry) \
+  {if (level.IsRequested(ename,this) || level.GetKeepFlag(ename,this) != 0) this->Set(level,ename,entry);}
+
+
+
 namespace MueLu {
 
 
@@ -922,15 +928,14 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	// Generate the representative nodes
 	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,*Pn_elemToNode,colMap,lo_elemToHiRepresentativeNode);
 	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(*Pn_elemToNode,Pn_nodeIsOwned,lo_elemToHiRepresentativeNode,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
-    }
+    }    
+    MUELU_LEVEL_SET_IF_REQUESTED_OR_KEPT(coarseLevel,"pcoarsen: element to node map",P1_elemToNode);
     
-    Set(coarseLevel,"pcoarsen: element to node map",P1_elemToNode);
     /*******************/    
     // Generate the P1_domainMap
     // HOW: Since we know how many each proc has, we can use the non-uniform contiguous map constructor to do the work for us
     RCP<const Map> P1_domainMap = MapFactory::Build(rowMap->lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),P1_numOwnedNodes,rowMap->getIndexBase(),rowMap->getComm());
-    Set(coarseLevel, "CoarseMap", P1_domainMap);       
-
+    MUELU_LEVEL_SET_IF_REQUESTED_OR_KEPT(coarseLevel,"CoarseMap",P1_domainMap);
 
     // Generate the P1_columnMap
     RCP<const Map> P1_colMap;
@@ -960,7 +965,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       Set(coarseLevel, "P",             finalP);
 
       APparams->set("graph", finalP);
-      Set(coarseLevel, "AP reuse data", APparams);
+      MUELU_LEVEL_SET_IF_REQUESTED_OR_KEPT(coarseLevel,"AP reuse data",APparams);
 
       if (IsPrint(Statistics1)) {
         RCP<ParameterList> params = rcp(new ParameterList());
