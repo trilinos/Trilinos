@@ -47,7 +47,7 @@
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Kokkos_CrsMatrix.hpp" // only included for backwards compatibility
 #include "Kokkos_Blas1_MV.hpp"
-#include "impl/Kokkos_Sparse_impl_spmv_omp.hpp"
+#include "Kokkos_Sparse_impl_spmv_omp.hpp"
 
 #ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
 #define KOKKOSSPARSE_ETI_ONLY
