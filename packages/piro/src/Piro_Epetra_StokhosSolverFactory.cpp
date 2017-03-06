@@ -305,32 +305,6 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_)
                                                                                               Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int,double> >(basis)));
     }
 
-    /*
-    ////////////added for adaptive
-    bool full_expansion=true;
-    int sub_p=2;
-    int num_dim=basis->dimension();
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > sub_bases(num_dim);
-
-    for (int i=0; i<num_dim; i++) {
-      sub_bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(sub_p,false));
-    }
-
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > sub_basis =
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(sub_bases,1e-12));
-
-    
-    for(std::size_t n=0;n<row_basis_vec.size();n++) {
-      if (n>row_basis_vec.size()/3 && n<row_basis_vec.size()*2/3) {
-        row_basis_vec[n] = sub_basis;
-      }
-      else {
-        row_basis_vec[n] = Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int,double> >(basis);
-      }
-    }
-    ////////////added for adaptive
-    */
-
     sg_nonlin_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator_Adaptive(sg_model, basis,
                                                           *row_basis_vec,
