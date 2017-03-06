@@ -168,7 +168,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_INTREPID2
       // If we're asking for it, find who made P
-      if (varName == "ipc: element to node map")                      return GetFactory("P");
+      if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
 #endif
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");

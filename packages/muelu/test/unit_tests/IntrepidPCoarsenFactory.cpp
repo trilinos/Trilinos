@@ -992,7 +992,6 @@ namespace MueLuTests {
       int numElements = maxGID + 1;
       // construct a serial map (claiming all rows and cells)
       serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
-      Teuchos::Ptr<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMap = serialMapRCP.ptr();
       
       int startingGID = 0;
       for (int rank=0; rank<numRanks; rank++)
@@ -1707,7 +1706,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     FCi elem_to_node;
     RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_p1_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
-    fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
+    fineLevel.Set("pcoarsen: element to node map",rcp(&elem_to_node,false));
 
     // only one NS vector 
     LocalOrdinal NSdim = 1;
@@ -1718,8 +1717,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 
     // ParameterList
     ParameterList Params;
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis",lo_basis);
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis",lo_basis);
 
     // Build P
     RCP<MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO> > IPCFact = rcp(new MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO>());
@@ -1912,13 +1911,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     //     if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -1980,12 +1979,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -2047,12 +2046,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -2918,12 +2917,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -2985,12 +2984,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c3");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c3");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -3052,12 +3051,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
       
 
@@ -3123,15 +3122,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("max levels",3);
     Params.set("coarse: max size",5);
 
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
 
-    level1.set("ipc: hi basis",hi_basis);
-    level1.set("ipc: lo basis","hgrad_line_c3");
+    level1.set("pcoarsen: hi basis",hi_basis);
+    level1.set("pcoarsen: lo basis","hgrad_line_c3");
     Params.set("level 1",level1);
 
-    level2.set("ipc: hi basis","hgrad_line_c3");
-    level2.set("ipc: lo basis","hgrad_line_c2");
+    level2.set("pcoarsen: hi basis","hgrad_line_c3");
+    level2.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
       
 #if 0
@@ -3207,17 +3206,163 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("max levels",3);
     Params.set("coarse: max size",100);
 
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
 
     level1.set("multigrid algorithm","pcoarsen");
-    level1.set("ipc: hi basis",hi_basis);
-    level1.set("ipc: lo basis","hgrad_line_c1");
+    level1.set("pcoarsen: hi basis",hi_basis);
+    level1.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("level 1",level1);
 
     level2.set("multigrid algorithm","sa");
     Params.set("level 2",level2);
       
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0, level1, level2, level3;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("rap: fix zero diagonals",true);
+    Params.set("verbosity","high");
+    Params.set("max levels",4);
+    Params.set("coarse: max size",100);
+
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+
+    level1.set("pcoarsen: hi basis","hgrad_line_c3");
+    level1.set("pcoarsen: lo basis","hgrad_line_c2");
+    Params.set("level 1",level1);
+
+    level2.set("pcoarsen: hi basis","hgrad_line_c2");
+    level2.set("pcoarsen: lo basis","hgrad_line_c1");
+    Params.set("level 2",level2);
+
+    level3.set("multigrid algorithm","sa");
+    Params.set("level 3",level3);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("rap: fix zero diagonals",true);
+    Params.set("verbosity","high");
+    Params.set("max levels",5);
+    Params.set("coarse: max size",10);
+
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+
+    Params.set("pcoarsen: element","hgrad_line_c");   
+    Params.set("pcoarsen: schedule","{3,2,1}");
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
@@ -3251,8 +3396,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node)
-
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
   
 #define MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, X)\

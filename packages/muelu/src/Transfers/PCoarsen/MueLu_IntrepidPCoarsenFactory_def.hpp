@@ -349,7 +349,6 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
 	 lo_elemToHiRepresentativeNode(i,j) =  hi_elemToNode(i,candidates[j][which]);
        }
      }
-
 }
 
 /*********************************************************************************************************/
@@ -754,14 +753,14 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("ipc: hi basis");
-    SET_VALID_ENTRY("ipc: lo basis");
+    SET_VALID_ENTRY("pcoarsen: hi basis");
+    SET_VALID_ENTRY("pcoarsen: lo basis");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     
     validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
-    validParamList->set< RCP<const FactoryBase> >("ipc: element to node map",          Teuchos::null, "Generating factory of the element to node map");
+    validParamList->set< RCP<const FactoryBase> >("pcoarsen: element to node map",          Teuchos::null, "Generating factory of the element to node map");
     return validParamList;
   }
 
@@ -769,7 +768,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
-    Input(fineLevel, "ipc: element to node map");
+    Input(fineLevel, "pcoarsen: element to node map");
     Input(fineLevel, "Nullspace");
   }
 
@@ -832,16 +831,19 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.
     int lo_degree, hi_degree;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("ipc: hi basis"),hi_degree);
-    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("ipc: lo basis"),lo_degree);
+    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("pcoarsen: hi basis"),hi_degree);
+    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("pcoarsen: lo basis"),lo_degree);
 #else
-    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: hi basis"),hi_degree);
-    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: lo basis"),lo_degree);
+    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("pcoarsen: hi basis"),hi_degree);
+    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("pcoarsen: lo basis"),lo_degree);
 #endif
+
+    // Useful Output
+    GetOStream(Statistics1) << "P-Coarsening from basis "<<pL.get<std::string>("pcoarsen: hi basis")<<" to "<<pL.get<std::string>("pcoarsen: lo basis") <<std::endl;
 
     /*******************/    
     // Get the higher-order element-to-node map 
-    const Teuchos::RCP<FCi> Pn_elemToNode = Get<Teuchos::RCP<FCi> >(fineLevel,"ipc: element to node map");
+    const Teuchos::RCP<FCi> Pn_elemToNode = Get<Teuchos::RCP<FCi> >(fineLevel,"pcoarsen: element to node map");
 
     // Calculate node ownership (the quick and dirty way)
     // NOTE: This exploits two things: 
@@ -922,7 +924,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(*Pn_elemToNode,Pn_nodeIsOwned,lo_elemToHiRepresentativeNode,*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
     }
     
-    Set(coarseLevel,"ipc: element to node map",P1_elemToNode);
+    Set(coarseLevel,"pcoarsen: element to node map",P1_elemToNode);
     /*******************/    
     // Generate the P1_domainMap
     // HOW: Since we know how many each proc has, we can use the non-uniform contiguous map constructor to do the work for us
