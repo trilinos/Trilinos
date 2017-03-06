@@ -53,6 +53,7 @@
 #include <Teuchos_YamlParameterListCoreHelpers.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Exceptions.hpp>
+#include <Teuchos_TwoDArray.hpp>
 
 
 
@@ -125,6 +126,22 @@ namespace TeuchosTests
         if(doubleArr[i] != correctDoubles[i])
         {
           throw std::runtime_error(std::string("doubleArray value [") + std::to_string(i) + "] is incorrect.");
+        }
+      }
+    });
+  }
+  TEUCHOS_UNIT_TEST(YAML, ReadTwoDArray)
+  {
+    std::string correctStrings[2][3] = {{"R", "G", "B"}, {"1", "2", "3"}};
+    TEST_NOTHROW({
+      RCP<ParameterList> plist = Teuchos::getParametersFromYamlFile("TwoDArray.yaml");
+      const Teuchos::TwoDArray<std::string>& str2d = plist->get<Teuchos::TwoDArray<std::string> >("str2d");
+      for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 3; ++j) {
+          if (str2d[i][j] != correctStrings[i][j]) {
+            throw std::runtime_error(std::string("str2d[") + std::to_string(i) + "]["
+                + std::to_string(j) + "] is incorrect.");
+          }
         }
       }
     });

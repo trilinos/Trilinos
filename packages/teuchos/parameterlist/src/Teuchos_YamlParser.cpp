@@ -49,6 +49,7 @@
 
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
+#include "Teuchos_TwoDArray.hpp"
 
 namespace Teuchos
 {
@@ -63,6 +64,36 @@ template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
   return arr;
 }
 
+void checkYamlTwoDArray(const YAML::Node& node, const std::string& key)
+{
+  for (YAML::const_iterator it = node.begin(); it != node.end(); ++it)
+  {
+    if (it->size() != node.begin()->size())
+    {
+      throw YamlSequenceError(std::string("TwoDArray \"") + key + "\" has irregular sizes");
+    }
+  }
+}
+
+template<typename T> Teuchos::TwoDArray<T> getYamlTwoDArray(const YAML::Node& node)
+{
+  Teuchos::TwoDArray<T> arr;
+  typename Teuchos::TwoDArray<T>::size_type i, j;
+  arr.resizeRows(node.size());
+  arr.resizeCols(node.begin()->size());
+  i = 0;
+  for (YAML::const_iterator rit = node.begin(); rit != node.end(); ++rit)
+  {
+    j = 0;
+    for (YAML::const_iterator cit = rit->begin(); cit != rit->end(); ++cit)
+    {
+      arr(i, j) = cit->as<T>();
+      ++j;
+    }
+    ++i;
+  }
+  return arr;
+}
 
 /* Helper functions */
 
@@ -327,29 +358,58 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   }
   else if(node.Type() == YAML::NodeType::Sequence)
   {
-    //typeString is used to provide a useful error message if types inconsistent
-    try
-    {
-      node.begin()->as<int>();
-      parent.set(key, getYamlArray<int>(node));
-    }
-    catch(...)
-    {
+    if (node.begin()->Type() == YAML::NodeType::Sequence) {
+      checkYamlTwoDArray(node, key);
       try
       {
-        node.begin()->as<double>();
-        parent.set(key, getYamlArray<double>(node));
+        node.begin()->begin()->as<int>();
+        parent.set(key, getYamlTwoDArray<int>(node));
       }
       catch(...)
       {
         try
         {
-          node.begin()->as<std::string>();
-          parent.set(key, getYamlArray<std::string>(node));
+          node.begin()->begin()->as<double>();
+          parent.set(key, getYamlTwoDArray<double>(node));
         }
         catch(...)
         {
-          throw YamlSequenceError(std::string("Array \"") + key + "\" must contain int, double, bool or string");
+          try
+          {
+            node.begin()->begin()->as<std::string>();
+            parent.set(key, getYamlTwoDArray<std::string>(node));
+          }
+          catch(...)
+          {
+            throw YamlSequenceError(std::string("TwoDArray \"") + key + "\" must contain int, double, bool or string");
+          }
+        }
+      }
+    } else {
+      //typeString is used to provide a useful error message if types inconsistent
+      try
+      {
+        node.begin()->as<int>();
+        parent.set(key, getYamlArray<int>(node));
+      }
+      catch(...)
+      {
+        try
+        {
+          node.begin()->as<double>();
+          parent.set(key, getYamlArray<double>(node));
+        }
+        catch(...)
+        {
+          try
+          {
+            node.begin()->as<std::string>();
+            parent.set(key, getYamlArray<std::string>(node));
+          }
+          catch(...)
+          {
+            throw YamlSequenceError(std::string("Array \"") + key + "\" must contain int, double, bool or string");
+          }
         }
       }
     }
