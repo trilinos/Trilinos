@@ -28,5 +28,9 @@ myEquationSet*:
   All the files needed to construct our equation set, or rather, the residual
   corresponding to our partial differential equation above.
 
+presentation/*:
+  The files needed to build the presentation I gave on Panzer at SIAM CSE 2017.
+  Run ./make in this directory to build the PDF.
+
 README.txt:
   This file, obviously.
