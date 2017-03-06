@@ -230,6 +230,7 @@ IF (Stokhos_ENABLE_EpetraExt)
     epetra/Stokhos_MLPreconditionerFactory.hpp
     epetra/Stokhos_PreconditionerFactory.hpp
     epetra/Stokhos_MLPrecOp.hpp
+    epetra/Stokhos_SGModelEvaluatorBase.hpp
     epetra/Stokhos_SGModelEvaluator.hpp
     epetra/Stokhos_SGQuadModelEvaluator.hpp
     epetra/Stokhos_SGInverseModelEvaluator.hpp
