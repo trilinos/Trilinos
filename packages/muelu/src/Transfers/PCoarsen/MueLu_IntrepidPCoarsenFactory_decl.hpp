@@ -258,10 +258,9 @@ namespace MueLu {
     // ! will be stored in seeds.
     template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
     void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
-                                   std::vector<std::vector<LocalOrdinal>> &seeds,
+                                   std::vector<std::vector<LocalOrdinal> > &seeds,
                                    const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap,
                                    const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &columnMap);
-
 
   }//namespace MueLuIntrepid
 } //namespace MueLu

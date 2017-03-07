@@ -47,6 +47,7 @@
 #define MUELU_IPCFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_IO.hpp>
 #include <sstream>
 #include <algorithm>
 
@@ -107,9 +108,11 @@ inline std::string tolower(const std::string & str) {
   return data;
 }
 
+
+/*********************************************************************************************************/
   template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
-                                 std::vector<std::vector<LocalOrdinal>> &seeds,
+                                 std::vector<std::vector<LocalOrdinal> > &seeds,
                                  const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap,
                                  const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &columnMap)
   {

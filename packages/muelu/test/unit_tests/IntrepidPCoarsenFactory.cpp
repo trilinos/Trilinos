@@ -3139,6 +3139,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     dump.set("A","{0,1,2}");
     dump.set("P","{0,1}");
     dump.set("R","{0,1}");
+    dump.set("pcoarsen: element to node map","{0,1,2}");
     Params.set("export data",dump);
 #endif
 
