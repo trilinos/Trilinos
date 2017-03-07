@@ -991,7 +991,8 @@ namespace MueLuTests {
       }
       int numElements = maxGID + 1;
       // construct a serial map (claiming all rows and cells)
-      serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
+      RCP<Node> mynode = rcp(new Node());
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm, mynode);
       
       int startingGID = 0;
       for (int rank=0; rank<numRanks; rank++)
@@ -1183,7 +1184,7 @@ namespace MueLuTests {
     using namespace Teuchos;
     RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
     typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP;
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > serialMapRCP;
     
     for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
     {
@@ -1204,7 +1205,8 @@ namespace MueLuTests {
         }
       }
       int numElements = maxLID + 1;
-      serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
+      RCP<Node> mynode = rcp(new Node());
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm, mynode);
       
       MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, elementToNodeMap,
                                                                                                  seeds, *serialMapRCP, *serialMapRCP);
