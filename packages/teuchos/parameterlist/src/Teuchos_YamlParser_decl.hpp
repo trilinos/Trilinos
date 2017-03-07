@@ -110,8 +110,8 @@ namespace YAMLParameterList
   //  template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node);
   void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel);
   void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel);    //throws if the entry's type is not supported
-  void generalWriteString(const std::string& str, std::ofstream& yaml);
-  void generalWriteDouble(double d, std::ofstream& yaml);
+  void generalWriteString(const std::string& str, std::ostream& yaml);
+  void generalWriteDouble(double d, std::ostream& yaml);
   bool stringNeedsQuotes(const std::string& str);
   typedef Teuchos::ParameterList::ConstIterator PLIter;
 }
