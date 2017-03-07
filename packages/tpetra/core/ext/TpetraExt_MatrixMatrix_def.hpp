@@ -58,7 +58,7 @@
 #include "Teuchos_FancyOStream.hpp"
 
 
-#ifdef HAVE_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
 #include "KokkosKernels_SPGEMM.hpp"
 #endif
 
@@ -1409,7 +1409,7 @@ void mult_A_B_newmatrix(
 
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
-  // Either the straight-up Tpetra code (SerialNode) or the TpetraKernels one (other NGP node types)
+  // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
 
 }
@@ -1645,8 +1645,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
 
 
 /*********************************************************************************************************/
-// AB NewMatrix Kernel wrappers (TpetraKernels/OpenMP Version)
-#if defined(HAVE_TPETRAKERNELS_EXPERIMENTAL) && defined (HAVE_TPETRA_INST_OPENMP)
+// AB NewMatrix Kernel wrappers (KokkosKernels/OpenMP Version)
+#if defined(HAVE_KOKKOSKERNELS_EXPERIMENTAL) && defined (HAVE_TPETRA_INST_OPENMP)
 template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal>
@@ -1687,7 +1687,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #endif
   //  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
 
-  // Node-specific code
+  // Node-specific code<
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
   std::string nodename("OpenMP");
 
@@ -1833,8 +1833,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
-  RCP<const Export<LO,GO,NO> > dummyExport;
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
 #if 0
