@@ -915,8 +915,10 @@ namespace MueLu {
 	  // P-Coarsening
 	  ParameterList Pparams;
 	  RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());     
-	  std::string hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
+	  std::string hi;
 	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
+	  else hi = lo;
 	  Pparams.set("pcoarsen: hi basis",hi);
 	  Pparams.set("pcoarsen: lo basis",lo);
 	  P->SetParameterList(Pparams);
