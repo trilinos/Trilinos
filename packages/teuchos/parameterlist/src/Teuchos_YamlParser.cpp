@@ -426,8 +426,6 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   }
 }
 
-
-
 void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
 {
   std::ofstream yaml(yamlFile);
@@ -458,6 +456,46 @@ void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int ind
       writeParameter(pl.name(it), pl.entry(it), yaml, indentLevel);
     }
   }
+}
+
+template <typename T>
+struct YamlWrite {
+  static void write(T const& x, std::ostream& stream) {
+    stream << x;
+  }
+};
+
+template <>
+struct YamlWrite<double> {
+  static void write(double const& x, std::ostream& stream) {
+    generalWriteDouble(x, stream);
+  }
+};
+
+template <>
+struct YamlWrite<std::string> {
+  static void write(std::string const& x, std::ostream& stream) {
+    generalWriteString(x, stream);
+  }
+};
+
+template <typename T>
+void writeYamlTwoDArray(Teuchos::TwoDArray<T> const& arr, std::ostream& stream)
+{
+  typename Teuchos::TwoDArray<T>::size_type i, j;
+  stream << '[';
+  for (i = 0; i < arr.getNumRows(); ++i)
+  {
+    if (i) stream << ", ";
+    stream << '[';
+    for (j = 0; j < arr.getNumCols(); ++j)
+    {
+      if (j) stream << ", ";
+      YamlWrite<T>::write(arr(i, j), stream);
+    }
+    stream << ']';
+  }
+  stream << ']';
 }
 
 void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel)
@@ -508,6 +546,24 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     }
     yaml << ']';
   }
+  else if(entry.isTwoDArray())
+  {
+    if(entry.isType<Teuchos::TwoDArray<int> >())
+    {
+      writeYamlTwoDArray<int>(
+          Teuchos::getValue<Teuchos::TwoDArray<int> >(entry), yaml);
+    }
+    else if(entry.isType<Teuchos::TwoDArray<double> >())
+    {
+      writeYamlTwoDArray<double>(
+          Teuchos::getValue<Teuchos::TwoDArray<double> >(entry), yaml);
+    }
+    else if(entry.isType<Teuchos::TwoDArray<std::string> >())
+    {
+      writeYamlTwoDArray<std::string>(
+          Teuchos::getValue<Teuchos::TwoDArray<std::string> >(entry), yaml);
+    }
+  }
   else if(entry.isType<int>())
   {
     yaml << Teuchos::getValue<int>(entry);
@@ -556,7 +612,7 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
   yaml << '\n';
 }
 
-void generalWriteString(const std::string& str, std::ofstream& yaml)
+void generalWriteString(const std::string& str, std::ostream& yaml)
 {
   if(stringNeedsQuotes(str))
   {
@@ -568,7 +624,7 @@ void generalWriteString(const std::string& str, std::ofstream& yaml)
   }
 }
 
-void generalWriteDouble(double d, std::ofstream& yaml)
+void generalWriteDouble(double d, std::ostream& yaml)
 {
   yaml << std::showpoint << std::setprecision(8);
   if(d < 1e6 && d > 1e-5)
