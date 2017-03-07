@@ -264,6 +264,12 @@ Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile)
   return readParams(baseMap);
 }
 
+Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml)
+{
+  std::vector<YAML::Node> baseMap = YAML::LoadAll(yaml);
+  return readParams(baseMap);
+}
+
 Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<YAML::Node>& lists)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList); //pl is the root ParameterList to be returned
@@ -426,9 +432,8 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   }
 }
 
-void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
+void writeYamlStream(std::ostream& yaml, Teuchos::RCP<Teuchos::ParameterList>& pl)
 {
-  std::ofstream yaml(yamlFile);
   yaml << "%YAML 1.1\n---\n";
   yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
   if(pl->numParams() == 0)
@@ -442,7 +447,13 @@ void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterL
   yaml << "...";
 }
 
-void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel)
+void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
+{
+  std::ofstream yaml(yamlFile);
+  writeYamlStream(yaml, pl);
+}
+
+void writeParameterList(Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel)
 {
   if(pl.begin() == pl.end())
   {
@@ -498,7 +509,7 @@ void writeYamlTwoDArray(Teuchos::TwoDArray<T> const& arr, std::ostream& stream)
   stream << ']';
 }
 
-void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel)
+void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ostream& yaml, int indentLevel)
 {
   for(int i = 0; i < indentLevel; i++)
   {
