@@ -130,21 +130,44 @@ namespace TeuchosTests
       }
     });
   }
-  TEUCHOS_UNIT_TEST(YAML, ReadTwoDArray)
+  TEUCHOS_UNIT_TEST(YAML, TwoDArrayConvert)
   {
-    std::string correctStrings[2][3] = {{"R", "G", "B"}, {"1", "2", "3"}};
-    TEST_NOTHROW({
-      RCP<ParameterList> plist = Teuchos::getParametersFromYamlFile("TwoDArray.yaml");
-      const Teuchos::TwoDArray<std::string>& str2d = plist->get<Teuchos::TwoDArray<std::string> >("str2d");
-      for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 3; ++j) {
-          if (str2d[i][j] != correctStrings[i][j]) {
-            throw std::runtime_error(std::string("str2d[") + std::to_string(i) + "]["
-                + std::to_string(j) + "] is incorrect.");
-          }
-        }
-      }
-    });
+    std::string xmlString =
+      "  <ParameterList>\n"
+      "    <ParameterList name=\"Problem\">\n"
+      "      <ParameterList name=\"Neumann BCs\">\n"
+      "        <ParameterList name=\"Time Dependent NBC on SS cyl_outside for DOF all set P\">\n"
+      "          <Parameter name=\"BC Values\" type=\"TwoDArray(double)\" value=\"3x1:{ 0.0, 10.0, 20.0}\"/>\n"
+      "        </ParameterList>\n"
+      "      </ParameterList>\n"
+      "    </ParameterList>\n"
+      "    <ParameterList name=\"Discretization\">\n"
+      "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
+      "    </ParameterList>\n"
+      "  </ParameterList>\n";
+    RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
+    std::stringstream yamlOutStream;
+    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream, xmlParams);
+    std::string yamlString = yamlOutStream.str();
+    std::string expectedYamlString =
+      "%YAML 1.1\n"
+      "---\n"
+      "ANONYMOUS:\n"
+      "  Problem: \n"
+      "    Neumann BCs: \n"
+      "      Time Dependent NBC on SS cyl_outside for DOF all set P: \n"
+      "        BC Values: [[0.00000000e+00], [10.00000000], [20.00000000]]\n"
+      "  Discretization: \n"
+      "    Node Set Associations: [[1, 2], [top, bottom]]\n"
+      "...\n";
+    TEST_EQUALITY(yamlString, expectedYamlString);
+    std::stringstream yamlInStream(yamlString);
+    RCP<ParameterList> yamlParams;
+    yamlParams = Teuchos::YAMLParameterList::parseYamlStream(yamlInStream);
+    std::stringstream yamlOutStream2;
+    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream2, yamlParams);
+    std::string yamlString2 = yamlOutStream2.str();
+    TEST_EQUALITY(yamlString2, expectedYamlString);
   }
-
 } //namespace TeuchosTests
+
