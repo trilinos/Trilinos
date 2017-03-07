@@ -444,7 +444,7 @@ void writeYamlStream(std::ostream& yaml, Teuchos::RCP<Teuchos::ParameterList>& p
   {
     writeParameterList(*pl, yaml, 2);
   }
-  yaml << "...";
+  yaml << "...\n";
 }
 
 void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
