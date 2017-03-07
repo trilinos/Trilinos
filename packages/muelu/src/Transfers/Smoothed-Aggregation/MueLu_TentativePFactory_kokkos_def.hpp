@@ -55,7 +55,7 @@
 #include <Teuchos_LAPACK.hpp>
 
 //#include <Tsqr_Matrix.hpp>
-
+#include "Kokkos_UnorderedMap.hpp"
 
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
 
@@ -256,6 +256,9 @@ namespace MueLu {
     amalgInfo->GetStridingInformation(fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase);
     std::cout << "fullBlockSize " << fullBlockSize << " blockID " << blockID << " stridingOffset " << stridingOffset << " stridedBlockSize " << stridedBlockSize << std::endl;
 
+    GO globalOffset = amalgInfo->GlobalOffset();
+
+
     // do unamalgamation
 
     // (overlapping) local node Ids belonging to aggregates on current processor
@@ -271,13 +274,36 @@ namespace MueLu {
     std::cout << "numAggregates = " << numAggregates << " vertex2AggId.dim0=" << vertex2AggId.dimension_0()<< " vertex2AggId.dim1=" << vertex2AggId.dimension_1() << std::endl;
 
     for(decltype(vertex2AggId.dimension_0()) i = 0; i < vertex2AggId.dimension_0(); i++) {
-      std::cout << vertex2AggId(i,0) << " ";
+      std::cout << nodeGlobalElts[i] << "(" << vertex2AggId(i,0) << ") ";
     }
     std::cout << std::endl;
 
+    typedef Kokkos::UnorderedMap<LO, bool, DeviceType> map_type;
+    //map_type isNodeGlobalElement(numAggregates);
+    map_type isNodeGlobalElement(colMap->getNodeNumElements());
+
+    int myPid = aggregates->GetMap()->getComm()->getRank();
+
+    for(LO i = 0; i < colMap->getNodeNumElements(); i++)
+      std::cout << colMap->getGlobalElement(i) << " ";
+    std::cout << std::endl;
+
     // create a unordered map GID -> isGlobalElement in colMap of A (available from above)
-    // fill it on the host
-    // use it within the parallel for kernel
+    // This has to be done on the host
+    // I hope that the UnorderedMap can be used within kernels
+    for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
+      auto myAgg = vertex2AggId(lnode,0);
+      if(procWinner(lnode,0) == myPid) {
+        GO gnodeid = nodeGlobalElts[lnode];
+        for (LO k = 0; k< stridedBlockSize; k++) {
+          GO gDofIndex = globalOffset + (gnodeid - indexBase) * fullBlockSize + stridingOffset + k + indexBase;
+          bool bIsInColumnMap = colMap->isNodeGlobalElement(gDofIndex);
+          isNodeGlobalElement.insert(gDofIndex, bIsInColumnMap);
+          std::cout << gnodeid << "->" << gDofIndex << ": " << isNodeGlobalElement.value_at(isNodeGlobalElement.find(gDofIndex)) << " should be " << bIsInColumnMap << std::endl;
+        }
+      }
+    }
+
     // write parallel kernel to detect size of aggregates
 
     // For now, do a simple translation
