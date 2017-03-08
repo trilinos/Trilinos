@@ -370,10 +370,10 @@ void Jacobi(Scalar omega,
   bool newFlag = !C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
 
   if (call_FillComplete_on_result && newFlag) {
-    MMdetails::jacobi_A_B_newmatrix(omega, Dinv, Aview, Bview, C, label);
+    MMdetails::jacobi_A_B_newmatrix(omega, Dinv, Aview, Bview, C, label, params);
 
   } else if (call_FillComplete_on_result) {
-    MMdetails::jacobi_A_B_reuse(omega, Dinv, Aview, Bview, C, label);
+    MMdetails::jacobi_A_B_reuse(omega, Dinv, Aview, Bview, C, label, params);
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "jacobi_A_B_general not implemented");
