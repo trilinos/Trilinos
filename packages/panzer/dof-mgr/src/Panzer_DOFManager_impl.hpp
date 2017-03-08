@@ -1049,7 +1049,7 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
     const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
     for(std::size_t e=0;e<elmts.size();e++) {
        // this is the vector of orientations to fill: initialize it correctly
-      std::vector<char> & eOrientation = orientation_[elmts[e]];
+      std::vector<signed char> & eOrientation = orientation_[elmts[e]];
 
       // This resize seems to be the same as fieldPattern.numberIDs().
       // When computer edge orientations is called, that is the assert.
@@ -1078,7 +1078,7 @@ void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double>
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
                               "DOFManager::getElementOrientations: Orientations were not constructed!");
 
-   const std::vector<char> & local_o = orientation_[localElmtId];
+   const std::vector<signed char> & local_o = orientation_[localElmtId];
    gidsOrientation.resize(local_o.size());
    for(std::size_t i=0;i<local_o.size();i++) {
       gidsOrientation[i] = double(local_o[i]);

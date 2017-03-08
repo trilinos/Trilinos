@@ -270,7 +270,7 @@ template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation);
+                                 std::vector<signed char> & orientation);
 
 /** For a given field pattern compute the offsets that give 
   * the dimension-0-subcell indices for each face. Note that the assumption is
@@ -307,7 +307,7 @@ template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation);
+                                 std::vector<signed char> & orientation);
 
 } // end orientations_helpers
 
