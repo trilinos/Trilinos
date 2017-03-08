@@ -60,6 +60,12 @@ IF(NOT MSVC)
   LIST(APPEND IMPORTEDLIBS m)
 ENDIF()
 
+# LibM not available under MSVC.
+IF(NOT MSVC)
+  # Add libm linking for ceil, floor and such.
+  LIST(APPEND IMPORTEDLIBS m)
+ENDIF()
+
 TRIBITS_ADD_LIBRARY(
   trilinosss
   HEADERS ${HEADERS}
