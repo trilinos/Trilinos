@@ -347,9 +347,14 @@ void Jacobi(Scalar omega,
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All I&X"))));
 #endif
 
+  // Enable globalConstants by default
+  // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
+  RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants",true));
+
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label,params);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label,importParams1);
 
   // We will also need local access to all rows of B that correspond to the
   // column-map of op(A).
@@ -357,7 +362,11 @@ void Jacobi(Scalar omega,
     targetMap_B = Aprime->getColMap();
 
   // Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label);
+  // Enable globalConstants by default
+  // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
+  RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants",true));
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All Multiply"))));
