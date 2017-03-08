@@ -232,6 +232,9 @@ namespace Xpetra {
 
     virtual void removeEmptyProcessesInPlace(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) = 0;
 
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const = 0;
+
     //@}
 
     //! @name Methods implementing Operator

@@ -916,6 +916,11 @@ namespace Xpetra {
       return Teuchos::ScalarTraits< typename ScalarTraits<Scalar>::magnitudeType >::squareroot(ret);
     }
 
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const {return true;}
+
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods
