@@ -108,8 +108,10 @@ namespace MueLu {
 
     std::ostringstream ss;
 
-    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols()
-       << ", nnz = " << A.getGlobalNumEntries() << std::endl;
+    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols();
+    if(A.haveGlobalConstants())
+       ss << ", nnz = " << A.getGlobalNumEntries();
+    ss << std::endl;
 
     if (params.is_null())
       return ss.str();
