@@ -169,6 +169,9 @@ namespace MueLu {
         Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
 
+      // We *always* need global constants for the RAP
+      RAPparams->set("compute global constants",true);
+
       // Allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.
       // Seems to work with matrix modifications to repair diagonal entries.
