@@ -38,9 +38,6 @@
 //
 // ***********************************************************************
 // @HEADER
-//
-//                 Anasazi: Block Eigensolvers Package
-//
 
 /*! \file AnasaziTraceMinRitzOp.hpp
  *  Defines several operators for use with TraceMin
@@ -105,7 +102,7 @@ template <class Scalar, class MV, class OP>
 class TraceMinProjOp
 {
   typedef Anasazi::MultiVecTraits<Scalar,MV>    MVT;
-  const Scalar ONE;
+  const Scalar ONE; 
 
 public:
   // Constructors
@@ -121,7 +118,7 @@ public:
   // Called by MINRES when certain vectors converge
   void removeIndices(const std::vector<int>& indicesToRemove);
 
-private:
+private:  
   Teuchos::Array< Teuchos::RCP<const MV> > projVecs_;
   Teuchos::RCP<Anasazi::MatOrthoManager<Scalar,MV,OP> > orthman_;
   Teuchos::RCP<const OP> B_;
@@ -147,7 +144,7 @@ class TraceMinRitzOp : public TraceMinOp<Scalar,MV,OP>
 
   typedef Anasazi::MultiVecTraits<Scalar,MV>     MVT;
   typedef Anasazi::OperatorTraits<Scalar,MV,OP>  OPT;
-  const Scalar ONE;
+  const Scalar ONE;  
   const Scalar ZERO;
 
 public:
@@ -170,7 +167,7 @@ public:
   void getInnerTol(std::vector<Scalar>& tolerances) const { tolerances = tolerances_; };
 
   void setMaxIts(const int maxits) { maxits_ = maxits; };
-
+  
   int getMaxIts() const { return maxits_; };
 
   // applies A+\sigma B to a vector
@@ -181,7 +178,7 @@ public:
 
   void removeIndices(const std::vector<int>& indicesToRemove);
 
-private:
+private:  
   Teuchos::RCP<const OP> A_, B_;
   Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> > Prec_;
 
@@ -224,7 +221,7 @@ public:
 
   void removeIndices(const std::vector<int>& indicesToRemove);
 
-private:
+private:  
   Teuchos::RCP< TraceMinRitzOp<Scalar,MV,OP> > Op_;
   Teuchos::RCP< TraceMinProjOp<Scalar,MV,OP> > projector_;
 
@@ -245,7 +242,7 @@ class TraceMinProjectedPrecOp : public TraceMinOp<Scalar,MV,OP>
 {
   typedef Anasazi::MultiVecTraits<Scalar,MV>     MVT;
   typedef Anasazi::OperatorTraits<Scalar,MV,OP>  OPT;
-  const Scalar ONE;
+  const Scalar ONE; 
 
 public:
   // constructors for standard/generalized EVP
@@ -258,7 +255,7 @@ public:
 
   void removeIndices(const std::vector<int>& indicesToRemove);
 
-private:
+private:  
   Teuchos::RCP<const OP> Op_;
   Teuchos::Array< Teuchos::RCP<const MV> > projVecs_;
 
@@ -280,7 +277,7 @@ class TraceMinProjRitzOpWithPrec : public TraceMinOp<Scalar,MV,OP>
 {
   typedef Anasazi::MultiVecTraits<Scalar,MV>                                MVT;
   typedef Anasazi::OperatorTraits<Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> >  OPT;
-  const Scalar ONE;
+  const Scalar ONE; 
 
 public:
   // constructors for standard/generalized EVP
@@ -295,7 +292,7 @@ public:
 
   void removeIndices(const std::vector<int>& indicesToRemove);
 
-private:
+private:  
   Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> > Op_;
   Teuchos::RCP<TraceMinProjectedPrecOp<Scalar,MV,OP> > Prec_;
 
@@ -570,9 +567,9 @@ ZERO(Teuchos::ScalarTraits<Scalar>::zero())
   linSolOp.release();
 
   // TODO: This should support left and right prec
-  if(Prec != Teuchos::null)
+  if(Prec != Teuchos::null)    
     Prec_ = Teuchos::rcp( new TraceMinRitzOp<Scalar,MV,OP>(Prec) );
-
+  
   // create my minres solver
   solver_ = Teuchos::rcp( new PseudoBlockMinres< Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> >(linSolOp,Prec_) );
 }
@@ -663,7 +660,7 @@ void TraceMinRitzOp<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
   solver_->setRHS(rcpX);
 
   // Solve the linear system
-  solver_->solve();
+  solver_->solve();  
 }
 
 
@@ -698,9 +695,9 @@ void TraceMinRitzOp<Scalar,MV,OP>::removeIndices(const std::vector<int>& indices
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 template <class Scalar, class MV, class OP>
-TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> >& Op, const Teuchos::RCP<const MV> projVecs, const Teuchos::RCP<Anasazi::MatOrthoManager<Scalar,MV,OP> > orthman)
-{
-  Op_ = Op;
+TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> >& Op, const Teuchos::RCP<const MV> projVecs, const Teuchos::RCP<Anasazi::MatOrthoManager<Scalar,MV,OP> > orthman) 
+{ 
+  Op_ = Op; 
 
   // Create the projector object
   projector_ = Teuchos::rcp( new TraceMinProjOp<Scalar,MV,OP>(projVecs, Op_->B_, orthman) );
@@ -717,7 +714,7 @@ TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMin
 template <class Scalar, class MV, class OP>
 TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> >& Op, const Teuchos::RCP<const MV> projVecs, const Teuchos::RCP<Anasazi::MatOrthoManager<Scalar,MV,OP> > orthman, Teuchos::Array<Teuchos::RCP<const MV> > auxVecs)
 {
-  Op_ = Op;
+  Op_ = Op; 
 
   // Create the projector object
   projector_ = Teuchos::rcp( new TraceMinProjOp<Scalar,MV,OP>(projVecs, Op_->B_, orthman, auxVecs) );
@@ -773,7 +770,7 @@ void TraceMinProjRitzOp<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
   solver_->setRHS(PX);
 
   // Solve the linear system
-  solver_->solve();
+  solver_->solve();  
 }
 
 
@@ -869,9 +866,9 @@ void TraceMinProjRitzOpWithPrec<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
 
   Teuchos::RCP<MV> rcpY = MVT::CloneViewNonConst(Y,indices);
   Teuchos::RCP<MV> rcpX = MVT::Clone(X,nvecs);
-
+  
   Prec_->Apply(X,*rcpX);
-
+  
   // Create the linear problem
   problem_->setProblem(rcpY,rcpX);
 
@@ -892,7 +889,7 @@ void TraceMinProjRitzOpWithPrec<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
   solver_->setParameters(pl);
 
   // Solve the linear system
-  solver_->solve();
+  solver_->solve();  
 }
 
 
@@ -950,7 +947,7 @@ ONE (Teuchos::ScalarTraits<Scalar>::one())
 
     MVT::MvScale(*helperMV, dotprods);
   }
-
+  
   projVecs_.push_back(helperMV);
 }
 
@@ -1001,26 +998,26 @@ ONE(Teuchos::ScalarTraits<Scalar>::one())
     nvecs = MVT::GetNumberVecs(*projVecs);
     locProjVecs = MVT::CloneCopy(*projVecs);
   }
-
+  
   Teuchos::RCP<MV> helperMV = MVT::Clone(*projVecs,nvecs);
 
   // Compute Prec \ projVecs
   OPT::Apply(*Op_,*locProjVecs,*helperMV);
-
+  
   // Set the operator for the inner products
   B_ = orthman_->getOp();
   orthman_->setOp(Op_);
 
   // Normalize the vectors such that Y' Prec \ Y = I
   const int rank = orthman_->normalizeMat(*locProjVecs,Teuchos::null,helperMV);
-
+  
   projVecs_.push_back(helperMV);
 
 //  helperMV->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
 
-  // FIXME (mfh 08 Aug 2014) Write a named exception for this case.
+  // FIXME (mfh 08 Aug 2014) Write a named exception for this case.  
   TEUCHOS_TEST_FOR_EXCEPTION(
-          rank != nvecs, std::runtime_error,
+          rank != nvecs, std::runtime_error, 
     "Belos::TraceMinProjectedPrecOp: constructor: Loss of orthogonality detected.");
 
   orthman_->setOp(Teuchos::null);
@@ -1046,28 +1043,28 @@ void TraceMinProjectedPrecOp<Scalar,MV,OP>::Apply(const MV& X, MV& Y) const
     // Y = M\X - proj proj' X
     int nvecsP = MVT::GetNumberVecs(*projVecs_[0]);
     OPT::Apply(*Op_,X,Y);
-
+	
     Teuchos::RCP< Teuchos::SerialDenseMatrix<int,Scalar> > projX = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,Scalar>(nvecsP,nvecsX));
 
     MVT::MvTransMv(ONE, *projVecs_[0], X, *projX);
-
+	
     MVT::MvTimesMatAddMv(-ONE, *projVecs_[0], *projX, ONE, Y);
   }
   else
   {
     Teuchos::RCP<MV> MX = MVT::Clone(X,nvecsX);
     OPT::Apply(*Op_,X,*MX);
-
+	
     std::vector<Scalar> dotprods(nvecsX);
     MVT::MvDot(*projVecs_[0], X, dotprods);
-
+	
     Teuchos::RCP<MV> helper = MVT::CloneCopy(*projVecs_[0]);
     MVT::MvScale(*helper, dotprods);
     MVT::MvAddMv(ONE, *MX, -ONE, *helper, Y);
   }
 }
 
-
+  
 template <class Scalar, class MV, class OP>
 void TraceMinProjectedPrecOp<Scalar,MV,OP>::removeIndices(const std::vector<int>& indicesToRemove)
 {
