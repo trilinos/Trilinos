@@ -20,7 +20,7 @@
 // Tempus
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
-#include "Tempus_IntegratorObserver.hpp"
+#include "Tempus_IntegratorObserverBasic.hpp"
 
 #include <string>
 
