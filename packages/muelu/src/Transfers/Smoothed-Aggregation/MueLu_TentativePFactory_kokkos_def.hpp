@@ -88,6 +88,72 @@ namespace MueLu {
       RowType rows_;
     };
 
+    // fill column node id view
+    template<class aggSizesType, class vertex2AggIdType, class procWinnerType, class nodeGlobalEltsType, class isNodeGlobalEltsType, class LOType, class GOType>
+    class CollectAggregateSizeFunctor {
+    private:
+      typedef LOType LO;
+      typedef GOType GO;
+
+      aggSizesType         aggSizes;        //< view containint size of aggregate
+      vertex2AggIdType     vertex2AggId;    //< view containing vertex2AggId information
+      procWinnerType       procWinner;      //< view containing processor ids
+      nodeGlobalEltsType   nodeGlobalElts;  //< view containing global node ids of current proc
+      isNodeGlobalEltsType isNodeGlobalElement; //< unordered map storing whether (global) node id is owned by current proc
+
+      int myPid;
+      LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
+      GO indexBase, globalOffset;
+    public:
+      CollectAggregateSizeFunctor(aggSizesType aggSizes_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
+        aggSizes(aggSizes_),
+        vertex2AggId(vertex2AggId_),
+        procWinner(procWinner_),
+        nodeGlobalElts(nodeGlobalElts_),
+        isNodeGlobalElement(isNodeGlobalElement_),
+        fullBlockSize(fullBlockSize_),
+        blockID(blockID_),
+        stridingOffset(stridingOffset_),
+        stridedBlockSize(stridedBlockSize_),
+        indexBase(indexBase_),
+        globalOffset(globalOffset_),
+        myPid(myPID_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO aggId) const {
+        if(stridedBlockSize == 1) {
+          // loop over all nodes
+          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
+            if(procWinner(lnode,0) == myPid) {
+              auto myAgg = vertex2AggId(lnode,0);
+              if(myAgg == aggId)
+                aggSizes(myAgg+1)++;
+            }
+          }
+        } else {
+          // loop over all nodes
+          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
+            if(procWinner(lnode,0) == myPid) {
+              auto myAgg = vertex2AggId(lnode,0);
+              if(myAgg == aggId) {
+                GO gnodeid = nodeGlobalElts(lnode);
+
+                for (LO k = 0; k< stridedBlockSize; k++) {
+                  GO gDofIndex = globalOffset + (gnodeid - indexBase) * fullBlockSize + stridingOffset + k + indexBase;
+                  if(isNodeGlobalElement.value_at(isNodeGlobalElement.find(gDofIndex)) == true) {
+                    aggSizes(myAgg+1)++;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      }
+    };
+
+
     typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
     // collect number nonzeros of blkSize rows in nnz_(row+1)
@@ -262,11 +328,12 @@ namespace MueLu {
     // do unamalgamation
 
     // (overlapping) local node Ids belonging to aggregates on current processor
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates->GetMap()->getNodeElementList();
+    Teuchos::ArrayView<const GO> nodeGlobalEltsView = aggregates->GetMap()->getNodeElementList();
+    Kokkos::View<GO*, DeviceType> nodeGlobalElts("nodeGlobalElts", nodeGlobalEltsView.size());
+    for(size_t i = 0; i < nodeGlobalElts.size(); i++)
+      nodeGlobalElts(i) = nodeGlobalEltsView[i];
 
     // TODO we have to create a view out of it
-
-    //Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst();
     auto procWinner   = aggregates->GetProcWinner()->getHostLocalView();
     auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView();
     const GO numAggregates = aggregates->GetNumAggregates();
@@ -313,6 +380,15 @@ namespace MueLu {
     Kokkos::View<LO*, DeviceType> sizes("agg_dof_sizes", numAggregates + 1);
     sizes(0) = 0;
 
+#if 1
+    // It's not clear whether the parallel routine is really faster than the serial one
+    // Each process has to loop over all nodes. The parallel for loop is over an additional
+    // outer for loop over the aggregates which actually is not needed in the serial code.
+    CollectAggregateSizeFunctor <decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> collectAggregateSizes(sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+    Kokkos::parallel_for("MueLu:TentativePF:Build:getaggsizes", numAggregates, collectAggregateSizes);
+
+    // the alternative would be to avoid race conditions and allow parallel write acces to sizes
+#else
     // we have to avoid race conditions when parallelizing the loops below
     if(stridedBlockSize == 1) {
       // loop over all nodes
@@ -338,6 +414,7 @@ namespace MueLu {
         }
       }
     }
+#endif
 
     for(GO i=0; i < numAggregates+1; i++) {
       std::cout << i << " -> " << sizes(i) << std::endl;
@@ -347,9 +424,9 @@ namespace MueLu {
     ScanFunctor<LO,decltype(sizes)> scanFunctorAggSizes(sizes);
     Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", numAggregates+1, scanFunctorAggSizes);
 
-    for(GO i=0; i < numAggregates+1; i++) {
+    /*for(GO i=0; i < numAggregates+1; i++) {
       std::cout << i << " -> " << sizes(i) << std::endl;
-    }
+    }*/
 
     // create "map" aggregate id 2 row map
     // same problem as above
@@ -384,18 +461,13 @@ namespace MueLu {
       }
     }
 
-    /*
-    Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", NSDim*aggCols.size()); // initialized to 0
-    if (NSDim == 1) {
-      for (LO i = 0; i < aggCols.size(); i++)
-        agg2RowMapLO(i) = aggCols(i);
-    } else {
-      for (LO i = 0; i < aggCols.size(); i++)
-        for (LO k = 0; k < NSDim; k++) {
-          // FIXME: this should be the proper transformation with indexBase and offsets
-          agg2RowMapLO(i*NSDim+k) = aggCols(i)*NSDim+k;
-        }
-    }*/
+    for(GO i=0; i < numAggregates+1; i++) {
+      std::cout << i << " -> " << numDofs(i) << std::endl;
+    }
+
+    for(LO i = 0; i < numRows; i++) {
+      std::cout << i << " dof " << agg2RowMapLO(i) << std::endl;
+    }
 
 #else
 
