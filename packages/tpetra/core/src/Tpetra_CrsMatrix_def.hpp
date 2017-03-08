@@ -3890,6 +3890,13 @@ namespace Tpetra {
     // getFrobeniusNorm(), and the result is cached there.
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  bool 
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  haveGlobalConstants() const {
+    return getCrsGraph ()->haveGlobalConstants ();
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
