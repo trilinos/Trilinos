@@ -4,6 +4,8 @@
                                  Driver settings
      =================================================================== -->
   <Parameter name="seed type" type="string" value="node"/>
+  <Parameter name="linear P1" type="bool" value="true"/>
+ 
 
   <!-- ===================================================================
                                  MueLu settings
