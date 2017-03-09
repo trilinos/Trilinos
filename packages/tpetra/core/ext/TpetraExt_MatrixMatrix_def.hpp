@@ -2606,7 +2606,6 @@ void import_and_extract_views(
   using Teuchos::TimeMonitor;
   RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Alloc"))));
 #endif
-
   // The goal of this method is to populate the 'Aview' struct with views of the
   // rows of A, including all rows that correspond to elements in 'targetMap'.
   //
@@ -2723,7 +2722,7 @@ void import_and_extract_views(
     labelList.set("Timer Label", label);
     // Minor speedup tweak - avoid computing the global constants
     if(!params.is_null()) 
-      labelList.set("import: compute global constants", params->get("import: compute global constants",false)); 
+      labelList.set("compute global constants", params->get("compute global constants",false)); 
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
