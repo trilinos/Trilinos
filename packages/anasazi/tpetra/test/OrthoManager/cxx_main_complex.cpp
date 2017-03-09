@@ -101,7 +101,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S, RCP<c
 
 MT MVDiff(const MV &X, const MV &Y);
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) 
 {
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
