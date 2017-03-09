@@ -994,8 +994,15 @@ void mult_AT_B_newmatrix(
   crs_matrix_struct_type Aview;
   crs_matrix_struct_type Bview;
   RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
-  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label);
-  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label);
+
+  // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
+  RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants",false));
+  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
+
+  RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants",false));
+  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T AB-core"))));
