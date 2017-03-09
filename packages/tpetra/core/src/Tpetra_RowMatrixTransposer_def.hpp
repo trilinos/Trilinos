@@ -64,7 +64,7 @@ template<class Scalar,
      class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTranspose ()
+createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   using Teuchos::RCP;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -92,6 +92,7 @@ createTranspose ()
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     labelList.set("Timer Label",label_);
 #endif
+    if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
     // Use the Export object to do a fused Export and fillComplete.
     return exportAndFillCompleteCrsMatrix<crs_matrix_type> (transMatrixWithSharedRows, *exporter,Teuchos::null,Teuchos::null,Teuchos::rcp(&labelList,false));
   }
@@ -108,7 +109,7 @@ template<class Scalar,
          class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTransposeLocal ()
+createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -222,9 +223,12 @@ createTransposeLocal ()
   }
 
   // Call ESFC & return
+  Teuchos::ParameterList eParams;
+  if(!params.is_null()) eParams.set("compute global constants",params->get("compute global constants",true));
+
   transMatrixWithSharedRows->expertStaticFillComplete (origMatrix_->getRangeMap (),
                                                        origMatrix_->getDomainMap (),
-                                                       myImport, myExport);
+                                                       myImport, myExport,rcp(&eParams,false));
   return transMatrixWithSharedRows;
 }
 //
