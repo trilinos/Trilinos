@@ -127,7 +127,11 @@ namespace MueLu {
     RCP<Matrix> finalP; // output
 
     // Reuse pattern if available
-    RCP<ParameterList> APparams = rcp(new ParameterList);
+    RCP<ParameterList> APparams;
+    if(pL.isSublist("matrixmatrix: kernel params")) 
+      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+    else 
+      APparams= rcp(new ParameterList);
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
@@ -136,6 +140,8 @@ namespace MueLu {
       if (APparams->isParameter("graph"))
         finalP = APparams->get< RCP<Matrix> >("graph");
     }
+    // By default, we don't need global constants for SaP
+    APparams->set("compute global constants",APparams->get("compute global constants",false));
 
     const ParameterList& pL = GetParameterList();
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
