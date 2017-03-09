@@ -95,13 +95,15 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   Array<GO> myColumns;
 
   if (graph.isLocallyIndexed ()) {
-    auto colMap = graph.getColMap ();
+    colMap = graph.getColMap ();
+    // If the graph is locally indexed, it had better have a column Map.
     // The extra check for ! graph.hasColMap() is conservative.
     if (colMap.is_null () || ! graph.hasColMap ()) {
       errCode = -1;
       if (errStrm != NULL) {
         *errStrm << prefix << "The graph is locally indexed on the calling "
-          "process, but has no column Map." << endl;
+          "process, but has no column Map (either getColMap() returns null, "
+          "or hasColMap() returns false)." << endl;
       }
       // Under this error condition, this process will not fill
       // myColumns.  The resulting new column Map will be incorrect,

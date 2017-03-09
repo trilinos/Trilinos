@@ -587,16 +587,7 @@ PHX::Device::size_type
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(size_type ordinal) const
 { 
-  if (ordinal > Rank-1 || ordinal < 0) {
-    std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
-       << " is outside the valid range of 0 - " << Rank - 1
-       << " in DataLayout object:\n"
-       << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
-		       std::logic_error, os.str());
-  }
-  
+  this->checkForValidRank(ordinal);
   return m_dim_size[ordinal];
 }
 
@@ -607,16 +598,7 @@ PHX::Device::size_type
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 extent(size_type ordinal) const
 { 
-  if (ordinal > Rank-1 || ordinal < 0) {
-    std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
-       << " is outside the valid range of 0 - " << Rank - 1
-       << " in DataLayout object:\n"
-       << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
-                               std::logic_error, os.str());
-  }
-  
+  this->checkForValidRank(ordinal);
   return m_dim_size[ordinal];
 }
 
@@ -626,17 +608,8 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 int 
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 extent_int(size_type ordinal) const
-{ 
-  if (ordinal > Rank-1 || ordinal < 0) {
-    std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
-       << " is outside the valid range of 0 - " << Rank - 1
-       << " in DataLayout object:\n"
-       << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
-		       std::logic_error, os.str());
-  }
-  
+{
+  this->checkForValidRank(ordinal);
   return static_cast<int>(m_dim_size[ordinal]);
 }
 
@@ -647,16 +620,7 @@ std::string
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 name(size_type ordinal) const
 { 
-  if (ordinal > Rank-1 || ordinal < 0) {
-    std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
-       << " is outside the valid range of 0 - " << Rank - 1
-       << " in DataLayout object:\n"
-       << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
-		       std::logic_error, os.str());
-  }
-  
+  this->checkForValidRank(ordinal);
   return m_dim_name[ordinal];
 }
 
@@ -691,6 +655,44 @@ createIdentifier(const std::string& prefix)
   os << ")";
   
   return os.str();
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename IndexType>
+typename std::enable_if<std::is_signed<IndexType>::value>::type
+PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+checkForValidRank(const IndexType& ordinal) const
+{
+  if (ordinal > Rank-1 || ordinal < 0) {
+    std::ostringstream os;
+    os << "Requested Ordinal " << ordinal 
+       << " is outside the valid range of 0 - " << Rank - 1
+       << " in DataLayout object:\n"
+       << m_identifier << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+			       std::runtime_error, os.str());
+  }
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename IndexType>
+typename std::enable_if<std::is_unsigned<IndexType>::value>::type
+PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+checkForValidRank(const IndexType& ordinal) const
+{
+  if (ordinal > Rank-1) {
+    std::ostringstream os;
+    os << "Requested Ordinal " << ordinal 
+       << " is outside the valid range of 0 - " << Rank - 1
+       << " in DataLayout object:\n"
+       << m_identifier << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1, 
+			       std::runtime_error, os.str());
+  }
 }
 
 //**********************************************************************

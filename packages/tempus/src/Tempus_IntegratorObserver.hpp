@@ -31,52 +31,35 @@ namespace Tempus {
  *   - IntegratorObserver is not stateless!  Developers may touch the
  *     solution state!  Developers need to be careful not to break the
  *     restart (checkpoint) capability.
- *   - The functions in this base class are simple no-op functions, as
- *     all basic functionality should be handled through other methods.
  */
 template<class Scalar>
 class IntegratorObserver
 {
 public:
 
-  /// Constructor
-  IntegratorObserver(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
-    const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl)
-    : solutionHistory_(solutionHistory), timeStepControl_(timeStepControl)
-  {}
-
-  /// Destructor
-  virtual ~IntegratorObserver(){}
-
   /// \name Basic IntegratorObserver methods
   //@{
     /// Observe the beginning of the time integrator.
-    virtual void observeStartIntegrator(){}
+    virtual void observeStartIntegrator() = 0;
 
     /// Observe the beginning of the time step loop.
-    virtual void observeStartTimeStep(){}
+    virtual void observeStartTimeStep() = 0;
 
     /// Observe after the next time step size is selected.
-    virtual void observeNextTimeStep(Status & integratorStatus){}
+    virtual void observeNextTimeStep(Status & integratorStatus) = 0;
 
     /// Observe before Stepper takes step.
-    virtual void observeBeforeTakeStep(){}
+    virtual void observeBeforeTakeStep() = 0;
 
     /// Observe after Stepper takes step.
-    virtual void observeAfterTakeStep(){}
+    virtual void observeAfterTakeStep() = 0;
 
     /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(Status & integratorStatus){}
+    virtual void observeAcceptedTimeStep(Status & integratorStatus) = 0;
 
     /// Observe the end of the time integrator.
-    virtual void observeEndIntegrator(const Status integratorStatus){}
+    virtual void observeEndIntegrator(const Status integratorStatus) = 0;
   //@}
-
-protected:
-
-  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
-  Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl_;
 
 };
 } // namespace Tempus

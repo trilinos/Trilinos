@@ -38,7 +38,6 @@
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
-//                    Michael Wolf (mmwolf@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -66,7 +65,7 @@
  */
 
 
-void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree);
+//void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree);
 
 
 namespace Zoltan2
@@ -117,6 +116,8 @@ private:
 		     std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
 	             std::vector<int> &bigraphVMapU, std::vector<int> &bigraphVMapV);
 
+void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree);
+
 
 public:
   // Constructor
@@ -153,18 +154,25 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
 template <typename Adapter>
 int AlgND<Adapter>::globalOrder(
   const RCP<GlobalOrderingSolution<gno_t> > &solution_)
 {
-  throw std::logic_error("AlgND does not yet support global ordering.");
+  throw std::logic_error("AlgND does not support global ordering.");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-int AlgND<Adapter>::localOrder(
-  const RCP<LocalOrderingSolution<lno_t> > &solution_)
+int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_)
 {
+    typedef typename Adapter::lno_t lno_t;     // local ids
+    // typedef typename Adapter::gno_t gno_t;     // global ids
+    // typedef typename Adapter::scalar_t scalar_t;   // scalars
+
     mEnv->debug(DETAILED_STATUS, std::string("Entering AlgND"));
 
     //////////////////////////////////////////////////////////////////////
@@ -175,19 +183,12 @@ int AlgND<Adapter>::localOrder(
     RCP<PartitioningSolution<Adapter> > partSoln;
     int nUserWts=0;
 
-       std::cout << "HERE1" << std::endl;
-
     partSoln =
       RCP<PartitioningSolution<Adapter> > (new PartitioningSolution<Adapter>(this->mEnv, mProblemComm, nUserWts));
 
-       AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
-
-       std::cout << "HERE2" << std::endl;
+    AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
 
     algZoltan.partition(partSoln);
-
-       std::cout << "HERE3" << std::endl;
-
 
     size_t numGlobalParts = partSoln->getTargetGlobalNumberOfParts();
 
@@ -207,9 +208,6 @@ int AlgND<Adapter>::localOrder(
     //////////////////////////////////////////////////////////////////////
     // change int to something, part_t?
 
-       std::cout << "HERE4" << std::endl;
-
-
     std::vector<int> partTree;
 
     buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
@@ -221,8 +219,6 @@ int AlgND<Adapter>::localOrder(
     }
     std::cout << "NumSeparators: " << numSeparators << std::endl;
 
-       std::cout << "HERE5" << std::endl;
-
     //////////////////////////////////////////////////////////////////////
 
 
@@ -231,9 +227,6 @@ int AlgND<Adapter>::localOrder(
     // the level of the hiearchy of the separator tree.  This allows us
     // to easily identify the boundary value vertices
     //////////////////////////////////////////////////////////////////////
-       std::cout << "HERE6" << std::endl;
-
-
     int numLevels = partTree[4*(numSeparators-1)]+1;
 
     std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
@@ -270,7 +263,8 @@ int AlgND<Adapter>::localOrder(
     // Set of separator vertices.  Used to keep track of what vertices are
     // already in previous calculated separators.  These vertices should be
     // excluded from future separator calculations
-    const std::set<int> sepVerts;
+    std::set<lno_t> sepVerts;
+    std::vector<std::vector< std::set<lno_t> > > sepVertsByLevel(numLevels);
 
     //////////////////////////////////////////////////////////////////////
     // Loop over each cut
@@ -281,6 +275,8 @@ int AlgND<Adapter>::localOrder(
 
     for(unsigned int level=0;level<numLevels;level++)
     {
+      sepVertsByLevel[level].resize(sepsInLev[level]);
+
       for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
       {
         ///////////////////////////////////////////////////////////////
@@ -332,31 +328,70 @@ int AlgND<Adapter>::localOrder(
         ///////////////////////////////////////////////////////////////
         // Calculate bipartite matching from boundary layer
         ///////////////////////////////////////////////////////////////
-	Matcher bpMatch(bigraphCRSRowPtr.data(), bigraphCRSCols.data(), bigraphNumU, bigraphNumV, bigraphNumE);
-        bpMatch.match();
-
-	const std::vector<int> &vertUMatches = bpMatch.getVertexUMatches();
-	const std::vector<int> &vertVMatches = bpMatch.getVertexVMatches();
-        ///////////////////////////////////////////////////////////////
-
-        ///////////////////////////////////////////////////////////////
-        // Calculate vertex cover (which is vertex separator) from matching
-        ///////////////////////////////////////////////////////////////
-	std::vector<int> VC;
-
-        getVCfromMatching(bigraphCRSRowPtr,bigraphCRSCols,vertUMatches,vertVMatches,
-			  bigraphVMapU,bigraphVMapV,VC);
-
-        for(unsigned int i=0;i<VC.size();i++)
+        if (bigraphNumU > 0)
 	{
-	  std::cout << "VC: " << VC[i] << std::endl;
-	}        
-        ///////////////////////////////////////////////////////////////
+          assert(bigraphNumV>0);
 
+	  Matcher<lno_t> bpMatch(bigraphCRSRowPtr.data(), bigraphCRSCols.data(), bigraphNumU, bigraphNumV, bigraphNumE);
+          bpMatch.match();
+
+	  const std::vector<int> &vertUMatches = bpMatch.getVertexUMatches();
+	  const std::vector<int> &vertVMatches = bpMatch.getVertexVMatches();
+          ///////////////////////////////////////////////////////////////
+
+          ///////////////////////////////////////////////////////////////
+          // Calculate vertex cover (which is vertex separator) from matching
+          ///////////////////////////////////////////////////////////////
+	  std::vector<int> VC;
+
+          bpMatch.getVCfromMatching(bigraphCRSRowPtr,bigraphCRSCols,vertUMatches,vertVMatches,
+	 		  bigraphVMapU,bigraphVMapV,VC);
+
+          for(unsigned int i=0;i<VC.size();i++)
+	  {
+            sepVerts.insert(VC[i]);
+
+            sepVertsByLevel[level][levIndx].insert(VC[i]);
+	    std::cout << "VC: " << VC[i] << std::endl;
+	  }        
+          ///////////////////////////////////////////////////////////////
+	}
+
+        //TODO: Copy data into separator structures?
 
 
       }
     }
+
+    //////////////////////////////////////////////////////////////////////
+    // Output separators
+    //////////////////////////////////////////////////////////////////////
+    std::cout << "Separators: " << std::endl;
+    for(unsigned int level=0;level<sepVertsByLevel.size();level++)
+    {
+      sepVertsByLevel[level].resize(sepsInLev[level]);
+
+      for(unsigned int levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
+      {
+	std::cout << "  Separator " << level << " " << levIndx << ": ";
+
+
+
+
+	typename std::set<lno_t>::const_iterator iterS;
+	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
+	{
+	  std::cout << *iterS << " ";
+	}
+	std::cout << std::endl;
+
+
+      }
+    }
+    //////////////////////////////////////////////////////////////////////
+
+
+
 
        std::cout << "HERE20" << std::endl;
 
@@ -548,111 +583,10 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 //////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////
-// Create boundary layer of vertices between 2 partitions
-////////////////////////////////////////////////////////////////////////////////
-// template <typename Adapter>
-// void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
-// 				      const part_t * parts,
-// 				      const std::set<int> &excVerts,
-// 				      std::vector<int> &boundVerts,
-// 				      std::vector<std::vector<int> > &boundVertsST)
 
-// {
-//   std::cout << "HI1" << std::endl;
-
-//   typedef typename Adapter::lno_t lno_t;         // local ids
-//   typedef typename Adapter::scalar_t scalar_t;   // scalars
-//   typedef StridedData<lno_t, scalar_t> input_t;
-
-//   int numVerts = mGraphModel->getLocalNumVertices();
-
-//   std::cout << "NumVerts: " << numVerts << std::endl;
-
-//   //Teuchos ArrayView
-//   ArrayView< const lno_t > eIDs;
-//   ArrayView< const lno_t > vOffsets;
-//   ArrayView< input_t > wgts;
-
-//   // For some reason getLocalEdgeList seems to be returning empty eIDs
-//   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
-
-//   size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
-
-//   for(int v1=0;v1<numVerts;v1++)
-//   {
-
-//     part_t vpart1 = partMap[parts[v1]];
-
-//     bool correctBL = (vpart1 >= 2*levelIndx && vpart1 < 2*(levelIndx+1) );
-
-//     // if vertex is not in the correct range of parts, it cannot be a member of 
-//     // this boundary layer
-//     if(!correctBL)
-//     {
-//       continue;
-//     }
-
-//     // Ignore vertices that belong to set of vertices to exclude
-//     if(excVerts.find(v1)!=excVerts.end())
-//     {
-//       continue;
-//     }
-
-//     //Loop over edges connected to v1
-//     //MMW figure out how to get this from Zoltan2
-//     for(int j=vOffsets[v1];j<vOffsets[v1+1];j++)
-//     {
-
-//       int v2 = eIDs[j];
-
-//       part_t vpart2 = partMap[parts[v2]];
-
-//       correctBL = (vpart2 >= 2*levelIndx && vpart2 < 2*(levelIndx+1) );
-
-//       // if vertex is not in the correct range of parts, it cannot be a member of 
-//       // this boundary layer
-//       if(!correctBL)
-//       {
-//         continue;
-//       }
-
-//       // Ignore vertices that belong to set of vertices to exclude
-//       if(excVerts.find(v2)!=excVerts.end())
-//       {
-//         continue;
-//       }
-
-//       if ( vpart1 !=  vpart2  )
-//       {
-//         // Vertex added to set of all boundary vertices
-//         boundVerts.push_back(v1);
-
-//         // Vertex added to 1st set of boundary vertices
-// 	if(vpart1<vpart2)
-//         {
-// 	  boundVertsST[0].push_back(v1);
-// 	}
-//         // Vertex added to 2nd set of boundary vertices
-// 	else
-// 	{
-// 	  boundVertsST[1].push_back(v1);
-// 	}
-// 	break;
-//       }
-
-//     }
-//   }
-
-// }
-//////////////////////////////////////////////////////////////////////////////
-
-}   // namespace Zoltan2
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree)
+template <typename Adapter>
+void AlgND<Adapter>::
+buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree)
 {
   // Insert information for this separator
   partTree.push_back(level);
@@ -674,7 +608,11 @@ void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::v
     buildPartTree(level+1,splitPart,newSplit,rightPart,partTree);
   }
 }
-////////////////////////////////////////////////////////////////////////////////
+
+
+
+}   // namespace Zoltan2
+
 
 
 

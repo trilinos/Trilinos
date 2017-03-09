@@ -106,6 +106,7 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_order_tests
   SOURCE_FILES
     simple.mtx
+    simple_coord.mtx
     simple_ordering.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}

@@ -816,7 +816,7 @@ Piro::tempusSolver(
 #endif
    bool computeSensitivities = true; 
    if (appParams->isSublist("Analysis")) {
-     ParameterList& analysisPL = appParams->sublist("Analysis");
+     Teuchos::ParameterList& analysisPL = appParams->sublist("Analysis");
      if (analysisPL.isParameter("Compute Sensitivities")) 
        computeSensitivities = analysisPL.get<bool>("Compute Sensitivities"); 
    }

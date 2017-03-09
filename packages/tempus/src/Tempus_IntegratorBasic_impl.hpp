@@ -22,7 +22,8 @@ template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
-     : integratorStatus_(WORKING), isInitialized_(false)
+    : integratorObserver_(Teuchos::null),
+      integratorStatus_(WORKING), isInitialized_(false)
 {
   this->setParameterList(inputPL);
   this->setStepper(model);
@@ -34,7 +35,8 @@ template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType)
-     : integratorStatus_(WORKING), isInitialized_(false)
+    : integratorObserver_(Teuchos::null),
+      integratorStatus_(WORKING), isInitialized_(false)
 {
   using Teuchos::RCP;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
@@ -48,7 +50,8 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic()
-     : integratorStatus_(WORKING), isInitialized_(false)
+  : integratorObserver_(Teuchos::null),
+    integratorStatus_(WORKING), isInitialized_(false)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -193,10 +196,12 @@ void IntegratorBasic<Scalar>::setObserver(
   Teuchos::RCP<IntegratorObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
-    // Create default IntegratorObserver
-    integratorObserver_ =
-      Teuchos::rcp(new IntegratorObserver<Scalar>(solutionHistory_,
-                                                  timeStepControl_));
+    // Create default IntegratorObserverBasic, otherwise keep current observer.
+    if (integratorObserver_ == Teuchos::null) {
+      integratorObserver_ =
+        Teuchos::rcp(new IntegratorObserverBasic<Scalar>(solutionHistory_,
+                                                         timeStepControl_));
+    }
   } else {
     integratorObserver_ = obs;
   }
