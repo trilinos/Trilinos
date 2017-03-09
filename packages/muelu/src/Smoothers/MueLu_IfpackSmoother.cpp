@@ -343,6 +343,13 @@ namespace MueLu {
     }
   }
 
+  template <class Node>
+  size_t IfpackSmoother<Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+  
+
 } // namespace MueLu
 
 // The IfpackSmoother is only templated on the Node, since it is an Epetra only object

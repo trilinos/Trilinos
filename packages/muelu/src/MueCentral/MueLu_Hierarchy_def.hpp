@@ -72,6 +72,7 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
 
+#include "MueLu_DirectSolver.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace MueLu {
@@ -168,6 +169,42 @@ namespace MueLu {
     }
     return totalNnz / lev0Nnz;
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherComplexity() const {
+    typedef Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MyAmesos2Smoother;
+    double node_sc = 0, global_sc=0;
+    double a0_nnz =0;
+    const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+    // Get cost of fine matvec
+    TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[0]->IsAvailable("A")) , Exceptions::RuntimeError,
+			       "Operator complexity cannot be calculated because A is unavailable on level " << 0);
+    RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
+    if (A.is_null()) return -1.0;
+    RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
+    if(Am.is_null()) return -1.0;
+    a0_nnz = as<double>(Am->getGlobalNumEntries());
+
+    // Get smoother complexity at each level
+    for (int i = 0; i < GetNumLevels(); ++i) {
+      size_t level_sc=0;      
+      RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
+      if (S.is_null()) continue;
+      level_sc = S->getNodeSmootherComplexity();
+      if(level_sc == INVALID) { printf("CMS: invalid complexity on level %d\n",i); global_sc=-1.0;break;}
+      
+      node_sc += as<double>(level_sc);
+    }
+     
+    if(global_sc < 0) return -1.0;
+    else {
+      Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_SUM,A->getDomainMap()->getComm()->getSize(),&node_sc,&global_sc);
+      return global_sc / a0_nnz;
+    }
+  }
+
+
+
 
   // Coherence checks todo in Setup() (using an helper function):
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1143,6 +1180,11 @@ namespace MueLu {
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
+	double sc = GetSmootherComplexity();
+	if(sc!=-1.0) {
+	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+	      << sc << std::endl;
+	}
         switch (Cycle_) {
            case VCYCLE:
              oss << "Cycle type          = V" << std::endl;

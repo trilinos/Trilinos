@@ -266,6 +266,10 @@ namespace MueLu {
            << "RCP<prec_>: " << prec_ << std::endl;
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    return prec_->getStatus().getNnzLU();
+  }
 } // namespace MueLu
 
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2

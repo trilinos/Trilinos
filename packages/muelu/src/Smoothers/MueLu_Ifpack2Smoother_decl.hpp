@@ -208,6 +208,9 @@ namespace MueLu {
     //! For diagnostic purposes
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getPreconditioner(){return prec_;}
 
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
+
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
