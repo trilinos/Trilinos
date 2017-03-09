@@ -774,12 +774,10 @@ namespace MueLuTests {
     }
   }
   
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void testUniqueNumbering(Teuchos::FancyOStream &out, bool &success)
   {
     // simple test with dof coords corresponding to our sample three-element quad mesh with a quadratic basis
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::DefaultExecutionSpace, typename Kokkos::HostSpace> Node;
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
@@ -842,7 +840,13 @@ namespace MueLuTests {
       out << " }\n";
     }
   }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, UniqueNumbering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    testUniqueNumbering<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
+  }
   
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void testBuildSampleElementToNodeMapThreeElementQuad(Teuchos::FancyOStream &out, bool &success)
   {
     // simple test with quadratic basis on quads: check that we have the right numbering (hard-coded)
@@ -852,9 +856,6 @@ namespace MueLuTests {
     
     vector<vector<int>> expectedGIDs = {vertexGIDs,edgeGIDs,cellGIDs};
     
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<typename Kokkos::DefaultExecutionSpace, typename Kokkos::HostSpace> Node;
     typedef typename Node::device_type::execution_space ES;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
@@ -920,6 +921,11 @@ namespace MueLuTests {
         }
       }
     }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, BuildSampleElementToNodeMapThreeElementQuad, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    testBuildSampleElementToNodeMapThreeElementQuad<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
   }
   
   template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
@@ -3401,7 +3407,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildSampleElementToNodeMapThreeElementQuad, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, UniqueNumbering, Scalar, LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
   
 #define MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, X)\
