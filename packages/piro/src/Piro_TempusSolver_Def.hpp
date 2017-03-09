@@ -44,7 +44,7 @@
 
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
-#include "Piro_MatrixFreeDecorator.hpp" 
+#include "Piro_MatrixFreeDecorator.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
@@ -106,18 +106,18 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
-    bool computeSensitivities, 
+    bool computeSensitivities,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false),
-  computeSensitivities_(computeSensitivities) 
+  computeSensitivities_(computeSensitivities)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
-    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
     if (appParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model,
                            appParams->get<double>("Matrix-Free Perturbation")));
@@ -125,7 +125,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
     initialize(appParams, model, piroObserver);
   }
-  else 
+  else
     initialize(appParams, in_model, piroObserver);
 }
 
@@ -159,11 +159,11 @@ void Piro::TempusSolver<Scalar>::initialize(
 
   if (appParams->isSublist("Tempus")) {
     RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
-    //*out << "tempusPL = " << *tempusPL << "\n"; 
+    //*out << "tempusPL = " << *tempusPL << "\n";
     RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
-    //*out << "integratorPL = " << *integratorPL << "\n"; 
-    //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but 
-    //Curt will add this at some point.  When this option is added, set Verbosity 
+    //*out << "integratorPL = " << *integratorPL << "\n";
+    //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but
+    //Curt will add this at some point.  When this option is added, set Verbosity
     //based on that sublist, rather than hard-coding it here.
     solnVerbLevel = Teuchos::VERB_DEFAULT;
 
@@ -171,10 +171,10 @@ void Piro::TempusSolver<Scalar>::initialize(
     t_initial = timeStepControlPL->get<Scalar>("Initial Time", 0.0);
     t_final = timeStepControlPL->get<Scalar>("Final Time", 0.1);
     RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
-    //*out << "stepperPL = " << *stepperPL << "\n"; 
+    //*out << "stepperPL = " << *stepperPL << "\n";
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
-    //*out << "Stepper Type = " << stepperType << "\n"; 
-     
+    //*out << "Stepper Type = " << stepperType << "\n";
+
     //
     // *out << "\nB) Create the Stratimikos linear solver factory ...\n";
     //
@@ -203,7 +203,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
     tempusPL->validateParameters(*getValidTempusParameters(),0);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
-     
+
     //
     *out << "\nC) Create and initalize the forward model ...\n";
 
@@ -211,7 +211,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     // C.1) Create the underlying Thyra::ModelEvaluator
     // already constructed as "model". Decorate if needed.
     // IKT, 12/8/16: it may be necessary to expand the list of conditions
-    // below, as more explicit schemes get added to Tempus 
+    // below, as more explicit schemes get added to Tempus
     if (
       stepperType == "RK Forward Euler" ||
       stepperType == "RK Explicit 4 Stage" ||
@@ -244,20 +244,20 @@ void Piro::TempusSolver<Scalar>::initialize(
 
     //
     *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
-     
+
     //Create Tempus integrator with observer using tempusPL and model.
     fwdStateIntegrator = Tempus::integratorBasic<Scalar>(tempusPL, model);
 
     //Get stepper from integrator
     fwdStateStepper = fwdStateIntegrator->getStepper();
 
-    //Set observer 
-    Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer = Teuchos::null; 
+    //Set observer
+    Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
     if (Teuchos::nonnull(piroObserver)) {
       //Get solutionHistory from integrator
       const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
       const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
-      //Create Tempus::IntegratorObserver object 
+      //Create Tempus::IntegratorObserverBasic object
       observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
     }
 
@@ -265,11 +265,11 @@ void Piro::TempusSolver<Scalar>::initialize(
       //Set observer in integrator
       fwdStateIntegrator->setObserver(observer);
       //Reinitialize everything in integrator class, since we have changed the observer.
-      fwdStateIntegrator->initialize(); 
+      fwdStateIntegrator->initialize();
     }
 
 
-  } 
+  }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
         appParams->isSublist("Tempus"),
@@ -304,10 +304,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   t_final(finalTime),
   num_p(model->Np()),
   num_g(model->Ng()),
+  computeSensitivities_(false),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
-  isInitialized(true), 
-  computeSensitivities_(false) 
+  isInitialized(true)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -341,17 +341,17 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   t_final(finalTime),
   num_p(model->Np()),
   num_g(model->Ng()),
+  computeSensitivities_(false),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
-  isInitialized(true),
-  computeSensitivities_(false) 
+  isInitialized(true)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   //IKT, 12/5/16: the following exception check is needed until setInitialCondition method
-  //is added to the Tempus::IntegratorBasic class.  
-  if (initialTime > 0.0) {  
+  //is added to the Tempus::IntegratorBasic class.
+  if (initialTime > 0.0) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
       "\n Error in Piro::TempusSolver: the constructor employed does not support initialTime > 0.0.  " <<
       "You have set initialTime = " << initialTime << "\n");
@@ -635,16 +635,16 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  bool requestedSensitivities = true; 
-  if (computeSensitivities_ == true) 
+  bool requestedSensitivities = true;
+  if (computeSensitivities_ == true)
     requestedSensitivities = Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
   else
-    requestedSensitivities = false;  
+    requestedSensitivities = false;
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
   RCP<Tempus::SolutionState<Scalar> > solutionState;
   RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
-  if (!requestedSensitivities) 
+  if (!requestedSensitivities)
   {
     //
     *out << "\nE) Solve the forward problem ...\n";
@@ -655,22 +655,22 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     fwdStateIntegrator->advanceTime(t_final);
 
     double time = fwdStateIntegrator->getTime();
-    
-    *out << "T final actual: " << time << "\n"; 
-    
+
+    *out << "T final actual: " << time << "\n";
+
     if (abs(time-t_final) > 1.0e-10) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true,
-        Teuchos::Exceptions::InvalidParameter, 
-        "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " << 
-        "specified in Input File.  Final time in input file is " << t_final << 
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " <<
+        "specified in Input File.  Final time in input file is " << t_final <<
         ", whereas actual final time is " << time << "\n" );
     }
 
     finalSolution = fwdStateIntegrator->getX();
 
     solutionHistory = fwdStateIntegrator->getSolutionHistory();
-    auto numStates = solutionHistory->getNumStates(); 
+    auto numStates = solutionHistory->getNumStates();
     solutionState = (*solutionHistory)[numStates-1];
     //Get final solution from solutionHistory.
     finalSolution = solutionState->getX();
@@ -680,13 +680,13 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
 
   }
-  else { 
+  else {
     //
     *out << "\nE) Solve the forward problem with Sensitivities...\n";
     //
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
-        Teuchos::Exceptions::InvalidParameter, 
+        Teuchos::Exceptions::InvalidParameter,
         "\n Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
   }
 
@@ -705,14 +705,14 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
       //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
-      //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following 
+      //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following
       //code is commented out for now.  Use t_final and soln_dt in set_t instead for now.
       /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
       const Scalar time = workingState->getTime();
       const Scalar dt   = workingState->getTimeStep();
       const Scalar t = time + dt;
       modelInArgs.set_t(t);*/
-      const Scalar soln_dt = solutionState->getTimeStep(); 
+      const Scalar soln_dt = solutionState->getTimeStep();
       modelInArgs.set_t(t_final - soln_dt);
     }
 
@@ -814,13 +814,13 @@ Piro::tempusSolver(
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-   bool computeSensitivities = true; 
+   bool computeSensitivities = true;
    if (appParams->isSublist("Analysis")) {
      Teuchos::ParameterList& analysisPL = appParams->sublist("Analysis");
-     if (analysisPL.isParameter("Compute Sensitivities")) 
-       computeSensitivities = analysisPL.get<bool>("Compute Sensitivities"); 
+     if (analysisPL.isParameter("Compute Sensitivities"))
+       computeSensitivities = analysisPL.get<bool>("Compute Sensitivities");
    }
-    
+
 #ifdef ALBANY_BUILD
   return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, computeSensitivities, piroObserver));
 #else
