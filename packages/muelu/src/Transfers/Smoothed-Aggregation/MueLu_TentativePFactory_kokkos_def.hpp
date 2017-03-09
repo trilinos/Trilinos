@@ -88,7 +88,7 @@ namespace MueLu {
       RowType rows_;
     };
 
-    // fill column node id view
+    // collect aggregate sizes (number of dofs associated with all nodes in aggregate)
     template<class aggSizesType, class vertex2AggIdType, class procWinnerType, class nodeGlobalEltsType, class isNodeGlobalEltsType, class LOType, class GOType>
     class CollectAggregateSizeFunctor {
     private:
@@ -150,6 +150,77 @@ namespace MueLu {
           }
         }
 
+      }
+    };
+
+
+    template<class agg2RowMapType, class aggSizesType, class vertex2AggIdType, class procWinnerType, class nodeGlobalEltsType, class isNodeGlobalEltsType, class LOType, class GOType>
+    class CreateAgg2RowMapLOFunctor {
+    private:
+      typedef LOType LO;
+      typedef GOType GO;
+
+      agg2RowMapType       agg2RowMap;      //< view containing row map entries associated with aggregate
+      aggSizesType         aggSizes;        //< view containing size of aggregate
+      vertex2AggIdType     vertex2AggId;    //< view containing vertex2AggId information
+      procWinnerType       procWinner;      //< view containing processor ids
+      nodeGlobalEltsType   nodeGlobalElts;  //< view containing global node ids of current proc
+      isNodeGlobalEltsType isNodeGlobalElement; //< unordered map storing whether (global) node id is owned by current proc
+
+      int myPid;
+      LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
+      GO indexBase, globalOffset;
+    public:
+      CreateAgg2RowMapLOFunctor(agg2RowMapType agg2RowMap_, aggSizesType aggSizes_, vertex2AggIdType vertex2AggId_, procWinnerType procWinner_, nodeGlobalEltsType nodeGlobalElts_, isNodeGlobalEltsType isNodeGlobalElement_, LO fullBlockSize_, LOType blockID_, LOType stridingOffset_, LOType stridedBlockSize_, GOType indexBase_, GOType globalOffset_, int myPID_ ) :
+        agg2RowMap(agg2RowMap_),
+        aggSizes(aggSizes_),
+        vertex2AggId(vertex2AggId_),
+        procWinner(procWinner_),
+        nodeGlobalElts(nodeGlobalElts_),
+        isNodeGlobalElement(isNodeGlobalElement_),
+        fullBlockSize(fullBlockSize_),
+        blockID(blockID_),
+        stridingOffset(stridingOffset_),
+        stridedBlockSize(stridedBlockSize_),
+        indexBase(indexBase_),
+        globalOffset(globalOffset_),
+        myPid(myPID_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO aggId) const {
+        LO myAggDofSize  = 0;
+        LO myAggDofStart = aggSizes(aggId);
+        if(stridedBlockSize == 1) {
+          // loop over all nodes
+          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
+            if(procWinner(lnode,0) == myPid) {
+              auto myAgg = vertex2AggId(lnode,0);
+              if(myAgg == aggId) {
+                agg2RowMap(myAggDofStart + myAggDofSize) = lnode;
+                myAggDofSize++;
+              }
+            }
+          }
+        } else {
+          // loop over all nodes
+          for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
+            if(procWinner(lnode,0) == myPid) {
+              auto myAgg = vertex2AggId(lnode,0);
+              if(myAgg == aggId) {
+                GO gnodeid = nodeGlobalElts[lnode];
+
+                for (LO k = 0; k< stridedBlockSize; k++) {
+                  GO gDofIndex = globalOffset + (gnodeid - indexBase) * fullBlockSize + stridingOffset + k + indexBase;
+                  if(isNodeGlobalElement.value_at(isNodeGlobalElement.find(gDofIndex)) == true) {
+                    agg2RowMap(myAggDofStart + myAggDofSize) = lnode * stridedBlockSize + k;
+                    myAggDofSize++;
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     };
 
@@ -432,8 +503,13 @@ namespace MueLu {
     // same problem as above
     // TODO add outer parallel loop over all aggregates
     Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", numRows); // initialized to 0
-    Kokkos::View<LO*, DeviceType> numDofs("countDofsPerAggregate", numAggregates); // helper view. We probably don't need that
 
+
+#if 1
+    CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
+    Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", numAggregates, createAgg2RowMap);
+#else
+    Kokkos::View<LO*, DeviceType> numDofs("countDofsPerAggregate", numAggregates); // helper view. We probably don't need that
     if(stridedBlockSize == 1) {
       // loop over all nodes
       for (decltype(vertex2AggId.dimension_0()) lnode = 0; lnode < vertex2AggId.dimension_0(); lnode++) {
@@ -460,10 +536,7 @@ namespace MueLu {
         }
       }
     }
-
-    for(GO i=0; i < numAggregates+1; i++) {
-      std::cout << i << " -> " << numDofs(i) << std::endl;
-    }
+#endif
 
     for(LO i = 0; i < numRows; i++) {
       std::cout << i << " dof " << agg2RowMapLO(i) << std::endl;
