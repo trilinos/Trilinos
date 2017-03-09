@@ -85,7 +85,6 @@ PHX::DataLayout* makeLayout (const int rank, const int* d) {
     d[0], d[1], d[2], d[3], d[4], d[5], d[6]);
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "bad rank");
-    return 0;
   }
 }
 } // namespace

@@ -152,21 +152,16 @@ namespace PHX {
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
  
-    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
     
-    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const PHX::Tag<DataT>& v);
     
-    KOKKOS_FORCEINLINE_FUNCTION
     MDField();
     
-    KOKKOS_FORCEINLINE_FUNCTION
     ~MDField();
 
     static const int ArrayRank=array_type::Rank;
     
-    KOKKOS_FORCEINLINE_FUNCTION
     const PHX::FieldTag& fieldTag() const;
 
     template<typename iType0, typename iType1, typename iType2, typename iType3,
@@ -285,7 +280,6 @@ namespace PHX {
      void dimensions(std::vector<size_type>& dims);
     */
     template<typename iType>
-    KOKKOS_FORCEINLINE_FUNCTION 
     void dimensions(std::vector<iType>& dims);
    
     KOKKOS_FORCEINLINE_FUNCTION 
