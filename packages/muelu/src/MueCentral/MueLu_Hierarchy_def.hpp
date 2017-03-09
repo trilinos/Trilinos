@@ -178,7 +178,7 @@ namespace MueLu {
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
     // Get cost of fine matvec
     TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[0]->IsAvailable("A")) , Exceptions::RuntimeError,
-			       "Operator complexity cannot be calculated because A is unavailable on level " << 0);
+			       "Smoother complexity cannot be calculated because A is unavailable on level " << 0);
     RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
     if (A.is_null()) return -1.0;
     RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
@@ -191,7 +191,7 @@ namespace MueLu {
       RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
       if (S.is_null()) continue;
       level_sc = S->getNodeSmootherComplexity();
-      if(level_sc == INVALID) { printf("CMS: invalid complexity on level %d\n",i); global_sc=-1.0;break;}
+      if(level_sc == INVALID) {global_sc=-1.0;break;}
       
       node_sc += as<double>(level_sc);
     }
