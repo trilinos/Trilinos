@@ -228,17 +228,21 @@ namespace MueLu {
     typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
     // collect number nonzeros of blkSize rows in nnz_(row+1)
-    template<class MatrixType>
+    template<class MatrixType,class DeviceType>
     class TestFunctor {
     private:
       //typedef typename MatrixType::ordinal_type LO;
       //typedef typename MatrixType::value_type SC;
+      typedef int LO;
+      typedef int GO;  // TODO fix me
+      typedef double SC;
 
-      typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
+      //typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
       //typedef typename MatrixType::execution_space::scratch_memory_space shared_space;
-      typedef Kokkos::View<int*,shared_space,Kokkos::MemoryUnmanaged> shared_1d_int;
-      typedef Kokkos::View<double*,shared_space,Kokkos::MemoryUnmanaged> shared_1d_double;
-      typedef Kokkos::View<double[3][3],shared_space,Kokkos::MemoryUnmanaged> shared_matrix;
+      //typedef typename DeviceType::scratch_memory_space shared_space;
+      typedef Kokkos::View<int*,Kokkos::MemoryUnmanaged> shared_1d_int;
+      typedef Kokkos::View<SC**,Kokkos::MemoryUnmanaged> shared_matrix;
+      typedef Kokkos::View<SC*,Kokkos::MemoryUnmanaged> shared_vector;
 
     private:
       //MatrixType kokkosMatrix; //< local matrix part
@@ -259,12 +263,10 @@ namespace MueLu {
         printf("Team no: %i, thread no: %i\n", thread.league_rank(), thread.team_rank());
 
         // Allocate a shared array for the team.
-        shared_1d_int testint(thread.team_shmem(),100);
-        shared_1d_double testdouble1(thread.team_shmem(),3);
-        shared_1d_double testdouble2(thread.team_shmem(),3);
-        shared_1d_double testdouble3(thread.team_shmem(),3);
+        shared_1d_int testint(thread.team_shmem(),2048);
 
-        shared_matrix mat(thread.team_shmem());
+        testint(i) = 1;
+        shared_matrix mat(thread.team_shmem(),5,3);
         mat(0,0) = 12.0;
         mat(0,1) = -51.0;
         mat(0,2) = 4.0;
@@ -274,19 +276,69 @@ namespace MueLu {
         mat(2,0) = -4.0;
         mat(2,1) = 24.0;
         mat(2,2) = -41.0;
+        mat(3,0) = -1.0;
+        mat(3,1) = 1.0;
+        mat(3,2) = 0.0;
+        mat(4,0) = 2.0;
+        mat(4,1) = 0.0;
+        mat(4,2) = 3.0;
 
-        int info = 0;
-        //Teuchos::LAPACK<int,double> lapack;
-        //lapack.GEQRF(10,10,mat.ptr_on_device(),10,testdouble2.ptr_on_device(),testdouble3.ptr_on_device(),10,&info);
 
+        /*for(int i=0; i<3; i++) {
+          for(int j=0; j<3; j++) {
+            printf(" %.2g ",mat(i,j));
+          }
+          printf("\n");
+        }*/
+
+        shared_matrix matminor(thread.team_shmem(),5,3);
+        matrix_minor(mat,matminor,1);
         for(int i=0; i<3; i++) {
           for(int j=0; j<3; j++) {
-            printf(" &d ",mat(i,j));
+            printf(" %.3g ",matminor(i,j));
           }
           printf("\n");
         }
 
+
+        auto colview0 = subview(matminor, Kokkos::ALL (), 0);
+        auto colview1 = subview(matminor, Kokkos::ALL (), 1);
+        auto colview2 = subview(matminor, Kokkos::ALL (), 2);
+
+        for(int i=0; i<3; i++) {
+          printf(" %.3g . ", colview0(i));
+        }
+        printf("\n");
+
+        printf("SQRT(4) = %.4g\n", vnorm(colview0));
       }
+
+      KOKKOS_FUNCTION
+      void matrix_minor ( const shared_matrix & mat, shared_matrix & matminor, LO d) const {
+        for (LO i = 0; i < d; i++) {
+          matminor(i,i) = 1.0;
+        }
+        for (LO i = d; i < mat.dimension_0(); i++) {
+          for (LO j=d; j < mat.dimension_1(); j++) {
+            matminor(i,j) = mat(i,j);
+          }
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      SC vnorm(const shared_vector & v) const {
+        SC sum = 0;
+        for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++)
+          sum += v(i) * v(i);
+        return sqrt(sum);
+      }
+
+      size_t team_shmem_size( int team_size ) const {
+        printf("team size = %i\n", team_size);
+        return 2 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,3) +
+               Kokkos::View<int*,Kokkos::MemoryUnmanaged>::shmem_size(2048);
+      }
+
 
 
     };
@@ -686,7 +738,7 @@ namespace MueLu {
 
       const Kokkos::TeamPolicy<> policy( 10 , 1); // 10 teams a 1 thread
 
-      Kokkos::parallel_for( policy, TestFunctor<int>());
+      Kokkos::parallel_for( policy, TestFunctor<int, DeviceType>());
 
       // Each team handles a slice of the data
       // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes.
