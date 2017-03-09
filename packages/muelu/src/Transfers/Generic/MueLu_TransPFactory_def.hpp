@@ -80,8 +80,19 @@ namespace MueLu {
     std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
+    const Teuchos::ParameterList& pL = GetParameterList();
 
-    RCP<Matrix> R = Utilities::Transpose(*P, true,label);
+    // Reuse pattern if available (multiple solve)
+    RCP<ParameterList> Tparams;
+    if(pL.isSublist("transpose: kernel params")) 
+	Tparams=rcp(new ParameterList(pL.sublist("transpose: kernel params")));
+      else 
+	Tparams= rcp(new ParameterList);
+      
+    // By default, we don't need global constants for transpose
+    Tparams->set("compute global constants",Tparams->get("compute global constants",false));
+
+    RCP<Matrix> R = Utilities::Transpose(*P, true,label,Tparams);
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);
