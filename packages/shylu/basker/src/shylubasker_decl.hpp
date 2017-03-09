@@ -66,22 +66,11 @@ namespace BaskerNS
     BASKER_INLINE
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
-    template< typename T2 >
-    BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, T2 *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
-
-    BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, size_t *col_ptr, Int *row_idx, Entry *val);
-
     BASKER_INLINE
     int Factor(Int option);
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
-
-    template< typename T2 >
-    BASKER_INLINE
-    int Factor(Int nrow, Int ncol, Int nnz, T2 *col_ptr, Int *row_idx, Entry *val);
 
     BASKER_INLINE
     int Factor_Inc(Int option);
@@ -1430,6 +1419,245 @@ namespace BaskerNS
     
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
   };
+
+#if 1
+  // This handles two different types for ints for example with Tpetra CRS Matrix
+  template <class Int, class Entry, class Exe_Space>
+  class BaskerTrilinosInterface : public Basker<Int, Entry, Exe_Space>
+  {
+    friend class Basker<Int,Entry,Exe_Space>;
+
+  public:
+
+    template < typename U >
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    {
+      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
+      Int* matching_type_col_ptr = new Int[ncol+1];
+
+      for (Int i = 0; i < ncol+1; ++i)
+      {
+        matching_type_col_ptr[i] = col_ptr[i];
+      }
+
+
+      int return_value = 
+        Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz, 
+         matching_type_col_ptr, 
+         row_idx, 
+         val,
+         crs_transpose_needed
+        );
+
+      delete [] matching_type_col_ptr;
+
+      return return_value;
+    }
+
+    template < typename U >
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    {
+      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
+
+      int return_value = 
+        Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz, 
+         col_ptr, 
+         row_idx, 
+         val,
+         crs_transpose_needed
+        );
+
+      return return_value;
+    }
+
+
+    template < typename U >
+    BASKER_INLINE
+    int Factor
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val)
+    {
+      Int* matching_type_col_ptr = new Int[ncol+1];
+
+      for (Int i = 0; i < ncol+1; ++i)
+      {
+        matching_type_col_ptr[i] = col_ptr[i];
+      }
+
+      int return_value = 
+        Basker<Int,Entry,Exe_Space>::Factor
+        (
+         nrow, 
+         ncol,
+         nnz, 
+         matching_type_col_ptr, 
+         row_idx, 
+         val
+        ); 
+
+      delete [] matching_type_col_ptr;
+
+      return return_value;
+    }
+
+    template < typename U >
+    BASKER_INLINE
+    int Factor
+    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val)
+    {
+
+      int return_value = 
+        Basker<Int,Entry,Exe_Space>::Factor
+        (
+         nrow, 
+         ncol,
+         nnz, 
+         col_ptr, 
+         row_idx, 
+         val
+        ); 
+
+      return return_value;
+    }
+
+  }; //end BaskerTrilinosInterface class
+#else
+
+  // Issues with this impl, even though the compiler recognizes the correct matching function as the one and only candidate...
+  template <class Int, class Entry, class Exe_Space, class Int2, typename Enable = void>
+  class BaskerTrilinosInterface; 
+
+  template <class Int, class Entry, class Exe_Space, class Int2>
+  class BaskerTrilinosInterface<Int, Entry, Exe_Space, Int2, typename std::enable_if< !std::is_same<Int,Int2>::value>::type> : public Basker<Int, Entry, Exe_Space>
+  {
+    friend class Basker<Int,Entry,Exe_Space>;
+
+  public:
+
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, Int nnz, Int2 *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    {
+      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
+
+      Int* matching_type_col_ptr = new Int[ncol+1];
+
+      for (Int i = 0; i < ncol+1; ++i)
+      {
+        matching_type_col_ptr[i] = col_ptr[i];
+      }
+
+
+      int return_value = 
+        Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz, 
+         matching_type_col_ptr, 
+         row_idx, 
+         val,
+         crs_transpose_needed
+        );
+
+      delete [] matching_type_col_ptr;
+
+      return return_value;
+    }
+
+
+    BASKER_INLINE
+    int Factor
+    (Int nrow, Int ncol, Int nnz, Int2 *col_ptr, Int *row_idx, Entry *val)
+    {
+      Int* matching_type_col_ptr = new Int[ncol+1];
+
+      for (Int i = 0; i < ncol+1; ++i)
+      {
+        matching_type_col_ptr[i] = col_ptr[i];
+      }
+
+      int return_value = 
+        Basker<Int,Entry,Exe_Space>::Factor
+        (
+         nrow, 
+         ncol,
+         nnz, 
+         matching_type_col_ptr, 
+         row_idx, 
+         val
+        ); 
+
+      delete [] matching_type_col_ptr;
+
+      return return_value;
+    }
+
+  }; //end BaskerTrilinosInterface class temp
+
+
+  template <class Int, class Entry, class Exe_Space, class Int2>
+  class BaskerTrilinosInterface<Int, Entry, Exe_Space, Int2, typename std::enable_if< std::is_same<Int,Int2>::value>::type > : public Basker<Int, Entry, Exe_Space>
+  {
+    friend class Basker<Int,Entry,Exe_Space>;
+
+  public:
+
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, Int nnz, Int2 *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    {
+      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
+
+      int return_value = 
+        Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz, 
+         col_ptr, 
+         row_idx, 
+         val,
+         crs_transpose_needed
+        );
+
+      return return_value;
+    }
+
+
+    BASKER_INLINE
+    int Factor
+    (Int nrow, Int ncol, Int nnz, Int2 *col_ptr, Int *row_idx, Entry *val)
+    {
+
+      int return_value = 
+        Basker<Int,Entry,Exe_Space>::Factor
+        (
+         nrow, 
+         ncol,
+         nnz, 
+         col_ptr, 
+         row_idx, 
+         val
+        ); 
+
+      return return_value;
+    }
+
+  }; //end BaskerTrilinosInterface class
+#endif
+
 
 }//End namespace Basker
 
