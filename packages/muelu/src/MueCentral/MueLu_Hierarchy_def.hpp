@@ -72,7 +72,6 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
 
-#include "MueLu_DirectSolver.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace MueLu {
@@ -172,7 +171,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherComplexity() const {
-    typedef Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MyAmesos2Smoother;
     double node_sc = 0, global_sc=0;
     double a0_nnz =0;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
@@ -1191,6 +1189,7 @@ namespace MueLu {
 	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
 	      << smoother_comp << std::endl;
 	}
+
         switch (Cycle_) {
            case VCYCLE:
              oss << "Cycle type          = V" << std::endl;

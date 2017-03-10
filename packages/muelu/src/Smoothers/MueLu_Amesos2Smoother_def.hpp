@@ -268,7 +268,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
-    return prec_->getStatus().getNnzLU();
+    if(!prec_.is_null())
+      return prec_->getStatus().getNnzLU();
+    else
+      return 0.0;
+
   }
 } // namespace MueLu
 
