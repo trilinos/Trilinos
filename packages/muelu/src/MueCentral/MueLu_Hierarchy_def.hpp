@@ -197,11 +197,11 @@ namespace MueLu {
       node_sc += as<double>(level_sc);
     }
      
-    if(global_sc < 0) return -1.0;
-    else {
-      Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_SUM,A->getDomainMap()->getComm()->getSize(),&node_sc,&global_sc);
-      return global_sc / a0_nnz;
-    }
+    double min_sc=0.0;
+    Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_SUM,A->getDomainMap()->getComm()->getSize(),&node_sc,&global_sc);
+    Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_MIN,A->getDomainMap()->getComm()->getSize(),&node_sc,&min_sc);
+    if(min_sc < 0.0) return -1.0;
+    else return global_sc / a0_nnz;
   }
 
 
@@ -1145,6 +1145,11 @@ namespace MueLu {
     reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
     root = maxSmartData % comm->getSize();
 #endif
+    
+    // Compute smoother complexity, if needed
+    double smoother_comp =-1.0;
+    if (verbLevel & (Statistics0 | Test))
+      smoother_comp = GetSmootherComplexity();
 
     std::string outstr;
     if (comm->getRank() == root && verbLevel & (Statistics0 | Test)) {
@@ -1181,10 +1186,10 @@ namespace MueLu {
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
-	double sc = GetSmootherComplexity();
-	if(sc!=-1.0) {
+
+	if(smoother_comp!=-1.0) {
 	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-	      << sc << std::endl;
+	      << smoother_comp << std::endl;
 	}
         switch (Cycle_) {
            case VCYCLE:
