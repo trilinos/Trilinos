@@ -156,9 +156,8 @@ namespace Intrepid2 {
     case POLYTYPE_GAUSS_RADAU_RIGHT:    return "GaussRadauRight";
     case POLYTYPE_GAUSS_LOBATTO:        return "GaussRadauLobatto";
     case POLYTYPE_MAX:                  return "Max PolyType";
-    default:                            return "INVALID EPolyType";
     }
-    return "Error";
+    return "INVALID EPolyType";
   }
   
   /** \brief  Verifies validity of a PolyType enum
@@ -194,9 +193,8 @@ namespace Intrepid2 {
     case COORDINATES_CYLINDRICAL: return "Cylindrical";
     case COORDINATES_SPHERICAL:   return "Spherical";
     case COORDINATES_MAX:         return "Max. Coordinates";
-    default:                      return "INVALID ECoordinates";
     }
-    return "Error";
+    return "INVALID ECoordinates";
   }
 
   /** \brief  Verifies validity of a Coordinate enum.
@@ -231,9 +229,8 @@ namespace Intrepid2 {
     case NORM_INF:   return "Infinity Norm";
     case NORM_FRO:   return "Frobenius Norm";
     case NORM_MAX:   return "Max. Norm";
-    default:         return "INVALID ENorm";
     }
-    return "Error";
+    return "INVALID ENorm";
   }
 
   /** \brief  Verifies validity of a Norm enum.
@@ -292,9 +289,8 @@ namespace Intrepid2 {
     case OPERATOR_D9:    return "D9";
     case OPERATOR_D10:   return "D10";
     case OPERATOR_MAX:   return "Dn Operator";
-    default:             return "INVALID EOperator";
     }
-    return "Error";
+    return "INVALID EOperator";
   }
 
   /** \brief  Verifies validity of an operator enum.
@@ -344,9 +340,8 @@ namespace Intrepid2 {
     case FUNCTION_SPACE_VECTOR_HGRAD: return "Vector H(grad)";
     case FUNCTION_SPACE_TENSOR_HGRAD: return "Tensor H(grad)";
     case FUNCTION_SPACE_MAX:          return "Max. Function space";
-    default:                          return "INVALID EFunctionSpace";
     }
-    return "Error";
+    return "INVALID EFunctionSpace";
   }
 
   /** \brief  Verifies validity of a function space enum
@@ -418,9 +413,8 @@ namespace Intrepid2 {
     case POINTTYPE_EQUISPACED:     return "Equispaced Points";
     case POINTTYPE_WARPBLEND:      return "WarpBlend Points";
     case POINTTYPE_GAUSS:          return "Gauss Points";
-    default:                       return "INVALID EPointType";
     }
-    return "Error";
+    return "INVALID EPointType";
   }
 
   /** \brief Verifies validity of a point type enum
@@ -457,9 +451,8 @@ namespace Intrepid2 {
     case BASIS_FVD_COVOLUME:     return "FVD Covolume";
     case BASIS_FVD_MIMETIC:      return "FVD Mimetic";
     case BASIS_MAX:              return "Max. Basis";
-    default:                     return "INVALID EBasis";
     }
-    return "Error";
+    return "INVALID EBasis";
   }
 
   /** \brief  Verifies validity of a basis enum

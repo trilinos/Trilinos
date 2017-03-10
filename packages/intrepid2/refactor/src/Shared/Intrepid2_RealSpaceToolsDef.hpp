@@ -715,7 +715,6 @@ namespace Intrepid2 {
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
-      break;
     }
     }
   }
@@ -797,7 +796,6 @@ namespace Intrepid2 {
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::det): Rank of detArray must be 1 or 2!");
-      break;
     }
     }
   }
