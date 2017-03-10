@@ -428,6 +428,13 @@ namespace MueLu {
     }
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+  
+
 } // namespace MueLu
 
 #endif /* MUELU_BRAESSSARAZINSMOOTHER_DEF_HPP_ */
