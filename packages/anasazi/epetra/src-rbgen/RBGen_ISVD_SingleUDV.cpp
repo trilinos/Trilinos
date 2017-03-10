@@ -45,7 +45,6 @@ namespace RBGen {
 
   ISVD_SingleUDV::ISVD_SingleUDV() : IncSVDPOD(), ISVDUDV(), ISVDSingle() {}
 
-  void ISVD_SingleUDV::Initialize( 
   void ISVD_SingleUDV::Initialize(
       const Teuchos::RCP< Teuchos::ParameterList >& params,
       const Teuchos::RCP< const Epetra_MultiVector >& init,
