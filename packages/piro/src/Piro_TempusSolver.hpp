@@ -47,7 +47,7 @@
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_IntegratorObserver.hpp"
+#include "Tempus_IntegratorObserverBasic.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
@@ -67,7 +67,7 @@ namespace Piro {
  *  \ingroup Piro_Thyra_solver_grp
  * */
 #ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal, 
+template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
 #else
 template <typename Scalar>
@@ -86,7 +86,7 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      bool computeSensitivities, 
+      bool computeSensitivities,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -166,7 +166,7 @@ private:
   int num_p;
   int num_g;
 
-  bool computeSensitivities_; 
+  bool computeSensitivities_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel solnVerbLevel;
@@ -175,7 +175,7 @@ private:
   std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
 
   std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
-    
+
   bool isInitialized;
 };
 

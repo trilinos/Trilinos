@@ -303,6 +303,10 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
+
   /// \brief The level of fill.
   ///
   /// For ILUT, this means the maximum number of entries in each row

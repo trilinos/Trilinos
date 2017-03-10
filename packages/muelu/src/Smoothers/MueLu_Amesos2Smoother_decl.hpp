@@ -129,6 +129,9 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
+   
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
 
     //@}
 

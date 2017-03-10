@@ -324,6 +324,9 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
   //@}
   //! @name Implementation of the Teuchos::Describable interface
   //@{

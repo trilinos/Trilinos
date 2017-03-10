@@ -170,6 +170,12 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
+    //! For diagnostic purposes
+    RCP<SmootherPrototype> getSmoother() {return s_;}
+
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const {return s_->getNodeSmootherComplexity();}
+
     //@}
 
   private:

@@ -55,6 +55,9 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Relaxation.hpp>
+#include <Ifpack2_ILUT.hpp>
+#include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
@@ -554,6 +557,27 @@ namespace MueLu {
            << "RCP<prec_>: " << prec_ << std::endl;
     }
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> MatrixType;
+    // NOTE: Only works for a subset of Ifpack2's smoothers
+    RCP<Ifpack2::Relaxation<MatrixType> > pr     = rcp_dynamic_cast<Ifpack2::Relaxation<MatrixType> >(prec_);
+    if(!pr.is_null()) return pr->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::Chebyshev<MatrixType> > pc       = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
+    if(!pc.is_null()) return pc->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::BlockRelaxation<MatrixType> > pb = rcp_dynamic_cast<Ifpack2::BlockRelaxation<MatrixType> >(prec_);
+    if(!pb.is_null()) return pb->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::ILUT<MatrixType> > pi            = rcp_dynamic_cast<Ifpack2::ILUT<MatrixType> >(prec_);
+    if(!pi.is_null()) return pi->getNodeSmootherComplexity();
+
+
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
 
 } // namespace MueLu
 

@@ -169,6 +169,45 @@ namespace MueLu {
     return totalNnz / lev0Nnz;
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherComplexity() const {
+    double node_sc = 0, global_sc=0;
+    double a0_nnz =0;
+    const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+    // Get cost of fine matvec
+    if (GetNumLevels() <= 0) return -1.0;
+    if (!Levels_[0]->IsAvailable("A")) return -1.0;
+
+    RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
+    if (A.is_null()) return -1.0;
+    RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
+    if(Am.is_null()) return -1.0;
+    a0_nnz = as<double>(Am->getGlobalNumEntries());
+
+    // Get smoother complexity at each level
+    for (int i = 0; i < GetNumLevels(); ++i) {
+      size_t level_sc=0;      
+      if(!Levels_[i]->IsAvailable("PreSmoother")) continue;
+      RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
+      if (S.is_null()) continue;
+      level_sc = S->getNodeSmootherComplexity();
+      if(level_sc == INVALID) {global_sc=-1.0;break;}
+      
+      node_sc += as<double>(level_sc);
+    }
+     
+    double min_sc=0.0;
+    RCP<const Teuchos::Comm<int> > comm =A->getDomainMap()->getComm();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,node_sc,Teuchos::ptr(&global_sc));
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,node_sc,Teuchos::ptr(&min_sc));
+
+    if(min_sc < 0.0) return -1.0;
+    else return global_sc / a0_nnz;
+  }
+
+
+
+
   // Coherence checks todo in Setup() (using an helper function):
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckLevel(Level& level, int levelID) {
@@ -1107,6 +1146,11 @@ namespace MueLu {
     reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
     root = maxSmartData % comm->getSize();
 #endif
+    
+    // Compute smoother complexity, if needed
+    double smoother_comp =-1.0;
+    if (verbLevel & (Statistics0 | Test))
+      smoother_comp = GetSmootherComplexity();
 
     std::string outstr;
     if (comm->getRank() == root && verbLevel & (Statistics0 | Test)) {
@@ -1143,6 +1187,12 @@ namespace MueLu {
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
+
+	if(smoother_comp!=-1.0) {
+	  oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+	      << smoother_comp << std::endl;
+	}
+
         switch (Cycle_) {
            case VCYCLE:
              oss << "Cycle type          = V" << std::endl;

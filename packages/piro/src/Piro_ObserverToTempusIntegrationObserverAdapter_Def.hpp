@@ -51,71 +51,71 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver)
-    : Tempus::IntegratorObserver<Scalar>(solutionHistory, timeStepControl), 
+    : Tempus::IntegratorObserverBasic<Scalar>(solutionHistory, timeStepControl),
     solutionHistory_(solutionHistory),
     timeStepControl_(timeStepControl),
-    wrappedObserver_(wrappedObserver),  
-    out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+    out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
+    wrappedObserver_(wrappedObserver)
 {
-  //Currently, sensitivities are not supported in Tempus.  
-  hasSensitivities_ = false; 
+  //Currently, sensitivities are not supported in Tempus.
+  hasSensitivities_ = false;
 };
 
 template <typename Scalar>
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter() 
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter()
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 template <typename Scalar>
-void 
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartIntegrator() 
+void
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartIntegrator()
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartTimeStep()
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeNextTimeStep(Tempus::Status & integratorStatus)
 {
-  //IKT, 11/3/16: currently integratorStatus is not used here, but we could add a condition 
+  //IKT, 11/3/16: currently integratorStatus is not used here, but we could add a condition
   //for it to be set to FAILED, if relevant/desired.
   this->observeTimeStep();
 }
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeBeforeTakeStep()
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAfterTakeStep()
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAcceptedTimeStep(Tempus::Status & integratorStatus)
 {
-  //Nothing to do 
+  //Nothing to do
 }
 
 
 template <typename Scalar>
-void 
+void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeEndIntegrator(const Tempus::Status integratorStatus)
 {
   this->observeTimeStep();
@@ -123,25 +123,25 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeEndIntegrator(c
 
 template <typename Scalar>
 void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep() 
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
   //Get solution
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
   solution.assert_not_null();
-  //Get solution_dot 
+  //Get solution_dot
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionHistory_->getCurrentState()->getXDot();
-  //IKT, 11/3/16: I think we will also need solution_dotdot for 2nd order time integrators. 
+  //IKT, 11/3/16: I think we will also need solution_dotdot for 2nd order time integrators.
   //In this case, we will need to get x_dotdot from solutionState and Piro::ObserverBase
-  //will need to be extended to have a constructor that takes x_dotdot.  
+  //will need to be extended to have a constructor that takes x_dotdot.
 
   const Scalar scalar_time = solutionHistory_->getCurrentState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
   const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
- 
-  if (Teuchos::nonnull(solution_dot)) 
+
+  if (Teuchos::nonnull(solution_dot))
   {
     wrappedObserver_->observeSolution(*solution, *solution_dot, time);
-  } 
+  }
   else {
     wrappedObserver_->observeSolution(*solution, time);
   }
