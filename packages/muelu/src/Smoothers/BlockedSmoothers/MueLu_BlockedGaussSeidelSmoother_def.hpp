@@ -369,6 +369,13 @@ namespace MueLu {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
   }
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+  
+
 
 } // namespace MueLu
 
