@@ -140,7 +140,7 @@ void StepperExplicitRK<Scalar>::takeStep(
         "Error - Explicit RK embedded methods not implemented yet!.\n");
     }
 
-    workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(ERK_ButcherTableau_->order());
   }
   return;

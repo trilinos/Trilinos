@@ -76,7 +76,7 @@ void StepperForwardEuler<Scalar>::takeStep(
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(currentState->getXDot()));
 
-    workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
   }
   return;
 }

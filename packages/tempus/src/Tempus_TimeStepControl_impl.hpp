@@ -70,7 +70,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
   {
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
+    RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->getMetaData();
     const Scalar time = metaData_->getTime();
     const int iStep = metaData_->getIStep();
     const Scalar errorAbs = metaData_->getErrorAbs();
@@ -79,7 +79,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     Scalar dt = metaData_->getDt();
     bool output = metaData_->getOutput();
 
-    RCP<StepperState<Scalar> > stepperState = workingState->stepperState_;
+    RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
 
     output = false;
 
