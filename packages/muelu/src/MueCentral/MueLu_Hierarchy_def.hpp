@@ -175,8 +175,9 @@ namespace MueLu {
     double a0_nnz =0;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
     // Get cost of fine matvec
-    TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[0]->IsAvailable("A")) , Exceptions::RuntimeError,
-			       "Smoother complexity cannot be calculated because A is unavailable on level " << 0);
+    if (GetNumLevels() <= 0) return -1.0;
+    if (!Levels_[0]->IsAvailable("A")) return -1.0;
+
     RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
     if (A.is_null()) return -1.0;
     RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
@@ -196,8 +197,10 @@ namespace MueLu {
     }
      
     double min_sc=0.0;
-    Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_SUM,A->getDomainMap()->getComm()->getSize(),&node_sc,&global_sc);
-    Teuchos::reduceAll(*A->getDomainMap()->getComm(),Teuchos::REDUCE_MIN,A->getDomainMap()->getComm()->getSize(),&node_sc,&min_sc);
+    RCP<const Teuchos::Comm<int> > comm =A->getDomainMap()->getComm();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,node_sc,Teuchos::ptr(&global_sc));
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,node_sc,Teuchos::ptr(&min_sc));
+
     if(min_sc < 0.0) return -1.0;
     else return global_sc / a0_nnz;
   }
