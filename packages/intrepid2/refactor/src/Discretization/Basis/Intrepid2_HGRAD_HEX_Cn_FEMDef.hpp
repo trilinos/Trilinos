@@ -270,7 +270,7 @@ namespace Intrepid2 {
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                                       ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): Operator type not implemented" );
-        break;
+        // break; commented out since exception is thrown
       }
       }
     }

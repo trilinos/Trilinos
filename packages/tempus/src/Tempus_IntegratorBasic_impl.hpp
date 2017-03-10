@@ -93,24 +93,24 @@ void IntegratorBasic<Scalar>::setStepperWStepper(
   stepper_ = newStepper;
 }
 
-
+/// This resets the SolutionHistory and sets the first SolutionState as the IC.
 template<class Scalar>
-void IntegratorBasic<Scalar>::setSolutionHistory(
-  Teuchos::RCP<SolutionHistory<Scalar> > sh)
+void IntegratorBasic<Scalar>::
+setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  if (sh == Teuchos::null) {
-    // Construct from Integrator ParameterList
-    RCP<ParameterList> shPL =
-      Teuchos::sublist(integratorPL_, "Solution History", true);
-    solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  // Construct from Integrator ParameterList
+  RCP<ParameterList> shPL =
+    Teuchos::sublist(integratorPL_, "Solution History", true);
+  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
 
-    // Create IC SolutionState
-    // Create meta data
+  if (state == Teuchos::null) {
+    // Construct default IC
+    // Create initial condition metadata from TimeStepControl
     RCP<SolutionStateMetaData<Scalar> > md =
-                                     rcp(new SolutionStateMetaData<Scalar> ());
+      rcp(new SolutionStateMetaData<Scalar> ());
     md->setTime (timeStepControl_->timeMin_);
     md->setIStep(timeStepControl_->iStepMin_);
     md->setDt   (timeStepControl_->dtInit_);
@@ -119,7 +119,7 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
     md->setOrder(orderTmp);
     md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
-    // Create initial condition solution state
+    // Create initial condition from ModelEvaluator::getNominalValues()
     typedef Thyra::ModelEvaluatorBase MEB;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =
       stepper_->getModel()->getNominalValues();
@@ -141,7 +141,59 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
       md, x, xdot, xdotdot, stepper_->getDefaultStepperState()));
 
     solutionHistory_->addState(newState);
+  } else {
+    // Use state as IC
+    solutionHistory_->addState(state);
+  }
+}
 
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::
+setInitialState(Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  // Construct from Integrator ParameterList
+  RCP<ParameterList> shPL =
+    Teuchos::sublist(integratorPL_, "Solution History", true);
+  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+
+  // Create initial condition metadata from TimeStepControl
+  RCP<SolutionStateMetaData<Scalar> > md =
+    rcp(new SolutionStateMetaData<Scalar> ());
+  md->setTime (timeStepControl_->timeMin_);
+  md->setIStep(timeStepControl_->iStepMin_);
+  md->setDt   (timeStepControl_->dtInit_);
+  int orderTmp = timeStepControl_->orderInit_;
+  if (orderTmp == 0) orderTmp = stepper_->getOrderMin();
+  md->setOrder(orderTmp);
+  md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
+
+  // Create xdot and xdotdot.
+  RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
+  RCP<Thyra::VectorBase<Scalar> > xdotdot = x0->clone_v();
+  Thyra::assign(xdot.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
+  Thyra::assign(xdotdot.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
+    md, x0, xdot, xdotdot, stepper_->getDefaultStepperState()));
+
+  solutionHistory_->addState(newState);
+}
+
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::setSolutionHistory(
+  Teuchos::RCP<SolutionHistory<Scalar> > sh)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  if (sh == Teuchos::null) {
+    // Create default SolutionHistory, otherwise keep current history.
+    if (solutionHistory_ == Teuchos::null) setInitialState();
   } else {
 
     TEUCHOS_TEST_FOR_EXCEPTION( sh->getNumStates() < 1,
@@ -155,7 +207,6 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
     integratorPL_->set("Solution History", shPL->name());
     integratorPL_->set(shPL->name(), shPL);
 
-    solutionHistory_ = Teuchos::null;
     solutionHistory_ = sh;
   }
 }

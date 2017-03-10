@@ -15,12 +15,6 @@ namespace Tempus {
 
 // SolutionState definitions:
 template<class Scalar>
-SolutionState<Scalar>::SolutionState()
-{
-  metaData_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
-}
-
-template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,

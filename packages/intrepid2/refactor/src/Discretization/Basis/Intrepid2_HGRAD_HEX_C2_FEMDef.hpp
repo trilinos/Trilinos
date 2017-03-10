@@ -999,7 +999,7 @@ namespace Intrepid2 {
       case OPERATOR_D6: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                       ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): operator not supported");
-        break;
+        // break; commented out becuase this always throws
       }
       case OPERATOR_D7:
       case OPERATOR_D8:

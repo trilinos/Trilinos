@@ -51,9 +51,6 @@ public:
   /// Destructor
   virtual ~SolutionState() {};
 
-  /** \brief Default constructor. */
-  SolutionState();
-
   /** \brief. */
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
