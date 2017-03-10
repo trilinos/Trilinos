@@ -188,6 +188,7 @@ namespace MueLu {
     // Get smoother complexity at each level
     for (int i = 0; i < GetNumLevels(); ++i) {
       size_t level_sc=0;      
+      if(!Levels_[i]->IsAvailable("PreSmoother")) continue;
       RCP<SmootherBase> S = Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
       if (S.is_null()) continue;
       level_sc = S->getNodeSmootherComplexity();
