@@ -110,6 +110,14 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
       Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
 
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->setInitialState.
+    RCP<Thyra::VectorBase<double> > x0 =
+      model->getNominalValues().get_x()->clone_v();
+    integrator->setInitialState(0.0, x0);
+
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)

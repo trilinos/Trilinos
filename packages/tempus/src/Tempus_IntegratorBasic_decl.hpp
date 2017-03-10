@@ -87,6 +87,12 @@ public:
     virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
     virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    /// Set the initial state which has the initial conditions
+    virtual void setInitialState(
+      Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
+    /// Set the initial state from Thyra::VectorBase
+    virtual void setInitialState(
+      Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
       {return solutionHistory_;}
