@@ -14,6 +14,7 @@
 
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_IntegratorObserverLogging.hpp"
+#include "Tempus_IntegratorObserverComposite.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -142,6 +143,83 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   TEST_EQUALITY(order.size(), 0);
 
   Teuchos::TimeMonitor::summarize();
+}
+
+TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_Observer_SinCos.xml");
+  //
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+
+  Tempus::Status status = Tempus::Status::PASSED;
+
+  // Setup the Integrator and reset initial time step
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>(pl, model);
+
+  RCP<Tempus::SolutionHistory<double> > sh  = integrator->getSolutionHistory();
+  RCP<Tempus::TimeStepControl<double> > tsc = integrator->getTimeStepControl();
+
+  RCP<Tempus::IntegratorObserverLogging<double> > loggingObs =
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+
+  // creating another logging observer
+  RCP<Tempus::IntegratorObserverLogging<double> > loggingObs2 =
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+
+  RCP<Tempus::IntegratorObserverComposite<double> > compObs = 
+      Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>(sh, tsc));
+
+  compObs->addObserver(loggingObs);
+  compObs->addObserver(loggingObs2);
+
+  compObs->observeStartIntegrator();
+  compObs->observeStartTimeStep();
+  compObs->observeBeforeTakeStep();
+  compObs->observeAfterTakeStep();
+  compObs->observeAcceptedTimeStep(status);
+
+
+  for (int i=0 ; i<10; ++i) {
+      compObs->observeStartTimeStep();
+      compObs->observeBeforeTakeStep();
+      compObs->observeAfterTakeStep();
+      compObs->observeAcceptedTimeStep(status);
+  }
+  compObs->observeEndIntegrator(status);
+
+ const std::map<std::string,int>& counters = *(loggingObs->getCounters());
+
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveStartIntegrator_  )->second, 1);
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveStartTimeStep_    )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveBeforeTakeStep_   )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveAfterTakeStep_    )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveAcceptedTimeStep_ )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs->nameObserveEndIntegrator_    )->second, 1);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveStartIntegrator_ )->second, 1);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveStartTimeStep_   )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveBeforeTakeStep_  )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveAfterTakeStep_   )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveAcceptedTimeStep_)->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveEndIntegrator_   )->second, 1);
 }
 
 
