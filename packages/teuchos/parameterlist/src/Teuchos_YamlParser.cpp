@@ -49,6 +49,7 @@
 
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
+#include "Teuchos_YamlParameterListCoreHelpers.hpp"
 #include "Teuchos_TwoDArray.hpp"
 
 namespace Teuchos
@@ -141,6 +142,27 @@ Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string
   return YAMLParameterList::parseYamlFile(yamlFileName);
 }
 
+Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlString(const std::string& yamlStr)
+{
+  std::stringstream ss(yamlStr);
+  return YAMLParameterList::parseYamlStream(ss);
+}
+
+void writeParameterListToYamlOStream(
+  const ParameterList &paramList,
+  std::ostream &yamlOut
+  )
+{
+  YAMLParameterList::writeYamlStream(yamlOut, paramList);
+}
+
+void writeParameterListToYamlFile(
+  const ParameterList &paramList,
+  const std::string &yamlFileName
+  )
+{
+  YAMLParameterList::writeYamlFile(yamlFileName, paramList);
+}
 
 std::string convertXmlToYaml(const std::string& xmlFileName)
 {
@@ -156,7 +178,7 @@ std::string convertXmlToYaml(const std::string& xmlFileName)
   {
     yamlFileName = xmlFileName.substr(0, xmlFileName.length() - 4) + ".yaml";
   }
-  YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
+  YAMLParameterList::writeYamlFile(yamlFileName, *toConvert);
   return yamlFileName;
 }
 
@@ -165,7 +187,7 @@ void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFil
   //load the parameter list from xml
   Teuchos::RCP<Teuchos::ParameterList> toConvert = Teuchos::getParametersFromXmlFile(xmlFileName);
   //replace the file extension ".xml" with ".yaml", or append it if there was no extension
-  YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
+  YAMLParameterList::writeYamlFile(yamlFileName, *toConvert);
 }
 
 bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs, bool verbose)
@@ -432,28 +454,28 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   }
 }
 
-void writeYamlStream(std::ostream& yaml, Teuchos::RCP<Teuchos::ParameterList>& pl)
+void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
 {
   yaml << "%YAML 1.1\n---\n";
   yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
-  if(pl->numParams() == 0)
+  if(pl.numParams() == 0)
   {
     yaml << " { }\n";
   }
   else
   {
-    writeParameterList(*pl, yaml, 2);
+    writeParameterList(pl, yaml, 2);
   }
   yaml << "...\n";
 }
 
-void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
+void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl)
 {
   std::ofstream yaml(yamlFile);
   writeYamlStream(yaml, pl);
 }
 
-void writeParameterList(Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel)
+void writeParameterList(const Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel)
 {
   if(pl.begin() == pl.end())
   {

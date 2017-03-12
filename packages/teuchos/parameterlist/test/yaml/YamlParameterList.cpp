@@ -147,7 +147,7 @@ namespace TeuchosTests
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
     std::stringstream yamlOutStream;
-    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream, xmlParams);
+    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream, *xmlParams);
     std::string yamlString = yamlOutStream.str();
     std::string expectedYamlString =
       "%YAML 1.1\n"
@@ -165,7 +165,7 @@ namespace TeuchosTests
     RCP<ParameterList> yamlParams;
     yamlParams = Teuchos::YAMLParameterList::parseYamlStream(yamlInStream);
     std::stringstream yamlOutStream2;
-    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream2, yamlParams);
+    Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream2, *yamlParams);
     std::string yamlString2 = yamlOutStream2.str();
     TEST_EQUALITY(yamlString2, expectedYamlString);
   }
