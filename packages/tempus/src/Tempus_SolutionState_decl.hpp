@@ -113,6 +113,10 @@ public:
     virtual Status getStepperStatus() const
       {return stepperState_->stepperStatus_;};
 
+    /// Return Meta Data
+    virtual Teuchos::RCP<SolutionStateMetaData<Scalar> > getMetaData()
+      { return metaData_; }
+
     /// Get the current solution, x.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x_;}
 
@@ -122,6 +126,11 @@ public:
     /// Get the current time second derivative of the solution, xdotdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot()
       {return xdotdot_;}
+
+    /// Get the StepperState
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState()
+      { return stepperState_; }
+
   //@}
 
 
@@ -165,6 +174,7 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+private:
   // Member Data
 
   /// Meta Data for the solution state

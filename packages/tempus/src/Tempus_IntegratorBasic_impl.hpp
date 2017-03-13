@@ -373,7 +373,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
       integratorObserver_->observeNextTimeStep(integratorStatus_);
 
       if (integratorStatus_ == FAILED) break;
-      solutionHistory_->getWorkingState()->metaData_->setSolutionStatus(WORKING);
+      solutionHistory_->getWorkingState()->getMetaData()->setSolutionStatus(WORKING);
 
       integratorObserver_->observeBeforeTakeStep();
 
@@ -398,7 +398,7 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::startTimeStep()
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > wsmd =
-    solutionHistory_->getWorkingState()->metaData_;
+    solutionHistory_->getWorkingState()->getMetaData();
 
   // Check if we need to dump screen output this step
   std::vector<int>::const_iterator it =
@@ -417,7 +417,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
 {
   using Teuchos::RCP;
   RCP<SolutionStateMetaData<Scalar> > wsmd =
-    solutionHistory_->getWorkingState()->metaData_;
+    solutionHistory_->getWorkingState()->getMetaData();
 
   // Too many failures
   if (wsmd->getNFailures() >= timeStepControl_->nFailuresMax_) {
@@ -487,7 +487,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   solutionHistory_->promoteWorkingState();
 
   RCP<SolutionStateMetaData<Scalar> > csmd =
-    solutionHistory_->getCurrentState()->metaData_;
+    solutionHistory_->getCurrentState()->getMetaData();
 
   csmd->setNFailures(std::max(csmd->getNFailures()-1,0));
   csmd->setNConsecutiveFailures(0);

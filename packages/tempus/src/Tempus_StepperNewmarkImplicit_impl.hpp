@@ -259,7 +259,7 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
 
     computePredictor(solutionHistory);
-    if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
+    if (workingState->getStepperState()->stepperStatus_ == Status::FAILED) return;
 
     //typedef Thyra::ModelEvaluatorBase MEB;
     const Scalar time = workingState->getTime();
@@ -296,9 +296,9 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     computeXDot(*x, *xDot);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->stepperState_->stepperStatus_ = Status::PASSED;
+      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
-      workingState->stepperState_->stepperStatus_ = Status::FAILED;
+      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
   }
 
   return;
@@ -312,7 +312,7 @@ void StepperNewmarkImplicit<Scalar>::computePredictor(
   predictorStepper_->takeStep(solutionHistory);
 
   Status & stepperStatus =
-    solutionHistory->getWorkingState()->stepperState_->stepperStatus_;
+    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
 
   if (stepperStatus == Status::FAILED) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();

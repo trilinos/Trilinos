@@ -188,9 +188,9 @@ void StepperDIRK<Scalar>::takeStep(
     }
 
     if (pass == true)
-      workingState->stepperState_->stepperStatus_ = Status::PASSED;
+      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
-      workingState->stepperState_->stepperStatus_ = Status::FAILED;
+      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(DIRK_ButcherTableau_->order());
   }
   return;
