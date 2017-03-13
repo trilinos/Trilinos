@@ -135,7 +135,7 @@ postRegistrationSetup(typename Traits::SetupData d,
     // skip allocation if this is an aliased field
     if (aliased_fields_.find((*var)->identifier()) == aliased_fields_.end()) {
       typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
-      Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
+      Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
       
       TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
                                  "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \""
