@@ -48,6 +48,10 @@ namespace Basker{
     int returnP(Int **p);
     int solve( Entry* b, Entry* x);
     int solveMultiple(Int nrhs, Entry *b, Entry *x);
+
+    Int getNnzL();
+    Int getNnzU();
+    Int getNnzLU();
     //int solve();
 
   private:
