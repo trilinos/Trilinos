@@ -49,10 +49,10 @@
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>   // TODO remove me
-#include <Teuchos_SerialQRDenseSolver.hpp> // TODO remove me
+//#include <Teuchos_SerialDenseMatrix.hpp>   // TODO remove me
+//#include <Teuchos_SerialQRDenseSolver.hpp> // TODO remove me
 
-#include <Teuchos_LAPACK.hpp>
+#include <Teuchos_LAPACK.hpp> // TODO remove me
 
 //#include <Tsqr_Matrix.hpp>
 #include "Kokkos_UnorderedMap.hpp"
@@ -283,15 +283,26 @@ namespace MueLu {
         mat(4,1) = 0.0;
         mat(4,2) = 3.0;
 
-
-        /*for(int i=0; i<3; i++) {
-          for(int j=0; j<3; j++) {
-            printf(" %.2g ",mat(i,j));
-          }
-          printf("\n");
-        }*/
+        ///////////////////////////////////
+        // mat is the input matrix
 
         shared_matrix matminor(thread.team_shmem(),5,3);
+        shared_vector e(thread.team_shmem(),5); //unit vector
+
+        for(decltype(mat.dimension_0()) k = 0; k < mat.dimension_0() && k < mat.dimension_1()-1; k++) {
+          // extract minor parts from mat
+          matrix_clear(matminor);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
+          matrix_minor(mat,matminor,k);
+
+          // extract k-th column from current minor
+          auto x = subview(matminor, Kokkos::ALL (), k);
+          SC   a = vnorm(x); // calculate 2-norm of current column vector
+          if(mat(k,k) > 0) a = -a;
+
+
+        }
+
+
         matrix_minor(mat,matminor,1);
         for(int i=0; i<3; i++) {
           for(int j=0; j<3; j++) {
@@ -313,6 +324,37 @@ namespace MueLu {
         printf("SQRT(4) = %.4g\n", vnorm(colview0));
       }
 
+      KOKKOS_INLINE_FUNCTION
+      void matrix_clear ( shared_matrix & m) const {
+        for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
+          for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
+            m(i,j) = 0;
+          }
+        }
+      }
+
+      KOKKOS_FUNCTION
+      void matrix_transpose ( shared_matrix & m) const {
+        for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
+          for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
+            SC t = m(i,j);
+            m(i,j) = m(j,i);
+            m(j,i) = t;
+          }
+        }
+      }
+
+      KOKKOS_FUNCTION
+      void matrix_mul ( const shared_matrix & m1, const shared_matrix & m2, shared_matrix & m1m2) const {
+        for(decltype(m1.dimension_0()) i = 0; i < m1.dimension_0(); i++) {
+          for(decltype(m1.dimension_1()) j = 0; j < m1.dimension_1(); j++) {
+            for(decltype(m1.dimension_1()) k = 0; k < m1.dimension_1(); k++) {
+              m1m2(i,j) += m1(i,k) * m2(k,j);
+            }
+          }
+        }
+      }
+
       KOKKOS_FUNCTION
       void matrix_minor ( const shared_matrix & mat, shared_matrix & matminor, LO d) const {
         for (LO i = 0; i < d; i++) {
@@ -325,6 +367,24 @@ namespace MueLu {
         }
       }
 
+      /// \brief Build vmul = I - v*v^T
+      /// \param v[in] input vector
+      ///
+      KOKKOS_FUNCTION
+      void vmul ( const shared_vector & v, shared_matrix & vmul) const {
+        for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
+          for(decltype(v.dimension_0()) j = 0; j < v.dimension_0(); j++) {
+            vmul(i,j) = -2 * v(i) * v(j);
+          }
+        }
+        for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
+          vmul(i,i) += 1;
+        }
+      }
+
+      /// \brief Calculate 2-norm of vector
+      /// \param v[in] input vector
+      /// \ret norm[out] 2-norm of input vector
       KOKKOS_INLINE_FUNCTION
       SC vnorm(const shared_vector & v) const {
         SC sum = 0;
@@ -333,9 +393,30 @@ namespace MueLu {
         return sqrt(sum);
       }
 
+      /// \brief Scales input vector v by d: v = v/d
+      /// \param v[in] input vector
+      /// \param d[in] scalar scaling factor
+      KOKKOS_INLINE_FUNCTION
+      void vdiv(shared_vector & v, SC d) const {
+        for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++)
+          v(i) = v(i) / d;
+      }
+
+      /// \brief Add vector add to v
+      /// \param v[in] input vector
+      /// \param add[in] input vector
+      /// \param d[in] scalar scaling factor
+      KOKKOS_INLINE_FUNCTION
+      void vdiv(shared_vector & v, const shared_vector & add, SC d) const {
+        for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++)
+          v(i) = v(i) + d * add(i);
+      }
+
+      // amout of shared memory
       size_t team_shmem_size( int team_size ) const {
         printf("team size = %i\n", team_size);
         return 2 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,3) +
+               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(5) +
                Kokkos::View<int*,Kokkos::MemoryUnmanaged>::shmem_size(2048);
       }
 
