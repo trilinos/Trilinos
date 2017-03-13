@@ -213,9 +213,9 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                      ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
-                                      "Invalid cell topology." );
+        INTREPID2_TEST_FOR_WARNING( true, 
+                                    ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
+                                    "Invalid cell topology." );
         break;
       }
       }
