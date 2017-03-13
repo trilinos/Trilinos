@@ -59,6 +59,9 @@ namespace Basker{
     U = new basker_matrix<Int,Entry>;
     U->nnz = 0;
 
+    actual_lnnz = Int(0);
+    actual_unnz = Int(0);
+
     been_fact = false;
     perm_flag = false;
   }
@@ -76,6 +79,9 @@ namespace Basker{
     //U = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
     U = new basker_matrix<Int, Entry>;
     U->nnz = nnzU;
+
+    actual_lnnz = Int(0);
+    actual_unnz = Int(0);
 
     been_fact = false;
     perm_flag = false;
@@ -597,27 +603,30 @@ namespace Basker{
     //FREE(X);
     //FREE(tptr);
 
+    actual_lnnz = lnnz;
+    actual_unnz = unnz;
+
     been_fact = true;
     return 0;
   }//end factor
 
 
   template <class Int, class Entry>
-  Int Basker<Int, Entry>::getNnzL()
+  Int Basker<Int, Entry>::get_NnzL()
   {
-    return L->nnz;
+    return actual_lnnz;
   }
 
   template <class Int, class Entry>
-  Int Basker<Int, Entry>::getNnzU()
+  Int Basker<Int, Entry>::get_NnzU()
   {
-    return U->nnz;
+    return actual_unnz;
   }
 
   template <class Int, class Entry>
-  Int Basker<Int, Entry>::getNnzLU()
+  Int Basker<Int, Entry>::get_NnzLU()
   {
-    return (U->nnz + L->nnz);
+    return (actual_lnnz + actual_unnz);
   }
 
   template <class Int, class Entry>

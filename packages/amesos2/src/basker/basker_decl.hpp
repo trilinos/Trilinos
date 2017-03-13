@@ -49,9 +49,9 @@ namespace Basker{
     int solve( Entry* b, Entry* x);
     int solveMultiple(Int nrhs, Entry *b, Entry *x);
 
-    Int getNnzL();
-    Int getNnzU();
-    Int getNnzLU();
+    Int get_NnzL();
+    Int get_NnzU();
+    Int get_NnzLU();
     //int solve();
 
   private:
@@ -81,6 +81,8 @@ namespace Basker{
     basker_matrix<Int, Entry> *U;
     Int *in_perm;
     Int *pinv;
+    Int actual_lnnz;
+    Int actual_unnz;
     bool been_fact;
     bool perm_flag;
 

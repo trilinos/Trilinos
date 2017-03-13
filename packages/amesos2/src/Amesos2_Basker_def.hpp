@@ -276,7 +276,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
 
       // This is set after numeric factorization complete as pivoting can be used;
       // In this case, a discrepancy between symbolic and numeric nnz total can occur.
-      this->setNnzLU( as<size_t>(basker.getNnzLU() ) ) ;
+      this->setNnzLU( as<size_t>(basker.get_NnzLU() ) ) ;
 #endif
 
     }
