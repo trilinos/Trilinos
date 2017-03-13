@@ -114,13 +114,10 @@ private:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>                    inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>                   outArgs_;
 
-  // Compute the balancing time derivative as a function of x
-  std::function<void (const Thyra::VectorBase<Scalar> &,
-                            Thyra::VectorBase<Scalar> &)>
-  xDotFunction(Scalar dt,Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old);
-
   Scalar beta_;
   Scalar gamma_;
+
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
 } // namespace Tempus

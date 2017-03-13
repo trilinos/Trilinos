@@ -63,7 +63,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // for second order schemes to replace call to computeXDot_
 
   // call functor to compute x dot
-  computeXDot_(*x,*x_dot);
+  //computeXDot_(*x,*x_dot);
 
   // setup input condition for nonlinear solve
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
