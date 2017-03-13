@@ -102,8 +102,6 @@ namespace Basker{
     delete L;
     //FREE(U);
     delete U;
-
-
   }
 
 
@@ -598,9 +596,29 @@ namespace Basker{
 
     //FREE(X);
     //FREE(tptr);
+
     been_fact = true;
     return 0;
   }//end factor
+
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::getNnzL()
+  {
+    return L->nnz;
+  }
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::getNnzU()
+  {
+    return U->nnz;
+  }
+
+  template <class Int, class Entry>
+  Int Basker<Int, Entry>::getNnzLU()
+  {
+    return (U->nnz + L->nnz);
+  }
 
   template <class Int, class Entry>
   int Basker<Int, Entry>::returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val)

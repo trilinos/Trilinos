@@ -166,10 +166,13 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
     if (data_.numeric_ != NULL)
       ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
                          (&(data_.numeric_), &(data_.common_)) ;
-    data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
-                (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
-                data_.symbolic_, &(data_.common_)) ;
+      data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
+                  (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
+                  data_.symbolic_, &(data_.common_)) ;
 
+      // This is set after numeric factorization complete as pivoting can be used;
+      // In this case, a discrepancy between symbolic and numeric nnz total can occur.
+      this->setNnzLU( as<size_t>((data_.numeric_)->lnz) + as<size_t>((data_.numeric_)->unz) );
     }
 
   }
