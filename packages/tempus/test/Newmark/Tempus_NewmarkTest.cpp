@@ -43,46 +43,6 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
-{
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
-
-  // Setup the BallParabolicModel
-  RCP<ParameterList> scm_pl = sublist(pList, "BallParabolicModel", true);
-  RCP<BallParabolicModel<double> > model =
-    Teuchos::rcp(new BallParabolicModel<double>(scm_pl));
-
-  RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
-
-  // Test constructor IntegratorBasic(tempusPL, model)
-  {
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(tempusPL, model);
-
-    RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
-    RCP<ParameterList> defaultPL =
-      integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
-  }
-
-  // Test constructor IntegratorBasic(model, stepperType)
-  {
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(model, "Newmark Beta Implicit");
-
-    RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
-    RCP<ParameterList> defaultPL =
-      integrator->getStepper()->getDefaultParameters();
-    defaultPL->remove("Description");
-
-    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
-  }
-}
-
 
 // ************************************************************
 // ************************************************************

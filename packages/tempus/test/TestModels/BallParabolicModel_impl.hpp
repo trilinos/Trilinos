@@ -43,13 +43,6 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   numResponses_ = 1;
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(numResponses_);
 
-  //Set up parameters
-  //IKT: do we need parameters?  What do they mean?
-  numParameters_ = 1;
-  p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(numParameters_);
-  p_init_ = createMember(p_space_);
-  Thyra::put_scalar(1.0, p_init_.ptr());
-
   setParameterList(pList_);
 }
 
@@ -188,23 +181,19 @@ evalModelImpl(
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
-  // Parse InArgs
-  RCP<const VectorBase<Scalar> > p_in = inArgs.get_p(0);
-  if (!p_in.get()) std::cout << "\n ERROR: BallParabolicModel requires p as InArgs. \n";
-  Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
-
   RCP<const VectorBase<Scalar> > x_in = inArgs.get_x();
-  if (!x_in.get()) std::cout << "\n ERROR: BallParabolicModel requires x as InArgs.  \n";
+  if (!x_in.get()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "\n ERROR: BallParabolicModel requires x as InArgs.\n");
+  }
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
   //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView
   auto myVecLength  = x_in_view.subDim();
 
   RCP<const VectorBase<Scalar> > x_dot_in = inArgs.get_x_dot();
-  Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in);
   double alpha = inArgs.get_alpha();
 
   RCP<const VectorBase<Scalar> > x_dotdot_in = inArgs.get_x_dot_dot();
-  Thyra::ConstDetachedVectorView<Scalar> x_dotdot_in_view( *x_dotdot_in);
   double omega = inArgs.get_W_x_dot_dot_coeff();
 
   //Parse OutArgs
@@ -218,14 +207,16 @@ evalModelImpl(
   if (f_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
     for (int i=0; i<myVecLength; i++) {
-      f_out_view[i] = -p_in_view[0];
+      f_out_view[i] = -1.0;
     }
     if (x_dotdot_in != Teuchos::null) {
+      Thyra::ConstDetachedVectorView<Scalar> x_dotdot_in_view( *x_dotdot_in);
       for (int i=0; i<myVecLength; i++) {
         f_out_view[i] = x_dotdot_in_view[i] - f_out_view[i];
       }
     }
     if (x_dot_in != Teuchos::null) {
+      Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in);
       for (int i=0; i<myVecLength; i++) {
         f_out_view[i] += damping*x_dot_in_view[i];
       }
@@ -236,7 +227,10 @@ evalModelImpl(
   if (W_out != Teuchos::null) {
     RCP<Thyra::MultiVectorBase<Scalar> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
     Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
-    if (omega == 0.0) throw "omega = 0.0";
+    if (omega == 0.0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "\n ERROR: omega = 0 in BallParabolicModel!\n");
+    }
     matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
       double da = damping*alpha;
@@ -257,11 +251,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BallParabolicModel<Scalar>::
 get_p_space(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
-                     "\n Error!  BallParabolicModel::get_p_space() only " <<
-                     " supports 1 parameter vector.  Supplied index l = " <<
-                     l << "\n");
-  return p_space_;
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                     "\n Error!  BallParabolicModel::get_p_space() is not supported!\n"); 
+  return Teuchos::null;
 }
 
 template<class Scalar>
@@ -269,23 +261,9 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 BallParabolicModel<Scalar>::
 get_p_names(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
-                     "\n Error!  BallParabolicModel::get_p_names() only " <<
-                     " supports 1 parameter vector.  Supplied index l = " <<
-                     l << "\n");
-
-  Thyra::ConstDetachedVectorView<Scalar> p_init_view( *p_init_ );
-  //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView
-  auto num_p  = p_init_view.subDim();
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
-      Teuchos::rcp(new Teuchos::Array<std::string>(num_p) );
-  for (int i=0; i<num_p; i++) {
-    std::stringstream ss;
-    ss << "Parameter " << i;
-    const std::string name = ss.str();
-    (*p_names)[i] = name;
-  }
-  return p_names;
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                     "\n Error!  BallParabolicModel::get_p_names() is not supported!\n"); 
+  return Teuchos::null;
 }
 
 template<class Scalar>
@@ -312,7 +290,7 @@ setupInOutArgs_() const
   //Set up InArgs
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(numParameters_);
+  inArgs.set_Np(0);
   inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x);
   inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot);
   inArgs.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
@@ -325,7 +303,7 @@ setupInOutArgs_() const
   //Set up OutArgs
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(numParameters_, numResponses_);
+  outArgs.set_Np_Ng(0, numResponses_);
 
   outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f);
   outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_W_op);

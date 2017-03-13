@@ -96,7 +96,6 @@ private:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > p_init_;
   int vecLength_; //Number of state unknowns (1)
   int numResponses_; //Number of responses (1)
-  int numParameters_; //Number of parameters (1)
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
