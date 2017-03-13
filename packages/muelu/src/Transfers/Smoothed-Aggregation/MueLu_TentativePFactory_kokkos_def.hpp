@@ -300,42 +300,19 @@ namespace MueLu {
           // extract minor parts from mat
           matrix_clear(matminor);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
           matrix_minor(z,matminor,k);
-          printf("minor %i\n",k);
-          for(int i=0; i<5; i++) {
-            for(int j=0; j<3; j++) {
-              printf(" %.3g ",matminor(i,j));
-            }
-            printf("\n");
-          }
 
           // extract k-th column from current minor
           auto x  = subview(matminor, Kokkos::ALL (), k);
-          printf("x\n");
-          for(int i=0; i<5; i++) {
-            printf(" %.3g ",x(i));
-            printf("\n");
-          }
           SC   xn = vnorm(x); // calculate 2-norm of current column vector
           if(mat(k,k) > 0) xn = -xn;
-          printf("xn = %.3g\n",xn);
 
           // build k-th unit vector
           for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
             e(i) = (i==k) ? 1 : 0;
 
           vmadd(e, x, xn); // e = x + xn * e;
-          printf("e\n");
-          for(int i=0; i<5; i++) {
-            printf(" %.3g ",e(i));
-            printf("\n");
-          }
           SC en = vnorm(e);
           vdiv(e,en); // scale vector e
-          printf("e normed\n");
-          for(int i=0; i<5; i++) {
-            printf(" %.3g ",e(i));
-            printf("\n");
-          }
 
           // build Q(k) and Q matrix
           if (k == 0) {
@@ -345,39 +322,12 @@ namespace MueLu {
           else {
             matrix_clear(qk); // zero out old qk
             vmul ( e, qk);
-            printf("qk %i\n",k);
-            for(int i=0; i<5; i++) {
-              for(int j=0; j<5; j++) {
-                printf(" %.3g ",qk(i,j));
-              }
-              printf("\n");
-            }
 
             matrix_mul ( qk, q, qt);
 
-            //q = qt;
             matrix_copy(qt,q);
             matrix_mul(qk, matminor, z);
           }
-
-          printf("q %i\n",k);
-          for(int i=0; i<5; i++) {
-            for(int j=0; j<5; j++) {
-              printf(" %.3g ",q(i,j));
-            }
-            printf("\n");
-          }
-
-
-
-          printf("z %i\n",k);
-          for(int i=0; i<5; i++) {
-            for(int j=0; j<3; j++) {
-              printf(" %.3g ",z(i,j));
-            }
-            printf("\n");
-          }
-
         }
 
         // build R part
