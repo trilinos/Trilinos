@@ -67,6 +67,13 @@ namespace Intrepid2 {
   /// test macros
   ///
 
+#define INTREPID2_TEST_FOR_WARNING(test, msg)                           \
+  if (test) {                                                           \
+    printf("[Intrepid2] Warning in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
+  }
+
 #define INTREPID2_TEST_FOR_EXCEPTION(test, x, msg)                      \
   if (test) {                                                           \
     printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
