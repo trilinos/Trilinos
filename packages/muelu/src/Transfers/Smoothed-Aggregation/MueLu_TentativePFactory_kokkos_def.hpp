@@ -287,32 +287,121 @@ namespace MueLu {
         // mat is the input matrix
 
         shared_matrix matminor(thread.team_shmem(),5,3);
+        shared_matrix z(thread.team_shmem(),5,3);
         shared_vector e(thread.team_shmem(),5); //unit vector
 
-        for(decltype(mat.dimension_0()) k = 0; k < mat.dimension_0() && k < mat.dimension_1()-1; k++) {
+        shared_matrix qk(thread.team_shmem(),5,5);
+        shared_matrix q (thread.team_shmem(),5,5);
+        shared_matrix qt (thread.team_shmem(),5,5); // temporary
+
+        matrix_copy(mat,z);
+
+        for(decltype(mat.dimension_0()) k = 0; k < mat.dimension_0() && k < mat.dimension_1()/*-1*/; k++) {
           // extract minor parts from mat
           matrix_clear(matminor);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
-          matrix_minor(mat,matminor,k);
+          matrix_minor(z,matminor,k);
+          printf("minor %i\n",k);
+          for(int i=0; i<5; i++) {
+            for(int j=0; j<3; j++) {
+              printf(" %.3g ",matminor(i,j));
+            }
+            printf("\n");
+          }
 
           // extract k-th column from current minor
-          auto x = subview(matminor, Kokkos::ALL (), k);
-          SC   a = vnorm(x); // calculate 2-norm of current column vector
-          if(mat(k,k) > 0) a = -a;
+          auto x  = subview(matminor, Kokkos::ALL (), k);
+          printf("x\n");
+          for(int i=0; i<5; i++) {
+            printf(" %.3g ",x(i));
+            printf("\n");
+          }
+          SC   xn = vnorm(x); // calculate 2-norm of current column vector
+          if(mat(k,k) > 0) xn = -xn;
+          printf("xn = %.3g\n",xn);
 
+          // build k-th unit vector
+          for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
+            e(i) = (i==k) ? 1 : 0;
+
+          vmadd(e, x, xn); // e = x + xn * e;
+          printf("e\n");
+          for(int i=0; i<5; i++) {
+            printf(" %.3g ",e(i));
+            printf("\n");
+          }
+          SC en = vnorm(e);
+          vdiv(e,en); // scale vector e
+          printf("e normed\n");
+          for(int i=0; i<5; i++) {
+            printf(" %.3g ",e(i));
+            printf("\n");
+          }
+
+          // build Q(k) and Q matrix
+          if (k == 0) {
+            vmul ( e, q);
+            matrix_mul(q, matminor, z);
+          }
+          else {
+            matrix_clear(qk); // zero out old qk
+            vmul ( e, qk);
+            printf("qk %i\n",k);
+            for(int i=0; i<5; i++) {
+              for(int j=0; j<5; j++) {
+                printf(" %.3g ",qk(i,j));
+              }
+              printf("\n");
+            }
+
+            matrix_mul ( qk, q, qt);
+
+            //q = qt;
+            matrix_copy(qt,q);
+            matrix_mul(qk, matminor, z);
+          }
+
+          printf("q %i\n",k);
+          for(int i=0; i<5; i++) {
+            for(int j=0; j<5; j++) {
+              printf(" %.3g ",q(i,j));
+            }
+            printf("\n");
+          }
+
+
+
+          printf("z %i\n",k);
+          for(int i=0; i<5; i++) {
+            for(int j=0; j<3; j++) {
+              printf(" %.3g ",z(i,j));
+            }
+            printf("\n");
+          }
 
         }
 
+        // build R part
+        matrix_mul ( q, mat, matminor);
+        // matminor contains result
 
-        matrix_minor(mat,matminor,1);
-        for(int i=0; i<3; i++) {
+        printf("R\n");
+        for(int i=0; i<5; i++) {
           for(int j=0; j<3; j++) {
             printf(" %.3g ",matminor(i,j));
           }
           printf("\n");
         }
+        printf("Q\n");
+        matrix_transpose(q);
+        for(int i=0; i<5; i++) {
+          for(int j=0; j<5; j++) {
+            printf(" %.3g ",q(i,j));
+          }
+          printf("\n");
+        }
 
 
-        auto colview0 = subview(matminor, Kokkos::ALL (), 0);
+        /*auto colview0 = subview(matminor, Kokkos::ALL (), 0);
         auto colview1 = subview(matminor, Kokkos::ALL (), 1);
         auto colview2 = subview(matminor, Kokkos::ALL (), 2);
 
@@ -321,7 +410,7 @@ namespace MueLu {
         }
         printf("\n");
 
-        printf("SQRT(4) = %.4g\n", vnorm(colview0));
+        printf("SQRT(4) = %.4g\n", vnorm(colview0));*/
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -333,10 +422,19 @@ namespace MueLu {
         }
       }
 
+      KOKKOS_INLINE_FUNCTION
+      void matrix_copy (const shared_matrix & mi, shared_matrix & mo) const {
+        for(decltype(mi.dimension_0()) i = 0; i < mi.dimension_0(); i++) {
+          for(decltype(mi.dimension_1()) j = 0; j < mi.dimension_1(); j++) {
+            mo(i,j) = mi(i,j);
+          }
+        }
+      }
+
       KOKKOS_FUNCTION
       void matrix_transpose ( shared_matrix & m) const {
         for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
-          for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
+          for(decltype(m.dimension_1()) j = 0; j < i; j++) {
             SC t = m(i,j);
             m(i,j) = m(j,i);
             m(j,i) = t;
@@ -346,6 +444,7 @@ namespace MueLu {
 
       KOKKOS_FUNCTION
       void matrix_mul ( const shared_matrix & m1, const shared_matrix & m2, shared_matrix & m1m2) const {
+        matrix_clear(m1m2);
         for(decltype(m1.dimension_0()) i = 0; i < m1.dimension_0(); i++) {
           for(decltype(m1.dimension_1()) j = 0; j < m1.dimension_1(); j++) {
             for(decltype(m1.dimension_1()) k = 0; k < m1.dimension_1(); k++) {
@@ -402,21 +501,22 @@ namespace MueLu {
           v(i) = v(i) / d;
       }
 
-      /// \brief Add vector add to v
+      /// \brief Add vector add to v: v = d * v + va
       /// \param v[in] input vector
-      /// \param add[in] input vector
+      /// \param va[in] input vector
       /// \param d[in] scalar scaling factor
       KOKKOS_INLINE_FUNCTION
-      void vdiv(shared_vector & v, const shared_vector & add, SC d) const {
+      void vmadd(shared_vector & v, const shared_vector & va, SC d) const {
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++)
-          v(i) = v(i) + d * add(i);
+          v(i) = va(i) + d * v(i);
       }
 
       // amout of shared memory
       size_t team_shmem_size( int team_size ) const {
         printf("team size = %i\n", team_size);
-        return 2 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,3) +
-               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(5) +
+        return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,3) + // mat + matminor + z
+               3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,5) +  // qk and q and qt
+               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(5) +     // e
                Kokkos::View<int*,Kokkos::MemoryUnmanaged>::shmem_size(2048);
       }
 
@@ -817,7 +917,7 @@ namespace MueLu {
 
     } else {
 
-      const Kokkos::TeamPolicy<> policy( 10 , 1); // 10 teams a 1 thread
+      const Kokkos::TeamPolicy<> policy( 1 /*10*/ , 1); // 10 teams a 1 thread
 
       Kokkos::parallel_for( policy, TestFunctor<int, DeviceType>());
 
