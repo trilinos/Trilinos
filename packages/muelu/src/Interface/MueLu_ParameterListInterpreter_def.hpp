@@ -838,6 +838,8 @@ namespace MueLu {
       // Smoothed aggregation
       MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
       ParameterList Pparams;
+      if(paramList.isSublist("matrixmatrix: kernel params"))   Pparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+      if(defaultList.isSublist("matrixmatrix: kernel params")) Pparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
       P->SetParameterList(Pparams);
 
