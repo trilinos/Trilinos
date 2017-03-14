@@ -101,13 +101,6 @@ public:
 
   typedef Matrix                                                matrix_type;
 
-  typedef typename super_type::local_matrix_type          local_matrix_type;
-  typedef typename super_type::spmtx_ptr_type                spmtx_ptr_type;
-  typedef typename super_type::spmtx_idx_type                spmtx_idx_type;
-  typedef typename super_type::spmtx_vals_type              spmtx_vals_type;
-
-  typedef typename std::remove_pointer<spmtx_ptr_type>::type spmtx_ptr_data_type;
-
 
   Basker( Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
@@ -214,7 +207,6 @@ private:
 #else
 #pragma message("Kokkos Node type not supported by Basker") 
 #endif // OpenMP vs Serial
-   //::BaskerNS::BaskerTrilinosInterface<local_ordinal_type,slu_type,Exe_Space,spmtx_ptr_data_type>
    ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>
        *basker;
 #else

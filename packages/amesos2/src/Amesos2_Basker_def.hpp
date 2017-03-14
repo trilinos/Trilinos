@@ -95,7 +95,6 @@ Basker<Matrix,Vector>::Basker(
 		     std::runtime_error,
 	   "Amesos2_Basker Exception: Do not have supported Kokkos node type for Basker");
 #endif
-  //basker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space, spmtx_ptr_data_type>();
   basker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   basker->Options.no_pivot      = BASKER_TRUE;
   basker->Options.symmetric     = BASKER_FALSE;
@@ -173,13 +172,13 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
       if ( case_check ) {
 
         // this needs to be checked during loadA_impl...
-        spmtx_ptr_type  sp_rowptr = this->matrixA_->returnRowPtr();
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-        spmtx_idx_type  sp_colind = this->matrixA_->returnColInd();
+        auto sp_colind = this->matrixA_->returnColInd();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-        spmtx_vals_type sp_values = this->matrixA_->returnValues();
+        auto sp_values = this->matrixA_->returnValues();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
@@ -243,13 +242,13 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
       if ( case_check ) {
 
-        spmtx_ptr_type  sp_rowptr = this->matrixA_->returnRowPtr();
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-        spmtx_idx_type  sp_colind = this->matrixA_->returnColInd();
+        auto sp_colind = this->matrixA_->returnColInd();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-        spmtx_vals_type sp_values = this->matrixA_->returnValues();
+        auto sp_values = this->matrixA_->returnValues();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
