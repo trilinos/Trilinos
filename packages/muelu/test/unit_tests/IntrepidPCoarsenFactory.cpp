@@ -958,6 +958,47 @@ namespace MueLuTests {
     }
   };
   
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
+  class EpetraMapMaker
+  {
+  public:
+    typedef Teuchos::RCP<Epetra_Map> MapRCP;
+    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm);
+    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm);
+  };
+  
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
+  public:
+    typedef Epetra_Map Map;
+    typedef Teuchos::RCP<Map> MapRCP;
+    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
+    {
+      return Teuchos::rcp( new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, Comm) );
+    }
+    
+    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm)
+    {
+      return Teuchos::rcp( new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, Comm) );
+    }
+  };
+  
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseTpetra> {
+  public:
+    typedef Epetra_Map Map;
+    typedef Teuchos::RCP<Map> MapRCP;
+    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
+    {
+      return Teuchos::null; // no Epetra map for UseTpetra
+    }
+    
+    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm)
+    {
+      return Teuchos::null; // no Epetra map for UseTpetra
+    }
+  };
+  
   template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
   {
@@ -1084,10 +1125,13 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
           GlobalOrdinal indexBase = 0;
           Epetra_SerialComm Comm;
-          Epetra_Map rowMapEpetra(int(myRowGIDs.size()), int(myRowGIDs.size()), &myRowGIDs[0], indexBase, Comm);
-          rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(rowMapEpetra);
-          Epetra_Map colMapEpetra(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], indexBase, Comm);
-          colMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(colMapEpetra);
+          typedef EpetraMapMaker<LocalOrdinal,GlobalOrdinal,Node,lib> MapMaker;
+          typedef RCP<const Epetra_Map> MapRCP;
+          MapRCP rowMapEpetra, colMapEpetra;
+          rowMapEpetra = MapMaker::makeMap(int(myRowGIDs.size()), int(myRowGIDs.size()), &myRowGIDs[0], int(indexBase), Comm);
+          rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(*rowMapEpetra);
+          colMapEpetra = MapMaker::makeMap(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], int(indexBase), Comm);
+          colMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(*colMapEpetra);
 #else
           out << "lib==Xpetra::UseEpetra, but HAVE_MUELU_EPETRA is not defined...\n";
           success = false;
