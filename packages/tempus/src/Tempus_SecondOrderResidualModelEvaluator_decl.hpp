@@ -34,48 +34,83 @@ public:
   /// Constructor
   SecondOrderResidualModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
-    : transientModel_(transientModel)
-  {}
+    : transientModel_(transientModel),
+      out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+  {
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  }
 
   /// Set the underlying transient ModelEvaluator
   void setTransientModel(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
-  { transientModel_ = me; }
+  { 
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    transientModel_ = me; 
+  }
 
   /// Get the underlying transient model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getTransientModel() const
-  { return transientModel_; }
+  { 
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    return transientModel_; 
+  }
 
   /// Set values needed in evalModelImpl 
-  void initialize(Teuchos::RCP<const Vector> a_old, Teuchos::RCP<Vector> v_pred, 
+  void initialize(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred, 
                   Teuchos::RCP<Vector> d_pred, Scalar delta_t, 
                    Scalar t, Scalar beta, Scalar gamma) 
   {
-    a_old_ = a_old; v_pred_ = v_pred; d_pred_ = d_pred; 
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    a_ = a; v_pred_ = v_pred; d_pred_ = d_pred; 
     delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma; 
   } 
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
-      { return transientModel_->create_W_op(); }
+    { 
+     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->create_W_op(); 
+    }
 
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-    get_W_factory() const { return transientModel_->get_W_factory(); }
+    get_W_factory() const 
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->get_W_factory(); 
+    }
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const
-      { return transientModel_->get_f_space(); }
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->get_f_space(); 
+    }
+
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
-      { return transientModel_->get_p_space(p); };
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->get_p_space(p); 
+    };
 
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
-      { return transientModel_->get_p_names(p); }
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->get_p_names(p); 
+    }
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
-      { return transientModel_->get_x_space(); }
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      return transientModel_->get_x_space(); 
+    }
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
-      { return transientModel_->getNominalValues(); }
+    { 
+      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = transientModel_->getNominalValues(); 
+      nominalValues.set_x(a_); 
+      return nominalValues; 
+    }
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
@@ -97,9 +132,10 @@ private:
   Scalar gamma_;
   Scalar beta_;
   Scalar delta_t_;
-  Teuchos::RCP<const Vector> a_old_; 
+  Teuchos::RCP<const Vector> a_; 
   Teuchos::RCP<Vector> d_pred_; 
   Teuchos::RCP<Vector> v_pred_; 
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
 
