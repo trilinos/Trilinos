@@ -77,9 +77,10 @@ namespace panzer {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using panzer::Dim;
-  using panzer::Cell;
-  using panzer::Point;
+  //These are commented out, still used but implied by namespace panzer
+  //using panzer::Dim;
+  //using panzer::Cell;
+  //using panzer::Point;
 
   TEUCHOS_UNIT_TEST(evaluators, Constant)
   {
