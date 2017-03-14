@@ -1611,7 +1611,7 @@ const LinearOp explicitTranspose(const LinearOp & op)
    }
 }
 
-const double frobeniusNorm(const LinearOp & op)
+double frobeniusNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
     const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
@@ -1624,7 +1624,7 @@ const double frobeniusNorm(const LinearOp & op)
   }
 }
 
-const double oneNorm(const LinearOp & op)
+double oneNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
     //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
@@ -1638,7 +1638,7 @@ const double oneNorm(const LinearOp & op)
   }
 }
 
-const double infNorm(const LinearOp & op)
+double infNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
     //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);

@@ -135,7 +135,7 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalO
 
   std::size_t myOwnedCount = owned.size();
  
-  std::size_t sum=-1,min=-1,max=-1;
+  std::size_t sum=0,min=0,max=0;
 
   // get min,max and sum
   Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&myOwnedCount,&sum);

@@ -197,7 +197,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
     weights.push_back(wgts);
 
-  const idInput_t *ia;
+  idInput_t *ia = NULL;
 
   try{
     ia = new idInput_t(numLocalObj, myGids, weights, strides);
