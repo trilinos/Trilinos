@@ -274,8 +274,7 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     predictVelocity(*v_pred, *v_old, *a_old, dt); 
 
     //inject d_pred, v_pred, a and other relevant data into residualModel_
-    //IKT, FIXME: implement the following routine in Tempus::SecondOrderResidualModelEvaluator 
-    //residualModel_->initialize(a_old, v_pred, d_pred, delta_t, t, beta_, gamma_);  
+    residualModel_->initialize(a_old, v_pred, d_pred, dt, t, beta_, gamma_);  
 
     //Solve for new acceleration 
     //IKT, 3/13/17: check how solveNonLinear works.
