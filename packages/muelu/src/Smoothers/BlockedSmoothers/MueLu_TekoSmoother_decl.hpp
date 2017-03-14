@@ -158,6 +158,9 @@ namespace MueLu {
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
 
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
+
     //@}
 
   private:
@@ -346,6 +349,9 @@ namespace MueLu {
       if (verbLevel & Debug)
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
+
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const {size_t cplx=0; return cplx;}
 
     //@}
 

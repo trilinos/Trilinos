@@ -208,6 +208,9 @@ namespace MueLu {
     //! For diagnostic purposes
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getPreconditioner(){return prec_;}
 
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
+
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
@@ -299,6 +302,9 @@ namespace MueLu {
     clone(const RCP<Node2>& node2, const Teuchos::RCP<const Matrix >& A_newnode) const { return Teuchos::null; }
     std::string description() const { return std::string(""); }
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {}
+
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const {size_t cplx=0; return cplx;}
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const {}
   };

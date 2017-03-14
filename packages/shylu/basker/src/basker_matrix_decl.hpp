@@ -46,12 +46,18 @@ namespace BaskerNS
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz);
+
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz,
                     Int *_col_ptr, Int *_row_idx, Entry *_val);
     BASKER_INLINE
     void init_matrix(string _label, Int _sr, Int _m, 
                     Int _sc, Int _n, Int _nnz);
+
+    template <typename T2>
+    BASKER_INLINE
+    void init_matrix(string _label, Int _m, Int _n, Int _nnz,
+                    T2 *_col_ptr, Int *_row_idx, Entry *_val);
 
     //finalize, used to delete any array structure that where created
     BASKER_INLINE
@@ -104,6 +110,8 @@ namespace BaskerNS
 
     //helper functions
     void copy_vec(Int* ptr, Int size, INT_1DARRAY a);
+    template <typename T2>
+    void copy_vec(T2* ptr, Int size, INT_1DARRAY a);
     void copy_vec(Entry *ptr, Int size,  ENTRY_1DARRAY a);
     BASKER_INLINE
     void init_vectors(Int _m, Int _n, Int _nnz);

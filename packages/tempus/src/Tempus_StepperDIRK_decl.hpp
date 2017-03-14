@@ -54,8 +54,9 @@ public:
 
   /// Constructor
   StepperDIRK(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
@@ -70,7 +71,9 @@ public:
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &
       solver = Teuchos::null);
 
-    void setTableau(std::string stepperType = "");
+    void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList,
+      std::string stepperType = "");
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -92,6 +95,7 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable

@@ -27,31 +27,73 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-TEUCHOS_UNIT_TEST(IntegratorBasic, DefaultConstruction)
+// Test Integrator construction from ParameterList and ModelEvaluator.
+TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction)
 {
-  // Read params from .xml file
-  RCP<ParameterList> tempusPL = getParametersFromXmlFile("Tempus_default.xml");
+  // 1) Setup the ParameterList (here we start with params from .xml file)
+  RCP<ParameterList> pl = getParametersFromXmlFile("Tempus_default.xml");
 
-  // Setup the SinCosModel
+  // 2) Setup the ModelEvaluator
   RCP<SinCosModel<double> > model = Teuchos::rcp(new SinCosModel<double> ());
 
-  // Setup the Integrator
-  RCP<ParameterList> integratorPL = sublist(tempusPL, "Tempus", true);
+  // 3) Setup the Integrator
+  RCP<ParameterList> tempusPL = sublist(pl, "Tempus", true);
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(integratorPL, model);
+    Tempus::integratorBasic<double>(tempusPL, model);
 
-  RCP<const ParameterList> defaultIntegratorPL = integrator->getParameterList();
+  // Test the ParameterList
+  RCP<ParameterList> testPL = integrator->getTempusParameterList();
   // Write out ParameterList to rebaseline test.
-  //writeParameterListToXmlFile(*defaultIntegratorPL,
-  //                            "Tempus_IntegratorBasic_ref.xml");
+  //writeParameterListToXmlFile(*testPL, "Tempus_IntegratorBasic_ref-test.xml");
 
   // Read params from reference .xml file
-  RCP<ParameterList> refIntegratorPL =
+  RCP<ParameterList> referencePL =
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
 
-  TEST_ASSERT(haveSameValues(*defaultIntegratorPL,*refIntegratorPL))
+  TEST_ASSERT(haveSameValues(*testPL,*referencePL))
+}
 
-  Teuchos::TimeMonitor::summarize();
+
+// Test integator construction, and then setParameterList, setStepper, and
+// initialization.
+TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
+{
+  // 1) Setup the Integrator
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+
+  // 2) Setup the ParameterList
+  //    - Start with the default Tempus PL
+  //    - Add Stepper PL
+  RCP<ParameterList> tempusPL = integrator->getTempusParameterList();
+
+  tempusPL->sublist("Default Integrator").set("Stepper Name", "Demo Stepper");
+  RCP<ParameterList> stepperPL = Teuchos::parameterList();
+  stepperPL->set("Stepper Type", "Forward Euler");
+  tempusPL->set("Demo Stepper", *stepperPL);
+
+  integrator->setParameterList(tempusPL);
+
+  // 3) Setup the Stepper
+  RCP<SinCosModel<double> > model = Teuchos::rcp(new SinCosModel<double> ());
+  integrator->setStepper(model);
+
+  // 4) Initialize integrator
+  integrator->initialize();
+
+  // Test the ParameterList
+  RCP<ParameterList> testPL = integrator->getTempusParameterList();
+  // Write out ParameterList to rebaseline test.
+  //writeParameterListToXmlFile(*testPL,"Tempus_IntegratorBasic_ref2-test.xml");
+
+  // Read params from reference .xml file
+  RCP<ParameterList> referencePL =
+    getParametersFromXmlFile("Tempus_IntegratorBasic_ref2.xml");
+
+  //std::cout << *testPL << std::endl;
+  //std::cout << *referencePL << std::endl;
+
+  TEST_ASSERT(haveSameValues(*testPL,*referencePL))
 }
 
 } // namespace Tempus_Test

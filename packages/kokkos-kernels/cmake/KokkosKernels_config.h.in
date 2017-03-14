@@ -1,0 +1,40 @@
+#ifndef KOKKOSKERNELS_CONFIG_H
+#define KOKKOSKERNELS_CONFIG_H
+
+/* Define if building in debug mode */
+#cmakedefine HAVE_KOKKOSKERNELS_DEBUG
+
+/* Define this macro if the quadmath TPL is enabled */
+#cmakedefine HAVE_KOKKOSKERNELS_QUADMATH
+
+/* Define this macro if the MKL TPL is enabled.  This is different
+   than just linking against the MKL to get the BLAS and LAPACK; it
+   requires (a) header file(s) as well, and may use functions other
+   than just BLAS and LAPACK functions.  */
+#cmakedefine HAVE_KOKKOSKERNELS_MKL
+
+/* Define this macro if experimental features of Kokkoskernels are enabled */
+#cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
+
+/* Define this macro to disallow instantiations of kernels which are not covered by ETI */
+#cmakedefine HAVE_KOKKOSKERNELS_ETI_ONLY
+
+/* Whether to build kernels for execution space Kokkos::Cuda */
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+/* Whether to build kernels for execution space Kokkos::OpenMP */
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+/* Whether to build kernels for execution space Kokkos::Threads */
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+/* Whether to build kernels for execution space Kokkos::Serial */
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+
+/*
+ * "Optimization level" for computational kernels in this subpackage.
+ * The higher the level, the more code variants get generated, and
+ * thus the longer the compile times.  However, more code variants
+ * mean both better performance overall, and more uniform performance
+ * for corner cases.
+ */
+#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+
+#endif // KOKKOSKERNELS_CONFIG_H

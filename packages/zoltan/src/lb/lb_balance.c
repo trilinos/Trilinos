@@ -316,9 +316,7 @@ struct OVIS_parameters ovisParameters;
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS){
-    printf("Build configuration:\n");
     Zoltan_Print_Configuration("  ");
-    printf("\n");
     Zoltan_Print_Key_Params(zz);
   }
 

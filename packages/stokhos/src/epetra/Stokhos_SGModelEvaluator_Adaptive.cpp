@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -59,8 +59,8 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad_,
   const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
   const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data_,
-  bool onlyUseLinear_,int kExpOrder_, 
-  const Teuchos::RCP<Teuchos::ParameterList>& params_) 
+  bool onlyUseLinear_,int kExpOrder_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_)
   : me(me_),
     sg_basis(am->getMasterStochasticBasis()),
     sg_row_dof_basis(am->getRowStochasticBasis()),
@@ -104,7 +104,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   if (x_map != Teuchos::null)
     supports_x = true;
 
-  overlapped_stoch_row_map = 
+  overlapped_stoch_row_map =
     Teuchos::rcp(new Epetra_LocalMap(static_cast<int>(num_sg_blocks), 0, *(sg_parallel_data->getStochasticComm())));
   stoch_row_map = overlapped_stoch_row_map;
 
@@ -112,6 +112,21 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     stoch_row_map = epetraCijk->getStochasticRowMap();
 
   if (supports_x) {
+
+    // Create block SG x and f maps
+    sg_x_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *x_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_x_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *x_map, *overlapped_stoch_row_map, *sg_comm));
+
+    sg_f_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *f_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_f_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *f_map, *overlapped_stoch_row_map, *sg_comm));
 
     // Create interlace SG x and f maps
     adapted_x_map = adaptMngr->getAdaptedMap();
@@ -121,11 +136,11 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     adapted_overlapped_f_map = adapted_x_map;
 
     // Create importer/exporter from/to overlapped distribution
-    adapted_overlapped_x_importer = 
+    adapted_overlapped_x_importer =
       Teuchos::rcp(new Epetra_Import(*adapted_overlapped_x_map, *get_x_map()));
-    adapted_overlapped_f_exporter = 
+    adapted_overlapped_f_exporter =
       Teuchos::rcp(new Epetra_Export(*adapted_overlapped_f_map, *adapted_f_map));
-    
+
     // now we create the underlying Epetra block vectors
     // that will be used by the model evaluator to construct
     // the solution of the deterministic problem.
@@ -140,16 +155,16 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     sg_x_init = create_x_sg();
     if (sg_x_init->myGID(0))
       (*sg_x_init)[0] = *(me->get_x_init());
-    
+
     // Preconditioner needs an x: This is adapted
     my_x = Teuchos::rcp(new Epetra_Vector(*get_x_map()));
 
     // setup storage for W, these are blocked in Stokhos
     // format
     ///////////////////////////////////////////////////////
- 
+
     // Determine W expansion type
-    std::string W_expansion_type = 
+    std::string W_expansion_type =
       params->get("Jacobian Expansion Type", "Full");
     if (W_expansion_type == "Linear")
       num_W_blocks = sg_basis->dimension() + 1;
@@ -158,18 +173,18 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
 
     Teuchos::RCP<Epetra_BlockMap> W_overlap_map =
       Teuchos::rcp(new Epetra_LocalMap(
-		     static_cast<int>(num_W_blocks), 0, 
-		     *(sg_parallel_data->getStochasticComm())));
-    W_sg_blocks = 
+                     static_cast<int>(num_W_blocks), 0,
+                     *(sg_parallel_data->getStochasticComm())));
+    W_sg_blocks =
       Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		     sg_basis, W_overlap_map, x_map, f_map, adapted_f_map, 
-		     sg_comm));
+                     sg_basis, W_overlap_map, x_map, f_map, adapted_f_map,
+                     sg_comm));
     for (unsigned int i=0; i<num_W_blocks; i++)
       W_sg_blocks->setCoeffPtr(i, me->create_W()); // allocate a bunch of matrices
 
     eval_W_with_f = params->get("Evaluate W with F", false);
   }
-    
+
   // Parameters -- The idea here is to add new parameter vectors
   // for the stochastic Galerkin components of the parameters
 
@@ -189,33 +204,33 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   sg_p_init.resize(num_p_sg);
 
   // Determine parameter expansion type
-  std::string p_expansion_type = 
+  std::string p_expansion_type =
     params->get("Parameter Expansion Type", "Full");
   if (p_expansion_type == "Linear")
     num_p_blocks = sg_basis->dimension() + 1;
   else
     num_p_blocks = num_sg_blocks;
-  
+
   // Create parameter maps, names, and initial values
   overlapped_stoch_p_map =
     Teuchos::rcp(new Epetra_LocalMap(
-		   static_cast<int>(num_p_blocks), 0, 
-		   *(sg_parallel_data->getStochasticComm())));
+                   static_cast<int>(num_p_blocks), 0,
+                   *(sg_parallel_data->getStochasticComm())));
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index_map[i]);
-    sg_p_map[i] = 
+    sg_p_map[i] =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
-		     *p_map, *overlapped_stoch_p_map, *sg_comm));
-    
-    Teuchos::RCP<const Teuchos::Array<std::string> > p_names = 
+                     *p_map, *overlapped_stoch_p_map, *sg_comm));
+
+    Teuchos::RCP<const Teuchos::Array<std::string> > p_names =
       me->get_p_names(sg_p_index_map[i]);
     if (p_names != Teuchos::null) {
-      sg_p_names[i] = 
-	Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
+      sg_p_names[i] =
+        Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
       for (int j=0; j<p_names->size(); j++) {
-	std::stringstream ss;
-	ss << (*p_names)[j] << " -- SG Coefficient " << i;
-	(*sg_p_names[i])[j] = ss.str();
+        std::stringstream ss;
+        ss << (*p_names)[j] << " -- SG Coefficient " << i;
+        (*sg_p_names[i])[j] = ss.str();
       }
     }
 
@@ -242,28 +257,28 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   // Create response maps
   for (int i=0; i<num_g_sg; i++) {
     Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index_map[i]);
-    sg_g_map[i] = 
+    sg_g_map[i] =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
-		     *g_map, *overlapped_stoch_row_map, *sg_comm));
-    
+                     *g_map, *overlapped_stoch_row_map, *sg_comm));
+
     // Create dg/dxdot, dg/dx SG blocks
     if (supports_x) {
-      dgdx_dot_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis,  overlapped_stoch_row_map));
-      dgdx_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis, overlapped_stoch_row_map));
+      dgdx_dot_sg_blocks[i] =
+        Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                       sg_basis,  overlapped_stoch_row_map));
+      dgdx_sg_blocks[i] =
+        Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                       sg_basis, overlapped_stoch_row_map));
     }
   }
-  
+
   // We don't support parallel for dgdx yet, so build a new EpetraCijk
   if (supports_x) {
     serialCijk =
-      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(sg_basis, 
-						    epetraCijk->getCijk(), 
-						    sg_comm,
-						    overlapped_stoch_row_map));
+      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(sg_basis,
+                                                    epetraCijk->getCijk(),
+                                                    sg_comm,
+                                                    overlapped_stoch_row_map));
   }
 
 }
@@ -275,9 +290,9 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad_,
   const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
   const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data_,
-  bool onlyUseLinear_,int kExpOrder_, 
+  bool onlyUseLinear_,int kExpOrder_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
-  bool scaleOP_) 
+  bool scaleOP_)
   : me(me_),
     sg_basis(sg_basis_),
     sg_row_dof_basis(sg_row_dof_basis_),
@@ -323,7 +338,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   adaptMngr = Teuchos::rcp(new Stokhos::AdaptivityManager(Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int,double> >(sg_basis),
                                                           sg_row_dof_basis,*sg_parallel_data->getStochasticComm(),scaleOP));
 
-  overlapped_stoch_row_map = 
+  overlapped_stoch_row_map =
     Teuchos::rcp(new Epetra_LocalMap(static_cast<int>(num_sg_blocks), 0, *(sg_parallel_data->getStochasticComm())));
   stoch_row_map = overlapped_stoch_row_map;
 
@@ -331,6 +346,21 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     stoch_row_map = epetraCijk->getStochasticRowMap();
 
   if (supports_x) {
+
+    // Create block SG x and f maps
+    sg_x_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *x_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_x_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *x_map, *overlapped_stoch_row_map, *sg_comm));
+
+    sg_f_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *f_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_f_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+                     *f_map, *overlapped_stoch_row_map, *sg_comm));
 
     // Create interlace SG x and f maps
     adapted_x_map = adaptMngr->getAdaptedMap();
@@ -340,11 +370,11 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     adapted_overlapped_f_map = adapted_x_map;
 
     // Create importer/exporter from/to overlapped distribution
-    adapted_overlapped_x_importer = 
+    adapted_overlapped_x_importer =
       Teuchos::rcp(new Epetra_Import(*adapted_overlapped_x_map, *get_x_map()));
-    adapted_overlapped_f_exporter = 
+    adapted_overlapped_f_exporter =
       Teuchos::rcp(new Epetra_Export(*adapted_overlapped_f_map, *adapted_f_map));
-    
+
     // now we create the underlying Epetra block vectors
     // that will be used by the model evaluator to construct
     // the solution of the deterministic problem.
@@ -359,16 +389,16 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     sg_x_init = create_x_sg();
     if (sg_x_init->myGID(0))
       (*sg_x_init)[0] = *(me->get_x_init());
-    
+
     // Preconditioner needs an x: This is adapted
     my_x = Teuchos::rcp(new Epetra_Vector(*get_x_map()));
 
     // setup storage for W, these are blocked in Stokhos
     // format
     ///////////////////////////////////////////////////////
- 
+
     // Determine W expansion type
-    std::string W_expansion_type = 
+    std::string W_expansion_type =
       params->get("Jacobian Expansion Type", "Full");
     if (W_expansion_type == "Linear")
       num_W_blocks = sg_basis->dimension() + 1;
@@ -377,18 +407,18 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
 
     Teuchos::RCP<Epetra_BlockMap> W_overlap_map =
       Teuchos::rcp(new Epetra_LocalMap(
-		     static_cast<int>(num_W_blocks), 0, 
-		     *(sg_parallel_data->getStochasticComm())));
-    W_sg_blocks = 
+                     static_cast<int>(num_W_blocks), 0,
+                     *(sg_parallel_data->getStochasticComm())));
+    W_sg_blocks =
       Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
-		     sg_basis, W_overlap_map, x_map, f_map, adapted_f_map, 
-		     sg_comm));
+                     sg_basis, W_overlap_map, x_map, f_map, adapted_f_map,
+                     sg_comm));
     for (unsigned int i=0; i<num_W_blocks; i++)
       W_sg_blocks->setCoeffPtr(i, me->create_W()); // allocate a bunch of matrices
 
     eval_W_with_f = params->get("Evaluate W with F", false);
   }
-    
+
   // Parameters -- The idea here is to add new parameter vectors
   // for the stochastic Galerkin components of the parameters
 
@@ -408,33 +438,33 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   sg_p_init.resize(num_p_sg);
 
   // Determine parameter expansion type
-  std::string p_expansion_type = 
+  std::string p_expansion_type =
     params->get("Parameter Expansion Type", "Full");
   if (p_expansion_type == "Linear")
     num_p_blocks = sg_basis->dimension() + 1;
   else
     num_p_blocks = num_sg_blocks;
-  
+
   // Create parameter maps, names, and initial values
   overlapped_stoch_p_map =
     Teuchos::rcp(new Epetra_LocalMap(
-		   static_cast<int>(num_p_blocks), 0, 
-		   *(sg_parallel_data->getStochasticComm())));
+                   static_cast<int>(num_p_blocks), 0,
+                   *(sg_parallel_data->getStochasticComm())));
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index_map[i]);
-    sg_p_map[i] = 
+    sg_p_map[i] =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
-		     *p_map, *overlapped_stoch_p_map, *sg_comm));
-    
-    Teuchos::RCP<const Teuchos::Array<std::string> > p_names = 
+                     *p_map, *overlapped_stoch_p_map, *sg_comm));
+
+    Teuchos::RCP<const Teuchos::Array<std::string> > p_names =
       me->get_p_names(sg_p_index_map[i]);
     if (p_names != Teuchos::null) {
-      sg_p_names[i] = 
-	Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
+      sg_p_names[i] =
+        Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
       for (int j=0; j<p_names->size(); j++) {
-	std::stringstream ss;
-	ss << (*p_names)[j] << " -- SG Coefficient " << i;
-	(*sg_p_names[i])[j] = ss.str();
+        std::stringstream ss;
+        ss << (*p_names)[j] << " -- SG Coefficient " << i;
+        (*sg_p_names[i])[j] = ss.str();
       }
     }
 
@@ -442,7 +472,7 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
     sg_p_init[i] = create_p_sg(sg_p_index_map[i]);
     sg_p_init[i]->init(0.0);
   }
-  
+
   // Responses -- The idea here is to add new parameter vectors
   // for the stochastic Galerkin components of the respones
   num_g = me_outargs.Ng();
@@ -461,28 +491,28 @@ Stokhos::SGModelEvaluator_Adaptive::SGModelEvaluator_Adaptive(
   // Create response maps
   for (int i=0; i<num_g_sg; i++) {
     Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index_map[i]);
-    sg_g_map[i] = 
+    sg_g_map[i] =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
-		     *g_map, *overlapped_stoch_row_map, *sg_comm));
-    
+                     *g_map, *overlapped_stoch_row_map, *sg_comm));
+
     // Create dg/dxdot, dg/dx SG blocks
     if (supports_x) {
-      dgdx_dot_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis,  overlapped_stoch_row_map));
-      dgdx_sg_blocks[i] = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       sg_basis, overlapped_stoch_row_map));
+      dgdx_dot_sg_blocks[i] =
+        Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                       sg_basis,  overlapped_stoch_row_map));
+      dgdx_sg_blocks[i] =
+        Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                       sg_basis, overlapped_stoch_row_map));
     }
   }
-  
+
   // We don't support parallel for dgdx yet, so build a new EpetraCijk
   if (supports_x) {
     serialCijk =
-      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(sg_basis, 
-						    epetraCijk->getCijk(), 
-						    sg_comm,
-						    overlapped_stoch_row_map));
+      Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(sg_basis,
+                                                    epetraCijk->getCijk(),
+                                                    sg_comm,
+                                                    overlapped_stoch_row_map));
   }
 
 }
@@ -505,10 +535,10 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator_Adaptive::get_p_map(int l) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
-		     "Error!  Invalid p map index " << l);
+                     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_map(l);
-  else 
+  else
     return sg_p_map[l-num_p];
 
   return Teuchos::null;
@@ -518,7 +548,7 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator_Adaptive::get_g_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_g_sg, std::logic_error,
-		     "Error!  Invalid g map index " << l);
+                     "Error!  Invalid g map index " << l);
   return sg_g_map[l];
 }
 
@@ -526,12 +556,12 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::SGModelEvaluator_Adaptive::get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
-		     "Error!  Invalid p map index " << l);
+                     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_names(l);
-  else 
+  else
     return sg_p_names[l-num_p];
-  
+
   return Teuchos::null;
 }
 
@@ -549,10 +579,10 @@ Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGModelEvaluator_Adaptive::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l < 0 || l >= num_p + num_p_sg, std::logic_error,
-		     "Error!  Invalid p map index " << l);
+                     "Error!  Invalid p map index " << l);
   if (l < num_p)
     return me->get_p_init(l);
-  else 
+  else
     return sg_p_init[l-num_p]->getBlockVector();
 
   return Teuchos::null;
@@ -575,7 +605,7 @@ Stokhos::SGModelEvaluator_Adaptive::create_W() const
 
     return my_W;
   }
-  
+
   return Teuchos::null;
 }
 
@@ -586,18 +616,18 @@ Stokhos::SGModelEvaluator_Adaptive::createInArgs() const
   InArgs me_inargs = me->createInArgs();
 
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(num_p + num_p_sg); 
+  inArgs.set_Np(num_p + num_p_sg);
   inArgs.setSupports(IN_ARG_x_dot, me_inargs.supports(IN_ARG_x_dot_sg));
   inArgs.setSupports(IN_ARG_x, me_inargs.supports(IN_ARG_x_sg));
   inArgs.setSupports(IN_ARG_t, me_inargs.supports(IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, me_inargs.supports(IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, me_inargs.supports(IN_ARG_beta));
   inArgs.setSupports(IN_ARG_sg_basis, me_inargs.supports(IN_ARG_sg_basis));
-  inArgs.setSupports(IN_ARG_sg_quadrature, 
-		     me_inargs.supports(IN_ARG_sg_quadrature));
-  inArgs.setSupports(IN_ARG_sg_expansion, 
-		     me_inargs.supports(IN_ARG_sg_expansion));
-  
+  inArgs.setSupports(IN_ARG_sg_quadrature,
+                     me_inargs.supports(IN_ARG_sg_quadrature));
+  inArgs.setSupports(IN_ARG_sg_expansion,
+                     me_inargs.supports(IN_ARG_sg_expansion));
+
   return inArgs;
 }
 
@@ -609,12 +639,14 @@ Stokhos::SGModelEvaluator_Adaptive::createOutArgs() const
 
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(num_p+num_p_sg, num_g_sg);
+
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f_sg));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W_sg));
   outArgs.setSupports(OUT_ARG_WPrec, false);
   for (int j=0; j<num_p; j++)
-    outArgs.setSupports(OUT_ARG_DfDp, j, 
-			me_outargs.supports(OUT_ARG_DfDp_sg, j));
+    outArgs.setSupports(OUT_ARG_DfDp, j,
+                        me_outargs.supports(OUT_ARG_DfDp_sg, j));
+
   for (int i=0; i<num_g_sg; i++) {
     int ii = sg_g_index_map[i];
 //    if (!me_outargs.supports(OUT_ARG_DgDx_dot_sg, ii).none())
@@ -622,19 +654,19 @@ Stokhos::SGModelEvaluator_Adaptive::createOutArgs() const
 //    if (!me_outargs.supports(OUT_ARG_DgDx_sg, ii).none())
 //      outArgs.setSupports(OUT_ARG_DgDx, i,  DERIV_LINEAR_OP);
     for (int j=0; j<num_p; j++)
-      outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp_sg, ii, j));
+      outArgs.setSupports(OUT_ARG_DgDp, i, j,
+                          me_outargs.supports(OUT_ARG_DgDp_sg, ii, j));
   }
 
   // We do not support derivatives w.r.t. the new SG parameters, so their
   // support defaults to none.
-  
+
   return outArgs;
 }
 
-void 
+void
 Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
-				     const OutArgs& outArgs) const
+                                     const OutArgs& outArgs) const
 {
   // Get the input arguments
   Teuchos::RCP<const Epetra_Vector> x;
@@ -704,7 +736,7 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
       p = sg_p_init[i]->getBlockVector();
 
     // Convert block p to SG polynomial
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> p_sg = 
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> p_sg =
       create_p_sg(sg_p_index_map[i], View, p.get());
     me_inargs.set_p_sg(sg_p_index_map[i], p_sg);
   }
@@ -728,26 +760,26 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
     if (!outArgs.supports(OUT_ARG_DfDp, i).none()) {
       Derivative dfdp = outArgs.get_DfDp(i);
       if (dfdp.getMultiVector() != Teuchos::null) {
-	Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dfdp_sg;
-	if (dfdp.getMultiVectorOrientation() == DERIV_MV_BY_COL)
-	  dfdp_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   sg_basis, overlapped_stoch_row_map, 
-			   me->get_f_map(), sg_comm, 
-			   me->get_p_map(i)->NumMyElements()));
-	else if (dfdp.getMultiVectorOrientation() == DERIV_TRANS_MV_BY_ROW)
-	  dfdp_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   sg_basis, overlapped_stoch_row_map, 
-			   me->get_p_map(i), sg_comm, 
-			   me->get_f_map()->NumMyElements()));
-	me_outargs.set_DfDp_sg(i, 
-			       SGDerivative(dfdp_sg,
-					    dfdp.getMultiVectorOrientation()));
+        Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dfdp_sg;
+        if (dfdp.getMultiVectorOrientation() == DERIV_MV_BY_COL)
+          dfdp_sg =
+            Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                           sg_basis, overlapped_stoch_row_map,
+                           me->get_f_map(), sg_comm,
+                           me->get_p_map(i)->NumMyElements()));
+        else if (dfdp.getMultiVectorOrientation() == DERIV_TRANS_MV_BY_ROW)
+          dfdp_sg =
+            Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                           sg_basis, overlapped_stoch_row_map,
+                           me->get_p_map(i), sg_comm,
+                           me->get_f_map()->NumMyElements()));
+        me_outargs.set_DfDp_sg(i,
+                               SGDerivative(dfdp_sg,
+                                            dfdp.getMultiVectorOrientation()));
       }
       TEUCHOS_TEST_FOR_EXCEPTION(dfdp.getLinearOp() != Teuchos::null, std::logic_error,
-			 "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel " << 
-			 "cannot handle operator form of df/dp!");
+                         "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel " <<
+                         "cannot handle operator form of df/dp!");
     }
   }
 
@@ -759,7 +791,7 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
     Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(i);
     if (g != Teuchos::null) {
       Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> g_sg =
-	create_g_sg(sg_g_index_map[i], View, g.get());
+        create_g_sg(sg_g_index_map[i], View, g.get());
       me_outargs.set_g_sg(ii, g_sg);
     }
 
@@ -767,98 +799,98 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
     if (outArgs.supports(OUT_ARG_DgDx_dot, i).supports(DERIV_LINEAR_OP)) {
       Derivative dgdx_dot = outArgs.get_DgDx_dot(i);
       if (dgdx_dot.getLinearOp() != Teuchos::null) {
-	Teuchos::RCP<Stokhos::SGOperator> op =
-	  Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(
-	    dgdx_dot.getLinearOp(), true);
-	Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-	  op->getSGPolynomial();
-	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
-	  me_outargs.set_DgDx_dot_sg(ii, sg_blocks);
-	else {
-	  for (unsigned int k=0; k<num_sg_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_dot_sg_blocks[i]->setCoeffPtr(k, mv);
-	  }
-	  if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
-						        DERIV_MV_BY_COL));
-	  else
-	    me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
-						        DERIV_TRANS_MV_BY_ROW));
-	}
+        Teuchos::RCP<Stokhos::SGOperator> op =
+          Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(
+            dgdx_dot.getLinearOp(), true);
+        Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
+          op->getSGPolynomial();
+        if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
+          me_outargs.set_DgDx_dot_sg(ii, sg_blocks);
+        else {
+          for (unsigned int k=0; k<num_sg_blocks; k++) {
+            Teuchos::RCP<Epetra_MultiVector> mv =
+              Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
+                sg_blocks->getCoeffPtr(k), true)->getMultiVector();
+            dgdx_dot_sg_blocks[i]->setCoeffPtr(k, mv);
+          }
+          if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, ii).supports(DERIV_MV_BY_COL))
+            me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
+                                                        DERIV_MV_BY_COL));
+          else
+            me_outargs.set_DgDx_dot_sg(ii, SGDerivative(dgdx_dot_sg_blocks[i],
+                                                        DERIV_TRANS_MV_BY_ROW));
+        }
       }
       TEUCHOS_TEST_FOR_EXCEPTION(dgdx_dot.getLinearOp() == Teuchos::null &&
-			 dgdx_dot.isEmpty() == false, 
-			 std::logic_error,
-			 "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel: " << 
-			 "Operator form of dg/dxdot is required!");
+                         dgdx_dot.isEmpty() == false,
+                         std::logic_error,
+                         "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel: " <<
+                         "Operator form of dg/dxdot is required!");
     }
 
     // dg/dx
     if (outArgs.supports(OUT_ARG_DgDx, i).supports(DERIV_LINEAR_OP)) {
       Derivative dgdx = outArgs.get_DgDx(i);
       if (dgdx.getLinearOp() != Teuchos::null) {
-	Teuchos::RCP<Stokhos::SGOperator> op =
-	  Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(
-	    dgdx.getLinearOp(), true);
-	Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
-	  op->getSGPolynomial();
-	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
-	  me_outargs.set_DgDx_sg(ii, sg_blocks);
-	else {
-	  for (unsigned int k=0; k<num_sg_blocks; k++) {
-	    Teuchos::RCP<Epetra_MultiVector> mv = 
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
-		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_sg_blocks[i]->setCoeffPtr(k, mv);
-	  }
-	  if (me_outargs.supports(OUT_ARG_DgDx_sg, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
-						    DERIV_MV_BY_COL));
-	  else
-	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
-						    DERIV_TRANS_MV_BY_ROW));
-	}
+        Teuchos::RCP<Stokhos::SGOperator> op =
+          Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(
+            dgdx.getLinearOp(), true);
+        Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > sg_blocks =
+          op->getSGPolynomial();
+        if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
+          me_outargs.set_DgDx_sg(ii, sg_blocks);
+        else {
+          for (unsigned int k=0; k<num_sg_blocks; k++) {
+            Teuchos::RCP<Epetra_MultiVector> mv =
+              Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
+                sg_blocks->getCoeffPtr(k), true)->getMultiVector();
+            dgdx_sg_blocks[i]->setCoeffPtr(k, mv);
+          }
+          if (me_outargs.supports(OUT_ARG_DgDx_sg, ii).supports(DERIV_MV_BY_COL))
+            me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
+                                                    DERIV_MV_BY_COL));
+          else
+            me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
+                                                    DERIV_TRANS_MV_BY_ROW));
+        }
       }
       TEUCHOS_TEST_FOR_EXCEPTION(dgdx.getLinearOp() == Teuchos::null &&
-			 dgdx.isEmpty() == false, 
-			 std::logic_error,
-			 "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel: " << 
-			 "Operator form of dg/dxdot is required!");
+                         dgdx.isEmpty() == false,
+                         std::logic_error,
+                         "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel: " <<
+                         "Operator form of dg/dxdot is required!");
     }
 
     // dg/dp
     // Rembember, no derivatives w.r.t. sg parameters
     for (int j=0; j<num_p; j++) {
       if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
-	Derivative dgdp = outArgs.get_DgDp(i,j);
-	if (dgdp.getMultiVector() != Teuchos::null) {
-	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdp_sg; 
-	  if (dgdp.getMultiVectorOrientation() == DERIV_MV_BY_COL)
-	    dgdp_sg = 
-	      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			     sg_basis, overlapped_stoch_row_map, 
-			     me->get_g_map(ii), sg_g_map[i], sg_comm, 
-			     View, *(dgdp.getMultiVector())));
-	  else if (dgdp.getMultiVectorOrientation() == DERIV_TRANS_MV_BY_ROW) {
-	    Teuchos::RCP<const Epetra_BlockMap> product_map =
-	      Teuchos::rcp(&(dgdp.getMultiVector()->Map()),false);
-	    dgdp_sg = 
-	      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			     sg_basis, overlapped_stoch_row_map, 
-			     me->get_p_map(j), product_map, sg_comm, 
-			     View, *(dgdp.getMultiVector())));
-	  }
-	  me_outargs.set_DgDp_sg(ii, j, 
-				 SGDerivative(dgdp_sg,
-					      dgdp.getMultiVectorOrientation()));
-	}
-	TEUCHOS_TEST_FOR_EXCEPTION(dgdp.getLinearOp() != Teuchos::null, 
-			   std::logic_error,
-			   "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel " << 
-			   "cannot handle operator form of dg/dp!");
+        Derivative dgdp = outArgs.get_DgDp(i,j);
+        if (dgdp.getMultiVector() != Teuchos::null) {
+          Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdp_sg;
+          if (dgdp.getMultiVectorOrientation() == DERIV_MV_BY_COL)
+            dgdp_sg =
+              Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                             sg_basis, overlapped_stoch_row_map,
+                             me->get_g_map(ii), sg_g_map[i], sg_comm,
+                             View, *(dgdp.getMultiVector())));
+          else if (dgdp.getMultiVectorOrientation() == DERIV_TRANS_MV_BY_ROW) {
+            Teuchos::RCP<const Epetra_BlockMap> product_map =
+              Teuchos::rcp(&(dgdp.getMultiVector()->Map()),false);
+            dgdp_sg =
+              Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                             sg_basis, overlapped_stoch_row_map,
+                             me->get_p_map(j), product_map, sg_comm,
+                             View, *(dgdp.getMultiVector())));
+          }
+          me_outargs.set_DgDp_sg(ii, j,
+                                 SGDerivative(dgdp_sg,
+                                              dgdp.getMultiVectorOrientation()));
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(dgdp.getLinearOp() != Teuchos::null,
+                           std::logic_error,
+                           "Error!  Stokhos::SGModelEvaluator_Adaptive::evalModel " <<
+                           "cannot handle operator form of dg/dp!");
       }
     }
 
@@ -869,7 +901,7 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
 
   // Copy block SG components for W
   if ((W_out != Teuchos::null || (eval_W_with_f && f_out != Teuchos::null)) ) {
-      
+
     Teuchos::RCP<Epetra_Operator> W;
     if (W_out != Teuchos::null)
       W = W_out;
@@ -884,7 +916,7 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
   if (f_out!=Teuchos::null){
     if (!scaleOP)
       for (int i=0; i<sg_basis->size(); i++)
-	(*f_sg_blocks)[i].Scale(sg_basis->norm_squared(i));
+        (*f_sg_blocks)[i].Scale(sg_basis->norm_squared(i));
 
     adaptMngr->copyToAdaptiveVector(*f_sg_blocks,*f_out);
   }
@@ -896,15 +928,15 @@ Stokhos::SGModelEvaluator_Adaptive::evalModel(const InArgs& inArgs,
       SGDerivative dfdp_sg = me_outargs.get_DfDp_sg(i);
       if (dfdp.getMultiVector() != Teuchos::null) {
 
-	dfdp.getMultiVector()->Export(
-	  *(dfdp_sg.getMultiVector()->getBlockMultiVector()), 
-	  *adapted_overlapped_f_exporter, Insert);
+        dfdp.getMultiVector()->Export(
+          *(dfdp_sg.getMultiVector()->getBlockMultiVector()),
+          *adapted_overlapped_f_exporter, Insert);
       }
     }
   }
 }
 
-void 
+void
 Stokhos::SGModelEvaluator_Adaptive::set_x_sg_init(
   const Stokhos::EpetraVectorOrthogPoly& x_sg_in)
 {
@@ -917,7 +949,7 @@ Stokhos::SGModelEvaluator_Adaptive::get_x_sg_init() const
   return sg_x_init;
 }
 
-void 
+void
 Stokhos::SGModelEvaluator_Adaptive::set_p_sg_init(
   int i, const Stokhos::EpetraVectorOrthogPoly& p_sg_in)
 {
@@ -930,19 +962,19 @@ Stokhos::SGModelEvaluator_Adaptive::get_p_sg_init(int l) const
   return sg_p_init[l];
 }
 
-Teuchos::Array<int> 
+Teuchos::Array<int>
 Stokhos::SGModelEvaluator_Adaptive::get_p_sg_map_indices() const
 {
   return sg_p_index_map;
 }
 
-Teuchos::Array<int> 
+Teuchos::Array<int>
 Stokhos::SGModelEvaluator_Adaptive::get_g_sg_map_indices() const
 {
   return sg_g_index_map;
 }
 
-Teuchos::Array< Teuchos::RCP<const Epetra_Map> > 
+Teuchos::Array< Teuchos::RCP<const Epetra_Map> >
 Stokhos::SGModelEvaluator_Adaptive::get_g_sg_base_maps() const
 {
   Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_maps(num_g);
@@ -951,154 +983,223 @@ Stokhos::SGModelEvaluator_Adaptive::get_g_sg_base_maps() const
   return base_maps;
  }
 
-Teuchos::RCP<const Epetra_BlockMap> 
+Teuchos::RCP<const Epetra_BlockMap>
 Stokhos::SGModelEvaluator_Adaptive::get_overlap_stochastic_map() const
 {
   return overlapped_stoch_row_map;
 }
 
-Teuchos::RCP<const Epetra_BlockMap> 
+Teuchos::RCP<const Epetra_BlockMap>
 Stokhos::SGModelEvaluator_Adaptive::get_x_sg_overlap_map() const
 {
   return adapted_overlapped_x_map;
 }
 
-Teuchos::RCP<const Epetra_Import> 
+Teuchos::RCP<const Epetra_Import>
 Stokhos::SGModelEvaluator_Adaptive::get_x_sg_importer() const
 {
   return adapted_overlapped_x_importer;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_x_sg() const
+Stokhos::SGModelEvaluator_Adaptive::create_x_sg(Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x;
-  sg_x = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-	              sg_basis, stoch_row_map, x_map, sg_comm));
+  if (v == NULL)
+    sg_x = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, stoch_row_map, x_map, sg_x_map, sg_comm));
+  else
+    sg_x = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, stoch_row_map, x_map, sg_x_map, sg_comm,
+                          CV, *v));
   return sg_x;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_x_sg_overlap() const
+Stokhos::SGModelEvaluator_Adaptive::create_x_sg_overlap(Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
-  return create_x_sg();
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x;
+  if (v == NULL)
+    sg_x = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, x_map,
+                          sg_overlapped_x_map, sg_comm));
+  else
+    sg_x = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, x_map,
+                          sg_overlapped_x_map, sg_comm, CV, *v));
+  return sg_x;
 }
 
 Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_x_mv_sg(int num_vecs) const
+Stokhos::SGModelEvaluator_Adaptive::create_x_mv_sg(int num_vecs, Epetra_DataAccess CV,
+                                          const Epetra_MultiVector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_x;
-  sg_x = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			  sg_basis, stoch_row_map, x_map,  sg_comm, num_vecs));
+  if (v == NULL)
+    sg_x = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, stoch_row_map, x_map, sg_x_map, sg_comm,
+                          num_vecs));
+  else
+    sg_x = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, stoch_row_map, x_map, sg_x_map, sg_comm,
+                          CV, *v));
   return sg_x;
 }
 
 Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
 Stokhos::SGModelEvaluator_Adaptive::create_x_mv_sg_overlap(
-  int num_vecs) const
+  int num_vecs,
+  Epetra_DataAccess CV,
+  const Epetra_MultiVector* v) const
 {
-  return create_x_mv_sg(num_vecs);
+  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_x;
+  if (v == NULL)
+    sg_x = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, x_map,
+                          sg_overlapped_x_map, sg_comm, num_vecs));
+  else
+    sg_x = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, x_map,
+                          sg_overlapped_x_map, sg_comm, CV, *v));
+  return sg_x;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_p_sg(int l, Epetra_DataAccess CV, 
-				       const Epetra_Vector* v) const
+Stokhos::SGModelEvaluator_Adaptive::create_p_sg(int l, Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p;
   Teuchos::Array<int>::const_iterator it = std::find(sg_p_index_map.begin(),
-						     sg_p_index_map.end(), 
-						     l);
+                                                     sg_p_index_map.end(),
+                                                     l);
   TEUCHOS_TEST_FOR_EXCEPTION(it == sg_p_index_map.end(), std::logic_error,
-		     "Error!  Invalid p map index " << l);
+                     "Error!  Invalid p map index " << l);
   int ll = it - sg_p_index_map.begin();
   if (v == NULL)
     sg_p = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_p_map, me->get_p_map(l),
-			  sg_p_map[ll], sg_comm));
+                          sg_basis, overlapped_stoch_p_map, me->get_p_map(l),
+                          sg_p_map[ll], sg_comm));
   else
     sg_p = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_p_map, me->get_p_map(l),
-			  sg_p_map[ll], sg_comm, CV, *v));
+                          sg_basis, overlapped_stoch_p_map, me->get_p_map(l),
+                          sg_p_map[ll], sg_comm, CV, *v));
   return sg_p;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_f_sg() const
+Stokhos::SGModelEvaluator_Adaptive::create_f_sg(Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_f;
-  sg_f = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			  sg_basis, stoch_row_map, f_map, sg_comm));
+  if (v == NULL)
+    sg_f = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, stoch_row_map, f_map, sg_f_map, sg_comm));
+  else
+    sg_f = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, stoch_row_map, f_map, sg_f_map, sg_comm,
+                          CV, *v));
   return sg_f;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_f_sg_overlap() const
+Stokhos::SGModelEvaluator_Adaptive::create_f_sg_overlap(Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
-  return create_f_sg();
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_f;
+  if (v == NULL)
+    sg_f = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, f_map,
+                          sg_overlapped_f_map, sg_comm));
+  else
+    sg_f = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, f_map,
+                          sg_overlapped_f_map, sg_comm, CV, *v));
+  return sg_f;
 }
 
 Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
 Stokhos::SGModelEvaluator_Adaptive::create_f_mv_sg(
-  int num_vecs) const
+  int num_vecs,
+  Epetra_DataAccess CV,
+  const Epetra_MultiVector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_f;
-  sg_f = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			  sg_basis, stoch_row_map, f_map, sg_comm, num_vecs));
+  if (v == NULL)
+    sg_f = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, stoch_row_map, f_map, sg_f_map, sg_comm,
+                          num_vecs));
+  else
+    sg_f = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, stoch_row_map, f_map, sg_f_map, sg_comm,
+                          CV, *v));
   return sg_f;
 }
 
 Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
 Stokhos::SGModelEvaluator_Adaptive::create_f_mv_sg_overlap(
-  int num_vecs) const
+  int num_vecs,
+  Epetra_DataAccess CV,
+  const Epetra_MultiVector* v) const
 {
-  return create_f_mv_sg_overlap(num_vecs);
+  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_f;
+  if (v == NULL)
+    sg_f = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, f_map,
+                          sg_overlapped_f_map, sg_comm, num_vecs));
+  else
+    sg_f = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+                          sg_basis, overlapped_stoch_row_map, f_map,
+                          sg_overlapped_f_map, sg_comm, CV, *v));
+  return sg_f;
 }
 
 Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly>
-Stokhos::SGModelEvaluator_Adaptive::create_g_sg(int l, Epetra_DataAccess CV, 
-				       const Epetra_Vector* v) const
+Stokhos::SGModelEvaluator_Adaptive::create_g_sg(int l, Epetra_DataAccess CV,
+                                       const Epetra_Vector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_g;
   Teuchos::Array<int>::const_iterator it = std::find(sg_g_index_map.begin(),
-						     sg_g_index_map.end(), 
-						     l);
+                                                     sg_g_index_map.end(),
+                                                     l);
   TEUCHOS_TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
-		     "Error!  Invalid g map index " << l);
+                     "Error!  Invalid g map index " << l);
   int ll = it - sg_g_index_map.begin();
   if (v == NULL)
     sg_g = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_row_map, 
-			  me->get_g_map(l), 
-			  sg_g_map[ll], sg_comm));
+                          sg_basis, overlapped_stoch_row_map,
+                          me->get_g_map(l),
+                          sg_g_map[ll], sg_comm));
   else
     sg_g = Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_row_map, 
-			  me->get_g_map(l), 
-			  sg_g_map[ll], sg_comm, CV, *v));
+                          sg_basis, overlapped_stoch_row_map,
+                          me->get_g_map(l),
+                          sg_g_map[ll], sg_comm, CV, *v));
   return sg_g;
 }
 
 Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly>
 Stokhos::SGModelEvaluator_Adaptive::create_g_mv_sg(int l, int num_vecs,
-					  Epetra_DataAccess CV, 
-					  const Epetra_MultiVector* v) const
+                                          Epetra_DataAccess CV,
+                                          const Epetra_MultiVector* v) const
 {
   Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_g;
   Teuchos::Array<int>::const_iterator it = std::find(sg_g_index_map.begin(),
-						     sg_g_index_map.end(), 
-						     l);
+                                                     sg_g_index_map.end(),
+                                                     l);
   TEUCHOS_TEST_FOR_EXCEPTION(it == sg_g_index_map.end(), std::logic_error,
-		     "Error!  Invalid g map index " << l);
+                     "Error!  Invalid g map index " << l);
   int ll = it - sg_g_index_map.begin();
   if (v == NULL)
     sg_g = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_row_map, 
-			  me->get_g_map(l), 
-			  sg_g_map[ll], sg_comm, num_vecs));
+                          sg_basis, overlapped_stoch_row_map,
+                          me->get_g_map(l),
+                          sg_g_map[ll], sg_comm, num_vecs));
   else
     sg_g = Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			  sg_basis, overlapped_stoch_row_map, 
-			  me->get_g_map(l), 
-			  sg_g_map[ll], sg_comm, CV, *v));
+                          sg_basis, overlapped_stoch_row_map,
+                          me->get_g_map(l),
+                          sg_g_map[ll], sg_comm, CV, *v));
   return sg_g;
 }

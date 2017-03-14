@@ -347,6 +347,11 @@ public:
 
     // Compute scaled descent direction
     s.scale(step_state->searchSize);
+    if ( bnd.isActivated() ) {
+      s.plus(x);
+      bnd.project(s);
+      s.axpy(static_cast<Real>(-1),x);
+    }
   }
 
   /** \brief Update step, if successful.

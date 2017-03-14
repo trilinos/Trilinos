@@ -60,7 +60,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_HEX_C2_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType input ) {
       switch (opType) {
       case OPERATOR_VALUE : {
@@ -946,7 +946,7 @@ namespace Intrepid2 {
              typename inputPointValueType,  class ...inputPointProperties>
     void
     Basis_HGRAD_HEX_C2_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -999,7 +999,7 @@ namespace Intrepid2 {
       case OPERATOR_D6: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                       ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): operator not supported");
-        break;
+        // break; commented out becuase this always throws
       }
       case OPERATOR_D7:
       case OPERATOR_D8:

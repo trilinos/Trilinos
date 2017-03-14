@@ -25,8 +25,8 @@ public:
 
   /// Constructor
   StepperBackwardEuler(
-    Teuchos::RCP<Teuchos::ParameterList>                      pList,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
@@ -68,6 +68,7 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable

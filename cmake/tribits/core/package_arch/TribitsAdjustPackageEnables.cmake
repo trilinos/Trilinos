@@ -160,8 +160,8 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
   ENDIF()
 
   SET(LIST_TYPE  ${LIB_OR_TEST}_${REQUIRED_OR_OPTIONAL}_DEP_PACKAGES)
-
   SET(PACKAGE_DEPS_LIST)
+  SET(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
   FOREACH(DEP_PKG ${${LIST_TYPE}})
     IF (TRIBITS_SET_DEP_PACKAGES_DEBUG_DUMP)
@@ -194,7 +194,6 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
               " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
           ENDIF()
           IF (REQUIRED_OR_OPTIONAL STREQUAL "REQUIRED")
-            SET(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
             MESSAGE_WRAPPER("NOTE: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
               " package ${PACKAGE_NAME} has a required dependency on missing"
               " package ${DEP_PKG}!")
@@ -208,6 +207,11 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
               " ${PACKAGE_NAME} being ignored because ${DEP_PKG} is missing!"
             "\n***\n" )
         ENDIF()
+        # Must set enable vars for missing package to off so that logic in
+        # existing downstream packages that key off of these vars will still
+        # work.
+        DUAL_SCOPE_SET(${PROJECT_NAME}_ENABLE_${DEP_PKG} OFF)
+        DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_${DEP_PKG} OFF)
       ENDIF()
     ENDIF()
   ENDFOREACH()

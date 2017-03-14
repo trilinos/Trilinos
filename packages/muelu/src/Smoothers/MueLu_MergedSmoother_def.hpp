@@ -209,6 +209,15 @@ namespace MueLu {
     return newSmootherList;
   }
 
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  getNodeSmootherComplexity() const 
+  {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
 } //namespace MueLu
 
 #endif // MUELU_MERGEDSMOOTHER_DEF_HPP

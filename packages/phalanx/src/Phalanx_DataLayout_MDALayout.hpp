@@ -165,6 +165,17 @@ namespace PHX {
     
     std::string createIdentifier(const std::string& prefix = "");
 
+    template<typename IndexType>
+    typename std::enable_if<std::is_signed<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
+
+    /** \brief Specialization to remove compiler warnings about
+	pointless comparison of unsigned integer with zero.
+     */
+    template<typename IndexType>
+    typename std::enable_if<std::is_unsigned<IndexType>::value>::type
+    checkForValidRank(const IndexType& ordinal) const;
+
   private:
 
     std::vector<const char*> m_dim_name;

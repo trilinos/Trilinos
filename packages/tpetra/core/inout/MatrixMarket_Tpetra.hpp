@@ -5847,6 +5847,7 @@ namespace Tpetra {
         const int myRank = comm->getRank ();
         std::ofstream out;
 
+
         // Only open the file on Rank 0.
         if (myRank == 0) {
           out.open (filename.c_str ());
@@ -5982,8 +5983,7 @@ namespace Tpetra {
         if (debug && myRank == 0) {
           std::ostringstream os;
           os << "-- Input sparse matrix is:"
-             << "---- " << numRows << " x " << numCols << " with "
-             << pMatrix->getGlobalNumEntries() << " entries;" << endl
+             << "---- " << numRows << " x " << numCols << endl
              << "---- "
              << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
              << " indexed." << endl

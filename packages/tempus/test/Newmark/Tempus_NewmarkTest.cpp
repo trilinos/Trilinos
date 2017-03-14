@@ -42,6 +42,10 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 {
   std::vector<double> StepSize;
@@ -69,11 +73,19 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Integrator")
+    pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
+
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->setInitialState.
+    RCP<Thyra::VectorBase<double> > x0 =
+      model->getNominalValues().get_x()->clone_v();
+    integrator->setInitialState(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -81,7 +93,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 
     // Test if at 'Final Time'
     double time = integrator->getTime();
-    double timeFinal =pl->sublist("Demo Integrator")
+    double timeFinal =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 

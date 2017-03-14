@@ -207,6 +207,14 @@ namespace MueLu {
     }
   }
 
+  template <class Node>
+  size_t AmesosSmoother<Node>::getNodeSmootherComplexity() const {
+    // FIXME: This is a placeholder
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
+
+
 } // namespace MueLu
 
 // The AmesosSmoother is only templated on the Node, since it is an Epetra only object

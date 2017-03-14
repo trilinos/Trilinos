@@ -113,7 +113,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 
   // insert evaluated fields into map, check for multiple evaluators
   // that provide the same field.
-  nodes_.push_back(PHX::DagNode<Traits>(static_cast<const int>(nodes_.size()),p));
+  nodes_.push_back(PHX::DagNode<Traits>(static_cast<int>(nodes_.size()),p));
   const std::vector<Teuchos::RCP<PHX::FieldTag>>& evaluatedFields = 
     p->evaluatedFields();
   for (auto i=evaluatedFields.cbegin(); i != evaluatedFields.cend(); ++i) {

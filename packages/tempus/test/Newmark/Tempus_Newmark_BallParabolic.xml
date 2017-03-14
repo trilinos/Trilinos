@@ -2,21 +2,21 @@
   <ParameterList name="BallParabolicModel">
   </ParameterList>
   <ParameterList name="Tempus">
-    <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
+    <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
 
-    <ParameterList name="Demo Integrator">
+    <ParameterList name="Default Integrator">
       <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
       <Parameter name="Screen Output Index List"     type="string" value="1"/>
       <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
-      <Parameter name="Stepper Name"       type="string" value="Demo Stepper"/>
+      <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Unlimited"/>
         <Parameter name="Storage Limit" type="int"    value="20"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time"             type="double" value="2.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Initial Time Step"      type="double" value="0.2"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
@@ -31,17 +31,17 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Demo Stepper">
+    <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Newmark Beta Implicit"/>
       <ParameterList name="Newmark Beta Parameters">
         <Parameter name="Beta"    type="double" value="0.25"/>
         <Parameter name="Gamma"   type="double" value="0.5"/>
       </ParameterList>
-      <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
-      <Parameter name="Predictor Name" type="string" value="Demo Predictor"/>
+      <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
 
-      <ParameterList name="Demo Solver">
+      <ParameterList name="Default Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">
             <Parameter name="Method" type="string" value="Newton"/>
@@ -51,10 +51,10 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="Line Search">
+            <Parameter name="Method" type="string" value="Full Step"/>
             <ParameterList name="Full Step">
               <Parameter name="Full Step" type="double" value="1"/>
             </ParameterList>
-            <Parameter name="Method" type="string" value="Full Step"/>
           </ParameterList>
           <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
           <ParameterList name="Printing">
@@ -91,16 +91,12 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Demo Predictor">
+      <ParameterList name="Default Predictor">
         <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
       </ParameterList>
 
     </ParameterList>
 
-  </ParameterList>
-
-  <ParameterList name="VerboseObject">
-    <Parameter name="Verbosity Level" type="string" value="high"/>
   </ParameterList>
 
 </ParameterList>

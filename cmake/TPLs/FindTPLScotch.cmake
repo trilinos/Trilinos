@@ -68,7 +68,7 @@ ENDIF()
 
 # Zoltan2 has a dependency on Scotch 6.0.3
 
-include(CheckCSourceRuns)
+include(CheckCSourceCompiles)
 FUNCTION(CHECK_SCOTCH_VERSION_6_0_3  VARNAME)
   SET(SOURCE
   "
@@ -82,23 +82,22 @@ FUNCTION(CHECK_SCOTCH_VERSION_6_0_3  VARNAME)
 #endif
   int main()
   {
-    if( SCOTCH_VERSION > 6 )
+    #if SCOTCH_VERSION > 6 
       return 0;
-    if( SCOTCH_VERSION == 6 )
-    if( SCOTCH_RELEASE > 0 )
+    #elif SCOTCH_VERSION == 6 && SCOTCH_RELEASE > 0
       return 0;
-    if( SCOTCH_VERSION == 6 )
-    if( SCOTCH_RELEASE == 0 )
-    if( SCOTCH_PATCHLEVEL >= 3 )
+    #elif SCOTCH_VERSION == 6 && SCOTCH_RELEASE == 0 && SCOTCH_PATCHLEVEL >= 3
       return 0;
-    return 1;
+    #else
+      scotch_version_failure
+    #endif
   }
   "
   )
   SET(CMAKE_REQUIRED_INCLUDES ${TPL_Scotch_INCLUDE_DIRS})
   SET(CMAKE_REQUIRED_LIBRARIES ${TPL_Scotch_LIBRARIES})
   SET(CMAKE_REQUIRED_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
-  CHECK_C_SOURCE_RUNS("${SOURCE}" ${VARNAME})
+  CHECK_C_SOURCE_COMPILES("${SOURCE}" ${VARNAME})
 ENDFUNCTION()
 
 IF(TPL_ENABLE_Scotch)

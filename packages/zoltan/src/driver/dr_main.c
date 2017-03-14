@@ -73,11 +73,6 @@
 #include "dr_dd.h"
 #include "dr_compress_const.h"
 
-/* Normally, an application would not include zz_const.h,
- * but we want to print TPL data types indextype and 
- * realtype in test output, so we'll include it here. */
-#include "zz_const.h"
-
 /* #define IGNORE_FIRST_ITERATION_STATS */
 /* #define RANDOM_DIST */
 
@@ -717,11 +712,6 @@ int i;
     }
     fprintf(fp, "\n");
   }
-
-#if defined(ZOLTAN_PARMETIS) || defined(ZOLTAN_SCOTCH)
-  fprintf(fp, "sizeof indextype = %u\n", sizeof(indextype));
-  fprintf(fp, "sizeof realtype = %u\n", sizeof(realtype));
-#endif
 
   fprintf(fp, "##########################################################\n");
 }

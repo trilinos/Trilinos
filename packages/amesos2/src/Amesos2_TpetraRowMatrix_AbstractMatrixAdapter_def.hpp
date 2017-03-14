@@ -221,6 +221,68 @@ namespace Amesos2 {
     return this->mat_->getNumEntriesInGlobalRow(row);
   }
 
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_ptr_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseRowPtr() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.row_map.data();
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_idx_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseColInd() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.graph.entries.data();
+  }
+
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  typename 
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat>
+    ::super_t::spmtx_vals_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getSparseValues() const
+  {
+    typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
+    return lm.values.data();
+  }
+
+
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,

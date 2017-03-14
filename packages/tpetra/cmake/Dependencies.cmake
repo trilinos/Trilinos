@@ -1,7 +1,6 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     Classic classic  PT  REQUIRED
-    Kernels kernels  PT  OPTIONAL
     TSQR    tsqr     PT  OPTIONAL
     Core    core     PT  REQUIRED
   )

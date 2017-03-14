@@ -450,7 +450,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_TpetraKernels)
+    IF (Stokhos_ENABLE_KokkosKernels)
 
       IF (HAVE_TPETRA_PTHREAD)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -628,7 +628,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_TpetraKernels)
+    IF (Stokhos_ENABLE_KokkosKernels)
 
       IF (HAVE_TPETRA_PTHREAD)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(

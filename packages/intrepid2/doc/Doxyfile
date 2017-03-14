@@ -480,8 +480,8 @@ WARN_LOGFILE           =
 
 INPUT              = \
 ../refactor/src/Cell \
+../refactor/src/Discretization \
 #../refactor/src/Shared \
-#../refactor/src/Discretization \
 #../refactor/src/Orientation 
 
 # This tag can be used to specify the character encoding of the source files that 

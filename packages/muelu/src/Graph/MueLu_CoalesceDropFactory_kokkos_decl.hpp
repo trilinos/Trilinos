@@ -51,6 +51,8 @@
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
+#include "Xpetra_Matrix_fwd.hpp"
+
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
 #include "MueLu_AmalgamationInfo_fwd.hpp"
@@ -162,6 +164,7 @@ namespace MueLu {
     //@}
 
     void Build(Level& currentLevel) const;
+
   };
 
 } //namespace MueLu

@@ -214,6 +214,9 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const = 0;
 
+    //! Force the computation of global constants if we don't have them
+    virtual void computeGlobalConstants() =0;
+
     //@}
 
     //! @name Overridden from Teuchos::Describable

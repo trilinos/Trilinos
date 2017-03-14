@@ -87,6 +87,12 @@ namespace Amesos2 {
     typedef GlobalOrdinal global_ordinal_t;
     typedef Node node_t;
 
+    typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
+    typedef typename matrix_type::local_matrix_type  local_matrix_t;
+    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
+
     typedef row_access major_access;
   };
 
@@ -104,6 +110,12 @@ namespace Amesos2 {
     typedef GlobalOrdinal global_ordinal_t;
     typedef Node node_t;
 
+    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
+    typedef typename matrix_type::local_matrix_type  local_matrix_t;
+    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
+    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
+    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
+
     typedef row_access major_access;
   };
 
@@ -118,6 +130,12 @@ namespace Amesos2 {
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
 
+    typedef Epetra_RowMatrix matrix_type;
+    typedef matrix_type local_matrix_t;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
+
     typedef row_access major_access;
   };
 
@@ -127,6 +145,12 @@ namespace Amesos2 {
     typedef int local_ordinal_t;
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+
+    typedef Epetra_CrsMatrix matrix_type;
+    typedef matrix_type local_matrix_t;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
 
     typedef row_access major_access;
   };
@@ -147,6 +171,12 @@ namespace Amesos2 {
     typedef int local_ordinal_t;
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
+
+    typedef Epetra_VbrMatrix matrix_type;
+    typedef matrix_type local_matrix_t;
+    typedef int* sparse_ptr_type;
+    typedef int* sparse_idx_type;
+    typedef double* sparse_values_type;
 
     typedef row_access major_access;
   };

@@ -868,6 +868,7 @@ std::string NumberToString( T Number )
     \arg CG_FLAG_ITEREXCEED  Iteration Limit Exceeded
     \arg CG_FLAG_NEGCURVE    Negative Curvature Detected
     \arh CG_FLAG_TRRADEX     Trust-Region Radius Exceeded
+    \arh CG_FLAG_ZERORHS     Initiali Right Hand Side is Zero
 
   */
   enum ECGFlag {
@@ -875,6 +876,7 @@ std::string NumberToString( T Number )
     CG_FLAG_ITEREXCEED,
     CG_FLAG_NEGCURVE,
     CG_FLAG_TRRADEX,
+    CG_FLAG_ZERORHS,
     CG_FLAG_UNDEFINED 
   };
 
@@ -893,6 +895,9 @@ std::string NumberToString( T Number )
         break;
       case CG_FLAG_TRRADEX:   
         retString = "Trust-Region radius exceeded";
+        break;
+      case CG_FLAG_ZERORHS:
+        retString = "Initial right hand side is zero";
         break;
       default:
         retString = "INVALID ECGFlag";  

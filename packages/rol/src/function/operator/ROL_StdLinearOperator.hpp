@@ -85,6 +85,8 @@ private:
 
 public:
 
+  StdLinearOperator() {}
+
   StdLinearOperator( RCP<std::vector<Real> > &A ) : A_(A) { 
     int N2 = A_->size();
     N_ = (std::round(std::sqrt(N2)));
@@ -121,7 +123,7 @@ public:
   }
 
   // Matrix multiplication with transpose
-  using LinearOperator<Real>::apply;
+  using LinearOperator<Real>::applyAdjoint;
   void applyAdjoint( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     using Teuchos::dyn_cast;    
     RCP<vector> Hvp = dyn_cast<SV>(Hv).getVector();

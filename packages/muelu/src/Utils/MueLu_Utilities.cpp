@@ -80,7 +80,7 @@ namespace MueLu {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
-              || name == "ipc: element to node map"
+              || name == "pcoarsen: element to node map"
 #endif
               ) {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);

@@ -25,8 +25,8 @@ public:
 
   /// Constructor
   StepperNewmarkImplicit(
-    Teuchos::RCP<Teuchos::ParameterList>                      pList,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
@@ -68,6 +68,7 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -76,27 +77,27 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
-  
+
     void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
                              const Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const; 
-    
+                             const Scalar dt) const;
+
     void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& d,
                                const Thyra::VectorBase<Scalar>& v,
                                const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const; 
-    
+                               const Scalar dt) const;
+
     void correctVelocity(Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& vPred,
                              const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const; 
+                             const Scalar dt) const;
 
     void correctDisplacement(Thyra::VectorBase<Scalar>& d,
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const; 
+                               const Scalar dt) const;
 
 private:
 
@@ -113,14 +114,10 @@ private:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>                    inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>                   outArgs_;
 
-  // Compute the balancing time derivative as a function of x
-  std::function<void (const Thyra::VectorBase<Scalar> &,
-                            Thyra::VectorBase<Scalar> &)>
-  xDotFunction(Scalar dt,Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old);
+  Scalar beta_;
+  Scalar gamma_;
 
-  Scalar beta_; 
-  Scalar gamma_; 
-
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
 } // namespace Tempus

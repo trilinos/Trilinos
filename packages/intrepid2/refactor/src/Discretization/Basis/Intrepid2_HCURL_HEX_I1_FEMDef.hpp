@@ -189,7 +189,7 @@ namespace Intrepid2 {
              typename inputPointValueType,  class ...inputPointProperties>
     void
     Basis_HCURL_HEX_I1_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;

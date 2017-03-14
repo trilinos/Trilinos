@@ -695,9 +695,24 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>pcoarsen: element</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Element class for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
 
     <parameter>
-      <name>ipc: hi basis</name>
+      <name>pcoarsen: schedule</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Coarsening schedule for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+    <parameter>
+      <name>pcoarsen: hi basis</name>
       <type>string</type>
       <default>""</default>
       <description>Higher order basis for IntrepidPCoarsening</description>
@@ -705,7 +720,7 @@
     </parameter>
 
     <parameter>
-      <name>ipc: lo basis</name>
+      <name>pcoarsen: lo basis</name>
       <type>string</type>
       <default>""</default>
       <description>Lower order basis for IntrepidPCoarsening</description>

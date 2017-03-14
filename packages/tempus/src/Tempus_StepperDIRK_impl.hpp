@@ -26,13 +26,14 @@ template<class Scalar> class StepperFactory;
 // StepperDIRK definitions:
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
 {
+  this->setTableau(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(transientModel);
   this->setSolver();
-  this->setTableau();
   this->initialize();
 }
 
@@ -75,12 +76,18 @@ void StepperDIRK<Scalar>::setSolver(
 }
 
 template<class Scalar>
-void StepperDIRK<Scalar>::setTableau(std::string stepperType)
+void StepperDIRK<Scalar>::setTableau(
+  Teuchos::RCP<Teuchos::ParameterList> pList,
+  std::string stepperType)
 {
-  if (stepperType == "")
-    stepperType = pList_->get<std::string>("Stepper Type");
+  if (stepperType == "") {
+    if (pList == Teuchos::null)
+      stepperType = "Forward Euler";
+    else
+      stepperType = pList->get<std::string>("Stepper Type");
+  }
 
-  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList_);
+  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
 
   //Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
   //std::cout << " A = \n" << A << std::endl;
@@ -88,9 +95,13 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
   TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
     std::logic_error,
        "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
-    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = " << stepperType <<  "\n");
   description_ = DIRK_ButcherTableau_->description();
+}
 
+template<class Scalar>
+void StepperDIRK<Scalar>::initialize()
+{
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
   stageX_    = residualModel_->getNominalValues().get_x()->clone_v();
@@ -98,11 +109,6 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
   stageXPartial_ = Thyra::createMember(residualModel_->get_x_space());
   assign(stageXDot_.ptr(),     Teuchos::ScalarTraits<Scalar>::zero());
   assign(stageXPartial_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-}
-
-template<class Scalar>
-void StepperDIRK<Scalar>::initialize()
-{
 }
 
 template <typename Scalar>
@@ -182,9 +188,9 @@ void StepperDIRK<Scalar>::takeStep(
     }
 
     if (pass == true)
-      workingState->stepperState_->stepperStatus_ = Status::PASSED;
+      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
-      workingState->stepperState_->stepperStatus_ = Status::FAILED;
+      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(DIRK_ButcherTableau_->order());
   }
   return;
@@ -228,11 +234,13 @@ template <class Scalar>
 void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
+  if (pList == Teuchos::null) {
+    pList_ = this->getDefaultParameters();
+  } else {
+    pList_ = pList;
+  }
+  // Can not validate because of optional Parameters.
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -240,17 +248,31 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
+  //std::stringstream Description;
+  //Description << "'Stepper Type' sets the stepper method.\n"
+  //            << "For DIRK the following methods are valid:\n"
+  //            << "  SDIRK 1 Stage 1st order\n"
+  //            << "  SDIRK 2 Stage 2nd order\n"
+  //            << "  SDIRK 2 Stage 3rd order\n"
+  //            << "  SDIRK 3 Stage 4th order\n"
+  //            << "  SDIRK 5 Stage 4th order\n"
+  //            << "  SDIRK 5 Stage 5th order\n";
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
-
-    validPL = pl;
-  }
-  return validPL;
+  return DIRK_ButcherTableau_->getValidParameters();
 }
 
+template <class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperDIRK<Scalar>::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  pl->set<std::string>("Solver Name", "Default Solver");
+  Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
+  pl->set("Default Solver", *solverPL);
+
+  return pl;
+}
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>

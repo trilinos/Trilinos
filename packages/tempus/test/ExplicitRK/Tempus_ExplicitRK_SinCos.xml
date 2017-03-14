@@ -23,8 +23,8 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
@@ -52,22 +52,15 @@
       <Parameter name="Stepper Type" type="string" value="General ERK"/>
       <ParameterList name="Tableau">
           <Parameter name="A" type="string"
-              value="0.000000000000000  0.000000000000000  0.000000000000000 0.000000000000000;
-                     0.500000000000000  0.000000000000000  0.000000000000000 0.000000000000000;
-                     0.000000000000000  0.500000000000000  0.000000000000000 0.000000000000000;
-                     0.000000000000000  0.000000000000000  1.000000000000000 0.000000000000000"/>
+              value="0.0 0.0 0.0 0.0; 0.5 0.0 0.0 0.0; 0.0 0.5 0.0 0.0; 0.0 0.0 1.0 0.0"/>
           <Parameter name="b" type="string"
-              value="0.166666666666667  0.333333333333333  0.333333333333333 0.166666666666667"/>
+              value="0.166666666666667 0.333333333333333 0.333333333333333 0.166666666666667"/>
           <Parameter name="c" type="string"
-              value="0.000000000000000  0.500000000000000  0.500000000000000 1.000000000000000"/>
+              value="0.0 0.5 0.5 1.0"/>
           <Parameter name="order" type="int" value="4"/>
       </ParameterList>
     </ParameterList>
 
-  </ParameterList>
-
-  <ParameterList name="VerboseObject">
-    <Parameter name="Verbosity Level" type="string" value="high"/>
   </ParameterList>
 
 </ParameterList>

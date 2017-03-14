@@ -49,7 +49,6 @@
 
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_DependencySheet.hpp"
 
 
 namespace Teuchos {
@@ -83,23 +82,6 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void updateParametersFromYamlFile(
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromYamlFile(const std::string &yamlFileName);
-
-
-/** \brief Reads Yaml parameters from a file and return them in a new parameter
- * list.
- *
- * \param yamlFileName [in] The file name containing Yaml parameter list
- * specification.
- *
- * \param depSheet [out] The Dependency Sheet into which Dependencies should be
- * placed.
- *
- * \relates ParameterList
- */
-TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
-RCP<ParameterList> getParametersFromYamlFile(const std::string &yamlFileName,
-  RCP<DependencySheet> depSheet);
-
 
 /** \brief Reads Yaml parameters from a std::string and updates those already in the
  * given parameter list.
@@ -144,20 +126,6 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromYamlString(const std::string &yamlStr);
 
 
-/** \brief Reads Yaml parameters from a std::string and return them in a new
- * parameter list.
- *
- * \param yamlStr [in] String containing Yaml parameter list specification.
- * \param depSheet [in] The Dependency Sheet into which Dependencies should be
- * placed.
- *
- * \relates ParameterList
- */
-TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
-RCP<ParameterList> getParametersFromYamlString( const std::string &yamlStr,
-  RCP<DependencySheet> depSheet);
-
-
 /** \brief Write parameters and sublists in Yaml format to an std::ostream.
  *
  * \param paramList [in] Contains the parameters and sublists that will be
@@ -165,15 +133,12 @@ RCP<ParameterList> getParametersFromYamlString( const std::string &yamlStr,
  *
  * \param yamlOut [in] The stream that will get the Yaml output.
  *
- * \param depSheet [in] The Dependency Sheet which should be written out.
- *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void writeParameterListToYamlOStream(
   const ParameterList &paramList,
-  std::ostream &yamlOut,
-  RCP<const DependencySheet> depSheet = null
+  std::ostream &yamlOut
   );
 
 
@@ -185,17 +150,13 @@ void writeParameterListToYamlOStream(
  * \param yamlFileName [in] The file name that will be create to contain the
  * Yaml version of the parameter list specification.
  *
- * \param depSheet [in] The Dependency Sheet which should be written out.
- *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void writeParameterListToYamlFile(
   const ParameterList &paramList,
-  const std::string &yamlFileName,
-  RCP<const DependencySheet> depSheet=null
+  const std::string &yamlFileName
   );
-
 
 } // namespace Teuchos
 

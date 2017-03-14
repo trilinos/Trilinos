@@ -182,6 +182,9 @@ namespace MueLu {
     // This function is global
     double GetOperatorComplexity() const;
 
+    // This function is global
+    double GetSmootherComplexity() const;
+
     //! Helper function
     void CheckLevel(Level& level, int levelID);
 

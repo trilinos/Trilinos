@@ -183,7 +183,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   #endif
   }
 
-  BASKER_ASSERT(A.nrow > 0, "Sfactor A.nrow");
+  BASKER_ASSERT(A.nrow > 0, "Basker sfactor assert: A.nrow > 0 failed");
   MALLOC_INT_1DARRAY(gperm, A.nrow);
   init_value(gperm,A.nrow, BASKER_MAX_IDX);
   MALLOC_INT_1DARRAY(gpermi,A.nrow);
@@ -241,14 +241,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     INT_2DARRAY gSrow;
     //MALLOC_INT_2DARRAY(gScol, tree.nlvls);
     MALLOC_INT_2DARRAY(gScol, split_num);
-    BASKER_ASSERT(split_num > 0, "sfactor split_num");
+    BASKER_ASSERT(split_num > 0, "Basker symmetric_sfactor assert: split_num > 0 failed");
     //MALLOC_INT_2DARRAY(gSrow, tree.nlvls);
     MALLOC_INT_2DARRAY(gSrow, split_num);
     split_num = num_threads/2;
     //for(Int ii=0; ii < tree.nlvls; ii++)
     for(Int ii=0; ii < split_num; ii++)
     {
-      BASKER_ASSERT(A.ncol > 0, "sfactor A.ncol malloc");
+      BASKER_ASSERT(A.ncol > 0, "Basker symmetric_sfactor assert: A.ncol malloc > 0 failed");
       MALLOC_INT_1DARRAY(gScol[ii], A.ncol);
       init_value(gScol[ii], A.ncol, (Int)0);
     }
@@ -514,7 +514,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   
     Int have_past = BASKER_MAX_IDX;
   
-    BASKER_ASSERT(ws_size > 0, "sfactor ws_size");
+    BASKER_ASSERT(ws_size > 0 , "Basker unsymmetric_sfactor assert: sfactor ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
   
     Int *past   = &(ws(0));
@@ -602,7 +602,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(ata_option == 1)
     {ws_size += MV.nrow;}
 
-    BASKER_ASSERT(ws_size > 0 , "sfactor ws_size");
+    BASKER_ASSERT(ws_size > 0 , "Basker e_tree assert: sfactor ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
 
     Int *past   = &(ws[0]);
@@ -658,7 +658,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   {
     const   Int n = MV.ncol;
     INT_1DARRAY post;
-    BASKER_ASSERT(n > 0, "sfactor post_order n");
+    BASKER_ASSERT(n > 0, "Basker post_order assert: sfactor post_order n > 0 failed");
     MALLOC_INT_1DARRAY(post,n);
     init_value(post, n, (Int)0);
     Int *p = &(ST.parent(0)); //parent;
@@ -716,7 +716,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   {
     Int n = MV.ncol;
     INT_1DARRAY post;
-    BASKER_ASSERT(n > 0, "sfactor post_order n");
+    BASKER_ASSERT(n > 0, "Basker post_order assert: sfactor post_order n > 0 failed");
     MALLOC_INT_1DARRAY(post,n);
     init_value(post, n, (Int)0);
     Int *p = &(ST.parent[0]); //parent;
@@ -811,11 +811,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    
     const Int ws_size = 4*MV.ncol+ (MV.ncol+MV.nrow+1);
     INT_1DARRAY ws;
-    BASKER_ASSERT(ws_size > 0, "sfactor col_count");
+    BASKER_ASSERT(ws_size > 0, "Basker col_count assert1: col_count ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
     init_value(ws, ws_size, (Int)0);
     INT_1DARRAY delta;
-    BASKER_ASSERT(MV.ncol > 0 , "sfactor col_count ncol");
+    BASKER_ASSERT(MV.ncol > 0, "Basker col_count assert2: ncol > 0 failed");
     MALLOC_INT_1DARRAY(delta, MV.ncol);
     init_value(delta, MV.ncol, (Int)0);
 
@@ -968,11 +968,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     Int *parent = &(ST.parent[0]);
     Int ws_size = 4*A.ncol+ (A.ncol+A.nrow+1);
     INT_1DARRAY ws;
-    BASKER_ASSERT(ws_size > 0, "sfactor col_count ws_size");
+    BASKER_ASSERT(ws_size > 0, "Basker col_count assert1: ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
     init_value(ws, ws_size, (Int)0);
     INT_1DARRAY delta;
-    BASKER_ASSERT(ws_size > 0 , "sfactor col_count ncol");
+    //BASKER_ASSERT(ws_size > 0, "Basker col_count assert2: ws_size > 0 failed");
+    BASKER_ASSERT(MV.ncol > 0, "Basker col_count assert2: ncol > 0 failed");
     MALLOC_INT_1DARRAY(delta, MV.ncol);
     init_value(delta, MV.ncol, (Int)0);
 
@@ -1260,7 +1261,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     //Start Algorithm
     INT_1DARRAY U_col_count;
-    BASKER_ASSERT(MV.ncol > 0, "sfactor ublk ncol");
+    BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
     //if(MV.ncol > 0)
     {
       MALLOC_INT_1DARRAY(U_col_count, MV.ncol);
@@ -1268,7 +1269,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
     //May want to change color to bool
     INT_1DARRAY color;
-    BASKER_ASSERT(MV.nrow > 0 , "sfactor ublks nrow");
+    BASKER_ASSERT(MV.nrow > 0, "Basker U_blk_sfactor assert: nrow > 0 failed");
     //if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(color, MV.nrow);
@@ -1527,7 +1528,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
  
     //Start Algorithm
     INT_1DARRAY U_col_count;
-    BASKER_ASSERT(MV.ncol > 0, "sfactor ublk ncol");
+    BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
     //if(MV.ncol > 0)
     {
       MALLOC_INT_1DARRAY(U_col_count, MV.ncol);
@@ -1535,7 +1536,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
     //May want to change color to bool
     INT_1DARRAY color;
-    BASKER_ASSERT(MV.nrow > 0, "sfactor ublk nrow");
+    BASKER_ASSERT(MV.nrow > 0, "Basker U_blk_sfactor assert: nrow > 0 failed");
     MALLOC_INT_1DARRAY(color, MV.nrow);
     init_value(color, MV.nrow, (Int)0);
     INT_1DARRAY pattern;
@@ -1702,7 +1703,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
     
     //Copy column_counts
-    printf("MVncol: %d \n", MV.ncol);
+    //printf("MVncol: %d \n", MV.ncol);
     ST.init_U_col_counts(MV.ncol);
     for(Int i = 0; i < MV.ncol; i++)
     {
@@ -1749,7 +1750,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    INT_1DARRAY grow
   )
   {
-    printf(" This L_blk_sfactor algorithm is not implemented\n");
+    printf("Basker: This L_blk_sfactor algorithm is not implemented\n");
     //Algorithm
     //You can either use the Row-count method or
     //Assume same as U_blk for symmtric case.
@@ -1767,7 +1768,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    INT_1DARRAY grow
   )
   {
-    printf(" This L_blk_sfactor algorithm is not implemented\n");
+    printf("Basker: This L_blk_sfactor algorithm is not implemented\n");
     //Algorithm
     //You can either use the Row-count method or
     //Assume same as U_blk for symmtric case.
@@ -1785,7 +1786,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    INT_1DARRAY grow
   )
   {
-    printf(" This S_sfactor_reduce algorithm is not implemented\n");
+    printf("Basker: This S_sfactor_reduce algorithm is not implemented\n");
   }//end S_sfactor_reduce()
 
 
@@ -1799,7 +1800,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    INT_1DARRAY grow
   )
   {
-    printf(" This S_sfactor_reduce algorithm is not implemented\n");
+    printf("Basker: This S_sfactor_reduce algorithm is not implemented\n");
   }//end S_sfactor_reduce()
 
   template <class Int, class Entry, class Exe_Space>
@@ -2125,7 +2126,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       return;
     }
 
-    BASKER_ASSERT(nblks_left > 0, "sfactor btf_last_dense nblks");
+    BASKER_ASSERT(nblks_left > 0, "Basker btf_last_dense assert: nblks_left > 0 failed");
     MALLOC_MATRIX_1DARRAY(LBTF, nblks_left);
     MALLOC_MATRIX_1DARRAY(UBTF, nblks_left);
 
@@ -2170,7 +2171,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     
     if(btf_tabs_offset == 0)
     {
-      BASKER_ASSERT(num_threads > 0, "sfactor num_threads");
+      BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
       MALLOC_THREAD_1DARRAY(thread_array, num_threads);
     }
 
@@ -2180,9 +2181,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       thread_array(i).iws_size = max_blk_size;
       thread_array(i).ews_size = max_blk_size;
 
-      BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "sfactor threads iws");
+      BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
       MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
-      BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "sfactor threads ews");
+      BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
       MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
 
       #ifdef BASKER_DEBUG_SFACTOR

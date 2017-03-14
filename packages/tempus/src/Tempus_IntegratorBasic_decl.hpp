@@ -20,7 +20,7 @@
 // Tempus
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
-#include "Tempus_IntegratorObserver.hpp"
+#include "Tempus_IntegratorObserverBasic.hpp"
 
 #include <string>
 
@@ -34,10 +34,19 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /** \brief Constructor with ParameterList, model and optional observer. */
+  /** \brief Constructor with ParameterList and model, and will be fully initialized. */
   IntegratorBasic(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+
+  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
+  IntegratorBasic(
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    std::string stepperType);
+
+  /// Destructor
+  /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
+  IntegratorBasic();
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -56,6 +65,13 @@ public:
     virtual void acceptTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
+    /// Return a copy of the Tempus ParameterList
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	const
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      *pl = *tempusPL_;
+      return pl;
+    }
   //@}
 
   /// \name Accessor methods
@@ -63,14 +79,20 @@ public:
     /// Get current time
     virtual Scalar getTime() const {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    virtual Scalar getIndex() const {return solutionHistory_->getCurrentIndex();}
+    virtual Scalar getIndex()const {return solutionHistory_->getCurrentIndex();}
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const
       {return stepper_;}
     /// Set the Stepper
-    virtual void setStepper(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
-    virtual void setStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    /// Set the initial state which has the initial conditions
+    virtual void setInitialState(
+      Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
+    /// Set the initial state from Thyra::VectorBase
+    virtual void setInitialState(
+      Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
       {return solutionHistory_;}
@@ -135,23 +157,34 @@ protected:
   Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
   Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
-  Teuchos::RCP<Teuchos::Time>  integratorTimer_;
-  Teuchos::RCP<Teuchos::Time>  stepperTimer_;
+  Teuchos::RCP<Teuchos::Time> integratorTimer_;
+  Teuchos::RCP<Teuchos::Time> stepperTimer_;
 
-  std::vector<int>    outputScreenIndices_;///< Vector of screen output indices.
+  std::vector<int> outputScreenIndices_;  ///< Vector of screen output indices.
 
   /** The integratorStatus is primarily in the WORKING Status, and
    *  PASSED/FAILED are noted at the end of the run.  A FAILED value
    *  is used to jump out of the time-integration loop.
    */
   Status integratorStatus_;
+  bool isInitialized_;
 };
 
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model);
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType);
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic();
 
 } // namespace Tempus
 

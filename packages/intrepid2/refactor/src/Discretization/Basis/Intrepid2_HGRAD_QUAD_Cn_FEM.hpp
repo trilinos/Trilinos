@@ -67,9 +67,9 @@ namespace Intrepid2 {
                  typename vinvViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues( /**/  outputValueViewType outputValues,
+        getValues(       outputValueViewType outputValues,
                    const inputPointViewType  inputPoints,
-                   /**/  workViewType        work,
+                         workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
       };
@@ -79,7 +79,7 @@ namespace Intrepid2 {
                typename inputPointValueType,  class ...inputPointProperties,
                typename vinvValueType,        class ...vinvProperties>
       static void
-      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType );
@@ -90,15 +90,15 @@ namespace Intrepid2 {
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
-        /**/  outputValueViewType _outputValues;
+              outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
         const ordinal_type        _opDn;
         
         KOKKOS_INLINE_FUNCTION
-        Functor( /**/  outputValueViewType outputValues_,
-                 /**/  inputPointViewType  inputPoints_,
-                 /**/  vinvViewType        vinv_,
+        Functor(       outputValueViewType outputValues_,
+                       inputPointViewType  inputPoints_,
+                       vinvViewType        vinv_,
                  const ordinal_type        opDn_ = 0 )
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
             _vinv(vinv_), _opDn(opDn_) {}
@@ -170,7 +170,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getValues( /**/  outputViewType outputValues,
+    getValues(       outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG

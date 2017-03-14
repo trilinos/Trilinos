@@ -175,6 +175,9 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const;
+
     //@}
 
   private:

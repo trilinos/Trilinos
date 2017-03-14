@@ -31,6 +31,89 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(DIRK, ParameterList)
+{
+  std::vector<std::string> RKMethods;
+  RKMethods.push_back("SDIRK 1 Stage 1st order");
+  RKMethods.push_back("SDIRK 2 Stage 2nd order");
+  RKMethods.push_back("SDIRK 2 Stage 3rd order");
+//RKMethods.push_back("DIRK 2 Stage 3rd order");
+  RKMethods.push_back("SDIRK 3 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 5th order");
+
+  for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
+
+    std::string RKMethod_ = RKMethods[m];
+
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_DIRK_SinCos.xml");
+
+    // Setup the SinCosModel
+    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+    RCP<SinCosModel<double> > model =
+      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+
+    RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
+    tempusPL->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
+
+    if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
+      // Construct in the same order as default.
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+      RCP<ParameterList> solverPL = Teuchos::parameterList();
+      *solverPL  = *(sublist(stepperPL, "Default Solver", true));
+      tempusPL->sublist("Default Stepper").remove("Default Solver");
+      tempusPL->sublist("Default Stepper")
+           .set<double>("gamma", 0.2928932188134524);
+      tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+    } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
+      // Construct in the same order as default.
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+      RCP<ParameterList> solverPL = Teuchos::parameterList();
+      *solverPL  = *(sublist(stepperPL, "Default Solver", true));
+      tempusPL->sublist("Default Stepper").remove("Default Solver");
+      tempusPL->sublist("Default Stepper").set("3rd Order A-stable", true);
+      tempusPL->sublist("Default Stepper").set("2nd Order L-stable", false);
+      tempusPL->sublist("Default Stepper")
+           .set<double>("gamma", 0.7886751345948128);
+      tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+    }
+
+    // Test constructor IntegratorBasic(tempusPL, model)
+    {
+      RCP<Tempus::IntegratorBasic<double> > integrator =
+        Tempus::integratorBasic<double>(tempusPL, model);
+
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+      RCP<ParameterList> defaultPL =
+        integrator->getStepper()->getDefaultParameters();
+      defaultPL->remove("Description");
+
+      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    }
+
+    // Test constructor IntegratorBasic(model, stepperType)
+    {
+      RCP<Tempus::IntegratorBasic<double> > integrator =
+        Tempus::integratorBasic<double>(model, RKMethods[m]);
+
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+      RCP<ParameterList> defaultPL =
+        integrator->getStepper()->getDefaultParameters();
+      defaultPL->remove("Description");
+
+      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    }
+  }
+}
+
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, SinCos)
 {
   std::vector<std::string> RKMethods;
@@ -78,23 +161,31 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+      pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
       if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
-        pl->sublist("Demo Stepper").set("gamma", 0.2928932190);
+        pl->sublist("Default Stepper").set("gamma", 0.2928932190);
       } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
-        pl->sublist("Demo Stepper").set("3rd Order A-stable", true);
-        pl->sublist("Demo Stepper").set("2nd Order L-stable", false);
-        pl->sublist("Demo Stepper").set("gamma", 0.7886751347);
+        pl->sublist("Default Stepper").set("3rd Order A-stable", true);
+        pl->sublist("Default Stepper").set("2nd Order L-stable", false);
+        pl->sublist("Default Stepper").set("gamma", 0.7886751347);
       }
 
       dt /= 2;
 
       // Setup the Integrator and reset initial time step
-      pl->sublist("Demo Integrator")
+      pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
       RCP<Tempus::IntegratorBasic<double> > integrator =
         Tempus::integratorBasic<double>(pl, model);
       order = integrator->getStepper()->getOrder();
+
+      // Initial Conditions
+      // During the Integrator construction, the initial SolutionState
+      // is set by default to model->getNominalVales().get_x().  However,
+      // the application can set it also by integrator->setInitialState.
+      RCP<Thyra::VectorBase<double> > x0 =
+        model->getNominalValues().get_x()->clone_v();
+      integrator->setInitialState(0.0, x0);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();
@@ -102,7 +193,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
       // Test if at 'Final Time'
       double time = integrator->getTime();
-      double timeFinal = pl->sublist("Demo Integrator")
+      double timeFinal = pl->sublist("Default Integrator")
         .sublist("Time Step Control").get<double>("Final Time");
       double tol = 100.0 * std::numeric_limits<double>::epsilon();
       TEST_FLOATING_EQUALITY(time, timeFinal, tol);
@@ -196,15 +287,15 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
     // Set the Stepper
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Stepper").set("Stepper Type", RKMethod_);
-    pl->sublist("Demo Stepper").set("gamma", 0.2928932188134524);
+    pl->sublist("Default Stepper").set("Stepper Type", RKMethod_);
+    pl->sublist("Default Stepper").set("gamma", 0.2928932188134524);
 
     // Set the step size
     dt /= 2;
     if (n == nTimeStepSizes-1) dt /= 10.0;
 
     // Setup the Integrator and reset initial time step
-    pl->sublist("Demo Integrator")
+    pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
@@ -216,7 +307,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
     // Test if at 'Final Time'
     double time = integrator->getTime();
-    double timeFinal =pl->sublist("Demo Integrator")
+    double timeFinal =pl->sublist("Default Integrator")
       .sublist("Time Step Control").get<double>("Final Time");
     double tol = 100.0 * std::numeric_limits<double>::epsilon();
     TEST_FLOATING_EQUALITY(time, timeFinal, tol);

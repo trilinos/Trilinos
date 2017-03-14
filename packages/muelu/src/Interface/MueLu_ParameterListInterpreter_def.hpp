@@ -276,6 +276,8 @@ namespace MueLu {
         this->nullspaceToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
       if (printList.isParameter("Coordinates"))
         this->coordinatesToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Coordinates");
+      if (printList.isParameter("pcoarsen: element to node map"))
+        this->elementToNodeMapsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "pcoarsen: element to node map");
     }
 
     // Set verbosity parameter
@@ -879,17 +881,67 @@ namespace MueLu {
 #endif
 #ifdef HAVE_MUELU_INTREPID2
     else if(multigridAlgo == "pcoarsen") {
-      // Intrepid P-Coarsening
-      RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
-      ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: hi basis", std::string, Pparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: lo basis", std::string, Pparams);
-      P->SetParameterList(Pparams);
-      manager.SetFactory("P", P);
+      if(paramList.isParameter("pcoarsen: schedule") && paramList.isParameter("pcoarsen: element")) { 
+	// P-Coarsening by schedule (new interface)
+	// NOTE: levelID represents the *coarse* level in this case
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(paramList,"pcoarsen: schedule");	  
+	std::string pcoarsen_element = paramList.get<std::string>("pcoarsen: element");
 
-      // Add special nullspace handling       
-      nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
-      manager.SetFactory("Nullspace", nullSpace);
+	if(levelID >= (int)pcoarsen_schedule.size()) {
+	  // Smoothed aggregation
+	  // NOTE: This is copied directly from above.  Not sure this is the best idea.
+	  MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
+	  ParameterList Pparams;
+	  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+	  P->SetParameterList(Pparams);
+	  // Filtering
+	  if (useFiltering) {
+	    MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
+	    ParameterList fParams;
+	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
+	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
+	    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+	    filterFactory->SetParameterList(fParams);
+	    filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+	    // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+	    filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
+	    P->SetFactory("A", filterFactory);
+	  }
+	  P->SetFactory("P", manager.GetFactory("Ptent"));
+	  manager.SetFactory("P", P);
+       
+	  if (reuseType == "tP" && !filteringChangesMatrix)
+	    keeps.push_back(keep_pair("AP reuse data", P.get()));
+	}
+	else {
+	  // P-Coarsening
+	  ParameterList Pparams;
+	  RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());     
+	  std::string hi;
+	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
+	  else hi = lo;
+	  Pparams.set("pcoarsen: hi basis",hi);
+	  Pparams.set("pcoarsen: lo basis",lo);
+	  P->SetParameterList(Pparams);
+	  manager.SetFactory("P", P);	  
+	  // Add special nullspace handling       
+	  nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
+	  manager.SetFactory("Nullspace", nullSpace);
+	}
+      }
+      else {
+	// P-Coarsening by manual specification (old interface)
+	ParameterList Pparams;
+	RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());     
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
+	P->SetParameterList(Pparams);
+	manager.SetFactory("P", P);
+	// Add special nullspace handling       
+	nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
+	manager.SetFactory("Nullspace", nullSpace);	
+      }
     }
 #endif
 

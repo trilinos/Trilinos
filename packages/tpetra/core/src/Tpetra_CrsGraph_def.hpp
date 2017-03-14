@@ -794,6 +794,11 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumDiags () const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalNumDiags()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
+                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
+#endif
     return globalNumDiags_;
   }
 
@@ -908,6 +913,11 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumEntries () const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalNumEntries()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
+					  ": The matrix does not have globalConstants computed, but the user has requested them.");
+#endif
     return globalNumEntries_;
   }
 
@@ -926,6 +936,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalMaxNumRowEntries () const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getGlobalMaxNumRowEntries()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
+                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
+#endif
+
     return globalMaxNumRowEntries_;
   }
 
@@ -3678,7 +3694,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC"))));
 #endif
-    computeGlobalConstants ();
+    if(params.is_null() || params->get("compute global constants",true))
+      computeGlobalConstants ();
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -4407,6 +4424,9 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
+
+    // Short circuit
+    if(haveGlobalConstants_) return;
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap(), std::logic_error, "Tpetra::"

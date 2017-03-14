@@ -21,9 +21,11 @@ namespace Tempus {
 // StepperExplicitRK definitions:
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
-  Teuchos::RCP<Teuchos::ParameterList>                      pList,
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
+  this->setTableau(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(transientModel);
   this->initialize();
@@ -49,19 +51,29 @@ void StepperExplicitRK<Scalar>::setNonConstModel(
 }
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
+void StepperExplicitRK<Scalar>::setTableau(
+  Teuchos::RCP<Teuchos::ParameterList> pList,
+  std::string stepperType)
 {
-  if (stepperType == "")
-    stepperType = pList_->get<std::string>("Stepper Type");
+  if (stepperType == "") {
+    if (pList == Teuchos::null)
+      stepperType = "RK Explicit 4 Stage";
+    else
+      stepperType = pList->get<std::string>("Stepper Type");
+  }
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList_);
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
        "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
-    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = " << stepperType << "\n");
   description_ = ERK_ButcherTableau_->description();
+}
 
+template<class Scalar>
+void StepperExplicitRK<Scalar>::initialize()
+{
   stageX_ = Thyra::createMember(eODEModel_->get_f_space());
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
@@ -72,12 +84,6 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
 }
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::initialize()
-{
-  this->setTableau();
-}
-
-template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -85,8 +91,8 @@ void StepperExplicitRK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
   {
-    RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
-    RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
     const Scalar time = currentState->getTime();
 
@@ -134,7 +140,7 @@ void StepperExplicitRK<Scalar>::takeStep(
         "Error - Explicit RK embedded methods not implemented yet!.\n");
     }
 
-    workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(ERK_ButcherTableau_->order());
   }
   return;
@@ -200,11 +206,13 @@ template <class Scalar>
 void StepperExplicitRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  //pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
+  if (pList == Teuchos::null) {
+    pList_ = this->getDefaultParameters();
+  } else {
+    pList_ = pList;
+  }
+  // Can not validate because of optional Parameters.
+  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -212,31 +220,32 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperExplicitRK<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  //std::stringstream Description;
+  //Description << "'Stepper Type' sets the stepper method.\n"
+  //            << "For Explicit RK the following methods are valid:\n"
+  //            << "  General ERK\n"
+  //            << "  RK Forward Euler\n"
+  //            << "  RK Explicit 4 Stage\n"
+  //            << "  RK Explicit 3/8 Rule\n"
+  //            << "  RK Explicit 4 Stage 3rd order by Runge\n"
+  //            << "  RK Explicit 5 Stage 3rd order by Kinnmark and Gray\n"
+  //            << "  RK Explicit 3 Stage 3rd order\n"
+  //            << "  RK Explicit 3 Stage 3rd order TVD\n"
+  //            << "  RK Explicit 3 Stage 3rd order by Heun\n"
+  //            << "  RK Explicit 2 Stage 2nd order by Runge\n"
+  //            << "  RK Explicit Trapezoidal\n";
 
-  if (is_null(validPL)) {
+  return ERK_ButcherTableau_->getValidParameters();
+}
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
 
-    // pl->set("Stepper Type", "RK Forward Euler",
-    //   "'Stepper Type' sets the stepper method.\n"
-    //   "For Explicit RK the following methods are valid:\n"
-    //   "  RK Forward Euler\n",
-    //   "  RK Explicit 4 Stage\n",
-    //   "  RK Explicit 3/8 Rule\n",
-    //   "  RK Explicit 4 Stage 3rd order by Runge\n",
-    //   "  RK Explicit 5 Stage 3rd order by Kinnmark and Gray\n",
-    //   "  RK Explicit 3 Stage 3rd order\n",
-    //   "  RK Explicit 3 Stage 3rd order TVD\n",
-    //   "  RK Explicit 3 Stage 3rd order by Heun\n",
-    //   "  RK Explicit 2 Stage 2nd order by Runge\n",
-    //   "  RK Explicit Trapezoidal\n",
-    //   StepperERKTypeValidator);
-
-    validPL = pl;
-  }
-  return validPL;
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperExplicitRK<Scalar>::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(ERK_ButcherTableau_->getValidParameters());
+  return pl;
 }
 
 

@@ -93,7 +93,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
-                                     name != "Nullspace" && name != "Coordinates" && name != "ipc: element to node map" &&
+                                     name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
 
@@ -121,7 +121,7 @@ namespace MueLu {
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
 #ifdef HAVE_MUELU_INTREPID2
-          else if (name == "ipc: element to node map")
+          else if (name == "pcoarsen: element to node map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR

@@ -28,10 +28,10 @@ namespace {
   static std::string Static_name     = "Static";
   static std::string Unlimited_name  = "Unlimited";
   static std::string Storage_name    = "Storage Type";
-  static std::string Storage_default = KeepNewest_name;
+  static std::string Storage_default = Unlimited_name;
 
   static std::string StorageLimit_name    = "Storage Limit";
-  static int         StorageLimit_default = 1;
+  static int         StorageLimit_default = 2;
 
   std::vector<std::string> HistoryPolicies =
     {Invalid_name, KeepNewest_name, Undo_name, Static_name, Unlimited_name};
@@ -236,7 +236,7 @@ void SolutionHistory<Scalar>::initWorkingState()
     // Set workingState_
     workingState_ = (*history_)[getNumStates()-1];
 
-    getWorkingState()->metaData_->setSolutionStatus(Status::WORKING);
+    getWorkingState()->getMetaData()->setSolutionStatus(Status::WORKING);
   }
 
   return;
@@ -246,7 +246,8 @@ void SolutionHistory<Scalar>::initWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =getWorkingState()->metaData_;
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
+    getWorkingState()->getMetaData();
   md->setTime(md->getTime() + md->getDt());
   md->setIStep(md->getIStep()+1);
   md->setNFailures(std::max(0,md->getNFailures()-1));
@@ -310,14 +311,9 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) {
-    pList_->validateParametersAndSetDefaults(*this->getValidParameters());
-  } else {
-    pList_ = pList;
-    pList_->validateParameters(*this->getValidParameters());
-  }
-
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
+  if (pList == Teuchos::null) *pList_ = *(this->getValidParameters());
+  else pList_ = pList;
+  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
@@ -370,27 +366,20 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 SolutionHistory<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  if (is_null(validPL)) {
+  pl->set(Storage_name, Storage_default,
+    "'Storage Type' sets the memory storage.  "
+    "'Keep Newest' - will retain the single newest solution state.  "
+    "'Undo' - will retain two solution states in order to do a single undo.  "
+    "'Static' - will retain 'Storage Limit' number of solution states.  "
+    "'Unlimited' - will not remove any solution states!",
+    StorageTypeValidator);
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
+  pl->set(StorageLimit_name, StorageLimit_default,
+    "Storage limit for the solution history.");
 
-    pl->set(Storage_name, Storage_default,
-      "'Storage Type' sets the memory storage.  "
-      "'Keep Newest' - will retain the single newest solution state.  "
-      "'Undo' - will retain two solution states in order to do a single undo.  "
-      "'Static' - will retain 'Storage Limit' number of solution states.  "
-      "'Unlimited' - will not remove any solution states!",
-      StorageTypeValidator);
-
-    pl->set(StorageLimit_name, StorageLimit_default,
-      "Storage limit for the solution history.");
-
-    validPL = pl;
-  }
-  return validPL;
+  return pl;
 }
 
 

@@ -247,8 +247,9 @@ INCLUDE(PrintVar)
 #   ``TIMEOUT <maxSeconds>``
 #
 #     If passed in, gives maximum number of seconds the test will be allowed
-#     to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
-#     the full CTest test, not individual ``TEST_<idx>`` commands!
+#     to run before being timed-out and killed (see `Setting timeouts for
+#     tests (TRIBITS_ADD_TEST())`_).  This is for the full CTest test, not
+#     individual ``TEST_<idx>`` commands!
 #
 #   ``ADDED_TEST_NAME_OUT <testName>``
 #
@@ -600,6 +601,39 @@ INCLUDE(PrintVar)
 #
 # where the test writes a log file ``someTest.log`` that we want to submit to
 # CDash also.
+#
+# This approach will work no matter what TriBITS names the individual test(s)
+# or whether the test(s) are added or not (depending on other arguments like
+# ``COMM``, ``XHOST``, etc.).
+#
+# The following built-in CTest test properties are set through `Overall
+# Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ or are otherwise automatically set
+# by this function and should **NOT** be overridden by direct calls to
+# ``SET_TESTS_PROPERTIES()``: ``ENVIRONMENT``, ``FAIL_REGULAR_EXPRESSION``,
+# ``LABELS``, ``PASS_REGULAR_EXPRESSION``, ``RUN_SERIAL``, ``TIMEOUT``,
+# ``WILL_FAIL``, and ``WORKING_DIRECTORY``.
+#
+# However, generally, other built-in CTest test properties can be set after
+# the test is added like show above.  Examples of test properties that can be
+# set using direct calls to ``SET_TESTS_PROPERTIES()`` include
+# ``ATTACHED_FILES``, ``ATTACHED_FILES_ON_FAIL``, ``COST``, ``DEPENDS``,
+# ``MEASUREMENT``, and ``RESOURCE_LOCK``.
+#
+# For example, one can set a dependency between two tests using::
+#
+#   TRIBITS_ADD_ADVANCED_TEST_TEST( test_a [...]
+#      ADDED_TEST_NAME_OUT  test_a_TEST_NAME )
+#   
+#   TRIBITS_ADD_ADVANCED_TEST_TEST( test_b [...]
+#      ADDED_TEST_NAME_OUT  test_z_TEST_NAME )
+#   
+#   IF (test_a_TEST_NAME AND test_b_TEST_NAME)
+#     SET_TESTS_PROPERTIES(${test_b_TEST_NAME}
+#       PROPERTIES DEPENDS ${test_a_TEST_NAME})
+#   ENDIF()
+#
+# This ensures that test ``test_b`` will always be run after ``test_a`` if
+# both tests are run by CTest.
 #
 # .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
 #

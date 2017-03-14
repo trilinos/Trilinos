@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Belos Teuchos Tpetra TpetraKernels)
+SET(LIB_REQUIRED_DEP_PACKAGES Belos Teuchos Tpetra KokkosKernels)
 SET(LIB_OPTIONAL_DEP_PACKAGES Xpetra Zoltan2 ThyraTpetraAdapters Amesos2 ShyLUBasker ShyLUHTS)
 SET(TEST_REQUIRED_DEP_PACKAGES Belos Galeri)
 SET(TEST_OPTIONAL_DEP_PACKAGES Amesos2 ShyLUBasker ShyLUHTS ML)

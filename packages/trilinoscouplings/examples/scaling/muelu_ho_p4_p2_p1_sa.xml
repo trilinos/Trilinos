@@ -4,8 +4,8 @@
                                  Driver settings
      =================================================================== -->
   <Parameter name="seed type" type="string" value="node"/>
-
-  <Parameter name="linear Pk" type="bool" value="true"/>
+  <Parameter name="linear P1" type="bool" value="true"/>
+ 
 
   <!-- ===================================================================
                                  MueLu settings
@@ -16,15 +16,16 @@
 
     <Parameter name="max levels" type="int" value="10"/>
 
-    <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+    <Parameter        name="multigrid algorithm"                  type="string"   value="pcoarsen"/>
+
+    <Parameter        name="pcoarsen: schedule"                   type="string"   value="{4,2,1}"/>
+    <Parameter        name="pcoarsen: element"                    type="string"   value="hgrad_quad_c"/>
 
     <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
     <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
 
     <!-- Level 0 -->
     <ParameterList name="level 0">
-      <Parameter        name="multigrid algorithm"                  type="string"   value="pcoarsen"/>
-
       <Parameter name="smoother: type"                             type="string" value="BLOCK RELAXATION"/>
       <ParameterList name="smoother: params">
         <Parameter name="partitioner: type"                        type="string" value="user"/>
@@ -33,20 +34,6 @@
         <Parameter name="relaxation: sweeps"                       type="int"    value="2"/>
         <Parameter name="relaxation: damping factor"               type="double" value="1"/>
       </ParameterList>
-    </ParameterList>
-
-    <!-- Level 1 -->
-    <ParameterList name="level 1">
-      <Parameter        name="multigrid algorithm"                  type="string"   value="pcoarsen"/>
-      <Parameter name="ipc: hi basis" type="string" value="hgrad_quad_c4"/>
-      <Parameter name="ipc: lo basis" type="string" value="hgrad_quad_c2"/>
-    </ParameterList>
-
-    <!-- Level 2 -->
-    <ParameterList name="level 2">
-      <Parameter        name="multigrid algorithm"                  type="string"   value="pcoarsen"/>
-      <Parameter name="ipc: hi basis"         type="string" value="hgrad_quad_c2"/>
-      <Parameter name="ipc: lo basis"         type="string" value="hgrad_quad_c1"/>
     </ParameterList>
 
   </ParameterList>

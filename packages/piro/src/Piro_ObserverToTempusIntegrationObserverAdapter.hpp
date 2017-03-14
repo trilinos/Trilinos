@@ -43,7 +43,7 @@
 #ifndef PIRO_OBSERVERTOTEMPUSINTEGRATIONOBSERVERADAPTER_HPP
 #define PIRO_OBSERVERTOTEMPUSINTEGRATIONOBSERVERADAPTER_HPP
 
-#include "Tempus_IntegratorObserver.hpp"
+#include "Tempus_IntegratorObserverBasic.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
@@ -52,9 +52,9 @@
 namespace Piro {
 
 template <typename Scalar>
-class ObserverToTempusIntegrationObserverAdapter : public Tempus::IntegratorObserver<Scalar> {
- 
- 
+class ObserverToTempusIntegrationObserverAdapter : public Tempus::IntegratorObserverBasic<Scalar> {
+
+
 public:
 
 
@@ -62,14 +62,14 @@ public:
   ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver); 
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver);
 
   // Overridden from Tempus::IntegratorObserver
-  
+
   //@{
   /// Destructor
 
-  virtual ~ObserverToTempusIntegrationObserverAdapter(); 
+  virtual ~ObserverToTempusIntegrationObserverAdapter();
 
   /// Observe the beginning of the time integrator.
   virtual void observeStartIntegrator();
@@ -99,7 +99,7 @@ private:
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-  bool hasSensitivities_; 
+  bool hasSensitivities_;
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
 };
 

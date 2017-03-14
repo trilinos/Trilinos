@@ -70,7 +70,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
   {
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
+    RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->getMetaData();
     const Scalar time = metaData_->getTime();
     const int iStep = metaData_->getIStep();
     const Scalar errorAbs = metaData_->getErrorAbs();
@@ -79,7 +79,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     Scalar dt = metaData_->getDt();
     bool output = metaData_->getOutput();
 
-    RCP<StepperState<Scalar> > stepperState = workingState->stepperState_;
+    RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
 
     output = false;
 
@@ -312,8 +312,6 @@ void TimeStepControl<Scalar>::setParameterList(
   pList->validateParametersAndSetDefaults(*this->getValidParameters());
   pList_ = pList;
 
-  Teuchos::readVerboseObjectSublist(&*pList_,this);
-
   timeMin_     = pList_->get<double>("Initial Time");
   timeMax_     = pList_->get<double>("Final Time");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -454,54 +452,48 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 TimeStepControl<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  if (is_null(validPL)) {
+  const double stdMin = std::numeric_limits<double>::epsilon();
+  const double stdMax = std::numeric_limits<double>::max();
+  pl->set<double>("Initial Time"      , 0.0    , "Initial time");
+  pl->set<double>("Final Time"        , stdMax , "Final time");
+  pl->set<int>   ("Initial Time Index", 0      , "Initial time index");
+  pl->set<int>   ("Final Time Index"  , 1000000, "Final time index");
+  pl->set<double>("Minimum Time Step" , stdMin , "Minimum time step size");
+  pl->set<double>("Initial Time Step" , stdMin , "Initial time step size");
+  pl->set<double>("Maximum Time Step" , stdMax , "Maximum time step size");
+  pl->set<int>   ("Minimum Order", 0,
+    "Minimum time-integration order.  If set to zero (default), the\n"
+    "Stepper minimum order is used.");
+  pl->set<int>   ("Initial Order", 0,
+    "Initial time-integration order.  If set to zero (default), the\n"
+    "Stepper minimum order is used.");
+  pl->set<int>   ("Maximum Order", 0,
+    "Maximum time-integration order.  If set to zero (default), the\n"
+    "Stepper maximum order is used.");
+  pl->set<double>("Maximum Absolute Error", 1.0e-08, "Maximum absolute error");
+  pl->set<double>("Maximum Relative Error", 1.0e-08, "Maximum relative error");
 
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    Teuchos::setupVerboseObjectSublist(&*pl);
+  pl->set<std::string>("Integrator Step Type", "Variable",
+    "'Integrator Step Type' indicates whether the Integrator will allow "
+    "the time step to be modified.\n"
+    "  'Constant' - Integrator will take constant time step sizes.\n"
+    "  'Variable' - Integrator will allow changes to the time step size.\n");
 
-    const double stdMin = std::numeric_limits<double>::epsilon();
-    const double stdMax = std::numeric_limits<double>::max();
-    pl->set("Initial Time"      , 0.0    , "Initial time");
-    pl->set("Final Time"        , stdMax , "Final time");
-    pl->set("Initial Time Index", 0      , "Initial time index");
-    pl->set("Final Time Index"  , 1000000, "Final time index");
-    pl->set("Minimum Time Step" , stdMin , "Minimum time step size");
-    pl->set("Initial Time Step" , stdMin , "Initial time step size");
-    pl->set("Maximum Time Step" , stdMax , "Maximum time step size");
-    pl->set("Maximum Absolute Error", 1.0e-08, "Maximum absolute error");
-    pl->set("Maximum Relative Error", 1.0e-08, "Maximum relative error");
-    pl->set("Minimum Order", 0,
-      "Minimum time-integration order.  If set to zero (default), the\n"
-      "Stepper minimum order is used.");
-    pl->set("Initial Order", 0,
-      "Initial time-integration order.  If set to zero (default), the\n"
-      "Stepper minimum order is used.");
-    pl->set("Maximum Order", 0,
-      "Maximum time-integration order.  If set to zero (default), the\n"
-      "Stepper maximum order is used.");
+  pl->set<std::string>("Output Time List", "",
+    "Comma deliminated list of output times");
+  pl->set<std::string>("Output Index List","",
+    "Comma deliminated list of output indices");
+  pl->set<double>("Output Time Interval", stdMax, "Output time interval");
+  pl->set<int>   ("Output Index Interval", 1000000, "Output index interval");
 
-    pl->set("Integrator Step Type", "Variable",
-      "'Integrator Step Type' indicates whether the Integrator will allow "
-      "the time step to be modified.\n"
-      "  'Constant' - Integrator will take constant time step sizes.\n"
-      "  'Variable' - Integrator will allow changes to the time step size.\n");
+  pl->set<int>   ("Maximum Number of Stepper Failures", 10,
+    "Maximum number of Stepper failures");
+  pl->set<int>   ("Maximum Number of Consecutive Stepper Failures", 5,
+    "Maximum number of consecutive Stepper failures");
 
-    pl->set("Output Time List", "", "Comma deliminated list of output times");
-    pl->set("Output Index List","", "Comma deliminated list of output indices");
-    pl->set("Output Time Interval", stdMax, "Output time interval");
-    pl->set("Output Index Interval", 1000000, "Output index interval");
-
-    pl->set("Maximum Number of Stepper Failures", 10,
-      "Maximum number of Stepper failures");
-    pl->set("Maximum Number of Consecutive Stepper Failures", 5,
-      "Maximum number of consecutive Stepper failures");
-
-    validPL = pl;
-
-  }
-  return validPL;
+  return pl;
 }
 
 

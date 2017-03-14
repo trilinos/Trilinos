@@ -62,6 +62,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
+  KokkosKernels         packages/kokkos-kernels           PT
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT

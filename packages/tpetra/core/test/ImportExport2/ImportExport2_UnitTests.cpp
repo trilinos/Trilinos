@@ -2177,18 +2177,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
         test_err += (Import1->getPermuteToLIDs()[i]!=Import2->getPermuteToLIDs()[i]);
       }
     }
-    if(Import1->getNumRemoteIDs() != Import2->getNumRemoteIDs())
+    if(Import1->getNumRemoteIDs() != Import2->getNumRemoteIDs()) {
       test_err++;
-    else {
-      for(size_t i=0; i<Import1->getNumRemoteIDs(); i++)
-        test_err += (Import1->getRemoteLIDs()[i]!=Import2->getRemoteLIDs()[i]);
     }
-    if(Import1->getNumExportIDs() != Import2->getNumExportIDs())
-      test_err++;
     else {
-      for(size_t i=0; i<Import1->getNumExportIDs(); i++) {
-        test_err += (Import1->getExportLIDs()[i]!=Import2->getExportLIDs()[i]);
-        test_err += (Import1->getExportPIDs()[i]!=Import2->getExportPIDs()[i]);
+      auto remoteLids1 = Import1->getRemoteLIDs ();
+      auto remoteLids2 = Import2->getRemoteLIDs ();
+
+      const size_t numRemoteIds = Import1->getNumRemoteIDs ();
+      for(size_t i=0; i<numRemoteIds; i++) {
+        test_err += (remoteLids1[i] != remoteLids2[i]);
+      }
+    }
+    if(Import1->getNumExportIDs() != Import2->getNumExportIDs()) {
+      test_err++;
+    }
+    else {
+      auto exportLids1 = Import1->getExportLIDs ();
+      auto exportLids2 = Import2->getExportLIDs ();
+      auto exportPids1 = Import1->getExportPIDs ();
+      auto exportPids2 = Import2->getExportPIDs ();
+
+      const size_t numExportIds = Import1->getNumExportIDs ();
+      for(size_t i=0; i<numExportIds; i++) {
+        test_err += (exportLids1[i] != exportLids2[i]);
+        test_err += (exportPids1[i] != exportPids2[i]);
       }
     }
     total_err += test_err;

@@ -122,9 +122,9 @@ bool NOX::Solver::SingleStep::check(NOX::Abstract::Group::ReturnType ret,
 
 bool NOX::Solver::SingleStep::try_step()
 {
-  if (!check(solnPtr->computeF(), "compute F"))
-    return false;
   if (!check(solnPtr->computeJacobian(), "compute Jacobian"))
+    return false;
+  if (!check(solnPtr->computeF(), "compute F"))
     return false;
   if (!check(solnPtr->computeNewton(paramsPtr->sublist("Linear Solver")),
              "solve Newton system"))

@@ -43,6 +43,7 @@
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <PanzerAdaptersSTK_config.hpp>
+#include <FEMHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -466,39 +467,39 @@ void CubeHexMeshFactory::addSides(STK_Interface & mesh) const
          // on the back
          stk::mesh::EntityId eid = (1+nx+ny*totalXElems)+offset[4];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,4);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 4);
       }
       if(nz+1==totalZElems) {
          // on the front
          stk::mesh::EntityId eid = (1+nx+ny*totalXElems)+offset[5];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,5);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 5);
       }
 
       if(ny==0) {
          // on the bottom 
          stk::mesh::EntityId eid = (1+nx+nz*totalXElems)+offset[0];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,0);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 0);
       }
       if(ny+1==totalYElems) {
          // on the top
          stk::mesh::EntityId eid = (1+nx+nz*totalXElems)+offset[2];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,2);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 2);
       }
 
       if(nx==0) {
          // on the left
          stk::mesh::EntityId eid = (1+ny+nz*totalYElems)+offset[3];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,3);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 3);
       }
       if(nx+1==totalXElems) {
          // on the right
          stk::mesh::EntityId eid = (1+ny+nz*totalYElems)+offset[1];
          stk::mesh::Entity side = mesh.getBulkData()->declare_entity(mesh.getSideRank(),eid,parts);
-         mesh.getBulkData()->declare_relation(element,side,1);
+	 stk::mesh::declare_element_side(*mesh.getBulkData(), element, side, 1);
       }
    }
 

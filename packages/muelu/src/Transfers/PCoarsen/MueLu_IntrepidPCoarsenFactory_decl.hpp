@@ -82,9 +82,11 @@ namespace MueLu {
     ### User parameters of IntrepidPCoarsenFactory ###
     Parameter | type | default | master.xml | validated | requested | description
     ----------|------|---------|:----------:|:---------:|:---------:|------------
-    | ipc: hi basis                          | string  | ""    | * | * |   | String describing higher-order basis function used |
-    | ipc: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid|
-    | inc: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
+    | pcoarsen: schedule                          | string  | ""    | * | * |   | String describing the higher order coarsening scheme to use |
+    | pcoarsen: element                          | string  | ""    | * | * |   | String describing the class of element to use for higher order coarsening |
+    | pcoarsen: hi basis                          | string  | ""    | * | * |   | String describing higher-order basis function used |
+    | pcoarsen: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid|
+    | pcoarsen: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
     | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
 
 
@@ -256,10 +258,9 @@ namespace MueLu {
     // ! will be stored in seeds.
     template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
     void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
-                                   std::vector<std::vector<LocalOrdinal>> &seeds,
+                                   std::vector<std::vector<LocalOrdinal> > &seeds,
                                    const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap,
                                    const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &columnMap);
-
 
   }//namespace MueLuIntrepid
 } //namespace MueLu
