@@ -45,10 +45,13 @@
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
+#include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetNeeds.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_LocalMeshChunk.hpp"
+
+#include "Panzer_SubcellConnectivity.hpp"
 
 #include "Shards_CellTopology.hpp"
 
@@ -59,24 +62,50 @@ WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
                       const panzer::WorksetNeeds & needs)
 {
 
-  const size_t num_cells = chunk.cell_vertices.dimension(0);
-  const size_t num_vertices_per_cell = chunk.cell_vertices.dimension(1);
-  const size_t num_dims_per_vertex = chunk.cell_vertices.dimension(2);
+  const size_t num_faces = chunk.num_faces;
+  const size_t num_cells = chunk.num_cells;
+  const size_t num_vertices_per_cell = chunk.cell_vertices.dimension_1();
+  const size_t num_dims_per_vertex = chunk.cell_vertices.dimension_2();
 
-  const Teuchos::RCP<const shards::CellTopology> & cell_topology = chunk.cell_topology;
+  subcell_index = -1;
+  block_id = chunk.element_block_name;
+  cell_local_ids.resize(num_cells,-1);
+  Kokkos::View<int*, PHX::Device> cell_ids = Kokkos::View<int*, PHX::Device>("cell_ids",num_cells);
+
+  for(int cell=0;cell<num_cells;++cell){
+    const int local_cell = chunk.local_mesh_cell_indexes[cell];
+    cell_local_ids[cell] = local_cell;
+    cell_ids(cell) = local_cell;
+  }
+  cell_local_ids_k = cell_ids;
+
+  auto fc = Teuchos::rcp(new panzer::FaceConnectivity());
+  fc->setup(chunk);
+  _face_connectivity = fc;
+
+  setupNeeds(chunk.cell_topology, chunk.cell_vertices, needs);
+}
+
+void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
+                                const Kokkos::View<double***,PHX::Device> & cell_vertices,
+                                const panzer::WorksetNeeds & needs)
+{
+
+  const size_t num_cells = cell_vertices.dimension_0();
+  const size_t num_vertices_per_cell = cell_vertices.dimension_1();
+  const size_t num_dims_per_vertex = cell_vertices.dimension_2();
 
   // Set cell vertices
   {
 
-    // Vertex data layout
-    Teuchos::RCP<PHX::DataLayout> data_layout = Teuchos::rcp(new PHX::MDALayout<Cell,NODE,Dim>(num_cells, num_vertices_per_cell, num_dims_per_vertex));
+    MDFieldArrayFactory af("",true);
 
-    cell_vertex_coordinates = CellCoordArray("cell_vertices",data_layout);
+    cell_vertex_coordinates = af.template buildStaticArray<double, Cell, NODE, Dim>("cell_vertices",num_cells, num_vertices_per_cell, num_dims_per_vertex);
 
     for(size_t i=0;i<num_cells;++i)
       for(size_t j=0;j<num_vertices_per_cell;++j)
         for(size_t k=0;k<num_dims_per_vertex;++k)
-          cell_vertex_coordinates(i,j,k) = chunk.cell_vertices(i,j,k);
+          cell_vertex_coordinates(i,j,k) = cell_vertices(i,j,k);
 
   }
 
@@ -96,8 +125,13 @@ WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
   // Create the integration terms and basis-integrator pairs
   for(const panzer::IntegrationDescriptor & integration_description : integration_descriptors){
 
+    int num_faces = -1;
+    if(integration_description.getType() == panzer::IntegrationRule::SURFACE){
+      num_faces = getFaceConnectivity().numSubcells();
+    }
+
     // Create and store integration rule
-    Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integration_description, cell_topology, num_cells));
+    Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integration_description, cell_topology, num_cells, num_faces));
     _integration_rule_map[integration_description.getKey()] = ir;
 
     // Create and store integration values
@@ -129,10 +163,13 @@ WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
 
   }
 
-  face_to_cells = chunk.face_to_cells;
-  cell_to_faces = chunk.cell_to_faces;
-  face_to_local_faces = chunk.face_to_local_faces;
+}
 
+const panzer::SubcellConnectivity &
+WorksetDetails::getFaceConnectivity() const
+{
+  TEUCHOS_ASSERT(_face_connectivity != Teuchos::null);
+  return *_face_connectivity;
 }
 
 const panzer::IntegrationValues2<double> &

@@ -592,7 +592,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     }
 
     // Calculate normals
-    auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim,cell_dim);
+    auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim);
     if(cell_dim == 1){
       // Intrepid is missing this interface
       TEUCHOS_ASSERT(false);

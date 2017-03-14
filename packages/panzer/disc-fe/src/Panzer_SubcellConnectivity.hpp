@@ -40,49 +40,76 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_LOCAL_MESH_CHUNK_HPP
-#define PANZER_LOCAL_MESH_CHUNK_HPP
+
+#ifndef PANZER_SUBCELL_CONNECTIVITY_HPP
+#define PANZER_SUBCELL_CONNECTIVITY_HPP
 
 #include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Shards_CellTopology.hpp"
-#include "Teuchos_RCP.hpp"
-#include <vector>
 
-namespace panzer
-{
+namespace panzer {
 
 template <typename LO, typename GO>
-struct LocalMeshChunk
+class LocalMeshChunk;
+
+class SubcellConnectivity
 {
+public:
 
-  int num_cells;
-  std::vector<GO> owned_cell_global_indexes;
-  std::vector<GO> ghost_cell_global_indexes;
-  std::vector<LO> virtual_cell_local_indexes;
+  SubcellConnectivity():_num_subcells(-1){}
+  ~SubcellConnectivity() = default;
 
-  std::vector<LO> local_mesh_cell_indexes;
+  /// Number of faces associated with workset
+  int numSubcells() const {return _num_subcells;}
 
-  std::string element_block_name;
-  std::string sideset_name;
+  /// Number of faces on a given cell
+  int numSubcellsOnCell(const int cell) const {return _cell_to_subcells_adj(cell+1)-_cell_to_subcells_adj(cell);}
 
-//  // given cell index, gives starting index into local_face_indexes
-//  std::vector<int> subcell_indexes_adj;
-//
-//  // List of subcell indexes for a given
-//  std::vector<int> subcell_indexes;
+  int numCellsOnSubcell(const int subcell) const {return _subcell_to_cells_adj(subcell+1)-_subcell_to_cells_adj(subcell);}
 
-  Kokkos::View<double***,PHX::Device> cell_vertices;
+  int subcellForCell(const int cell, const int local_subcell_index) const
+  {
+    const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
+    return _cell_to_subcells(index);
+  };
 
-  Teuchos::RCP<const shards::CellTopology> cell_topology;
+  int cellForSubcell(const int subcell, const int local_cell_index) const
+  {
+    const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+    return _subcell_to_cells(index);
+  };
 
-  int num_faces;
-  Kokkos::View<const LO*[2],PHX::Device> face_to_cells;
-  Kokkos::View<const LO**,PHX::Device> cell_to_faces;
-  Kokkos::View<const LO*[2],PHX::Device> face_to_local_faces;
+  int localSubcellForSubcell(const int subcell, const int local_cell_index) const
+  {
+    const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+    return _subcell_to_local_subcells(index);
+  };
+
+protected:
+  int _num_subcells;
+  Kokkos::View<int*, PHX::Device> _subcell_to_cells_adj;
+  Kokkos::View<int*, PHX::Device> _subcell_to_cells;
+  Kokkos::View<int*, PHX::Device> _subcell_to_local_subcells;
+  Kokkos::View<int*, PHX::Device> _cell_to_subcells_adj;
+  Kokkos::View<int*, PHX::Device> _cell_to_subcells;
 
 };
 
-}
+
+class FaceConnectivity:
+    public SubcellConnectivity
+{
+public:
+
+  FaceConnectivity() = default;
+  ~FaceConnectivity() = default;
+
+  void setup(const panzer::LocalMeshChunk<int,int> & chunk);
+
+protected:
+
+};
+
+} // namespace panzer
 
 #endif

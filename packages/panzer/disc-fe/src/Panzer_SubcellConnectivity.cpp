@@ -40,49 +40,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_LOCAL_MESH_CHUNK_HPP
-#define PANZER_LOCAL_MESH_CHUNK_HPP
+#include "Panzer_SubcellConnectivity.hpp"
 
-#include "Kokkos_View.hpp"
-#include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Shards_CellTopology.hpp"
-#include "Teuchos_RCP.hpp"
-#include <vector>
+#include "Panzer_LocalMeshChunk.hpp"
 
 namespace panzer
 {
 
-template <typename LO, typename GO>
-struct LocalMeshChunk
+void
+FaceConnectivity::setup(const panzer::LocalMeshChunk<int,int> & chunk)
 {
+  const int num_cells = chunk.cell_to_faces.dimension_0();
+  const int num_faces = chunk.face_to_cells.dimension_0();
+  const int num_faces_per_cell = chunk.cell_to_faces.dimension_1();
+  const int num_cells_per_face = 2;
 
-  int num_cells;
-  std::vector<GO> owned_cell_global_indexes;
-  std::vector<GO> ghost_cell_global_indexes;
-  std::vector<LO> virtual_cell_local_indexes;
+  _num_subcells = num_faces;
 
-  std::vector<LO> local_mesh_cell_indexes;
+  _subcell_to_cells_adj = Kokkos::View<int*>("subcell_to_cells_adj", num_faces+1);
+  _subcell_to_cells = Kokkos::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
+  _subcell_to_local_subcells = Kokkos::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
+  _cell_to_subcells_adj = Kokkos::View<int*>("cell_to_subcells_adj", num_cells+1);
+  _cell_to_subcells = Kokkos::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
 
-  std::string element_block_name;
-  std::string sideset_name;
+  _subcell_to_cells_adj(0)=0;
+  for(int face=0;face<num_faces;++face){
+    _subcell_to_cells_adj(face+1) =_subcell_to_cells_adj(face)+num_cells_per_face;
+    _subcell_to_cells(num_cells_per_face*face + 0) = chunk.face_to_cells(face,0);
+    _subcell_to_cells(num_cells_per_face*face + 1) = chunk.face_to_cells(face,1);
+    _subcell_to_local_subcells(num_cells_per_face*face + 0) = chunk.face_to_local_faces(face,0);
+    _subcell_to_local_subcells(num_cells_per_face*face + 1) = chunk.face_to_local_faces(face,1);
+  }
 
-//  // given cell index, gives starting index into local_face_indexes
-//  std::vector<int> subcell_indexes_adj;
-//
-//  // List of subcell indexes for a given
-//  std::vector<int> subcell_indexes;
-
-  Kokkos::View<double***,PHX::Device> cell_vertices;
-
-  Teuchos::RCP<const shards::CellTopology> cell_topology;
-
-  int num_faces;
-  Kokkos::View<const LO*[2],PHX::Device> face_to_cells;
-  Kokkos::View<const LO**,PHX::Device> cell_to_faces;
-  Kokkos::View<const LO*[2],PHX::Device> face_to_local_faces;
-
-};
+  _cell_to_subcells_adj(0)=0;
+  for(int cell=0;cell<num_cells;++cell){
+    _cell_to_subcells_adj(cell+1) =_cell_to_subcells_adj(cell)+num_faces_per_cell;
+    for(int local_face=0;local_face<num_faces_per_cell;++local_face){
+      _cell_to_subcells(num_faces_per_cell*cell+local_face) = chunk.cell_to_faces(cell,local_face);
+    }
+  }
 
 }
 
-#endif
+}

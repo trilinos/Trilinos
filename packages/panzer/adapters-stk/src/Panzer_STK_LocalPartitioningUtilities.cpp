@@ -87,6 +87,9 @@ convertMeshInfoToSingleChunk(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
 
   chunk.element_block_name = mesh_info.element_block_name;
 
+  chunk.local_mesh_cell_indexes.resize(num_total_cells,-1);
+  for(GO i=0;i<num_total_cells;++i){chunk.local_mesh_cell_indexes[i]=LO(i);}
+
   chunk.owned_cell_global_indexes.resize(num_owned_cells,-1);
   for(GO i=0;i<num_owned_cells;++i){chunk.owned_cell_global_indexes[i]=mesh_info.owned_cells(i);}
 
@@ -116,6 +119,8 @@ convertMeshInfoToSingleChunk(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
   chunk.face_to_cells = mesh_info.face_to_cells;
   chunk.cell_to_faces = mesh_info.cell_to_face;
   chunk.face_to_local_faces = mesh_info.face_to_lidx;
+  chunk.num_cells = num_total_cells;
+  chunk.num_faces = chunk.face_to_cells.dimension_0();
 }
 
 template<typename LO, typename GO>

@@ -71,6 +71,10 @@ convertMeshChunkToWorkset(const panzer::LocalMeshChunk<LO,GO> & chunk,
                       const panzer::WorksetNeeds & needs,
                       panzer::Workset & workset)
 {
+  workset.setup(chunk, needs);
+
+  workset.num_cells = chunk.num_cells;
+  workset.subcell_dim = -1;
 
 }
 

@@ -194,9 +194,9 @@ void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::Cel
 
   Intrepid2::DefaultCubatureFactory cubature_factory;
 
-  _point_offsets.resize(num_faces+1,0);
+  _point_offsets.resize(num_faces_per_cell+1,0);
   int test_face_size = -1;
-  for(int subcell_index=0; subcell_index<num_faces; ++subcell_index){
+  for(int subcell_index=0; subcell_index<num_faces_per_cell; ++subcell_index){
     Teuchos::RCP<shards::CellTopology> face_topology = Teuchos::rcp(new shards::CellTopology(cell_topology->getCellTopologyData(subcell_dim,subcell_index)));
     const auto & intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*face_topology, getOrder());
     const int num_face_points = intrepid_cubature->getNumPoints();
