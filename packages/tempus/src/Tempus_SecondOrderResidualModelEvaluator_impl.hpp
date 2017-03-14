@@ -63,10 +63,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // for second order schemes to replace call to computeXDot_
 
   // call functor to compute x dot
-  computeXDot_(*x,*x_dot);
+  //computeXDot_(*x,*x_dot);
 
   // setup input condition for nonlinear solve
-  MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
+  /*MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
   transientInArgs.set_x(x);
   transientInArgs.set_x_dot(x_dot);
   transientInArgs.set_x_dot_dot(x_dot_dot);
@@ -85,7 +85,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   transientOutArgs.set_W_op(outArgs.get_W_op());
 
   // build residual and jacobian
-  transientModel_->evalModel(transientInArgs,transientOutArgs);
+  transientModel_->evalModel(transientInArgs,transientOutArgs); */
 }
 
 

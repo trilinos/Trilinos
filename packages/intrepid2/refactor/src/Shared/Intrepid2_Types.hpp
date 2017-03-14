@@ -381,9 +381,8 @@ namespace Intrepid2 {
     case DISCRETE_SPACE_INCOMPLETE: return "Incomplete";
     case DISCRETE_SPACE_BROKEN:     return "Broken";
     case DISCRETE_SPACE_MAX:        return "Max. Rec. Space";
-    default:                        return "INVALID EDiscreteSpace";
     }
-    return "Error";
+    return "INVALID EDiscreteSpace";
   }
 
   /** \brief  Verifies validity of a discrete space enum

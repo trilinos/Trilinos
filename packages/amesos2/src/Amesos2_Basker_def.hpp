@@ -247,12 +247,12 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       }
       else {
 
-      info = basker->Factor(this->globalNumRows_,
-                            this->globalNumCols_, 
-                            this->globalNumNonZeros_, 
-                            colptr_.getRawPtr(), 
-                            rowind_.getRawPtr(), 
-                            nzvals_.getRawPtr());
+        info = basker->Factor(this->globalNumRows_,
+            this->globalNumCols_, 
+            this->globalNumNonZeros_, 
+            colptr_.getRawPtr(), 
+            rowind_.getRawPtr(), 
+            nzvals_.getRawPtr());
       //We need to handle the realloc options
       }
 
@@ -262,8 +262,21 @@ Basker<Matrix,Vector>::numericFactorization_impl()
 				 std::runtime_error,
 				 "Error Basker Factor");
 
+      local_ordinal_type blnnz = local_ordinal_type(0); 
+      local_ordinal_type bunnz = local_ordinal_type(0); 
+      basker->GetLnnz(blnnz); // Add exception handling?
+      basker->GetUnnz(bunnz);
+
+      // This is set after numeric factorization complete as pivoting can be used;
+      // In this case, a discrepancy between symbolic and numeric nnz total can occur.
+      this->setNnzLU( as<size_t>( blnnz + bunnz ) );
+
 #else
-      info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
+      info = basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
+
+      // This is set after numeric factorization complete as pivoting can be used;
+      // In this case, a discrepancy between symbolic and numeric nnz total can occur.
+      this->setNnzLU( as<size_t>(basker.get_NnzLU() ) ) ;
 #endif
 
     }
@@ -539,10 +552,6 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   } //end alternative path 
 #else // Not ShyLUBasker
-
-  #ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-  #endif
 
   // Only the root image needs storage allocated
   if( this->root_ ){

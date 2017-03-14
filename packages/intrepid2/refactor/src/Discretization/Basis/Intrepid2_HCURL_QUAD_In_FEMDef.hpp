@@ -238,8 +238,10 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                                      ">>> ERROR (Basis_HCURL_QUAD_In_FEM): Operator type not implemented" );
+        // INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
+        //                               ">>> ERROR (Basis_HCURL_QUAD_In_FEM): Operator type not implemented" );
+        INTREPID2_TEST_FOR_WARNING( true , 
+                                    ">>> ERROR (Basis_HCURL_QUAD_In_FEM): Operator type not implemented" );
         break;
       }
       }
