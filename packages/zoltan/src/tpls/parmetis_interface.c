@@ -507,7 +507,7 @@ static int Zoltan_Parmetis_Parse(
     }
 
     /* If ordering, use ordering method instead of load-balancing method */
-    if (ord && ord->order_opt && ord->order_opt->method){
+    if (ord && ord->order_opt){
       strcpy(alg, ord->order_opt->method);
     }
 

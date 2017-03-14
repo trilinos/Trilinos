@@ -447,8 +447,5 @@ int main(int argc, char *argv[]){
   catch(char * s){
     cerr << s << endl;
   }
-  catch(char const * s){
-    cerr << s << endl;
-  }
 }
 

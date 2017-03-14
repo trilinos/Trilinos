@@ -507,8 +507,8 @@ void Zoltan_Print_Configuration(char *indent)
 #endif
 
 #if defined(ZOLTAN_PARMETIS) || defined(ZOLTAN_METIS) || defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
-  printf("%s    sizeof indextype = %u\n", indent, sizeof(indextype));
-  printf("%s    sizeof realtype = %u\n", indent, sizeof(realtype));
+  printf("%s    sizeof indextype = %lu\n", indent, sizeof(indextype));
+  printf("%s    sizeof realtype = %lu\n", indent, sizeof(realtype));
 #endif
 }
 
