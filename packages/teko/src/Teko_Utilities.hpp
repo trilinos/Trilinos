@@ -740,9 +740,9 @@ const LinearOp explicitTranspose(const LinearOp & op);
 
 /** Rturn the frobenius norm of a linear operator
   */
-const double frobeniusNorm(const LinearOp & op);
-const double oneNorm(const LinearOp & op);
-const double infNorm(const LinearOp & op);
+double frobeniusNorm(const LinearOp & op);
+double oneNorm(const LinearOp & op);
+double infNorm(const LinearOp & op);
 
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator
