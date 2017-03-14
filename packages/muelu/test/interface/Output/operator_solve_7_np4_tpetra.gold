@@ -66,7 +66,7 @@ Level 1
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -79,6 +79,7 @@ Level 1
 --------------------------------------------------------------------------------
 Number of levels    = 2
 Operator complexity = 1.31
+Smoother complexity = 1.20
 Cycle type          = V
 
 level   rows    nnz  nnz/row  c ratio  procs
@@ -87,6 +88,6 @@ level   rows    nnz  nnz/row  c ratio  procs
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [10000, 10000], Global nnz: 49600}
 
-Smoother (level 1) pre  : SuperLU solver interface, direct solve
+Smoother (level 1) pre  : KLU2 solver interface
 Smoother (level 1) post : no smoother
 
