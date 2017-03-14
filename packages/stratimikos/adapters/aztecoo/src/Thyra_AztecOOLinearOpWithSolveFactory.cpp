@@ -589,7 +589,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   EOpTransp epetra_epetraPrecOpTransp;
   EApplyEpetraOpAs epetra_epetraPrecOpApplyAs;
   EAdjointEpetraOp epetra_epetraPrecOpAdjointSupport;
-  EOpTransp overall_epetra_epetraPrecOpTransp;
+  EOpTransp overall_epetra_epetraPrecOpTransp=NOTRANS;
   if(rightPrecOp.get()) {
     RCP<const LinearOpBase<double> > tmpWrappedPrecOp;
     unwrap(
