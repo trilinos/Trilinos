@@ -61,6 +61,7 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // Ioss includes
+#include "Ioss_CodeTypes.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_PropertyManager.h"
@@ -115,15 +116,7 @@ public:
         * about the required connectivity (e.g. <code>buildConnectivity</code>
         * has never been called).
         */
-   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const {
-   	   std::string filename = iossMeshDB_->get_filename();
-   	   Ioss::DatabaseUsage db_usage = iossMeshDB_->usage();
-   	   Ioss::ParallelUtils util = iossMeshDB_->util();
-   	   MPI_Comm communicator = util.communicator();
-   	   Ioss::DatabaseIO * iossMeshDB = Ioss::IOFactory::create(type, filename,
-   	       		db_usage, communicator, properties);
-   	   return Teuchos::rcp(new IOSSConnManager<GO>(iossMeshDB));
-   };
+   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone(std::string & type, Ioss::PropertyManager & properties) const;
 
    /** Get ID connectivity for a particular element
      *

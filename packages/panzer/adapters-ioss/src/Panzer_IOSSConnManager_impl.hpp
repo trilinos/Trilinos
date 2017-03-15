@@ -71,8 +71,10 @@
 //#include "Panzer_STK_PeriodicBC_Matcher.hpp"
 //#include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_FieldPattern.hpp"
+#include "Panzer_IOSSDatabaseTypeManager.hpp"
 
 // Ioss includes
+#include "Ioss_CodeTypes.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_GroupingEntity.h"
@@ -103,19 +105,54 @@ IOSSConnManager<GO>::IOSSConnManager(Ioss::DatabaseIO * iossMeshDB)
   TEUCHOS_TEST_FOR_EXCEPTION(iossMeshDB_ == NULL, std::logic_error, "Error, iossMeshDB is NULL.");
 
   // Check that the database is OK and that the file can be opened.
-  bool status_ok = iossMeshDB->ok(true, &error_message, &bad_count);
+  bool status_ok = iossMeshDB_->ok(true, &error_message, &bad_count);
   TEUCHOS_TEST_FOR_EXCEPTION(!status_ok, std::logic_error,
 		  "Error, Ioss::DatabaseIO::ok() failed.\n error_message = "
 		  << error_message << "\nbad_count = " << bad_count << "\n");
 
   // Get the metadata
+
   iossRegion_ = rcp(new Ioss::Region(iossMeshDB_, "iossRegion_"));
   iossNodeBlocks_ = iossRegion_->get_node_blocks();
   iossElementBlocks_ = iossRegion_->get_element_blocks();
 
+
   // Create iossToShardsTopology_ map;
   createTopologyMapping();
 
+}
+
+template <typename GO>
+Teuchos::RCP<panzer::ConnManagerBase<int> > IOSSConnManager<GO>::noConnectivityClone(
+  std::string & type, Ioss::PropertyManager & properties) const {
+	   std::string filename = iossMeshDB_->get_filename();
+
+	   // Verify that multiple open databases are supported
+	   TEUCHOS_TEST_FOR_EXCEPTION(IossDatabaseTypeManager::supportsMultipleOpenDatabases(type), std::logic_error, "Error, " << type << "does not support multiple open databases.");
+
+	   // temporarily try this with a _copy file
+	   size_t dotPosition = filename.find(".");
+	   std::string filenameBase(filename, 0, dotPosition);
+	   std::string filenameExtension(filename, dotPosition+1);
+	   std::string filenameCopy = filenameBase + "_copy." + filenameExtension;
+
+	   // Make a copy of the property manager
+	   Ioss::PropertyManager propertiesCopy;
+	   Ioss::NameList propertyNames;
+	   int numProperties = properties.describe(&propertyNames);
+	   std::string propertyName;
+	   for (int p = 0; p < numProperties; ++p) {
+	     Ioss::Property propertyCopy(properties.get(propertyNames[p]));
+	     propertiesCopy.add(propertyCopy);
+	   }
+
+	   Ioss::DatabaseUsage db_usage = iossMeshDB_->usage();
+	   Ioss::ParallelUtils util = iossMeshDB_->util();
+	   MPI_Comm communicator = util.communicator();
+	   Ioss::DatabaseIO * iossMeshDB = Ioss::IOFactory::create(type, filenameCopy,
+	   	       		db_usage, communicator, propertiesCopy);
+
+	   return Teuchos::rcp(new IOSSConnManager<GO>(iossMeshDB));
 }
 
 template <typename GO>
