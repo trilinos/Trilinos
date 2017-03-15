@@ -123,8 +123,9 @@ namespace PHX {
 
     virtual void setName(const std::string& name);
 
-    virtual void postRegistrationSetup(typename Traits::SetupData d,
-				       PHX::FieldManager<Traits>& vm) = 0;
+    virtual void 
+    postRegistrationSetup(typename Traits::SetupData d,
+                          PHX::FieldManager<Traits>& vm) override = 0;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     evaluatedFields() const override;
@@ -135,7 +136,7 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     dependentFields() const override;
 
-    virtual void evaluateFields(typename Traits::EvalData d) = 0;
+    virtual void evaluateFields(typename Traits::EvalData d) override = 0;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     virtual Kokkos::Future<void,PHX::exec_space>
