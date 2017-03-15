@@ -515,7 +515,7 @@ public:
   }
 
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
       std::ostream & outStream = std::cout,
       const bool verbose = false) const {
     return meshSideSets_;
