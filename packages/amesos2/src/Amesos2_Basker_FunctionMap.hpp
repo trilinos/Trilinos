@@ -61,7 +61,6 @@
 #include "Amesos2_Basker_TypeMap.hpp"
 
 #ifdef SHYLUBASKER
-//#include <shylubasker_decl.hpp>
 #include <shylubasker_trilinos_decl.hpp>
 #include <shylubasker_def.hpp>
 #else

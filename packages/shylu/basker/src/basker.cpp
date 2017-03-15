@@ -1,6 +1,5 @@
 
 #include "basker_types.hpp"
-#include "shylubasker_trilinos_decl.hpp"
 #include "shylubasker_decl.hpp"
 //#include "shylubasker_def.hpp"
 
