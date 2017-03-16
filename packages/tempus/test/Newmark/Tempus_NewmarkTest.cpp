@@ -13,13 +13,14 @@
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
-//IKT, FIXME: replace the following with Newmark test case model,
-//to be implemented
 #include "../TestModels/BallParabolicModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
+
 
 #ifdef Tempus_ENABLE_MPI
 #include "Epetra_MpiComm.h"
@@ -51,8 +52,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
-  double dt = 0.2;
   double order = 0.0;
+  double dt = 0.4;
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Read params from .xml file
@@ -69,10 +70,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
     RCP<BallParabolicModel<double> > model =
       Teuchos::rcp(new BallParabolicModel<double>(scm_pl));
 
-    dt /= 2;
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    dt /= 2;
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -115,9 +116,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
-             << get_ele(*(x_plot), 1) << "   "
-             << get_ele(*(x_exact_plot), 0) << "   "
-             << get_ele(*(x_exact_plot), 1) << std::endl;
+             << get_ele(*(x_exact_plot), 0) << std::endl;
       }
       ftmp.close();
     }
