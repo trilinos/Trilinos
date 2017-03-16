@@ -62,17 +62,14 @@ WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
                       const panzer::WorksetNeeds & needs)
 {
 
-  const size_t num_faces = chunk.num_faces;
   const size_t num_cells = chunk.num_cells;
-  const size_t num_vertices_per_cell = chunk.cell_vertices.dimension_1();
-  const size_t num_dims_per_vertex = chunk.cell_vertices.dimension_2();
 
   subcell_index = -1;
   block_id = chunk.element_block_name;
   cell_local_ids.resize(num_cells,-1);
   Kokkos::View<int*, PHX::Device> cell_ids = Kokkos::View<int*, PHX::Device>("cell_ids",num_cells);
 
-  for(int cell=0;cell<num_cells;++cell){
+  for(size_t cell=0;cell<num_cells;++cell){
     const int local_cell = chunk.local_mesh_cell_indexes[cell];
     cell_local_ids[cell] = local_cell;
     cell_ids(cell) = local_cell;
@@ -152,12 +149,28 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
       // Create and store basis values
       Teuchos::RCP<panzer::BasisValues2<double> > bv = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
       bv->setupArrays(b_layout);
-      bv->evaluateValues(iv->cub_points,
-                         iv->jac,
-                         iv->jac_det,
-                         iv->jac_inv,
-                         iv->weighted_measure,
-                         cell_vertex_coordinates);
+      if(ir->getType() == panzer::IntegrationDescriptor::SURFACE){
+        bv->evaluateValues(iv->ref_ip_coordinates,
+                           iv->jac,
+                           iv->jac_det,
+                           iv->jac_inv,
+                           iv->weighted_measure,
+                           cell_vertex_coordinates);
+      } else if((ir->getType() == panzer::IntegrationDescriptor::CV_VOLUME)
+          or (ir->getType() == panzer::IntegrationDescriptor::CV_SIDE)
+          or (ir->getType() == panzer::IntegrationDescriptor::CV_BOUNDARY)){
+        bv->evaluateValuesCV(iv->ref_ip_coordinates,
+                             iv->jac,
+                             iv->jac_det,
+                             iv->jac_inv);
+      } else {
+        bv->evaluateValues(iv->cub_points,
+                           iv->jac,
+                           iv->jac_det,
+                           iv->jac_inv,
+                           iv->weighted_measure,
+                           cell_vertex_coordinates);
+      }
       _basis_map[basis_description.getKey()][integration_description.getKey()] = bv;
     }
 

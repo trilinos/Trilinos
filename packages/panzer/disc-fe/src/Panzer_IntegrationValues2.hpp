@@ -118,7 +118,7 @@ namespace panzer {
 
     // integration points
     Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>
-    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes
+    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes or Surface integrals
 
     DblArrayDynamic dyn_cub_points, dyn_side_cub_points, dyn_cub_weights;
     DblArrayDynamic dyn_phys_cub_points, dyn_phys_cub_weights, dyn_phys_cub_norms, dyn_node_coordinates;
@@ -126,6 +126,8 @@ namespace panzer {
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
   protected:
+
+
 
     // TODO: Make this a utility function that only exists in source file
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> getIntrepidCubature(const panzer::IntegrationRule & ir) const;

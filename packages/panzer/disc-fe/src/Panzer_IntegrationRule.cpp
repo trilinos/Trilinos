@@ -94,6 +94,9 @@ IntegrationRule(const panzer::IntegrationDescriptor& description,
 
   TEUCHOS_ASSERT(description.getType() != panzer::IntegrationDescriptor::NONE);
 
+  cubature_degree = description.getOrder();
+  cv_type = "none";
+
   if(getType() == panzer::IntegrationDescriptor::VOLUME){
 
     panzer::CellData cell_data(num_cells, cell_topology);
@@ -189,6 +192,10 @@ void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::Cel
     const int num_points_per_cell = num_faces_per_cell;
     const int num_points_per_face = 1;
     PointRule::setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
+    _point_offsets.resize(3,0);
+    _point_offsets[0] = 0;
+    _point_offsets[1] = num_points_per_face;
+    _point_offsets[2] = _point_offsets[1]+num_points_per_face;
     return;
   }
 

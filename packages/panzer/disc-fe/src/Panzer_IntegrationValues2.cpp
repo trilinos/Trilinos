@@ -174,7 +174,6 @@ setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
 
   cub_points = af.template buildStaticArray<Scalar,IP,Dim>("cub_points",num_ip, num_space_dim);
 
-
   if (ir->isSide() && ir->cv_type == "none") {
     dyn_side_cub_points = af.template buildArray<double,IP,Dim>("side_cub_points",num_ip, ir->side_topology->getDimension());
     side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_ip,ir->side_topology->getDimension());
@@ -529,21 +528,30 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   int point_offset=0;
   for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
 
-    // Get the face topology from the cell topology
-    const shards::CellTopology face_topology(cell_topology.getCellTopologyData(subcell_dim,subcell_index));
-
-    // Get the quadrature rule
-    const auto ic = cubature_factory.create<PHX::Device::execution_space,double,double>(face_topology,ir.getOrder());
-    const int num_points_on_face = (cell_dim==1)? 1 : ic->getNumPoints();
+    // Default for 1D
+    int num_points_on_face = 1;
 
     // Get the cubature for the side
-    auto side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("side_cub_weights",num_points_on_face);
-    auto side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_side_cub_points",num_points_on_face,cell_dim);
+    Kokkos::DynRankView<double,PHX::Device> side_cub_weights;
+    Kokkos::DynRankView<double,PHX::Device> side_cub_points;
     if(cell_dim==1){
+      side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("side_cub_weights",num_points_on_face);
+      side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_side_cub_points",num_points_on_face,cell_dim);
       side_cub_weights(0)=1.;
       side_cub_points(0,0) = (subcell_index==0)? -1. : 1.;
     } else {
+
+      // Get the face topology from the cell topology
+      const shards::CellTopology face_topology(cell_topology.getCellTopologyData(subcell_dim,subcell_index));
+
+      auto ic = cubature_factory.create<PHX::Device::execution_space,double,double>(face_topology,ir.getOrder());
+      num_points_on_face = ic->getNumPoints();
+
+      side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("side_cub_weights",num_points_on_face);
+      side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_side_cub_points",num_points_on_face,cell_dim);
+
       auto subcell_cub_points = Kokkos::DynRankView<double,PHX::Device>("side_cub_points",num_points_on_face,subcell_dim);
+
       // Get the reference face points
       ic->getCubature(subcell_cub_points, side_cub_weights);
 
@@ -554,6 +562,15 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
                                        subcell_index,
                                        cell_topology);
     }
+
+
+    for(int local_point=0;local_point<num_points_on_face;++local_point){
+      const int point = point_offset + local_point;
+      for(int dim=0;dim<cell_dim;++dim){
+        cub_points(point,dim) = side_cub_points(local_point,dim);
+      }
+    }
+
 
     // Map from side points to physical points
     auto side_ip_coordinates = Kokkos::DynRankView<Scalar,PHX::Device>("side_ip_coordinates",num_cells,num_points_on_face,cell_dim);
@@ -594,8 +611,14 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     // Calculate normals
     auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim);
     if(cell_dim == 1){
-      // Intrepid is missing this interface
-      TEUCHOS_ASSERT(false);
+
+      int other_subcell_index = (subcell_index==0) ? 1 : 0;
+
+      for(int cell=0;cell<num_cells;++cell){
+        Scalar norm = (in_node_coordinates(cell,subcell_index,0) - in_node_coordinates(cell,other_subcell_index,0));
+        side_normals(cell,0,0) = norm / fabs(norm);
+      }
+
     } else {
 
       cell_tools.getPhysicalSideNormals(side_normals,side_jacobian,subcell_index,cell_topology);
@@ -659,38 +682,41 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         std::sort(point_indexes.begin(),point_indexes.end(),sorter);
 
         // Indexes are now sorted, now we swap everything around
-        for(int old_point=0;old_point<num_points_on_face;++old_point){
-          const int new_point = point_indexes[old_point];
+        for(int old_point_idx=0;old_point_idx<num_points_on_face;++old_point_idx){
+          const int new_cell_point = point_offset + point_indexes[old_point_idx];
+          const int old_cell_point = point_offset+old_point_idx;
 
           Scalar hold;
 
-          hold = weighted_measure(cell,new_point);
-          weighted_measure(cell,new_point) = weighted_measure(cell,old_point);
-          weighted_measure(cell,old_point) = hold;
+          hold = weighted_measure(cell,new_cell_point);
+          weighted_measure(cell,new_cell_point) = weighted_measure(cell,old_cell_point);
+          weighted_measure(cell,old_cell_point) = hold;
 
-          hold = jac_det(cell,new_point);
-          jac_det(cell,new_point) = jac_det(cell,old_point);
-          jac_det(cell,old_point) = hold;
+          hold = jac_det(cell,new_cell_point);
+          jac_det(cell,new_cell_point) = jac_det(cell,old_cell_point);
+          jac_det(cell,old_cell_point) = hold;
 
           for(int dim=0;dim<cell_dim;++dim){
 
-            hold = ip_coordinates(cell,new_point,dim);
-            ip_coordinates(cell,new_point,dim) = ip_coordinates(cell,old_point,dim);
-            ip_coordinates(cell,old_point,dim) = hold;
+            ref_ip_coordinates(cell,new_cell_point,dim) = cub_points(old_cell_point,dim);
 
-            hold = surface_normals(cell,new_point,dim);
-            surface_normals(cell,new_point,dim) = surface_normals(cell,old_point,dim);
-            surface_normals(cell,old_point,dim) = hold;
+            hold = ip_coordinates(cell,new_cell_point,dim);
+            ip_coordinates(cell,new_cell_point,dim) = ip_coordinates(cell,old_cell_point,dim);
+            ip_coordinates(cell,old_cell_point,dim) = hold;
+
+            hold = surface_normals(cell,new_cell_point,dim);
+            surface_normals(cell,new_cell_point,dim) = surface_normals(cell,old_cell_point,dim);
+            surface_normals(cell,old_cell_point,dim) = hold;
 
             for(int dim2=0;dim2<cell_dim;++dim2){
 
-              hold = jac(cell,new_point,dim,dim2);
-              jac(cell,new_point,dim,dim2) = jac(cell,old_point,dim,dim2);
-              jac(cell,old_point,dim,dim2) = hold;
+              hold = jac(cell,new_cell_point,dim,dim2);
+              jac(cell,new_cell_point,dim,dim2) = jac(cell,old_cell_point,dim,dim2);
+              jac(cell,old_cell_point,dim,dim2) = hold;
 
-              hold = jac_inv(cell,new_point,dim,dim2);
-              jac_inv(cell,new_point,dim,dim2) = jac_inv(cell,old_point,dim,dim2);
-              jac_inv(cell,old_point,dim,dim2) = hold;
+              hold = jac_inv(cell,new_cell_point,dim,dim2);
+              jac_inv(cell,new_cell_point,dim,dim2) = jac_inv(cell,old_cell_point,dim,dim2);
+              jac_inv(cell,old_cell_point,dim,dim2) = hold;
 
             }
           }
