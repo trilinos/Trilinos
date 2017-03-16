@@ -111,7 +111,7 @@ namespace MueLu {
     RCP<Matrix>           Ptentative;
     RCP<MultiVector>      coarseNullspace;
     if (!aggregates->AggregatesCrossProcessors())
-      BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
+      BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
@@ -141,7 +141,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
+                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
@@ -364,7 +364,12 @@ namespace MueLu {
     GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
 
     PtentCrs->setAllValues(iaPtent, jaPtent, valPtent);
-    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+    ParameterList label;
+    std::string levelIDs = toString(levelID);
+    label.set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
+    RCP<const Export> dummy_e;
+    RCP<const Import> dummy_i;
+    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap(),dummy_i,dummy_e,rcp(&label,false));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
