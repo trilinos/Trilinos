@@ -372,7 +372,7 @@ Thyra::create_DgDx_dot_mv(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
+  TEUCHOS_UNREACHABLE_RETURN(MEB::DerivativeMultiVector<Scalar>());
 }
 
 
@@ -414,7 +414,7 @@ Thyra::create_DgDp_mv(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
+  TEUCHOS_UNREACHABLE_RETURN(MEB::DerivativeMultiVector<Scalar>());
 }
 
 

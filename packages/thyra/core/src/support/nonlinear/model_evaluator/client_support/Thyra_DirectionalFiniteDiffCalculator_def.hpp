@@ -76,13 +76,13 @@ class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
 public:
   // Public functions overridden from ModelEvaulator.
   RCP<const VectorSpaceBase<Scalar> > get_x_space() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); }
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return Teuchos::null; }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); }
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::InArgs<Scalar>()); }
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
-    { TEUCHOS_TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
+    { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::OutArgs<Scalar>()); }
   void evalModel(
     const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ModelEvaluatorBase::OutArgs<Scalar> &outArgs

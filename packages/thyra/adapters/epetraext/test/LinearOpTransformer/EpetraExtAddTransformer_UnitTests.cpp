@@ -122,7 +122,6 @@ buildAddOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<doubl
       break;
    default:
       TEUCHOS_ASSERT(false);
-      break;
    }
 
    return M;

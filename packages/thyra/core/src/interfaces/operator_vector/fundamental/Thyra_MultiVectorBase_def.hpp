@@ -88,12 +88,11 @@ rowStatIsSupportedImpl(const RowStatLinearOpBaseUtils::ERowStat rowStat) const
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM:
     case RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM:
       return true;
-      break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 
-  return false; // will never be called
+  TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
 template<class Scalar>
