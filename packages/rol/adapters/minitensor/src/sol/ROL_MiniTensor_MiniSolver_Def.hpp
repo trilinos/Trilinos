@@ -150,7 +150,8 @@ solve(
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
-  failed = failed || fn.failed;
+  failed = failed || fn.get_failed();
+  if (fn.get_failed() == true) failure_message = fn.get_failure_message();
   initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
@@ -222,7 +223,8 @@ solve(
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
-  failed = failed || fn.failed;
+  failed = failed || fn.get_failed();
+  if (fn.get_failed() == true) failure_message = fn.get_failure_message();
   initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
@@ -230,7 +232,7 @@ solve(
   obj(fn);
 
   // Define constraint
-  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+  using MTCONSTR = typename std::conditional<EIC::IS_EQUALITY,
       ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
       ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
 
@@ -298,7 +300,8 @@ solve(
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
-  failed = failed || fn.failed;
+  failed = failed || fn.get_failed();
+  if (fn.get_failed() == true) failure_message = fn.get_failure_message();
   initial_norm = minitensor::norm(resi);
 
   // Define algorithm.
@@ -316,7 +319,7 @@ solve(
   bound_constr(lo, hi);
 
   // Define equality/inequality constraint
-  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+  using MTCONSTR = typename std::conditional<EIC::IS_EQUALITY,
       ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
       ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
 
