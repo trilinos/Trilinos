@@ -1,0 +1,44 @@
+<ParameterList>
+  <ParameterList name="Stratimikos">
+    <Parameter name="Linear Solver Type"  type="string" value="Belos"/>
+    <Parameter name="Preconditioner Type" type="string" value="MueLu"/>
+
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Block GMRES">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
+            <Parameter name="Output Frequency"      type="int"    value="1"/>
+            <Parameter name="Output Style"          type="int"    value="1"/>
+            <Parameter name="Verbosity"             type="int"    value="41"/>
+            <Parameter name="Maximum Iterations"    type="int"    value="20"/>
+            <Parameter name="Block Size"            type="int"    value="1"/>
+            <Parameter name="Num Blocks"            type="int"    value="4"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- Linear Solver Types -->
+
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack2">
+        <Parameter name="Overlap"                         type="int" value="0"/>
+        <Parameter name="Prec Type"                       type="string" value="ILUT"/>
+        <ParameterList name="Ifpack2 Settings">
+          <Parameter name="fact: level-of-fill"           type="int" value="0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="MueLu">
+        <Parameter name="verbosity"                       type="string"   value="none"/>
+        <Parameter name="max levels"                      type="int"      value="10"/>
+        <Parameter name="multigrid algorithm"             type="string"   value="sa"/>
+        <Parameter name="smoother: type"                  type="string"   value="RELAXATION"/>
+        <ParameterList name="smoother: params">
+          <Parameter name="relaxation: type"              type="string"   value="Symmetric Gauss-Seidel"/>
+          <Parameter name="relaxation: sweeps"            type="int"      value="3"/>
+          <Parameter name="relaxation: damping factor"    type="double"   value="1"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- Preconditioner Types -->
+</ParameterList>
+
