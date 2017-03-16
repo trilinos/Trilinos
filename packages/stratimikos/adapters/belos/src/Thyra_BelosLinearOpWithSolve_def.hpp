@@ -635,15 +635,15 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 
   Belos::ReturnType belosSolveStatus;
   {
-    // Write detailed convergence information if requested for levels >= VERB_LOW
-    RCP<std::ostream>
-      outUsed =
-      ( static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)
-        ? out
-        : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
-        );
-    Teuchos::OSTab tab1(outUsed,1,"BELOS");
-    tmpPL->set("Output Stream", outUsed);
+    // LB: We no longer check this->getVerbLevel to decide whether the output stream
+    // of the iterative solver should be a blackhole or a valid ostream. Instead,
+    // we let the user decide that with the verbosity option in the solver's
+    // parameter list. This way we do not have to make this class verbose too, if
+    // we want the solver to be verbose. In other words, the verbosity of this class
+    // (which is set equal to that of its factory) should have nothing to do with
+    // the verbosity of the Belos solver (which is set via solver's parameter list
+    // by the user).
+    tmpPL->set("Output Stream", out);
     iterativeSolver_->setParameters(tmpPL);
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
