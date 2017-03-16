@@ -248,7 +248,8 @@ int main(int argc, char *argv[]) {
     }
     // Sampler
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
+      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
+    //  = Teuchos::rcp(new PDE_OptVector_BatchManager<RealT>(comm));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,bman));
 

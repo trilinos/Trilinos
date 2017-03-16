@@ -134,7 +134,7 @@ public:
       (*meshSideSets_)[2][2](i) = i + (np1+np2) + nx_*(ny_-1);
     }
     // Pressure Pinning
-    (*meshSideSets_)[6][0](0) = 0;
+    (*meshSideSets_)[6][0](0) = nx_ * (ny_/2) + (nx_/2);
 
   } // computeSideSets
 

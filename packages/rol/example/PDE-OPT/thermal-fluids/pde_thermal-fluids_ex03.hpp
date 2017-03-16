@@ -165,6 +165,7 @@ private:
   Real Re_, Pr_, Gr_, h_;
   const Real grav_;
   int Nbottom_, Nleft_, Nright_;
+  Real ReScale_, PrScale_, GrScale_, hScale_, TScale_;
 
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
@@ -194,10 +195,10 @@ private:
     if (sideset==0) {
       val = static_cast<Real>(1);
       if (param.size()) {
-        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0)), scale(0.05);
+        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
         for (int i = 0; i < Nbottom_; ++i) {
           Real di(i+1);
-          val += scale * param[i]/ln2 * (root2 * std::sin(di * pi * coords[0]))/(di * pi);
+          val += TScale_ * param[i]/ln2 * (root2 * std::sin(di * pi * coords[0]))/(di * pi);
         }
       }
     }
@@ -267,8 +268,8 @@ private:
     Real val = Re_;
     if (param.size()) {
       int offset = Nbottom_ + Nright_ + Nleft_;
-      Real one(1), scale(0.0);
-      val /= (one + scale*param[offset]);
+      Real one(1);
+      val /= (one + ReScale_*param[offset]);
     }
     return val;
   }
@@ -278,8 +279,8 @@ private:
     Real val = Pr_;
     if (param.size()) {
       int offset = Nbottom_ + Nright_ + Nleft_;
-      Real one(1), scale(0.0);
-      val *= (one + scale*param[offset])/(one + scale*param[offset+1]);
+      Real one(1);
+      val *= (one + ReScale_*param[offset])/(one + PrScale_*param[offset+1]);
     }
     return val;
   }
@@ -289,8 +290,8 @@ private:
     Real val = Gr_;
     if (param.size()) {
       int offset = Nbottom_ + Nright_ + Nleft_;
-      Real one(1), scale(0.0), muscale = one + scale*param[offset];
-      val *= (one + scale*param[offset+2])/(muscale*muscale);
+      Real one(1), muscale = one + ReScale_*param[offset];
+      val *= (one + GrScale_*param[offset+2])/(muscale*muscale);
     }
     return val;
   }
@@ -301,18 +302,18 @@ private:
     if ( param.size()) {
       if ( sideset == 5 ) {
         int offset = Nbottom_;
-        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0)), scale(0.05);
+        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
         for (int i = 0; i < Nleft_; ++i) {
           Real di(i+1);
-          val += scale * param[offset + i]/ln2 * (root2 * std::sin(di * pi * x[1]))/(di * pi);
+          val += hScale_ * param[offset + i]/ln2 * (root2 * std::sin(di * pi * x[1]))/(di * pi);
         }
       }
       else if ( sideset == 1 ) {
         int offset = Nbottom_ + Nleft_;
-        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0)), scale(0.05);
+        Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
         for (int i = 0; i < Nright_; ++i) {
           Real di(i+1);
-          val += scale * param[offset + i]/ln2 * (root2 * std::sin(di * pi * x[1]))/(di * pi);
+          val += hScale_ * param[offset + i]/ln2 * (root2 * std::sin(di * pi * x[1]))/(di * pi);
         }
       }
     }
@@ -441,6 +442,12 @@ public:
     Nbottom_ = parlist.sublist("Problem").get("Bottom KL Truncation Order",5);
     Nleft_   = parlist.sublist("Problem").get("Left KL Truncation Order",5);
     Nright_  = parlist.sublist("Problem").get("Right KL Truncation Order",5);
+    // Stochastic scales
+    ReScale_ = parlist.sublist("Problem").get("Reynolds Number Noise Scale",0.05);
+    PrScale_ = parlist.sublist("Problem").get("Prandtl Number Noise Scale",0.05);
+    GrScale_ = parlist.sublist("Problem").get("Grashof Number Noise Scale",0.05);
+    hScale_  = parlist.sublist("Problem").get("Robin Noise Scale",0.2);
+    TScale_  = parlist.sublist("Problem").get("Bottom Temperature Noise Scale",0.2);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
