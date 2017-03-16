@@ -24,7 +24,7 @@ export OMPI_CXX=$TRILINOS_BASE_DIR/Trilinos/packages/kokkos/config/nvcc_wrapper
 export USE_CUDA=ON
 module load blas/gcc/4.8.4
 module load lapack/3.5.0/gcc/4.8.4
-export LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-L${BLAS_ROOT}/lib;-lblas"
+export LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 
 
 module swap yaml-cpp/0.3.0 yaml-cpp/20170104 
