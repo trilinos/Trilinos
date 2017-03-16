@@ -56,23 +56,33 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
-
+  
   //Setup initial condition
   //Create and populate inArgs
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
-  //the solution variable in NOX is the acceleration, a_{n+1} 
-  transientInArgs.set_x_dot_dot(inArgs.get_x()); 
-  RCP<Thyra::VectorBase<Scalar> > velocity = Thyra::createMember(inArgs.get_x()->space());
-  //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + \gamma dt a_{n+1}
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, delta_t_*gamma_, *inArgs.get_x());
-  transientInArgs.set_x_dot(velocity); 
-  RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
-  //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + \beta dt^2 a_{n+1}
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, beta_*delta_t_*delta_t_, *inArgs.get_x()); 
-  transientInArgs.set_x(displacement); 
-  transientInArgs.set_W_x_dot_dot_coeff(1.0);                 // da/da
-  transientInArgs.set_alpha(gamma_*delta_t_);                 // dv/da
-  transientInArgs.set_beta(beta_*delta_t_*delta_t_);          // dd/da
+
+  switch (schemeType_) 
+  {
+    case NEWMARK_IMPLICIT: 
+      //Specific for the Newmark-Beta stepper.  May want to redesign this for a generic 
+      //second order scheme to not have an if statement here... 
+      //IKT, 3/14/17: this is effectively the same as the Piro::NewmarkDecorator::evalModel function.  
+      //the solution variable in NOX is the acceleration, a_{n+1} 
+      transientInArgs.set_x_dot_dot(inArgs.get_x()); 
+      RCP<Thyra::VectorBase<Scalar> > velocity = Thyra::createMember(inArgs.get_x()->space());
+      //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + \gamma dt a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, delta_t_*gamma_, *inArgs.get_x());
+      transientInArgs.set_x_dot(velocity); 
+      RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
+      //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + \beta dt^2 a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, beta_*delta_t_*delta_t_, *inArgs.get_x()); 
+      transientInArgs.set_x(displacement); 
+      transientInArgs.set_W_x_dot_dot_coeff(1.0);                 // da/da
+      transientInArgs.set_alpha(gamma_*delta_t_);                 // dv/da
+      transientInArgs.set_beta(beta_*delta_t_*delta_t_);          // dd/da
+      break; 
+  }
+
   transientInArgs.set_t(t_);
   for (int i=0; i<transientModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)

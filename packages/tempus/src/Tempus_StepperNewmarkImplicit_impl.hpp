@@ -96,7 +96,7 @@ void StepperNewmarkImplicit<Scalar>::setModel(
   this->validImplicitSecondOrderODE_DAE(transientModel);
   if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
   residualModel_ =
-    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel));
+    Teuchos::rcp(new SecondOrderResidualModelEvaluator<Scalar>(transientModel, "Newmark Beta Implicit"));
 
   inArgs_  = residualModel_->getNominalValues();
   outArgs_ = residualModel_->createOutArgs();
@@ -274,7 +274,7 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     predictVelocity(*v_pred, *v_old, *a_old, dt); 
 
     //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initialize(a_old, v_pred, d_pred, dt, t, beta_, gamma_);  
+    residualModel_->initializeNewmark(a_old, v_pred, d_pred, dt, t, beta_, gamma_);  
 
     //Solve for new acceleration 
     //IKT, 3/13/17: check how solveNonLinear works.

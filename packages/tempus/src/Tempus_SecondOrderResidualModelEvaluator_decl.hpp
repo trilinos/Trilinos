@@ -35,11 +35,20 @@ public:
 
   /// Constructor
   SecondOrderResidualModelEvaluator(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel, const std::string schemeName)
     : transientModel_(transientModel),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream())
   {
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "    schemeName = " << schemeName << "\n"; 
+    if (schemeName == "Newmark Beta Implicit") {
+      schemeType_ = NEWMARK_IMPLICIT;
+    }
+    else {
+       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+       "Error: SecondOrderResidualModelEvaluator called with unsopported schemeName = " << schemeName  
+       <<"!  Supported schemeNames are: 'Newmark Beta Implicit'.\n"); 
+    }
   }
 
   /// Set the underlying transient ModelEvaluator
@@ -58,9 +67,9 @@ public:
   }
 
   /// Set values needed in evalModelImpl 
-  void initialize(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred, 
-                  Teuchos::RCP<Vector> d_pred, Scalar delta_t, 
-                   Scalar t, Scalar beta, Scalar gamma) 
+  void initializeNewmark(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred, 
+                         Teuchos::RCP<Vector> d_pred, Scalar delta_t, 
+                         Scalar t, Scalar beta, Scalar gamma) 
   {
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     a_ = a; v_pred_ = v_pred; d_pred_ = d_pred; 
@@ -121,6 +130,8 @@ public:
               const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
+    
+    enum SCHEME_TYPE {NEWMARK_IMPLICIT}; 
   
 private:
 
@@ -138,6 +149,7 @@ private:
   Teuchos::RCP<Vector> d_pred_; 
   Teuchos::RCP<Vector> v_pred_; 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+  SCHEME_TYPE schemeType_; 
 
 };
 
