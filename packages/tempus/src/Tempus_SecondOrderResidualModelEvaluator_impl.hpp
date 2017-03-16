@@ -17,7 +17,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SecondOrderResidualModelEvaluator<Scalar>::
 createInArgs() const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   typedef Thyra::ModelEvaluatorBase MEB;
 
   MEB::InArgsSetup<Scalar> inArgs;
@@ -34,7 +36,9 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 SecondOrderResidualModelEvaluator<Scalar>::
 createOutArgsImpl() const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   typedef Thyra::ModelEvaluatorBase MEB;
 
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -53,7 +57,9 @@ SecondOrderResidualModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
   

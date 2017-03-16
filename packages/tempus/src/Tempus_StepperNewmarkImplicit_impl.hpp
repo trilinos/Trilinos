@@ -14,6 +14,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
 
+//#define VERBOSE_DEBUG_OUTPUT
 
 namespace Tempus {
 
@@ -26,7 +27,9 @@ void StepperNewmarkImplicit<Scalar>::predictVelocity(Thyra::VectorBase<Scalar>& 
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   //vPred = v + dt*(1.0-gamma_)*a
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
 }
@@ -38,7 +41,9 @@ void StepperNewmarkImplicit<Scalar>::predictDisplacement(Thyra::VectorBase<Scala
                                                    const Thyra::VectorBase<Scalar>& a,
                                                    const Scalar dt) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp = Thyra::createMember<Scalar>(dPred.space());
   //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a
   Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_);
@@ -53,7 +58,9 @@ void StepperNewmarkImplicit<Scalar>::correctVelocity(Thyra::VectorBase<Scalar>& 
                                                  const Thyra::VectorBase<Scalar>& a,
                                                  const Scalar dt) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   //v = vPred + dt*gamma_*a
   Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);
 }
@@ -64,7 +71,9 @@ void StepperNewmarkImplicit<Scalar>::correctDisplacement(Thyra::VectorBase<Scala
                                                    const Thyra::VectorBase<Scalar>& a,
                                                    const Scalar dt) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   //d = dPred + beta_*dt*dt*a
   Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a);
 }
@@ -77,7 +86,9 @@ StepperNewmarkImplicit<Scalar>::StepperNewmarkImplicit(
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -92,7 +103,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   this->validImplicitSecondOrderODE_DAE(transientModel);
   if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
   residualModel_ =
@@ -107,7 +120,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setNonConstModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   this->setModel(transientModel);
 }
 
@@ -120,7 +135,9 @@ void StepperNewmarkImplicit<Scalar>::setNonConstModel(
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setSolver(std::string solverName)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -142,7 +159,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setSolver(
   Teuchos::RCP<Teuchos::ParameterList> solverPL)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -174,7 +193,9 @@ void StepperNewmarkImplicit<Scalar>::setSolver(
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setPredictor(std::string predictorName)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -194,7 +215,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::setPredictor(
   Teuchos::RCP<Teuchos::ParameterList> predPL)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -228,7 +251,9 @@ void StepperNewmarkImplicit<Scalar>::setPredictor(
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::initialize()
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   this->setSolver();
   this->setPredictor();
 }
@@ -238,7 +263,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
@@ -298,7 +325,9 @@ template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::computePredictor(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   if (predictorStepper_ == Teuchos::null) return;
   predictorStepper_->takeStep(solutionHistory);
 
@@ -327,7 +356,9 @@ Teuchos::RCP<Tempus::StepperState<Scalar> >
 StepperNewmarkImplicit<Scalar>::
 getDefaultStepperState()
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
     rcp(new StepperState<Scalar>(description()));
   return stepperState;
@@ -337,7 +368,9 @@ getDefaultStepperState()
 template<class Scalar>
 std::string StepperNewmarkImplicit<Scalar>::description() const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   std::string name = "Newmark Implicit";
   return(name);
 }
@@ -348,7 +381,9 @@ void StepperNewmarkImplicit<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   out << description() << "::describe:" << std::endl
       << "residualModel_ = " << residualModel_->description() << std::endl;
 }
@@ -358,7 +393,9 @@ template <class Scalar>
 void StepperNewmarkImplicit<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
   else pList_ = pList;
   // Can not validate because of optional Parameters.
@@ -398,7 +435,9 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::getValidParameters() const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
@@ -411,7 +450,9 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::getDefaultParameters() const
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
@@ -437,7 +478,9 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::getNonconstParameterList()
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   return(pList_);
 }
 
@@ -446,7 +489,9 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperNewmarkImplicit<Scalar>::unsetParameterList()
 {
+#ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
   pList_ = Teuchos::null;
   return(temp_plist);
