@@ -787,14 +787,8 @@ public:
   T
   value(Vector<T, N> const & X)
   {
-    // Get a convenience reference to the failed flag in case it is used more
-    // than once.
-    bool &
-    failed = Base::failed;
-
     // Set the flag to signal that an unrecoverable error happened.
-
-    failed = true;
+    this->set_failed("Testing failure mechanism");
 
     T const
     fn = 0.0;

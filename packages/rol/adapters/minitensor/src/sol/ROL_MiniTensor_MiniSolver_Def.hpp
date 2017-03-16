@@ -88,7 +88,8 @@ solve(
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
-  failed = failed || fn.failed;
+  failed = failed || fn.get_failed();
+  if (fn.get_failed() == true) failure_message = fn.get_failure_message();
   initial_norm = minitensor::norm(resi);
 
   // Define algorithm.

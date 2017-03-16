@@ -175,6 +175,9 @@ public:
 
   char const *
   function_name{nullptr};
+
+  char const *
+  failure_message{"No failure detected"};
 };
 
 } // namespace ROL

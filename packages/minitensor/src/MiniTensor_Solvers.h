@@ -63,6 +63,10 @@ template<typename FunctionDerived, typename S, Index M>
 struct Function_Base
 {
 public:
+  static constexpr
+  Index
+  DIMENSION{M};
+
   Function_Base()
   {
   }
@@ -96,15 +100,32 @@ public:
   Tensor<T, N>
   hessian(FunctionDerived & f, Vector<T, N> const & x);
 
+  void
+  set_failed(char const * const msg = nullptr);
+
+  bool
+  get_failed();
+
+  void
+  clear_failed();
+
+  void
+  set_failure_message(char const * const msg = nullptr);
+
+  char const * const
+  get_failure_message();
+
+private:
   ///
   /// Signal that something has gone horribly wrong.
   ///
   bool
   failed{false};
 
-  static constexpr
-  Index
-  DIMENSION{M};
+  ///
+  /// Keep a message to inform what went wrong above.
+  char const *
+  failure_message{nullptr};
 };
 
 ///
@@ -279,6 +300,9 @@ public:
 
   char const *
   function_name{nullptr};
+
+  char const *
+  failure_message{"No failure detected"};
 };
 
 ///
