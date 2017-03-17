@@ -45,14 +45,6 @@
 #include "TeuchosCore_config.h"
 
 
-/** \file Teuchos_CompilerCodeTweakMacros.hpp
- *
- * This file contains macros used to tweak code to make compilers happy and
- * avoid warnings of various types.  See the macros defined here for the
- * motivation and usage of these macros.
- */
-
-
 /** \brief Avoid warning about unreachable or missing return from function.
  *
  * Consider a function like:
@@ -104,6 +96,8 @@
  * On compilers that warn about a missing return, the statement <tt>return
  * -1;</tt> is provided.  However, on compilers that warn about unreachable
  * code, it will simply provide <tt>(void);</tt>.
+ *
+ * \ingroup teuchos_language_support_grp
  */
 #define TEUCHOS_UNREACHABLE_RETURN(dummyReturnVal)
 
