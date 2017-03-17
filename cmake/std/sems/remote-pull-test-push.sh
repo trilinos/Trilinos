@@ -7,7 +7,7 @@
 # Call as:
 #
 #  $ cd <local_trilinos_base_dir>/
-#  $ ./Trilinos/sampleScripts/remote-pull-test-push/cee-lan/remote-pull-test-push.sh \
+#  $ ./Trilinos/cmake/std/sems/remote-pull-test-push.sh \
 #       <remote_pull_test_push_server>  <remote_trilinos_base_dir>
 #
 # where <local_trilinos_base_dir> is the base directory for Trilinos on the
