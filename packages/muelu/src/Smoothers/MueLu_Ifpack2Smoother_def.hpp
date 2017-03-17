@@ -352,7 +352,7 @@ namespace MueLu {
     // Ifpack2 wants the seeds in an array of the same length as the number of local elements,
     // with local partition #s marked for the ones that are seeds, and invalid for the rest
     int myNodeCount = A_->getRowMap()->getNodeNumElements();
-    ArrayRCP<GlobalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
+    ArrayRCP<LocalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
     int localPartitionNumber = 0;
     for (LocalOrdinal seed : seeds[dimension])
     {
