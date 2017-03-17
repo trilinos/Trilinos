@@ -45,7 +45,7 @@ echo "***"
 echo
 
 cd $local_trilinos_base_dir/Trilinos/
-git push -f intermediate-repo $local_branch_name
+git push -f intermediate-repo $local_branch_name:$local_branch_name
 
 echo
 echo "***"
