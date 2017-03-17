@@ -131,6 +131,7 @@ namespace MueLu {
     if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -214,6 +215,7 @@ namespace MueLu {
   "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -488,6 +490,8 @@ namespace MueLu {
          ("pcoarsen: hi basis","pcoarsen: hi basis")
       
          ("pcoarsen: lo basis","pcoarsen: lo basis")
+      
+         ("smoother: neighborhood type","smoother: neighborhood type")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       

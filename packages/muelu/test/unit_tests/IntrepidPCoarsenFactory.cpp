@@ -3204,8 +3204,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
-
-
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
@@ -3426,6 +3424,110 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2_TopoSmoother, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+    
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+    
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=4;
+    std::string hi_basis("hgrad_line_c4");
+    
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    /*
+    int numElements = elem_to_node.dimension(0);
+    int numNodesPerElement = elem_to_node.dimension(1);
+    for (int elemOrdinal=0; elemOrdinal<numElements; elemOrdinal++)
+    {
+      cout << "element " << elemOrdinal << " nodes: ";
+      for (int node=0; node<numNodesPerElement; node++)
+        cout << elem_to_node(elemOrdinal,node) << " ";
+      cout << endl;
+    }*/
+    
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+    
+    // ParameterList
+    ParameterList Params, level0, level1, level2, mmm;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("verbosity","high");
+    Params.set("max levels",3);
+    Params.set("coarse: max size",5);
+    Params.set("smoother: type","TOPOLOGICAL");
+    Params.set("smoother: neighborhood type", "node");
+    
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
+    ParameterList &l0s = level0.sublist("smoother: params");
+    l0s.set("pcoarsen: hi basis", hi_basis);
+    l0s.set("smoother: neighborhood type", "node");
+    Params.set("level 0",level0);
+    
+    level1.set("pcoarsen: hi basis",hi_basis);
+    level1.set("pcoarsen: lo basis","hgrad_line_c3");
+    ParameterList &l1s = level1.sublist("smoother: params");
+    l1s.set("pcoarsen: hi basis", "hgrad_line_c3");
+    l1s.set("smoother: neighborhood type", "node");
+    Params.set("level 1",level1);
+    
+    level2.set("pcoarsen: hi basis","hgrad_line_c3");
+    level2.set("pcoarsen: lo basis","hgrad_line_c2");
+    ParameterList &l2s = level2.sublist("smoother: params");
+    l2s.set("pcoarsen: hi basis", "hgrad_line_c2");
+    l2s.set("smoother: neighborhood type", "node");
+    Params.set("level 2",level2);
+    
+#if 0
+    // DEBUG
+    ParameterList dump;
+    dump.set("A","{0,1,2}");
+    dump.set("P","{0,1}");
+    dump.set("R","{0,1}");
+    dump.set("pcoarsen: element to node map","{0,1,2}");
+    Params.set("export data",dump);
+#endif
+    
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+  
   /*********************************************************************************************************************/
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
@@ -3454,6 +3556,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2_TopoSmoother, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node) \
