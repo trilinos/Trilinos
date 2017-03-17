@@ -216,14 +216,12 @@ bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(
   switch(precOpType) {
     case PRECONDITIONER_INPUT_TYPE_AS_OPERATOR:
       return true;
-      break;
     case PRECONDITIONER_INPUT_TYPE_AS_MATRIX:
       return useAztecPrec_;
-      break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR);
 }
 
 
