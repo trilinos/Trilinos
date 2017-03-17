@@ -927,8 +927,7 @@ namespace MueLuTests {
   {
     testBuildSampleElementToNodeMapThreeElementQuad<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
   }
-
-#ifdef HAVE_MUELU_TPETRA  
+  
   template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
   class TpetraMapMaker
   {
@@ -936,7 +935,7 @@ namespace MueLuTests {
     typedef Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> MapRCP;
     static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm);
   };
-
+  
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class TpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
   public:
@@ -958,9 +957,7 @@ namespace MueLuTests {
       return Teuchos::rcp( new Map(numElements, elements, indexBase, comm ) );
     }
   };
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
+  
   template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
   class EpetraMapMaker
   {
@@ -970,7 +967,6 @@ namespace MueLuTests {
     static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm);
   };
   
-
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
   public:
@@ -986,7 +982,7 @@ namespace MueLuTests {
       return Teuchos::rcp( new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, Comm) );
     }
   };
-
+  
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseTpetra> {
   public:
@@ -1002,7 +998,6 @@ namespace MueLuTests {
       return Teuchos::null; // no Epetra map for UseTpetra
     }
   };
-#endif  
   
   template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
@@ -3436,6 +3431,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 #   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
+    
+    // don't run this test if in Epetra mode (no Ifpack implementation, only Ifpack2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
     
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
