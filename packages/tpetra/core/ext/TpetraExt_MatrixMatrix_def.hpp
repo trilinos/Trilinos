@@ -980,8 +980,10 @@ void mult_AT_B_newmatrix(
   /*************************************************************/
   /* 1) Local Transpose of A                                   */
   /*************************************************************/
-  transposer_type transposer (rcpFromRef (A));
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = transposer.createTransposeLocal();
+  transposer_type transposer (rcpFromRef (A),label+std::string("XP: "));
+  RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
+  if(!params.is_null()) transposeParams->set("compute global constants",params->get("compute global constants",false));
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = transposer.createTransposeLocal(transposeParams);
 
   /*************************************************************/
   /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
@@ -1653,6 +1655,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   // with the implementation of the local part of sparse matrix-matrix
   // multply above.
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
   RCP<const Export<LO,GO,NO> > dummyExport;
   C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
@@ -1849,6 +1852,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
@@ -2381,6 +2385,7 @@ void jacobi_A_B_newmatrix(
   // with the implementation of the local part of sparse matrix-matrix
   // multply above
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
   RCP<const Export<LO,GO,NO> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);

@@ -800,10 +800,14 @@ namespace MueLu {
 
     // Tentative P
     MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
+    ParameterList ptentParams;
+    if(paramList.isSublist("matrixmatrix: kernel params"))   ptentParams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+    if(defaultList.isSublist("matrixmatrix: kernel params")) ptentParams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+    Ptent->SetParameterList(ptentParams);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-
+    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));    
     manager.SetFactory("Ptent",     Ptent);
+
 
     if (reuseType == "tP" && levelID) {
       keeps.push_back(keep_pair("Nullspace", Ptent.get()));

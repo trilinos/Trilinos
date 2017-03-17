@@ -4110,7 +4110,10 @@ namespace Tpetra {
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph"))));
+
+    printf("CMS: expertStaticFillComplete being called w/ MMM label = %s\n",label.c_str());
 #endif
+
 
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
