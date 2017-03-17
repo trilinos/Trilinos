@@ -61,9 +61,6 @@ echo "***"
 echo "*** 3) Doing non-blocking remote pull/tets/push on '$remote_pull_test_push_server' (se log file checkin-test-remote.log)"
 echo "***"
 
-
-# E) Run remote checkin-test.py script non-blocking 
-
 cd $local_trilinos_base_dir
 
 ssh -q $remote_pull_test_push_server \
