@@ -73,6 +73,10 @@ using Teuchos::fancyOStream;
 //
 
 
+const Ordinal m = 5;
+const Ordinal n = 3;
+
+
 TEUCHOS_UNIT_TEST( DefaultMultipliedLinearOp, defaultConstruct )
 {
 
