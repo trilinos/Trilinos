@@ -1,5 +1,32 @@
 #!/bin/sh
 
+# Parse command line options.
+DEBUGMODE=0
+USAGE="sendTestSummary.sh [-d] <logfile>"
+while getopts d OPT; do
+    case "$OPT" in
+        d)
+            # debug mode, don't send email summary
+            DEBUGMODE=1
+            ;;
+        \?)
+            # getopts issues an error message
+            echo ${USAGE}
+            echo
+            exit 1
+            ;;
+    esac
+done
+
+# Remove the options we parsed above.
+shift `expr $OPTIND - 1`
+# The logfile is required. Error out if it's not provided.
+if [ $# -eq 0 ]; then
+    echo $USAGE >&2
+        exit 1
+        fi
+### end parsing ###
+
 cd /home/jhu/code/trilinos-test
 
 timeStamp="$(date +%F_%R)"
@@ -10,7 +37,7 @@ INFILE=$1
 PATTERN="(Xpetra|MueLu)"
 #file to be mailed
 OUTFILE="test-summary-${timeStamp}.txt"
-RECIPIENTS=( "jhu@sandia.gov" "tawiesn@sandia.gov" "prokopenkoav@ornl.gov" "csiefer@sandia.gov" )
+RECIPIENTS=( "jhu@sandia.gov" "tawiesn@sandia.gov" "prokopenkoav@ornl.gov" "csiefer@sandia.gov" "nvrober@sandia.gov" "lberge@sandia.gov" "andrey.prok@gmail.com")
 
 backupFile="cron_driver.log.$timeStamp"
 cp cron_driver.log $backupFile
@@ -244,8 +271,14 @@ END {
 }
 ' $INFILE
 
-for person in "${RECIPIENTS[@]}"
-do
-  #echo "" | mail -s "geminga test summary, $(date)" -a $OUTFILE $person
-  cat $OUTFILE | mail -s "geminga test summary, $(date)" $person
-done
+if [[ $DEBUGMODE == 1 ]]; then
+  mailCommand="cat $OUTFILE | mail -s \"geminga test summary, $(date)\" $person"
+  echo "mail command: $mailCommand"
+  echo "Debug mode, mail not sent."
+else
+  for person in "${RECIPIENTS[@]}"
+  do
+    #echo "" | mail -s "geminga test summary, $(date)" -a $OUTFILE $person
+    cat $OUTFILE | mail -s "geminga test summary, $(date)" $person
+  done
+fi
