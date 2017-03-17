@@ -115,7 +115,7 @@ public:
   char const * const
   get_failure_message();
 
-private:
+protected:
   ///
   /// Signal that something has gone horribly wrong.
   ///
