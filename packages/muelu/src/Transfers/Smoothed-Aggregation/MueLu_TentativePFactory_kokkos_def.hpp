@@ -227,20 +227,17 @@ namespace MueLu {
 
     typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
-    // collect number nonzeros of blkSize rows in nnz_(row+1)
-    template<class MatrixType,class DeviceType>
+    // local QR decomposition
+    template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType>
     class TestFunctor {
     private:
-      //typedef typename MatrixType::ordinal_type LO;
-      //typedef typename MatrixType::value_type SC;
-      typedef int LO;
-      typedef int GO;  // TODO fix me
-      typedef double SC;
+      typedef LOType LO;
+      typedef GOType GO;
+      typedef SCType SC;
 
       //typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
       //typedef typename MatrixType::execution_space::scratch_memory_space shared_space;
       //typedef typename DeviceType::scratch_memory_space shared_space;
-      typedef Kokkos::View<int*,Kokkos::MemoryUnmanaged> shared_1d_int;
       typedef Kokkos::View<SC**,Kokkos::MemoryUnmanaged> shared_matrix;
       typedef Kokkos::View<SC*,Kokkos::MemoryUnmanaged> shared_vector;
 
@@ -249,23 +246,56 @@ namespace MueLu {
       //NnzType nnz;             //< View containing number of nonzeros for current row
       //blkSizeType blkSize;     //< block size (or partial block size in strided maps)
 
+      NspType fineNS;
+      aggRowsType aggRows;
+      maxAggDofSizeType maxAggDofSize; //< maximum number of dofs in aggregate (max size of aggregate * numDofsPerNode)
+      agg2RowMapLOType agg2RowMapLO;
+      statusType statusAtomic;
     public:
-      TestFunctor(/*MatrixType kokkosMatrix_, NnzType nnz_, blkSizeType blkSize_*/) //:
-        //kokkosMatrix(kokkosMatrix_),
-        //nnz(nnz_),
-        //blkSize(blkSize_)
+      TestFunctor(NspType fineNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_) :
+        fineNS(fineNS_),
+        aggRows(aggRows_),
+        maxAggDofSize(maxAggDofSize_),
+        agg2RowMapLO(agg2RowMapLO_),
+        statusAtomic(statusAtomic_)
         { }
 
       KOKKOS_INLINE_FUNCTION
       void operator() ( const team_member & thread) const {
-        int i = thread.league_rank();
+        auto agg = thread.league_rank();
 
         printf("Team no: %i, thread no: %i\n", thread.league_rank(), thread.team_rank());
 
-        // Allocate a shared array for the team.
-        shared_1d_int testint(thread.team_shmem(),2048);
+        LO aggSize = aggRows(agg+1) - aggRows(agg);
 
-        testint(i) = 1;
+        SC one  = Teuchos::ScalarTraits<SC>::one();
+        SC zero = Teuchos::ScalarTraits<SC>::zero();
+
+        // Extract the piece of the nullspace corresponding to the aggregate, and
+        // put it in the flat array, "localQR" (in column major format) for the
+        // QR routine.
+        shared_matrix localQR(thread.team_shmem(),aggSize,fineNS.dimension_1());
+
+        for (size_t j = 0; j < fineNS.dimension_1(); j++)
+          for (LO k = 0; k < aggSize; k++)
+            localQR(k,j) = fineNS(agg2RowMapLO(aggRows(agg)+k),j);
+
+        // Test for zero columns
+        for (size_t j = 0; j < fineNS.dimension_1(); j++) {
+          bool bIsZeroNSColumn = true;
+
+          for (LO k = 0; k < aggSize; k++)
+            if (localQR(k,j) != zero)
+              bIsZeroNSColumn = false;
+
+          if (bIsZeroNSColumn) {
+            statusAtomic(1) = true;
+            return;
+          }
+        }
+
+
+#if 0
         shared_matrix mat(thread.team_shmem(),5,3);
         mat(0,0) = 12.0;
         mat(0,1) = -51.0;
@@ -282,33 +312,34 @@ namespace MueLu {
         mat(4,0) = 2.0;
         mat(4,1) = 0.0;
         mat(4,2) = 3.0;
+#endif
 
         ///////////////////////////////////
         // mat is the input matrix
 
-        shared_matrix matminor(thread.team_shmem(),5,3);
-        shared_matrix z(thread.team_shmem(),5,3);
-        shared_vector e(thread.team_shmem(),5); //unit vector
+        shared_matrix r(thread.team_shmem(),aggSize,fineNS.dimension_1()); // memory containing the r part in the end
+        shared_matrix z(thread.team_shmem(),aggSize,fineNS.dimension_1()); // helper matrix (containing parts of localQR)
+        shared_vector e(thread.team_shmem(),aggSize); //unit vector
 
-        shared_matrix qk(thread.team_shmem(),5,5);
-        shared_matrix q (thread.team_shmem(),5,5);
-        shared_matrix qt (thread.team_shmem(),5,5); // temporary
+        shared_matrix qk(thread.team_shmem(),aggSize,aggSize);  // memory cotaining one householder reflection part
+        shared_matrix q (thread.team_shmem(),aggSize,aggSize);  // memory containing q part in the end
+        shared_matrix qt (thread.team_shmem(),aggSize,aggSize); // temporary
 
-        matrix_copy(mat,z);
+        matrix_copy(localQR,z);
 
-        for(decltype(mat.dimension_0()) k = 0; k < mat.dimension_0() && k < mat.dimension_1()/*-1*/; k++) {
+        for(decltype(localQR.dimension_0()) k = 0; k < localQR.dimension_0() && k < localQR.dimension_1()/*-1*/; k++) {
           // extract minor parts from mat
-          matrix_clear(matminor);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
-          matrix_minor(z,matminor,k);
+          matrix_clear(r);  // zero out temporary matrix (there is some potential to speed this up by avoiding this)
+          matrix_minor(z,r,k);
 
           // extract k-th column from current minor
-          auto x  = subview(matminor, Kokkos::ALL (), k);
+          auto x  = subview(r, Kokkos::ALL (), k);
           SC   xn = vnorm(x); // calculate 2-norm of current column vector
-          if(mat(k,k) > 0) xn = -xn;
+          if(localQR(k,k) > 0) xn = -xn;
 
           // build k-th unit vector
           for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
-            e(i) = (i==k) ? 1 : 0;
+            e(i) = (i==k) ? one : zero;
 
           vmadd(e, x, xn); // e = x + xn * e;
           SC en = vnorm(e);
@@ -317,38 +348,35 @@ namespace MueLu {
           // build Q(k) and Q matrix
           if (k == 0) {
             vmul ( e, q);
-            matrix_mul(q, matminor, z);
+            matrix_mul(q, r, z);
           }
           else {
             matrix_clear(qk); // zero out old qk
             vmul ( e, qk);
-
-            matrix_mul ( qk, q, qt);
-
+            matrix_mul ( qk, q, qt);  // TODO can we avoid qt?
             matrix_copy(qt,q);
-            matrix_mul(qk, matminor, z);
+            matrix_mul(qk, r, z);
           }
         }
 
         // build R part
-        matrix_mul ( q, mat, matminor);
-        // matminor contains result
+        matrix_mul ( q, localQR, r);
 
-        printf("R\n");
-        for(int i=0; i<5; i++) {
-          for(int j=0; j<3; j++) {
-            printf(" %.3g ",matminor(i,j));
+        /*printf("R\n");
+        for(int i=0; i<aggSize; i++) {
+          for(int j=0; j<fineNS.dimension_1(); j++) {
+            printf(" %.3g ",r(i,j));
           }
           printf("\n");
         }
         printf("Q\n");
         matrix_transpose(q);
-        for(int i=0; i<5; i++) {
-          for(int j=0; j<5; j++) {
+        for(int i=0; i<aggSize; i++) {
+          for(int j=0; j<aggSize; j++) {
             printf(" %.3g ",q(i,j));
           }
           printf("\n");
-        }
+        }*/
 
 
         /*auto colview0 = subview(matminor, Kokkos::ALL (), 0);
@@ -365,9 +393,10 @@ namespace MueLu {
 
       KOKKOS_INLINE_FUNCTION
       void matrix_clear ( shared_matrix & m) const {
+        SC zero = Teuchos::ScalarTraits<SC>::zero();
         for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
           for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
-            m(i,j) = 0;
+            m(i,j) = zero;
           }
         }
       }
@@ -406,8 +435,9 @@ namespace MueLu {
 
       KOKKOS_FUNCTION
       void matrix_minor ( const shared_matrix & mat, shared_matrix & matminor, LO d) const {
+        SC one = Teuchos::ScalarTraits<SC>::one();
         for (LO i = 0; i < d; i++) {
-          matminor(i,i) = 1.0;
+          matminor(i,i) = one;
         }
         for (LO i = d; i < mat.dimension_0(); i++) {
           for (LO j=d; j < mat.dimension_1(); j++) {
@@ -420,14 +450,15 @@ namespace MueLu {
       /// \param v[in] input vector
       ///
       KOKKOS_FUNCTION
-      void vmul ( const shared_vector & v, shared_matrix & vmul) const {
+      void vmul ( const shared_vector & v, shared_matrix & vmuldata) const {
+        SC one = Teuchos::ScalarTraits<SC>::one();
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
           for(decltype(v.dimension_0()) j = 0; j < v.dimension_0(); j++) {
-            vmul(i,j) = -2 * v(i) * v(j);
+            vmuldata(i,j) = -2 * v(i) * v(j);
           }
         }
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
-          vmul(i,i) += 1;
+          vmuldata(i,i) += one;
         }
       }
 
@@ -464,10 +495,9 @@ namespace MueLu {
       // amout of shared memory
       size_t team_shmem_size( int team_size ) const {
         printf("team size = %i\n", team_size);
-        return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,3) + // mat + matminor + z
-               3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(5,5) +  // qk and q and qt
-               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(5) +     // e
-               Kokkos::View<int*,Kokkos::MemoryUnmanaged>::shmem_size(2048);
+        return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,fineNS.dimension_1()) + // mat + matminor + z
+               3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,maxAggDofSize) +  // qk and q and qt
+               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize); // e
       }
 
 
@@ -670,17 +700,17 @@ namespace MueLu {
     }
 #endif
 
-    for(GO i=0; i < numAggregates+1; i++) {
-      std::cout << i << " -> " << sizes(i) << std::endl;
+    // get maximum size of aggregate
+    LO maxAggSize = 0;
+    for(LO i = 0; i < sizes.dimension_0(); i++) {
+      if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
+      std::cout << "aggregate " << i << ": " << sizes(i) << std::endl;
     }
+    std::cout << "maxAggSize = " << maxAggSize << std::endl;
 
     // parallel_scan (exclusive)
     ScanFunctor<LO,decltype(sizes)> scanFunctorAggSizes(sizes);
     Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", numAggregates+1, scanFunctorAggSizes);
-
-    /*for(GO i=0; i < numAggregates+1; i++) {
-      std::cout << i << " -> " << sizes(i) << std::endl;
-    }*/
 
     // create "map" aggregate id 2 row map
     // same problem as above
@@ -721,9 +751,9 @@ namespace MueLu {
     }
 #endif
 
-    for(LO i = 0; i < numRows; i++) {
+    /*for(LO i = 0; i < numRows; i++) {
       std::cout << i << " dof " << agg2RowMapLO(i) << std::endl;
-    }
+    }*/
 
 #else
 
@@ -867,19 +897,14 @@ namespace MueLu {
 
     } else {
 
-      const Kokkos::TeamPolicy<> policy( 1 /*10*/ , 1); // 10 teams a 1 thread
+      TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError, "Only works for non-overlapping aggregates (goodMap == true)");
 
-      Kokkos::parallel_for( policy, TestFunctor<int, DeviceType>());
+      // Set up team policy with numAggregates teams and one thread per team.
+      // Each team handles a slice of the data associated with one aggregate
+      // and performs a local QR decomposition
+      const Kokkos::TeamPolicy<> policy( numAggregates /*1*/ /*10*/ , 1); // 10 teams a 1 thread
 
-      // Each team handles a slice of the data
-      // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes.
-      // Kokkos::AUTO will determine the number of threads
-      // The maximum vector length is hardware dependent but can always be smaller than the hardware allows.
-      // The vector length must be a power of 2.
-
-      //const Kokkos::TeamPolicy<> policy( 512 , Kokkos::AUTO , 16);
-
-      //Kokkos::parallel_for( policy , SomeCorrelation(data,gsum) );
+      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic)>(fineNSRandom,sizes,maxAggSize,agg2RowMapLO,statusAtomic));
 
       throw Exceptions::RuntimeError("Ignore NSDim > 1 for now");
 
