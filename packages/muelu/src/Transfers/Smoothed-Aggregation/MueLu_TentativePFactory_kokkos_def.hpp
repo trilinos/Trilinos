@@ -247,13 +247,15 @@ namespace MueLu {
       //blkSizeType blkSize;     //< block size (or partial block size in strided maps)
 
       NspType fineNS;
+      NspType coarseNS;
       aggRowsType aggRows;
       maxAggDofSizeType maxAggDofSize; //< maximum number of dofs in aggregate (max size of aggregate * numDofsPerNode)
       agg2RowMapLOType agg2RowMapLO;
       statusType statusAtomic;
     public:
-      TestFunctor(NspType fineNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_) :
+      TestFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_) :
         fineNS(fineNS_),
+        coarseNS(coarseNS_),
         aggRows(aggRows_),
         maxAggDofSize(maxAggDofSize_),
         agg2RowMapLO(agg2RowMapLO_),
@@ -268,8 +270,8 @@ namespace MueLu {
 
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
-        SC one  = Teuchos::ScalarTraits<SC>::one();
-        SC zero = Teuchos::ScalarTraits<SC>::zero();
+        //SC one  = Teuchos::ScalarTraits<SC>::one();
+        //SC zero = Teuchos::ScalarTraits<SC>::zero();
 
         // Extract the piece of the nullspace corresponding to the aggregate, and
         // put it in the flat array, "localQR" (in column major format) for the
@@ -285,7 +287,7 @@ namespace MueLu {
           bool bIsZeroNSColumn = true;
 
           for (LO k = 0; k < aggSize; k++)
-            if (localQR(k,j) != zero)
+            if (localQR(k,j) != 0.0)  // TODO scalar traits
               bIsZeroNSColumn = false;
 
           if (bIsZeroNSColumn) {
@@ -339,7 +341,7 @@ namespace MueLu {
 
           // build k-th unit vector
           for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
-            e(i) = (i==k) ? one : zero;
+            e(i) = (i==k) ?  1.0 :  0.0;
 
           vmadd(e, x, xn); // e = x + xn * e;
           SC en = vnorm(e);
@@ -361,6 +363,13 @@ namespace MueLu {
 
         // build R part
         matrix_mul ( q, localQR, r);
+
+        Xpetra::global_size_t offset = agg * fineNS.dimension_1(); // calculate row offset for coarse nullspace
+
+        // upper triangular part of R build coarse NS
+        for(size_t j = 0; j < fineNS.dimension_1(); j++)
+          for(size_t k = 0; k <= j; k++)
+            coarseNS(offset+k,j) = r(k,j);
 
         /*printf("R\n");
         for(int i=0; i<aggSize; i++) {
@@ -393,10 +402,10 @@ namespace MueLu {
 
       KOKKOS_INLINE_FUNCTION
       void matrix_clear ( shared_matrix & m) const {
-        SC zero = Teuchos::ScalarTraits<SC>::zero();
+        //SC zero = Teuchos::ScalarTraits<SC>::zero();
         for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
           for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
-            m(i,j) = zero;
+            m(i,j) = 0.0;
           }
         }
       }
@@ -435,9 +444,9 @@ namespace MueLu {
 
       KOKKOS_FUNCTION
       void matrix_minor ( const shared_matrix & mat, shared_matrix & matminor, LO d) const {
-        SC one = Teuchos::ScalarTraits<SC>::one();
+        //SC one = Teuchos::ScalarTraits<SC>::one();
         for (LO i = 0; i < d; i++) {
-          matminor(i,i) = one;
+          matminor(i,i) = 1.0; //one;
         }
         for (LO i = d; i < mat.dimension_0(); i++) {
           for (LO j=d; j < mat.dimension_1(); j++) {
@@ -451,14 +460,14 @@ namespace MueLu {
       ///
       KOKKOS_FUNCTION
       void vmul ( const shared_vector & v, shared_matrix & vmuldata) const {
-        SC one = Teuchos::ScalarTraits<SC>::one();
+        //SC one = Teuchos::ScalarTraits<SC>::one();
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
           for(decltype(v.dimension_0()) j = 0; j < v.dimension_0(); j++) {
             vmuldata(i,j) = -2 * v(i) * v(j);
           }
         }
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
-          vmuldata(i,i) += one;
+          vmuldata(i,i) += 1;
         }
       }
 
@@ -904,7 +913,18 @@ namespace MueLu {
       // and performs a local QR decomposition
       const Kokkos::TeamPolicy<> policy( numAggregates /*1*/ /*10*/ , 1); // 10 teams a 1 thread
 
-      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic)>(fineNSRandom,sizes,maxAggSize,agg2RowMapLO,statusAtomic));
+      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic));
+
+
+      std::cout << *coarseNullspace << std::endl;
+
+      Teuchos::ArrayRCP< const Scalar > data0 = coarseNullspace->getData(0);
+      Teuchos::ArrayRCP< const Scalar > data1 = coarseNullspace->getData(1);
+      for (size_t i = 0; i < coarseNullspace->getLocalLength(); i++) {
+        std::cout << i << "\t" << coarseNS(i,0) << "\t" << coarseNS(i,1) << std::endl;
+        std::cout << i << "\t" << data0[i] << "\t" << data1[i] << std::endl;
+      }
+
 
       throw Exceptions::RuntimeError("Ignore NSDim > 1 for now");
 
