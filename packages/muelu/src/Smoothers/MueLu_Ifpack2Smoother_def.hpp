@@ -314,10 +314,8 @@ namespace MueLu {
     
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
-    typedef Intrepid2::Basis<ES,Scalar,Scalar> Basis;
 #else
     typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
-    typedef Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > Basis;
 #endif
     
     LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
@@ -328,10 +326,14 @@ namespace MueLu {
     
     string basisString = paramList.get<string>("pcoarsen: hi basis");
     int degree;
+    // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
+    // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
+    // care about the assignment of basis ordinals to topological entities, so this code is actually
+    // independent of the Scalar type--hard-coding double here won't hurt us.
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    Teuchos::RCP<Basis> basis = MueLuIntrepid::BasisFactory<Scalar,ES>(basisString, degree);
+    auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
 #else
-    Teuchos::RCP<Basis> basis = MueLuIntrepid::BasisFactory<Scalar>(basisString, degree);
+    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
 #endif
     
     string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
