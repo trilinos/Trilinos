@@ -114,6 +114,7 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_timer.h \
 	$(srcdir)/include/zoltan_dd.h \
 	$(srcdir)/include/zoltan_dd_cpp.h \
+	$(srcdir)/include/zoltan_partition_tree.h \
 	$(srcdir)/include/zoltan_mem.h
 
 #       $(srcdir)/Zoltan_ConfigDefs.h
@@ -293,6 +294,7 @@ RCB = \
 	$(srcdir)/rcb/inertial3d.c \
 	$(srcdir)/rcb/point_assign.c \
 	$(srcdir)/rcb/rcb_box.c \
+	$(srcdir)/rcb/rcb_partition_tree.c \
 	$(srcdir)/rcb/rcb.c \
 	$(srcdir)/rcb/rcb_util.c \
 	$(srcdir)/rcb/rib.c \
