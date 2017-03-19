@@ -62,11 +62,13 @@ void Teuchos::updateParametersFromYamlFileAndBroadcast(
       TEUCHOS_TEST_FOR_EXCEPTION(!stream.is_open(),
           std::runtime_error,
           "Could not open YAML file " << yamlFileName);
-      std::string yamlString((std::istreambuf_iterator<char>(stream)),
-                             std::istreambuf_iterator<char>());
+      std::istreambuf_iterator<char> stream_iter(stream);
+      std::istreambuf_iterator<char> stream_end;
+      std::string yamlString(stream_iter, stream_end);
       int strsize = yamlString.size();
       broadcast<int, int>(comm, 0, &strsize);
-      broadcast<int, char>(comm, 0, strsize, &yamlString[0]);
+      char* ptr = (strsize) ? (&yamlString[0]) : 0;
+      broadcast<int, char>(comm, 0, strsize, ptr);
       updateParametersFromYamlString(yamlString, paramList,overwrite);
     }
     else {
@@ -74,7 +76,8 @@ void Teuchos::updateParametersFromYamlFileAndBroadcast(
       broadcast<int, int>(comm, 0, &strsize);
       std::string yamlString;
       yamlString.resize(strsize);
-      broadcast<int, char>(comm, 0, strsize, &yamlString[0]);
+      char* ptr = (strsize) ? (&yamlString[0]) : 0;
+      broadcast<int, char>(comm, 0, strsize, ptr);
       updateParametersFromYamlString(yamlString, paramList,overwrite);
     }
   }
