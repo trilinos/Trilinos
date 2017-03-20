@@ -203,12 +203,15 @@ int main(int argc, char *argv[]) {
       *outStream << std::endl << "Check Hessian of Reduced Objective Function" << std::endl;
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
-    up->zero();
+    //up->zero();
     zp->zero();
 
     RealT tol(1.e-8);
-    con->solve(*rp,*up,*zp,tol);
-    pdecon->outputTpetraVector(u_rcp,"state_uncontrolled.txt");
+    bool initSolve = parlist->sublist("Problem").get("Solve state for full space",true);
+    if (initSolve) {
+      con->solve(*rp,*up,*zp,tol);
+      pdecon->outputTpetraVector(u_rcp,"state_uncontrolled.txt");
+    }
 
     bool useCompositeStep = parlist->sublist("Problem").get("Full space",false);
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
@@ -233,7 +236,7 @@ int main(int argc, char *argv[]) {
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    //pdecon->outputTpetraData();
+    pdecon->outputTpetraData();
 
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj0
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));

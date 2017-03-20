@@ -106,8 +106,15 @@ public:
     (*meshSideSets_)[5][2].resize(0);
     (*meshSideSets_)[5][3].resize(ny_);
     // Pressure Pinning
-    (*meshSideSets_)[6].resize(1);
+    (*meshSideSets_)[6].resize(4);
+    //(*meshSideSets_)[6][0].resize(1);
+    //(*meshSideSets_)[6][1].resize(1);
+    //(*meshSideSets_)[6][2].resize(1);
+    //(*meshSideSets_)[6][3].resize(1);
     (*meshSideSets_)[6][0].resize(1);
+    (*meshSideSets_)[6][1].resize(0);
+    (*meshSideSets_)[6][2].resize(0);
+    (*meshSideSets_)[6][3].resize(0);
     
     // Bottom
     for (int i=0; i<nx_; ++i) {
@@ -134,7 +141,12 @@ public:
       (*meshSideSets_)[2][2](i) = i + (np1+np2) + nx_*(ny_-1);
     }
     // Pressure Pinning
-    (*meshSideSets_)[6][0](0) = nx_ * (ny_/2) + (nx_/2);
+    //int offset = nx_ * (ny_/2) + (nx_-1)/2;
+    //(*meshSideSets_)[6][0](0) = offset + nx_ + 1;
+    //(*meshSideSets_)[6][1](0) = offset + nx_;
+    //(*meshSideSets_)[6][2](0) = offset;
+    //(*meshSideSets_)[6][3](0) = offset + 1;
+    (*meshSideSets_)[6][0](0) = 0;
 
   } // computeSideSets
 
