@@ -129,9 +129,22 @@ private:
 /// \tparam XMV 1-D resp. 2-D input View
 /// \tparam YMV 1-D resp. 2-D input View
 ///
-/// \param dots [out] Output 1-D View to which to write results.
-/// \param x [in] Input 2-D View.
-/// \param y [in] Input 2-D View.
+/// \param R [out] Output 1-D or 0-D View to which to write results.
+/// \param X [in] Input 2-D or 1-D View.
+/// \param Y [in] Input 2-D or 1-D View.
+///
+/// This function implements a few different use cases:
+/// <ul>
+/// <li> If X and Y are both 1-D, then this is a single dot product.
+///   R must be 0-D (a View of a single value). </li>
+/// <li> If X and Y are both 2-D, then this function computes their
+///   dot products columnwise.  R must be 1-D. </li>
+/// <li> If X is 2-D and Y is 1-D, then this function computes the dot
+///   product of each column of X, with Y, in turn.  R must be
+///   1-D. </li>
+/// <li> If X is 1-D and Y is 2-D, then this function computes the dot
+///   product X with each column of Y, in turn.  R must be 1-D. </li>
+/// </ul>
 ///
 /// \note To implementers: We use enable_if here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
@@ -152,17 +165,40 @@ dot (const RV& R, const XMV& X, const YMV& Y,
                  "KokkosBlas::dot: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (XMV::rank == YMV::rank, "KokkosBlas::dot: "
-                 "X and Y must have the same rank.");
-  static_assert ((RV::rank == 0 && XMV::rank == 1) ||
-                 (RV::rank == 1 && XMV::rank == 2),
-                 "KokkosBlas::dot: Either RV has rank 0 and XMV and YMV have "
-                 "rank 1, or RV has rank 1 and XMV and YMV have rank 2.");
+  static_assert (RV::rank == 0 || RV::rank == 1,
+                 "KokkosBlas::dot: R must have rank 0 or 1.");
+  static_assert (XMV::rank == 1 || XMV::rank == 2,
+                 "KokkosBlas::dot: X must have rank 1 or 2.");
+  static_assert (YMV::rank == 1 || YMV::rank == 2,
+                 "KokkosBlas::dot: Y must have rank 1 or 2.");
+  static_assert ((XMV::rank == 2 && YMV::rank == 2 && RV::rank == 1) ||
+                 (XMV::rank == 1 && YMV::rank == 1 && RV::rank == 0) ||
+                 (XMV::rank == 2 && YMV::rank == 1 && RV::rank == 1) ||
+                 (XMV::rank == 1 && YMV::rank == 2 && RV::rank == 1),
+                 "KokkosBlas::dot: Ranks of RV, XMV, and YMV don't match.  "
+                 "See this function's documentation for the allowed "
+                 "combinations of ranks.");
 
   // Check compatibility of dimensions at run time.
-  if (X.dimension_0 () != Y.dimension_0 () ||
-      X.dimension_1 () != Y.dimension_1 () ||
-      (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ())) {
+
+  // Regardless of ranks of X and Y, their numbers of rows must match.
+  bool dimsMatch = true;
+  if (X.dimension_0 () != Y.dimension_0 ()) {
+    dimsMatch = false;
+  }
+  else if (X.dimension_1 () != Y.dimension_1 () &&
+           X.dimension_1 () != 1 &&
+           Y.dimension_1 () != 1) {
+    // Numbers of columns don't match, and neither X nor Y have one column.
+    dimsMatch = false;
+  }
+  const auto maxNumCols = X.dimension_1 () > Y.dimension_1 () ?
+    X.dimension_1 () : Y.dimension_1 ();
+  if (RV::rank == 1 && R.dimension_0 () != maxNumCols) {
+    dimsMatch = false;
+  }
+
+  if (! dimsMatch) {
     std::ostringstream os;
     os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
     if (RV::rank == 1) {

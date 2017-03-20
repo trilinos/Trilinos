@@ -187,7 +187,7 @@ testDot (std::ostream& out, const int theNumCols)
   typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
   typename mv_type::HostMirror Y_h = Kokkos::create_mirror_view (Y);
   typename one_d_result_type::HostMirror R_h = Kokkos::create_mirror_view (R);
-  typename one_d_result_type::HostMirror R_expected_h = Kokkos::create_mirror_view (R_expected);
+  typename one_d_result_type::HostMirror R_expected_h ("R_expected_h", numCols);
 
   const Scalar ONE = ATS::one ();
   const Scalar TWO = ONE + ONE;
@@ -209,9 +209,8 @@ testDot (std::ostream& out, const int theNumCols)
   }
   Kokkos::deep_copy (X, X_h);
   Kokkos::deep_copy (Y, Y_h);
-  // Kokkos::deep_copy (R_expected, R_expected_h); // don't need this
 
-  // Test 2-D dot 2-D -> 1-D case.
+  out << "  Test 2-D dot 2-D -> 1-D case" << endl;
   KokkosBlas::dot (R, X, Y);
   Kokkos::deep_copy (R_h, R);
 
@@ -224,7 +223,7 @@ testDot (std::ostream& out, const int theNumCols)
     }
   }
 
-  // Test 1-D dot 1-D -> 0-D case.
+  out << "  Test 1-D dot 1-D -> 0-D case" << endl;
   zero_d_result_type r ("r");
   typename zero_d_result_type::HostMirror r_h = Kokkos::create_mirror_view (r);
   for (size_type j = 0; j < numCols; ++j) {
@@ -233,6 +232,58 @@ testDot (std::ostream& out, const int theNumCols)
     KokkosBlas::dot (r, X_j, Y_j);
     Kokkos::deep_copy (r_h, r);
     if (r_h () != R_expected_h[j]) {
+      curSuccess = false;
+    }
+  }
+
+  out << "  Test 2-D dot 1-D -> 1-D case" << endl;
+  one_d_result_type R2 ("R2", numCols);
+  typename one_d_result_type::HostMirror R2_h = Kokkos::create_mirror_view (R2);
+  curVal = ONE;
+  for (size_type j = 0; j < numCols; ++j) {
+    // auto X_h_j = Kokkos::subview (X_h, Kokkos::ALL (), j);
+    // auto Y_h_j = Kokkos::subview (Y_h, Kokkos::ALL (), j);
+    // KokkosBlas::fill (X_h_j, curVal);
+    // KokkosBlas::fill (Y_h_j, TWO * curVal);
+
+    dot_type curExpectedVal = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    for (size_type i = 0; i < numRows; ++i) {
+      curExpectedVal += IPT::dot (curVal, TWO);
+    }
+    R_expected_h[j] = curExpectedVal;
+    curVal += ONE;
+  }
+  auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0);
+  KokkosBlas::dot (R2, X, Y_0);
+  Kokkos::deep_copy (R2_h, R2);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (R2_h[j] != R_expected_h[j]) {
+      curSuccess = false;
+    }
+  }
+
+  out << "  Test 1-D dot 2-D -> 1-D case" << endl;
+  Kokkos::deep_copy (R2, Kokkos::Details::ArithTraits<dot_type>::zero ());
+  const Scalar THREE = TWO + ONE; // need this, else same as previous test
+  curVal = THREE;
+  for (size_type j = 0; j < numCols; ++j) {
+    // auto X_h_j = Kokkos::subview (X_h, Kokkos::ALL (), j);
+    // auto Y_h_j = Kokkos::subview (Y_h, Kokkos::ALL (), j);
+    // KokkosBlas::fill (X_h_j, curVal);
+    // KokkosBlas::fill (Y_h_j, TWO * curVal);
+
+    dot_type curExpectedVal = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    for (size_type i = 0; i < numRows; ++i) {
+      curExpectedVal += IPT::dot (THREE, TWO * curVal);
+    }
+    R_expected_h[j] = curExpectedVal;
+    curVal += ONE;
+  }
+  auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
+  KokkosBlas::dot (R2, X_0, Y);
+  Kokkos::deep_copy (R2_h, R2);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (R2_h[j] != R_expected_h[j]) {
       curSuccess = false;
     }
   }
