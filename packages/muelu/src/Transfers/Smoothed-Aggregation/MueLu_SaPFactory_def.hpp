@@ -76,7 +76,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
 
-
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
     norecurse.disableRecursiveValidation();
@@ -147,6 +146,7 @@ namespace MueLu {
         finalP = APparams->get< RCP<Matrix> >("graph");
     }
     // By default, we don't need global constants for SaP
+    APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
 
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));

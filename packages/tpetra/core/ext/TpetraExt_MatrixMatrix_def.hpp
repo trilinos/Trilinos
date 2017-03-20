@@ -350,7 +350,7 @@ void Jacobi(Scalar omega,
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants",false));
+  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
@@ -365,7 +365,7 @@ void Jacobi(Scalar omega,
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants",false));
+  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -982,7 +982,7 @@ void mult_AT_B_newmatrix(
   /*************************************************************/
   transposer_type transposer (rcpFromRef (A),label+std::string("XP: "));
   RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) transposeParams->set("compute global constants",params->get("compute global constants",false));
+  if(!params.is_null()) transposeParams->set("compute global constants",params->get("compute global constants: temporaries",false));
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = transposer.createTransposeLocal(transposeParams);
 
   /*************************************************************/
@@ -999,11 +999,11 @@ void mult_AT_B_newmatrix(
 
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants",false));
+  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
   MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
 
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants",false));
+  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
   MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

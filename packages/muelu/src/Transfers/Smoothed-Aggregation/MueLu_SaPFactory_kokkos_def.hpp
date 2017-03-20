@@ -147,6 +147,7 @@ namespace MueLu {
         finalP = APparams->get< RCP<Matrix> >("graph");
     }
     // By default, we don't need global constants for SaP
+    APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
 
     const ParameterList& pL = GetParameterList();

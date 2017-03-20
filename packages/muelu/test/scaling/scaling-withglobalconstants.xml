@@ -52,6 +52,7 @@
 
 
     <ParameterList name="matrixmatrix: kernel params">
+      <Parameter name="compute global constants: temporaries" type="bool" value="true"/>
       <Parameter name="compute global constants" type="bool" value="true"/>
     </ParameterList>
       
