@@ -271,10 +271,10 @@ namespace MueLu {
         { }
 
       KOKKOS_INLINE_FUNCTION
-      void operator() ( const team_member & thread) const {
+      void operator() ( const team_member & thread, size_t& nnz) const {
         auto agg = thread.league_rank();
 
-        printf("Team no: %i, thread no: %i\n", thread.league_rank(), thread.team_rank());
+        //printf("Team no: %i, thread no: %i\n", thread.league_rank(), thread.team_rank());
 
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
@@ -397,6 +397,7 @@ namespace MueLu {
             }
           }
           rows(localRow+1) = lnnz;
+          nnz += lnnz;
         }
         /*printf("R\n");
         for(int i=0; i<aggSize; i++) {
@@ -519,7 +520,7 @@ namespace MueLu {
 
       // amout of shared memory
       size_t team_shmem_size( int team_size ) const {
-        printf("team size = %i\n", team_size);
+        //printf("team size = %i\n", team_size);
         return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,fineNS.dimension_1()) + // mat + matminor + z
                3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,maxAggDofSize) +  // qk and q and qt
                Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize); // e
@@ -629,7 +630,6 @@ namespace MueLu {
     LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
     GO indexBase;
     amalgInfo->GetStridingInformation(fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase);
-    std::cout << "fullBlockSize " << fullBlockSize << " blockID " << blockID << " stridingOffset " << stridingOffset << " stridedBlockSize " << stridedBlockSize << std::endl;
 
     GO globalOffset = amalgInfo->GlobalOffset();
 
@@ -647,22 +647,12 @@ namespace MueLu {
     auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView();
     const GO numAggregates = aggregates->GetNumAggregates();
 
-    std::cout << "numAggregates = " << numAggregates << " vertex2AggId.dim0=" << vertex2AggId.dimension_0()<< " vertex2AggId.dim1=" << vertex2AggId.dimension_1() << std::endl;
-
-    for(decltype(vertex2AggId.dimension_0()) i = 0; i < vertex2AggId.dimension_0(); i++) {
-      std::cout << nodeGlobalElts[i] << "(" << vertex2AggId(i,0) << ") ";
-    }
-    std::cout << std::endl;
 
     typedef Kokkos::UnorderedMap<LO, bool, DeviceType> map_type;
     //map_type isNodeGlobalElement(numAggregates);
     map_type isNodeGlobalElement(colMap->getNodeNumElements());
 
     int myPid = aggregates->GetMap()->getComm()->getRank();
-
-    for(LO i = 0; i < colMap->getNodeNumElements(); i++)
-      std::cout << colMap->getGlobalElement(i) << " ";
-    std::cout << std::endl;
 
     // create a unordered map GID -> isGlobalElement in colMap of A (available from above)
     // This has to be done on the host
@@ -729,9 +719,9 @@ namespace MueLu {
     LO maxAggSize = 0;
     for(LO i = 0; i < sizes.dimension_0(); i++) {
       if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
-      std::cout << "aggregate " << i << ": " << sizes(i) << std::endl;
+      //std::cout << "aggregate " << i << ": " << sizes(i) << std::endl;
     }
-    std::cout << "maxAggSize = " << maxAggSize << std::endl;
+    //std::cout << "maxAggSize = " << maxAggSize << std::endl;
 
     // parallel_scan (exclusive)
     ScanFunctor<LO,decltype(sizes)> scanFunctorAggSizes(sizes);
@@ -927,26 +917,10 @@ namespace MueLu {
       // Set up team policy with numAggregates teams and one thread per team.
       // Each team handles a slice of the data associated with one aggregate
       // and performs a local QR decomposition
-      const Kokkos::TeamPolicy<> policy( numAggregates /*1*/ /*10*/ , 1); // 10 teams a 1 thread
+      const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
 
-      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux));
-
-
-      /*std::cout << *coarseNullspace << std::endl;
-
-      Teuchos::ArrayRCP< const Scalar > data0 = coarseNullspace->getData(0);
-      Teuchos::ArrayRCP< const Scalar > data1 = coarseNullspace->getData(1);
-      for (size_t i = 0; i < coarseNullspace->getLocalLength(); i++) {
-        std::cout << i << "\t" << coarseNS(i,0) << "\t" << coarseNS(i,1) << std::endl;
-        std::cout << i << "\t" << data0[i] << "\t" << data1[i] << std::endl;
-      }*/
-
-      for (size_t i = 0; i < colsAux.dimension_0(); i++) {
-        std::cout << i << " " << colsAux(i) << " val " << valsAux(i) << std::endl;
-      }
-
-
-      throw Exceptions::RuntimeError("Ignore NSDim > 1 for now");
+      //Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux));
+      Kokkos::parallel_reduce( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
 
 
 #if 0
@@ -1132,9 +1106,10 @@ namespace MueLu {
 
       size_t lnnz = 0;
       for (LO j = rowsAux(i); j < rowsAux(i+1); j++)
-        if (valsAux(j) != INVALID) {
+        if (colsAux(j) != INVALID) {
           cols(rowStart+lnnz) = colsAux(j);
           vals(rowStart+lnnz) = valsAux(j);
+          //printf("row = %i: move (%i,%g) to (%i, %g)\n",rowStart,colsAux(j),valsAux(j), cols(rowStart+lnnz), vals(rowStart+lnnz));
           lnnz++;
         }
     });
@@ -1153,7 +1128,6 @@ namespace MueLu {
     ArrayRCP<SC>     valPtent;
 
     PtentCrs->allocateAllValues(nnz, iaPtent, jaPtent, valPtent);
-
     ArrayView<size_t> ia  = iaPtent();
     ArrayView<LO>     ja  = jaPtent();
     ArrayView<SC>     val = valPtent();
@@ -1162,13 +1136,19 @@ namespace MueLu {
     typename rows_type::HostMirror rowsHost = Kokkos::create_mirror_view(rows);
     typename cols_type::HostMirror colsHost = Kokkos::create_mirror_view(cols);
     typename vals_type::HostMirror valsHost = Kokkos::create_mirror_view(vals);
+
+    // copy data from device to host
+    // shouldn't be do anything if we are already on the host
+    Kokkos::deep_copy (rowsHost, rows);
+    Kokkos::deep_copy (colsHost, cols);
+    Kokkos::deep_copy (valsHost, vals);
+
     for (LO i = 0; i < rowsHost.size(); i++)
       ia[i] = rowsHost(i);
     for (LO j = 0; j < colsHost.size(); j++) {
       ja [j] = colsHost(j);
       val[j] = valsHost(j);
     }
-
     PtentCrs->setAllValues(iaPtent, jaPtent, valPtent);
     PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
   }
