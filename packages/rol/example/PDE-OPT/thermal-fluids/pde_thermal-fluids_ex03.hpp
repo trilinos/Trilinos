@@ -166,6 +166,7 @@ private:
   const Real grav_;
   int Nbottom_, Nleft_, Nright_;
   Real ReScale_, PrScale_, GrScale_, hScale_, TScale_;
+  bool pinPressure_;
 
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
@@ -448,6 +449,8 @@ public:
     GrScale_ = parlist.sublist("Problem").get("Grashof Number Noise Scale",0.05);
     hScale_  = parlist.sublist("Problem").get("Robin Noise Scale",0.2);
     TScale_  = parlist.sublist("Problem").get("Bottom Temperature Noise Scale",0.2);
+    // Pin pressure
+    pinPressure_ = parlist.sublist("Problem").get("Pin Pressure",true);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -661,15 +664,17 @@ public:
       computeDirichlet();
       // Velocity Boundary Conditions
       for (int i = 0; i < numSideSets; ++i) {
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numVBdryDofs = fvidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numVBdryDofs; ++l) {
-              for (int m = 0; m < d; ++m) {
-                (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
+        if (i!=6) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numVBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numVBdryDofs; ++l) {
+                for (int m = 0; m < d; ++m) {
+                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
+                }
               }
             }
           }
@@ -689,11 +694,14 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6) {
-          int j = 2, l = 0;
-          if (bdryCellLocIds_[i][0].size() > 0) { 
-            int cidx = bdryCellLocIds_[i][0][0];
-            (*R[d])(cidx,fpidx_[j][l]) = (*U[d])(cidx,fpidx_[j][l]);
+        if (i==6 && pinPressure_) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int l = 0, cidx = bdryCellLocIds_[i][j][k];
+              (*R[d])(cidx,fpidx_[j][l]) = (*U[d])(cidx,fpidx_[j][l]) - static_cast<Real>(0);
+            }
           }
         }
       }
@@ -941,27 +949,29 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity Boundary Conditions
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numVBdryDofs = fvidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numVBdryDofs; ++l) {
-              for (int m = 0; m < fv; ++m) {
-                for (int n = 0; n < d; ++n) {
-                  for (int p = 0; p < d; ++p) {
-                    (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+        if (i!=6) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numVBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numVBdryDofs; ++l) {
+                for (int m = 0; m < fv; ++m) {
+                  for (int n = 0; n < d; ++n) {
+                    for (int p = 0; p < d; ++p) {
+                      (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    }
+                    (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
                   }
-                  (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
                 }
-              }
-              for (int m = 0; m < d; ++m) {
-                for (int n = 0; n < fp; ++n) {
-                  (*J[m][d])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
-                }
-                for (int n = 0; n < fh; ++n) {
-                  (*J[m][d+1])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                for (int m = 0; m < d; ++m) {
+                  for (int n = 0; n < fp; ++n) {
+                    (*J[m][d])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                  }
+                  for (int n = 0; n < fh; ++n) {
+                    (*J[m][d+1])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                  }
                 }
               }
             }
@@ -993,21 +1003,24 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6) {
-          int j = 2, l = 0;
-          if (bdryCellLocIds_[i][0].size() > 0) {
-            int cidx = bdryCellLocIds_[i][0][0];
-            for (int m = 0; m < fv; ++m) {
-              for (int n = 0; n < d; ++n) {
-                (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+        if (i==6 && pinPressure_) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int l = 0, cidx = bdryCellLocIds_[i][j][k];
+              for (int m = 0; m < fv; ++m) {
+                for (int n = 0; n < d; ++n) {
+                  (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
               }
-            }
-            for (int m = 0; m < fp; ++m) {
-              (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
-            }
-            (*J[d][d])(cidx,fpidx_[j][l],fpidx_[j][l]) = static_cast<Real>(1);
-            for (int m = 0; m < fh; ++m) {
-              (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              for (int m = 0; m < fp; ++m) {
+                (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
+              (*J[d][d])(cidx,fpidx_[j][l],fpidx_[j][l]) = static_cast<Real>(1);
+              for (int m = 0; m < fh; ++m) {
+                (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
             }
           }
         }
@@ -1107,26 +1120,28 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity Boundary Conditions
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numVBdryDofs = fvidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numVBdryDofs; ++l) {
-              for (int m = 0; m < fv; ++m) {
-                for (int n = 0; n < d; ++n) {
-                  for (int p = 0; p < d; ++p) {
-                    (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+        if (i!=6) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numVBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numVBdryDofs; ++l) {
+                for (int m = 0; m < fv; ++m) {
+                  for (int n = 0; n < d; ++n) {
+                    for (int p = 0; p < d; ++p) {
+                      (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    }
                   }
                 }
-              }
-              for (int m = 0; m < d; ++m) {
-                for (int n = 0; n < fp; ++n) {
-                  (*J[m][d])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
-                }
-                for (int n = 0; n < fh; ++n) {
-                  (*J[m][d+1])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                for (int m = 0; m < d; ++m) {
+                  for (int n = 0; n < fp; ++n) {
+                    (*J[m][d])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                  }
+                  for (int n = 0; n < fh; ++n) {
+                    (*J[m][d+1])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                  }
                 }
               }
             }
@@ -1157,20 +1172,23 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6) {
-          int j = 2, l = 0;
-          if (bdryCellLocIds_[i][0].size() > 0) {
-            int cidx = bdryCellLocIds_[i][0][0];
-            for (int m = 0; m < fv; ++m) {
-              for (int n = 0; n < d; ++n) {
-                (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+        if (i==6 && pinPressure_) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int l = 0, cidx = bdryCellLocIds_[i][j][k];
+              for (int m = 0; m < fv; ++m) {
+                for (int n = 0; n < d; ++n) {
+                  (*J[d][n])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+                }
               }
-            }
-            for (int m = 0; m < fp; ++m) {
-              (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
-            }
-            for (int m = 0; m < fh; ++m) {
-              (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              for (int m = 0; m < fp; ++m) {
+                (*J[d][d])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
+              for (int m = 0; m < fh; ++m) {
+                (*J[d][d+1])(cidx,fpidx_[j][l],m) = static_cast<Real>(0);
+              }
             }
           }
         }
@@ -1227,15 +1245,17 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity boundary conditions
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numVBdryDofs = fvidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numVBdryDofs; ++l) {
-              for (int m = 0; m < d; ++m) {
-                (*L[m])(cidx,fvidx_[j][l]) = static_cast<Real>(0);
+        if (i!=6) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numVBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numVBdryDofs; ++l) {
+                for (int m = 0; m < d; ++m) {
+                  (*L[m])(cidx,fvidx_[j][l]) = static_cast<Real>(0);
+                }
               }
             }
           }
@@ -1255,11 +1275,14 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6) {
-          int j = 2, l = 0;
-          if (bdryCellLocIds_[i][0].size() > 0) { 
-            int cidx = bdryCellLocIds_[i][0][0];
-            (*L[d])(cidx,fpidx_[j][l]) = static_cast<Real>(0);
+        if (i==6 && pinPressure_) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int l = 0, cidx = bdryCellLocIds_[i][j][k];
+              (*L[d])(cidx,fpidx_[j][l]) = static_cast<Real>(0);
+            }
           }
         }
       }

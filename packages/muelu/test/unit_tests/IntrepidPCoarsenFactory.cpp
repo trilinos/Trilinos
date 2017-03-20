@@ -3484,34 +3484,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
     
     // ParameterList
-    ParameterList Params, level0, level1, level2, mmm;
+    ParameterList Params;
     Params.set("multigrid algorithm","pcoarsen");
     Params.set("verbosity","high");
     Params.set("max levels",3);
     Params.set("coarse: max size",5);
     Params.set("smoother: type","TOPOLOGICAL");
     Params.set("smoother: neighborhood type", "node");
-    
+    Params.set("pcoarsen: element","hgrad_line_c");   
+    Params.set("pcoarsen: schedule","{4,3,2}");
+
+    ParameterList & smoo = Params.sublist("smoother: params");
+    smoo.set("smoother: neighborhood type", "node");
+
+    ParameterList & level0 = Params.sublist("level 0");
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
-    ParameterList &l0s = level0.sublist("smoother: params");
-    l0s.set("pcoarsen: hi basis", hi_basis);
-    l0s.set("smoother: neighborhood type", "node");
-    Params.set("level 0",level0);
-    
-    level1.set("pcoarsen: hi basis",hi_basis);
-    level1.set("pcoarsen: lo basis","hgrad_line_c3");
-    ParameterList &l1s = level1.sublist("smoother: params");
-    l1s.set("pcoarsen: hi basis", "hgrad_line_c3");
-    l1s.set("smoother: neighborhood type", "node");
-    Params.set("level 1",level1);
-    
-    level2.set("pcoarsen: hi basis","hgrad_line_c3");
-    level2.set("pcoarsen: lo basis","hgrad_line_c2");
-    ParameterList &l2s = level2.sublist("smoother: params");
-    l2s.set("pcoarsen: hi basis", "hgrad_line_c2");
-    l2s.set("smoother: neighborhood type", "node");
-    Params.set("level 2",level2);
-    
+       
+
 #if 0
     // DEBUG
     ParameterList dump;
