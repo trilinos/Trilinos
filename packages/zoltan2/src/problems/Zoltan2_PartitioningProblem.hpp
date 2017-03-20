@@ -295,6 +295,10 @@ public:
       algorithm_Validator);
 
     // bool parameter
+    pl.set("keep_partition_tree", false, "If true, will keep partition tree",
+      Environment::getBoolValidator());
+
+    // bool parameter
     pl.set("rectilinear", false, "If true, then when a cut is made, all of the "
       "dots located on the cut are moved to the same side of the cut. The "
       "resulting regions are then rectilinear. The resulting load balance may "
