@@ -882,11 +882,12 @@ namespace MueLu {
 #endif
 #ifdef HAVE_MUELU_INTREPID2
     else if(multigridAlgo == "pcoarsen") {
-      if(paramList.isParameter("pcoarsen: schedule") && paramList.isParameter("pcoarsen: element")) { 
+      // This only makes sense to invoke from the default list.
+      if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
 	// P-Coarsening by schedule (new interface)
 	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(paramList,"pcoarsen: schedule");	  
-	std::string pcoarsen_element = paramList.get<std::string>("pcoarsen: element");
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
 	if(levelID >= (int)pcoarsen_schedule.size()) {
 	  // Smoothed aggregation
