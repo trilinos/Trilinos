@@ -550,15 +550,11 @@ namespace MueLu {
 
 	if(levelID <  (int)pcoarsen_schedule.size()) {
 	  // Topo info for P-Coarsening
-	  std::string hi;
 	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
-	  else hi = lo;
-	  preSmootherParams.set("pcoarsen: hi basis",hi);
+	  preSmootherParams.set("pcoarsen: hi basis",lo);
 	}
       }
 #endif
-
 
 #ifdef HAVE_MUELU_MATLAB
         if(preSmootherType == "matlab")
@@ -601,11 +597,8 @@ namespace MueLu {
 
 	if(levelID <  (int)pcoarsen_schedule.size()) {
 	  // Topo info for P-Coarsening
-	  std::string hi;
 	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
-	  else hi = lo;
-	  postSmootherParams.set("pcoarsen: hi basis",hi);
+	  postSmootherParams.set("pcoarsen: hi basis",lo);
 	}
       }
 #endif

@@ -308,8 +308,6 @@ namespace MueLu {
     
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     
-    std::cout << "ParamList:\n" << paramList;
-    
     typedef typename Node::device_type::execution_space ES;
     
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
