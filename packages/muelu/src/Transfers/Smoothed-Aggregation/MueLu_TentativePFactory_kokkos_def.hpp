@@ -228,7 +228,7 @@ namespace MueLu {
     typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
     // local QR decomposition
-    template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType>
+    template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
     class TestFunctor {
     private:
       typedef LOType LO;
@@ -252,14 +252,22 @@ namespace MueLu {
       maxAggDofSizeType maxAggDofSize; //< maximum number of dofs in aggregate (max size of aggregate * numDofsPerNode)
       agg2RowMapLOType agg2RowMapLO;
       statusType statusAtomic;
+      rowsType rows;
+      rowsAuxType rowsAux;
+      colsAuxType colsAux;
+      valsAuxType valsAux;
     public:
-      TestFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_) :
+      TestFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_) :
         fineNS(fineNS_),
         coarseNS(coarseNS_),
         aggRows(aggRows_),
         maxAggDofSize(maxAggDofSize_),
         agg2RowMapLO(agg2RowMapLO_),
-        statusAtomic(statusAtomic_)
+        statusAtomic(statusAtomic_),
+        rows(rows_),
+        rowsAux(rowsAux_),
+        colsAux(colsAux_),
+        valsAux(valsAux_)
         { }
 
       KOKKOS_INLINE_FUNCTION
@@ -270,8 +278,9 @@ namespace MueLu {
 
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
-        //SC one  = Teuchos::ScalarTraits<SC>::one();
-        //SC zero = Teuchos::ScalarTraits<SC>::zero();
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        SC one  = ATS::one();
+        SC zero = ATS::zero();
 
         // Extract the piece of the nullspace corresponding to the aggregate, and
         // put it in the flat array, "localQR" (in column major format) for the
@@ -287,7 +296,7 @@ namespace MueLu {
           bool bIsZeroNSColumn = true;
 
           for (LO k = 0; k < aggSize; k++)
-            if (localQR(k,j) != 0.0)  // TODO scalar traits
+            if (localQR(k,j) != zero)
               bIsZeroNSColumn = false;
 
           if (bIsZeroNSColumn) {
@@ -341,7 +350,7 @@ namespace MueLu {
 
           // build k-th unit vector
           for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
-            e(i) = (i==k) ?  1.0 :  0.0;
+            e(i) = (i==k) ?  one : zero;
 
           vmadd(e, x, xn); // e = x + xn * e;
           SC en = vnorm(e);
@@ -371,41 +380,48 @@ namespace MueLu {
           for(size_t k = 0; k <= j; k++)
             coarseNS(offset+k,j) = r(k,j);
 
+        // Don't forget to transpose q
+        matrix_transpose(q);
+
+        // Process each row in the local Q factor and fill helper arrays to assemble P
+        for (LO j = 0; j < aggSize; j++) {
+          LO localRow = agg2RowMapLO(aggRows(agg)+j);
+          size_t rowStart = rowsAux(localRow);
+          size_t lnnz = 0;
+          for (size_t k = 0; k < fineNS.dimension_1(); k++) {
+            // skip zeros
+            if(q(j,k) != zero) {
+              colsAux(rowStart+lnnz) = offset + k;
+              valsAux(rowStart+lnnz) = q(j,k);
+              lnnz++;
+            }
+          }
+          rows(localRow+1) = lnnz;
+        }
         /*printf("R\n");
         for(int i=0; i<aggSize; i++) {
           for(int j=0; j<fineNS.dimension_1(); j++) {
             printf(" %.3g ",r(i,j));
           }
           printf("\n");
-        }
-        printf("Q\n");
-        matrix_transpose(q);
+        }*/
+        /*printf("Q\n");
+
         for(int i=0; i<aggSize; i++) {
           for(int j=0; j<aggSize; j++) {
             printf(" %.3g ",q(i,j));
           }
           printf("\n");
         }*/
-
-
-        /*auto colview0 = subview(matminor, Kokkos::ALL (), 0);
-        auto colview1 = subview(matminor, Kokkos::ALL (), 1);
-        auto colview2 = subview(matminor, Kokkos::ALL (), 2);
-
-        for(int i=0; i<3; i++) {
-          printf(" %.3g . ", colview0(i));
-        }
-        printf("\n");
-
-        printf("SQRT(4) = %.4g\n", vnorm(colview0));*/
       }
 
       KOKKOS_INLINE_FUNCTION
       void matrix_clear ( shared_matrix & m) const {
-        //SC zero = Teuchos::ScalarTraits<SC>::zero();
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        SC zero = ATS::zero();
         for(decltype(m.dimension_0()) i = 0; i < m.dimension_0(); i++) {
           for(decltype(m.dimension_1()) j = 0; j < m.dimension_1(); j++) {
-            m(i,j) = 0.0;
+            m(i,j) = zero;
           }
         }
       }
@@ -913,16 +929,20 @@ namespace MueLu {
       // and performs a local QR decomposition
       const Kokkos::TeamPolicy<> policy( numAggregates /*1*/ /*10*/ , 1); // 10 teams a 1 thread
 
-      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic));
+      Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux));
 
 
-      std::cout << *coarseNullspace << std::endl;
+      /*std::cout << *coarseNullspace << std::endl;
 
       Teuchos::ArrayRCP< const Scalar > data0 = coarseNullspace->getData(0);
       Teuchos::ArrayRCP< const Scalar > data1 = coarseNullspace->getData(1);
       for (size_t i = 0; i < coarseNullspace->getLocalLength(); i++) {
         std::cout << i << "\t" << coarseNS(i,0) << "\t" << coarseNS(i,1) << std::endl;
         std::cout << i << "\t" << data0[i] << "\t" << data1[i] << std::endl;
+      }*/
+
+      for (size_t i = 0; i < colsAux.dimension_0(); i++) {
+        std::cout << i << " " << colsAux(i) << " val " << valsAux(i) << std::endl;
       }
 
 
