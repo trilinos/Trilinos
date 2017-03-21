@@ -104,7 +104,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR=/projects/install/rhel6-x86_64/sems/compiler/gcc/4.9.3/openmpi/1.6.5"
+      "-DMPI_BASE_DIR=/projects/install/rhel6-x86_64/sems/compiler/gcc/4.9.3/openmpi/1.8.7"
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
