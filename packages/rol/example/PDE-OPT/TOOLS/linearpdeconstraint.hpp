@@ -227,6 +227,8 @@ private:
   }
 
 public:
+  virtual ~Linear_PDE_Constraint() {}
+
   Linear_PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
                         const Teuchos::RCP<MeshManager<Real> > &meshMgr,
                         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
