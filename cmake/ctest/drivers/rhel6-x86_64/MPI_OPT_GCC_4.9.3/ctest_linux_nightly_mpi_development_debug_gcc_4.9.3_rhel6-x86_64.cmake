@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.9.3.cmake")
 
 #
@@ -65,8 +64,6 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_DEBUG_Werror_DEV)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/lib:/home/trilinos/compilers/gcc/support_libs/mpfr-3.1.2/lib:/home/ trilinos/compilers/gcc/support_libs/gmp-5.1.1/lib:/home/trilinos/compilers/gcc/4.9.3/lib64:$ENV{LD_LIBRARY_PATH}")
-
 SET(CTEST_TEST_TYPE Experimental)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
@@ -77,21 +74,23 @@ SET(Trilinos_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTPL_ENABLE_Pthread:BOOL=ON"
-  "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DTPL_ENABLE_HDF5:BOOL=ON"
-  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/include"
-  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/lib"
-  "-DTPL_ENABLE_Netcdf:BOOL=ON"
-  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.4.4/pnetcdf-4.2/lib"
-  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/pnetcdf-4.2/include"
-  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DTPL_ENABLE_Netcdf:BOOL=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DTPL_ENABLE_BoostLib:BOOL=ON"
+  "-DTPL_ENABLE_Zlib:BOOL=ON"
+  
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
-  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   "-DTrilinos_ENABLE_MOOCHO=OFF"
   "-DTrilinos_ENABLE_Optika=OFF"
   "-DTrilinos_ENABLE_Didasko=OFF"
+  
+  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
+  
+  "-DTPL_ENABLE_Pthread:BOOL=ON"
+  
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   )
 
 #
