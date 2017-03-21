@@ -745,12 +745,35 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
       // former, "child" MultiVector.  This is because Kokkos::View
       // doesn't have a notion of noncontiguous column Views with
       // possibly varying strides.
-      //
-      // FIXME (mfh 03 Jan 2017) We could handle the global part of
-      // the computation as a single global iallreduce.  However, this
-      // should still work.
-      typedef ::Tpetra::Details::CommRequest req_base_type;
-      std::vector<std::shared_ptr<req_base_type> > requests (numVecs);
+
+
+      // If the input communicator is an intercomm, then the input and
+      // output buffers of iallreduce may not alias one another.
+      const bool needCopy = Details::isInterComm (*comm);
+      result_view_type result_lcl = needCopy ?
+        result_view_type ("result_lcl", result.dimension_0 ()) :
+        result;
+
+      const bool X_latestOnHost = X.template need_sync<dev_memory_space> () &&
+        ! X.template need_sync<host_memory_space> ();
+      const bool Y_latestOnHost = Y.template need_sync<dev_memory_space> () &&
+        ! Y.template need_sync<host_memory_space> ();
+      // Let X guide whether to execute on device or host.
+      const bool runOnHost = X_latestOnHost;
+      // Assume that we have to copy Y to where we need to run.
+      // idot() takes the input MultiVectors as const, so it can't
+      // sync them.  We just have to copy their data, if needed, to
+      // the memory space where we want to run.
+      const bool Y_copyToHost = (X_latestOnHost && ! Y_latestOnHost);
+      const bool Y_copyToDev = (! X_latestOnHost && Y_latestOnHost);
+
+      typename result_view_type::HostMirror result_lcl_h;
+      if (runOnHost) {
+        // create_mirror_view doesn't promise to create a deep copy,
+        // so we can't rely on this case to avoid making result_lcl.
+        result_lcl_h = Kokkos::create_mirror_view (result_lcl);
+      }
+
       for (size_t j = 0; j < numVecs; ++j) {
         // numVecs = max(X_numVecs, Y_numVecs).  Allow special case of
         // X_numVecs != Y_numVecs && (X_numVecs == 1 || Y_numVecs == 1).
@@ -760,26 +783,50 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
         RCP<const vec_type> Y_j = (Y_numVecs == size_t (1)) ?
           Y.getVector (0) :
           Y.getVector (j);
-        auto result_j = subview (result, j);
-        requests[j] = idot<SC, LO, GO, NT> (result_j, *X_j, *Y_j);
-      }
-      typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
-      // mfh 04 Jan 2017: If I used [=] as the capture clause here,
-      // GCC 4.7.2 claimed that I was using numVecs uninitialized, and
-      // the idot() test thats exercise this case (noncontiguous,
-      // multiple-column MultiVector inputs) failed.  It passed with
-      // Clang 3.9.0 and CUDA 7.5 with GCC 4.8.4.  I know that GCC
-      // 4.7.2 has issues with lambdas.  Fortunately, if I specify the
-      // variables to capture explicitly in the capture clause, the
-      // "uninitialized" warning goes away, and the tests pass.  See
-      // #974.
-      return std::shared_ptr<req_base_type> (new req_type ([numVecs,requests] () {
-          for (size_t j = 0; j < numVecs; ++j) {
-            if (requests[j].get () != NULL) {
-              requests[j]->wait ();
-            }
+
+        if (runOnHost) {
+          auto X_j_2d_h = X_j->template getLocalView<host_memory_space> ();
+          auto X_j_1d_h = Kokkos::subview (X_j_2d_h, Kokkos::ALL (), 0);
+          decltype (X_j_2d_h) Y_j_2d_h;
+          decltype (X_j_1d_h) Y_j_1d_h;
+
+          if (Y_copyToHost) {
+            auto Y_j_2d = Y_j->template getLocalView<dev_memory_space> ();
+            auto Y_j_1d = Kokkos::subview (Y_j_2d, Kokkos::ALL (), 0);
+            Kokkos::deep_copy (Y_j_1d_h, Y_j_1d);
           }
-        }));
+          else {
+            Y_j_2d_h = Y_j->template getLocalView<host_memory_space> ();
+            Y_j_1d_h = Kokkos::subview (Y_j_2d_h, Kokkos::ALL (), 0);
+          }
+          auto result_lcl_h_j = Kokkos::subview (result_lcl_h, j);
+          KokkosBlas::dot (result_lcl_h_j, X_j_1d_h, Y_j_1d_h);
+        }
+        else {
+          auto X_j_2d = X_j->template getLocalView<dev_memory_space> ();
+          auto X_j_1d = Kokkos::subview (X_j_2d, Kokkos::ALL (), 0);
+          decltype (X_j_2d) Y_j_2d;
+          decltype (X_j_1d) Y_j_1d;
+
+          if (Y_copyToDev) {
+            auto Y_j_2d_h = Y_j->template getLocalView<host_memory_space> ();
+            auto Y_j_1d_h = Kokkos::subview (Y_j_2d, Kokkos::ALL (), 0);
+            Kokkos::deep_copy (Y_j_1d, Y_j_1d_h);
+          }
+          else {
+            Y_j_2d = Y_j->template getLocalView<dev_memory_space> ();
+            Y_j_1d = Kokkos::subview (Y_j_2d, Kokkos::ALL (), 0);
+          }
+          auto result_lcl_j = Kokkos::subview (result_lcl, j);
+          KokkosBlas::dot (result_lcl_j, X_j_1d, Y_j_1d);
+        }
+      } // for each column j of X and Y
+
+      if (runOnHost) {
+        Kokkos::deep_copy (result_lcl, result_lcl_h);
+      }
+      using ::Tpetra::Details::iallreduce;
+      return iallreduce (result_lcl, result, Teuchos::REDUCE_SUM, *comm);
     }
     else { // numVecs == 1 || ! X_or_Y_have_nonconstant_stride
       if (X.template need_sync<dev_memory_space> () &&
