@@ -325,7 +325,7 @@ namespace MueLu {
     }
     //@}
 
-    RCP<SmootherPrototype> Copy() const { return rcp (new TekoSmoother (*this)); }
+    RCP<SmootherPrototype> Copy() const { return Teuchos::rcp (new MueLu::TekoSmoother<double,int,GlobalOrdinal,Node> (*this)); }
 
     //! @name Overridden from Teuchos::Describable
     //@{
