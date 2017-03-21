@@ -1,6 +1,6 @@
 <ParameterList name="Newmark_BallParabolic">
   <ParameterList name="BallParabolicModel">
-    <Parameter name="Damping" type="double" value="0.0"/>
+    <Parameter name="Damping" type="double" value="1.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -19,7 +19,7 @@
         <Parameter name="Final Time"             type="double" value="2.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.2"/>
+        <Parameter name="Initial Time Step"      type="double" value="1.0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
@@ -90,7 +90,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
 
     </ParameterList>
 

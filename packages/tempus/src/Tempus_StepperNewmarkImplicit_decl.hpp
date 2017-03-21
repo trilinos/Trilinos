@@ -40,9 +40,6 @@ public:
     /// Set the solver
     void setSolver(std::string solverName);
     void setSolver(Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    /// Set the predictor
-    void setPredictor(std::string predictorName);
-    void setPredictor(Teuchos::RCP<Teuchos::ParameterList> predPL=Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
