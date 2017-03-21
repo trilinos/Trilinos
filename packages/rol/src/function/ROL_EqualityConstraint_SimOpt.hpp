@@ -265,7 +265,7 @@ public:
         alpha = 1.0;
       }
     }
-    else if (solverType_==1) {
+    if (solverType_==1) {
       Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
       Teuchos::RCP<Objective<Real> > obj = Teuchos::rcp(new NonlinearLeastSquaresObjective_SimOpt<Real>(con,u,z,c,true));
       Teuchos::ParameterList parlist;
@@ -278,7 +278,7 @@ public:
       algo->run(u,*obj,print_);
       value(c,u,z,tol);
     }
-    else if (solverType_==2 || (solverType_==3 && cnorm > ctol)) {
+    if (solverType_==2 || (solverType_==3 && cnorm > ctol)) {
       Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
       Teuchos::RCP<const Vector<Real> > zVec = Teuchos::rcpFromRef(z);
       Teuchos::RCP<EqualityConstraint<Real> > conU
@@ -294,7 +294,7 @@ public:
       algo->run(u,*l,*objU,*conU,print_);
       value(c,u,z,tol);
     }
-    else {
+    if (solverType_ > 3 || solverType_ < 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> ERROR (ROL:EqualityConstraint_SimOpt:solve): Invalid solver type!");
     }
