@@ -347,15 +347,21 @@ struct Idot<DotViewType, VecViewType, false> {
 
     // Even if VecViewType is rank 1, it's still syntactically correct
     // to call X.dimension_1().
-    const size_t numVecs =
+    const size_t X_numVecs =
       (static_cast<int> (VecViewType::rank) == 1) ?
       static_cast<size_t> (1) :
       static_cast<size_t> (X.dimension_1 ());
+    const size_t Y_numVecs =
+      (static_cast<int> (VecViewType::rank) == 1) ?
+      static_cast<size_t> (1) :
+      static_cast<size_t> (Y.dimension_1 ());
+    const size_t result_numVecs = (X_numVecs > Y_numVecs) ?
+      X_numVecs : Y_numVecs;
     // tmp_dot_view_type must have rank exactly 1 less than vec_view_type.
     typedef typename GetDotView<DotViewType, VecViewType>::view_type
       tmp_dot_view_type;
     tmp_dot_view_type resultView =
-      GetDotView<DotViewType, VecViewType>::getView (result, numVecs);
+      GetDotView<DotViewType, VecViewType>::getView (result, result_numVecs);
     typedef Idot<tmp_dot_view_type, vec_view_type, true> impl_type;
     return impl_type::idot (resultView, X, Y, comm);
   }
@@ -368,23 +374,24 @@ struct Idot<DotViewType, VecViewType, false> {
 //
 
 /// \brief Nonblocking dot product, with either Tpetra::MultiVector or
-///   Tpetra::Vector inputs, and raw pointer or array output.
+///   Tpetra::Vector inputs, and raw pointer or raw array output.
 ///
 /// \param result [out] Output; raw pointer or raw array to the return
 ///   value(s).  It is only valid to read this after calling wait() on
 ///   the return value.  It must be legal to write to the first
-///   <tt>X.getNumVectors()</tt> entries of this array.  This memory
-///   must be accessible from the host CPU.
+///   <tt>std::max(X.getNumVectors(), Y.getNumVectors())</tt> entries
+///   of this array.  This memory must be accessible from the host
+///   CPU.
 ///
 /// \param X [in] First input Tpetra::MultiVector or Tpetra::Vector.
 ///   This must have same number of rows (globally, and on each (MPI)
 ///   process) as Y.  If this is a Tpetra::MultiVector, then this must
-///   have the same number of columns as Y.
+///   either have the same number of columns as Y, or have one column.
 ///
 /// \param Y [in] Second input Tpetra::MultiVector or Tpetra::Vector.
 ///   This must have same number of rows (globally, and on each (MPI)
 ///   process) as X.  If this is a Tpetra::MultiVector, then this must
-///   have the same number of columns as X.
+///   either have the same number of columns as X, or have one column.
 ///
 /// \return Pointer to an object representing the nonblocking
 ///   collective (communication operation).  Call wait() on this
@@ -395,6 +402,12 @@ struct Idot<DotViewType, VecViewType, false> {
 /// \tparam LO Same as the second template parameter of Tpetra::Vector.
 /// \tparam GO Same as the third template parameter of Tpetra::Vector.
 /// \tparam NT Same as the fourth template parameter of Tpetra::Vector.
+///
+/// Compute the dot product of each column of X, with each
+/// corresponding column of Y.  If X has a single column, then compute
+/// the dot product of X with each column of Y in turn.  If Y has a
+/// single column, then compute the dot product of each column of X in
+/// turn with Y.
 ///
 /// In this version of the function, the dot product result goes into
 /// an array (just a raw pointer).  The \c dot_type typedef is the
@@ -424,14 +437,20 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
 
   auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
-  const size_t numVecs = X.getNumVectors ();
 
-  // The number of vectors in each MultiVector is (supposed to be)
-  // globally the same across all participating processes.
-  if (Y.getNumVectors () != numVecs) {
+  const size_t X_numVecs = X.getNumVectors ();
+  const size_t Y_numVecs = Y.getNumVectors ();
+  const size_t numVecs = (X_numVecs > Y_numVecs) ? X_numVecs : Y_numVecs;
+
+  // Check compatibility of number of columns; allow special cases of
+  // a multivector dot a single vector, or vice versa.
+  if (X_numVecs != Y_numVecs &&
+      X_numVecs != size_t (1) &&
+      Y_numVecs != size_t (1)) {
     std::ostringstream os;
     os << "Tpetra::idot: X.getNumVectors() = " << numVecs
-       << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
+       << " != Y.getNumVectors() = " << Y.getNumVectors ()
+       << ", but neither is 1.";
     throw std::invalid_argument (os.str ());
   }
 
@@ -456,8 +475,14 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
       typedef ::Tpetra::Details::CommRequest req_base_type;
       std::vector<std::shared_ptr<req_base_type> > requests (numVecs);
       for (size_t j = 0; j < numVecs; ++j) {
-        RCP<const vec_type> X_j = X.getVector (j);
-        RCP<const vec_type> Y_j = Y.getVector (j);
+        // numVecs = max(X_numVecs, Y_numVecs).  Allow special case of
+        // X_numVecs != Y_numVecs && (X_numVecs == 1 || Y_numVecs == 1).
+        RCP<const vec_type> X_j = (X_numVecs == size_t (1)) ?
+          X.getVector (0) :
+          X.getVector (j);
+        RCP<const vec_type> Y_j = (Y_numVecs == size_t (1)) ?
+          Y.getVector (0) :
+          Y.getVector (j);
         requests[j] = idot<SC, LO, GO, NT> (result + j, *X_j, *Y_j);
       }
       typedef ::Tpetra::Details::Impl::DeferredActionCommRequest req_type;
@@ -493,9 +518,9 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
         }
         else {
           auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, X_numVecs));
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, Y_numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
           typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
@@ -514,9 +539,9 @@ idot (typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type* result,
         }
         else {
           auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, X_numVecs));
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, Y_numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
           typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
@@ -620,17 +645,18 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
 ///
 /// \param result [out] Output; rank-1 Kokkos::View.  It is only valid
 ///   to read the entries of this after calling wait() on the return
-///   value.
+///   value.  This must have length
+///   <tt>std::max(X.getNumVectors(), Y.getNumVectors())</tt>.
 ///
 /// \param X [in] First input Tpetra::MultiVector or Tpetra::Vector.
 ///   This must have same number of rows (globally, and on each (MPI)
 ///   process) as Y.  If this is a Tpetra::MultiVector, then this must
-///   have the same number of columns as Y.
+///   either have the same number of columns as Y, or have one column.
 ///
 /// \param Y [in] Second input Tpetra::MultiVector or Tpetra::Vector.
 ///   This must have same number of rows (globally, and on each (MPI)
 ///   process) as X.  If this is a Tpetra::MultiVector, then this must
-///   have the same number of columns as X.
+///   either have the same number of columns as X, or have one column.
 ///
 /// \return Pointer to an object representing the nonblocking
 ///   collective (communication operation).  Call wait() on this
@@ -641,6 +667,12 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
 /// \tparam LO Same as the second template parameter of Tpetra::Vector.
 /// \tparam GO Same as the third template parameter of Tpetra::Vector.
 /// \tparam NT Same as the fourth template parameter of Tpetra::Vector.
+///
+/// Compute the dot product of each column of X, with each
+/// corresponding column of Y.  If X has a single column, then compute
+/// the dot product of X with each column of Y in turn.  If Y has a
+/// single column, then compute the dot product of each column of X in
+/// turn with Y.
 ///
 /// In this version of the function, the dot product results go into a
 /// rank-1 (one-dimensional) Kokkos::View.  We prefer that you use the
@@ -682,14 +714,20 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
 
   auto map = X.getMap ();
   RCP<const Comm<int> > comm = map.is_null () ? Teuchos::null : map->getComm ();
-  const size_t numVecs = X.getNumVectors ();
 
-  // The number of vectors in each MultiVector is (supposed to be)
-  // globally the same across all participating processes.
-  if (Y.getNumVectors () != numVecs) {
+  const size_t X_numVecs = X.getNumVectors ();
+  const size_t Y_numVecs = Y.getNumVectors ();
+  const size_t numVecs = X_numVecs > Y_numVecs ? X_numVecs : Y_numVecs;
+
+  // Check compatibility of number of columns; allow special cases of
+  // a multivector dot a single vector, or vice versa.
+  if (X_numVecs != Y_numVecs &&
+      X_numVecs != size_t (1) &&
+      Y_numVecs != size_t (1)) {
     std::ostringstream os;
     os << "Tpetra::idot: X.getNumVectors() = " << numVecs
-       << " != Y.getNumVectors() = " << Y.getNumVectors () << ".";
+       << " != Y.getNumVectors() = " << Y.getNumVectors ()
+       << ", but neither is 1.";
     throw std::invalid_argument (os.str ());
   }
 
@@ -714,8 +752,14 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
       typedef ::Tpetra::Details::CommRequest req_base_type;
       std::vector<std::shared_ptr<req_base_type> > requests (numVecs);
       for (size_t j = 0; j < numVecs; ++j) {
-        RCP<const vec_type> X_j = X.getVector (j);
-        RCP<const vec_type> Y_j = Y.getVector (j);
+        // numVecs = max(X_numVecs, Y_numVecs).  Allow special case of
+        // X_numVecs != Y_numVecs && (X_numVecs == 1 || Y_numVecs == 1).
+        RCP<const vec_type> X_j = (X_numVecs == size_t (1)) ?
+          X.getVector (0) :
+          X.getVector (j);
+        RCP<const vec_type> Y_j = (Y_numVecs == size_t (1)) ?
+          Y.getVector (0) :
+          Y.getVector (j);
         auto result_j = subview (result, j);
         requests[j] = idot<SC, LO, GO, NT> (result_j, *X_j, *Y_j);
       }
@@ -754,9 +798,9 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
         }
         else {
           auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, X_numVecs));
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, Y_numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
           typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
@@ -777,9 +821,9 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type*,
         }
         else {
           auto X_lcl_2d = subview (X_lcl, pair_type (0, X.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, X_numVecs));
           auto Y_lcl_2d = subview (Y_lcl, pair_type (0, Y.getLocalLength ()),
-                                   pair_type (0, numVecs));
+                                   pair_type (0, Y_numVecs));
           typedef typename decltype (X_lcl_2d)::const_type vec_view_type;
           typedef Details::Idot<result_view_type, vec_view_type> impl_type;
           return impl_type::idot (result, X_lcl_2d, Y_lcl_2d, *comm);
