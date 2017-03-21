@@ -45,6 +45,8 @@
 #ifndef KOKKOSKERNELS_BLAS1_MV_UNITTESTS_HPP
 #define KOKKOSKERNELS_BLAS1_MV_UNITTESTS_HPP
 
+#include <Kokkos_InnerProductSpaceTraits.hpp>
+
 namespace { // (anonymous)
 
 enum EWhichNorm {
@@ -146,6 +148,143 @@ testFill (std::ostream& out, const int theNumCols, const bool oneCol)
               << X_h(i,j) << " != " << ATS::one () << endl;
         }
       }
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess;
+}
+
+
+template<class Scalar, class Layout, class Device>
+bool
+testDot (std::ostream& out, const int theNumCols)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  typedef Kokkos::Details::InnerProductSpaceTraits<Scalar> IPT;
+  typedef typename IPT::dot_type dot_type;
+  typedef Kokkos::View<dot_type, Layout, Device> zero_d_result_type;
+  typedef Kokkos::View<dot_type*, Layout, Device> one_d_result_type;
+
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::dot" << endl;
+
+  const size_type numRows = 10;
+  const size_type numCols = static_cast<size_type> (theNumCols);
+
+  mv_type X ("X", numRows, numCols);
+  mv_type Y ("Y", numRows, numCols);
+  one_d_result_type R ("R", numCols);
+  one_d_result_type R_expected ("R_expected", numCols);
+  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+  typename mv_type::HostMirror Y_h = Kokkos::create_mirror_view (Y);
+  typename one_d_result_type::HostMirror R_h = Kokkos::create_mirror_view (R);
+  typename one_d_result_type::HostMirror R_expected_h ("R_expected_h", numCols);
+
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+
+  KokkosBlas::fill (R, Kokkos::Details::ArithTraits<dot_type>::zero ());
+  Scalar curVal = ONE;
+  for (size_type j = 0; j < numCols; ++j) {
+    auto X_h_j = Kokkos::subview (X_h, Kokkos::ALL (), j);
+    auto Y_h_j = Kokkos::subview (Y_h, Kokkos::ALL (), j);
+    KokkosBlas::fill (X_h_j, curVal);
+    KokkosBlas::fill (Y_h_j, TWO * curVal);
+
+    dot_type curExpectedVal = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    for (size_type i = 0; i < numRows; ++i) {
+      curExpectedVal += IPT::dot (curVal, TWO * curVal);
+    }
+    R_expected_h[j] = curExpectedVal;
+    curVal += ONE;
+  }
+  Kokkos::deep_copy (X, X_h);
+  Kokkos::deep_copy (Y, Y_h);
+
+  out << "  Test 2-D dot 2-D -> 1-D case" << endl;
+  KokkosBlas::dot (R, X, Y);
+  Kokkos::deep_copy (R_h, R);
+
+  for (size_type j = 0; j < numCols; ++j) {
+    // We chose both the values and the number of terms in each sum
+    // such that rounding error should not occur.  Thus, we may
+    // compare exactly.
+    if (R_expected_h[j] != R_h[j]) {
+      curSuccess = false;
+    }
+  }
+
+  out << "  Test 1-D dot 1-D -> 0-D case" << endl;
+  zero_d_result_type r ("r");
+  typename zero_d_result_type::HostMirror r_h = Kokkos::create_mirror_view (r);
+  for (size_type j = 0; j < numCols; ++j) {
+    auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+    auto Y_j = Kokkos::subview (Y, Kokkos::ALL (), j);
+    KokkosBlas::dot (r, X_j, Y_j);
+    Kokkos::deep_copy (r_h, r);
+    if (r_h () != R_expected_h[j]) {
+      curSuccess = false;
+    }
+  }
+
+  out << "  Test 2-D dot 1-D -> 1-D case" << endl;
+  one_d_result_type R2 ("R2", numCols);
+  typename one_d_result_type::HostMirror R2_h = Kokkos::create_mirror_view (R2);
+  curVal = ONE;
+  for (size_type j = 0; j < numCols; ++j) {
+    // auto X_h_j = Kokkos::subview (X_h, Kokkos::ALL (), j);
+    // auto Y_h_j = Kokkos::subview (Y_h, Kokkos::ALL (), j);
+    // KokkosBlas::fill (X_h_j, curVal);
+    // KokkosBlas::fill (Y_h_j, TWO * curVal);
+
+    dot_type curExpectedVal = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    for (size_type i = 0; i < numRows; ++i) {
+      curExpectedVal += IPT::dot (curVal, TWO);
+    }
+    R_expected_h[j] = curExpectedVal;
+    curVal += ONE;
+  }
+  auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0);
+  KokkosBlas::dot (R2, X, Y_0);
+  Kokkos::deep_copy (R2_h, R2);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (R2_h[j] != R_expected_h[j]) {
+      curSuccess = false;
+    }
+  }
+
+  out << "  Test 1-D dot 2-D -> 1-D case" << endl;
+  Kokkos::deep_copy (R2, Kokkos::Details::ArithTraits<dot_type>::zero ());
+  const Scalar THREE = TWO + ONE; // need this, else same as previous test
+  curVal = THREE;
+  for (size_type j = 0; j < numCols; ++j) {
+    // auto X_h_j = Kokkos::subview (X_h, Kokkos::ALL (), j);
+    // auto Y_h_j = Kokkos::subview (Y_h, Kokkos::ALL (), j);
+    // KokkosBlas::fill (X_h_j, curVal);
+    // KokkosBlas::fill (Y_h_j, TWO * curVal);
+
+    dot_type curExpectedVal = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    for (size_type i = 0; i < numRows; ++i) {
+      curExpectedVal += IPT::dot (THREE, TWO * curVal);
+    }
+    R_expected_h[j] = curExpectedVal;
+    curVal += ONE;
+  }
+  auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
+  KokkosBlas::dot (R2, X_0, Y);
+  Kokkos::deep_copy (R2_h, R2);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (R2_h[j] != R_expected_h[j]) {
+      curSuccess = false;
     }
   }
 
@@ -1079,6 +1218,9 @@ testMV (std::ostream& out, const int numCols, const bool oneCol)
   bool curSuccess = true;
 
   curSuccess = testFill<Scalar, Layout, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
+
+  curSuccess = testDot<Scalar, Layout, Device> (out, numCols);
   success = success && curSuccess;
 
   // The compiler frowns upon looping with enums, so we cast to int.
