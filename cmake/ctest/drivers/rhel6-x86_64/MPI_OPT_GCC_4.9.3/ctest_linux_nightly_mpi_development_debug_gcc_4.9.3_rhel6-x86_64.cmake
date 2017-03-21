@@ -52,8 +52,6 @@
 #
 # ************************************************************************
 # @HEADER
-MESSAGE(STATUS "---> ctest_linux_nightly_mpi_development_debug_gcc_4.9.3_rhel6-x86_64.cmake")
-MESSAGE(STATUS "---> CTEST_SCRIPT_DIRECTORY: ${CTEST_SCRIPT_DIRECTORY}")
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.9.3.cmake")
 
