@@ -15,6 +15,7 @@
 #include "NOX_Thyra.H"
 
 //#define VERBOSE_DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 namespace Tempus {
 
@@ -277,15 +278,19 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
     RCP<const Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
+
+#ifdef DEBUG_OUTPUT
+    //IKT, 3/21/17, debug output: pring d_old, v_old, a_old to check for correctness.
+    *out_ << "IKT d_old = " << Thyra::max(*d_old) << "\n";
+    *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
+    *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
+#endif
+
     //Get new values of d, v and a from current workingState (to be updated here)
     RCP<Thyra::VectorBase<Scalar> > d_new    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > v_new = workingState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
    
-    //IKT, 3/13/17: what does this do?  
-    computePredictor(solutionHistory);
-    if (workingState->getStepperState()->stepperStatus_ == Status::FAILED) return;
-
     //Get time and dt 
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
@@ -321,28 +326,6 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
   return;
 }
 
-template<class Scalar>
-void StepperNewmarkImplicit<Scalar>::computePredictor(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  if (predictorStepper_ == Teuchos::null) return;
-  predictorStepper_->takeStep(solutionHistory);
-
-  Status & stepperStatus =
-    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
-
-  if (stepperStatus == Status::FAILED) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperNewmarkImplicit::computePredictor");
-    *out << "Warning - predictorStepper has failed." << std::endl;
-  } else {
-    // Reset status to WORKING since this is the predictor
-    stepperStatus = Status::WORKING;
-  }
-}
 
 
 /** \brief Provide a StepperState to the SolutionState.

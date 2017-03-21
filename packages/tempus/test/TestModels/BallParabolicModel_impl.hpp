@@ -25,10 +25,13 @@ namespace Tempus_Test {
 
 template<class Scalar>
 BallParabolicModel<Scalar>::
-BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
+BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
+ out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   isInitialized_ = false;
-  damping_ = 1.0; 
+  damping_ = 0.0; 
+  setParameterList(pList_);
+  *out_ << "\n \n Damping = " << damping_ << "\n"; 
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -43,7 +46,7 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   numResponses_ = 1;
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(numResponses_);
 
-  setParameterList(pList_);
+  setupInOutArgs_();
 }
 
 template<class Scalar>
@@ -345,7 +348,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
   RCP<ParameterList> pl = this->getMyNonconstParamList();
-  setupInOutArgs_();
+  damping_ = get<Scalar>(*pl,"Damping");
 }
 
 template<class Scalar>
@@ -357,6 +360,8 @@ getValidParameters() const
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     validPL = pl;
+    Teuchos::setDoubleParameter(
+        "Damping", 0.0, "Damping coefficient in model", &*pl);
   }
   return validPL;
 }
