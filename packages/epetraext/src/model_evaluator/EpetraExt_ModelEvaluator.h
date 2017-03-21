@@ -390,7 +390,7 @@ public:
           case DERIV_TRANS_MV_BY_ROW: return supportsTransMVByRow_;
           default: TEUCHOS_TEST_FOR_EXCEPT(true);
         }
-        return false; // Will never be called!
+        TEUCHOS_UNREACHABLE_RETURN(false);
       }
   private:
     bool supportsLinearOp_;

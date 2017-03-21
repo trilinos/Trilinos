@@ -45,12 +45,31 @@
 #include "TeuchosCore_config.h"
 
 
-/** \file Teuchos_CompilerCodeTweakMacros.hpp
- *
- * This file contains macros used to tweak code to make compilers happy and
- * avoid warnings of various types.  See the macros defined here for the
- * motivation and usage of these macros.
- */
+//
+// Implementations of below macros
+//
+
+
+#ifdef __NVCC__
+  #define TEUCHOS_UNREACHABLE_RETURN_IMPL(dummyReturnVal)
+#else
+  #define TEUCHOS_UNREACHABLE_RETURN_IMPL(dummyReturnVal) \
+    return dummyReturnVal
+#endif
+// Above, the unreachable return statement is only removed for __NVCC__.  This
+// is because only __NVCC__ warns about the unreachable return.  Having that
+// return statement added for other compilers that don't warn leads to safer
+// code by avoiding undefined behavior in case a function is modified in such
+// a way that this return is no longer unreachable.  In that case, we want it
+// to return something to avoid undefined behavior in case it ever gets
+// executed.  That is just good defensive programming.  Also, by leaving this
+// return statement by default, we avoid the (incorrect) warning by some
+// compilers that the function may not return a value.
+
+
+//
+// User interface macros
+//
 
 
 /** \brief Avoid warning about unreachable or missing return from function.
@@ -69,7 +88,7 @@
  * \end{code} 
  *
  * That code will never execute out of the switch statement.  However, some
- * comilers will provide a warning that the function may not return a value.
+ * compilers will provide a warning that the function may not return a value.
  * Therefore, one can remove this warning by adding a dummy return value like:
  *
  * \begin{code}
@@ -85,8 +104,8 @@
  * \end{code} 
  *
  * That removes the "may not return value" warning on those compilers.  But
- * other compilers will correclty warn that <tt>return -1;</tt> will never be
- * executed with a warning like "statement is reachable".  Therefore, to
+ * other compilers will correctly warn that <tt>return -1;</tt> will never be
+ * executed with a warning like "statement is unreachable".  Therefore, to
  * address warnings like this, this macro is used like:
  *
  * \begin{code}
@@ -101,11 +120,16 @@
   }
  * \end{code} 
  *
- * On compilers that warn about a missing return, the statement <tt>return
- * -1;</tt> is provided.  However, on compilers that warn about unreachable
- * code, it will simply provide <tt>(void);</tt>.
+ * On compilers that warn about the return being unreachable the return
+ * statement is skipped.  On every other compiler, the return statement is
+ * kept which results in safer code under refactoring (by avoiding undefined
+ * behavior when returning from a function by fall-through without returning
+ * an explicit value.
+ *
+ * \ingroup teuchos_language_support_grp
  */
-#define TEUCHOS_UNREACHABLE_RETURN(dummyReturnVal)
+#define TEUCHOS_UNREACHABLE_RETURN(dummyReturnVal) \
+  TEUCHOS_UNREACHABLE_RETURN_IMPL(dummyReturnVal)
 
 
 #endif // TEUCHOS_COMPILER_CODE_TWEAK_MACROS_HPP
