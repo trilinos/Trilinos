@@ -200,7 +200,7 @@ private:
         }
       }
     }
-    else if (sideset==3) {
+    else if (sideset==5) {
       val = static_cast<Real>(0);
     }
     return val;
@@ -298,7 +298,7 @@ private:
     const std::vector<Real> param = PDE<Real>::getParameter();
     Real val = h_;
     if ( param.size()) {
-      if ( sideset == 5 ) {
+      if ( sideset == 2 ) {
         int offset = Nbottom_;
         Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
         for (int i = 0; i < Nleft_; ++i) {
