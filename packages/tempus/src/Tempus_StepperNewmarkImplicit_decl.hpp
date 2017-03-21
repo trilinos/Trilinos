@@ -61,10 +61,6 @@ public:
     virtual Scalar getOrderMax() const {return 2.0;}
   //@}
 
-  /// Compute predictor given the supplied stepper
-  virtual void computePredictor(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -101,7 +97,7 @@ public:
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
-
+  
 private:
 
   /// Default Constructor -- not allowed
@@ -119,6 +115,7 @@ private:
 
   Scalar beta_;
   Scalar gamma_;
+  
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 

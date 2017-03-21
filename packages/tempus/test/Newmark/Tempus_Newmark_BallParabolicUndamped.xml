@@ -1,5 +1,6 @@
 <ParameterList name="Newmark_BallParabolic">
   <ParameterList name="BallParabolicModel">
+    <Parameter name="Damping" type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
