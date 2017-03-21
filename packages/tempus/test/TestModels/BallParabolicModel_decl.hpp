@@ -100,7 +100,8 @@ private:
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
   mutable bool isInitialized_;
-
+  double damping_; 
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 
 

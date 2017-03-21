@@ -28,7 +28,7 @@ BallParabolicModel<Scalar>::
 BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
-
+  damping_ = 1.0; 
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -37,7 +37,7 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   x_dot_vec_ = createMember(x_space_);
   Thyra::put_scalar(1.0, x_dot_vec_.ptr());
   x_dot_dot_vec_ = createMember(x_space_);
-  Thyra::put_scalar(0.0, x_dot_dot_vec_.ptr());
+  Thyra::put_scalar(-1.0-damping_, x_dot_dot_vec_.ptr());
 
   //Set up responses
   numResponses_ = 1;
@@ -60,19 +60,29 @@ getExactSolution(double t) const
   Teuchos::RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    exact_x_view[0] = t*(1.0-0.5*t);
+    if (damping_ == 0) 
+      exact_x_view[0] = t*(1.0-0.5*t);
+    else 
+      exact_x_view[0] = -(1.0+damping_)/(damping_*damping_)*exp(-damping_*t) 
+                        - t/damping_ + (1.0+damping_)/(damping_*damping_); 
   }
   inArgs.set_x(exact_x);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
-    exact_x_dot_view[0] = 1.0-t;
+    if (damping_ == 0) 
+      exact_x_dot_view[0] = 1.0-t;
+    else
+      exact_x_dot_view[0] = (1.0+damping_)/damping_*exp(-damping_*t)-1.0/damping_; 
   }
   inArgs.set_x_dot(exact_x_dot);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
-    exact_x_dot_dot_view[0] = -1.0;
+    if (damping_ == 0) 
+      exact_x_dot_dot_view[0] = -1.0;
+    else 
+      exact_x_dot_dot_view[0] = -1.0*(1.0+damping_)*exp(-damping_*t); 
   }
   inArgs.set_x_dot_dot(exact_x_dot_dot);
   return(inArgs);
@@ -202,8 +212,6 @@ evalModelImpl(
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
   //Populate residual and Jacobian
-  //IKT: what is damping for??
-  double damping = 0.0;
   if (f_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
     for (int i=0; i<myVecLength; i++) {
@@ -218,7 +226,7 @@ evalModelImpl(
     if (x_dot_in != Teuchos::null) {
       Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in);
       for (int i=0; i<myVecLength; i++) {
-        f_out_view[i] += damping*x_dot_in_view[i];
+        f_out_view[i] += damping_*x_dot_in_view[i];
       }
     }
   }
@@ -233,7 +241,7 @@ evalModelImpl(
     }
     matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
-      double da = damping*alpha;
+      double da = damping_*alpha;
       matrix_view(0,0) += da;
     }
   }
