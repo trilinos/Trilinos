@@ -29,9 +29,9 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   isInitialized_ = false;
-  c_ = 0.0; 
   setParameterList(pList_);
-  *out_ << "\n \n Damping c coeff = " << c_ << "\n"; 
+  *out_ << "\n \n Damping coeff c = " << c_ << "\n"; 
+  *out_ << "\n Forcing coeff f = " << f_ << "\n"; 
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -40,7 +40,7 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
   x_dot_vec_ = createMember(x_space_);
   Thyra::put_scalar(1.0, x_dot_vec_.ptr());
   x_dot_dot_vec_ = createMember(x_space_);
-  Thyra::put_scalar(-1.0-c_, x_dot_dot_vec_.ptr());
+  Thyra::put_scalar(f_-c_, x_dot_dot_vec_.ptr());
 
   //Set up responses
   numResponses_ = 1;
@@ -64,28 +64,28 @@ getExactSolution(double t) const
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
     if (c_ == 0) 
-      exact_x_view[0] = t*(1.0-0.5*t);
+      exact_x_view[0] = t*(1.0+0.5*f_*t);
     else 
-      exact_x_view[0] = -(1.0+c_)/(c_*c_)*exp(-c_*t) 
-                        - t/c_ + (1.0+c_)/(c_*c_); 
+      exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t)) 
+                        + f_*t/c_; 
   }
   inArgs.set_x(exact_x);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     if (c_ == 0) 
-      exact_x_dot_view[0] = 1.0-t;
+      exact_x_dot_view[0] = 1.0+f_*t;
     else
-      exact_x_dot_view[0] = (1.0+c_)/c_*exp(-c_*t)-1.0/c_; 
+      exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_; 
   }
   inArgs.set_x_dot(exact_x_dot);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
     if (c_ == 0) 
-      exact_x_dot_dot_view[0] = -1.0;
+      exact_x_dot_dot_view[0] = f_;
     else 
-      exact_x_dot_dot_view[0] = -1.0*(1.0+c_)*exp(-c_*t); 
+      exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t); 
   }
   inArgs.set_x_dot_dot(exact_x_dot_dot);
   return(inArgs);
@@ -218,7 +218,7 @@ evalModelImpl(
   if (f_out != Teuchos::null) {
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
     for (int i=0; i<myVecLength; i++) {
-      f_out_view[i] = -1.0;
+      f_out_view[i] = f_;
     }
     if (x_dotdot_in != Teuchos::null) {
       Thyra::ConstDetachedVectorView<Scalar> x_dotdot_in_view( *x_dotdot_in);
@@ -347,7 +347,8 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
   RCP<ParameterList> pl = this->getMyNonconstParamList();
-  c_ = get<Scalar>(*pl,"Damping c coeff");
+  c_ = get<Scalar>(*pl,"Damping coeff c");
+  f_ = get<Scalar>(*pl,"Forcing coeff f");
 }
 
 template<class Scalar>
@@ -360,7 +361,9 @@ getValidParameters() const
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     validPL = pl;
     Teuchos::setDoubleParameter(
-        "Damping c coeff", 0.0, "Damping coefficient in model", &*pl);
+        "Damping coeff c", 0.0, "Damping coefficient in model", &*pl);
+    Teuchos::setDoubleParameter(
+        "Forcing coeff f", -1.0, "Forcing coefficient in model", &*pl);
   }
   return validPL;
 }
