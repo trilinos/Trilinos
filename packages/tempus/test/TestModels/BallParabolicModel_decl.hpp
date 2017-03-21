@@ -17,24 +17,31 @@
 
 namespace Tempus_Test {
 
-/** \brief This is the "parabolic ball" model problem from Piro.
-  * This is a canonical differential equation model of a ball thrown up
-  * in the air, and taking on a parabolic trajectory:
+/** \brief This is a slightly more complicated version of the "parabolic ball" model problem from Piro.
+  * Consider the ODE: 
   *   \f[
-  *   \ddot{x}=-1
+  *   \ddot{x} + c\dot{x}=-1
   *   \f]
-  * The initial conditions are:
+  * where c is a constant damping parameter and the initial conditions are:
   *   \f{eqnarray*}{
   *     x(0) & = & 0\\
   *     \dot{x}(0) & = & 1
   *   \f}
-  * It can be shown that the exact solution to this problem is:
+  * We consider the problem for \f$t\in [0,2]\f$ .  
+  * When c = 0, this ODE simplies to a 
+  * This is a canonical differential equation model of a ball thrown up
+  * in the air, and taking on a parabolic trajectory:
   *    \f[
   *    x(t) = t(1-0.5t)
   *    \f]
-  * We consider the problem for \f$t\in [0,2]\f$ .  An EpetraExt version of this test is implemented in
+  * An EpetraExt version of this test (for c = 0) is implemented in
   * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
   * Newmark-Beta scheme (see input_Solver_NB.xml input file).
+  * For the more general case when c is non-zero, it can be shown that the exact solution 
+  * to this ODE is: 
+  *    \f[
+  *    x(t) = \frac{(1+c)}{c^2}(1-e^{-ct}) - \frac{t}{c} 
+  *    \f]
   */
 
 template<class Scalar>
