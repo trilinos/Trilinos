@@ -49,6 +49,11 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
+#include "ROL_NonlinearLeastSquaresObjective_SimOpt.hpp"
+#include "ROL_EqualityConstraint_State.hpp"
+#include "ROL_Objective_FSsolver.hpp"
+#include "ROL_Algorithm.hpp"
+
 /** @ingroup func_group
     \class ROL::EqualityConstraint_SimOpt
     \brief Defines the equality constraint operator interface for simulation-based optimization.
@@ -106,6 +111,8 @@ private:
   const Real DEFAULT_decr_;
   const int  DEFAULT_maxit_;
   const bool DEFAULT_print_;
+  const bool DEFAULT_zero_;
+  const int  DEFAULT_solverType_;
 
   // User-set parameters for solve (backtracking Newton)
   Real atol_;
@@ -115,6 +122,8 @@ private:
   Real decr_;
   int  maxit_;
   bool print_;
+  bool zero_;
+  int  solverType_;
 
   // Flag to initialize vector storage in solve
   bool firstSolve_;
@@ -130,9 +139,11 @@ public:
       DEFAULT_decr_(1.e-4),
       DEFAULT_maxit_(500),
       DEFAULT_print_(false),
+      DEFAULT_zero_(false),
+      DEFAULT_solverType_(0),
       atol_(DEFAULT_atol_), rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
-      decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_),
-      firstSolve_(true) {}
+      decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_), zero_(DEFAULT_zero_),
+      solverType_(DEFAULT_solverType_), firstSolve_(true) {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
@@ -192,59 +203,100 @@ public:
                      Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    if ( firstSolve_ ) {
-      unew_ = u.clone();
-      jv_   = u.clone();
-      firstSolve_ = false;
+    if ( zero_ ) {
+      u.zero();
     }
     update(u,z,true);
     value(c,u,z,tol);
-    Real cnorm = c.norm(), alpha = 1.0, tmp = 0.0;
+    Real cnorm = c.norm();
     const Real ctol = std::min(atol_, rtol_*cnorm);
-    int cnt = 0;
-    if ( print_ ) {
-      std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
-      std::cout << "       ";
-      std::cout << std::setw(6)  << std::left << "iter";
-      std::cout << std::setw(15) << std::left << "rnorm";
-      std::cout << std::setw(15) << std::left << "alpha";
-      std::cout << "\n";
-    }
-    for (cnt = 0; cnt < maxit_; ++cnt) {
-      // Compute Newton step
-      applyInverseJacobian_1(*jv_,c,u,z,tol);
-      unew_->set(u);
-      unew_->axpy(-alpha, *jv_);
-      update(*unew_,z);
-      value(c,*unew_,z,tol);
-      tmp = c.norm();
-      // Perform backtracking line search
-      while ( tmp > (1.0-decr_*alpha)*cnorm &&
-              alpha > stol_ ) {
-        alpha *= factor_;
+    if (solverType_==0 || solverType_==3) {
+      if ( firstSolve_ ) {
+        unew_ = u.clone();
+        jv_   = u.clone();
+        firstSolve_ = false;
+      }
+      update(u,z,true);
+      value(c,u,z,tol);
+      Real alpha(1), tmp(0);
+      int cnt = 0;
+      if ( print_ ) {
+        std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
+        std::cout << "       ";
+        std::cout << std::setw(6)  << std::left << "iter";
+        std::cout << std::setw(15) << std::left << "rnorm";
+        std::cout << std::setw(15) << std::left << "alpha";
+        std::cout << "\n";
+      }
+      for (cnt = 0; cnt < maxit_; ++cnt) {
+        // Compute Newton step
+        applyInverseJacobian_1(*jv_,c,u,z,tol);
         unew_->set(u);
-        unew_->axpy(-alpha,*jv_);
+        unew_->axpy(-alpha, *jv_);
         update(*unew_,z);
         value(c,*unew_,z,tol);
         tmp = c.norm();
+        // Perform backtracking line search
+        while ( tmp > (1.0-decr_*alpha)*cnorm &&
+                alpha > stol_ ) {
+          alpha *= factor_;
+          unew_->set(u);
+          unew_->axpy(-alpha,*jv_);
+          update(*unew_,z);
+          value(c,*unew_,z,tol);
+          tmp = c.norm();
+        }
+        if ( print_ ) {
+          std::cout << "       ";
+          std::cout << std::setw(6)  << std::left << cnt;
+          std::cout << std::scientific << std::setprecision(6);
+          std::cout << std::setw(15) << std::left << tmp;
+          std::cout << std::scientific << std::setprecision(6);
+          std::cout << std::setw(15) << std::left << alpha;
+          std::cout << "\n";
+        }
+        // Update iterate
+        cnorm = tmp;
+        u.set(*unew_);
+        if (cnorm < ctol) {
+          break;
+        }
+        update(u,z,true);
+        alpha = 1.0;
       }
-      if ( print_ ) {
-        std::cout << "       ";
-        std::cout << std::setw(6)  << std::left << cnt;
-        std::cout << std::scientific << std::setprecision(6);
-        std::cout << std::setw(15) << std::left << tmp;
-        std::cout << std::scientific << std::setprecision(6);
-        std::cout << std::setw(15) << std::left << alpha;
-        std::cout << "\n";
-      }
-      // Update iterate
-      cnorm = tmp;
-      u.set(*unew_);
-      if (cnorm < ctol) {
-        break;
-      }
-      update(u,z,true);
-      alpha = 1.0;
+    }
+    else if (solverType_==1) {
+      Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
+      Teuchos::RCP<Objective<Real> > obj = Teuchos::rcp(new NonlinearLeastSquaresObjective_SimOpt<Real>(con,u,z,c,true));
+      Teuchos::ParameterList parlist;
+      parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
+      parlist.sublist("Status Test").set("Step Tolerance",stol_);
+      parlist.sublist("Status Test").set("Iteration Limit",maxit_);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
+      Teuchos::RCP<Algorithm<Real> > algo = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist,false));
+      algo->run(u,*obj,print_);
+      value(c,u,z,tol);
+    }
+    else if (solverType_==2 || (solverType_==3 && cnorm > ctol)) {
+      Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
+      Teuchos::RCP<const Vector<Real> > zVec = Teuchos::rcpFromRef(z);
+      Teuchos::RCP<EqualityConstraint<Real> > conU
+        = Teuchos::rcp(new EqualityConstraint_State<Real>(con,zVec));
+      Teuchos::RCP<Objective<Real> > objU
+        = Teuchos::rcp(new Objective_FSsolver<Real>());
+      Teuchos::ParameterList parlist;
+      parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
+      parlist.sublist("Status Test").set("Step Tolerance",stol_);
+      parlist.sublist("Status Test").set("Iteration Limit",maxit_);
+      Teuchos::RCP<Algorithm<Real> > algo = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist,false));
+      Teuchos::RCP<Vector<Real> > l = c.dual().clone();
+      algo->run(u,*l,*objU,*conU,print_);
+      value(c,u,z,tol);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> ERROR (ROL:EqualityConstraint_SimOpt:solve): Invalid solver type!");
     }
   }
 
@@ -261,6 +313,8 @@ public:
                 - "Step Tolerance": Absolute tolerance for the step size parameter (Real)
                 - "Backtracking Factor": Rate for decreasing step size during backtracking, between 0 and 1 (Real)
                 - "Output Iteration History": Set to true in order to print solve iteration history (bool)
+                - "Zero Initial Guess": Use a vector of zeros as an initial guess for the solve (bool)
+                - "Solver Type": Determine which solver to use (0: Newton with line search, 1: Levenberg-Marquardt, 2: SQP) (int)
 
              These parameters are accessed as parlist.sublist("SimOpt").sublist("Solve").get(...).
 
@@ -268,13 +322,15 @@ public:
   */
   virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
     Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
-    atol_   = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
-    rtol_   = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
-    maxit_  = list.get("Iteration Limit",               DEFAULT_maxit_);
-    decr_   = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
-    stol_   = list.get("Step Tolerance",                DEFAULT_stol_);
-    factor_ = list.get("Backtracking Factor",           DEFAULT_factor_);
-    print_  = list.get("Output Iteration History",      DEFAULT_print_);
+    atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
+    rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
+    maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);
+    decr_       = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
+    stol_       = list.get("Step Tolerance",                DEFAULT_stol_);
+    factor_     = list.get("Backtracking Factor",           DEFAULT_factor_);
+    print_      = list.get("Output Iteration History",      DEFAULT_print_);
+    zero_       = list.get("Zero Initial Guess",            DEFAULT_zero_);
+    solverType_ = list.get("Solver Type",                   DEFAULT_solverType_);
   }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
