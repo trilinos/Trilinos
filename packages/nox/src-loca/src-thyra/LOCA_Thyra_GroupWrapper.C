@@ -97,6 +97,13 @@ LOCA::Thyra::GroupWrapper::operator=(const NOX::Thyra::Group& source)
   return *this;
 }
 
+LOCA::Thyra::Group&
+LOCA::Thyra::GroupWrapper::operator=(const LOCA::Thyra::Group& source)
+{
+  operator=(dynamic_cast<const GroupWrapper&> (source));
+  return *this;
+}
+
 Teuchos::RCP<NOX::Abstract::Group>
 LOCA::Thyra::GroupWrapper::clone(NOX::CopyType type) const
 {

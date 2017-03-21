@@ -50,6 +50,7 @@
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "Epetra_Map.h"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 //#define FILE_DEBUG 1
 
@@ -200,7 +201,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   std::cout << "ERROR: LOCA::Epetra::xyztPrec::Apply() - "
        << "method is NOT implemented!!  " << std::endl;
   throw "LOCA Error";
-  return false;
+  TEUCHOS_UNREACHABLE_RETURN(-1);
 }
 
 int LOCA::Epetra::xyztPrec::
@@ -474,7 +475,7 @@ NormInf() const
   std::cout << "ERROR: LOCA::Epetra::xyztPrec::NormInf() - "
        << "method is NOT implemented!!  " << std::endl;
   throw "LOCA Error";
-  return 0.0;
+  TEUCHOS_UNREACHABLE_RETURN(0.0);
 }
 
 bool LOCA::Epetra::xyztPrec::
@@ -484,7 +485,7 @@ UseTranspose() const
   std::cout << "ERROR: LOCA::Epetra::xyztPrec::UseTranspose() - "
        << "method is NOT implemented!!  " << std::endl;
   throw "LOCA Error";
-  return false;
+  TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
 bool LOCA::Epetra::xyztPrec::
