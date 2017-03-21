@@ -150,7 +150,10 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::
-setInitialState(Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0)
+setInitialState(Scalar t0,
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -171,11 +174,17 @@ setInitialState(Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0)
   md->setOrder(orderTmp);
   md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
-  // Create xdot and xdotdot.
+  // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = x0->clone_v();
-  Thyra::assign(xdot.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
-  Thyra::assign(xdotdot.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+  if (xdot0 == Teuchos::null)
+    Thyra::assign(xdot.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
+  else
+    Thyra::assign(xdot.ptr(),    *(xdot0));
+  if (xdotdot0 == Teuchos::null)
+    Thyra::assign(xdotdot.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+  else
+    Thyra::assign(xdotdot.ptr(), *(xdotdot0));
 
   RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
     md, x0, xdot, xdotdot, stepper_->getDefaultStepperState()));
