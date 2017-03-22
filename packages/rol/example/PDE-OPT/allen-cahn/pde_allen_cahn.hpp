@@ -276,7 +276,6 @@ public:
     // GET DIMENSIONS
     const int c = fe_vol_->gradN()->dimension(0);
     const int f = fe_vol_->gradN()->dimension(1);
-    const int p = fe_vol_->gradN()->dimension(2);
     // INITIALIZE JACOBIAN
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
     // APPLY ROBIN CONDITIONS

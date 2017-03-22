@@ -350,7 +350,6 @@ public:
     // -->     Lid boundaries: i=2
     // -->       Pressure pin: i=4
     int numSideSets = bdryCellLocIds_.size();
-    const int numCubPerSide = bdryCub_->getNumPoints();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity Boundary Conditions
@@ -394,7 +393,6 @@ public:
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
-    int p  = cellCub_->getNumPoints();
     int fv = basisPtrVel_->getCardinality();
     int fp = basisPtrPrs_->getCardinality();
     int d  = cellCub_->getDimension();
@@ -445,7 +443,6 @@ public:
 
     // APPLY BOUNDARY CONDITIONS
     int numSideSets = bdryCellLocIds_.size();
-    const int numCubPerSide = bdryCub_->getNumPoints();
     if (numSideSets > 0) {
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
@@ -509,7 +506,6 @@ public:
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Retrieve dimensions.
     int c  = u_coeff->dimension(0);
-    int p  = cellCub_->getNumPoints();
     int fv = basisPtrVel_->getCardinality();
     int fp = basisPtrPrs_->getCardinality();
     int d  = cellCub_->getDimension();
