@@ -38,8 +38,12 @@ public:
       getModel(){return residualModel_->getTransientModel();}
 
     /// Set the solver
-    void setSolver(std::string solverName);
-    void setSolver(Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(std::string solverName);
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -52,7 +56,7 @@ public:
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
     virtual Scalar getOrder() const {
       if (gamma_ == 0.5) return 2.0;
-      else return 1.0; 
+      else return 1.0;
     }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
@@ -94,7 +98,7 @@ public:
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
-  
+
 private:
 
   /// Default Constructor -- not allowed
@@ -112,7 +116,7 @@ private:
 
   Scalar beta_;
   Scalar gamma_;
-  
+
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 

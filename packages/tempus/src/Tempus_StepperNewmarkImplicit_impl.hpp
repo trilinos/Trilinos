@@ -144,7 +144,6 @@ void StepperNewmarkImplicit<Scalar>::setSolver(std::string solverName)
 
   RCP<ParameterList> solverPL = Teuchos::sublist(pList_, solverName, true);
   pList_->set("Solver Name", solverName);
-  if (solver_ != Teuchos::null) solver_ = Teuchos::null;
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
   RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
   solver_->setParameterList(noxPL);
@@ -168,7 +167,13 @@ void StepperNewmarkImplicit<Scalar>::setSolver(
 
   std::string solverName = pList_->get<std::string>("Solver Name");
   if (is_null(solverPL)) {
-    solverPL = Teuchos::sublist(pList_, solverName, true);
+    // Create default solver, otherwise keep current solver.
+    if (solver_ == Teuchos::null) {
+      solverPL = Teuchos::sublist(pList_, solverName, true);
+      solver_ = rcp(new Thyra::NOXNonlinearSolver());
+      RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
+      solver_->setParameterList(noxPL);
+    }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
       std::logic_error,
@@ -178,11 +183,29 @@ void StepperNewmarkImplicit<Scalar>::setSolver(
     solverName = solverPL->name();
     pList_->set("Solver Name", solverName);
     pList_->set(solverName, solverPL);      // Add sublist
+    solver_ = rcp(new Thyra::NOXNonlinearSolver());
+    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
+    solver_->setParameterList(noxPL);
   }
-  if (solver_ != Teuchos::null) solver_ = Teuchos::null;
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-  solver_->setParameterList(noxPL);
+}
+
+
+/** \brief Set the solver.
+ *  This sets the solver to supplied solver and adds solver's ParameterList
+ *  to the Stepper ParameterList.
+ */
+template<class Scalar>
+void StepperNewmarkImplicit<Scalar>::setSolver(
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  RCP<ParameterList> solverPL = solver->getNonconstParameterList();
+  std::string solverName = solverPL->name();
+  pList_->set("Solver Name", solverName);
+  pList_->set(solverName, solverPL);      // Add sublist
+  solver_ = solver;
 }
 
 
@@ -210,7 +233,7 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
-    //Get values of d, v and a from previous step 
+    //Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
     RCP<const Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
@@ -226,31 +249,31 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > d_new    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > v_new = workingState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
-   
-    //Get time and dt 
+
+    //Get time and dt
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
-    //Update time 
+    //Update time
     Scalar t = time+dt;
 
-    //allocate d and v predictors 
+    //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred = Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar> > v_pred = Thyra::createMember(v_old->space());
 
     //compute displacement and velocity predictors
-    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt); 
-    predictVelocity(*v_pred, *v_old, *a_old, dt); 
+    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
+    predictVelocity(*v_pred, *v_old, *a_old, dt);
 
     //inject d_pred, v_pred, a and other relevant data into residualModel_
-    residualModel_->initializeNewmark(a_old, v_pred, d_pred, dt, t, beta_, gamma_);  
+    residualModel_->initializeNewmark(a_old, v_pred, d_pred, dt, t, beta_, gamma_);
 
-    //Solve for new acceleration 
+    //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
     const Thyra::SolveStatus<double> sStatus =
       this->solveNonLinear(residualModel_, *solver_, a_new, inArgs_);
 
-    correctVelocity(*v_new, *v_pred, *a_new, dt); 
-    correctDisplacement(*d_new, *d_pred, *a_new, dt); 
+    correctVelocity(*v_new, *v_pred, *a_new, dt);
+    correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
