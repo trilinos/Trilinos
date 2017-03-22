@@ -20,28 +20,30 @@ namespace Tempus_Test {
 /** \brief This is a slightly more complicated version of the "parabolic ball" model problem from Piro.
   * Consider the ODE: 
   *   \f[
-  *   \ddot{x} + c\dot{x}=f
+  *   \ddot{x} + c\dot{x} + kx=f
   *   \f]
-  * where c is a constant damping parameter, f is a constant forcing parameter, and the initial conditions are:
+  * where \f$k \geq 0\f$ is a constant, \f$c\f$ is a constant damping parameter, \f$f\f$ is a constant forcing parameter, with initial conditions are:
   *   \f{eqnarray*}{
   *     x(0) & = & 0\\
   *     \dot{x}(0) & = & 1
   *   \f}
-  * We consider the problem for \f$t\in [0,2]\f$ .  
-  * When \f$c = 0\f$, this ODE simplies to a 
+  * It is straight-forward to show that the exact solution to this ODE is:
+  *   \f{eqnarray*}{
+  *     x(t) & = & t(1+0.5ft),  \hspace{3.6cm} if  \hspace{0.2cm} k = c = 0 \\
+  *          & = & \frac{(c-f)}{c^2}(1-e^{-ct}) + \frac{f}{c}t, \hspace{1.9cm} if \hspace{0.2cm} k = 0, c\neq 0 \\
+  *          & = & \frac{1}{\sqrt{k}}\sin(\sqrt{k}t) + \frac{f}{k}\left(1-\cos(\sqrt{k}t) \right), \hspace{0.2cm} if \hspace{0.2cm} k > 0, c = 0
+  *   \f}
+  * While it is possible to derive the solution to this ODE for the case when \f$k > 0\f$ and \f$c \neq 0\f$,
+  * we do not consider that case here.  When \f$c = k = 0\f$ and \f$f=-1\f$,
+  * our ODE simplies to a 
   * canonical differential equation model of a ball thrown up
-  * in the air, and taking on a parabolic trajectory:
+  * in the air, with a parabolic trajectory solution, namely 
   *    \f[
-  *    x(t) = t(1+0.5ft)
+  *    x(t) = t(1-0.5t)
   *    \f]
-  * An EpetraExt version of this test (for \f$c = 0\f$, \f$f = -1\f$) is implemented in
+  * where \f$t\in [0,2]\f$.  An EpetraExt version of this simplified version of the test is implemented in
   * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
   * Newmark-Beta scheme (see input_Solver_NB.xml input file).
-  * For the more general case when \f$c\neq 0\f$, it can be shown that the exact solution 
-  * to this ODE is: 
-  *    \f[
-  *    x(t) = \frac{(c-f)}{c^2}(1-e^{-ct}) + \frac{f}{c}t
-  *    \f]
   */
 
 template<class Scalar>
