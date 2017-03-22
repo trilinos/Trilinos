@@ -1281,6 +1281,7 @@ namespace Xpetra {
       return bmat->getCrsMatrix();
     }
 
+    /// helper routine recursively returns the first inner-most non-null matrix block from a (nested) blocked operator
     Teuchos::RCP<Matrix> getInnermostCrsMatrix() {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::getInnermostCrsMatrix");
       size_t row = Rows()+1, col = Cols()+1;
