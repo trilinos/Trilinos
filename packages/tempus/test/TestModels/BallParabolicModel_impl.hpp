@@ -71,6 +71,9 @@ getExactSolution(double t) const
         exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t)) 
                           + f_*t/c_; 
     }
+    else {
+      exact_x_view[0] = 1.0/sqrt(k_)*sin(sqrt(k_)*t) + f_/k_*(1.0-cos(sqrt(k_)*t)); 
+    }
   }
   inArgs.set_x(exact_x);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
@@ -82,6 +85,9 @@ getExactSolution(double t) const
       else
         exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_; 
     }
+    else {
+      exact_x_dot_view[0] = cos(sqrt(k_)*t) + f_/sqrt(k_)*sin(sqrt(k_)*t); 
+    }
   }
   inArgs.set_x_dot(exact_x_dot);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
@@ -92,6 +98,9 @@ getExactSolution(double t) const
         exact_x_dot_dot_view[0] = f_;
       else 
         exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t); 
+    }
+    else {
+      exact_x_dot_dot_view[0] = f_*cos(sqrt(k_)*t) - sqrt(k_)*sin(sqrt(k_)*t); 
     }
   }
   inArgs.set_x_dot_dot(exact_x_dot_dot);
