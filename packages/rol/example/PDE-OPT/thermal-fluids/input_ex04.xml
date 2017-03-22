@@ -27,9 +27,32 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="20"   />
-    <Parameter name="NY"                type="int"     value="20"   />
+    <Parameter name="NX"                type="int"     value="18"   />
+    <Parameter name="NY"                type="int"     value="18"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
+  </ParameterList>
+
+  <!-- SOLVER INFORMATION -->
+  <ParameterList name="Solver">
+    <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
+    <ParameterList name="Direct">
+      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
+    </ParameterList>
+    <ParameterList name="MueLu">
+      <Parameter name="verbosity"                 type="string"  value="none"          />
+      <Parameter name="number of equations"       type="int"     value="2"             />
+      <Parameter name="problem: symmetric"        type="bool"    value="false"         />
+      <Parameter name="multigrid algorithm"       type="string"  value="sa"            />
+      <Parameter name="coarse: type"              type="string"  value="KLU2"          />
+    </ParameterList>
+    <ParameterList name="Belos">
+      <Parameter name="Block Size"                type="int"     value="1"             />
+      <Parameter name="Maximum Iterations"        type="int"     value="100"           />
+      <Parameter name="Convergence Tolerance"     type="double"  value="1e-10"         />
+      <Parameter name="Output Style"              type="int"     value="1"             />
+      <Parameter name="Output Frequency"          type="int"     value="1"             />
+      <Parameter name="Verbosity"                 type="int"     value="0"             />
+    </ParameterList>
   </ParameterList>
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
@@ -41,10 +64,10 @@
       <Parameter name="Stochastic Optimization Type" type="string" value="BPOE"         />
     -->
     <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Exponential Utility" />
+      <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
       <!--
+        <Parameter name="Name" type="string" value="Exponential Utility" />
         <Parameter name="Name" type="string" value="KL Divergence" />
-        <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
         <Parameter name="Name" type="string" value="Log-Quantile Quadrangle" />
       -->
 
@@ -54,7 +77,7 @@
 
       <ParameterList name="Quantile-Based Quadrangle">
         <Parameter name="Confidence Level"             type="double" value="0.95"  />
-        <Parameter name="Convex Combination Parameter" type="double" value="0.0"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.5"   />
         <Parameter name="Smoothing Parameter"          type="double" value="1.e-4" />
         <ParameterList name="Distribution">
           <Parameter name="Name" type="string" value="Parabolic" />
@@ -94,13 +117,15 @@
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-8"  />
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-10" />
       <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
-      <Parameter name="Iteration Limit"               type="int"     value="20"     />
+      <Parameter name="Iteration Limit"               type="int"     value="25"     />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
       <Parameter name="Output Iteration History"      type="bool"    value="true"   />
+      <Parameter name="Zero Initial Guess"            type="bool"    value="false"  />
+      <Parameter name="Solver Type"                   type="int"     value="3"      />
     </ParameterList>
   </ParameterList>
 
@@ -286,9 +311,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"   />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="100"     />
+    <Parameter name="Iteration Limit"      type="int"    value="10"      />
   </ParameterList>
 </ParameterList>
