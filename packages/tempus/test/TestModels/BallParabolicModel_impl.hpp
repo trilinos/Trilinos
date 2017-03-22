@@ -31,7 +31,8 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
   isInitialized_ = false;
   setParameterList(pList_);
   *out_ << "\n \n Damping coeff c = " << c_ << "\n"; 
-  *out_ << "\n Forcing coeff f = " << f_ << "\n"; 
+  *out_ << "Forcing coeff f = " << f_ << "\n"; 
+  *out_ << "x coeff k = " << k_ << "\n"; 
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -63,29 +64,35 @@ getExactSolution(double t) const
   Teuchos::RCP<VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    if (c_ == 0) 
-      exact_x_view[0] = t*(1.0+0.5*f_*t);
-    else 
-      exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t)) 
-                        + f_*t/c_; 
+    if (k_ == 0) {
+      if (c_ == 0) 
+        exact_x_view[0] = t*(1.0+0.5*f_*t);
+      else 
+        exact_x_view[0] = (c_-f_)/(c_*c_)*(1.0-exp(-c_*t)) 
+                          + f_*t/c_; 
+    }
   }
   inArgs.set_x(exact_x);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
-    if (c_ == 0) 
-      exact_x_dot_view[0] = 1.0+f_*t;
-    else
-      exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_; 
+    if (k_ == 0) {
+      if (c_ == 0) 
+        exact_x_dot_view[0] = 1.0+f_*t;
+      else
+        exact_x_dot_view[0] = (c_-f_)/c_*exp(-c_*t)+f_/c_; 
+    }
   }
   inArgs.set_x_dot(exact_x_dot);
   Teuchos::RCP<VectorBase<Scalar> > exact_x_dot_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_dot_view(*exact_x_dot_dot);
-    if (c_ == 0) 
-      exact_x_dot_dot_view[0] = f_;
-    else 
-      exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t); 
+    if (k_ == 0) {
+      if (c_ == 0) 
+        exact_x_dot_dot_view[0] = f_;
+      else 
+        exact_x_dot_dot_view[0] = (f_-c_)*exp(-c_*t); 
+    }
   }
   inArgs.set_x_dot_dot(exact_x_dot_dot);
   return(inArgs);
@@ -195,6 +202,7 @@ evalModelImpl(
       "Error, setupInOutArgs_ must be called first!\n");
 
   RCP<const VectorBase<Scalar> > x_in = inArgs.get_x();
+  double beta = inArgs.get_beta();
   if (!x_in.get()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "\n ERROR: BallParabolicModel requires x as InArgs.\n");
@@ -232,6 +240,12 @@ evalModelImpl(
         f_out_view[i] += c_*x_dot_in_view[i];
       }
     }
+    if (x_in != Teuchos::null) {
+      Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in);
+      for (int i=0; i<myVecLength; i++) {
+        f_out_view[i] += k_*x_in_view[i];
+      }
+    }
   }
 
   // Note: W = alpha*df/dxdot + beta*df/dx + omega*df/dxdotdot
@@ -245,6 +259,9 @@ evalModelImpl(
     matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
       matrix_view(0,0) += c_*alpha;
+    }
+    if (x_in != Teuchos::null) {
+      matrix_view(0,0) += k_*beta;
     }
   }
 
@@ -349,6 +366,16 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   RCP<ParameterList> pl = this->getMyNonconstParamList();
   c_ = get<Scalar>(*pl,"Damping coeff c");
   f_ = get<Scalar>(*pl,"Forcing coeff f");
+  k_ = get<Scalar>(*pl,"x coeff k");
+  if (k_ < 0.0) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Error: invalid value of x coeff k = " << k_ <<"!  x coeff k must be >= 0.\n");
+  }
+  if ((k_ > 0.0) && (c_ != 0.0)) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Error: BallParabolic model only supports x coeff k > 0 when Damping coeff c = 0.  You have " 
+      << "specified x coeff k = " << k_ << " and Damping coeff c = " << c_ << ".\n");
+  }
 }
 
 template<class Scalar>
@@ -364,6 +391,8 @@ getValidParameters() const
         "Damping coeff c", 0.0, "Damping coefficient in model", &*pl);
     Teuchos::setDoubleParameter(
         "Forcing coeff f", -1.0, "Forcing coefficient in model", &*pl);
+    Teuchos::setDoubleParameter(
+        "x coeff k", 0.0, "x coefficient in model", &*pl);
   }
   return validPL;
 }

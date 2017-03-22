@@ -28,16 +28,16 @@ namespace Tempus_Test {
   *     \dot{x}(0) & = & 1
   *   \f}
   * We consider the problem for \f$t\in [0,2]\f$ .  
-  * When c = 0, this ODE simplies to a 
-  * This is a canonical differential equation model of a ball thrown up
+  * When \f$c = 0\f$, this ODE simplies to a 
+  * canonical differential equation model of a ball thrown up
   * in the air, and taking on a parabolic trajectory:
   *    \f[
   *    x(t) = t(1+0.5ft)
   *    \f]
-  * An EpetraExt version of this test (for c = 0, f = -1) is implemented in
+  * An EpetraExt version of this test (for \f$c = 0\f$, \f$f = -1\f$) is implemented in
   * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
   * Newmark-Beta scheme (see input_Solver_NB.xml input file).
-  * For the more general case when c is non-zero, it can be shown that the exact solution 
+  * For the more general case when \f$c\neq 0\f$, it can be shown that the exact solution 
   * to this ODE is: 
   *    \f[
   *    x(t) = \frac{(c-f)}{c^2}(1-e^{-ct}) + \frac{f}{c}t
@@ -109,6 +109,7 @@ private:
   mutable bool isInitialized_;
   double c_; //damping coefficient
   double f_; //forcing coefficient
+  double k_; //coefficient multiplying x in ODE 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 
