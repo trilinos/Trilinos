@@ -45,7 +45,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ThermalFluidsDataCopy
     SOURCE_FILES
-      input.xml input_ex03.xml input_ex04.xml plotresults.m
+      input.xml input_ex03.xml input_ex04.xml plotresults.m plotresults_ex03.m plotresults_ex04.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
