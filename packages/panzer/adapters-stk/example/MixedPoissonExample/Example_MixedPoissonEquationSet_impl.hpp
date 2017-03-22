@@ -116,7 +116,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   this->addDOF("PHI",basis_type,basis_order,integration_order);
   this->addDOFGrad("PHI");
 
-  this->addDOF("GRADPHI_FIELD",grad_basis_type,basis_order,integration_order);
+  this->addDOF("GRADPHI_FIELD",grad_basis_type,grad_basis_order,integration_order);
   this->addDOFDiv("GRADPHI_FIELD");
 
    // ********************
