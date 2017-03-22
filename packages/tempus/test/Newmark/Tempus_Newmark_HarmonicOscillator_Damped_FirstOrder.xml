@@ -1,6 +1,6 @@
-<ParameterList name="Newmark_BallParabolic">
-  <ParameterList name="BallParabolicModel">
-    <Parameter name="Damping coeff c" type="double" value="0.0"/>
+<ParameterList name="Newmark_HarmonicOscillator">
+  <ParameterList name="HarmonicOscillatorModel">
+    <Parameter name="Damping coeff c" type="double" value="1.0"/>
     <Parameter name="Forcing coeff f" type="double" value="-1.0"/>
     <Parameter name="x coeff k" type="double" value="0.0"/>
   </ParameterList>
@@ -21,7 +21,7 @@
         <Parameter name="Final Time"             type="double" value="2.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.2"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.125"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
@@ -39,7 +39,7 @@
       <Parameter name="Stepper Type"   type="string" value="Newmark Beta Implicit"/>
       <ParameterList name="Newmark Beta Parameters">
         <Parameter name="Beta"    type="double" value="0.25"/>
-        <Parameter name="Gamma"   type="double" value="0.5"/>
+        <Parameter name="Gamma"   type="double" value="0.33"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
@@ -92,7 +92,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
 
     </ParameterList>
 

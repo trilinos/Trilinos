@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef TEMPUS_TEST_BALLPARABOLIC_MODEL_IMPL_HPP
-#define TEMPUS_TEST_BALLPARABOLIC_MODEL_IMPL_HPP
+#ifndef TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_IMPL_HPP
+#define TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_IMPL_HPP
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -24,8 +24,8 @@
 namespace Tempus_Test {
 
 template<class Scalar>
-BallParabolicModel<Scalar>::
-BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
+HarmonicOscillatorModel<Scalar>::
+HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   isInitialized_ = false;
@@ -52,7 +52,7 @@ BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 getExactSolution(double t) const
 {
   using Thyra::VectorBase;
@@ -109,7 +109,7 @@ getExactSolution(double t) const
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_x_space() const
 {
   return x_space_;
@@ -118,7 +118,7 @@ get_x_space() const
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_f_space() const
 {
   return x_space_;
@@ -127,7 +127,7 @@ get_f_space() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 getNominalValues() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -138,7 +138,7 @@ getNominalValues() const
 
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 create_W() const
 {
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
@@ -155,7 +155,7 @@ create_W() const
 
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 create_W_op() const
 {
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, vecLength_);
@@ -165,7 +165,7 @@ create_W_op() const
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_W_factory() const
 {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
@@ -176,7 +176,7 @@ get_W_factory() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 createInArgs() const
 {
   setupInOutArgs_();
@@ -189,7 +189,7 @@ createInArgs() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 createOutArgsImpl() const
 {
   setupInOutArgs_();
@@ -199,7 +199,7 @@ createOutArgsImpl() const
 
 template<class Scalar>
 void
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
@@ -214,7 +214,7 @@ evalModelImpl(
   double beta = inArgs.get_beta();
   if (!x_in.get()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "\n ERROR: BallParabolicModel requires x as InArgs.\n");
+      "\n ERROR: HarmonicOscillatorModel requires x as InArgs.\n");
   }
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
   //IKT, FIXME: check that subDim() is the write routine to get local length of a Thyra::ConstDetachedVectorView
@@ -263,7 +263,7 @@ evalModelImpl(
     Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
     if (omega == 0.0) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "\n ERROR: omega = 0 in BallParabolicModel!\n");
+        "\n ERROR: omega = 0 in HarmonicOscillatorModel!\n");
     }
     matrix_view(0,0) = omega;
     if (x_dot_in != Teuchos::null) {
@@ -284,31 +284,31 @@ evalModelImpl(
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                     "\n Error!  BallParabolicModel::get_p_space() is not supported!\n"); 
+                     "\n Error!  HarmonicOscillatorModel::get_p_space() is not supported!\n"); 
   return Teuchos::null;
 }
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                     "\n Error!  BallParabolicModel::get_p_names() is not supported!\n"); 
+                     "\n Error!  HarmonicOscillatorModel::get_p_names() is not supported!\n"); 
   return Teuchos::null;
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 get_g_space(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(j != 0, std::logic_error,
-                     "\n Error!  BallParabolicModel::get_g_space() only " <<
+                     "\n Error!  HarmonicOscillatorModel::get_g_space() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
                      j << "\n");
   return g_space_;
@@ -318,7 +318,7 @@ get_g_space(int j) const
 
 template<class Scalar>
 void
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 setupInOutArgs_() const
 {
   if (isInitialized_) return;
@@ -362,13 +362,13 @@ setupInOutArgs_() const
 
 template<class Scalar>
 void
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   using Teuchos::get;
   using Teuchos::RCP;
   using Teuchos::ParameterList;
-  RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("BallParabolicModel"));
+  RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("HarmonicOscillatorModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
@@ -382,14 +382,14 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   }
   if ((k_ > 0.0) && (c_ != 0.0)) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error: BallParabolic model only supports x coeff k > 0 when Damping coeff c = 0.  You have " 
+      "Error: HarmonicOscillator model only supports x coeff k > 0 when Damping coeff c = 0.  You have " 
       << "specified x coeff k = " << k_ << " and Damping coeff c = " << c_ << ".\n");
   }
 }
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-BallParabolicModel<Scalar>::
+HarmonicOscillatorModel<Scalar>::
 getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
@@ -407,4 +407,4 @@ getValidParameters() const
 }
 
 } // namespace Tempus_Test
-#endif // TEMPUS_TEST_BALLPARABOLIC_MODEL_IMPL_HPP
+#endif // TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_IMPL_HPP

@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef TEMPUS_TEST_BALLPARABOLIC_MODEL_DECL_HPP
-#define TEMPUS_TEST_BALLPARABOLIC_MODEL_DECL_HPP
+#ifndef TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_DECL_HPP
+#define TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_DECL_HPP
 
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
@@ -17,7 +17,7 @@
 
 namespace Tempus_Test {
 
-/** \brief This is a slightly more complicated version of the "parabolic ball" model problem from Piro.
+/** \brief 
   * Consider the ODE: 
   *   \f[
   *   \ddot{x} + c\dot{x} + kx=f
@@ -48,14 +48,14 @@ namespace Tempus_Test {
   */
 
 template<class Scalar>
-class BallParabolicModel
+class HarmonicOscillatorModel
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
     public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
 
   // Constructor
-  BallParabolicModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+  HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   // Exact solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
@@ -119,4 +119,4 @@ private:
 
 
 } // namespace Tempus_Test
-#endif // TEMPUS_TEST_BALLPARABOLIC_MODEL_DECL_HPP
+#endif // TEMPUS_TEST_HARMONIC_OSCILLATOR_MODEL_DECL_HPP
