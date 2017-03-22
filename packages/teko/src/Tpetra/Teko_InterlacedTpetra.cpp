@@ -122,6 +122,9 @@ void buildSubMaps(GO numGlobals,LO numMyElements,GO minMyGID,const std::vector<i
    for(varItr=vars.begin();varItr!=vars.end();++varItr) {
       LO numLocalVars = *varItr;
       GO numAllElmts = numLocalVars*numGlobals/numGlobalVars;
+#ifndef NDEBUG
+      LO numMyElmts = numLocalVars * numBlocks;
+#endif
 
       // create global arrays describing the as of yet uncreated maps
       std::vector<GO> subGlobals;
