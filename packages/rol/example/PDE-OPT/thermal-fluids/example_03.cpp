@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
       *outStream << std::endl << "Check Hessian of Reduced Objective Function" << std::endl;
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
-    //up->zero();
+    up->zero();
     zp->zero();
 
     RealT tol(1.e-8);
