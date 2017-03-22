@@ -43,7 +43,8 @@ namespace Tempus_Test {
   *    \f]
   * where \f$t\in [0,2]\f$.  An EpetraExt version of this simplified version of the test is implemented in
   * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
-  * Newmark-Beta scheme (see input_Solver_NB.xml input file).
+  * Newmark-Beta scheme (see input_Solver_NB.xml input file).  When \f$c = f = 0\f$ and  \f$k = 1\f$, 
+  * this test is equivalent to the SinCos model..
   */
 
 template<class Scalar>
