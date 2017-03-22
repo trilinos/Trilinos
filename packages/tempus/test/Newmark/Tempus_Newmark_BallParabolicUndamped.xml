@@ -1,6 +1,8 @@
 <ParameterList name="Newmark_BallParabolic">
   <ParameterList name="BallParabolicModel">
-    <Parameter name="Damping" type="double" value="0.0"/>
+    <Parameter name="Damping coeff c" type="double" value="0.0"/>
+    <Parameter name="Forcing coeff f" type="double" value="-1.0"/>
+    <Parameter name="x coeff k" type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -40,7 +42,6 @@
         <Parameter name="Gamma"   type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
-      <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
 
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">
@@ -92,9 +93,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Default Predictor">
-        <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
-      </ParameterList>
 
     </ParameterList>
 

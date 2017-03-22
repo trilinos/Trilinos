@@ -172,20 +172,17 @@ private:
 
   Real velocityDirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
     Real val(0);
-    if ((sideset==4) && (dir==1)) {
-      val = static_cast<Real>(2)
-           *(static_cast<Real>(1)/static_cast<Real>(3) - coords[0])
-           *(coords[0]-static_cast<Real>(0));
-    }
-    else if ((sideset==3) && (dir==1)) {
-      val = static_cast<Real>(-4)
-           *(coords[0]-static_cast<Real>(1)/static_cast<Real>(3))
-           *(static_cast<Real>(2)/static_cast<Real>(3)-coords[0]);
-    }
-    else if ((sideset==2) && (dir==1)) {
-      val = static_cast<Real>(2)
-           *(coords[0]-static_cast<Real>(2)/static_cast<Real>(3))
-           *(static_cast<Real>(1)-coords[0]);
+    if ((sideset==3) && (dir==1)) {
+      const Real one(1), two(2), three(3), four(4), x = coords[0];
+      if (x <= one/three) {
+        val = two*(one/three - x)*x;
+      }
+      else if (x > one/three && x < two/three) {
+        val = -four*(x-one/three)*(two/three-x);
+      }
+      else if (x >= two/three) {
+        val = two*(x-two/three)*(one-x);
+      }
     }
     return val;
   }
@@ -203,7 +200,7 @@ private:
         }
       }
     }
-    else if (sideset==3) {
+    else if (sideset==5) {
       val = static_cast<Real>(0);
     }
     return val;
@@ -301,7 +298,7 @@ private:
     const std::vector<Real> param = PDE<Real>::getParameter();
     Real val = h_;
     if ( param.size()) {
-      if ( sideset == 5 ) {
+      if ( sideset == 2 ) {
         int offset = Nbottom_;
         Real root2(std::sqrt(2.0)), pi(M_PI), ln2(std::log(2.0));
         for (int i = 0; i < Nleft_; ++i) {
@@ -614,16 +611,17 @@ public:
     /**************************************************************************/
     /*** APPLY BOUNDARY CONDITIONS ********************************************/
     /**************************************************************************/
-    // --> Control boundaries: i=1,5
-    // --> Outflow boundaries: i=2,4
-    // -->  Inflow boundaries: i=3
+    // -->        Control boundaries: i=1,2
+    // -->        No slip boundaries: i=0,1,2
+    // --> Outflow/Inflow boundaries: i=3
+    // -->              Pressure Pin: i=4
     int numSideSets = bdryCellLocIds_.size();
     const int numCubPerSide = bdryCub_->getNumPoints();
     if (numSideSets > 0) {
       // ROBIN CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Control boundaries
-        if (i==1 || i==5) {
+        if (i==1 || i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -664,7 +662,7 @@ public:
       computeDirichlet();
       // Velocity Boundary Conditions
       for (int i = 0; i < numSideSets; ++i) {
-        if (i!=6) {
+        if (i<4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -680,7 +678,7 @@ public:
           }
         }
         // Thermal Boundary Conditions
-        if ( (i==0) || (i==3) ) {
+        if ( (i==0) || (i==5) ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();   // Number of sides per cell
           for (int j = 0; j < numLocalSideIds; ++j) {        // Loop over sides of cell: Quad = {0, 1, 2, 3}
             int numCellsSide = bdryCellLocIds_[i][j].size(); // Number of cells with side j
@@ -694,7 +692,7 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6 && pinPressure_) {
+        if (i==7 && pinPressure_) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -904,7 +902,7 @@ public:
       // ROBIN CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Control boundaries
-        if (i==1 || i==5) {
+        if (i==1 || i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -949,7 +947,7 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity Boundary Conditions
-        if (i!=6) {
+        if (i<4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -978,7 +976,7 @@ public:
           }
         }
         // Thermal boundary conditions
-        if ( (i==0) || (i==3) ) {
+        if ( (i==0) || (i==5) ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1003,7 +1001,7 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6 && pinPressure_) {
+        if (i==7 && pinPressure_) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1074,7 +1072,7 @@ public:
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
         // Control boundaries
-        if (i==1 || i==5) {
+        if (i==1 || i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1120,7 +1118,7 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity Boundary Conditions
-        if (i!=6) {
+        if (i<4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1148,7 +1146,7 @@ public:
           }
         }
         // Thermal boundary conditions
-        if ( (i==0) || (i==3) ) {
+        if ( (i==0) || (i==5) ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1172,7 +1170,7 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6 && pinPressure_) {
+        if (i==7 && pinPressure_) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1245,7 +1243,7 @@ public:
       // DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // Velocity boundary conditions
-        if (i!=6) {
+        if (i<4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1260,8 +1258,8 @@ public:
             }
           }
         }
-        // Inflow boundaries
-        if ( (i==0) || (i==3) ) {
+        // Thermal boundaries
+        if ( (i==0) || (i==5) ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -1275,7 +1273,7 @@ public:
           }
         }
         // Pressure pinning
-        if (i==6 && pinPressure_) {
+        if (i==7 && pinPressure_) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();

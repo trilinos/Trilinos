@@ -186,69 +186,6 @@ void StepperNewmarkImplicit<Scalar>::setSolver(
 }
 
 
-/** \brief Set the predictor to a pre-defined predictor in the ParameterList.
- *  The predictor is set to predictorName sublist in the Stepper's
- *  ParameterList.  The predictorName sublist should already be defined
- *  in the Stepper's ParameterList.  Otherwise it will fail.
- */
-template<class Scalar>
-void StepperNewmarkImplicit<Scalar>::setPredictor(std::string predictorName)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
-  pList_->set("Predictor Name", predictorName);
-  if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
-  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-}
-
-
-/** \brief Set the predictor to the supplied Parameter sublist.
- *  This adds a new predictor Parameter sublist to the Stepper's ParameterList.
- *  If the predictor sublist is null, it tests if the predictor is set in
- *  the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperNewmarkImplicit<Scalar>::setPredictor(
-  Teuchos::RCP<Teuchos::ParameterList> predPL)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  std::string predictorName = pList_->get<std::string>("Predictor Name","None");
-  if (is_null(predPL)) {
-    if (predictorName != "None") {
-      RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
-      RCP<StepperFactory<Scalar> > sf =
-        Teuchos::rcp(new StepperFactory<Scalar>());
-      predictorStepper_ =
-        sf->createStepper(residualModel_->getTransientModel(), predPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
-      std::logic_error,
-         "Error - Trying to add a predictor that is already in ParameterList!\n"
-      << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n"
-      << "  Predictor Name  = "<<predictorName<<"\n");
-    predictorName = predPL->name();
-    pList_->set("Predictor Name", predictorName);
-    pList_->set(predictorName, predPL);           // Add sublist
-    if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
-    RCP<StepperFactory<Scalar> > sf =
-      Teuchos::rcp(new StepperFactory<Scalar>());
-    predictorStepper_ =
-      sf->createStepper(residualModel_->getTransientModel(), predPL);
-  }
-}
-
-
 template<class Scalar>
 void StepperNewmarkImplicit<Scalar>::initialize()
 {
@@ -256,7 +193,6 @@ void StepperNewmarkImplicit<Scalar>::initialize()
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   this->setSolver();
-  this->setPredictor();
 }
 
 
@@ -443,15 +379,9 @@ StepperNewmarkImplicit<Scalar>::getDefaultParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<std::string>("Predictor Name", "Default Predictor");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
-
-  // Predictor ParameterList
-  RCP<ParameterList> predPL = Teuchos::parameterList();
-  predPL->set("Stepper Type", "Newmark Implicit");
-  pl->set("Default Predictor", *predPL);
 
   return pl;
 }

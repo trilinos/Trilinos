@@ -79,7 +79,6 @@ void LOCA::ErrorCheck::throwError(const std::string& callingFunction,
     "ERROR: " << callingFunction << "\n"
     << "ThrowLabel: " << throwLabel << "\n"
     << message << "\n");
-  return;
 }
 
 void LOCA::ErrorCheck::printWarning(const std::string& callingFunction,

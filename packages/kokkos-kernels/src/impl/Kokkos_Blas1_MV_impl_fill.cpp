@@ -82,7 +82,7 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
       // It might not necessarily be true for ALL Scalar types that
       // memset with 0 does the right thing, but it certainly works
       // here.
-      memset (X.ptr_on_device (), 0, numRows * sizeof (KOKKOSBLAS_IMPL_MV_SCALAR));
+      memset (X.ptr_on_device (), 0, numRows * numCols * sizeof (KOKKOSBLAS_IMPL_MV_SCALAR));
     }
     else {
       typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,

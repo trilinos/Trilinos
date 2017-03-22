@@ -48,6 +48,7 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Polynomial.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 #ifdef HAVE_PYTRILINOS
 #ifndef PyObject_HEAD

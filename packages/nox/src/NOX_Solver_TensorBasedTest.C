@@ -295,6 +295,24 @@ NOX::Solver::TensorBasedTest::getList() const
   return *paramsPtr;
 }
 
+Teuchos::RCP< const NOX::Abstract::Group >
+NOX::Solver::TensorBasedTest::getSolutionGroupPtr() const
+{
+  return solnptr;
+}
+
+Teuchos::RCP< const NOX::Abstract::Group >
+NOX::Solver::TensorBasedTest::getPreviousSolutionGroupPtr() const
+{
+  return oldsolnptr;
+}
+
+Teuchos::RCP< const Teuchos::ParameterList >
+NOX::Solver::TensorBasedTest::getListPtr() const
+{
+  return paramsPtr;
+}
+
 const NOX::Direction::Tensor&
 NOX::Solver::TensorBasedTest::getDirection() const
 {

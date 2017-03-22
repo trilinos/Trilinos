@@ -166,6 +166,7 @@ int main(int argc, char *argv[]) {
     std::string filename = "input_ex04.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",myRank==0);
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
