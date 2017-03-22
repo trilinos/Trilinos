@@ -43,19 +43,20 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-#define TEST_HARMONIC_OSCILLATOR_UNDAMPED
+#define TEST_BALL_PARABOLIC
 #define TEST_HARMONIC_OSCILLATOR_DAMPED
+#define TEST_SIN_COS
 
 
-#ifdef TEST_HARMONIC_OSCILLATOR_UNDAMPED
+#ifdef TEST_BALL_PARABOLIC
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorUndamped)
+TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 {
   //Tolerance to check if test passed 
   double tolerance = 1.0e-14; 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_HarmonicOscillator_Undamped.xml");
+    getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -84,7 +85,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorUndamped)
     model->getExactSolution(time).get_x();
 
   // Plot sample solution and exact solution
-  std::ofstream ftmp("Tempus_Newmark_HarmonicOscillator_Undamped.dat");
+  std::ofstream ftmp("Tempus_Newmark_BallParabolic.dat");
+  ftmp.precision(16); 
   RCP<SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
   bool passed = true; 
@@ -170,6 +172,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_HarmonicOscillator_Damped_SecondOrder.dat");
+      ftmp.precision(16); 
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -204,6 +207,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_HarmonicOscillator_Damped_SecondOrder.dat");
+  ftmp.precision(16); 
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -268,6 +272,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
     // Plot sample solution and exact solution at most-refined resolution 
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_HarmonicOscillator_Damped_FirstOrder.dat");
+      ftmp.precision(16); 
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -302,6 +307,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_HarmonicOscillator_Damped_FirstOrder.dat");
+  ftmp.precision(16); 
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
