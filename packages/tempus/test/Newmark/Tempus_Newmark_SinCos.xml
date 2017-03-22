@@ -19,8 +19,9 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <!--Integrate for 2 periods-->
-        <Parameter name="Final Time"             type="double" value="2.0"/>
+        <!--Integrate for 2.2 periods.  We do not integrate an integer number of periods
+             to avoid having a 0 value of the solution at the final time.-->
+        <Parameter name="Final Time"             type="double" value="2.2"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Initial Time Step"      type="double" value="0.05"/>

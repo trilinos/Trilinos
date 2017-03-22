@@ -407,7 +407,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos)
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
   std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.01 );
+  TEST_FLOATING_EQUALITY( slope, order, 0.02 );
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_SinCos.dat");
