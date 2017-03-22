@@ -840,7 +840,7 @@ public:
     const int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ( i == 1 || i == 5 ) {
+        if ( i == 1 || i == 2 ) {
           const int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             const int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -899,7 +899,7 @@ public:
     const int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ( i == 1 || i == 5 ) {
+        if ( i == 1 || i == 2 ) {
           const int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             const int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -982,7 +982,7 @@ public:
     const int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ( i == 1 || i == 5 ) {
+        if ( i == 1 || i == 2 ) {
           const int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             const int numCellsSide = bdryCellLocIds_[i][j].size();
