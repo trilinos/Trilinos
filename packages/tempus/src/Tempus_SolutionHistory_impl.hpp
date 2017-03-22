@@ -311,17 +311,17 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) *pList_ = *(this->getValidParameters());
-  else pList_ = pList;
-  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  if (pList == Teuchos::null) *shPL_ = *(this->getValidParameters());
+  else shPL_ = pList;
+  shPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
 
   storageType = StorageTypeValidator->getIntegralValue(
-    *pList_, Storage_name, Storage_default);
+    *shPL_, Storage_name, Storage_default);
 
-  int storage_limit = pList_->get(StorageLimit_name, StorageLimit_default);
+  int storage_limit = shPL_->get(StorageLimit_name, StorageLimit_default);
 
   switch (storageType) {
   case STORAGE_TYPE_INVALID:
@@ -387,7 +387,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 SolutionHistory<Scalar>::getNonconstParameterList()
 {
-  return(pList_);
+  return(shPL_);
 }
 
 
@@ -395,8 +395,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 SolutionHistory<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
-  pList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = shPL_;
+  shPL_ = Teuchos::null;
   return(temp_plist);
 }
 

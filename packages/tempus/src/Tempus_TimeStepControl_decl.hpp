@@ -100,7 +100,7 @@ public:
   int nFailuresMax_;            ///< Maximum number of stepper failures
   int nConsecutiveFailuresMax_; ///< Maximum number of consecutive stepper failures
 
-  Teuchos::RCP<Teuchos::ParameterList> pList_;
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.

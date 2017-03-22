@@ -88,7 +88,7 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>              pList_;
+  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;

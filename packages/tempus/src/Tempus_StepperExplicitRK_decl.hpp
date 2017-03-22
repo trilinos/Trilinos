@@ -101,7 +101,7 @@ private:
 protected:
 
   std::string                                        description_;
-  Teuchos::RCP<Teuchos::ParameterList>               pList_;
+  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
 

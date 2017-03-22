@@ -68,8 +68,8 @@ void StepperDIRK<Scalar>::setSolver(std::string solverName)
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  RCP<ParameterList> solverPL = Teuchos::sublist(pList_, solverName, true);
-  pList_->set("Solver Name", solverName);
+  RCP<ParameterList> solverPL = Teuchos::sublist(stepperPL_, solverName, true);
+  stepperPL_->set("Solver Name", solverName);
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
   RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
   solver_->setParameterList(noxPL);
@@ -88,11 +88,11 @@ void StepperDIRK<Scalar>::setSolver(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  std::string solverName = pList_->get<std::string>("Solver Name");
+  std::string solverName = stepperPL_->get<std::string>("Solver Name");
   if (is_null(solverPL)) {
     // Create default solver, otherwise keep current solver.
     if (solver_ == Teuchos::null) {
-      solverPL = Teuchos::sublist(pList_, solverName, true);
+      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
       solver_ = rcp(new Thyra::NOXNonlinearSolver());
       RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
       solver_->setParameterList(noxPL);
@@ -101,11 +101,11 @@ void StepperDIRK<Scalar>::setSolver(
     TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
       std::logic_error,
          "Error - Trying to add a solver that is already in ParameterList!\n"
-      << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n"
-      << "  Solver Name  = "<<solverName<<"\n");
+      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
+      << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
-    pList_->set("Solver Name", solverName);
-    pList_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set("Solver Name", solverName);
+    stepperPL_->set(solverName, solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -126,8 +126,8 @@ void StepperDIRK<Scalar>::setSolver(
 
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
-  pList_->set("Solver Name", solverName);
-  pList_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set("Solver Name", solverName);
+  stepperPL_->set(solverName, solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -292,12 +292,12 @@ void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    pList_ = this->getDefaultParameters();
+    stepperPL_ = this->getDefaultParameters();
   } else {
-    pList_ = pList;
+    stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters.
-  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -335,7 +335,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperDIRK<Scalar>::getNonconstParameterList()
 {
-  return(pList_);
+  return(stepperPL_);
 }
 
 
@@ -343,8 +343,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperDIRK<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
-  pList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
+  stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

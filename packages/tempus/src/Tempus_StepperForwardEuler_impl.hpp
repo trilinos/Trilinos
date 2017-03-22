@@ -120,11 +120,11 @@ template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
-  else pList_ = pList;
-  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  else stepperPL_ = pList;
+  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = pList_->get<std::string>("Stepper Type");
+  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
     std::logic_error,
        "Error - Stepper Type is not 'Forward Euler'!\n"
@@ -159,7 +159,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getNonconstParameterList()
 {
-  return(pList_);
+  return(stepperPL_);
 }
 
 
@@ -167,8 +167,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
-  pList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
+  stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

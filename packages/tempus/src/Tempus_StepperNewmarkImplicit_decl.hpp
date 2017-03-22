@@ -106,13 +106,12 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>                         pList_;
-  Teuchos::RCP<SecondOrderResidualModelEvaluator<Scalar> >     residualModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >            solver_;
-  Teuchos::RCP<Stepper<Scalar> >                               predictorStepper_;
+  Teuchos::RCP<Teuchos::ParameterList>                     stepperPL_;
+  Teuchos::RCP<SecondOrderResidualModelEvaluator<Scalar> > residualModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >        solver_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>                    inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>                   outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>               outArgs_;
 
   Scalar beta_;
   Scalar gamma_;

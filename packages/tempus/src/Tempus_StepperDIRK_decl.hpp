@@ -115,7 +115,7 @@ private:
 protected:
 
   std::string                                       description_;
-  Teuchos::RCP<Teuchos::ParameterList>              pList_;
+  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
 
