@@ -294,8 +294,10 @@ private:
     part_t rootNode = 0; // track index of the root node for swapping
     // a bit awkward but efficient - save the children of root and final node
     // for swap at end to satisfy convention that root is highest index node
-    part_t saveRootNodeChildren[2];
-    part_t saveFinalNodeChildren[2];
+    part_t saveRootNodeChildrenA = -1;
+    part_t saveRootNodeChildrenB = -1;
+    part_t saveFinalNodeChildrenA = -1;
+    part_t saveFinalNodeChildrenB = -1;
     for(part_t n = numParts; n < numTreeNodes; ++n) { // scan and set all parents
       int parent = -1;
       int left_leaf = -1;
@@ -313,12 +315,12 @@ private:
       // save root node for final swap
       if(parent == 1 || parent == -1) { // is it the root?
         rootNode = n; // remember I am the root
-        saveRootNodeChildren[0] = leftIndex;
-        saveRootNodeChildren[1] = rightIndex;
+        saveRootNodeChildrenA = leftIndex;
+        saveRootNodeChildrenB = rightIndex;
       }
       if(n == numTreeNodes-1) {
-        saveFinalNodeChildren[0] = leftIndex;
-        saveFinalNodeChildren[1] = rightIndex;
+        saveFinalNodeChildrenA = leftIndex;
+        saveFinalNodeChildrenB = rightIndex;
       }
     }
     treeVertParents[rootNode] = -1; // convention parent is root -1
@@ -340,17 +342,17 @@ private:
       // swap the parent of the two nodes
       std::swap(treeVertParents[rootNode], treeVertParents[numTreeNodes-1]);
       // get the children of the swapped nodes to have updated parents
-      treeVertParents[saveFinalNodeChildren[0]] = rootNode;
-      treeVertParents[saveFinalNodeChildren[1]] = rootNode;
+      treeVertParents[saveFinalNodeChildrenA] = rootNode;
+      treeVertParents[saveFinalNodeChildrenB] = rootNode;
       // handle case where final node is child of the root
-      if(saveRootNodeChildren[0] == numTreeNodes - 1) {
-        saveRootNodeChildren[0] = rootNode;
+      if(saveRootNodeChildrenA == numTreeNodes - 1) {
+        saveRootNodeChildrenA = rootNode;
       }
-      if(saveRootNodeChildren[1] == numTreeNodes - 1) {
-        saveRootNodeChildren[1] = rootNode;
+      if(saveRootNodeChildrenB == numTreeNodes - 1) {
+        saveRootNodeChildrenB = rootNode;
       }
-      treeVertParents[saveRootNodeChildren[0]] = numTreeNodes - 1;
-      treeVertParents[saveRootNodeChildren[1]] = numTreeNodes - 1;
+      treeVertParents[saveRootNodeChildrenA] = numTreeNodes - 1;
+      treeVertParents[saveRootNodeChildrenB] = numTreeNodes - 1;
       // update the beg and end indices - simply swap them
       std::swap(splitRangeBeg[rootNode], splitRangeBeg[numTreeNodes-1]);
       std::swap(splitRangeEnd[rootNode], splitRangeEnd[numTreeNodes-1]);
