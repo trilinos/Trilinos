@@ -1055,7 +1055,7 @@ std::string EpetraExt::toString(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return ""; // Should never be called
+  TEUCHOS_UNREACHABLE_RETURN(""); // Should never be called
 }
 
 
@@ -1101,7 +1101,7 @@ std::string EpetraExt::toString( ModelEvaluator::EInArgsMembers inArg )
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid inArg!");
   }
-  return ""; // Will never be executed!
+  TEUCHOS_UNREACHABLE_RETURN(""); // Will never be executed!
 }
 
 
@@ -1127,7 +1127,7 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid outArg!");
   }
-  return ""; // Will never be executed!
+  TEUCHOS_UNREACHABLE_RETURN(""); // Will never be executed!
 }
 
 

@@ -65,16 +65,17 @@ NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
         const Teuchos::RCP<NOX::StatusTest::Generic>& t,
         const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()),
   solnPtr(xGrp),                               // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone
   testPtr(t),
-  paramsPtr(p),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  paramsPtr(p)
 {
-  init();
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utilsPtr = globalDataPtr->getUtils(); 
+  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  this->init();
 }
 
 // Protected

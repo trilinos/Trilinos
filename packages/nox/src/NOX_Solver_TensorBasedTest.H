@@ -157,6 +157,9 @@ public:
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+  virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
   //!  Return the direction object
   virtual const NOX::Direction::Tensor& getDirection() const;

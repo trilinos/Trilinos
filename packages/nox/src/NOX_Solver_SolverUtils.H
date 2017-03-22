@@ -59,7 +59,6 @@ namespace NOX {
 
   namespace Solver{
 
-
     /*! \brief Nonmember method that returns the status test check type.
 
         This object parses the "Solver Options" parameter list for a
@@ -75,6 +74,10 @@ namespace NOX {
     */
     NOX::StatusTest::CheckType
     parseStatusTestCheckType(Teuchos::ParameterList& solver_options_list);
+
+    /*! \brief Nonmember method that validates and sets the defaults for the "Solver Options" sublist. */
+    void
+    validateSolverOptionsSublist(Teuchos::ParameterList& solver_options_list);
 
   }  // namespace Solver
 }  // namespace NOX
