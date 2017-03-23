@@ -928,77 +928,7 @@ namespace MueLuTests {
     testBuildSampleElementToNodeMapThreeElementQuad<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
   }
   
-  template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
-  class TpetraMapMaker
-  {
-  public:
-    typedef Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> MapRCP;
-    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm);
-  };
-  
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
-  public:
-    typedef Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> MapRCP;
-    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm)
-    {
-      // for UseEpetra, we don't actually need to create any Tpetra Maps
-      return Teuchos::null;
-    }
-  };
-  
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseTpetra> {
-  public:
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    typedef Teuchos::RCP<Map> MapRCP;
-    static MapRCP makeMap(Tpetra::global_size_t numElements, std::vector<GlobalOrdinal> elements, GlobalOrdinal indexBase, Teuchos::RCP<Comm<int>> comm)
-    {
-      return Teuchos::rcp( new Map(numElements, elements, indexBase, comm ) );
-    }
-  };
-  
-  template<class LocalOrdinal, class GlobalOrdinal, class Node, Xpetra::UnderlyingLib libValue>
-  class EpetraMapMaker
-  {
-  public:
-    typedef Teuchos::RCP<Epetra_Map> MapRCP;
-    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm);
-    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm);
-  };
-  
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseEpetra> {
-  public:
-    typedef Epetra_Map Map;
-    typedef Teuchos::RCP<Map> MapRCP;
-    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
-    {
-      return Teuchos::rcp( new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, Comm) );
-    }
-    
-    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm)
-    {
-      return Teuchos::rcp( new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, Comm) );
-    }
-  };
-  
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class EpetraMapMaker<LocalOrdinal, GlobalOrdinal, Node, Xpetra::UseTpetra> {
-  public:
-    typedef Epetra_Map Map;
-    typedef Teuchos::RCP<Map> MapRCP;
-    static MapRCP makeMap(int NumGlobalElements, int NumMyElements, const int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
-    {
-      return Teuchos::null; // no Epetra map for UseTpetra
-    }
-    
-    static MapRCP makeMap(long long NumGlobalElements, int NumMyElements, const long long *MyGlobalElements, long long IndexBase, const Epetra_Comm &Comm)
-    {
-      return Teuchos::null; // no Epetra map for UseTpetra
-    }
-  };
-  
+
   template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
   void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
   {
@@ -1060,13 +990,13 @@ namespace MueLuTests {
           return (GID >= startingGID) && (GID < startingGID + numRankLocalElements);
         };
         
-        vector<GlobalOrdinal> myRowGIDs(numRankLocalElements);
+	Teuchos::Array<GlobalOrdinal> myRowGIDs(numRankLocalElements);
         for (int i=0; i<numRankLocalElements; i++)
         {
           myRowGIDs[i] = startingGID + i;
         }
         // colMap sees all local rows, plus any non-local IDs they talk to:
-        vector<GlobalOrdinal> myColGIDs = myRowGIDs;
+	Teuchos::Array<GlobalOrdinal> myColGIDs = myRowGIDs;
         set<GlobalOrdinal> offRankGIDs;
         for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
         {
@@ -1100,44 +1030,11 @@ namespace MueLuTests {
         // add off-rank GIDs to the end of the colMapGIDs:
         myColGIDs.insert(myColGIDs.end(), offRankGIDs.begin(), offRankGIDs.end());
         
-        if (lib==Xpetra::UseTpetra)
-        {
-#ifdef HAVE_MUELU_TPETRA
-          GlobalOrdinal indexBase = 0;
-          typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-          typedef RCP<const Map> MapRCP;
-          typedef TpetraMapMaker<LocalOrdinal,GlobalOrdinal,Node,lib> MapMaker;
-          MapRCP rowMapTpetra, colMapTpetra;
-          Tpetra::global_size_t rowCount = Tpetra::global_size_t(myRowGIDs.size());
-          rowMapTpetra = MapMaker::makeMap(rowCount, myRowGIDs, indexBase, serialComm);
-          rowMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(rowMapTpetra);
-          Tpetra::global_size_t columnCount = Tpetra::global_size_t(myColGIDs.size());
-          colMapTpetra = MapMaker::makeMap(columnCount, myColGIDs, indexBase, serialComm);
-          colMapRCP = Xpetra::toXpetra<LocalOrdinal,GlobalOrdinal,Node>(colMapTpetra);
-#else
-          out << "lib==Xpetra::UseTpetra, but HAVE_MUELU_TPETRA is not defined...\n";
-          success = false;
-          return;
-#endif
-        }
-        else
-        {
-#ifdef HAVE_MUELU_EPETRA
-          GlobalOrdinal indexBase = 0;
-          Epetra_SerialComm Comm;
-          typedef EpetraMapMaker<LocalOrdinal,GlobalOrdinal,Node,lib> MapMaker;
-          typedef RCP<const Epetra_Map> MapRCP;
-          MapRCP rowMapEpetra, colMapEpetra;
-          rowMapEpetra = MapMaker::makeMap(int(myRowGIDs.size()), int(myRowGIDs.size()), &myRowGIDs[0], int(indexBase), Comm);
-          rowMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(*rowMapEpetra);
-          colMapEpetra = MapMaker::makeMap(int(myColGIDs.size()), int(myColGIDs.size()), &myColGIDs[0], int(indexBase), Comm);
-          colMapRCP = Xpetra::toXpetra<GlobalOrdinal,Node>(*colMapEpetra);
-#else
-          out << "lib==Xpetra::UseEpetra, but HAVE_MUELU_EPETRA is not defined...\n";
-          success = false;
-          return;
-#endif
-        }
+	GlobalOrdinal indexBase = 0;
+	GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+	rowMapRCP = MapFactory::Build(lib,GO_INVALID,myRowGIDs().getConst(), indexBase,serialComm);
+	colMapRCP = MapFactory::Build(lib,GO_INVALID,myColGIDs().getConst(), indexBase,serialComm);
+
         
         // rewrite elementToNodeMap to contain only LIDs, and determine expected seeds
         for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
@@ -1367,7 +1264,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     
     Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
-    
     TEST_FIND_SEEDS(testFindSeedsParallel,ptype,E)
   }
   
@@ -1376,7 +1272,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
-    
     TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL,E)
   }
   
@@ -1385,7 +1280,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     
     Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
-    
     TEST_FIND_SEEDS(testFindSeedsSerial,ptype,E)
   }
   
@@ -1394,7 +1288,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
-    
     TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL,E)
   }
   
@@ -1403,7 +1296,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     
     Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
-    
     TEST_FIND_SEEDS(testFindSeedsParallel,ptype,T)
   }
   
@@ -3199,6 +3091,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
+
+
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
@@ -3419,102 +3313,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
-  
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2_TopoSmoother, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#   endif
-#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#   endif
-    
-    // don't run this test if in Epetra mode (no Ifpack implementation, only Ifpack2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-    
-    typedef Scalar SC;
-    typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO;
-    typedef Node  NO;
-    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
-    
-    out << "version: " << MueLu::Version() << std::endl;
-    using Teuchos::RCP;
-    int degree=4;
-    std::string hi_basis("hgrad_line_c4");
-    
-    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    
-    GO num_nodes = 972;
-    // Build a pseudo-poisson test matrix
-    FCi elem_to_node;
-    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
-
-    /*
-    int numElements = elem_to_node.dimension(0);
-    int numNodesPerElement = elem_to_node.dimension(1);
-    for (int elemOrdinal=0; elemOrdinal<numElements; elemOrdinal++)
-    {
-      cout << "element " << elemOrdinal << " nodes: ";
-      for (int node=0; node<numNodesPerElement; node++)
-        cout << elem_to_node(elemOrdinal,node) << " ";
-      cout << endl;
-    }*/
-    
-    // Normalized RHS
-    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
-    RHS1->setSeed(846930886);
-    RHS1->randomize();
-    Teuchos::Array<MT> norms(1);
-    RHS1->norm2(norms);
-    RHS1->scale(1/norms[0]);
-    
-    // Zero initial guess
-    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
-    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-    
-    // ParameterList
-    ParameterList Params;
-    Params.set("multigrid algorithm","pcoarsen");
-    Params.set("verbosity","high");
-    Params.set("max levels",3);
-    Params.set("coarse: max size",5);
-    Params.set("smoother: type","TOPOLOGICAL");
-    Params.set("smoother: neighborhood type", "node");
-    Params.set("pcoarsen: element","hgrad_line_c");   
-    Params.set("pcoarsen: schedule","{4,3,2}");
-
-    ParameterList & smoo = Params.sublist("smoother: params");
-    smoo.set("smoother: neighborhood type", "node");
-
-    ParameterList & level0 = Params.sublist("level 0");
-    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
-       
-
-#if 0
-    // DEBUG
-    ParameterList dump;
-    dump.set("A","{0,1,2}");
-    dump.set("P","{0,1}");
-    dump.set("R","{0,1}");
-    dump.set("pcoarsen: element to node map","{0,1,2}");
-    Params.set("export data",dump);
-#endif
-    
-    // Build hierarchy
-    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
-  }
-  
   /*********************************************************************************************************************/
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
@@ -3543,7 +3341,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2_TopoSmoother, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node) \
