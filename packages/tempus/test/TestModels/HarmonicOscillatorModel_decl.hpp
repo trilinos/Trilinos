@@ -20,20 +20,21 @@ namespace Tempus_Test {
 /** \brief 
   * Consider the ODE: 
   *   \f[
-  *   \ddot{x} + c\dot{x} + kx=f
+  *   m\ddot{x} + c\dot{x} + kx=f
   *   \f]
-  * where \f$k \geq 0\f$ is a constant, \f$c\f$ is a constant damping parameter, \f$f\f$ is a constant forcing parameter, with initial conditions are:
+  * where \f$k \geq 0\f$ is a constant, \f$c\f$ is a constant damping parameter, \f$f\f$ is a constant forcing parameter,
+  * and \f$m>0\f$ is a constant mass parameter, with initial conditions are:
   *   \f{eqnarray*}{
   *     x(0) & = & 0\\
   *     \dot{x}(0) & = & 1
   *   \f}
   * It is straight-forward to show that the exact solution to this ODE is:
   *   \f{eqnarray*}{
-  *     x(t) & = & t(1+0.5ft),  \hspace{3.6cm} if  \hspace{0.2cm} k = c = 0 \\
-  *          & = & \frac{(c-f)}{c^2}(1-e^{-ct}) + \frac{f}{c}t, \hspace{1.9cm} if \hspace{0.2cm} k = 0, c\neq 0 \\
-  *          & = & \frac{1}{\sqrt{k}}\sin(\sqrt{k}t) + \frac{f}{k}\left(1-\cos(\sqrt{k}t) \right), \hspace{0.2cm} if \hspace{0.2cm} k > 0, c = 0
+  *     x(t) & = & t(1+0.5\tilde{f}t),  \hspace{3.6cm} if  \hspace{0.2cm} k = c = 0 \\
+  *          & = & \frac{(\tilde{c}-\tilde{f})}{\tilde{c}^2}(1-e^{-\tilde{c}t}) + \frac{f}{c}t, \hspace{1.9cm} if \hspace{0.2cm} k = 0, c\neq 0 \\
+  *          & = & \frac{1}{\sqrt{\tilde{k}}}\sin(\sqrt{\tilde{k}}t) + \frac{f}{k}\left(1-\cos(\sqrt{\tilde{k}}t) \right), \hspace{0.2cm} if \hspace{0.2cm} k > 0, c = 0
   *   \f}
-  * While it is possible to derive the solution to this ODE for the case when \f$k > 0\f$ and \f$c \neq 0\f$,
+  * where \f$\tilde{c}\equiv c/m\f$, \f$\tilde{k}\equiv k/m\f$ and \f$\tilde{f}\equiv f/m\f$.  While it is possible to derive the solution to this ODE for the case when \f$k > 0\f$ and \f$c \neq 0\f$,
   * we do not consider that case here.  When \f$c = k = 0\f$ and \f$f=-1\f$,
   * our ODE simplies to a 
   * canonical differential equation model of a ball thrown up
