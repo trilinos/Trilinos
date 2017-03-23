@@ -48,13 +48,6 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
-#include <Teuchos_ScalarTraits.hpp>
-//#include <Teuchos_SerialDenseMatrix.hpp>   // TODO remove me
-//#include <Teuchos_SerialQRDenseSolver.hpp> // TODO remove me
-
-#include <Teuchos_LAPACK.hpp> // TODO remove me
-
-//#include <Tsqr_Matrix.hpp>
 #include "Kokkos_UnorderedMap.hpp"
 
 #include "MueLu_TentativePFactory_kokkos_decl.hpp"
