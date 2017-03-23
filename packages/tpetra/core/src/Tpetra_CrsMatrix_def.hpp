@@ -2264,20 +2264,20 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                       const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                       const Teuchos::ArrayView<const Scalar>& values,
+  sumIntoGlobalValues (const GlobalOrdinal gblRow,
+                       const Teuchos::ArrayView<const GlobalOrdinal>& gblInputInds,
+                       const Teuchos::ArrayView<const Scalar>& inputVals,
                        const bool atomic)
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
 
-    if (! isFillActive ()) {
+    if (! this->isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
@@ -2286,56 +2286,111 @@ namespace Tpetra {
     // because they touch RCP's reference count, which is not thread
     // safe.  Dereferencing an RCP or calling op-> does not touch the
     // reference count.
-    const LO lrow = this->staticGraph_.is_null () ?
-      myGraph_->rowMap_->getLocalElement (globalRow) :
-      staticGraph_->rowMap_->getLocalElement (globalRow);
-    //const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
+    const LO lclRow = this->staticGraph_.is_null () ?
+      this->myGraph_->rowMap_->getLocalElement (gblRow) :
+      this->staticGraph_->rowMap_->getLocalElement (gblRow);
+    //const LO lclRow = this->getRowMap ()->getLocalElement (gblRow);
 
-    if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
-      // globalRow is not in the row Map, so stash the given entries
+    if (lclRow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // gblRow is not in the row Map, so stash the given entries
       // away in a separate data structure.  globalAssemble() (called
       // during fillComplete()) will exchange that data and sum it in
       // using sumIntoGlobalValues().
-      this->insertNonownedGlobalValues (globalRow, indices, values);
+      this->insertNonownedGlobalValues (gblRow, gblInputInds, inputVals);
       // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
-      // since we won't know whether the given indices were valid
+      // since we won't know whether the input indices were valid
       // until globalAssemble (called in fillComplete) is called.
       // That's why insertNonownedGlobalValues doesn't return
       // anything.  Just for consistency, I'll return the number of
       // entries that the user gave us.
-      return static_cast<LO> (indices.size ());
+      return static_cast<LO> (gblInputInds.size ());
     }
-
-    if (staticGraph_.is_null ()) {
+    else if (this->staticGraph_.is_null ()) {
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const RowInfo rowInfo = this->staticGraph_->getRowInfo (lrow);
-
-    auto curVals = this->getRowViewNonConst (rowInfo);
-    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-    View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
-    View<const GO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
-                                                 indices.size ());
-    return staticGraph_->template sumIntoGlobalValues<ST, HD, DD> (rowInfo,
-                                                                   curVals,
-                                                                   indsIn,
-                                                                   valsIn,
-                                                                   atomic);
+    else {
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      const IST* inputValsRaw = reinterpret_cast<const IST*> (inputVals.getRawPtr ());
+      // 'inputVals' and 'gblInputInds' come from the user, so they are host data.
+      View<const IST*, HD, MemoryUnmanaged> valsIn (inputValsRaw, inputVals.size ());
+      View<const GO*, HD, MemoryUnmanaged> indsIn (gblInputInds.getRawPtr (),
+                                                   gblInputInds.size ());
+      return staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn,
+                                                                      atomic);
+    }
   }
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValues (const GlobalOrdinal globalRow,
+  sumIntoGlobalValues (const GlobalOrdinal gblRow,
                        const LocalOrdinal numEnt,
-                       const Scalar vals[],
-                       const GlobalOrdinal cols[],
+                       const Scalar inputVals[],
+                       const GlobalOrdinal gblInputInds[],
                        const bool atomic)
   {
-    Teuchos::ArrayView<const GlobalOrdinal> colsIn (cols, numEnt);
-    Teuchos::ArrayView<const Scalar> valsIn (vals, numEnt);
-    return this->sumIntoGlobalValues (globalRow, colsIn, valsIn, atomic);
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
+    if (! this->isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    // mfh 26 Nov 2015: Avoid calling getRowMap() or getCrsGraph(),
+    // because they touch RCP's reference count, which is not thread
+    // safe.  Dereferencing an RCP or calling op-> does not touch the
+    // reference count.
+    const LO lclRow = this->staticGraph_.is_null () ?
+      this->myGraph_->rowMap_->getLocalElement (gblRow) :
+      this->staticGraph_->rowMap_->getLocalElement (gblRow);
+    //const LO lclRow = this->getRowMap ()->getLocalElement (gblRow);
+
+    if (lclRow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // mfh 23 Mar 2017: This branch is not thread safe in a debug
+      // build, in part because it uses Teuchos::ArrayView.
+      using Teuchos::ArrayView;
+      ArrayView<const GO> gblInputInds_av (numEnt == 0 ? NULL : gblInputInds, numEnt);
+      ArrayView<const Scalar> inputVals_av (numEnt == 0 ? NULL : inputVals, numEnt);
+
+      // gblRow is not in the row Map, so stash the given entries away
+      // in a separate data structure.  globalAssemble() (called
+      // during fillComplete()) will exchange that data and sum it in
+      // using sumIntoGlobalValues().
+      this->insertNonownedGlobalValues (gblRow, gblInputInds_av, inputVals_av);
+      // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
+      // since we won't know whether the given indices were valid
+      // until globalAssemble (called in fillComplete) is called.
+      // That's why insertNonownedGlobalValues doesn't return
+      // anything.  Just for consistency, I'll return the number of
+      // entries that the user gave us.
+      return numEnt;
+    }
+    else if (this->staticGraph_.is_null ()) {
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else {
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      const IST* inputValsIST = reinterpret_cast<const IST*> (inputVals);
+      View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : inputValsIST, numEnt);
+      View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : gblInputInds, numEnt);
+      return staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn,
+                                                                      atomic);
+    }
   }
 
 
