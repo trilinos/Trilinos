@@ -3,6 +3,7 @@
     <Parameter name="Damping coeff c" type="double" value="1.0"/>
     <Parameter name="Forcing coeff f" type="double" value="-1.0"/>
     <Parameter name="x coeff k" type="double" value="0.0"/>
+    <Parameter name="Mass coeff m" type="double" value="1.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>

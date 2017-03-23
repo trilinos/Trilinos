@@ -30,9 +30,15 @@ HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
 {
   isInitialized_ = false;
   setParameterList(pList_);
-  *out_ << "\n \n Damping coeff c = " << c_ << "\n"; 
+  *out_ << "\n\nDamping coeff c = " << c_ << "\n"; 
   *out_ << "Forcing coeff f = " << f_ << "\n"; 
-  *out_ << "x coeff k = " << k_ << "\n"; 
+  *out_ << "x coeff k = " << k_ << "\n";
+  *out_ << "Mass coeff m = " << m_ << "\n";
+  //Divide all coefficients by m_ 
+  k_ /= m_; 
+  f_ /= m_; 
+  c_ /= m_; 
+  m_ = 1.0; 
   //Set up space and initial guess for solution vector
   vecLength_ = 1;
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(vecLength_);
@@ -376,6 +382,11 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   c_ = get<Scalar>(*pl,"Damping coeff c");
   f_ = get<Scalar>(*pl,"Forcing coeff f");
   k_ = get<Scalar>(*pl,"x coeff k");
+  m_ = get<Scalar>(*pl,"Mass coeff m");
+  if (m_ <= 0.0) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Error: invalid value of Mass coeff m = " << m_ <<"!  Mass coeff m must be > 0.\n");
+  }
   if (k_ < 0.0) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Error: invalid value of x coeff k = " << k_ <<"!  x coeff k must be >= 0.\n");
@@ -402,6 +413,8 @@ getValidParameters() const
         "Forcing coeff f", -1.0, "Forcing coefficient in model", &*pl);
     Teuchos::setDoubleParameter(
         "x coeff k", 0.0, "x coefficient in model", &*pl);
+    Teuchos::setDoubleParameter(
+        "Mass coeff m", 1.0, "Mass coefficient in model", &*pl);
   }
   return validPL;
 }

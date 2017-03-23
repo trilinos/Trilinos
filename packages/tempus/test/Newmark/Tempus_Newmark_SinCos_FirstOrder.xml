@@ -4,6 +4,7 @@
     <Parameter name="Forcing coeff f" type="double" value="0.0"/>
     <!--We set sqrt(k) = 2*pi, so that the period of the solution is 1-->
     <Parameter name="x coeff k" type="double" value="39.4784176"/>
+    <Parameter name="Mass coeff m" type="double" value="1.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>

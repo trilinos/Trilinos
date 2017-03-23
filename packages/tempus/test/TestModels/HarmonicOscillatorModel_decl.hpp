@@ -113,6 +113,7 @@ private:
   double c_; //damping coefficient
   double f_; //forcing coefficient
   double k_; //coefficient multiplying x in ODE 
+  double m_; //mass coefficient
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 
