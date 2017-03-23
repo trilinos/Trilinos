@@ -35,7 +35,7 @@ namespace Tempus_Test {
   *          & = & \frac{1}{\sqrt{\tilde{k}}}\sin(\sqrt{\tilde{k}}t) + \frac{f}{k}\left(1-\cos(\sqrt{\tilde{k}}t) \right), \hspace{0.2cm} if \hspace{0.2cm} k > 0, c = 0
   *   \f}
   * where \f$\tilde{c}\equiv c/m\f$, \f$\tilde{k}\equiv k/m\f$ and \f$\tilde{f}\equiv f/m\f$.  While it is possible to derive the solution to this ODE for the case when \f$k > 0\f$ and \f$c \neq 0\f$,
-  * we do not consider that case here.  When \f$c = k = 0\f$ and \f$f=-1\f$,
+  * we do not consider that case here.  When \f$c = k = 0\f$, \f$m=1\f$, and \f$f=-1\f$,
   * our ODE simplies to a 
   * canonical differential equation model of a ball thrown up
   * in the air, with a parabolic trajectory solution, namely 
@@ -44,7 +44,7 @@ namespace Tempus_Test {
   *    \f]
   * where \f$t\in [0,2]\f$.  An EpetraExt version of this simplified version of the test is implemented in
   * Piro::MockModelEval_B (see Trilinos/packages/piro/test), where it is used to test the Piro (EpetraExt)
-  * Newmark-Beta scheme (see input_Solver_NB.xml input file).  When \f$c = f = 0\f$ and  \f$k = 1\f$, 
+  * Newmark-Beta scheme (see input_Solver_NB.xml input file).  When \f$c = f = 0\f$ and  \f$m=k = 1\f$, 
   * this test is equivalent to the SinCos model..
   */
 
