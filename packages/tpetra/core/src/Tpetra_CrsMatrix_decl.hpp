@@ -3706,6 +3706,30 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar>& values,
                          const Tpetra::CombineMode combineMode);
 
+    /// \brief Combine in the data using the given combine mode.
+    ///
+    /// The copyAndPermute() and unpackAndCombine() methods may this
+    /// function to combine incoming entries from the source matrix
+    /// with the target matrix's current data.  This method's behavior
+    /// depends on whether the target matrix (that is, this matrix)
+    /// has a static graph.
+    ///
+    /// \param lclRow [in] <i>Local</i> row index of the row to modify.
+    /// \param numEnt [in] Number of entries in the input data.
+    /// \param vals [in] Input values to combine.
+    /// \param cols [in] Input (global) column indices corresponding
+    ///   to the above values.
+    /// \param combineMode [in] The CombineMode to use.
+    ///
+    /// \return The number of modified entries.  No error if and only
+    ///   if equal to numEnt.
+    LocalOrdinal
+    combineGlobalValuesRaw (const LocalOrdinal lclRow,
+                            const LocalOrdinal numEnt,
+                            const impl_scalar_type vals[],
+                            const GlobalOrdinal cols[],
+                            const Tpetra::CombineMode combineMode);
+
     /// \brief Transform CrsMatrix entries, using global indices;
     ///   backwards compatibility version that takes
     ///   Teuchos::ArrayView instead of Kokkos::View.

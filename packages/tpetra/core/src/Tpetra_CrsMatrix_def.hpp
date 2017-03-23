@@ -5886,16 +5886,30 @@ namespace Tpetra {
              const LocalOrdinal lclRow,
              const Tpetra::CombineMode combineMode)
   {
+    typedef impl_scalar_type IST;
+
     if (tmpSize < numEnt || (numEnt != 0 && (valInTmp == NULL || indInTmp == NULL))) {
       return false;
     }
     memcpy (valInTmp, valIn, numEnt * sizeof (Scalar));
     memcpy (indInTmp, indIn, numEnt * sizeof (GlobalOrdinal));
-    const GlobalOrdinal gblRow = this->getRowMap ()->getGlobalElement (lclRow);
-    Teuchos::ArrayView<Scalar> val ((numEnt == 0) ? NULL : valInTmp, numEnt);
-    Teuchos::ArrayView<GlobalOrdinal> ind ((numEnt == 0) ? NULL : indInTmp, numEnt);
-    this->combineGlobalValues (gblRow, ind, val, combineMode);
-    return true;
+
+    // FIXME (mfh 23 Mar 2017) It would make sense to use the return
+    // value here as more than just a "did it succeed" Boolean test.
+    //
+    // TODO (mfh 23 Mar 2017) Push IST up above unpackRow, so that
+    // unpackRow takes an IST* for valInTmp.
+    IST* const valInTmpIST = reinterpret_cast<IST*> (valInTmp);
+
+    // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
+    // expects this method to ignore incoming entries that do not
+    // exist on the process that owns those rows.
+
+    //const LocalOrdinal numModified =
+      this->combineGlobalValuesRaw (lclRow, numEnt, valInTmpIST, indInTmp,
+                                    combineMode);
+    return true; // FIXME (mfh 23 Mar 2013) See above.
+    //return numModified == numEnt;
   }
 
 
@@ -6044,6 +6058,95 @@ namespace Tpetra {
       << ", bufSize: " << bufSize << ", offset: " << firstBadOffset
       << ", numBytes: " << firstBadNumBytes << ".");
   }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  combineGlobalValuesRaw (const LocalOrdinal lclRow,
+                          const LocalOrdinal numEnt,
+                          const impl_scalar_type vals[],
+                          const GlobalOrdinal cols[],
+                          const Tpetra::CombineMode combineMode)
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef Kokkos::Device<typename View<LO*, DD>::HostMirror::execution_space, Kokkos::HostSpace> HD;
+    //const char tfecfFuncName[] = "combineGlobalValuesRaw: ";
+
+    if (this->isStaticGraph ()) {
+      // INSERT doesn't make sense for a static graph, since you
+      // aren't allowed to change the structure of the graph.
+      // However, all the other combine modes work.
+
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      if (static_cast<LO> (rowInfo.localRow) != lclRow) {
+        return static_cast<LO> (0); // invalid local row
+      }
+      auto curVals = this->getRowViewNonConst (rowInfo);
+
+      if (combineMode == ADD) {
+        View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : vals, numEnt);
+        View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : cols, numEnt);
+        // NOTE (mfh 23 Mar 2017): For now, different threads will
+        // unpack different rows, so we don't need atomic updates.  If
+        // we change that in the future, we'll need to change this.
+        constexpr bool atomic = false;
+        return this->staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                              curVals,
+                                                                              indsIn,
+                                                                              valsIn,
+                                                                              atomic);
+      }
+      else if (combineMode == REPLACE) {
+        typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+        typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+        typedef typename std::decay<decltype (curVals) >::type OSVT; // output scalar view type
+        ISVT valsIn (numEnt == 0 ? NULL : vals, numEnt);
+        GIVT indsIn (numEnt == 0 ? NULL : cols, numEnt);
+
+        // // NOTE (mfh 23 Mar 2017): For now, different threads will
+        // // unpack different rows, so we don't need atomic updates.  If
+        // // we change that in the future, we'll need to change this.
+        // constexpr bool atomic = false;
+        return this->staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
+                                                                                   curVals,
+                                                                                   indsIn,
+                                                                                   valsIn);
+      }
+      else {
+        // mfh 23 Mar 2017: This branch is not thread safe in a debug
+        // build, due to use of Teuchos::ArrayView; see #229.
+        const GO gblRow = this->staticGraph_->rowMap_->getGlobalElement (lclRow);
+        Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+        Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
+
+        // FIXME (mfh 23 Mar 2017) This is a work-around for less
+        // common combine modes.  combineGlobalValues throws on error;
+        // it does not return an error code.  Thus, if it returns, it
+        // succeeded.
+        this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+        return numEnt;
+      }
+    }
+    else { // no static graph
+      // mfh 23 Mar 2017: This branch is not thread safe in a debug
+      // build, due to use of Teuchos::ArrayView; see #229.
+      const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
+      Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+      Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
+
+      // FIXME (mfh 23 Mar 2017) This is a work-around for less common
+      // combine modes.  combineGlobalValues throws on error; it does
+      // not return an error code.  Thus, if it returns, it succeeded.
+      this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+      return numEnt;
+    }
+  }
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
