@@ -3437,7 +3437,7 @@ namespace Tpetra {
     ///
     /// \return \c true if the method succeeded, else \c false.
     bool
-    unpackRow (Scalar* const valInTmp,
+    unpackRow (impl_scalar_type* const valInTmp,
                GlobalOrdinal* const indInTmp,
                const size_t tmpNumEnt,
                const char* const valIn,

@@ -61,6 +61,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include <typeinfo>
+#include <vector>
 
 namespace Tpetra {
 //
@@ -5877,7 +5878,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackRow (Scalar* const valInTmp,
+  unpackRow (impl_scalar_type* const valInTmp,
              GlobalOrdinal* const indInTmp,
              const size_t tmpSize,
              const char* const valIn,
@@ -5896,17 +5897,15 @@ namespace Tpetra {
 
     // FIXME (mfh 23 Mar 2017) It would make sense to use the return
     // value here as more than just a "did it succeed" Boolean test.
-    //
-    // TODO (mfh 23 Mar 2017) Push IST up above unpackRow, so that
-    // unpackRow takes an IST* for valInTmp.
-    IST* const valInTmpIST = reinterpret_cast<IST*> (valInTmp);
 
     // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
     // expects this method to ignore incoming entries that do not
-    // exist on the process that owns those rows.
+    // exist on the process that owns those rows.  We would like to
+    // distinguish between "errors" resulting from ignored entries,
+    // vs. actual errors.
 
     //const LocalOrdinal numModified =
-      this->combineGlobalValuesRaw (lclRow, numEnt, valInTmpIST, indInTmp,
+      this->combineGlobalValuesRaw (lclRow, numEnt, valInTmp, indInTmp,
                                     combineMode);
     return true; // FIXME (mfh 23 Mar 2013) See above.
     //return numModified == numEnt;
@@ -6308,32 +6307,11 @@ namespace Tpetra {
                         Distributor & /* distor */,
                         CombineMode combineMode)
   {
-    using Teuchos::Array;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine: ";
-
-#ifdef HAVE_TPETRA_DEBUG
-    const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
-    const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
-    const int numValidModes = 4;
-
-    if (std::find (validModes, validModes+numValidModes, combineMode) ==
-        validModes+numValidModes) {
-      std::ostringstream os;
-      os << "Invalid combine mode.  Valid modes are {";
-      for (int k = 0; k < numValidModes; ++k) {
-        os << validModeNames[k];
-        if (k < numValidModes - 1) {
-          os << ", ";
-        }
-      }
-      os << "}.";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::invalid_argument, os.str ());
-    }
-#endif // HAVE_TPETRA_DEBUG
 
     const size_type numImportLIDs = importLIDs.size ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -6372,8 +6350,8 @@ namespace Tpetra {
     // aliasing rules, we memcpy each incoming row's data into these
     // temporary arrays.  We double their size every time we run out
     // of storage.
-    Array<Scalar> valInTmp;
-    Array<GO> indInTmp;
+    std::vector<IST> valInTmp;
+    std::vector<GO> indInTmp;
     for (size_type i = 0; i < numImportLIDs; ++i) {
       const LO lclRow = importLIDs[i];
       const size_t numBytes = numPacketsPerLID[i];
@@ -6389,10 +6367,10 @@ namespace Tpetra {
 
         const char* const valBeg = numEntEnd;
         const char* const valEnd =
-          valBeg + static_cast<size_t> (numEnt) * sizeof (Scalar);
+          valBeg + static_cast<size_t> (numEnt) * sizeof (IST);
         const char* const indBeg = valEnd;
         const size_t expectedNumBytes = sizeof (LO) +
-          static_cast<size_t> (numEnt) * (sizeof (Scalar) + sizeof (GO));
+          static_cast<size_t> (numEnt) * (sizeof (IST) + sizeof (GO));
 
         if (expectedNumBytes > numBytes) {
           firstBadIndex = i;
@@ -6421,7 +6399,7 @@ namespace Tpetra {
           indInTmp.resize (tmpNumEnt);
         }
         unpackErr =
-          ! unpackRow (valInTmp.getRawPtr (), indInTmp.getRawPtr (), tmpNumEnt,
+          ! unpackRow (valInTmp.data (), indInTmp.data (), tmpNumEnt,
                        valBeg, indBeg, numEnt, lclRow, combineMode);
         if (unpackErr) {
           firstBadIndex = i;
