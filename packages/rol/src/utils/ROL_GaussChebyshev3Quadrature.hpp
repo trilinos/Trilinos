@@ -44,6 +44,10 @@
 #ifndef ROL_GAUSSCHEBYSHEV3QUADRATURE_HPP
 #define ROL_GAUSSCHEBYSHEV3QUADRATURE_HPP
 
+#if defined(_MSC_VER) && !defined(M_PI)
+#define _USE_MATH_DEFINES
+#endif
+
 #include "ROL_Quadrature1D.hpp"
 #include <cmath>
 

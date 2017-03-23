@@ -134,7 +134,7 @@ private:
   public: 
     Mask( bool complement ) : complement_(complement) {}
     Real apply( const Real &x, const Real &y ) const {
-      return ( complement_ xor (y !=0) ) ? 0 : x;
+      return ( complement_ ^ (y !=0) ) ? 0 : x;
     } 
   }; // class Mask
 
