@@ -272,7 +272,6 @@ namespace MueLu {
         // put it in the flat array, "localQR" (in column major format) for the
         // QR routine.
         shared_matrix localQR(thread.team_shmem(),aggSize,fineNS.dimension_1());
-
         for (size_t j = 0; j < fineNS.dimension_1(); j++)
           for (LO k = 0; k < aggSize; k++)
             localQR(k,j) = fineNS(agg2RowMapLO(aggRows(agg)+k),j);
@@ -290,7 +289,6 @@ namespace MueLu {
             return;
           }
         }
-
         // calculate row offset for coarse nullspace
         Xpetra::global_size_t offset = agg * fineNS.dimension_1();
 
@@ -306,6 +304,7 @@ namespace MueLu {
           shared_vector e(thread.team_shmem(),aggSize); //unit vector
           shared_matrix qk(thread.team_shmem(),aggSize,aggSize);  // memory cotaining one householder reflection part
           shared_matrix qt (thread.team_shmem(),aggSize,aggSize); // temporary
+          shared_vector x(thread.team_shmem(),aggSize);
 
           // standard case
           // do local QR decomposition
@@ -317,7 +316,9 @@ namespace MueLu {
             matrix_minor(z,r,k);
 
             // extract k-th column from current minor
-            auto x  = subview(r, Kokkos::ALL (), k);
+            //auto x  = subview(r, Kokkos::ALL (), k);
+            for(decltype(x.dimension_0()) i = 0; i < x.dimension_0(); i++)
+              x(i) = r(i,k);
             SC   xn = vnorm(x); // calculate 2-norm of current column vector
             if(localQR(k,k) > 0) xn = -xn;
 
@@ -346,13 +347,10 @@ namespace MueLu {
           // build R part
           matrix_mul ( q, localQR, r);
 
-          //Xpetra::global_size_t offset = agg * fineNS.dimension_1(); // calculate row offset for coarse nullspace
-
           // upper triangular part of R build coarse NS
           for(decltype(fineNS.dimension_1()) j = 0; j < fineNS.dimension_1(); j++)
             for(decltype(j) k = 0; k <= j; k++)
               coarseNS(offset+k,j) = r(k,j);
-
           // Don't forget to transpose q
           matrix_transpose(q);
         } else {
@@ -477,11 +475,11 @@ namespace MueLu {
         typedef Kokkos::ArithTraits<SC>     ATS;
         SC one = ATS::one();
 
-        for (LO i = 0; i < d; i++) {
+        for (decltype(d) i = 0; i < d; i++) {
           matminor(i,i) = one;
         }
-        for (LO i = d; i < mat.dimension_0(); i++) {
-          for (LO j=d; j < mat.dimension_1(); j++) {
+        for (decltype(mat.dimension_0()) i = d; i < mat.dimension_0(); i++) {
+          for (decltype(mat.dimension_1()) j=d; j < mat.dimension_1(); j++) {
             matminor(i,j) = mat(i,j);
           }
         }
@@ -538,7 +536,7 @@ namespace MueLu {
       size_t team_shmem_size( int team_size ) const {
         return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,fineNS.dimension_1()) + // mat + matminor + z
                3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,maxAggDofSize) +  // qk and q and qt
-               Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize); // e
+               2 * Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize); // e, x
       }
     };
 
@@ -730,6 +728,7 @@ namespace MueLu {
     for(LO i = 0; i < sizes.dimension_0(); i++) {
       if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
     }
+
 
     // parallel_scan (exclusive)
     // The Kokkos::View sizes then contains the aggreate Dof offsets
@@ -933,6 +932,7 @@ namespace MueLu {
     PtentCrs->resumeFill();  // we need that for rectangular matrices
     PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
     Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
+
 #else
     Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> PtentCrs = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
