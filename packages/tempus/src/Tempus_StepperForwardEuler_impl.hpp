@@ -77,6 +77,7 @@ void StepperForwardEuler<Scalar>::takeStep(
       *(currentState->getX()),dt,*(currentState->getXDot()));
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setOrder(this->getOrder());
   }
   return;
 }

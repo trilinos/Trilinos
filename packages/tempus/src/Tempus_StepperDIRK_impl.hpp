@@ -248,7 +248,7 @@ void StepperDIRK<Scalar>::takeStep(
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-    workingState->setOrder(DIRK_ButcherTableau_->order());
+    workingState->setOrder(this->getOrder());
   }
   return;
 }

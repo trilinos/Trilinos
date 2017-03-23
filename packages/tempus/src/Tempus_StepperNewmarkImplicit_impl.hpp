@@ -286,6 +286,7 @@ void StepperNewmarkImplicit<Scalar>::takeStep(
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    workingState->setOrder(this->getOrder());
   }
   return;
 }

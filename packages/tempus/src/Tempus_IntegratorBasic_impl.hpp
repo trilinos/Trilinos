@@ -115,7 +115,7 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     md->setIStep(timeStepControl_->iStepMin_);
     md->setDt   (timeStepControl_->dtInit_);
     int orderTmp = timeStepControl_->orderInit_;
-    if (orderTmp == 0) orderTmp = stepper_->getOrderMin();
+    if (orderTmp == 0) orderTmp = stepper_->getOrder();
     md->setOrder(orderTmp);
     md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
@@ -170,7 +170,7 @@ setInitialState(Scalar t0,
   md->setIStep(timeStepControl_->iStepMin_);
   md->setDt   (timeStepControl_->dtInit_);
   int orderTmp = timeStepControl_->orderInit_;
-  if (orderTmp == 0) orderTmp = stepper_->getOrderMin();
+  if (orderTmp == 0) orderTmp = stepper_->getOrder();
   md->setOrder(orderTmp);
   md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 

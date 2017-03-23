@@ -224,8 +224,8 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
   {
-    RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-    RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
@@ -257,6 +257,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    workingState->setOrder(this->getOrder());
   }
 
   return;

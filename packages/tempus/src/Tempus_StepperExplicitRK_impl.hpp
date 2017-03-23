@@ -141,7 +141,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     }
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    workingState->setOrder(ERK_ButcherTableau_->order());
+    workingState->setOrder(this->getOrder());
   }
   return;
 }
