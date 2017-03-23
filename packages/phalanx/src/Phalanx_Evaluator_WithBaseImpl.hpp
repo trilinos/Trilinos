@@ -125,7 +125,7 @@ namespace PHX {
 
     virtual void 
     postRegistrationSetup(typename Traits::SetupData d,
-                          PHX::FieldManager<Traits>& vm) override = 0;
+                          PHX::FieldManager<Traits>& vm) override;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     evaluatedFields() const override;

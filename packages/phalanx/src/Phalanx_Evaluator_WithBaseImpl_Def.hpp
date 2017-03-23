@@ -273,6 +273,13 @@ setName(const std::string& name)
 
 //**********************************************************************
 template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+postRegistrationSetup(typename Traits::SetupData d,
+                      PHX::FieldManager<Traits>& vm)
+{}
+
+//**********************************************************************
+template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::evaluatedFields() const
 { return evaluated_; }

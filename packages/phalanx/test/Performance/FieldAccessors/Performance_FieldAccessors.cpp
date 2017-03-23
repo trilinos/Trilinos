@@ -176,7 +176,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   RCP<Time> raw_ptr_time = TimeMonitor::getNewTimer("double* Time");
   
   {    
-    TimeMonitor tm(*total_time);
+    TimeMonitor tm_total(*total_time);
 
     PHX::InitializeKokkosDevice();
 
