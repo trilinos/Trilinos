@@ -61,9 +61,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
     getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
 
   // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(scm_pl));
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -131,9 +131,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
     getParametersFromXmlFile("Tempus_Newmark_HarmonicOscillator_Damped_SecondOrder.xml");
 
   // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(scm_pl));
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
 
   // Setup the Integrator and reset initial time step
@@ -231,9 +231,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
     getParametersFromXmlFile("Tempus_Newmark_HarmonicOscillator_Damped_FirstOrder.xml");
 
   // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(scm_pl));
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
 
   // Setup the Integrator and reset initial time step
@@ -333,10 +333,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
     getParametersFromXmlFile("Tempus_Newmark_SinCos_SecondOrder.xml");
 
   // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(scm_pl));
-
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  
+  //Get k and m coefficients from model, needed for computing energy 
+  double k = hom_pl->get<double>("x coeff k");
+  double m = hom_pl->get<double>("Mass coeff m");
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -386,10 +389,20 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
         RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
         RCP<Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
+        //kinetic energy = 0.5*m*xdot*xdot 
+        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
+        ke *= 0.5*m;
+        //potential energy = 0.5*k*x*x 
+        double pe = Thyra::dot(*x_plot, *x_plot); 
+        pe *= 0.5*k; 
+        double te = ke + pe;  
+        //Output to file the following: 
+        //[time, x computed, x exact, xdot computed, ke, pe, te] 
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
              << get_ele(*(x_exact_plot), 0) << "   " 
-             << get_ele(*(x_dot_plot), 0) << std::endl;
+             << get_ele(*(x_dot_plot), 0) << "   "
+             << ke << "   " << pe << "   " << te << std::endl;
       }
       ftmp.close();
     }
@@ -435,10 +448,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
     getParametersFromXmlFile("Tempus_Newmark_SinCos_FirstOrder.xml");
 
   // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> scm_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(scm_pl));
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
+  //Get k and m coefficients from model, needed for computing energy 
+  double k = hom_pl->get<double>("x coeff k");
+  double m = hom_pl->get<double>("Mass coeff m");
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -488,10 +504,20 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
         RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
         RCP<Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
+        //kinetic energy = 0.5*m*xdot*xdot 
+        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
+        ke *= 0.5*m;
+        //potential energy = 0.5*k*x*x 
+        double pe = Thyra::dot(*x_plot, *x_plot); 
+        pe *= 0.5*k; 
+        double te = ke + pe;  
+        //Output to file the following: 
+        //[time, x computed, x exact, xdot computed, ke, pe, te] 
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
              << get_ele(*(x_exact_plot), 0) << "   " 
-             << get_ele(*(x_dot_plot), 0) << std::endl;
+             << get_ele(*(x_dot_plot), 0) << "   "
+             << ke << "   " << pe << "   " << te << std::endl;
       }
       ftmp.close();
     }
