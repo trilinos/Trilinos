@@ -16,6 +16,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 // Thyra
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_NonlinearSolverBase.hpp"
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -76,6 +77,15 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel() = 0;
+
+    /// Set solver via ParameterList solver name.
+    virtual void setSolver(std::string solverName) = 0;
+    /// Set solver via solver ParameterList.
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null) = 0;
+    /// Set solver.
+    virtual void setSolver(
+        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;

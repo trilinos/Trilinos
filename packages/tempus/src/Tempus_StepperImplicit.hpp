@@ -12,7 +12,6 @@
 // Tempus
 #include "Tempus_Stepper.hpp"
 //Thrya
-#include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -29,15 +28,6 @@ public:
 
   /// \name Basic implicit stepper methods
   //@{
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName) = 0;
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null) = 0;
-    /// Set solver.
-    virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
-
     /// Solve non-linear problem using x in-place.
     const Thyra::SolveStatus<Scalar> solveNonLinear(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,

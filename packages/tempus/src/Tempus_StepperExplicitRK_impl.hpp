@@ -51,6 +51,38 @@ void StepperExplicitRK<Scalar>::setNonConstModel(
 }
 
 template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(std::string solverName)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(
+  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
 void StepperExplicitRK<Scalar>::setTableau(
   Teuchos::RCP<Teuchos::ParameterList> pList,
   std::string stepperType)
