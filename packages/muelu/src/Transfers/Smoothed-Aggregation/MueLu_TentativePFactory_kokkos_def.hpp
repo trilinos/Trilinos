@@ -229,22 +229,16 @@ namespace MueLu {
 
     // local QR decomposition
     template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
-    class TestFunctor {
+    class LocalQRDecompFunctor {
     private:
       typedef LOType LO;
       typedef GOType GO;
       typedef SCType SC;
 
-      //typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
-      //typedef typename MatrixType::execution_space::scratch_memory_space shared_space;
-      //typedef typename DeviceType::scratch_memory_space shared_space;
       typedef Kokkos::View<SC**,Kokkos::MemoryUnmanaged> shared_matrix;
       typedef Kokkos::View<SC*,Kokkos::MemoryUnmanaged> shared_vector;
 
     private:
-      //MatrixType kokkosMatrix; //< local matrix part
-      //NnzType nnz;             //< View containing number of nonzeros for current row
-      //blkSizeType blkSize;     //< block size (or partial block size in strided maps)
 
       NspType fineNS;
       NspType coarseNS;
@@ -257,7 +251,7 @@ namespace MueLu {
       colsAuxType colsAux;
       valsAuxType valsAux;
     public:
-      TestFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_) :
+      LocalQRDecompFunctor(NspType fineNS_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_) :
         fineNS(fineNS_),
         coarseNS(coarseNS_),
         aggRows(aggRows_),
@@ -309,8 +303,6 @@ namespace MueLu {
 
         // Reserve shared memory for local QR decomposition and results (r and q)
         shared_matrix q (thread.team_shmem(),aggSize,aggSize);  // memory containing q part in the end
-
-        //////////////////////////////////////////////
 
         // Calculate QR decomposition (standard)
         if (aggSize >= fineNS.dimension_1()) {
@@ -489,9 +481,11 @@ namespace MueLu {
 
       KOKKOS_FUNCTION
       void matrix_minor ( const shared_matrix & mat, shared_matrix & matminor, LO d) const {
-        //SC one = Teuchos::ScalarTraits<SC>::one();
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        SC one = ATS::one();
+
         for (LO i = 0; i < d; i++) {
-          matminor(i,i) = 1.0; //one;
+          matminor(i,i) = one;
         }
         for (LO i = d; i < mat.dimension_0(); i++) {
           for (LO j=d; j < mat.dimension_1(); j++) {
@@ -505,14 +499,15 @@ namespace MueLu {
       ///
       KOKKOS_FUNCTION
       void vmul ( const shared_vector & v, shared_matrix & vmuldata) const {
-        //SC one = Teuchos::ScalarTraits<SC>::one();
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        SC one = ATS::one();
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
           for(decltype(v.dimension_0()) j = 0; j < v.dimension_0(); j++) {
             vmuldata(i,j) = -2 * v(i) * v(j);
           }
         }
         for(decltype(v.dimension_0()) i = 0; i < v.dimension_0(); i++) {
-          vmuldata(i,i) += 1;
+          vmuldata(i,i) += one;
         }
       }
 
@@ -548,14 +543,10 @@ namespace MueLu {
 
       // amout of shared memory
       size_t team_shmem_size( int team_size ) const {
-        //printf("team size = %i\n", team_size);
         return 3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,fineNS.dimension_1()) + // mat + matminor + z
                3 * Kokkos::View<double**,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize,maxAggDofSize) +  // qk and q and qt
                Kokkos::View<double*,Kokkos::MemoryUnmanaged>::shmem_size(maxAggDofSize); // e
       }
-
-
-
     };
 
 
@@ -902,10 +893,7 @@ namespace MueLu {
       // Each team handles a slice of the data associated with one aggregate
       // and performs a local QR decomposition
       const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
-
-      //Kokkos::parallel_for( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux));
-      Kokkos::parallel_reduce( policy, TestFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
-
+      Kokkos::parallel_reduce( policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
       for (int i = 0; i < statusHost.size(); i++)
@@ -945,6 +933,14 @@ namespace MueLu {
     // FIXME: For now, we simply copy-paste arrays. The proper way to do that
     // would be to construct a Kokkos CrsMatrix, and then construct
     // Xpetra::Matrix out of that.
+#if 1
+    // create local CrsMatrix
+    local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
+    Teuchos::RCP<CrsMatrix> PtentCrs = CrsMatrixFactory::Build(rowMap,coarseMap,lclMatrix);
+    PtentCrs->resumeFill();  // we need that for rectangular matrices
+    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+    Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
+#else
     Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> PtentCrs = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
 
@@ -976,6 +972,7 @@ namespace MueLu {
     }
     PtentCrs->setAllValues(iaPtent, jaPtent, valPtent);
     PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
