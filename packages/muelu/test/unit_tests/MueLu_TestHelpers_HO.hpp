@@ -66,6 +66,29 @@
 namespace MueLuTests {
   namespace TestHelpers {
 
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
+    {
+      throw std::runtime_error("This does not work for arbitrary node types");
+    }
+
+
+#ifdef HAVE_MUELU_EPETRA    
+    template <>
+    void AllocateEpetraFECrsMatrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
+
+    {
+      // Epetra is hard
+      const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
+      const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
+      RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
+      B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(B_epetra);
+    }
+#endif
+
+
+
+
     // Here nx is the number of nodes on the underlying (p=1) mesh.
     // This mesh is then promoted up to degree 
     //Teuchos::RCP<Matrix>
@@ -211,13 +234,7 @@ namespace MueLuTests {
       // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
       RCP<Matrix> B;
       if(lib==Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-	// Epetra is hard
-	const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
-	const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
-	RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
-	B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<SC,LO,GO,NO>(B_epetra);
-#endif
+	AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap,B);
       }
       else {
 	// Tpetra is easy
