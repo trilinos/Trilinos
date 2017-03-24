@@ -32,6 +32,18 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_05
+    SOURCES example_05.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_06
+    SOURCES example_06.cpp
+    ADD_DIR_TO_NAME
+  )
+
 #  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    example_02
 #    SOURCES example_02.cpp
@@ -45,7 +57,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ThermalFluidsDataCopy
     SOURCE_FILES
-      input.xml input_ex03.xml input_ex04.xml plotresults.m plotresults_ex03.m plotresults_ex04.m
+      input.xml input_ex03.xml input_ex04.xml input_ex05.xml input_ex06.xml plotresults.m plotresults_ex03.m plotresults_ex04.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
