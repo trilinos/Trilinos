@@ -239,7 +239,7 @@ int main(int argc, char** argv)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// General test function to analyze solution and print out some information
+// Runs validation on the results to make sure the arrays are sensible
 ////////////////////////////////////////////////////////////////////////////////
 bool validate(part_t numTreeVerts,
   std::vector<part_t> permPartNums,
@@ -249,18 +249,18 @@ bool validate(part_t numTreeVerts,
 )
 {
   // by design numTreeVerts does not include the root
-  if(numTreeVerts != splitRangeBeg.size() - 1) {
+  if(numTreeVerts != static_cast<part_t>(splitRangeBeg.size()) - 1) {
     return false;
   }
-  if(numTreeVerts != splitRangeEnd.size() - 1) {
+  if(numTreeVerts != static_cast<part_t>(splitRangeEnd.size()) - 1) {
     return false;
   }
-  if(numTreeVerts != treeVertParents.size() - 1) {
+  if(numTreeVerts != static_cast<part_t>(treeVertParents.size()) - 1) {
     return false;
   }
   // now search every node and validate it's properties
   for(part_t n = 0; n <= numTreeVerts; ++n) {
-    if(n < permPartNums.size()) {
+    if(n < static_cast<part_t>(permPartNums.size())) {
       // terminal so children should just be range 1
       if(splitRangeEnd[n] != splitRangeBeg[n] + 1) {
         std::cout << "Invalid terminal - range should be 1" << std::endl;
@@ -307,7 +307,7 @@ bool validate(part_t numTreeVerts,
         std::cout << "Root must start at 0!" << std::endl;
         return false;
       }
-      if(splitRangeEnd[n] != permPartNums.size()) {
+      if(splitRangeEnd[n] != static_cast<part_t>(permPartNums.size())) {
         std::cout << "Root must contain all parts!" << std::endl;
         return false;
       }
@@ -323,7 +323,6 @@ bool validate(part_t numTreeVerts,
 int analyze(Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> &problem,
   RCP<const Teuchos::Comm<int> > comm)
 {
-  typedef SparseMatrixAdapter_t::part_t part_t;
   part_t numTreeVerts = 0;
   std::vector<part_t> permPartNums; // peritab in Scotch
   std::vector<part_t> splitRangeBeg;
@@ -627,9 +626,6 @@ int testForMJ(SparseMatrixAdapter_t &matAdapter, int me, part_t numParts,
     return -1;
   }
   //////////////////////////////////////////////////////////////////////
-
-  typedef SparseMatrixAdapter_t::scalar_t scalar_t;
-  typedef SparseMatrixAdapter_t::part_t part_t;
 
   Zoltan2::PartitioningSolution<SparseMatrixAdapter_t> solution = problem.getSolution();
 
