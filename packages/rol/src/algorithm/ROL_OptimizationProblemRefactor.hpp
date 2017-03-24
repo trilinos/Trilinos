@@ -73,6 +73,14 @@ class OptimizationProblem {
 
 private:
 
+  Teuchos::RCP<OBJ>      ORIGINAL_obj_;
+  Teuchos::RCP<V>        ORIGINAL_sol_;
+  Teuchos::RCP<BND>      ORIGINAL_bnd_;
+  Teuchos::RCP<EQCON>    ORIGINAL_econ_;
+  Teuchos::RCP<V>        ORIGINAL_emul_;
+  Teuchos::RCP<INCON>    ORIGINAL_icon_;
+  Teuchos::RCP<V>        ORIGINAL_imul_;
+
   Teuchos::RCP<OBJ>      obj_;
   Teuchos::RCP<V>        sol_;
   Teuchos::RCP<BND>      bnd_;
@@ -80,6 +88,91 @@ private:
   Teuchos::RCP<V>        mul_;
 
   EProblem problemType_;
+
+  bool isInitialized_;
+
+protected:
+  void initialize(const Teuchos::RCP<Objective<Real> >            &obj,
+                  const Teuchos::RCP<Vector<Real> >               &x,
+                  const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
+                  const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
+                  const Teuchos::RCP<Vector<Real> >               &le,
+                  const Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                  const Teuchos::RCP<Vector<Real> >               &li ) {
+    if (!isInitialized_) {
+      // If we have an inequality constraint
+      if( incon != Teuchos::null ) {
+
+        Real tol = std::sqrt(ROL_EPSILON<Real>());      
+
+        // Create slack variables s = |c_i(x)|
+        RCP<V> s = li->dual().clone();
+        incon->value(*s,*x,tol);
+        s->applyUnary(ABS()); 
+
+        sol_ = CreatePartitionedVector(x,s);
+
+        RCP<BND> xbnd, sbnd; 
+
+        RCP<V> sl = s->clone();
+        RCP<V> su = s->clone();
+
+        sl->applyUnary( FILL(0.0) );
+        su->applyUnary( FILL(ROL_INF<Real>()) );
+
+        sbnd = rcp( new BND(sl,su) );    
+  
+        // Create a do-nothing bound constraint for x if we don't have one
+        if( bnd == Teuchos::null ) {
+          xbnd = rcp( new BND(*x) );
+        }
+        else { // Otherwise use the given bound constraint on x
+          xbnd = bnd;  
+        }
+       
+        // Create a partitioned bound constraint on the optimization and slack variables 
+        bnd_ = CreateBoundConstraint_Partitioned(xbnd,sbnd);
+
+        // Create partitioned lagrange multiplier and composite constraint
+        if( eqcon == Teuchos::null ) {
+          mul_ = CreatePartitionedVector(li);
+          con_ = rcp( new CCON(incon,x) );
+        }
+        else {
+          mul_ = CreatePartitionedVector(li,le);
+          con_ = rcp( new CCON(incon,eqcon,x) );
+        }
+
+        obj_ = rcp( new SLOBJ(obj) );
+      }
+      else {  // There is no inequality constraint
+   
+        obj_ = obj;
+        sol_ = x;
+        mul_ = le;
+        bnd_ = bnd;
+        con_ = eqcon;
+      }
+
+      if( con_ == Teuchos::null ) {    // Type-U or Type-B
+        if( bnd_ == Teuchos::null || !bnd_->isActivated() ) {  // Type-U
+          problemType_ = TYPE_U;        
+        }
+        else { // Type-B
+          problemType_ = TYPE_B; 
+        }
+      }
+      else { // Type-E or Type-EB
+        if( bnd_ == Teuchos::null || !bnd_->isActivated() ) { // Type-E
+          problemType_ = TYPE_E;     
+        }
+        else { // Type-EB
+          problemType_ = TYPE_EB; 
+        }
+      }
+      isInitialized_ = true;
+    }
+  }
 
 public:
   virtual ~OptimizationProblem(void) {}
@@ -91,81 +184,12 @@ public:
                        const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
                        const Teuchos::RCP<Vector<Real> >               &le,
                        const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li ) {
-   
-    using Teuchos::RCP; using Teuchos::rcp; 
-
-    // If we have an inequality constraint
-    if( incon != Teuchos::null ) {
-
-      Real tol = 0;      
-
-      // Create slack variables s = |c_i(x)|
-      RCP<V> s = li->dual().clone();
-      incon->value(*s,*x,tol);
-      s->applyUnary(ABS()); 
-
-      sol_ = CreatePartitionedVector(x,s);
-
-      RCP<BND> xbnd, sbnd; 
-
-      RCP<V> sl = s->clone();
-      RCP<V> su = s->clone();
-
-      sl->applyUnary( FILL(0.0) );
-      su->applyUnary( FILL(ROL_INF<Real>()) );
-
-      sbnd = rcp( new BND(sl,su) );    
-  
-      // Create a do-nothing bound constraint for x if we don't have one
-      if( bnd == Teuchos::null ) {
-        xbnd = rcp( new BND(*x) );
-      }
-      else { // Otherwise use the given bound constraint on x
-        xbnd = bnd;  
-      }
-     
-      // Create a partitioned bound constraint on the optimization and slack variables 
-      bnd_ = CreateBoundConstraint_Partitioned(xbnd,sbnd);
-
-      // Create partitioned lagrange multiplier and composite constraint
-      if( eqcon == Teuchos::null ) {
-        mul_ = CreatePartitionedVector(li);
-        con_ = rcp( new CCON(incon,x) );
-      }
-      else {
-        mul_ = CreatePartitionedVector(li,le);
-        con_ = rcp( new CCON(incon,eqcon,x) );
-      }
-
-      obj_ = rcp( new SLOBJ(obj) );
-    }
-
-    else {  // There is no inequality constraint
-   
-      obj_ = obj;
-      sol_ = x;
-      mul_ = le;
-      bnd_ = bnd;
-      con_ = eqcon;
-    }
-
-    if( con_ == Teuchos::null ) {    // Type-U or Type-B
-      if( bnd_ == Teuchos::null || !bnd_->isActivated() ) {  // Type-U
-        problemType_ = TYPE_U;        
-      }
-      else { // Type-B
-        problemType_ = TYPE_B; 
-      }
-    }
-    else { // Type-E or Type-EB
-      if( bnd_ == Teuchos::null || !bnd_->isActivated() ) { // Type-E
-        problemType_ = TYPE_E;     
-      }
-      else { // Type-EB
-        problemType_ = TYPE_EB; 
-      }
-    }
+                       const Teuchos::RCP<Vector<Real> >               &li )
+    : ORIGINAL_obj_(obj), ORIGINAL_sol_(x), ORIGINAL_bnd_(bnd),
+      ORIGINAL_econ_(eqcon), ORIGINAL_emul_(le),
+      ORIGINAL_icon_(incon), ORIGINAL_imul_(li),
+      isInitialized_(false) {
+    initialize(obj,x,bnd,eqcon,le,incon,li);
   }
 
   // No inequality constructor [2]
@@ -218,46 +242,78 @@ public:
      OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, 
                           Teuchos::null, Teuchos::null ) { } 
 
-  /* Get/Set methods */
+  /* Set methods */
+
+  virtual void setObjective(const Teuchos::RCP<Objective<Real> > &obj) {
+    isInitialized_ = false;
+    ORIGINAL_obj_ = obj;
+  }
+
+  virtual void setSolutionVector(const Teuchos::RCP<Vector<Real> > &sol) {
+    isInitialized_ = false;
+    ORIGINAL_sol_ = sol;
+  }
+
+  virtual void setBoundConstraint(const Teuchos::RCP<BoundConstraint<Real> > &bnd) {
+    isInitialized_ = false;
+    ORIGINAL_bnd_ = bnd;
+  }
+
+  virtual void setEqualityConstraint(const Teuchos::RCP<EqualityConstraint<Real> > &con) {
+    isInitialized_ = false;
+    ORIGINAL_econ_ = con;
+  }
+
+  virtual void setEMultiplierVector(const Teuchos::RCP<Vector<Real> > &mul) {
+    isInitialized_ = false;
+    ORIGINAL_emul_ = mul;
+  }
+
+  virtual void setInequalityConstraint(const Teuchos::RCP<EqualityConstraint<Real> > &con) {
+    isInitialized_ = false;
+    ORIGINAL_icon_ = con;
+  }
+
+  virtual void setIMultiplierVector(const Teuchos::RCP<Vector<Real> > &mul) {
+    isInitialized_ = false;
+    ORIGINAL_imul_ = mul;
+  }
+
+  /* Get methods */
 
   Teuchos::RCP<Objective<Real> > getObjective(void) {
+    initialize(ORIGINAL_obj_,ORIGINAL_sol_,ORIGINAL_bnd_,
+               ORIGINAL_econ_,ORIGINAL_emul_,
+               ORIGINAL_icon_,ORIGINAL_imul_);
     return obj_;
   }
 
-  void setObjective(const Teuchos::RCP<Objective<Real> > &obj) {
-    obj_ = obj;
-  }
-
   Teuchos::RCP<Vector<Real> > getSolutionVector(void) {
+    initialize(ORIGINAL_obj_,ORIGINAL_sol_,ORIGINAL_bnd_,
+               ORIGINAL_econ_,ORIGINAL_emul_,
+               ORIGINAL_icon_,ORIGINAL_imul_);
     return sol_;
   }
 
-  void setSolutionVector(const Teuchos::RCP<Vector<Real> > &sol) {
-    sol_ = sol;
-  }
-
   Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) {
+    initialize(ORIGINAL_obj_,ORIGINAL_sol_,ORIGINAL_bnd_,
+               ORIGINAL_econ_,ORIGINAL_emul_,
+               ORIGINAL_icon_,ORIGINAL_imul_);
     return bnd_;
   }
 
-  void setBoundConstraint(const Teuchos::RCP<BoundConstraint<Real> > &bnd) {
-    bnd_ = bnd;
-  }
-
   Teuchos::RCP<EqualityConstraint<Real> > getEqualityConstraint(void) {
+    initialize(ORIGINAL_obj_,ORIGINAL_sol_,ORIGINAL_bnd_,
+               ORIGINAL_econ_,ORIGINAL_emul_,
+               ORIGINAL_icon_,ORIGINAL_imul_);
     return con_;
   }
 
-  void setEqualityConstraint(const Teuchos::RCP<EqualityConstraint<Real> > &con) {
-    con_ = con;
-  }
-
   Teuchos::RCP<Vector<Real> > getMultiplierVector(void) {
+    initialize(ORIGINAL_obj_,ORIGINAL_sol_,ORIGINAL_bnd_,
+               ORIGINAL_econ_,ORIGINAL_emul_,
+               ORIGINAL_icon_,ORIGINAL_imul_);
     return mul_;
-  }
-
-  void setMultiplierVector(const Teuchos::RCP<Vector<Real> > &mul) {
-    mul_ = mul;
   }
 
   EProblem getProblemType(void) {
