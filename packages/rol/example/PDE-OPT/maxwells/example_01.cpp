@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
     pdecon->outputTpetraVector(z_rcp,"control.txt");
-    assembler->serialPrintStateEdgeField(u_rcp,"stateCellCenter.txt",pde->getFE());
+    assembler->serialPrintStateEdgeField(u_rcp,pde->getFieldHelper(),"stateCellCenter.txt",pde->getFE());
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
