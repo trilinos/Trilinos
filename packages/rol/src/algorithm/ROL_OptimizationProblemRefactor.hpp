@@ -99,6 +99,7 @@ protected:
                   const Teuchos::RCP<Vector<Real> >               &le,
                   const Teuchos::RCP<InequalityConstraint<Real> > &incon,
                   const Teuchos::RCP<Vector<Real> >               &li ) {
+    using Teuchos::RCP; using Teuchos::rcp;
     if (!isInitialized_) {
       // If we have an inequality constraint
       if( incon != Teuchos::null ) {
@@ -269,7 +270,7 @@ public:
     ORIGINAL_emul_ = mul;
   }
 
-  virtual void setInequalityConstraint(const Teuchos::RCP<EqualityConstraint<Real> > &con) {
+  virtual void setInequalityConstraint(const Teuchos::RCP<InequalityConstraint<Real> > &con) {
     isInitialized_ = false;
     ORIGINAL_icon_ = con;
   }
