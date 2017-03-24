@@ -72,8 +72,8 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
   
   // Check GIDS
   const auto& gids = mesh.getGlobalIndices();
-  TEST_EQUALITY(gids.dimension(0), nx * ny * nz); // num elements
-  TEST_EQUALITY(gids.dimension(1),nodes_per_element); // linear nodal element
+  TEST_EQUALITY(static_cast<int>(gids.extent(0)), nx * ny * nz); // num elements
+  TEST_EQUALITY(static_cast<int>(gids.extent(1)), nodes_per_element); // linear nodal element
   TEST_EQUALITY(gids(23,0),33);
   TEST_EQUALITY(gids(23,1),53);
   TEST_EQUALITY(gids(23,2),58);

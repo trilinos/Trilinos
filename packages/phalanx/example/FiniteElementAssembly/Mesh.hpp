@@ -53,31 +53,7 @@ namespace phx_example {
 
 class Mesh {
 
-public:
-
-  Mesh(const int num_elements_x,
-       const int num_elements_y,
-       const int num_elements_z,
-       const double length_x,
-       const double length_y,
-       const double length_z,
-       const int num_equations);
-
-  const Kokkos::View<int[1],PHX::Device> getNumEquations() const; 
-  const Kokkos::View<int**,PHX::Device>& getGlobalIndices() const;
-  const Kokkos::View<double***,PHX::Device>& getCoordinates() const;
-  const Kokkos::View<double***,PHX::Device>& getQPCoordinates() const;
-  const Kokkos::View<double*,PHX::Device> getWeights() const;
-  const Kokkos::View<double**,PHX::Device> getBasis() const;
-  const Kokkos::View<double***,PHX::Device> getGradBasisRef() const;
-  const Kokkos::View<double****,PHX::Device> getJac() const;
-  const Kokkos::View<double****,PHX::Device> getInvJac() const;
-  const Kokkos::View<double**,PHX::Device> getDetJac() const;
-  const Kokkos::View<double****,PHX::Device> getGradBasisReal() const;
-  
-  void print(std::ostream& os) const;
-
-private:
+  using team_t =  Kokkos::TeamPolicy<PHX::exec_space>::member_type;
   
   const int nex_;
   const int ney_;
@@ -120,6 +96,49 @@ private:
 
   // Gradient of basis in real space <cell,qp,basis,dim>
   Kokkos::View<double****> grad_basis_real_;
+
+public:
+  
+  struct ComputeJac_Tag{};
+  struct ComputeInvJac_Tag{};
+  struct ComputeCoords_Tag{};
+  struct ComputeGradBasisReal_Tag{};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const ComputeJac_Tag& tag, const team_t& team) const;
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const ComputeInvJac_Tag& tag, const team_t& team) const;
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const ComputeCoords_Tag& tag, const team_t& team) const;
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const ComputeGradBasisReal_Tag& tag, const team_t& team) const;
+
+public:
+
+  Mesh(const int num_elements_x,
+       const int num_elements_y,
+       const int num_elements_z,
+       const double length_x,
+       const double length_y,
+       const double length_z,
+       const int num_equations);
+
+  const Kokkos::View<int[1],PHX::Device> getNumEquations() const; 
+  const Kokkos::View<int**,PHX::Device>& getGlobalIndices() const;
+  const Kokkos::View<double***,PHX::Device>& getCoordinates() const;
+  const Kokkos::View<double***,PHX::Device>& getQPCoordinates() const;
+  const Kokkos::View<double*,PHX::Device> getWeights() const;
+  const Kokkos::View<double**,PHX::Device> getBasis() const;
+  const Kokkos::View<double***,PHX::Device> getGradBasisRef() const;
+  const Kokkos::View<double****,PHX::Device> getJac() const;
+  const Kokkos::View<double****,PHX::Device> getInvJac() const;
+  const Kokkos::View<double**,PHX::Device> getDetJac() const;
+  const Kokkos::View<double****,PHX::Device> getGradBasisReal() const;
+  
+  void print(std::ostream& os) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Mesh& b);

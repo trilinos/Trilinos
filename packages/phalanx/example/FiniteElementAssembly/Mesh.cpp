@@ -44,7 +44,7 @@
 #include "Mesh.hpp"
 
 namespace phx_example {
-
+  
 //**********************************************************************
 Mesh::Mesh(const int num_elements_x,
            const int num_elements_y,
@@ -202,74 +202,95 @@ Mesh::Mesh(const int num_elements_x,
     grad_basis_ref_(qp,7,1) = + (1.-chi) * (1.+mu) / 8.0;
     grad_basis_ref_(qp,7,2) = + (1.-chi) * (1.+eta) / 8.0;
   }
-    
+
+  // weights
   Kokkos::deep_copy(weights_, 1.0);
 
+  // jac
   Kokkos::TeamPolicy<PHX::exec_space> tp(nel_,Kokkos::AUTO());
-  using team_t =  Kokkos::TeamPolicy<PHX::exec_space>::member_type;  
-  
   Kokkos::deep_copy(jac_,0.0);
-  Kokkos::parallel_for(tp, KOKKOS_LAMBDA (const team_t& team) {
-      const int cell = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), KOKKOS_LAMBDA (const int& qp) {
-          for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
-            for (int i=0; i < 3; ++i) {
-              for (int j=0; j < 3; ++j) {
-                jac_(cell,qp,i,j) += coords_(cell,basis,i) * grad_basis_ref_(qp,basis,j);
-              }
-            }
-          }
-      });
-  });
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeJac_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
 
-  Kokkos::parallel_for(tp, KOKKOS_LAMBDA (const team_t& team) {
-      const int cell = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), KOKKOS_LAMBDA (const int& qp) {
-          inv_jac_(cell,qp,0,0) = jac_(cell,qp,1,1) * jac_(cell,qp,2,2) - jac_(cell,qp,1,2) * jac_(cell,qp,2,1);
-          inv_jac_(cell,qp,1,1) = jac_(cell,qp,2,2) * jac_(cell,qp,0,0) - jac_(cell,qp,2,0) * jac_(cell,qp,0,2);
-          inv_jac_(cell,qp,2,2) = jac_(cell,qp,0,0) * jac_(cell,qp,1,1) - jac_(cell,qp,0,1) * jac_(cell,qp,1,0);
-          inv_jac_(cell,qp,0,1) = jac_(cell,qp,1,2) * jac_(cell,qp,2,0) - jac_(cell,qp,1,0) * jac_(cell,qp,2,2);
-          inv_jac_(cell,qp,1,2) = jac_(cell,qp,2,0) * jac_(cell,qp,0,1) - jac_(cell,qp,2,1) * jac_(cell,qp,0,0);
-          inv_jac_(cell,qp,2,0) = jac_(cell,qp,0,1) * jac_(cell,qp,1,2) - jac_(cell,qp,0,2) * jac_(cell,qp,1,1);
-          inv_jac_(cell,qp,1,0) = jac_(cell,qp,2,1) * jac_(cell,qp,0,2) - jac_(cell,qp,0,1) * jac_(cell,qp,2,2);
-          inv_jac_(cell,qp,2,1) = jac_(cell,qp,0,2) * jac_(cell,qp,1,0) - jac_(cell,qp,1,2) * jac_(cell,qp,0,0);
-          inv_jac_(cell,qp,0,2) = jac_(cell,qp,1,0) * jac_(cell,qp,1,1) - jac_(cell,qp,2,0) * jac_(cell,qp,1,1);
-          
-          det_jac_(cell,qp) = jac_(cell,qp,0,0) * inv_jac_(cell,qp,0,0)
-            + jac_(cell,qp,0,1) * inv_jac_(cell,qp,1,0)
-            + jac_(cell,qp,0,2) * inv_jac_(cell,qp,2,0);
-          
-          for (int i=0; i < 3; ++i)
-            for (int j=0; j < 3; ++j)
-              inv_jac_(cell,qp,i,j) = inv_jac_(cell,qp,i,j) / det_jac_(cell,qp);
-        });
-  });
+  // inv_jac, det_jac
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeInvJac_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
 
+  // qp coords
   Kokkos::deep_copy(qp_coords_,0.0);
-  Kokkos::parallel_for(tp, KOKKOS_LAMBDA (const team_t& team) {
-      const int cell = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), KOKKOS_LAMBDA (const int& qp) {
-          for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
-            qp_coords_(cell,qp,0) += basis_(qp,basis) * coords_(cell,basis,0);
-            qp_coords_(cell,qp,1) += basis_(qp,basis) * coords_(cell,basis,1);
-            qp_coords_(cell,qp,2) += basis_(qp,basis) * coords_(cell,basis,2);
-          }
-      });
-  });
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeCoords_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
 
-  // Transform basis gradients to real space
+  // transform basis gradients to real space
   Kokkos::deep_copy(grad_basis_real_,0.0);
-  Kokkos::parallel_for(tp, KOKKOS_LAMBDA (const team_t& team) {
-      const int cell = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), KOKKOS_LAMBDA (const int& qp) {
-          const int num_basis = static_cast<int>(grad_basis_real_.extent(2)); 
-          for (int basis=0; basis < num_basis; ++basis)
-            for (int dim1=0; dim1 < 3; ++dim1)
-              for (int dim2=0; dim2 < 3; ++dim2)
-                grad_basis_real_(cell,qp,basis,dim1) += grad_basis_ref_(qp,basis,dim1) * inv_jac_(cell,qp,dim1,dim2);
-      });
-  });
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeGradBasisReal_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
+}
 
+//**********************************************************************
+KOKKOS_INLINE_FUNCTION
+void Mesh::operator() (const ComputeJac_Tag& , const team_t& team) const
+{
+  const int cell = team.league_rank();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+      for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
+        for (int i=0; i < 3; ++i) {
+          for (int j=0; j < 3; ++j) {
+            jac_(cell,qp,i,j) += coords_(cell,basis,i) * grad_basis_ref_(qp,basis,j);
+          }
+        }
+      }
+  });
+}
+
+//**********************************************************************
+KOKKOS_INLINE_FUNCTION
+void Mesh::operator() (const ComputeInvJac_Tag& , const team_t& team) const
+{
+  const int cell = team.league_rank();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+      inv_jac_(cell,qp,0,0) = jac_(cell,qp,1,1) * jac_(cell,qp,2,2) - jac_(cell,qp,1,2) * jac_(cell,qp,2,1);
+      inv_jac_(cell,qp,1,1) = jac_(cell,qp,2,2) * jac_(cell,qp,0,0) - jac_(cell,qp,2,0) * jac_(cell,qp,0,2);
+      inv_jac_(cell,qp,2,2) = jac_(cell,qp,0,0) * jac_(cell,qp,1,1) - jac_(cell,qp,0,1) * jac_(cell,qp,1,0);
+      inv_jac_(cell,qp,0,1) = jac_(cell,qp,1,2) * jac_(cell,qp,2,0) - jac_(cell,qp,1,0) * jac_(cell,qp,2,2);
+      inv_jac_(cell,qp,1,2) = jac_(cell,qp,2,0) * jac_(cell,qp,0,1) - jac_(cell,qp,2,1) * jac_(cell,qp,0,0);
+      inv_jac_(cell,qp,2,0) = jac_(cell,qp,0,1) * jac_(cell,qp,1,2) - jac_(cell,qp,0,2) * jac_(cell,qp,1,1);
+      inv_jac_(cell,qp,1,0) = jac_(cell,qp,2,1) * jac_(cell,qp,0,2) - jac_(cell,qp,0,1) * jac_(cell,qp,2,2);
+      inv_jac_(cell,qp,2,1) = jac_(cell,qp,0,2) * jac_(cell,qp,1,0) - jac_(cell,qp,1,2) * jac_(cell,qp,0,0);
+      inv_jac_(cell,qp,0,2) = jac_(cell,qp,1,0) * jac_(cell,qp,1,1) - jac_(cell,qp,2,0) * jac_(cell,qp,1,1);
+      
+      det_jac_(cell,qp) = jac_(cell,qp,0,0) * inv_jac_(cell,qp,0,0)
+        + jac_(cell,qp,0,1) * inv_jac_(cell,qp,1,0)
+        + jac_(cell,qp,0,2) * inv_jac_(cell,qp,2,0);
+      
+      for (int i=0; i < 3; ++i)
+        for (int j=0; j < 3; ++j)
+          inv_jac_(cell,qp,i,j) = inv_jac_(cell,qp,i,j) / det_jac_(cell,qp);
+  });
+}
+  
+//**********************************************************************
+KOKKOS_INLINE_FUNCTION
+void Mesh::operator() (const ComputeCoords_Tag& , const team_t& team) const
+{
+  const int cell = team.league_rank();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+      for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
+        qp_coords_(cell,qp,0) += basis_(qp,basis) * coords_(cell,basis,0);
+        qp_coords_(cell,qp,1) += basis_(qp,basis) * coords_(cell,basis,1);
+        qp_coords_(cell,qp,2) += basis_(qp,basis) * coords_(cell,basis,2);
+      }
+  });
+}
+ 
+//**********************************************************************
+KOKKOS_INLINE_FUNCTION
+void Mesh::operator() (const ComputeGradBasisReal_Tag& , const team_t& team) const
+{
+  const int cell = team.league_rank();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), [=] (const int& qp) {
+      const int num_basis = static_cast<int>(grad_basis_real_.extent(2)); 
+      for (int basis=0; basis < num_basis; ++basis)
+        for (int dim1=0; dim1 < 3; ++dim1)
+          for (int dim2=0; dim2 < 3; ++dim2)
+            grad_basis_real_(cell,qp,basis,dim1) += grad_basis_ref_(qp,basis,dim1) * inv_jac_(cell,qp,dim1,dim2);
+  });
 }
 
 //**********************************************************************
