@@ -2,22 +2,27 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <!-- OUTPUT -->
-    <Parameter name="Check derivatives"           type="bool"    value="false"       />
-    <Parameter name="Number of output samples"    type="int"     value="4"           />
+    <Parameter name="Check derivatives"              type="bool"    value="false"       />
+    <Parameter name="Number of output samples"       type="int"     value="4000"        />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"           type="int"     value="4"           />
+    <Parameter name="Number of samples"              type="int"     value="8"         />
     <!-- PROBLEM INFORMATION -->
-    <Parameter name="Objective type"              type="string"  value="Vorticity"   />
-    <Parameter name="Control penalty parameter"   type="double"  value="1e-2"        />
-    <Parameter name="Reynolds Number"             type="double"  value="100.0"       />
-    <Parameter name="Prandtl Number"              type="double"  value="0.72"        />
-    <Parameter name="Grashof Number"              type="double"  value="10000.0"     />
-    <Parameter name="Robin Coefficient"           type="double"  value="1.0"         />
-    <Parameter name="Bottom KL Truncation Order"  type="int"     value="5"           />
-    <Parameter name="Right KL Truncation Order"   type="int"     value="5"           />
-    <Parameter name="Left KL Truncation Order"    type="int"     value="5"           />
+    <Parameter name="Objective type"                 type="string"  value="Vorticity"   />
+    <Parameter name="Control penalty parameter"      type="double"  value="1e-2"        />
+    <Parameter name="Reynolds Number"                type="double"  value="100.0"       />
+    <Parameter name="Prandtl Number"                 type="double"  value="0.72"        />
+    <Parameter name="Grashof Number"                 type="double"  value="10000.0"     />
+    <Parameter name="Robin Coefficient"              type="double"  value="1.0"         />
+    <Parameter name="Bottom KL Truncation Order"     type="int"     value="5"           />
+    <Parameter name="Right KL Truncation Order"      type="int"     value="5"           />
+    <Parameter name="Left KL Truncation Order"       type="int"     value="5"           />
+    <Parameter name="Reynolds Number Noise Scale"    type="double"  value="1e-2"        />
+    <Parameter name="Prandtl Number Noise Scale"     type="double"  value="1e-2"        />
+    <Parameter name="Grashof Number Noise Scale"     type="double"  value="1e-2"        />
+    <Parameter name="Robin Noise Scale"              type="double"  value="5e-2"        />
+    <Parameter name="Bottom Temperature Noise Scale" type="double"  value="5e-2"        />
     <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Cubature Degree"             type="int"     value="4"           />
+    <Parameter name="Cubature Degree"                type="int"     value="4"           />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -26,8 +31,8 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="18"   />
-    <Parameter name="NY"                type="int"     value="18"   />
+    <Parameter name="NX"                type="int"     value="30"   />
+    <Parameter name="NY"                type="int"     value="30"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
@@ -35,7 +40,7 @@
   <ParameterList name="Solver">
     <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
     <ParameterList name="Direct">
-      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
+      <Parameter name="Solver Type"               type="string"  value="PARDISOMKL"    />
     </ParameterList>
     <ParameterList name="MueLu">
       <Parameter name="verbosity"                 type="string"  value="none"          />
@@ -58,8 +63,8 @@
   <ParameterList name="SOL">
     <ParameterList name="Simulated">
       <Parameter name="Use Constraint Weights" type="bool"    value="true"   />
-      <Parameter name="Use CVaR"               type="bool"    value="false"  />
-      <Parameter name="CVaR Confidence Level"  type="double"  value="0.95"   />
+      <Parameter name="Use CVaR"               type="bool"    value="true"   />
+      <Parameter name="CVaR Confidence Level"  type="double"  value="0.5"    />
       <ParameterList name="Plus Function">
         <Parameter name="Smoothing Parameter"  type="double"  value="1e-4"   />
         <ParameterList name="Distribution">
@@ -84,7 +89,7 @@
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
       <Parameter name="Output Iteration History"      type="bool"    value="true"   />
       <Parameter name="Zero Initial Guess"            type="bool"    value="false"  />
-      <Parameter name="Solver Type"                   type="int"     value="3"      />
+      <Parameter name="Solver Type"                   type="int"     value="0"      />
     </ParameterList>
   </ParameterList>
 
@@ -158,7 +163,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Initial Radius"                       type="double" value="1e-2"         />
       <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
@@ -273,6 +278,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"   />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="10"      />
+    <Parameter name="Iteration Limit"      type="int"    value="100"     />
   </ParameterList>
 </ParameterList>
