@@ -66,6 +66,7 @@
 #include "qoi.hpp"
 #include "dofmanager.hpp"
 #include "meshmanager.hpp"
+#include "fieldhelper.hpp"
 
 //// Global Timers.
 #ifdef ROL_TIMERS
@@ -1883,14 +1884,20 @@ public:
   }
 
   void serialPrintStateEdgeField(const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                                 const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
                                  const std::string &filename,
                                  const Teuchos::RCP<FE_CURL<Real> > &fe) const {
+    const int c = fe->curlN()->dimension(0);
+    const int f = fe->curlN()->dimension(1);
+    const int p = 1, d = 3;
+
     Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff;
     getCoeffFromStateVector(u_coeff,u);
 
-    const int p = 1, d = 3;
-    const int c = u_coeff->dimension(0);
-    const int f = basisPtrs_[0]->getCardinality();
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
+    fieldHelper->splitFieldCoeff(U, u_coeff);
+    int numFields = U.size();
+
     // Transform cell center to physical
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rx
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p,d));
@@ -1914,9 +1921,12 @@ public:
     Intrepid::FunctionSpaceTools::HCURLtransformVALUE<Real>(*valPhysical,
                                                             *cellJacInv,
                                                             *valReference);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > uval
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d));
-    Intrepid::FunctionSpaceTools::evaluate<Real>(*uval, *u_coeff, *valPhysical);
+
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > uval(numFields);
+    for (int k = 0; k < numFields; ++k) {
+      uval[k] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p,d));
+      Intrepid::FunctionSpaceTools::evaluate<Real>(*uval[k], *U[k], *valPhysical);
+    }
     // Print
     std::ofstream file;
     file.open(filename);
@@ -1925,8 +1935,10 @@ public:
       for (int j = 0; j < d; ++j) {
         file << std::setw(25) << (*px)(i,0,j);
       }
-      for (int j = 0; j < d; ++j) {
-        file << std::setw(25) << (*uval)(i,0,j);
+      for (int k = 0; k < numFields; ++k) {
+        for (int j = 0; j < d; ++j) {
+          file << std::setw(25) << (*uval[k])(i,0,j);
+        }
       }
       file << std::endl;
     }
