@@ -30,10 +30,20 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_04
+    SOURCES example_04.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 4
+    NUM_TOTAL_CORES_USED 4
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     StochAdvDiffDataCopy
     SOURCE_FILES
-      input.xml plotresults.m plotresults_ex02.m
+      input.xml input_ex04.xml plotresults.m plotresults_ex02.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
