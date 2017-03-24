@@ -126,6 +126,11 @@ public:
     }
   }
 
+  void precond( Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &u, Real &tol ) {
+    con_->applyInverseAdjointJacobian_1(*cdual_,v,u,*z_,tol);
+    con_->applyInverseJacobian_1(pv,cdual_->dual(),u,*z_,tol);
+  }
+
 // Definitions for parametrized (stochastic) equality constraints
 public:
   void setParameter(const std::vector<Real> &param) {
