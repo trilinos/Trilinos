@@ -156,7 +156,7 @@ namespace TeuchosTests
       "  Problem: \n"
       "    Neumann BCs: \n"
       "      Time Dependent NBC on SS cyl_outside for DOF all set P: \n"
-      "        BC Values: [[0.00000000e+00], [10.00000000], [20.00000000]]\n"
+      "        BC Values: [[0.000000000000000e+00], [1.000000000000000e+01], [2.000000000000000e+01]]\n"
       "  Discretization: \n"
       "    Node Set Associations: [[1, 2], [top, bottom]]\n"
       "...\n";

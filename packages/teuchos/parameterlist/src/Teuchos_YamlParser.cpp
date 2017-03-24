@@ -47,6 +47,9 @@
 #ifndef TEUCHOS_YAMLPARSER_DEF_H_
 #define TEUCHOS_YAMLPARSER_DEF_H_
 
+#include <iostream>
+#include <iomanip>
+
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
 #include "Teuchos_YamlParameterListCoreHelpers.hpp"
@@ -659,17 +662,11 @@ void generalWriteString(const std::string& str, std::ostream& yaml)
 
 void generalWriteDouble(double d, std::ostream& yaml)
 {
-  yaml << std::showpoint << std::setprecision(8);
-  if(d < 1e6 && d > 1e-5)
-  {
-    //use regular notation
-    yaml << d;
-  }
-  else
-  {
-    yaml << std::scientific << d;
-  }
-  yaml << std::fixed;
+  std::ios saved_state(0);
+  saved_state.copyfmt(yaml);
+  yaml << std::noshowpoint << std::scientific << std::setprecision(15);
+  yaml << d;
+  yaml.copyfmt(saved_state);
 }
 
 bool stringNeedsQuotes(const std::string& str)
