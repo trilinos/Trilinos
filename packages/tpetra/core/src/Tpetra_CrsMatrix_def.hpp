@@ -5887,8 +5887,6 @@ namespace Tpetra {
              const LocalOrdinal lclRow,
              const Tpetra::CombineMode combineMode)
   {
-    typedef impl_scalar_type IST;
-
     if (tmpSize < numEnt || (numEnt != 0 && (valInTmp == NULL || indInTmp == NULL))) {
       return false;
     }
