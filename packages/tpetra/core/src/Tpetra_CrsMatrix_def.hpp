@@ -6081,7 +6081,18 @@ namespace Tpetra {
 
     for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs[i];
-      const size_t numEnt = this->getNumEntriesInLocalRow (lclRow);
+
+      size_t numEnt;
+      if (staticGraph) {
+        // FIXME (mfh 24 Mar 2017) Everything here assumes UVM.  If
+        // we want to fix that, we need to write a pack kernel for
+        // the whole matrix, that runs on device.
+        numEnt = static_cast<size_t> (this->lclMatrix_.graph.row_map[lclRow+1] -
+                                      this->lclMatrix_.graph.row_map[lclRow]);
+      }
+      else {
+        numEnt = this->getNumEntriesInLocalRow (lclRow);
+      }
 
       // Only pack this row's data if it has a nonzero number of
       // entries.  We can do this because receiving processes get the
