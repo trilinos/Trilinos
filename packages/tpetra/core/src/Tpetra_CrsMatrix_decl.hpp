@@ -3414,6 +3414,36 @@ namespace Tpetra {
              const size_t numEnt,
              const LocalOrdinal lclRow) const;
 
+    /// \brief Pack data for the current row to send, if the matrix's
+    ///   graph is known to be static (and therefore fill complete,
+    ///   and locally indexed).
+    ///
+    /// \param numEntOut [out] Where to write the number of entries in
+    ///   the row.
+    /// \param valOut [out] Output (packed) array of matrix values.
+    /// \param indOut [out] Output (packed) array of matrix column
+    ///   indices (as global indices).
+    /// \param numEnt [in] Number of entries in the row.
+    /// \param lclRow [in] Local index of the row.
+    ///
+    /// This method does not allocate temporary storage.  We intend
+    /// for this to be safe to call in a thread-parallel way on host
+    /// (not in CUDA).
+    ///
+    /// \return \c true if the method succeeded, else \c false.
+    ///
+    /// \warning (mfh 24 Mar 2017) The current implementation of this
+    ///   kernel assumes CUDA UVM.  If we want to fix that, we need to
+    ///   write a pack kernel for the whole matrix, that runs on
+    ///   device.  As a work-around, consider a fence before and after
+    ///   packing.
+    bool
+    packRowStatic (char* const numEntOut,
+                   char* const valOut,
+                   char* const indOut,
+                   const size_t numEnt,
+                   const LocalOrdinal lclRow) const;
+
     /// \brief Unpack and combine received data for the current row.
     ///
     /// \pre <tt>tmpSize >= numEnt</tt>
