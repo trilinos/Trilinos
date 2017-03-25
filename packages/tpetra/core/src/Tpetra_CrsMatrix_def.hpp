@@ -5986,15 +5986,18 @@ namespace Tpetra {
                      size_t& totalNumEntries,
                      const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const
   {
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     //const char tfecfFuncName[] = "allocatePackSpace: ";
-    const size_type numExportLIDs = exportLIDs.size ();
 
-    // Count the total number of entries to send.
+    // The number of export LIDs must fit in LocalOrdinal, assuming
+    // that the LIDs are distinct and valid on the calling process.
+    const LO numExportLIDs = static_cast<LO> (exportLIDs.size ());
+
+    // Count the total number of matrix entries to send.
     totalNumEntries = 0;
-    for (size_type i = 0; i < numExportLIDs; ++i) {
+    for (LO i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs[i];
       size_t curNumEntries = this->getNumEntriesInLocalRow (lclRow);
       // FIXME (mfh 25 Jan 2015) We should actually report invalid row
@@ -6005,8 +6008,8 @@ namespace Tpetra {
       totalNumEntries += curNumEntries;
     }
 
-    // FIXME (mfh 24 Feb 2013) This code is only correct if
-    // sizeof(Scalar) is a meaningful representation of the amount of
+    // FIXME (mfh 24 Feb 2013, 24 Mar 2017) This code is only correct
+    // if sizeof(IST) is a meaningful representation of the amount of
     // data in a Scalar instance.  (LO and GO are always built-in
     // integer types.)
     //
@@ -6015,7 +6018,7 @@ namespace Tpetra {
     // receive buffers.
     const size_t allocSize =
       static_cast<size_t> (numExportLIDs) * sizeof (LO) +
-      totalNumEntries * (sizeof (Scalar) + sizeof (GO));
+      totalNumEntries * (sizeof (IST) + sizeof (GO));
     if (static_cast<size_t> (exports.size ()) < allocSize) {
       exports.resize (allocSize);
     }
@@ -6050,7 +6053,7 @@ namespace Tpetra {
     // unallocated.  Do the first two parts of "Count, allocate, fill,
     // compute."
     size_t totalNumEntries = 0;
-    allocatePackSpace (exports, totalNumEntries, exportLIDs);
+    this->allocatePackSpace (exports, totalNumEntries, exportLIDs);
     const size_t bufSize = static_cast<size_t> (exports.size ());
 
     // Compute the number of "packets" (in this case, bytes) per
