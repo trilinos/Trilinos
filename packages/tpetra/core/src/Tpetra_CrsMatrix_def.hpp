@@ -5899,7 +5899,12 @@ namespace Tpetra {
     if (numEnt == 0) {
       return true; // nothing more to pack
     }
+#ifdef HAVE_TPETRA_DEBUG
+    if (lclRow >= this->lclMatrix_.numRows () ||
+        static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (this->lclMatrix_.graph.row_map.dimension_0 ())) {
+#else // NOT HAVE_TPETRA_DEBUG
     if (lclRow >= this->lclMatrix_.numRows ()) {
+#endif // HAVE_TPETRA_DEBUG
       // It's bad if this is not a valid local row index.  One thing
       // we can do is just pack the flag invalid value for the column
       // indices.  That makes sure that the receiving process knows
@@ -5924,8 +5929,8 @@ namespace Tpetra {
     // Since the matrix is locally indexed on the calling process, we
     // have to use its column Map (which it _must_ have in this case)
     // to convert to global indices.
-    const offset_type rowBeg = this->lclMatrix_.graph.row_map[numEnt];
-    const offset_type rowEnd = this->lclMatrix_.graph.row_map[numEnt + 1];
+    const offset_type rowBeg = this->lclMatrix_.graph.row_map[lclRow];
+    const offset_type rowEnd = this->lclMatrix_.graph.row_map[lclRow + 1];
 
     auto indIn = Kokkos::subview (this->lclMatrix_.graph.entries,
                                   pair_type (rowBeg, rowEnd));
