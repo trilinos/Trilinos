@@ -77,10 +77,6 @@
 #  define HAVE_COMPLEX
 #endif
 
-#if defined(_MSC_VER) && !defined(M_PI)
-#define _USE_MATH_DEFINES
-#endif
-
 #include <cstdio>
 #include <cstdarg>
 #include <cerrno>

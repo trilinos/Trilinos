@@ -58,8 +58,8 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-#if defined(_MSC_VER) && !defined(M_PI)
-#define M_PI 3.14159265358979323846
+#if defined(_MSC_VER)
+#include "winmath.h"
 #endif
 
 namespace ROL {
