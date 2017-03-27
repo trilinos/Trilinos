@@ -58,6 +58,10 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
+#if defined(_MSC_VER)
+#include "winmath.h"
+#endif
+
 namespace ROL {
 namespace ZOO {
 

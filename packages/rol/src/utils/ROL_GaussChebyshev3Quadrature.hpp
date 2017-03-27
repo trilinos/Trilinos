@@ -45,7 +45,11 @@
 #define ROL_GAUSSCHEBYSHEV3QUADRATURE_HPP
 
 #include "ROL_Quadrature1D.hpp"
+#if defined(_MSC_VER)
+#include "winmath.h"
+#else
 #include <cmath>
+#endif
 
 namespace ROL {
 
