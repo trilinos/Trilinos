@@ -1475,6 +1475,14 @@ namespace Tpetra {
 
       OutMapType mapOut; // Make an empty Map.
 
+      // If out_node_type::execution_space hasn't been initialized
+      // (because nodeOut is null) initialize it now, by letting
+      // defaultArgNode create the out_node_type instance.  Do this
+      // first, since we'll be creating Kokkos::View instances with
+      // out_node_type::device_type below, and this requires that
+      // out_node_type::execution_space be initialized.
+      mapOut.node_ = nodeOut.is_null () ? defaultArgNode<out_node_type> () : nodeOut;
+
       // Fill the new Map with (possibly) shallow copies of all of the
       // original Map's data.  This is safe because Map is immutable,
       // so users can't change the original Map.
@@ -1527,8 +1535,6 @@ namespace Tpetra {
       // expectations.  (Kokkos::View::operator= only does a shallow
       // copy, EVER.)
       mapOut.glMap_ = out_table_type (mapIn.glMap_);
-      // New Map gets the new Node instance.
-      mapOut.node_ = nodeOut;
 
       // We could cleverly clone the Directory here if it is
       // initialized, but there is no harm in simply creating it
