@@ -12,7 +12,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
-#include "Tempus_StepperNewmarkImplicit.hpp"
+#include "Tempus_StepperNewmark.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
 
@@ -65,8 +65,8 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
-    else if (stepperType == "Newmark Beta Implicit")
-      return rcp(new StepperNewmarkImplicit<Scalar>(model, stepperPL));
+    else if (stepperType == "Newmark Beta")
+      return rcp(new StepperNewmark<Scalar>(model, stepperPL));
     else if (
       stepperType == "RK Forward Euler" ||
       stepperType == "RK Explicit 4 Stage" ||

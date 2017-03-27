@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperNewmarkImplicit_decl_hpp
-#define Tempus_StepperNewmarkImplicit_decl_hpp
+#ifndef Tempus_StepperNewmark_decl_hpp
+#define Tempus_StepperNewmark_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_SecondOrderResidualModelEvaluator.hpp"
@@ -15,16 +15,22 @@
 namespace Tempus {
 
 
-/** \brief Backward Euler time stepper.
- *  Backward Euler is an implicit time stepper (i.e., with solver).
+/** \brief Newmark Beta time stepper.
+ *  Newmark Beta can be an explicit or implicit method, depending on 
+ *  the value of the \f$\beta\f$ parameter. If \f$\beta = 0\f$, the method 
+ *  is explicit.  Regardless of whether the method is implicit 
+ *  or explicit, a linear solve is required.  This linear solve can be 
+ *  optimized, however, for the explicit case by lumping the mass matrix.
+ *  This optimization has not been implemented in the Tempus::StepperNewmark
+ *  class at the present time. 
  */
 template<class Scalar>
-class StepperNewmarkImplicit : virtual public Tempus::StepperImplicit<Scalar>
+class StepperNewmark : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
   /// Constructor
-  StepperNewmarkImplicit(
+  StepperNewmark(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
     Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
@@ -102,7 +108,7 @@ public:
 private:
 
   /// Default Constructor -- not allowed
-  StepperNewmarkImplicit();
+  StepperNewmark();
 
 private:
 
@@ -122,4 +128,4 @@ private:
 };
 } // namespace Tempus
 
-#endif // Tempus_StepperNewmarkImplicit_decl_hpp
+#endif // Tempus_StepperNewmark_decl_hpp

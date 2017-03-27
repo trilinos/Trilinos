@@ -179,7 +179,7 @@ public:
     }
 
     /// Validate ME supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
-    void validImplicitSecondOrderODE_DAE(
+    void validSecondOrderODE_DAE(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
       TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
