@@ -650,15 +650,16 @@ void run_tasmanian(
     // Get the number of new points
     num_new_points = sparseGrid.getNumNeeded();
 
+    ++level;
+
     if (static_cast<int>(perf_total.uq_count) + num_new_points > cmd.USE_UQ_MAX_SAMPLES) {
       reached_max_samples = true;
       break;
     }
 
     // Don't add new points to the count if this is the last iteration
-    if (level < max_level)
+    if (level <= max_level)
       perf_total.uq_count += num_new_points;
-    ++level;
   }
   R_total = R_total_num / R_total_denom;
 
