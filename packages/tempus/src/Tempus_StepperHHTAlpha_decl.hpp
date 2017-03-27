@@ -15,7 +15,7 @@
 namespace Tempus {
 
 
-/** \brief HHT-Alphatime stepper.
+/** \brief HHT-Alpha time stepper.
  */
 template<class Scalar>
 class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>

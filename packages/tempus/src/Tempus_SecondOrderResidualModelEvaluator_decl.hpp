@@ -45,13 +45,13 @@ public:
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     *out_ << "    schemeName = " << schemeName << "\n"; 
 #endif
-    if (schemeName == "Newmark Beta") {
+    if (schemeName == "Newmark Beta" || schemeName == "HHT-Alpha") {
       schemeType_ = NEWMARK_IMPLICIT;
     }
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
        "Error: SecondOrderResidualModelEvaluator called with unsopported schemeName = " << schemeName  
-       <<"!  Supported schemeNames are: 'Newmark Beta'.\n"); 
+       <<"!  Supported schemeNames are: 'Newmark Beta' and 'HHT-Alpha'.\n"); 
     }
   }
 

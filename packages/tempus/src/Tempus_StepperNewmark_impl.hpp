@@ -371,9 +371,9 @@ void StepperNewmark<Scalar>::setParameterList(
            << " from Newmark Beta Parameters in input file.\n\n";
     } 
     else {
-      *out << "\n \nScheme Name = " << scheme_name << " specified.  Using values \n"
-           << "of Beta and Gamma for this scheme (ignoring values of Beta and Gamma) \n"
-           << "in input file.\n"; 
+      *out << "\n \nScheme Name = " << scheme_name << ".  Using values \n"
+           << "of Beta and Gamma for this scheme (ignoring values of Beta and Gamma \n"
+           << "in input file, if provided).\n"; 
        if (scheme_name == "Average Acceleration") {
          beta_ = 0.25; gamma_ = 0.5; 
        }
