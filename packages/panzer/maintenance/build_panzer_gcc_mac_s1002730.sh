@@ -20,7 +20,6 @@ cmake \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
 -D Trilinos_ENABLE_FEI:BOOL=ON \
       -D EpetraExt_ENABLE_HDF5:BOOL=OFF \
-      -D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
       -D Teuchos_ENABLE_FLOAT:BOOL=OFF \
       -D Teuchos_ENABLE_COMPLEX:BOOL=OFF \
 -D Tpetra_ENABLE_OpenMP:BOOL=ON \

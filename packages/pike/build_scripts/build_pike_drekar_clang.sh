@@ -7,7 +7,6 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=OFF \
 -D Trilinos_ENABLE_PikeBlackBox:BOOL=ON \
 -D Trilinos_ENABLE_PikeImplicit:BOOL=OFF \
--D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
 -D Trilinos_ENABLE_DEBUG=OFF \
 -D Pike_ENABLE_DEBUG:BOOL=ON \
 -D Pike_ENABLE_TESTS:BOOL=ON \
