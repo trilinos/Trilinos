@@ -15,14 +15,25 @@
 namespace Tempus {
 
 
-/** \brief Newmark Beta time stepper.
+/** \brief Newmark Beta time stepper.  
+ *
+ *  Here, we implement the Newmark Beta scheme in predictor/corrector form;
+ *  see equations (34)-(35) in: A. Mota, W. Klug, M. Ortiz,  "Finite element simulation
+ *  of firearm injury to the human cranium",  Computational Mechanics 31(1) 115-121 (2003). 
+ *
+ *  Newmark Beta has two parameters: \f$\beta\f$ 
+ *  and \f$\gamma\f$, both of which need to be in the range \f$[0,1]\f$. 
  *  Newmark Beta can be an explicit or implicit method, depending on 
  *  the value of the \f$\beta\f$ parameter. If \f$\beta = 0\f$, the method 
  *  is explicit.  Regardless of whether the method is implicit 
  *  or explicit, a linear solve is required.  This linear solve can be 
  *  optimized, however, for the explicit case by lumping the mass matrix.
  *  This optimization has not been implemented in the Tempus::StepperNewmark
- *  class at the present time. 
+ *  class at the present time.
+ *
+ *  Newmark Beta is second order accurate if \f$\gamma =  0.5\f$; otherwise it is first order 
+ *  accurate.  Some additional properties about the Newmark Beta scheme
+ *  can be found <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.   
  */
 template<class Scalar>
 class StepperNewmark : virtual public Tempus::StepperImplicit<Scalar>

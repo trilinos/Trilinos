@@ -367,6 +367,12 @@ void StepperNewmark<Scalar>::setParameterList(
     if (scheme_name == "Not Specified") {
       beta_ = newmarkPL.get("Beta", 0.25);
       gamma_ = newmarkPL.get("Gamma", 0.5);
+      TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
+        std::logic_error,
+           "\nError in 'Newmark' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n"); 
+      TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
+        std::logic_error,
+           "\nError in 'Newmark' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n"); 
       *out << "\n \nSetting Beta = " << beta_ << " and Gamma = " << gamma_
            << " from Newmark Beta Parameters in input file.\n\n";
     } 

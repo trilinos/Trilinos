@@ -40,10 +40,9 @@
 
     <ParameterList name="Default Stepper">
 
-      <Parameter name="Stepper Type"   type="string" value="Newmark Beta"/>
-      <ParameterList name="Newmark Beta Parameters">
-        <Parameter name="Beta"    type="double" value="0.25"/>
-        <Parameter name="Gamma"   type="double" value="0.33"/>
+      <Parameter name="Stepper Type"   type="string" value="HHT-Alpha"/>
+      <ParameterList name="HHT-Alpha Parameters">
+        <Parameter name="Scheme Name"    type="string" value="Newmark Beta Average Acceleration"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 

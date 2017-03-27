@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_SecondOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark" << std::endl;
+  std::cout << "  Stepper = Newmark Beta" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -300,7 +300,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, HarmonicOscillatorDamped_FirstOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark" << std::endl;
+  std::cout << "  Stepper = Newmark Beta" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -417,7 +417,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark" << std::endl;
+  std::cout << "  Stepper = HHT-Alpha" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -532,7 +532,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark" << std::endl;
+  std::cout << "  Stepper = HHT-Alpha" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
@@ -647,7 +647,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = Newmark" << std::endl;
+  std::cout << "  Stepper = HHT-Alpha" << std::endl;
   std::cout << "  =========================" << std::endl;
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
