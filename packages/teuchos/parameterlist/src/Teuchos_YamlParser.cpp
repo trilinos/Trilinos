@@ -662,11 +662,7 @@ void generalWriteString(const std::string& str, std::ostream& yaml)
 
 void generalWriteDouble(double d, std::ostream& yaml)
 {
-  std::ios saved_state(0);
-  saved_state.copyfmt(yaml);
-  yaml << std::noshowpoint << std::scientific << std::setprecision(15);
   yaml << d;
-  yaml.copyfmt(saved_state);
 }
 
 bool stringNeedsQuotes(const std::string& str)
