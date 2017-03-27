@@ -32,7 +32,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
 
   IF( TrilinosCouplings_ENABLE_Stokhos AND
       Stokhos_ENABLE_Sacado AND
-      Stokhos_ENABLE_TpetraKernels AND
+      Stokhos_ENABLE_KokkosKernels AND
       Stokhos_ENABLE_Tpetra )
 
     # The ensemble version requires the PCE scalar type too since it builds
