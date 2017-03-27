@@ -88,6 +88,15 @@ public:
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
 
+    void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
+                                 const Thyra::VectorBase<Scalar>& v) const; 
+
+    void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
+                                     const Thyra::VectorBase<Scalar>& d) const; 
+
+    void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
+                              const Thyra::VectorBase<Scalar>& a_n) const; 
+
     void correctVelocity(Thyra::VectorBase<Scalar>& v,
                              const Thyra::VectorBase<Scalar>& vPred,
                              const Thyra::VectorBase<Scalar>& a,
@@ -114,7 +123,8 @@ private:
 
   Scalar beta_;
   Scalar gamma_;
-
+  Scalar alpha_f_; 
+  Scalar alpha_m_; 
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 

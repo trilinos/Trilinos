@@ -56,6 +56,54 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
   Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
 }
 
+
+template<class Scalar>
+void StepperHHTAlpha<Scalar>::
+predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
+                        const Thyra::VectorBase<Scalar>& v) const
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+  //vPred = (1-alpha_f)*vPred
+  Thyra::Vt_S(Teuchos::ptrFromRef(vPred), 1.0-alpha_f_); 
+  //vPred += alpha_f*v 
+  Thyra::Vp_V(Teuchos::ptrFromRef(vPred), v, alpha_f_); 
+}
+
+
+template<class Scalar>
+void StepperHHTAlpha<Scalar>::
+predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
+                            const Thyra::VectorBase<Scalar>& d) const
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+  //dPred = (1-alpha_f)*dPred
+  Thyra::Vt_S(Teuchos::ptrFromRef(dPred), 1.0-alpha_f_); 
+  //dPred += alpha_f*d
+  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, alpha_f_); 
+}
+
+template<class Scalar>
+void StepperHHTAlpha<Scalar>::
+correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
+                    const Thyra::VectorBase<Scalar>& a_n) const
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+  //IKT, FIXME: need to make sure alpha_m != 1
+  Scalar a = 1.0/(1.0-alpha_m_); 
+  //a_n_plus1 = 1/(1-alpha_m)*a_n_plus1
+  Thyra::Vt_S(Teuchos::ptrFromRef(a_n_plus1), a);
+  //a_n_plus1 -= alpha_m/(1-alpha_m)*a_n
+  Thyra::Vp_V(Teuchos::ptrFromRef(a_n_plus1), a_n, -alpha_m_*a); 
+}
+
+
+
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 correctVelocity(Thyra::VectorBase<Scalar>& v,
@@ -358,6 +406,8 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
+  alpha_f_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
+  alpha_m_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
   if (stepperPL_->isSublist("HHT-Alpha Parameters")) {
