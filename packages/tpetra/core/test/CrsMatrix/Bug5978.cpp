@@ -76,10 +76,6 @@
 // - 210b4176780172382181d05e815be92117d4324f
 //
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
@@ -138,12 +134,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug5978, SC, LO, GO, NT)
   out << "Proc " << myRank << ": Creating row and column Maps" << endl;
   comm->barrier ();
 
-  RCP<NT> node = DefaultPlatform::getDefaultPlatform().getNode ();
   const GO INVALID = OrdinalTraits<GO>::invalid ();
   RCP<const MapType> rowMap =
-    rcp (new MapType (INVALID, rowGIDs (), 0, comm, node));
+    rcp (new MapType (INVALID, rowGIDs (), 0, comm));
   RCP<const MapType> colMap =
-    rcp (new MapType (INVALID, colGIDs (), 0, comm, node));
+    rcp (new MapType (INVALID, colGIDs (), 0, comm));
 
   out << "Proc " << myRank << ": Creating matrix" << endl;
   comm->barrier ();
