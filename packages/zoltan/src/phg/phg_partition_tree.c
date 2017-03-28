@@ -62,6 +62,7 @@ int * tree_size
 )
 {
 /* Return the phg tree size.
+   See zoltan_partition_tree.h for a more precise definition of tree size.
  */
 
 static char  *yo = "Zoltan_PHG_Partition_Tree";
@@ -97,6 +98,7 @@ int    *hi_index         /* high index */
 )
 {
 /* Return the phg tree node information.
+   See zoltan_partition_tree.h for a more precise definition of parameters.
  */
 
 static char              *yo = "Zoltan_PHG_Partition_Tree";
