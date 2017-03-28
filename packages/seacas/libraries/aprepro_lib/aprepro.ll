@@ -76,6 +76,10 @@ int loop_lvl = 0;
 std::fstream *tmp_file;
 const char  *temp_f;
 
+#if defined __NVCC__
+#pragma diag_suppress code_is_unreachable
+#endif
+
 #define MAX_IF_NESTING 64
 
  int if_state[MAX_IF_NESTING] = {0}; // INITIAL
@@ -307,14 +311,14 @@ integer {D}+({E})?
   }
 }
 
-<END_CASE_SKIP>"{case".*"\n"  {
+<END_CASE_SKIP>{WS}"{"{WS}"case".*"\n"  {
   yyless(0);
   curr_index = 0;
   BEGIN(INITIAL);
   switch_skip_to_endcase = false;
 }
 
-<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+<INITIAL,END_CASE_SKIP>{WS}"{"{WS}"default"{WS}"}".*"\n"     {
  aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
     yyerror("default statement found outside switch statement.");
@@ -338,7 +342,7 @@ integer {D}+({E})?
   }
 }
 
-<END_CASE_SKIP>"{endswitch}".*"\n"  {
+<END_CASE_SKIP>{WS}"{"{WS}"endswitch"{WS}"}".*"\n"        {
   aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
   switch_active = false;
@@ -347,7 +351,7 @@ integer {D}+({E})?
 
 <END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
 
-<INITIAL>{WS}"{endswitch}".*"\n"        {
+<INITIAL>{WS}"{"{WS}"endswitch"{WS}"}".*"\n"        {
   aprepro.ap_file_list.top().lineno++;
   if (!switch_active) {
     yyerror("endswitch statement found without matching switch.");

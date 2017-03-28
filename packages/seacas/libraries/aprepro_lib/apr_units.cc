@@ -1,23 +1,23 @@
 // Copyright (c) 2014, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,35 +29,36 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <cstdio>
-#include <cstring> 
-#include <iomanip>
-#include "init_structs.h"
-#include "aprepro.h"
 #include "apr_util.h"
+#include "aprepro.h"
+#include "init_structs.h"
+#include <cstdio>
+#include <cstring>
+#include <iomanip>
 
 namespace SEAMS {
 
   extern Aprepro *aprepro;
-  extern int   echo;
+  extern int      echo;
 
   const char *do_Units(char *type);
   void load_conversion(struct var_init *base, struct svar_init *label);
 
-#define DEFINE_VAR(name, val, label) do {	\
-    if ((ptr = aprepro->getsym((name))) == nullptr) \
-      ptr = aprepro->putsym((name), SEAMS::Aprepro::VARIABLE, 1);	\
-    ptr->value.var = (val);		\
-    if (echo) { \
-      *(aprepro->infoStream) << comment << " 1 " << \
-      std::left << std::setw(10) << name << "\t= " << \
-      std::setw(14) << std::setprecision(7) << val << \
-      "  " << label << '\n'; \
-    } \
-  } while(0)
+#define DEFINE_VAR(name, val, label)                                                               \
+  do {                                                                                             \
+    if ((ptr = aprepro->getsym((name))) == nullptr)                                                \
+      ptr          = aprepro->putsym((name), SEAMS::Aprepro::VARIABLE, 1);                         \
+    ptr->value.var = (val);                                                                        \
+    if (echo) {                                                                                    \
+      *(aprepro->infoStream) << comment << " 1 " << std::left << std::setw(10) << name             \
+                             << "\t= " << std::setw(14) << std::setprecision(7) << val << "  "     \
+                             << label << '\n';                                                     \
+    }                                                                                              \
+  } while (0)
 
+  // clang-format off
 namespace {
 /*-------------------------------------------------------------------------------------*/
 /* SI Units */
@@ -426,6 +427,25 @@ void load_conversion(struct var_init *base, struct svar_init *label)
            comment << " 1 " << std::left << std::setw(10) << "radian" << "\t= "
                    << std::setw(14) << std::setprecision(7) << rad << "  " << Aout << '\n';
   }
+
+  if (echo) *(aprepro->infoStream) << title_prefix << "Binary Prefixes" << '\n';
+  DEFINE_VAR("byte", 1, "byte");
+  DEFINE_VAR("KiB",  1024.0, "byte");
+  DEFINE_VAR("MiB",  1024.0*1024.0, "byte");
+  DEFINE_VAR("GiB",  1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("TiB",  1024.0*1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("PiB",  1024.0*1024.0*1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("EiB",  1024.0*1024.0*1024.0*1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("ZiB",  1024.0*1024.0*1024.0*1024.0*1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("YiB",  1024.0*1024.0*1024.0*1024.0*1024.0*1024.0*1024.0*1024.0, "byte");
+  DEFINE_VAR("KB",   1.0e03, "byte");
+  DEFINE_VAR("MB",   1.0e06, "byte");
+  DEFINE_VAR("GB",   1.0e09, "byte");
+  DEFINE_VAR("TB",   1.0e12, "byte");
+  DEFINE_VAR("PB",   1.0e15, "byte");
+  DEFINE_VAR("EB",   1.0e18, "byte");
+  DEFINE_VAR("ZB",   1.0e21, "byte");
+  DEFINE_VAR("YB",   1.0e24, "byte");
 
   if (echo) *(aprepro->infoStream) << title_prefix << "Time (T)" << '\n';
   DEFINE_VAR("second",                                        sec,         tout);

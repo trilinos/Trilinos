@@ -180,7 +180,8 @@ namespace Iohb {
       return -1;
     }
 
-    time_t timeLastFlush;
+    time_t timeLastFlush_;
+    time_t flushInterval_;
 
     std::ostream *logStream;
     Layout *      layout_;

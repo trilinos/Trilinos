@@ -348,7 +348,6 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
                      beststep);
             }
           }
-          gtotal -= bestval;
           weightsum[to] -= vweight;
           weightsum[from] += weightfrom;
           break;

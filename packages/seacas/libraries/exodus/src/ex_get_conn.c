@@ -86,6 +86,8 @@ int ex_get_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, void_in
   const char *vedgeconn  = NULL;
   const char *vfaceconn  = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   /* Should we warn if edgeconn or faceconn are non-NULL?
    * No, fail silently so the same code can be used to read any type of block
    * info.

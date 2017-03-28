@@ -117,6 +117,8 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
 
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0;
 
   /* determine which type of object property names are desired for */

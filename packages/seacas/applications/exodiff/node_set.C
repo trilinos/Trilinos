@@ -154,6 +154,14 @@ template <typename INT> const double *Node_Set<INT>::Distribution_Factors() cons
   return dist_factors;
 }
 
+template <typename INT> void Node_Set<INT>::Free_Distribution_Factors() const
+{
+  if (dist_factors) {
+    delete [] dist_factors;
+    dist_factors = nullptr;
+  }
+}
+
 template <typename INT> void Node_Set<INT>::Display(std::ostream &s)
 {
   Check_State();

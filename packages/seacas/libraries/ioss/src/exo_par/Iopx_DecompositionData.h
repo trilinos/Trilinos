@@ -58,7 +58,7 @@ namespace Iopx {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) : comm_(comm), myProcessor(0), processorCount(0) {}
+    DecompositionDataBase(MPI_Comm comm) : comm_(comm), m_processor(0), m_processorCount(0) {}
 
     virtual ~DecompositionDataBase() {}
     virtual int  int_size() const             = 0;
@@ -79,8 +79,8 @@ namespace Iopx {
 
     MPI_Comm comm_;
 
-    int myProcessor;
-    int processorCount;
+    int m_processor;
+    int m_processorCount;
 
     std::vector<Ioss::BlockDecompositionData> el_blocks;
     std::vector<Ioss::SetDecompositionData>   node_sets;

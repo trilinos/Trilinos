@@ -62,7 +62,7 @@ namespace Excn {
                             std::string &name, int num, int total_num) const;
 
   private:
-    std::string *disk_names;
+    std::vector<std::string> disk_names;
 
     int number_of_raids;
     int raid_offset;

@@ -619,7 +619,7 @@ namespace {
                              * tet/hex problem
                              */
                             if (hflag1 && tflag2)
-                              (weight->edges[weight->edges.size() - 1])--;
+                              (weight->edges.back())--;
                           }
                         }
                         else if ((sid < 0) && (!problem->skip_checks)) {

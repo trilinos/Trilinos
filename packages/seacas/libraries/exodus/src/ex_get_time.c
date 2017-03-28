@@ -86,6 +86,8 @@ int ex_get_time(int exoid, int time_step, void *time_value)
   size_t start[1];
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined variable */

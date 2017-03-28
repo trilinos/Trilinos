@@ -46,50 +46,22 @@
 
 namespace Ioss {
   class CommSet;
-}
-namespace Ioss {
   class EdgeBlock;
-}
-namespace Ioss {
   class EdgeSet;
-}
-namespace Ioss {
   class ElementBlock;
-}
-namespace Ioss {
   class ElementSet;
-}
-namespace Ioss {
-  class FaceBlock;
-}
-namespace Ioss {
-  class FaceSet;
-}
-namespace Ioss {
-  class Field;
-}
-namespace Ioss {
-  class NodeBlock;
-}
-namespace Ioss {
-  class NodeSet;
-}
-namespace Ioss {
-  class PropertyManager;
-}
-namespace Ioss {
-  class Region;
-}
-namespace Ioss {
-  class SideBlock;
-}
-namespace Ioss {
-  class SideSet;
-}
-
-namespace Ioss {
-  class GroupingEntity;
   class EntityBlock;
+  class FaceBlock;
+  class FaceSet;
+  class Field;
+  class GroupingEntity;
+  class NodeBlock;
+  class NodeSet;
+  class PropertyManager;
+  class Region;
+  class SideBlock;
+  class SideSet;
+  class StructuredBlock;
 }
 
 /** \brief A namespace for the pamgen database format.
@@ -215,6 +187,12 @@ namespace Iopg {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
 
+    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -254,6 +232,11 @@ namespace Iopg {
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
 
     std::string databaseTitle;
 

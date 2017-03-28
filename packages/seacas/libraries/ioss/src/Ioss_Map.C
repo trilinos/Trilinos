@@ -91,10 +91,6 @@ namespace {
     {
       return key_less(lhs.first, k);
     }
-    bool operator()(const Ioss::IdPair::first_type &k, const Ioss::IdPair &rhs) const
-    {
-      return key_less(k, rhs.first);
-    }
     // Assignment operator
     // Copy constructor
   private:
@@ -111,14 +107,6 @@ namespace {
     bool operator()(const Ioss::IdPair &lhs, const Ioss::IdPair &rhs) const
     {
       return key_equal(lhs.first, rhs.first);
-    }
-    bool operator()(const Ioss::IdPair &lhs, const Ioss::IdPair::first_type &k) const
-    {
-      return key_equal(lhs.first, k);
-    }
-    bool operator()(const Ioss::IdPair::first_type &k, const Ioss::IdPair &rhs) const
-    {
-      return key_equal(k, rhs.first);
     }
     // Assignment operator
     // Copy constructor

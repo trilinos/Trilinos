@@ -75,6 +75,8 @@ int ex_put_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_id set_id
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     exerrval = status;

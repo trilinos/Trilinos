@@ -16,10 +16,10 @@ exit 1
 
 ########################################################################
 function execute_epu {
-    cycles=$1
+    cycles=`expr $1 - 1`
     all_options=$2
     
-    $PARALLEL -u "$EPU -cycle {} $all_options" ::: $($ZPAD $cycles)
+    $PARALLEL --will-cite -u "$EPU -cycle {} $all_options" ::: $($SEQ 0 $cycles)
 
     epu_rc=$?
     return $epu_rc
@@ -44,7 +44,7 @@ cycles=-1
 ACCESS=@ACCESSDIR@
 EPU=${ACCESS}/bin/epu
 PARALLEL=${ACCESS}/bin/parallel
-ZPAD=${ACCESS}/bin/zpad
+SEQ="seq -w"
 if [ $# -eq 0 ] ; then
   usage
 fi

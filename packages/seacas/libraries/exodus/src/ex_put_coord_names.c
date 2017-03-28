@@ -80,6 +80,8 @@ int ex_put_coord_names(int exoid, char *coord_names[])
   size_t num_dim;
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {

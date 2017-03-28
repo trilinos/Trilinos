@@ -123,6 +123,8 @@ int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* open appropriate variable, depending on obj_type and prop_name */

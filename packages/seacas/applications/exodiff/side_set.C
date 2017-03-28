@@ -235,6 +235,14 @@ template <typename INT> const double *Side_Set<INT>::Distribution_Factors() cons
   return dist_factors;
 }
 
+template <typename INT> void Side_Set<INT>::Free_Distribution_Factors() const
+{
+  if (dist_factors) {
+    delete [] dist_factors;
+    dist_factors = nullptr;
+  }
+}
+
 template <typename INT>
 std::pair<INT, INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
 {

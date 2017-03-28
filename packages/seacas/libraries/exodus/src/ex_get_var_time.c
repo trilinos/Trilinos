@@ -86,6 +86,8 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   const char *varobjids;
   const char *varobstat;
 
+  ex_check_valid_file_id(exoid);
+
   switch (var_type) {
   case EX_GLOBAL:
     return ex_get_glob_var_time_int(exoid, var_index, beg_time_step, end_time_step, var_vals);

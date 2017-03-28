@@ -65,6 +65,8 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
   size_t lnum_node_maps, lnum_elem_maps;
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* node maps are optional */

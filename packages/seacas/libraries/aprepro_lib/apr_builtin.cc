@@ -1,37 +1,37 @@
 #include "apr_builtin.h"
 
-#include <cmath>
-#include <cmath>
-#include <cfenv>
 #include <cctype>
-#include <errno.h>
-#include <cstdlib>
-#include <sstream>
-#include <fstream>
-#include <ctime>
+#include <cfenv>
+#include <cmath>
+#include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <errno.h>
+#include <fstream>
+#include <sstream>
 #include <sys/stat.h>
 #ifdef _WIN32
-  #include <io.h>
+#include <io.h>
 #else
-  #include <unistd.h>
+#include <unistd.h>
 #endif
-#include <cstring>
-#include <assert.h>
-#include "aprepro.h"
 #include "apr_scanner.h"
-#include "aprepro_parser.h"
-#include "apr_util.h"
 #include "apr_tokenize.h"
+#include "apr_util.h"
+#include "aprepro.h"
+#include "aprepro_parser.h"
+#include <assert.h>
+#include <cstring>
 
 #include <random>
 
 #ifndef PI
-#define PI  3.141592653589793238462643
+#define PI 3.141592653589793238462643
 #endif
 
 namespace {
-    std::mt19937_64 rng;
+  std::mt19937_64 rng;
 
   void reset_error()
   {
@@ -46,1147 +46,1082 @@ namespace {
 
 namespace SEAMS {
 
-extern SEAMS::Aprepro *aprepro;
+  extern SEAMS::Aprepro *aprepro;
 
 #if defined(VMS) || defined(_hpux_) || defined(sun) || defined(__linux__)
-#define HYPOT(x,y) hypot(x,y)
+#define HYPOT(x, y) hypot(x, y)
 #else
-#define HYPOT(x,y) do_hypot(x,y)
+#define HYPOT(x, y) do_hypot(x, y)
 #endif
 
-#define d2r(x)  ((x)*PI/180.)
-#define r2d(x)  ((x)*180./PI)
+#define d2r(x) ((x)*PI / 180.)
+#define r2d(x) ((x)*180. / PI)
 
 #ifndef max
-#define max(x,y) (x) > (y) ? (x) : (y)
-#define min(x,y) (x) < (y) ? (x) : (y)
+#define max(x, y) (x) > (y) ? (x) : (y)
+#define min(x, y) (x) < (y) ? (x) : (y)
 #endif
 
 #if defined(sun) || defined(__linux__)
-#define LOG1P(x)	log1p(x)
+#define LOG1P(x) log1p(x)
 #else
-#define LOG1P(x)	std::log(1.0 + (x))
+#define LOG1P(x) std::log(1.0 + (x))
 #endif
 
-/* DO_INT:  Calculate integer nearest to zero from value */
-double do_int(double x)
-{
-  double temp;
-  reset_error();
-  temp = (double) (x < 0 ? -std::floor (-(x)) : std::floor (x));
-  SEAMS::math_error ("int");
-  return (temp);
-}
+  /* DO_INT:  Calculate integer nearest to zero from value */
+  double do_int(double x)
+  {
+    double temp;
+    reset_error();
+    temp = (double)(x < 0 ? -std::floor(-(x)) : std::floor(x));
+    SEAMS::math_error("int");
+    return (temp);
+  }
 
-/* DO_NINT:  Calculate integer nearest value */
-double do_nint(double x)
-{
-  double temp;
-  reset_error();
-  temp = (double) (x < 0 ? -std::floor(0.5-x) : std::floor(x+0.5));
-  SEAMS::math_error ("nint");
-  return (temp);
-}
+  /* DO_NINT:  Calculate integer nearest value */
+  double do_nint(double x)
+  {
+    double temp;
+    reset_error();
+    temp = (double)(x < 0 ? -std::floor(0.5 - x) : std::floor(x + 0.5));
+    SEAMS::math_error("nint");
+    return (temp);
+  }
 
-/* DO_DIST: Calculate distance between point 1 at (x1,y1) and
- *          point 2 at (x2,y2).
- */
-double do_dist(double x1, double y1, double x2, double y2)
-{
-  double temp;
-  reset_error();
-  temp = HYPOT((x1 - x2), (y1 - y2));
-  SEAMS::math_error("hypot");
-  return (temp);
-}
+  /* DO_DIST: Calculate distance between point 1 at (x1,y1) and
+   *          point 2 at (x2,y2).
+   */
+  double do_dist(double x1, double y1, double x2, double y2)
+  {
+    double temp;
+    reset_error();
+    temp = HYPOT((x1 - x2), (y1 - y2));
+    SEAMS::math_error("hypot");
+    return (temp);
+  }
 
-/* DO_ANGLE: Calculate angle (radians) between vector 1 at (0,0; x1,y1) and
- *          vector 2 at (0,0; x2,y2).
- */
-double do_angle(double x1, double y1, double x2, double y2)
-{
-  double temp;
-  temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
-  reset_error();
-  temp = acos(temp);
-  SEAMS::math_error("angle");
-  return (temp);
-}
+  /* DO_ANGLE: Calculate angle (radians) between vector 1 at (0,0; x1,y1) and
+   *          vector 2 at (0,0; x2,y2).
+   */
+  double do_angle(double x1, double y1, double x2, double y2)
+  {
+    double temp;
+    temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    reset_error();
+    temp = acos(temp);
+    SEAMS::math_error("angle");
+    return (temp);
+  }
 
-/* DO_ANGLE: Calculate angle (degrees) between vector 1 at (0,0; x1,y1) and
- *          vector 2 at (0,0; x2,y2).
- */
-double do_angled(double x1, double y1, double x2, double y2)
-{
-  double temp;
-  temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
-  reset_error();
-  temp = r2d(acos(temp));
-  SEAMS::math_error("angled");
-  return (temp);
-}
+  /* DO_ANGLE: Calculate angle (degrees) between vector 1 at (0,0; x1,y1) and
+   *          vector 2 at (0,0; x2,y2).
+   */
+  double do_angled(double x1, double y1, double x2, double y2)
+  {
+    double temp;
+    temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    reset_error();
+    temp = r2d(acos(temp));
+    SEAMS::math_error("angled");
+    return (temp);
+  }
 
-/* DO_HYPOT: calcluate sqrt(p^2 + q^2)     */
-/* Algorithm from "More Programming Pearls," Jon Bentley */
-/* Accuracy: 6.5 digits after 2 iterations,
- *           20  digits after 3 iterations,
- *           62  digits after 4 iterations.
- */
+  /* DO_HYPOT: calcluate sqrt(p^2 + q^2)     */
+  /* Algorithm from "More Programming Pearls," Jon Bentley */
+  /* Accuracy: 6.5 digits after 2 iterations,
+   *           20  digits after 3 iterations,
+   *           62  digits after 4 iterations.
+   */
 
-double do_hypot(double x, double y)
-{
-  double r;
-  int i;
+  double do_hypot(double x, double y)
+  {
+    double r;
+    int    i;
 
-  x = fabs(x);
-  y = fabs(y);
-  if (x < y)
-    {
+    x = fabs(x);
+    y = fabs(y);
+    if (x < y) {
       r = y;
       y = x;
       x = r;
     }
-  if (x == 0.0)
-    return (y);
+    if (x == 0.0)
+      return (y);
 
-  for (i = 0; i < 3; i++)
-    {
+    for (i = 0; i < 3; i++) {
       r = y / x;
       r *= r;
       r /= (4.0 + r);
       x += (2.0 * r * x);
       y *= r;
     }
-  return (x);
-}
-
-double 
-do_max(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = max(x, y);
-  SEAMS::math_error("max");
-  return (temp);
-}
-
-double 
-do_min(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = min(x, y);
-  SEAMS::math_error("min");
-  return (temp);
-}
-
-double 
-do_d2r(double x)
-{
-  return (d2r(x));
-}
-
-double 
-do_r2d(double x)
-{
-  return (r2d(x));
-}
-
-double 
-do_sind(double x)
-{
-  double temp;
-  reset_error();
-  temp = sin(d2r(x));
-  SEAMS::math_error("sind");
-  return (temp);
-}
-
-double 
-do_sin(double x)
-{
-  double temp;
-  reset_error();
-  temp = sin(x);
-  SEAMS::math_error("sin");
-  return (temp);
-}
-
-double 
-do_cosd(double x)
-{
-  double temp;
-  reset_error();
-  temp = cos(d2r(x));
-  SEAMS::math_error("cosd");
-  return (temp);
-}
-
-double 
-do_cos(double x)
-{
-  double temp;
-  reset_error();
-  temp = cos(x);
-  SEAMS::math_error("cos");
-  return (temp);
-}
-
-double 
-do_tand(double x)
-{
-  double temp;
-  reset_error();
-  temp = tan(d2r(x));
-  SEAMS::math_error("tand");
-  return (temp);
-}
-
-double 
-do_tan(double x)
-{
-  double temp;
-  reset_error();
-  temp = tan(x);
-  SEAMS::math_error("tan");
-  return (temp);
-}
-
-double 
-do_atan2d(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = r2d(atan2(x, y));
-  SEAMS::math_error("atan2d");
-  return (temp);
-}
-
-double 
-do_atan2(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = atan2(x, y);
-  SEAMS::math_error("atan2");
-  return (temp);
-}
-
-double 
-do_atand(double x)
-{
-  double temp;
-  reset_error();
-  temp = r2d(atan(x));
-  SEAMS::math_error("atand");
-  return (temp);
-}
-
-double 
-do_atan(double x)
-{
-  double temp;
-  reset_error();
-  temp = atan(x);
-  SEAMS::math_error("atan");
-  return (temp);
-}
-
-double 
-do_asind(double x)
-{
-  double temp;
-  reset_error();
-  temp = r2d(asin(x));
-  SEAMS::math_error("asind");
-  return (temp);
-}
-
-double 
-do_asin(double x)
-{
-  double temp;
-  reset_error();
-  temp = asin(x);
-  SEAMS::math_error("asin");
-  return (temp);
-}
-
-double 
-do_acosd(double x)
-{
-  double temp;
-  reset_error();
-  temp = r2d(acos(x));
-  SEAMS::math_error("acosd");
-  return (temp);
-}
-
-double 
-do_acos(double x)
-{
-  double temp;
-  reset_error();
-  temp = acos(x);
-  SEAMS::math_error("acos");
-  return (temp);
-}
-
-/* do_srand(x) Seed the random generator with the specified integer value */
-double
-do_srand(double seed)
-{
-  rng.seed((size_t)seed);
-  return (0);
-}
-
-/* do_rand(x) returns a random double in the range 0<= do_rand <= x */
-double 
-do_rand(double xl, double xh)
-{
-  std::uniform_real_distribution<double> dist(xl, xh);
-  return dist(rng);
-}
-
-double 
-do_rand_normal(double mean, double stddev)
-{
-  std::normal_distribution<> dist(mean, stddev);
-  return dist(rng);
-}
-
-double 
-do_rand_lognormal(double mean, double stddev)
-{
-  std::lognormal_distribution<> dist(mean, stddev);
-  return dist(rng);
-}
-
-double 
-do_rand_weibull(double alpha, double beta)
-{
-  std::weibull_distribution<> dist(alpha, beta);
-  return dist(rng);
-}
-
-double 
-do_sign(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = (y) >= 0 ? fabs(x) : -fabs(x);
-  SEAMS::math_error("sign");
-  return (temp);
-}
-
-double 
-do_dim(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = x - (min(x, y));
-  SEAMS::math_error("dim");
-  return (temp);
-}
-
-double 
-do_fabs(double x)
-{
-  double temp;
-  reset_error();
-  temp = fabs(x);
-  SEAMS::math_error("fabs");
-  return (temp);
-}
-
-double 
-do_ceil(double x)
-{
-  double temp;
-  reset_error();
-  temp = ceil(x);
-  SEAMS::math_error("ceil");
-  return (temp);
-}
-
-double 
-do_cosh(double x)
-{
-  double temp;
-  reset_error();
-  temp = cosh(x);
-  SEAMS::math_error("cosh");
-  return (temp);
-}
-
-double 
-do_exp(double x)
-{
-  double temp;
-  reset_error();
-  temp = exp(x);
-  SEAMS::math_error("exp");
-  return (temp);
-}
-
-double 
-do_floor(double x)
-{
-  double temp;
-  reset_error();
-  temp = floor(x);
-  SEAMS::math_error("floor");
-  return (temp);
-}
-
-double 
-do_fmod(double x, double y)
-{
-  double temp;
-  reset_error();
-  temp = fmod(x, y);
-  SEAMS::math_error("fmod");
-  return (temp);
-}
-
-double 
-do_log(double x)
-{
-  double temp;
-  reset_error();
-  temp = std::log(x);
-  SEAMS::math_error("log");
-  return (temp);
-}
-
-double 
-do_log10(double x)
-{
-  double temp;
-  reset_error();
-  temp = std::log10(x);
-  SEAMS::math_error("log10");
-  return (temp);
-}
-
-double 
-do_sinh(double x)
-{
-  double temp;
-  reset_error();
-  temp = sinh(x);
-  SEAMS::math_error("sinh");
-  return (temp);
-}
-
-double 
-do_sqrt(double x)
-{
-  double temp;
-  feclearexcept(FE_ALL_EXCEPT);
-  reset_error();
-  temp = std::sqrt(x);
-  if(fetestexcept(FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO)) {
-    SEAMS::math_error("sqrt");
+    return (x);
   }
-  return (temp);
-}
 
-double 
-do_tanh(double x)
-{
-  double temp;
-  reset_error();
-  temp = tanh(x);
-  SEAMS::math_error("tanh");
-  return (temp);
-}
+  double do_max(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = max(x, y);
+    SEAMS::math_error("max");
+    return (temp);
+  }
 
-double do_polarX(double rad, double ang)
-{
-  return (rad * cos(d2r(ang)));
-}
+  double do_min(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = min(x, y);
+    SEAMS::math_error("min");
+    return (temp);
+  }
 
-double do_polarY(double rad, double ang)
-{
-  return (rad * sin(d2r(ang)));
-}
+  double do_d2r(double x) { return (d2r(x)); }
 
-double cof[] =
-{76.18009173, -86.50532033, 24.01409822,
- -1.231739516, 0.120858003e-2, -0.536382e-5};
-double do_lgamma(double val)
-{
-#define STP	2.50662827465
-  double x, tmp, ser;
-  int j;
+  double do_r2d(double x) { return (r2d(x)); }
 
-  x = val - 1.0;
-  tmp = x + 5.5;
-  tmp = (x + 0.5) * std::log(tmp) - tmp;
-  ser = 1.0;
-  for (j = 0; j < 6; j++)
-    {
+  double do_sind(double x)
+  {
+    double temp;
+    reset_error();
+    temp = sin(d2r(x));
+    SEAMS::math_error("sind");
+    return (temp);
+  }
+
+  double do_sin(double x)
+  {
+    double temp;
+    reset_error();
+    temp = sin(x);
+    SEAMS::math_error("sin");
+    return (temp);
+  }
+
+  double do_cosd(double x)
+  {
+    double temp;
+    reset_error();
+    temp = cos(d2r(x));
+    SEAMS::math_error("cosd");
+    return (temp);
+  }
+
+  double do_cos(double x)
+  {
+    double temp;
+    reset_error();
+    temp = cos(x);
+    SEAMS::math_error("cos");
+    return (temp);
+  }
+
+  double do_tand(double x)
+  {
+    double temp;
+    reset_error();
+    temp = tan(d2r(x));
+    SEAMS::math_error("tand");
+    return (temp);
+  }
+
+  double do_tan(double x)
+  {
+    double temp;
+    reset_error();
+    temp = tan(x);
+    SEAMS::math_error("tan");
+    return (temp);
+  }
+
+  double do_atan2d(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = r2d(atan2(x, y));
+    SEAMS::math_error("atan2d");
+    return (temp);
+  }
+
+  double do_atan2(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = atan2(x, y);
+    SEAMS::math_error("atan2");
+    return (temp);
+  }
+
+  double do_atand(double x)
+  {
+    double temp;
+    reset_error();
+    temp = r2d(atan(x));
+    SEAMS::math_error("atand");
+    return (temp);
+  }
+
+  double do_atan(double x)
+  {
+    double temp;
+    reset_error();
+    temp = atan(x);
+    SEAMS::math_error("atan");
+    return (temp);
+  }
+
+  double do_asind(double x)
+  {
+    double temp;
+    reset_error();
+    temp = r2d(asin(x));
+    SEAMS::math_error("asind");
+    return (temp);
+  }
+
+  double do_asin(double x)
+  {
+    double temp;
+    reset_error();
+    temp = asin(x);
+    SEAMS::math_error("asin");
+    return (temp);
+  }
+
+  double do_acosd(double x)
+  {
+    double temp;
+    reset_error();
+    temp = r2d(acos(x));
+    SEAMS::math_error("acosd");
+    return (temp);
+  }
+
+  double do_acos(double x)
+  {
+    double temp;
+    reset_error();
+    temp = acos(x);
+    SEAMS::math_error("acos");
+    return (temp);
+  }
+
+  /* do_srand(x) Seed the random generator with the specified integer value */
+  double do_srand(double seed)
+  {
+    rng.seed((size_t)seed);
+    return (0);
+  }
+
+  /* do_rand(x) returns a random double in the range 0<= do_rand <= x */
+  double do_rand(double xl, double xh)
+  {
+    std::uniform_real_distribution<double> dist(xl, xh);
+    return dist(rng);
+  }
+
+  double do_rand_normal(double mean, double stddev)
+  {
+    std::normal_distribution<> dist(mean, stddev);
+    return dist(rng);
+  }
+
+  double do_rand_lognormal(double mean, double stddev)
+  {
+    std::lognormal_distribution<> dist(mean, stddev);
+    return dist(rng);
+  }
+
+  double do_rand_weibull(double alpha, double beta)
+  {
+    std::weibull_distribution<> dist(alpha, beta);
+    return dist(rng);
+  }
+
+  double do_sign(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = (y) >= 0 ? fabs(x) : -fabs(x);
+    SEAMS::math_error("sign");
+    return (temp);
+  }
+
+  double do_dim(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = x - (min(x, y));
+    SEAMS::math_error("dim");
+    return (temp);
+  }
+
+  double do_fabs(double x)
+  {
+    double temp;
+    reset_error();
+    temp = fabs(x);
+    SEAMS::math_error("fabs");
+    return (temp);
+  }
+
+  double do_ceil(double x)
+  {
+    double temp;
+    reset_error();
+    temp = ceil(x);
+    SEAMS::math_error("ceil");
+    return (temp);
+  }
+
+  double do_cosh(double x)
+  {
+    double temp;
+    reset_error();
+    temp = cosh(x);
+    SEAMS::math_error("cosh");
+    return (temp);
+  }
+
+  double do_exp(double x)
+  {
+    double temp;
+    reset_error();
+    temp = exp(x);
+    SEAMS::math_error("exp");
+    return (temp);
+  }
+
+  double do_floor(double x)
+  {
+    double temp;
+    reset_error();
+    temp = floor(x);
+    SEAMS::math_error("floor");
+    return (temp);
+  }
+
+  double do_fmod(double x, double y)
+  {
+    double temp;
+    reset_error();
+    temp = fmod(x, y);
+    SEAMS::math_error("fmod");
+    return (temp);
+  }
+
+  double do_log(double x)
+  {
+    double temp;
+    reset_error();
+    temp = std::log(x);
+    SEAMS::math_error("log");
+    return (temp);
+  }
+
+  double do_log10(double x)
+  {
+    double temp;
+    reset_error();
+    temp = std::log10(x);
+    SEAMS::math_error("log10");
+    return (temp);
+  }
+
+  double do_sinh(double x)
+  {
+    double temp;
+    reset_error();
+    temp = sinh(x);
+    SEAMS::math_error("sinh");
+    return (temp);
+  }
+
+  double do_sqrt(double x)
+  {
+    double temp;
+    feclearexcept(FE_ALL_EXCEPT);
+    reset_error();
+    temp = std::sqrt(x);
+    if (fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO)) {
+      SEAMS::math_error("sqrt");
+    }
+    return (temp);
+  }
+
+  double do_tanh(double x)
+  {
+    double temp;
+    reset_error();
+    temp = tanh(x);
+    SEAMS::math_error("tanh");
+    return (temp);
+  }
+
+  double do_polarX(double rad, double ang) { return (rad * cos(d2r(ang))); }
+
+  double do_polarY(double rad, double ang) { return (rad * sin(d2r(ang))); }
+
+  double cof[] = {76.18009173,  -86.50532033,   24.01409822,
+                  -1.231739516, 0.120858003e-2, -0.536382e-5};
+  double do_lgamma(double val)
+  {
+#define STP 2.50662827465
+    double x, tmp, ser;
+    int    j;
+
+    x   = val - 1.0;
+    tmp = x + 5.5;
+    tmp = (x + 0.5) * std::log(tmp) - tmp;
+    ser = 1.0;
+    for (j = 0; j < 6; j++) {
       x += 1.0;
       ser += (cof[j] / x);
     }
-  return (tmp + std::log(STP * ser));
-}
+    return (tmp + std::log(STP * ser));
+  }
 
-double do_juldayhms(double mon, double day, double year,
-		    double h, double mi, double se)
-{
-  long m = (long)mon, d = (long)day, y = (long)year;
-  long c, ya, j;
-  double seconds = h * 3600.0 + mi * 60 + se;
+  double do_juldayhms(double mon, double day, double year, double h, double mi, double se)
+  {
+    long   m = (long)mon, d = (long)day, y = (long)year;
+    long   c, ya, j;
+    double seconds = h * 3600.0 + mi * 60 + se;
 
-  if (m > 2)
-    m -= 3;
-  else
-    {
+    if (m > 2)
+      m -= 3;
+    else {
       m += 9;
       --y;
     }
-  c = y / 100L;
-  ya = y - (100L * c);
-  j = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
-  if (seconds < 12 * 3600.0)
-    {
+    c  = y / 100L;
+    ya = y - (100L * c);
+    j  = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
+    if (seconds < 12 * 3600.0) {
       j--;
       seconds += 12.0 * 3600.0;
     }
-  else
-    {
+    else {
       seconds = seconds - 12.0 * 3600.0;
     }
-  return (j + (seconds / 3600.0) / 24.0);
-}
+    return (j + (seconds / 3600.0) / 24.0);
+  }
 
-double do_julday(double mon, double day, double year)
-{
-  return do_juldayhms(mon, day, year, 0.0, 0.0, 0.0);
-}
+  double do_julday(double mon, double day, double year)
+  {
+    return do_juldayhms(mon, day, year, 0.0, 0.0, 0.0);
+  }
 
-double do_log1p(double x)
-{
-  return LOG1P(x);
-}
+  double do_log1p(double x) { return LOG1P(x); }
 
-double do_acosh(double x)
-{
-  double t;
-  if (x > 1.0e20)
-    return (LOG1P(x) + std::log(2.0));
-  else
-    {
+  double do_acosh(double x)
+  {
+    double t;
+    if (x > 1.0e20)
+      return (LOG1P(x) + std::log(2.0));
+    else {
       t = std::sqrt(x - 1.0);
       return (LOG1P(t * (t + std::sqrt(x + 1))));
     }
-}
+  }
 
-double do_asinh(double x)
-{
-  double s, t;
-  if (1.0 + x * x == 1.0)
-    return (x);
-  if (std::sqrt(1.0 + x * x) == 1.0)
-    return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
-  else
-    {
+  double do_asinh(double x)
+  {
+    double s, t;
+    if (1.0 + x * x == 1.0)
+      return (x);
+    if (std::sqrt(1.0 + x * x) == 1.0)
+      return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
+    else {
       t = fabs(x);
       s = 1.0 / t;
       return (do_sign(1.0, x) * LOG1P(t + t / (s + std::sqrt(1 + s * s))));
     }
-}
-
-double do_atanh(double x)
-{
-  double z;
-  z = do_sign(0.5, x);
-  x = do_sign(x, 1.0);
-  x = x / (1.0 - x);
-  return (z * LOG1P(x + x));
-}
-
-double do_rows(const array *arr)
-{
-  return arr->rows;
-}
-
-double do_cols(const array *arr)
-{
-  return arr->cols;
-}
-
-/*
-  --------------------------STRING FUNCTIONS------------------------
- */
-
-const char *do_get_date()
-{
-  char *tmp;
-  const size_t bufsize = 32;
-  static char tmpstr[32];
-
-  time_t timer = time(nullptr);
-  struct tm *timeptr = localtime(&timer);
-  
-  /* First  the date in the form CCYY/MM/DD */
-  strftime(tmpstr, bufsize, "%Y/%m/%d", timeptr);
-  new_string(tmpstr, &tmp);
-  return(tmp);
-}
-
-const char *do_get_iso_date()
-{
-  char *tmp;
-  const size_t bufsize = 32;
-  static char tmpstr[32];
-
-  time_t timer = time(nullptr);
-  struct tm *timeptr = localtime(&timer);
-  
-  /* First  the date in the form CCYY/MM/DD */
-  strftime(tmpstr, bufsize, "%Y%m%d", timeptr);
-  new_string(tmpstr, &tmp);
-  return(tmp);
-}
-
-const char *do_get_time()
-{
-  char *tmp;
-  const size_t bufsize = 32;
-  static char tmpstr[32];
-
-  time_t timer = time(nullptr);
-  struct tm *timeptr = localtime(&timer);
-  
-  /* Now the time in the form HH:MM:SS where 0 <= HH < 24 */
-  strftime(tmpstr, bufsize, "%H:%M:%S", timeptr);
-  new_string(tmpstr, &tmp);
-  return(tmp);
-}
-
-const char *do_tolower(char *string)
-{
-  char *p = string;
-  while (*p != '\0')
-    {
-      if (isupper((int)*p))
-	*p = tolower((int)*p);
-      p++;
-    }
-  return (string);
-}
-
-const char *do_toupper(char *string)
-{
-  char *p = string;
-  while (*p != '\0')
-    {
-      if (islower((int)*p))
-	*p = toupper((int)*p);
-      p++;
-    }
-  return (string);
-}
-
-const char *do_tostring(double x)
-{
-  char *tmp;
-  static char tmpstr[128];
-  if (x == 0.0)
-    {
-      new_string("0", &tmp);
-      return (tmp);
-    }
-  else
-    {
-      SEAMS::symrec *format;
-      format = aprepro->getsym("_FORMAT");
-      (void) sprintf(tmpstr, format->value.svar, x);
-      new_string(tmpstr, &tmp);
-      return (tmp);
-    }
-}
-
-const char *do_output(char *filename)
-{
-  aprepro->outputStream.top()->flush();
-
-  if (std::strcmp(filename, "pop") == 0 ||
-      std::strcmp(filename, "stdout") == 0) {
-    while (aprepro->outputStream.size() > 1) {
-      std::ostream* output = aprepro->outputStream.top();
-      aprepro->outputStream.pop();
-      delete output;
-    }
-
-    aprepro->info("Output now redirected to original output stream.\n");
-  }
-  else {
-    std::ostream* output = new std::ofstream(filename);
-    if (output != nullptr) {
-      aprepro->outputStream.push(output);
-
-      aprepro->info("Output now redirected to file'" +
-                    std::string(filename) + "'.\n");
-    } else {
-    aprepro->error("Could not open output file '" +
-                   std::string(filename) + "'.\n", false);
-    }
-  }
-  return (nullptr);
-}
-
-const char *do_append(char *filename)
-{
-  aprepro->outputStream.top()->flush();
-
-  if (std::strcmp(filename, "pop") == 0 ||
-      std::strcmp(filename, "stdout") == 0) {
-    while (aprepro->outputStream.size() > 1) {
-      std::ostream* output = aprepro->outputStream.top();
-      aprepro->outputStream.pop();
-      delete output;
-    }
-
-    aprepro->info("Output now redirected to original output stream.\n");
-  }
-  else {
-    auto  output = new std::ofstream(filename, std::ios_base::app); // Append
-    if (output != nullptr) {
-      aprepro->outputStream.push(output);
-
-      aprepro->info("Output now redirected to file '" +
-                    std::string(filename) + "'\n");
-    } else {
-      aprepro->error("Could not open output file '" +
-                     std::string(filename) + "' for appending.\n", false);
-    }
-  }
-  return (nullptr);
-}
-
-double do_word_count(char *string, char *delm)
-{
-  std::string temp = string;
-  std::vector<std::string> tokens = tokenize(temp, delm);
-  return (double)tokens.size();
-}
-
-const char *do_get_word(double n, char *string, char *delm)
-{
-  size_t in = (size_t)n;
-  std::string temp = string;
-  std::vector<std::string> tokens = tokenize(temp, delm);
-
-  if (tokens.size() >= in) {
-    char *word = nullptr;
-    new_string(tokens[in-1].c_str(), &word);
-    return word;
-  } else {
-    return nullptr;
-  }
-}
-
-const char *do_file_to_string(char *filename)
-{
-  std::fstream *file = aprepro->open_file(filename, "r");
-
-  std::ostringstream lines;
-  std::string line;
-  while (std::getline(*file, line)) {
-    lines << line << '\n';
   }
 
-  char *ret_string;
-  new_string(lines.str().c_str(), &ret_string);
-  return ret_string;
-}
-
-const char *do_getenv(char *env)
-{
-  char *tmp;
-  char *ret_string;
-  if (env == nullptr)
-    return "";
-  
-  tmp = (char *)getenv(env);
-  if (tmp != nullptr) {
-    new_string(tmp, &ret_string);
-    return (ret_string);
-  } else {
-    return "";
-  }
-}
-
-double do_strtod(char *string)
-{
-  double x;
-  reset_error();
-  x = atof(string);
-  SEAMS::math_error("strtod");
-  return x;
-}
-
-const char *
-do_dumpsym()
-{
-  aprepro->dumpsym(SEAMS::Parser::token::VAR, 0);
-  return(nullptr);
-}
-
-const char *
-do_dumpfunc()
-{
-  aprepro->dumpsym(SEAMS::Parser::token::FNCT, 1);
-  return(nullptr);
-}
-
-const char *
-do_dumpvar()
-{
-  aprepro->dumpsym(SEAMS::Parser::token::VAR, 1);
-  return(nullptr);
-}
-
-double do_option(char *option, double value)
-{
-  double current;
-  current = -1;
-  
-  if (std::strcmp(option, "warning") == 0) {
-    current = aprepro->ap_options.warning_msg;
-    aprepro->ap_options.warning_msg = (value == 0.0) ? false : true;
+  double do_atanh(double x)
+  {
+    double z;
+    z = do_sign(0.5, x);
+    x = do_sign(x, 1.0);
+    x = x / (1.0 - x);
+    return (z * LOG1P(x + x));
   }
 
-  else if (std::strcmp(option, "info") == 0) {
-    current = aprepro->ap_options.info_msg;
-    aprepro->ap_options.info_msg = (value == 0.0) ? false : true;
-  }
-  
-  else if (std::strcmp(option, "debugging") == 0) {
-    current = aprepro->ap_options.debugging;
-    aprepro->ap_options.debugging = (value == 0.0) ? false : true;
-  }
-  
-  else if (std::strcmp(option, "statistics") == 0) {
-    aprepro->statistics();
-  }
+  double do_rows(const array *arr) { return arr->rows; }
 
-  else {
-    aprepro->error("Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n",
-                   false);
-  }
-  return current;
-}
+  double do_cols(const array *arr) { return arr->cols; }
 
-const char *do_include_path(char *new_path)
-{
-  aprepro->ap_options.include_path = new_path;
-  return (nullptr);
-}
-
-const char *do_intout(double intval)
-{
-  /* convert 'intval' to a string using an integer format
-   * This can be used if you need to set the default output
-   * format to force the decimal point.  In that case, integers
-   * also have a decimal point which is usually not wanted.
-   * Using 'intout(val)', val will be converted to a string
-   * using an integer format
+  /*
+    --------------------------STRING FUNCTIONS------------------------
    */
-  
-  char *tmp;
-  static char tmpstr[128];
-  if (intval == 0.0) {
-    new_string("0", &tmp);
-    return (tmp);
-  }
-  else {
-    (void) sprintf(tmpstr, "%d", (int)intval);
+
+  const char *do_get_date()
+  {
+    char *       tmp;
+    const size_t bufsize = 32;
+    static char  tmpstr[32];
+
+    time_t     timer   = time(nullptr);
+    struct tm *timeptr = localtime(&timer);
+
+    /* First  the date in the form CCYY/MM/DD */
+    strftime(tmpstr, bufsize, "%Y/%m/%d", timeptr);
     new_string(tmpstr, &tmp);
     return (tmp);
   }
-}
 
-const char *do_execute(char *string)
-{
-  aprepro->lexer->execute(string);
-  return nullptr;
-}
+  const char *do_get_iso_date()
+  {
+    char *       tmp;
+    const size_t bufsize = 32;
+    static char  tmpstr[32];
 
-const char *do_rescan(char *string)
-{
-  aprepro->lexer->rescan(string);
-  return nullptr;
-}
+    time_t     timer   = time(nullptr);
+    struct tm *timeptr = localtime(&timer);
 
-const char *do_if(double x)
-{
-  aprepro->inIfdefGetvar = false; 
-  aprepro->lexer->if_handler(x);
-  return nullptr;
-}
-
-const char *do_notif(double x)
-{
-  aprepro->lexer->if_handler(!x);
-  return nullptr;
-}
-
-const char *do_elseif(double x)
-{
-  aprepro->lexer->elseif_handler(x);
-  return nullptr;
-}
-
-const char *do_str_if(char *string)
-{
-  std::string test(string);
-  aprepro->lexer->if_handler(!test.empty());
-
-  return nullptr;
-}
-
-const char *do_str_notif(char* string)
-{
-  std::string test(string);
-  aprepro->lexer->if_handler(test.empty());
-
-  return nullptr;
-}
-
-const char*do_str_elseif(char* string)
-{
-  std::string test(string);
-  aprepro->lexer->elseif_handler(!test.empty());
-
-  return nullptr;
-}
-
-const char *do_switch(double x)
-{
-  aprepro->lexer->switch_handler(x);
-  return nullptr;
-}
-
-const char *do_case(double x)
-{
-  aprepro->lexer->case_handler(x);
-  return nullptr;
-}
-
-const char *do_extract(char *string, char *begin, char *end)
-{
-  /* From 'string' return a substring delimited by 'begin' and 'end'.
-   *  'begin' is included in the string, but 'end' is not. If
-   *  'begin' does not appear in the string, return nullptr; If 'end'
-   *  does not appear, then return the remainder of the string. If
-   *  'begin' == "", then start at beginning; if 'end' == "", then
-   *  return remainder of the string.
-   */
-  
-  char *start = string;
-  char *tmp;
-  int len = 0;
-  
-  if (std::strlen(begin) > 0) {
-    start = std::strstr(string, begin);
-    if (start == nullptr)
-      return "";
+    /* First  the date in the form CCYY/MM/DD */
+    strftime(tmpstr, bufsize, "%Y%m%d", timeptr);
+    new_string(tmpstr, &tmp);
+    return (tmp);
   }
-  
-  len = std::strlen(start);
-  if (std::strlen(end) > 0) {
-    char *finish = std::strstr(start, end);
-    if (finish != nullptr) {
-      len = finish-start;
+
+  const char *do_get_time()
+  {
+    char *       tmp;
+    const size_t bufsize = 32;
+    static char  tmpstr[32];
+
+    time_t     timer   = time(nullptr);
+    struct tm *timeptr = localtime(&timer);
+
+    /* Now the time in the form HH:MM:SS where 0 <= HH < 24 */
+    strftime(tmpstr, bufsize, "%H:%M:%S", timeptr);
+    new_string(tmpstr, &tmp);
+    return (tmp);
+  }
+
+  const char *do_tolower(char *string)
+  {
+    char *p = string;
+    while (*p != '\0') {
+      if (isupper((int)*p))
+        *p = tolower((int)*p);
+      p++;
+    }
+    return (string);
+  }
+
+  const char *do_toupper(char *string)
+  {
+    char *p = string;
+    while (*p != '\0') {
+      if (islower((int)*p))
+        *p = toupper((int)*p);
+      p++;
+    }
+    return (string);
+  }
+
+  const char *do_tostring(double x)
+  {
+    char *      tmp;
+    static char tmpstr[128];
+    if (x == 0.0) {
+      new_string("0", &tmp);
+      return (tmp);
+    }
+    else {
+      SEAMS::symrec *format;
+      format = aprepro->getsym("_FORMAT");
+      (void)sprintf(tmpstr, format->value.svar, x);
+      new_string(tmpstr, &tmp);
+      return (tmp);
     }
   }
 
-  auto tmpstr = new char[len+1];
-  std::strncpy(tmpstr, start, len);
-  tmpstr[len] = '\0';
-  new_string(tmpstr, &tmp);
-  delete[] tmpstr;
-  return tmp;
-}
+  const char *do_output(char *filename)
+  {
+    aprepro->outputStream.top()->flush();
 
-const char *do_get_temp_filename()
-{
-  char *filename;
-  new_string(get_temp_filename(), &filename);
-  return filename;
-}
+    if (std::strcmp(filename, "pop") == 0 || std::strcmp(filename, "stdout") == 0) {
+      while (aprepro->outputStream.size() > 1) {
+        std::ostream *output = aprepro->outputStream.top();
+        aprepro->outputStream.pop();
+        delete output;
+      }
 
-const char *do_error (char *error_string)
-{
-  /* Print error message (to stderr) and exit */
-  yyerror(*aprepro, error_string);
-  exit(EXIT_FAILURE);
-  /* NOTREACHED */
-  return(nullptr);
-}
+      aprepro->info("Output now redirected to original output stream.\n");
+    }
+    else {
+      std::ostream *output = new std::ofstream(filename);
+      if (output != nullptr) {
+        aprepro->outputStream.push(output);
 
-const char *do_print_array(const array *my_array_data)
-{
-  if (my_array_data != nullptr) {
-    std::ostringstream lines;
-
-    int rows = my_array_data->rows;
-    int cols = my_array_data->cols;
-
-    int idx=0;
-
-    for (int ir=0; ir < rows; ir++) {
-      if (ir > 0)
-	lines << "\n";
-      lines << "\t";
-      for (int ic=0; ic < cols; ic++) {
-	lines << my_array_data->data[idx++];
-	if (ic < cols-1)
-	  lines << "\t";
+        aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
+      }
+      else {
+        aprepro->error("Could not open output file '" + std::string(filename) + "'.\n", false);
       }
     }
-    char *ret_string;
-    new_string(lines.str().c_str(), &ret_string);
+    return (nullptr);
+  }
+
+  const char *do_append(char *filename)
+  {
+    aprepro->outputStream.top()->flush();
+
+    if (std::strcmp(filename, "pop") == 0 || std::strcmp(filename, "stdout") == 0) {
+      while (aprepro->outputStream.size() > 1) {
+        std::ostream *output = aprepro->outputStream.top();
+        aprepro->outputStream.pop();
+        delete output;
+      }
+
+      aprepro->info("Output now redirected to original output stream.\n");
+    }
+    else {
+      auto output = new std::ofstream(filename, std::ios_base::app); // Append
+      if (output != nullptr) {
+        aprepro->outputStream.push(output);
+
+        aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
+      }
+      else {
+        aprepro->error(
+            "Could not open output file '" + std::string(filename) + "' for appending.\n", false);
+      }
+    }
+    return (nullptr);
+  }
+
+  double do_word_count(char *string, char *delm)
+  {
+    std::string              temp   = string;
+    std::vector<std::string> tokens = tokenize(temp, delm);
+    return (double)tokens.size();
+  }
+
+  const char *do_get_word(double n, char *string, char *delm)
+  {
+    size_t                   in     = (size_t)n;
+    std::string              temp   = string;
+    std::vector<std::string> tokens = tokenize(temp, delm);
+
+    if (tokens.size() >= in) {
+      char *word = nullptr;
+      new_string(tokens[in - 1].c_str(), &word);
+      return word;
+    }
+    else {
+      return nullptr;
+    }
+  }
+
+  const char *do_file_to_string(char *filename)
+  {
+    char *        ret_string = nullptr;
+    std::fstream *file       = aprepro->open_file(filename, "r");
+
+    if (file) {
+      std::ostringstream lines;
+      std::string        line;
+      while (std::getline(*file, line)) {
+        lines << line << '\n';
+      }
+
+      new_string(lines.str().c_str(), &ret_string);
+    }
     return ret_string;
   }
-  else {
-    return "";
-  }
-}
 
-const char *do_delete(char *string)
-{
-  aprepro->remove_variable(string);
+  const char *do_getenv(char *env)
+  {
+    char *tmp;
+    char *ret_string;
+    if (env == nullptr)
+      return "";
 
-  return nullptr;
-}
-
-array *do_make_array(double rows, double cols)
-{
-  auto array_data = new array(rows, cols);
-  return array_data;
-}
-
-array *do_identity(double size)
-{
-  int i;
-  int isize = size;
-  auto array_data = new array(size,size);
-
-  for (i=0; i < isize; i++) {
-    array_data->data[i*isize+i] = 1.0;
-  }
-  return array_data;
-}
-
-array *do_transpose(const array *a)
-{
-  int i,j;
-  auto array_data = new array(a->cols, a->rows);
-
-  for (i=0; i < a->rows; i++) {
-    for (j=0; j < a->cols; j++) {
-      array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
+    tmp = (char *)getenv(env);
+    if (tmp != nullptr) {
+      new_string(tmp, &ret_string);
+      return (ret_string);
     }
-  }
-  return array_data;
-}
-
-array *do_csv_array1(const char *filename)
-{
-  return do_csv_array(filename, 0.0);
-}
-
-array *do_csv_array(const char *filename, double skip)
-{
-  size_t rows_to_skip = (size_t)skip;
-  
-  const char *delim = ",\t ";
-  std::fstream *file = aprepro->open_file(filename, "r");
-  
-  size_t rows = 0;
-  size_t cols = 0;
-
-  std::string line;
-  while (std::getline(*file, line)) {
-    rows++;
-    if (rows > rows_to_skip) {
-      std::vector<std::string> tokens = tokenize(line, delim);
-      cols = tokens.size() > cols ? tokens.size() : cols;
+    else {
+      return "";
     }
   }
 
-  auto array_data = new array(rows-rows_to_skip, cols);
+  double do_strtod(char *string)
+  {
+    double x;
+    reset_error();
+    x = atof(string);
+    SEAMS::math_error("strtod");
+    return x;
+  }
 
-  /* Read file again storing entries in array_data->data */
-  file->clear();
-  file->seekg(0);
-    
-  int idx = 0;
-  rows = 0;
-  while (std::getline(*file, line)) {
-    if (++rows > rows_to_skip) {
-      std::vector<std::string> tokens = tokenize(line, delim);
-      for (size_t i=0; i < (size_t)array_data->cols; i++) {
-	if (i < tokens.size()) {
-	  array_data->data[idx++] = atof(tokens[i].c_str());
-	}
-	else {
-	  array_data->data[idx++] = 0.0;
-	}
+  const char *do_dumpsym()
+  {
+    aprepro->dumpsym(SEAMS::Parser::token::VAR, 0);
+    return (nullptr);
+  }
+
+  const char *do_dumpfunc()
+  {
+    aprepro->dumpsym(SEAMS::Parser::token::FNCT, 1);
+    return (nullptr);
+  }
+
+  const char *do_dumpvar()
+  {
+    aprepro->dumpsym(SEAMS::Parser::token::VAR, 1);
+    return (nullptr);
+  }
+
+  double do_option(char *option, double value)
+  {
+    double current;
+    current = -1;
+
+    if (std::strcmp(option, "warning") == 0) {
+      current                         = aprepro->ap_options.warning_msg;
+      aprepro->ap_options.warning_msg = (value == 0.0) ? false : true;
+    }
+
+    else if (std::strcmp(option, "info") == 0) {
+      current                      = aprepro->ap_options.info_msg;
+      aprepro->ap_options.info_msg = (value == 0.0) ? false : true;
+    }
+
+    else if (std::strcmp(option, "debugging") == 0) {
+      current                       = aprepro->ap_options.debugging;
+      aprepro->ap_options.debugging = (value == 0.0) ? false : true;
+    }
+
+    else if (std::strcmp(option, "statistics") == 0) {
+      aprepro->statistics();
+    }
+
+    else {
+      aprepro->error(
+          "Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n",
+          false);
+    }
+    return current;
+  }
+
+  const char *do_include_path(char *new_path)
+  {
+    aprepro->ap_options.include_path = new_path;
+    return (nullptr);
+  }
+
+  const char *do_intout(double intval)
+  {
+    /* convert 'intval' to a string using an integer format
+     * This can be used if you need to set the default output
+     * format to force the decimal point.  In that case, integers
+     * also have a decimal point which is usually not wanted.
+     * Using 'intout(val)', val will be converted to a string
+     * using an integer format
+     */
+
+    char *      tmp;
+    static char tmpstr[128];
+    if (intval == 0.0) {
+      new_string("0", &tmp);
+      return (tmp);
+    }
+    else {
+      (void)sprintf(tmpstr, "%d", (int)intval);
+      new_string(tmpstr, &tmp);
+      return (tmp);
+    }
+  }
+
+  const char *do_execute(char *string)
+  {
+    aprepro->lexer->execute(string);
+    return nullptr;
+  }
+
+  const char *do_rescan(char *string)
+  {
+    aprepro->lexer->rescan(string);
+    return nullptr;
+  }
+
+  const char *do_if(double x)
+  {
+    aprepro->inIfdefGetvar = false;
+    aprepro->lexer->if_handler(x);
+    return nullptr;
+  }
+
+  const char *do_notif(double x)
+  {
+    aprepro->lexer->if_handler(!x);
+    return nullptr;
+  }
+
+  const char *do_elseif(double x)
+  {
+    aprepro->lexer->elseif_handler(x);
+    return nullptr;
+  }
+
+  const char *do_str_if(char *string)
+  {
+    std::string test(string);
+    aprepro->lexer->if_handler(!test.empty());
+
+    return nullptr;
+  }
+
+  const char *do_str_notif(char *string)
+  {
+    std::string test(string);
+    aprepro->lexer->if_handler(test.empty());
+
+    return nullptr;
+  }
+
+  const char *do_str_elseif(char *string)
+  {
+    std::string test(string);
+    aprepro->lexer->elseif_handler(!test.empty());
+
+    return nullptr;
+  }
+
+  const char *do_switch(double x)
+  {
+    aprepro->lexer->switch_handler(x);
+    return nullptr;
+  }
+
+  const char *do_case(double x)
+  {
+    aprepro->lexer->case_handler(x);
+    return nullptr;
+  }
+
+  const char *do_extract(char *string, char *begin, char *end)
+  {
+    /* From 'string' return a substring delimited by 'begin' and 'end'.
+     *  'begin' is included in the string, but 'end' is not. If
+     *  'begin' does not appear in the string, return nullptr; If 'end'
+     *  does not appear, then return the remainder of the string. If
+     *  'begin' == "", then start at beginning; if 'end' == "", then
+     *  return remainder of the string.
+     */
+
+    char *start = string;
+    char *tmp;
+    int   len = 0;
+
+    if (std::strlen(begin) > 0) {
+      start = std::strstr(string, begin);
+      if (start == nullptr)
+        return "";
+    }
+
+    len = std::strlen(start);
+    if (std::strlen(end) > 0) {
+      char *finish = std::strstr(start, end);
+      if (finish != nullptr) {
+        len = finish - start;
       }
     }
+
+    auto tmpstr = new char[len + 1];
+    std::strncpy(tmpstr, start, len);
+    tmpstr[len] = '\0';
+    new_string(tmpstr, &tmp);
+    delete[] tmpstr;
+    return tmp;
   }
-  assert(rows - rows_to_skip == (size_t)array_data->rows);
-  return array_data;
-}
 
-array *do_csv_array2(const char *filename, const char *comment)
-{
-  const char *delim = ",\t ";
-  std::fstream *file = aprepro->open_file(filename, "r");
-  
-  size_t rows = 0;
-  size_t cols = 0;
+  const char *do_get_temp_filename()
+  {
+    char *filename;
+    new_string(get_temp_filename(), &filename);
+    return filename;
+  }
 
-  std::string line;
-  while (std::getline(*file, line)) {
-    if (line[0] != comment[0]) {
-      rows++;
-      std::vector<std::string> tokens = tokenize(line, delim);
-      cols = tokens.size() > cols ? tokens.size() : cols;
+  const char *do_error(char *error_string)
+  {
+    /* Print error message (to stderr) and exit */
+    yyerror(*aprepro, error_string);
+    exit(EXIT_FAILURE);
+    /* NOTREACHED */
+    return (nullptr);
+  }
+
+  const char *do_print_array(const array *my_array_data)
+  {
+    if (my_array_data != nullptr) {
+      std::ostringstream lines;
+
+      int rows = my_array_data->rows;
+      int cols = my_array_data->cols;
+
+      int idx = 0;
+
+      for (int ir = 0; ir < rows; ir++) {
+        if (ir > 0)
+          lines << "\n";
+        lines << "\t";
+        for (int ic = 0; ic < cols; ic++) {
+          lines << my_array_data->data[idx++];
+          if (ic < cols - 1)
+            lines << "\t";
+        }
+      }
+      char *ret_string;
+      new_string(lines.str().c_str(), &ret_string);
+      return ret_string;
+    }
+    else {
+      return "";
     }
   }
 
-  auto array_data = new array(rows, cols);
+  const char *do_delete(char *string)
+  {
+    aprepro->remove_variable(string);
 
-  /* Read file again storing entries in array_data->data */
-  file->clear();
-  file->seekg(0);
-    
-  int idx = 0;
-  rows = 0;
-  while (std::getline(*file, line)) {
-    if (line[0] != comment[0]) {
-      rows++;
-      std::vector<std::string> tokens = tokenize(line, delim);
-      for (size_t i=0; i < (size_t)array_data->cols; i++) {
-	if (i < tokens.size()) {
-	  array_data->data[idx++] = atof(tokens[i].c_str());
-	}
-	else {
-	  array_data->data[idx++] = 0.0;
-	}
+    return nullptr;
+  }
+
+  array *do_make_array(double rows, double cols)
+  {
+    auto array_data = new array(rows, cols);
+    return array_data;
+  }
+
+  array *do_identity(double size)
+  {
+    int  i;
+    int  isize      = size;
+    auto array_data = new array(size, size);
+
+    for (i = 0; i < isize; i++) {
+      array_data->data[i * isize + i] = 1.0;
+    }
+    return array_data;
+  }
+
+  array *do_transpose(const array *a)
+  {
+    int  i, j;
+    auto array_data = new array(a->cols, a->rows);
+
+    for (i = 0; i < a->rows; i++) {
+      for (j = 0; j < a->cols; j++) {
+        array_data->data[j * a->rows + i] = a->data[i * a->cols + j];
       }
     }
+    return array_data;
   }
-  assert((int)rows == array_data->rows);
-  return array_data;
-}
+
+  array *do_csv_array1(const char *filename) { return do_csv_array(filename, 0.0); }
+
+  array *do_csv_array(const char *filename, double skip)
+  {
+    size_t rows_to_skip = (size_t)skip;
+
+    const char *  delim = ",\t ";
+    std::fstream *file  = aprepro->open_file(filename, "r");
+    if (file) {
+
+      size_t rows = 0;
+      size_t cols = 0;
+
+      std::string line;
+      while (std::getline(*file, line)) {
+        rows++;
+        if (rows > rows_to_skip) {
+          std::vector<std::string> tokens = tokenize(line, delim);
+          cols                            = tokens.size() > cols ? tokens.size() : cols;
+        }
+      }
+
+      auto array_data = new array(rows - rows_to_skip, cols);
+
+      /* Read file again storing entries in array_data->data */
+      file->clear();
+      file->seekg(0);
+
+      int idx = 0;
+      rows    = 0;
+      while (std::getline(*file, line)) {
+        if (++rows > rows_to_skip) {
+          std::vector<std::string> tokens = tokenize(line, delim);
+          for (size_t i = 0; i < (size_t)array_data->cols; i++) {
+            if (i < tokens.size()) {
+              array_data->data[idx++] = atof(tokens[i].c_str());
+            }
+            else {
+              array_data->data[idx++] = 0.0;
+            }
+          }
+        }
+      }
+      assert(rows - rows_to_skip == (size_t)array_data->rows);
+      return array_data;
+    }
+    else {
+      return nullptr;
+    }
+  }
+
+  array *do_csv_array2(const char *filename, const char *comment)
+  {
+    const char *  delim = ",\t ";
+    std::fstream *file  = aprepro->open_file(filename, "r");
+    if (file) {
+
+      size_t rows = 0;
+      size_t cols = 0;
+
+      std::string line;
+      while (std::getline(*file, line)) {
+        if (line[0] != comment[0]) {
+          rows++;
+          std::vector<std::string> tokens = tokenize(line, delim);
+          cols                            = tokens.size() > cols ? tokens.size() : cols;
+        }
+      }
+
+      auto array_data = new array(rows, cols);
+
+      /* Read file again storing entries in array_data->data */
+      file->clear();
+      file->seekg(0);
+
+      int idx = 0;
+      rows    = 0;
+      while (std::getline(*file, line)) {
+        if (line[0] != comment[0]) {
+          rows++;
+          std::vector<std::string> tokens = tokenize(line, delim);
+          for (size_t i = 0; i < (size_t)array_data->cols; i++) {
+            if (i < tokens.size()) {
+              array_data->data[idx++] = atof(tokens[i].c_str());
+            }
+            else {
+              array_data->data[idx++] = 0.0;
+            }
+          }
+        }
+      }
+      assert((int)rows == array_data->rows);
+      return array_data;
+    }
+    else {
+      return nullptr;
+    }
+  }
 
 } // namespace SEAMS

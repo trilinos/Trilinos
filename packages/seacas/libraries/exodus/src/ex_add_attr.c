@@ -57,6 +57,8 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   int         obj_id_ndx;
   int         numattrdim;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (num_attr_per_entry <= 0) {

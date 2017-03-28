@@ -43,6 +43,9 @@ int ex_get_sets(int exoid, size_t set_count, struct ex_set *sets)
   size_t i;
   int    status = EX_NOERR;
   int    stat;
+
+  ex_check_valid_file_id(exoid);
+
   for (i = 0; i < set_count; i++) {
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       stat = ex_get_set_param(exoid, sets[i].type, sets[i].id, &sets[i].num_entry,

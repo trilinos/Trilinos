@@ -299,6 +299,6 @@ C  https://bids.github.io/colormap/
       g = rgb(2, index)
       b = rgb(3, index)
 
-      write (*,*) icol, ncol, index, r, g, b
+C      write (*,*) icol, ncol, index, r, g, b
       return
       end

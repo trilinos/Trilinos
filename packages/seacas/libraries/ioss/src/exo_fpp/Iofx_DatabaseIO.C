@@ -254,7 +254,7 @@ namespace Iofx {
             errmsg << "ERROR: Unable to " << open_create << " exodus decomposed database files:\n";
             for (int i = 0; i < util().parallel_size(); i++) {
               if (status[i] < 0) {
-                errmsg << "\t" << decoded_filename() << "\n";
+                errmsg << "\t" << Ioss::Utils::decode_filename(get_filename(), i, util().parallel_size()) << "\n";
               }
             }
           }
@@ -429,7 +429,17 @@ namespace Iofx {
     else {
       // If the first write for this file, create it...
       if (int_byte_size_api() == 8) {
-        mode |= EX_ALL_INT64_DB;
+	// Check whether client actually wants 4-byte output on db
+	// - If they specified INTEGER_SIZE_DB and the size isn't 8,
+	//   then don't change mode and use the default 4-byte output.
+	if (properties.exists("INTEGER_SIZE_DB")) {
+	  if (properties.get("INTEGER_SIZE_DB").get_int() == 8) {
+	    mode |= EX_ALL_INT64_DB;
+	  }
+	}
+	else {
+	  mode |= EX_ALL_INT64_DB;
+	}
       }
       exodusFilePtr = ex_create(decoded_filename().c_str(), mode, &cpu_word_size, &dbRealWordSize);
     }
@@ -1152,15 +1162,16 @@ namespace Iofx {
 
       bool        db_has_name = false;
       std::string block_name;
-      {
+      if (ignore_database_names()) {
+	block_name = alias;
+      }
+      else {
         Ioss::SerializeIO serializeIO__(this);
         block_name = Ioex::get_entity_name(get_file_pointer(), entity_type, id, basename,
                                            maximumNameLength, db_has_name);
       }
       if (get_use_generic_canonical_name()) {
-        std::string temp = block_name;
-        block_name       = alias;
-        alias            = temp;
+	std::swap(block_name, alias);
       }
 
       std::string save_type = X_type;
@@ -1177,7 +1188,7 @@ namespace Iofx {
         if (tokens.size() >= 2) {
           // Check whether last token names an X topology type...
           const Ioss::ElementTopology *topology =
-              Ioss::ElementTopology::factory(tokens[tokens.size() - 1], true);
+	    Ioss::ElementTopology::factory(tokens.back(), true);
           if (topology != nullptr) {
             type = topology->name();
           }
@@ -1704,10 +1715,15 @@ namespace Iofx {
           Ioss::SerializeIO serializeIO__(this);
 
           bool db_has_name = false;
-          side_set_name    = Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
-                                                maximumNameLength, db_has_name);
-
           std::string alias = Ioss::Utils::encode_entity_name("surface", id);
+	  if (ignore_database_names()) {
+	    side_set_name = alias;
+	  }
+	  else {
+	    side_set_name    = Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
+						     maximumNameLength, db_has_name);
+	  }
+
 
           if (side_set_name == "universal_sideset") {
             split_type = Ioss::SPLIT_BY_DONT_SPLIT;
@@ -1723,9 +1739,7 @@ namespace Iofx {
           }
           else {
             if (get_use_generic_canonical_name()) {
-              std::string temp = side_set_name;
-              side_set_name    = alias;
-              alias            = temp;
+	      std::swap(side_set_name, alias);
             }
             side_set = new Ioss::SideSet(this, side_set_name);
             side_set->property_add(Ioss::Property("id", id));
@@ -1828,7 +1842,7 @@ namespace Iofx {
             // case so that the generated name will match the current
             // name.  Instead of converting from string to int back to
             // string, we just set a variable to query later.
-            sid = tokens[tokens.size() - 1];
+            sid = tokens.back();
           }
           else if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
             // There are multiple side types in the model.
@@ -2103,15 +2117,18 @@ void DatabaseIO::get_sets(ex_entity_type type, int64_t count, const std::string 
         attributes[ins] = num_attr;
 
         bool        db_has_name = false;
-        std::string Xset_name   = Ioex::get_entity_name(get_file_pointer(), type, id, base + "list",
-                                                      maximumNameLength, db_has_name);
-
         std::string alias = Ioss::Utils::encode_entity_name(base + "list", id);
+	std::string Xset_name;
+	if (ignore_database_names()) {
+	  Xset_name = alias;
+	}
+	else {
+	  Xset_name   = Ioex::get_entity_name(get_file_pointer(), type, id, base + "list",
+					      maximumNameLength, db_has_name);
+	}
 
         if (get_use_generic_canonical_name()) {
-          std::string temp = Xset_name;
-          Xset_name        = alias;
-          alias            = temp;
+	  std::swap(Xset_name, alias);
         }
 
         bool              filtered          = false;

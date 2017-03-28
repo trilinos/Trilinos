@@ -72,6 +72,8 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   sets_to_define = malloc(set_count * sizeof(int));
 
   /* Note that this routine can be called:

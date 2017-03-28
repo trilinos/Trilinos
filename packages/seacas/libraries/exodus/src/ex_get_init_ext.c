@@ -99,6 +99,8 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   info->num_dim       = 0;

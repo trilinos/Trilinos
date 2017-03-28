@@ -63,6 +63,8 @@ int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   int  varid, status;
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   /* Find the variable ID for the element block IDs */
   if ((status = nc_inq_varid(exoid, VAR_ELBLK_IDS_GLOBAL, &varid)) != NC_NOERR) {
     exerrval = status;

@@ -69,6 +69,8 @@ int ex_get_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
 
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     exerrval = EX_MSG;

@@ -68,6 +68,8 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
   char        errmsg[MAX_ERR_LENGTH];
   const char *vname = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined variables  */

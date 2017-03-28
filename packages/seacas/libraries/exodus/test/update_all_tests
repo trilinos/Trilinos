@@ -38,8 +38,8 @@
 
 #set PREFIX = "valgrind --tool=memcheck"
 set PREFIX = ""
-set SRCDIR = .
-set NCDUMP = /Users/gdsjaar/src/SEACAS/bin/ncdump
+set SRCDIR = /Users/gdsjaar/src/seacas/build/packages/seacas/libraries/exodus/test
+set NCDUMP = /Users/gdsjaar/src/seacas/bin/ncdump
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output

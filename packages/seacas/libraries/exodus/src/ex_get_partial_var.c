@@ -87,6 +87,8 @@ int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     return ex_get_glob_vars_int(exoid, time_step, num_entities, var_vals);
   }
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Determine index of obj_id in VAR_ID_EL_BLK array */

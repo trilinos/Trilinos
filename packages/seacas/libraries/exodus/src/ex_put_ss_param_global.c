@@ -68,6 +68,8 @@ int ex_put_ss_param_global(int exoid, void_int *global_ids, void_int *side_cnts,
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Get the variable ID for the vector of global side set IDs */

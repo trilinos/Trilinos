@@ -92,6 +92,8 @@ int ex_get_qa(int exoid, char *qa_record[][4])
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */

@@ -92,6 +92,8 @@ int ex_put_cmap_params_cc(int exoid, void_int *node_cmap_ids, void_int *node_cma
   int  index_type, bulk_type;
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* See if using NC_FORMAT_NETCDF4 format... */

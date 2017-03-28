@@ -110,6 +110,8 @@ int ex_put_loadbal_param_cc(int exoid, void_int *num_int_nodes, void_int *num_bo
   int id_type    = NC_INT;
 
   /*-----------------------------Execution begins-----------------------------*/
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (ex_int64_status(exoid) & EX_MAPS_INT64_DB) {
