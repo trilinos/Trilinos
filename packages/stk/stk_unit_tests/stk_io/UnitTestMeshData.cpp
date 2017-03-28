@@ -150,7 +150,6 @@ TEST( StkMeshIoBroker, testModifyTopology )
 
         {
             stk::mesh::BulkData & mesh = fixture.bulk_data();
-            mesh.initialize_face_adjacent_element_graph();
             mesh.modification_begin();
             stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
             stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);

@@ -121,16 +121,7 @@
 ///
 
 // Platform/operating system based features and bugs
-#if defined(REDS)				// Redstorm
-#  define SIERRA_SETVBUF_OUTPUT 1
-#  define SIERRA_DIAG_ENDL_NOFLUSH
-#  define SIERRA_SRAND_PARALLEL_IO_BUG
-#  define SIERRA_HEAP_INFO
-#  define SIERRA_MEMORY_INFO
-#  define SIERRA_USER_SHUTDOWN_SIGNAL SIGUSR1
-#  define SIERRA_SHUTDOWN_SIGNAL SIGTERM
-
-#elif defined(_CRAYXE)			        // Cray
+#if defined(_CRAYXE)			        // Cray
 #  define SIERRA_SETVBUF_OUTPUT 1
 #  define SIERRA_DIAG_ENDL_NOFLUSH
 #  define SIERRA_SRAND_PARALLEL_IO_BUG

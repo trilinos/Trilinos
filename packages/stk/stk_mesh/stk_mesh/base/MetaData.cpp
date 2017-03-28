@@ -45,7 +45,6 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part, etc
-#include "stk_mesh/base/PropertyBase.hpp"  // for Property
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
@@ -64,8 +63,8 @@ bool root_part_in_subset(stk::mesh::Part & part)
     return true;
   }
   const PartVector & subsets = part.subsets();
-  for (PartVector::const_iterator it=subsets.begin() ; it != subsets.end() ; ++it) {
-    if (is_topology_root_part( **it )) {
+  for (const Part* subset : subsets) {
+    if (is_topology_root_part( *subset )) {
       return true;
     }
   }
@@ -80,9 +79,9 @@ void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, En
     topologies_found.insert(top);
   }
   const PartVector & subsets = part.subsets();
-  for (PartVector::const_iterator it=subsets.begin() ; it != subsets.end() ; ++it) {
-    top = meta.get_cell_topology(**it);
-    if (top.isValid() && ( (**it).primary_entity_rank() == rank) ) {
+  for (const Part* subset : subsets) {
+    top = meta.get_cell_topology(*subset);
+    if (top.isValid() && ( (*subset).primary_entity_rank() == rank) ) {
       topologies_found.insert(top);
     }
   }
@@ -220,10 +219,9 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_aura_part(NULL),
     m_field_repo(),
     m_coord_field(NULL),
-    m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_part_fields()
+    m_surfaceToBlock()
 {
   // Declare the predefined parts
 
@@ -246,10 +244,9 @@ MetaData::MetaData()
     m_aura_part(NULL),
     m_field_repo(),
     m_coord_field(NULL),
-    m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_part_fields()
+    m_surfaceToBlock()
 {
   // Declare the predefined parts
 
@@ -327,36 +324,10 @@ Part * MetaData::get_part( const std::string & p_name ,
   return part;
 }
 
-void MetaData::add_new_part_in_part_fields()
-{
-  for(size_t i=0; i<m_part_fields.size(); ++i) {
-    PartFieldBase* part_field = m_part_fields[i];
-    std::vector<char*>& char_ptr_vector = part_field->char_data();
-    char_ptr_vector.push_back(new char[part_field->bytes_per_part()]);
-  }
-}
-
-void MetaData::synchronize_part_fields_with_parts()
-{
-  size_t num_parts = get_parts().size();
-  for(size_t i=0; i<m_part_fields.size(); ++i) {
-    PartFieldBase* part_field = m_part_fields[i];
-    std::vector<char*>& char_ptr_vector = part_field->char_data();
-    if (char_ptr_vector.size() != num_parts) {
-      size_t old_size = char_ptr_vector.size();
-      char_ptr_vector.resize(num_parts);
-      for(size_t j=old_size; j<num_parts; ++j) {
-        char_ptr_vector[j] = new char[part_field->bytes_per_part()];
-      }
-    }
-  }
-}
-
 Part & MetaData::declare_part( const std::string & p_name )
 {
   const EntityRank rank = InvalidEntityRank;
 
-  add_new_part_in_part_fields();
   return *m_part_repo.declare_part( p_name, rank );
 }
 
@@ -370,7 +341,6 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, boo
 {
   require_valid_entity_rank(rank);
 
-  add_new_part_in_part_fields();
   return *m_part_repo.declare_part( p_name , rank, arg_force_no_induce );
 }
 
@@ -419,10 +389,9 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
     assign_cell_topology( subset, superset_top);
     const PartVector & subset_parts = subset.subsets();
-    for (PartVector::const_iterator it=subset_parts.begin() ; it != subset_parts.end() ; ++it) {
-      Part & it_part = **it;
-      if (it_part.primary_entity_rank() == superset.primary_entity_rank()) {
-        assign_cell_topology( it_part, superset_top);
+    for (Part* part : subset_parts) {
+      if (part->primary_entity_rank() == superset.primary_entity_rank()) {
+        assign_cell_topology( *part, superset_top);
       }
     }
   }
@@ -498,8 +467,6 @@ void MetaData::commit()
 
   m_commit = true ; // Cannot add or change parts or fields now
 
-  synchronize_part_fields_with_parts();
-
   set_mesh_on_fields(m_bulk_data);
 
 #ifdef STK_VERBOSE_OUTPUT
@@ -509,20 +476,9 @@ void MetaData::commit()
 
 MetaData::~MetaData()
 {
-  // Destroy part fields:
-  for(size_t i=0; i<m_part_fields.size(); ++i) {
-    delete m_part_fields[i];
-  }
-
   // Destroy the properties, used 'new' to allocate so now use 'delete'
 
   try {
-    std::vector<PropertyBase * >::iterator j = m_properties.begin();
-
-    for ( ; j != m_properties.end() ; ++j ) { delete *j ; }
-
-    m_properties.clear();
-
     std::vector<shards::CellTopologyManagedData*>::iterator i = m_created_topologies.begin();
     for ( ; i != m_created_topologies.end(); ++i) {
       delete *i;
@@ -919,9 +875,12 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
             first_found_part = &part;
         }
         else {
-          ThrowErrorMsgIf( top != stk::topology::INVALID_TOPOLOGY && top != topology,
-            "topology is ambiguously defined for the bucket. It is defined as " << topology.name() <<
-             " and as " << top.name() );
+          if ( top != stk::topology::INVALID_TOPOLOGY && top != topology) {
+              std::ostringstream os;
+              os << "topology defined as both " << topology.name() << " and as " << top.name()
+                 << "; a given mesh entity must have only one topology.";
+              throw std::runtime_error(os.str());
+          }
         }
       }
     }
@@ -1124,12 +1083,12 @@ shards::CellTopology get_cell_topology(stk::topology t)
 FieldBase* MetaData::get_field(stk::mesh::EntityRank entity_rank, const std::string& name ) const
 {
   const FieldVector& fields = m_field_repo.get_fields(static_cast<stk::topology::rank_t>(entity_rank));
-  for ( FieldVector::const_iterator i =  fields.begin() ; i != fields.end(); ++i ) {
-    if (equal_case((*i)->name(), name)) {
-      return *i;
+  for ( FieldBase* field : fields ) {
+    if (equal_case(field->name(), name)) {
+      return field;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1139,8 +1098,8 @@ FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData
   unsigned num_nonnull_fields = 0;
   for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
     FieldBase* thisfield = metaData.get_field(i, name);
-    if (thisfield != NULL) {
-      if (field == NULL) {
+    if (thisfield != nullptr) {
+      if (field == nullptr) {
         field = thisfield;
       }
       ++num_nonnull_fields;

@@ -199,72 +199,6 @@ TEST_F(HexShellShell, DISABLED_Hex0Shell0Shell1Parallel )
 }
 
 // disabled due to split coincident elements
-TEST_F(HexShellShell, DISABLED_Hex0Shell1Shell2Parallel_testChosenIds )
-{
-    //  ID.proc
-    //
-    //          3.0------------7.0
-    //          /|             /|
-    //         / |            / |
-    //        /  |           /  |
-    //      4.0------------8.0  |
-    //       |   |          |   |
-    //       |   |   1.0    |2.1|
-    //       |   |          |3.2|
-    //       |  2.0---------|--6.0
-    //       |  /           |  /
-    //       | /            | /
-    //       |/             |/
-    //      1.0------------5.0
-    //                      ^
-    //                      |
-    //                       ---- Two stacked shells
-
-    if(stk::parallel_machine_size(get_comm()) == 3u)
-    {
-        setup_hex_shell_shell_on_procs({0, 1, 2});
-
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
-
-        stk::mesh::EntityId chosen_id;
-
-        if(stk::parallel_machine_rank(get_comm()) == 0)
-        {
-            const stk::mesh::Entity hex1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
-            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
-            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
-            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
-            chosen_id = info1.m_chosen_side_id;
-        }
-        else if(stk::parallel_machine_rank(get_comm()) == 1)
-        {
-            const stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
-            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
-            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
-            //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell2, 0, 3, 0);
-            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
-            chosen_id = info1.m_chosen_side_id;
-        }
-        else
-        {
-            const stk::mesh::Entity shell3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
-            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
-            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
-            //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell3, 0, 2, 0);
-            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
-            chosen_id = info1.m_chosen_side_id;
-        }
-
-        stk::mesh::EntityId max_id;
-        stk::mesh::EntityId min_id;
-        stk::all_reduce_min(get_comm(), &chosen_id, &min_id, 1);
-        stk::all_reduce_max(get_comm(), &chosen_id, &max_id, 1);
-
-        EXPECT_EQ(min_id, max_id);
-    }
-}
-
-// disabled due to split coincident elements
 TEST_F(HexShellShell, DISABLED_Skin)
 {
     if(stk::parallel_machine_size(get_comm()) == 2u)
@@ -306,7 +240,7 @@ TEST_F(HexShellShell, SideConnections)
         get_bulk().modification_begin();
         stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
         int shellSide = 1;
-        stk::mesh::Entity face = get_bulk().declare_element_side(shell2, shellSide);
+        stk::mesh::Entity face = get_bulk().declare_element_side(shell2, shellSide, stk::mesh::ConstPartVector{});
         sideConnector.connect_side_to_all_elements(face, shell2, shellSide);
         get_bulk().modification_end();
 
@@ -664,11 +598,6 @@ private:
         if(get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned())
         {
             EXPECT_EQ(0u, elemElemGraph->get_num_connected_elems(entity));
-            if(2 == numParallelEdges)
-            {
-                EXPECT_TRUE(elemElemGraph->get_parallel_edge_info(entity, 0, remoteEntityId, 0).m_chosen_side_id > 0);
-                EXPECT_TRUE(elemElemGraph->get_parallel_edge_info(entity, 1, remoteEntityId, 1).m_chosen_side_id > 0);
-            }
         }
     }
 
@@ -1302,11 +1231,6 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
         EXPECT_EQ(3u,     elemElemGraph.get_connected_remote_id_and_via_side(hex2, 1).id);
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
-
-        stk::mesh::impl::ParallelInfo& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
-        stk::mesh::impl::ParallelInfo& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
-        EXPECT_EQ(p_info_shell4_shell3.m_chosen_side_id, p_info_shell4_hex2.m_chosen_side_id);
-
     }
 
     EXPECT_EQ(4u, elemElemGraph.num_edges());

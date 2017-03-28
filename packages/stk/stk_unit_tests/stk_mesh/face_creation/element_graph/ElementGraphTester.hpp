@@ -28,8 +28,7 @@ typedef std::vector<GraphEdgeMock> GraphEdges;
 class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
-    ElemElemGraphTester(stk::mesh::BulkData& bulkData)
-      : ElemElemGraph(bulkData) {};
+    ElemElemGraphTester(stk::mesh::BulkData& bulkData) : ElemElemGraph(bulkData) {}
 
     virtual ~ElemElemGraphTester() {}
 

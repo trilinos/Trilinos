@@ -176,7 +176,6 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
 
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
-                             const OrdinalVector & omit ,
                                    OrdinalVector & induced_parts)
 {
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
@@ -191,12 +190,24 @@ void induced_part_membership(const BulkData& mesh,
 
     for (int j = 0; j < num_rels; ++j)
     {
-      impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh, rels[j], omit, e_rank, induced_parts);
+      impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, rels[j], e_rank, induced_parts);
     }
   }
 }
 
 //----------------------------------------------------------------------
+
+stk::mesh::Entity find_by_ordinal(stk::mesh::Entity mesh_obj, stk::mesh::EntityRank rank, size_t ordinal, const stk::mesh::BulkData& mesh)
+{
+  stk::mesh::ConnectivityOrdinal const* ordinals = mesh.begin_ordinals(mesh_obj, rank);
+  stk::mesh::Entity const* conn = mesh.begin(mesh_obj, rank);
+  for (int i = 0, ie = mesh.num_connectivity(mesh_obj, rank); i < ie; ++i) {
+    if (ordinals[i] == ordinal) {
+      return conn[i];
+    }
+  }
+  return stk::mesh::Entity();
+}
 
 } // namespace mesh
 } // namespace stk

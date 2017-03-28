@@ -53,38 +53,12 @@ namespace stk {
  *  This is a work-horse communication for mesh data structures
  *  with parallel domain decomposition.
  */
-class CommAll ;
 class CommSparse;
+class CommNeighbors;
 
 /** Pack and unpack buffers for the sparse all-to-all communication.
  */
 class CommBuffer ;
-
-/** Given the send sizes determine the receive sizes.
- *  Send and receive size arrays are dimensioned to
- *  the size of the parallel machine.
- *  Return global parallel logical OR of the input local flag.
- *  This parallel reduction is aggregated into the required
- *  communication for determining the sparse sizes.
- *  Output the receive sizes and maximum number of send or
- *  receive messages for a single processor.
- *  A dense all-to-all communication is used if:
- *     num_msg_bound < num_msg_maximum
- *  otherwise a set of point-to-point messages are used.
- */
-bool comm_sizes( ParallelMachine ,
-                 const unsigned   num_msg_bound ,
-                       unsigned & num_msg_maximum ,
-                 const unsigned * const send_size ,
-                       unsigned * const recv_size ,
-                 bool local_flag = false );
-
-/** If the communication is known to be dense.
- */
-bool comm_dense_sizes( ParallelMachine ,
-                       const unsigned * const send_size ,
-                             unsigned * const recv_size ,
-                       bool local_flag = false );
 
 //------------------------------------------------------------------------
 
@@ -155,9 +129,8 @@ public:
   CommBuffer();
 
 private:
-  friend class CommAll ;
   friend class CommSparse ;
-  friend class CommGather ;
+  friend class CommNeighbors ;
   friend class CommBroadcast ;
 
   static CommBuffer * allocate( const unsigned, const unsigned * const );
@@ -171,127 +144,6 @@ private:
   ucharp m_beg ;
   ucharp m_ptr ;
   ucharp m_end ;
-};
-
-//------------------------------------------------------------------------
-
-class CommAll {
-public:
-
-  ParallelMachine parallel()      const { return m_comm ; }
-  int             parallel_size() const { return m_size ; }
-  int             parallel_rank() const { return m_rank ; }
-
-  /** Obtain the message buffer for a given processor */
-  CommBuffer & send_buffer( int p ) const
-  {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("send_buffer",p); }
-#endif
-    return m_send[p] ;
-  }
-
-  /** Obtain the message buffer for a given processor */
-  CommBuffer & recv_buffer( int p ) const
-  {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
-    return m_recv[p] ;
-  }
-
-  //----------------------------------------
-  /** Construct for undefined communication.
-   *  No buffers are allocated.
-   */
-  CommAll(bool propagate_local_error_flags=true);
-
-  /** Allocate send and receive buffers based upon input sizes.
-   *  If recv_size == NULL then the receive size
-   *  is determined by communicating the send sizes.
-   *  Symmetry is given by passing the same data for both
-   *  send and receive sizes.
-   *  Return global parallel OR of local flags.
-   */
-  bool allocate_buffers( ParallelMachine ,
-                         const unsigned num_msg_bounds ,
-                         const unsigned * const send_size ,
-                         const unsigned * const recv_size ,
-                         const bool local_flag = false );
-
-  bool allocate_buffers( ParallelMachine comm ,
-                         const unsigned * const send_sizes,
-                         const unsigned * const recv_sizes );
-
-  /**
-   * Allocate symmetric buffers, no communication required. buf_sizes should
-   * have lenth = parallel_size(comm).
-   */
-  bool allocate_symmetric_buffers( ParallelMachine comm ,
-                                   const unsigned * const buf_sizes );
-
-  //----------------------------------------
-  /** Construct for a to-be-sized communication.
-   *  Allocate surrogate send buffers to enable
-   *  no-op packing for the purpose of send sizing.
-   *  Surrogate send scenario:
-   *  1) Surrogate send buffers are "packed" for sizing where
-   *     packing sizes are recorded but no data is copied.
-   *  2) 'allocate_buffers(symmetric,flag)' is called to allocate
-   *     buffers.  The symmetric flag guarantees that the send
-   *     sizes matches the receive sizes.
-   *  3) Send buffers are identically packed; however, this
-   *     packing copies data into the send buffers.
-   */
-  explicit CommAll( ParallelMachine, bool propagate_local_error_flags=true );
-
-  /** Allocate asymmetric communication based upon
-   *  sizing from the surrogate send buffer packing.
-   *  If symmetric then the receive sizes are guaranteed
-   *  to be identical to the send sizes.
-   *  Return global parallel OR of local flags.
-   */
-  bool allocate_buffers( const unsigned num_msg_bounds ,
-                         const bool symmetric = false ,
-                         const bool local_flag = false );
-
-  //----------------------------------------
-  /** Communicate send buffers to receive buffers.  */
-  void communicate();
-
-  //----------------------------------------
-  /** Swap send and receive buffers leading to reversed communication. */
-  void swap_send_recv();
-
-  /** Reset, but do not reallocate, message buffers for reprocessing.
-   *  Sets 'size() == 0' and 'remaining() == capacity()'.
-   */
-  void reset_buffers();
-
-  ~CommAll();
-
-  static bool sm_verbose;
-  static bool sm_verbose_proc0_only;
-
-private:
-
-  CommAll( const CommAll & );
-  CommAll & operator = ( const CommAll & );
-
-  void rank_error( const char * , int ) const ;
-
-  bool allocate_buffers( const unsigned * const send_size ,
-                         const unsigned * const recv_size ,
-                         bool local_flag );
-
-  ParallelMachine m_comm ;
-  bool            m_propagate_local_error_flags;
-  int             m_size ;
-  int             m_rank ;
-  unsigned        m_bound ;
-  unsigned        m_max ;
-  CommBuffer    * m_send ;
-  CommBuffer    * m_recv ;
 };
 
 //------------------------------------------------------------------------
@@ -333,50 +185,8 @@ private:
 };
 
 //----------------------------------------------------------------------
-
-class CommGather {
-public:
-
-  ParallelMachine parallel()      const { return m_comm ; }
-  int             parallel_size() const { return m_size ; }
-  int             parallel_rank() const { return m_rank ; }
-
-  ~CommGather();
-
-  CommGather( ParallelMachine , int root_rank , unsigned send_size );
-
-  CommBuffer & send_buffer() { return m_send ; }
-
-  void communicate();
-
-  CommBuffer & recv_buffer( int );
-
-  void reset();
-
-private:
-
-  CommGather();
-  CommGather( const CommGather & );
-  CommGather & operator = ( const CommGather & );
-
-  ParallelMachine m_comm ;
-  int             m_size ;
-  int             m_rank ;
-  int             m_root_rank ;
-  CommBuffer      m_send ;
-  CommBuffer    * m_recv ;
-  int           * m_recv_count ;
-  int           * m_recv_displ ;
-};
-
-}
-
-//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Inlined template implementations for the CommBuffer
-
-namespace stk {
-
 
 template<>
 struct CommBufferAlign<1> {
@@ -669,8 +479,8 @@ inline void parallel_data_exchange_nonsym_known_sizes_t(std::vector< std::vector
 }
 
 //
-//  This plan assumes the send and recv lists are matched, but that the actual ammount of data to send is unknown.
-//  A processor knows which other processors it will be receiving data from, but does not know who much data.
+//  This plan assumes the send and recv lists are matched, but that the actual amount of data to send is unknown.
+//  A processor knows which other processors it will be receiving data from, but does not know how much data.
 //  Thus the comm plan is known from the inputs, but an additional message sizing call must be done.
 //
 template<typename T>
@@ -737,6 +547,52 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
+}
+
+template<typename T, typename MsgPacker, typename MsgUnpacker>
+void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
+                                            const std::vector<int>& comm_procs,
+                                            MsgPacker& pack_msg,
+                                            MsgUnpacker& unpack_msg,
+                                            bool deterministic)
+{
+#if defined( STK_HAS_MPI)
+  const int msg_tag = 10242;
+  int class_size = sizeof(T);
+
+  int num_comm_procs = comm_procs.size();
+  std::vector<std::vector<T> > send_data(num_comm_procs);
+  std::vector<std::vector<T> > recv_data(num_comm_procs);
+  std::vector<MPI_Request> send_requests(num_comm_procs);
+  std::vector<MPI_Request> recv_requests(num_comm_procs);
+  std::vector<MPI_Status> statuses(num_comm_procs);
+
+  for(int i=0; i<num_comm_procs; ++i) {
+    int iproc = comm_procs[i];
+    pack_msg(iproc, send_data[i]);
+    recv_data[i].resize(send_data[i].size());
+
+    char* recv_buffer = (char*)recv_data[i].data();
+    int buf_size = recv_data[i].size()*class_size;
+    MPI_Irecv(recv_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_requests[i]);
+    char* send_buffer = (char*)send_data[i].data();
+    MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
+  }
+
+  MPI_Status status;
+  for(int i = 0; i < num_comm_procs; ++i) {
+      int idx = i;
+      if (deterministic) {
+          MPI_Wait(&recv_requests[i], &status);
+      }   
+      else {
+          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
+      }   
+      unpack_msg(comm_procs[idx], recv_data[idx]);
+  }
+
+  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
 #endif
 }
 

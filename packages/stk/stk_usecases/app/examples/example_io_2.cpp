@@ -295,7 +295,7 @@ namespace app {
 	for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
 	  if (*I == "attribute" && names.size() > 1)
 	    continue;
-	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(stk::topology::ELEMENT_RANK, *I);
+	  stk::mesh::FieldBase *field = meta.get_field(stk::topology::ELEMENT_RANK, *I);
 	  stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
 	}
@@ -328,7 +328,7 @@ namespace app {
 	for(int i=0; i<node_count; ++i) {
 	  nodes[i] = bulk.get_entity( stk::topology::NODE_RANK, node_ids[i] );
 	  if (bulk.is_valid(nodes[i]))
-	    bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
+	    bulk.declare_node(node_ids[i], add_parts);
 	}
 
 
@@ -349,7 +349,6 @@ namespace app {
   void process_surface_entity(const Ioss::SideSet* io, stk::mesh::BulkData & bulk)
   {
     assert(io->type() == Ioss::SIDESET);
-    const int64_t ten = 10;
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
     const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
@@ -380,9 +379,7 @@ namespace app {
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
 	  if (bulk.is_valid(elem)) {
-	    int64_t side_id = ten * elem_side[is*2+0] + elem_side[is*2+1];
-	    stk::mesh::Entity side =
-	      stk::mesh::declare_element_side(bulk, side_id, elem, side_ordinal);
+	    stk::mesh::Entity side = bulk.declare_element_side(elem, side_ordinal, add_parts);
 	    bulk.change_entity_parts( side, add_parts );
 	    sides[is] = side;
 	  } else {
@@ -649,7 +646,7 @@ namespace app {
     /// fields to stk::io.  This maybe works with only a single field,
     /// but adding attributes, distribution factors and perhaps other
     /// fields will make this unwieldy.
-    stk::io::define_output_db(out_region, bulk_data, &in_region);
+    stk::io::define_output_db(out_region, bulk_data, {}, &in_region);
     stk::io::write_output_db(out_region,  bulk_data);
 
     // ------------------------------------------------------------------------

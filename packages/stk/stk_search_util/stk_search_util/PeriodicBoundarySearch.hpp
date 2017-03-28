@@ -81,7 +81,7 @@ class matrix3x3
         void transformVec(const std::vector<double>& in, std::vector<double> &result) const
         {
             result.resize(3);
-            this->transformVec(&in[0], &result[0]);
+            this->transformVec(in.data(), result.data());
         }
 
         ~matrix3x3() {}
@@ -117,18 +117,6 @@ inline void fillRotationMatrix(const double angleInRadians,  double axisX,  doub
     rotationMatrix.setData(6,axisX*axisZ*oneMinusCosAngle - axisY*sinAngle);
     rotationMatrix.setData(7,axisY*axisZ*oneMinusCosAngle + axisX*sinAngle);
     rotationMatrix.setData(8,cosAngle + axisZ*axisZ*oneMinusCosAngle);
-
-//    rotationMatrix.setData(0,cosAngle + axisX*axisX*oneMinusCosAngle);
-//    rotationMatrix.setData(3,axisX*axisY*oneMinusCosAngle - axisZ*sinAngle);
-//    rotationMatrix.setData(6,axisX*axisZ*oneMinusCosAngle + axisY*sinAngle);
-//
-//    rotationMatrix.setData(1,axisX*axisY*oneMinusCosAngle + axisZ*sinAngle);
-//    rotationMatrix.setData(4,cosAngle + axisY*axisY*oneMinusCosAngle);
-//    rotationMatrix.setData(7,axisY*axisZ*oneMinusCosAngle - axisX*sinAngle);
-//
-//    rotationMatrix.setData(2,axisX*axisZ*oneMinusCosAngle - axisY*sinAngle);
-//    rotationMatrix.setData(5,axisY*axisZ*oneMinusCosAngle + axisX*sinAngle);
-//    rotationMatrix.setData(8,cosAngle + axisZ*axisZ*oneMinusCosAngle);
 }
 
 struct GetCoordiantes;
@@ -231,6 +219,8 @@ public:
   {}
 
   const SearchPairVector & get_pairs() const { return m_search_results; }
+
+  const std::vector<TransformHelper>& get_transforms() const { return m_transforms; }
 
   stk::mesh::Selector get_domain_selector() const
   {
@@ -572,6 +562,7 @@ private:
 
         calc_centroid(parallel, side_1 & m_bulk_data.mesh_meta_data().locally_owned_part(), centroid_1);
         calc_centroid(parallel, side_2 & m_bulk_data.mesh_meta_data().locally_owned_part(), centroid_2);
+
         for (int i = 0; i < 3; ++i)
           transform.m_translation[i] = centroid_2[i] - centroid_1[i];
 
@@ -660,7 +651,7 @@ private:
     {
       double *center = &side_1_vector[iPoint].first.center()[0];
       std::vector<double> ctr(center, center+3);
-      rotation.transformVec(&ctr[0], center);
+      rotation.transformVec(ctr.data(), center);
       for (int i = 0; i < 3; ++i) {
         center[i] += translation[i];
       }
@@ -689,31 +680,6 @@ struct GetCoordinates
 
   stk::mesh::BulkData & m_bulk_data;
   const CoordFieldType & m_coords_field;
-};
-
-template <class ModelCoordFieldType, class DispCoordFieldType, typename Scalar = double>
-struct GetDisplacedCoordinates
-{
-  typedef void result_type;
-  GetDisplacedCoordinates(stk::mesh::BulkData & bulk_data, ModelCoordFieldType & model_coord_field, DispCoordFieldType & disp_coord_field)
-    : m_bulk_data(bulk_data),
-      m_model_coord_field(model_coord_field),
-      m_disp_coord_field(disp_coord_field)
-  {}
-
-  void operator()(stk::mesh::Entity e, Scalar * coords) const
-  {
-    const unsigned nDim = m_bulk_data.mesh_meta_data().spatial_dimension();
-    const double * const temp_model_coords = stk::mesh::field_data(m_model_coord_field, e);
-    const double * const temp_disp_coords = stk::mesh::field_data(m_disp_coord_field, e);
-    for (unsigned i = 0; i < nDim; ++i) {
-      coords[i] = temp_model_coords[i] + temp_disp_coords[i];
-    }
-  }
-
-  stk::mesh::BulkData & m_bulk_data;
-  ModelCoordFieldType & m_model_coord_field;
-  DispCoordFieldType & m_disp_coord_field;
 };
 
 }} //namespace stk::mesh

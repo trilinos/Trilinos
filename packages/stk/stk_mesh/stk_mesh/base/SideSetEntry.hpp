@@ -21,6 +21,20 @@ struct SideSetEntry
     : SideSetEntry(in_element, static_cast<stk::mesh::ConnectivityOrdinal>(in_side))
   {  }
 
+  bool operator==(const SideSetEntry &rhs) const
+  {
+      return ((element == rhs.element) && (side == rhs.side));
+  }
+
+  bool operator<(const SideSetEntry &rhs) const
+  {
+      if(element < rhs.element)
+          return true;
+      else if (element == rhs.element && side < rhs.side)
+          return true;
+      else return false;
+  }
+
   stk::mesh::Entity element;
   stk::mesh::ConnectivityOrdinal side;
 };

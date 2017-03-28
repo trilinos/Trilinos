@@ -15,7 +15,6 @@ protected:
 
     void test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary()
     {
-        get_bulk().initialize_face_adjacent_element_graph();
         each_proc_make_face_on_proc_boundary();
         test_that_num_sides_is_expected_value(1);
     }

@@ -154,11 +154,11 @@ TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   Entity elem1  = fix.create_entity( fix.element_rank, fix.element_hex_part );
   std::vector<Entity> elem_node(8);
   for (int i = 0; i < 8; ++i) {
-    elem_node[i] = fix.bulk.declare_entity(stk::topology::NODE_RANK, 100 + i);
+    elem_node[i] = fix.bulk.declare_node(100 + i);
     fix.bulk.declare_relation(elem1, elem_node[i], i);
   }
 
-  Entity side1 = fix.bulk.declare_element_side(elem1, 0, {&fix.generic_face_part});
+  Entity side1 = fix.bulk.declare_element_side(elem1, 0, stk::mesh::ConstPartVector{&fix.generic_face_part});
 
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
@@ -180,11 +180,6 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 
   fix.bulk.modification_begin();
-  Entity elem4  = fix.create_entity( fix.element_rank , fix.generic_element_part );
-  ASSERT_THROW(
-    stk::mesh::declare_element_side( fix.bulk, fix.element_rank, elem4, fix.nextEntityId(), {&fix.element_wedge_part} ),
-    std::runtime_error
-      );
   //fix.bulk.modification_end();
 
 
@@ -211,22 +206,6 @@ TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
   fix2.bulk.modification_end();
 }
 
-TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
-{
-  // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "No element topology found and cell side id exceeds..."
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  fix.bulk.modification_begin();
-
-  stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
-  Entity element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
-  stk::topology elem_top = fix.bulk.bucket(element).topology();
-  const EntityId nSideCount = elem_top.num_sides() + 10 ;
-  ASSERT_THROW(
-    stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, nSideCount, {&fix.element_tet_part} ),
-    std::runtime_error
-      );
-  fix.bulk.modification_end();
-}
 
 TEST( testTopologyHelpers, declare_element_side_full )
 {
@@ -240,8 +219,7 @@ TEST( testTopologyHelpers, declare_element_side_full )
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
 
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
-                                                  {&fix.face_tri_part});
+  Entity face2 = fix.bulk.declare_element_side(element, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
   fix.bulk.modification_end();
 
   stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
@@ -259,8 +237,7 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
   fix.bulk.modification_begin();
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
-                                                  {&fix.face_tri_part});
+  Entity face2 = fix.bulk.declare_element_side(element, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
@@ -278,8 +255,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
     fix.bulk.modification_begin();
     Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
     const EntityId zero_side_count = 0;
-    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
-                                                   {&fix.face_tri_part});
+    Entity face = fix.bulk.declare_element_side(element, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
     fix.bulk.modification_end();
 
     const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
@@ -301,15 +277,14 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 
   PartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
-  Entity element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
+  Entity element = fix.bulk.declare_element(fix.nextEntityId(), part_intersection);
   ASSERT_TRUE( fix.bulk.bucket(element).topology() == stk::topology::INVALID_TOPOLOGY );
 
   Entity element_with_top = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   ASSERT_TRUE( fix.bulk.bucket(element_with_top).topology() != stk::topology::INVALID_TOPOLOGY );
 
   const EntityId zero_side_count = 0;
-  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count,
-                                                          {&fix.face_tri_part});
+  Entity face_with_top = fix.bulk.declare_element_side(element_with_top, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
   const int valid_local_side_id = 0;
   ASSERT_THROW(
       fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),
@@ -561,7 +536,6 @@ TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
 
 void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
 {
-    unsigned global_side_id = 1;
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
     std::string name = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
@@ -574,7 +548,7 @@ void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
 
     mesh.modification_begin();
     stk::mesh::Part &quad4_part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
-    stk::mesh::Entity side = stk::mesh::declare_element_side(mesh, global_side_id, elem, local_side_id, {&quad4_part});
+    stk::mesh::Entity side = mesh.declare_element_side(elem, local_side_id, stk::mesh::PartVector{&quad4_part});
     mesh.modification_end();
 
     stk::mesh::Permutation identity_permutation = static_cast<stk::mesh::Permutation>(0);
@@ -848,13 +822,13 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
 
         mesh.modification_begin();
-        stk::mesh::Entity Quad9 = mesh.declare_entity(stk::topology::ELEM_RANK, 1, meta.get_topology_root_part(stk::topology::QUAD_9_2D));
+        stk::mesh::Entity Quad9 = mesh.declare_element(1, {&meta.get_topology_root_part(stk::topology::QUAD_9_2D)});
         unsigned node_ids[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         stk::mesh::EntityVector nodes(9);
         for(unsigned i=0;i<9;++i)
         {
-            nodes[i] = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i]);
+            nodes[i] = mesh.declare_node(node_ids[i]);
         }
 
         for(size_t i=0;i<nodes.size();++i)
@@ -870,7 +844,7 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
         stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
         for(size_t i=0;i<sides.size();++i)
         {
-            sides[i] = mesh.declare_element_side(Quad9, i, {&meta.get_topology_root_part(stk::topology::LINE_3)});
+            sides[i] = mesh.declare_element_side(Quad9, i, stk::mesh::ConstPartVector{&meta.get_topology_root_part(stk::topology::LINE_3)});
         }
 
         EXPECT_NO_THROW(mesh.modification_end());
@@ -943,12 +917,13 @@ protected:
         get_bulk().modification_begin();
         stk::mesh::declare_element(get_bulk(), parts, s.elemIDsPerProc[procId], s.nodeIDsPerProc[procId]);
         add_shared_nodes(s.sharedNodeIds);
-        create_sides(superSide, sideParts, s);
         get_bulk().modification_end();
+        create_sides(superSide, sideParts, s);
     }
 
     void create_sides(stk::topology superSide, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
     {
+        get_bulk().modification_begin();
         stk::mesh::Entity side = get_bulk().declare_solo_side(s.sharedFaceId, parts);
         for(unsigned i=0; i<s.sharedNodeIds.size(); ++i) {
             stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, s.sharedNodeIds[i]);
@@ -958,6 +933,7 @@ protected:
         int procId = get_bulk().parallel_rank();
         stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, s.elemIDsPerProc[procId]);
         get_bulk().declare_relation(elem, side, s.ordinalPerProc[procId], s.permPerProc[procId]);
+        get_bulk().modification_end();
     }
 
     void add_shared_nodes(const stk::mesh::EntityIdVector &sharedNodeIds)

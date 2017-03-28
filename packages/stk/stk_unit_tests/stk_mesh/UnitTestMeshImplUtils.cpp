@@ -33,8 +33,8 @@
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
-#include <stk_mesh/base/CreateFaces.hpp>       // for comm_mesh_counts, count_entities
+#include <stk_mesh/base/GetEntities.hpp>       // for count_entities
+#include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
@@ -721,11 +721,11 @@ TEST(MeshImplUtils, check_for_connected_nodes)
     mesh.modification_begin();
     Entity node1, node2, node3, node4;
     if (mesh.parallel_rank() == 0) {
-        Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1, block_1);
-        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
-        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2);
-        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3);
-        node4 = mesh.declare_entity(stk::topology::NODE_RANK,4);
+        Entity element = mesh.declare_element(1, {&block_1});
+        node1 = mesh.declare_node(1);
+        node2 = mesh.declare_node(2);
+        node3 = mesh.declare_node(3);
+        node4 = mesh.declare_node(4);
         //before relations declared, this check should fail
         EXPECT_EQ(-1, stk::mesh::impl::check_for_connected_nodes(mesh));
         mesh.declare_relation(element,node1,0);
@@ -746,7 +746,7 @@ TEST(MeshImplUtils, check_for_connected_nodes_invalid_topology)
     stk::mesh::BulkData mesh(meta, communicator);
     mesh.modification_begin();
     if (mesh.parallel_rank() == 0) {
-        mesh.declare_entity(stk::topology::ELEMENT_RANK, 1);
+        mesh.declare_element(1);
         //before relations declared, this check should fail
         EXPECT_EQ(-1, stk::mesh::impl::check_for_connected_nodes(mesh));
     }
@@ -763,11 +763,11 @@ TEST(MeshImplUtils, comm_mesh_very_parallel_consistency_nominal)
         mesh.modification_begin();
         Entity node1, node2, node3, node4;
         if (mesh.parallel_rank() == 0) {
-            Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1, block_1);
-            node1 = mesh.declare_entity(stk::topology::NODE_RANK, 1);
-            node2 = mesh.declare_entity(stk::topology::NODE_RANK, 2);
-            node3 = mesh.declare_entity(stk::topology::NODE_RANK, 3);
-            node4 = mesh.declare_entity(stk::topology::NODE_RANK, 4);
+            Entity element = mesh.declare_element(1, {&block_1});
+            node1 = mesh.declare_node(1);
+            node2 = mesh.declare_node(2);
+            node3 = mesh.declare_node(3);
+            node4 = mesh.declare_node(4);
             mesh.declare_relation(element, node1, 0);
             mesh.declare_relation(element, node2, 1);
             mesh.declare_relation(element, node3, 2);
@@ -794,11 +794,11 @@ TEST(MeshImplUtils, check_no_shared_elements_or_higher_nominal)
         Entity node1, node2, node3, node4, node5, node6;
         if (myRank == 0)
         {
-            Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,1,block_1);
-            node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
-            node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
-            node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
-            node4 = mesh.declare_entity(stk::topology::NODE_RANK,4);
+            Entity element = mesh.declare_element(1, {&block_1});
+            node1 = mesh.declare_node(1);
+            node2 = mesh.declare_node(2); // shared
+            node3 = mesh.declare_node(3); // shared
+            node4 = mesh.declare_node(4);
             mesh.declare_relation(element,node1,0);
             mesh.declare_relation(element,node2,1);
             mesh.declare_relation(element,node3,2);
@@ -808,11 +808,11 @@ TEST(MeshImplUtils, check_no_shared_elements_or_higher_nominal)
         }
         if (myRank == 1)
         {
-            Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,2,block_1);
-            node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
-            node5 = mesh.declare_entity(stk::topology::NODE_RANK,5);
-            node6 = mesh.declare_entity(stk::topology::NODE_RANK,6);
-            node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
+            Entity element = mesh.declare_element(2, {&block_1});
+            node2 = mesh.declare_node(2); // shared
+            node5 = mesh.declare_node(5);
+            node6 = mesh.declare_node(6);
+            node3 = mesh.declare_node(3); // shared
             mesh.declare_relation(element,node2,0);
             mesh.declare_relation(element,node5,1);
             mesh.declare_relation(element,node6,2);
@@ -833,15 +833,8 @@ void call_get_or_create_face_at_element_side_and_check(stk::mesh::BulkData & mes
     mesh.modification_end();
     ASSERT_TRUE( mesh.is_valid(new_face) );
     EXPECT_EQ( new_face_global_id, mesh.identifier(new_face) );
-    ASSERT_EQ( 1u, mesh.num_elements(new_face));
-    stk::mesh::Entity attached_element = *mesh.begin_elements(new_face);
-    EXPECT_EQ( element, attached_element );
-    unsigned attached_side_ordinal = *mesh.begin_element_ordinals(new_face);
-    EXPECT_EQ( side_ordinal, attached_side_ordinal );
+    ASSERT_EQ( 2u, mesh.num_elements(new_face));
     EXPECT_TRUE( mesh.bucket(new_face).member(part) );
-    unsigned other_element_global_id = 2;
-    stk::mesh::Entity other_element = mesh.get_entity(stk::topology::ELEMENT_RANK, other_element_global_id);
-    EXPECT_EQ( 0u, mesh.num_faces(other_element) );
 }
 
 TEST( MeshImplUtils, test_create_face_for_sideset)
@@ -867,7 +860,7 @@ TEST( MeshImplUtils, test_create_face_for_sideset)
     unsigned elem_global_id = 1;
     stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,elem_global_id);
     unsigned side_ordinal = 5;
-    unsigned new_face_global_id = 42;
+    unsigned new_face_global_id = 16;
 
 
     stk::mesh::Entity new_face = mesh.get_entity(stk::topology::FACE_RANK, new_face_global_id);
@@ -899,7 +892,7 @@ TEST( MeshImplUtils, test_connect_face_to_other_elements)
     unsigned elem_global_id = 1;
     stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,elem_global_id);
     unsigned side_ordinal = 5;
-    unsigned new_face_global_id = 42;
+    unsigned new_face_global_id = 16;
 
     call_get_or_create_face_at_element_side_and_check(mesh,element,side_ordinal,new_face_global_id,quad4_part);
     stk::mesh::Entity new_face = mesh.get_entity(stk::topology::FACE_RANK, new_face_global_id);

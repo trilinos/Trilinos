@@ -33,11 +33,6 @@ bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
                               stk::topology otherElemTopology,
                               const stk::mesh::EntityVector &otherElemSideNodes);
 
-void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
-                                            stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,
-                                            const stk::mesh::impl::SparseGraph &extractedCoincidentElements,
-                                            const IdMapper &idMapper,
-                                            MPI_Comm comm);
 }}} // end namespaces stk mesh
 
 #endif

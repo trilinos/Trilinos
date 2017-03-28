@@ -57,6 +57,8 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_meta( m_spatial_dimension, rank_names ),
     m_bulk_data( m_meta, pm ),
     m_quad_part( m_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4 ) ),
+    m_elem_parts(1, &m_quad_part),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
     m_nx( nx ),
     m_ny( ny )
@@ -76,6 +78,8 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_meta( m_spatial_dimension),
     m_bulk_data( m_meta, pm, (auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA) ),
     m_quad_part( m_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4 ) ),
+    m_elem_parts(1, &m_quad_part),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
     m_nx( nx ),
     m_ny( ny )
@@ -163,9 +167,12 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
       elem_nodes[2] = node_id( ix+1 , iy+1 );
       elem_nodes[3] = node_id( ix   , iy+1 );
 
-      stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
+      stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy ) , elem_nodes);
+
       for (unsigned i = 0; i<4; ++i) {
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_nodes[i] );
+        m_bulk_data.change_entity_parts(node, m_node_parts);
+
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),
@@ -177,13 +184,15 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
         Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
-        data[0] = nx ;
-        data[1] = ny ;
+        data[0] = (Scalar)nx ;
+        data[1] = (Scalar)ny ;
       }
     }
   }
 
   m_bulk_data.modification_end();
+
+  m_bulk_data.initialize_face_adjacent_element_graph();
 }
 
 void QuadFixture::fill_node_map(int p_rank)

@@ -94,7 +94,7 @@ public:
   unsigned index( const unsigned Depth ) const ;
 
   /** \brief  Clear index at depth */
-  OctTreeKey & clear_index( const unsigned Depth );
+  //OctTreeKey & clear_index( const unsigned Depth );
 
   /** \brief  Set index at depth */
   OctTreeKey & set_index( const unsigned Depth , const unsigned Index);

@@ -150,69 +150,6 @@ void remove( PartVector & v , Part & part )
   if ( i != e && *i == & part ) { v.erase( i ); }
 }
 
-bool contain( const ConstPartVector & v , const Part & part )
-{
-  ConstPartVector::const_iterator e = v.end();
-  ConstPartVector::const_iterator i = v.begin();
-
-  i = std::lower_bound( i , e , part , PartLess() );
-
-  return i != e && *i == & part ;
-}
-
-bool contain( const PartVector & v , const Part & part )
-{
-  const PartVector::const_iterator e = v.end();
-        PartVector::const_iterator i = v.begin();
-
-  i = std::lower_bound( i , e , part , PartLess() );
-
-  return i != e && *i == & part ;
-}
-
-bool contain( const PartVector & super , const PartVector & sub )
-{
-  bool result = ( ! sub.empty() ) && ( sub.size() <= super.size() );
-
-  if ( result ) {
-    PartLess comp ;
-
-    const PartVector::const_iterator ev = super.end();
-          PartVector::const_iterator iv = super.begin();
-
-    const PartVector::const_iterator ep = sub.end();
-          PartVector::const_iterator ip = sub.begin();
-
-    while ( result && ip != ep ) {
-      Part * const q = *ip ; ++ip ;
-      iv = std::lower_bound( iv , ev , q , comp );
-      result = iv != ev && *iv == q ;
-    }
-  }
-
-  return result ;
-}
-
-size_t intersect( const PartVector & v , const PartVector & p )
-{
-  // Both lists must be sorted, assume v.size() > p.size()
-
-  const PartVector::const_iterator ev = v.end();
-        PartVector::const_iterator iv = v.begin();
-
-  const PartVector::const_iterator ep = p.end();
-        PartVector::const_iterator ip = p.begin();
-
-  size_t count = 0 ;
-
-  for ( ; ip != ep && iv != ev ; ++ip ) {
-    Part * const q = *ip ;
-    iv = std::lower_bound( iv , ev , q , PartLess() );
-    if ( iv != ev && *iv == q ) { ++count ; }
-  }
-
-  return count ;
-}
 
 size_t intersect( const PartVector & v , const PartVector & p , PartVector & r )
 {
@@ -242,6 +179,17 @@ bool intersect( const Part & a , const Part & b )
          intersect( b_sub , a_sub );
 }
 
+bool contains( const PartVector & v , const Part & part )
+{
+  const PartVector::const_iterator e = v.end();
+        PartVector::const_iterator i = v.begin();
+
+  i = std::lower_bound( i , e , part , PartLess() );
+
+  const bool match = (i != e) && (*i == &part);
+  return match;
+}
+
 BulkData & Part::mesh_bulk_data() const
 {
     return mesh_meta_data().mesh_bulk_data();
@@ -252,13 +200,7 @@ bool Part::contains(const Part& part) const
   if (this == &part) { // same part
     return true;
   }
-  const PartVector & subs = subsets();
-  for (size_t i = 0, ie = subs.size(); i < ie; ++i) {
-    if (subs[i] == &part) {
-      return true;
-    }
-  }
-  return false;
+  return stk::mesh::contains(subsets(), part);
 }
 
 } // namespace mesh

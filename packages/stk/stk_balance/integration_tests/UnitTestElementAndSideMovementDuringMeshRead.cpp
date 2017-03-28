@@ -76,8 +76,6 @@ public:
 
         // stk_mesh_modification_end_after_node_sharing_resolution();
 
-        bulk_data().delete_face_adjacent_element_graph();
-
         // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle
         if(!i_started_modification_cycle)
             bulk_data().modification_begin();

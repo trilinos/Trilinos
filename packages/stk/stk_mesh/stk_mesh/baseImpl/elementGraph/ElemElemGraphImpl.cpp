@@ -190,9 +190,9 @@ bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity el
     return bulkData.is_valid(side);
 }
 
-stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts)
+stk::mesh::ConstPartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts)
 {
-    stk::mesh::PartVector sideParts;
+    stk::mesh::ConstPartVector sideParts;
     if(bc_mesh_parts != nullptr)
     {
         const stk::mesh::PartVector * meshparts_to_apply = bc_mesh_parts;
@@ -256,34 +256,35 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
         stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts)
 {
-    stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
+//    stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
 
     // determine which element is active
-    stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
+//    stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
-    if(remoteActiveSelector[-remote_id])
-    {
-        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-    }
+//    if(remoteActiveSelector[-remote_id])
+//    {
+//        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
+//    }
 
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
     if(!bulkData.is_valid(side))
     {
         stk::mesh::PartVector side_parts = get_parts_for_creating_side(bulkData, parts_for_creating_side, local_element, side_id);
-        ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
-        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, side_parts);
+//        ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
+//        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, side_parts);
+        side = bulkData.declare_element_side(local_element, side_ord, side_parts);
         shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
     }
     else
     {
         if(bulkData.bucket(side).owned())
         {
-            stk::mesh::PartVector parts = get_stk_parts_for_moving_parts_into_death_boundary(boundary_mesh_parts);
-            bulkData.change_entity_parts(side, parts, stk::mesh::PartVector());
+            stk::mesh::ConstPartVector parts = get_stk_parts_for_moving_parts_into_death_boundary(boundary_mesh_parts);
+            bulkData.change_entity_parts(side, parts);
             shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, bulkData.parallel_owner_rank(side)));
         }
     }
@@ -305,7 +306,7 @@ void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::E
     }
     else if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
     {
-        bulkData.change_entity_parts(side, {}, {&activePart});
+        bulkData.change_entity_parts(side, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&activePart});
     }
 }
 
@@ -348,7 +349,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int local_side_index    = iter->get_local_element_side_index();
         int remote_side_index    = iter->get_remote_element_side_index();
         int sharing_proc       = iter->get_remote_processor_rank();
-        stk::mesh::EntityId chosenId = iter->m_chosenSideId;
 
         size_t numNodes= iter->m_sharedNodes.size();
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
@@ -361,7 +361,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(remoteId);
         comm.send_buffer(sharing_proc).pack<int>(local_side_index);
         comm.send_buffer(sharing_proc).pack<int>(remote_side_index);
-        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)

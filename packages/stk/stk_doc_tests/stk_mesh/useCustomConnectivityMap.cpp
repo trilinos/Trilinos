@@ -42,7 +42,7 @@
 
 namespace {
 //-BEGIN
-TEST(stkMeshHowTo, DISABLED_useCustomConnectivityMap)
+TEST(stkMeshHowTo, useCustomConnectivityMap)
 {
     const unsigned spatialDimension = 2;
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
@@ -76,25 +76,25 @@ TEST(stkMeshHowTo, DISABLED_useCustomConnectivityMap)
 
     stk::mesh::Entity elemNodes[3];
     stk::mesh::Entity elemEdges[3];
-    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId, tri_part);
-    elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[0]);
-    elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
-    elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
+    stk::mesh::Entity elem = mesh.declare_element(elemId, {&tri_part});
+    elemNodes[0] = mesh.declare_node(elemNodeIds[0]);
+    elemNodes[1] = mesh.declare_node(elemNodeIds[1]);
+    elemNodes[2] = mesh.declare_node(elemNodeIds[2]);
 
     //downward element -> node connectivity
     mesh.declare_relation(elem, elemNodes[0], 0);
     mesh.declare_relation(elem, elemNodes[1], 1);
     mesh.declare_relation(elem, elemNodes[2], 2);
 
-    elemEdges[0] = mesh.declare_element_side(elem, 0, {&edge_part});
-    elemEdges[1] = mesh.declare_element_side(elem, 1, {&edge_part});
-    elemEdges[2] = mesh.declare_element_side(elem, 2, {&edge_part});
+    elemEdges[0] = mesh.declare_element_side(elem, 0, stk::mesh::ConstPartVector{&edge_part});
+    elemEdges[1] = mesh.declare_element_side(elem, 1, stk::mesh::ConstPartVector{&edge_part});
+    elemEdges[2] = mesh.declare_element_side(elem, 2, stk::mesh::ConstPartVector{&edge_part});
 
     mesh.modification_end();
 
-    //now test upward connectivity which stk-mesh would have created automatically if we didn't disable it.
-    unsigned expectedNumElemsPerEdge = 0;//this would be 1 if we didn't disable
-    unsigned expectedNumEdgesPerNode = 0;//this would be 2 if we didn't disable
+    unsigned expectedNumElemsPerEdge = 1;
+    unsigned expectedNumEdgesPerNode = 2;
+
     EXPECT_EQ(expectedNumElemsPerEdge, mesh.num_elements(elemEdges[0]));
     EXPECT_EQ(expectedNumEdgesPerNode, mesh.num_edges(elemNodes[0]));
 }

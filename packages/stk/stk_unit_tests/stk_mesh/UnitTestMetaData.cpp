@@ -53,6 +53,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include "stk_io/FillMesh.hpp"
 
 
 namespace stk { namespace mesh { class Part; } }
@@ -182,12 +183,12 @@ TEST( UnitTestMetaData, testEntityRepository )
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
+    node = bulk.declare_node(new_id+1, add_part);
     nodes.push_back(node);
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , elem_parts );
+  stk::mesh::Entity elem  = bulk.declare_element(new_id+1, elem_parts);
 
   for (unsigned ord = 0; ord < 8; ++ord)
   {

@@ -8,12 +8,12 @@ class TestBalanceBalanceLargeToSmall : public MeshFixtureMxNRebalance
 protected:
     TestBalanceBalanceLargeToSmall() : MeshFixtureMxNRebalance() {}
 
-    virtual const unsigned get_x() const { return 3; }
-    virtual const unsigned get_y() const { return 3; }
-    virtual const unsigned get_z() const { return 4; }
+    virtual unsigned get_x() const { return 3; }
+    virtual unsigned get_y() const { return 3; }
+    virtual unsigned get_z() const { return 4; }
 
-    virtual const unsigned get_num_procs_initial_decomp() const { return 3; }
-    virtual const unsigned get_num_procs_target_decomp()  const { return 2; }
+    virtual unsigned get_num_procs_initial_decomp() const { return 3; }
+    virtual unsigned get_num_procs_target_decomp()  const { return 2; }
 };
 
 TEST_F(TestBalanceBalanceLargeToSmall, MxN_decompositionWithAura)

@@ -117,9 +117,9 @@ void RingFixture::generate_mesh( )
         add_parts[1] = m_element_parts[ i % m_element_parts.size() ];
       }
 
-      Entity e_node_0 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , m_node_ids[n0] , no_parts );
-      Entity e_node_1 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , m_node_ids[n1] , no_parts );
-      Entity e_element   = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , m_element_ids[i] , add_parts );
+      Entity e_node_0 = m_bulk_data.declare_node(m_node_ids[n0], no_parts);
+      Entity e_node_1 = m_bulk_data.declare_node(m_node_ids[n1], no_parts);
+      Entity e_element   = m_bulk_data.declare_element(m_element_ids[i], add_parts);
       m_bulk_data.declare_relation( e_element , e_node_0 , 0 );
       m_bulk_data.declare_relation( e_element , e_node_1 , 1 );
       DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, m_node_ids[n0], e_node_0);

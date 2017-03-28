@@ -41,9 +41,9 @@
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Field.hpp"
-#include "CopyTransfer.hpp"
-#include "CopyTransferStkMeshAdapter.hpp"
-#include "CopySearchGeometric.hpp"
+#include "stk_transfer/copy_by_id/TransferCopyById.hpp"
+#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
+#include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 
 namespace
 {
@@ -122,7 +122,7 @@ TEST(StkMeshHowTo, useCopyTransfer)
                                      entitiesA);
     std::vector<stk::mesh::FieldBase*> fieldsA;
     fieldsA.push_back(&scalarFieldNodeA);
-    stk::transfer::CopyTransferStkMeshAdapter transferMeshA(meshA,entitiesA,fieldsA);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferMeshA(meshA,entitiesA,fieldsA);
 
     stk::mesh::EntityVector entitiesB;
     stk::mesh::get_selected_entities(metaB.locally_owned_part(),
@@ -130,11 +130,11 @@ TEST(StkMeshHowTo, useCopyTransfer)
                                      entitiesB);
     std::vector<stk::mesh::FieldBase*> fieldsB;
     fieldsB.push_back(&scalarFieldNodeB);
-    stk::transfer::CopyTransferStkMeshAdapter transferMeshB(meshB,entitiesB,fieldsB);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferMeshB(meshB,entitiesB,fieldsB);
 
-    stk::transfer::CopySearchGeometric copySearch;
+    stk::transfer::SearchByIdGeometric copySearch;
 
-    stk::transfer::CopyTransfer copyTransfer(copySearch,transferMeshA,transferMeshB);
+    stk::transfer::TransferCopyById copyTransfer(copySearch,transferMeshA,transferMeshB);
     copyTransfer.initialize();
 
     // Apply CopyTransfer

@@ -83,10 +83,10 @@ struct GpuGatherBucketScratchData
             {
                 temp[k] = 0.0;
             }
-            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+            ngp::Mesh::ConnectedNodes nodesView = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(nodesView(nodeIndex));
+                unsigned idx = get_index(nodesView[nodeIndex]);
                 for(unsigned k=0; k<dim; ++k) {
                     temp[k] += nodeCoords(idx, k);
                 }
@@ -108,10 +108,10 @@ struct GpuGatherBucketScratchData
             tempx = 0.0;
             tempy = 0.0;
             tempz = 0.0;
-            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+            ngp::Mesh::ConnectedNodes nodesView = bucket.get_nodes(elementIndex);
             for(int nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                int idx = get_index(nodesView(nodeIndex));
+                int idx = get_index(nodesView[nodeIndex]);
                 tempx += constNodeCoords(idx, 0);
                 tempy += constNodeCoords(idx, 1);
                 tempz += constNodeCoords(idx, 2);
@@ -132,10 +132,10 @@ struct GpuGatherBucketScratchData
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double temp[3] = {0.0, 0.0, 0.0};
             const unsigned elemFieldIndex = get_index(bucket[elementIndex]);
-            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+            ngp::Mesh::ConnectedNodes nodesView = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(nodesView(nodeIndex));
+                unsigned idx = get_index(nodesView[nodeIndex]);
                 for(unsigned k=0; k<dim; ++k) {
                     temp[k] += nodeCoords(idx, k);
                 }
@@ -165,10 +165,10 @@ struct GpuGatherBucketScratchData
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double tempx = 0, tempy = 0, tempz = 0;
             const unsigned elemFieldIndex = get_index(bucket[elementIndex]);
-            ngp::ConnectedNodesType elemNodes = bucket.get_nodes(elementIndex);
+            ngp::Mesh::ConnectedNodes  elemNodes = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(elemNodes(nodeIndex));
+                unsigned idx = get_index(elemNodes[nodeIndex]);
                 tempx += constNodeCoords(idx, 0);
                 tempy += constNodeCoords(idx, 1);
                 tempz += constNodeCoords(idx, 2);
@@ -216,10 +216,10 @@ void run_bucket_test()
 
     double errorCheck = 0;
     Kokkos::parallel_reduce(numElements, KOKKOS_LAMBDA(int elementIndex, double& update) {
-        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+        ngp::Mesh::ConnectedNodes nodesView = bucket.get_nodes(elementIndex);
         unsigned expectedCounter = elementIndex*numNodesPerElement;
         for(unsigned nodeIndex=0; nodeIndex<numNodesPerElement; ++nodeIndex) {
-            if (nodesView(nodeIndex) != expectedCounter) {
+            if (nodesView[nodeIndex] != expectedCounter) {
                 update += 1.0;
             }
             ++expectedCounter;

@@ -297,7 +297,6 @@ trim(
 template <class T>
 T convert_cast(const String &s)
 {
-  /* %TRACE% */  /* %TRACE% */
   std::istringstream is(s.c_str());
   T t = 0;
 

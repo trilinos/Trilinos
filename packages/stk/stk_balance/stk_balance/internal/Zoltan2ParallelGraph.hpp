@@ -23,6 +23,8 @@ public:
                                const std::vector<stk::mesh::Selector>& selectors,
                                const stk::mesh::impl::LocalIdMapper& localIds);
 
+    void adjust_weights_for_small_meshes();
+
     void createGraphEdgesUsingNodeConnectivity(stk::mesh::BulkData &stkMeshBulkData,
                                                const stk::balance::BalanceSettings &balanceSettings,
                                                size_t numElements,

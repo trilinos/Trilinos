@@ -205,6 +205,25 @@ typedef CFunction<CExtern2> CFunction2;
 typedef CFunction<CExtern3> CFunction3;
 typedef CFunction<CExtern4> CFunction4;
 
+
+extern "C" {
+  double cycloidal_ramp(double t, double t1, double t2)
+  {
+    if( t < t1 )
+    {
+      return 0.0;
+    }
+    else if( t < t2 )
+    {
+      return (t-t1)/(t2-t1)-1/(s_two_pi)*sin(s_two_pi/(t2-t1)*(t-t1));
+    }
+    else 
+    {
+      return 1.0;
+    }
+  }
+}
+
 namespace {
 extern "C" {
   /// extract signed integral value from floating-point number
@@ -342,21 +361,7 @@ extern "C" {
     }
   }
 
-  double cycloidal_ramp(double t, double t1, double t2)
-  {
-    if( t < t1 )
-    {
-      return 0.0;
-    }
-    else if( t < t2 )
-    {
-      return (t-t1)/(t2-t1)-1/(s_two_pi)*sin(s_two_pi/(t2-t1)*(t-t1));
-    }
-    else 
-    {
-      return 1.0;
-    }
-  }
+
 
   double cosine_ramp1(double t) {
     return cosine_ramp3(t, 0.0, 1.0);

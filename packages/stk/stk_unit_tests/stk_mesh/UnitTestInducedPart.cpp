@@ -87,12 +87,12 @@ protected:
         stk::mesh::PartVector parts;
         parts.push_back(unranked_part);
         parts.push_back(element_rank_part);
-        elem = get_bulk().declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+        elem = get_bulk().declare_element(1 /*id*/, parts);
 
         parts.clear();
-        node  = get_bulk().declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
-        node2 = get_bulk().declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);
-        node3 = get_bulk().declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);
+        node  = get_bulk().declare_node(1 /*id*/, parts);
+        node2 = get_bulk().declare_node(2 /*id*/, parts);
+        node3 = get_bulk().declare_node(3 /*id*/, parts);
 
         get_bulk().declare_relation(elem, node,   0 /*rel id*/);
         get_bulk().declare_relation(elem, node2,  1 /*rel id*/);
@@ -144,17 +144,17 @@ protected:
         stk::mesh::PartVector parts;
         parts.push_back(unranked_part);
         parts.push_back(element_rank_part);
-        elem = get_bulk().declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+        elem = get_bulk().declare_element(1 /*id*/, parts);
 
         parts.clear();
         parts.push_back(edge_rank_part);
-        edge = get_bulk().declare_entity(stk::topology::EDGE_RANK, 1 /*id*/, parts);
+        edge = get_bulk().declare_edge(1 /*id*/, parts);
 
         parts.clear();
-        node                    = get_bulk().declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
-        stk::mesh::Entity node1 = get_bulk().declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);
-        stk::mesh::Entity node2 = get_bulk().declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);
-        stk::mesh::Entity node3 = get_bulk().declare_entity(stk::topology::NODE_RANK, 4 /*id*/, parts);
+        node                    = get_bulk().declare_node(1 /*id*/, parts);
+        stk::mesh::Entity node1 = get_bulk().declare_node(2 /*id*/, parts);
+        stk::mesh::Entity node2 = get_bulk().declare_node(3 /*id*/, parts);
+        stk::mesh::Entity node3 = get_bulk().declare_node(4 /*id*/, parts);
 
         get_bulk().declare_relation(elem, node,  0 /*rel id*/);
         get_bulk().declare_relation(elem, node1, 1 /*rel id*/);
@@ -324,10 +324,10 @@ TEST ( UnitTestInducedPart, verifyForceNoInduce )
   parts.push_back(&element_rank_part);
   parts.push_back(&element_rank_part_no_induce);
   parts.push_back(&element_rank_part_change_to_no_induce);
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, element_id, parts);
+  Entity elem = mesh.declare_element(element_id, parts);
 
   parts.clear();
-  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_id, parts);
+  Entity node = mesh.declare_node(node_id, parts);
 
   const stk::mesh::RelationIdentifier rel_0_id = 0, rel_1_id = 1;
   mesh.declare_relation(elem, node,  rel_0_id);

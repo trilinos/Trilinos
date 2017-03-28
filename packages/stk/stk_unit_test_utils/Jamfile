@@ -87,6 +87,7 @@ install install-user-include
 explicit install-user-lib ;
 install install-user-lib
   : stk_unit_test_utils
+    stk_unit_main
     comparisonUtils
   : <location>$(install-root)/stk/stk_unit_test_utils/lib
   ;
@@ -104,6 +105,7 @@ lib stk_unit_test_utils
       /sierra/stk_util//stk_util_util
       /sierra/stk_io//stk_io
       /tpl/gtest//gtest
+      /tpl/trilinos-kokkoscore//kokkoscore
       /mpi//mpi
     ]
   : 
@@ -113,6 +115,23 @@ lib stk_unit_test_utils
   :
   :
     <include>$(stk_unit_test_utils-root)/..
+  ;
+
+lib stk_unit_main
+  :
+    [ ifdevbuild
+      [ glob $(stk_unit_test_utils-root)/unit_main_lib/*.cpp ]
+      stk_unit_test_utils
+      /sierra/stk_util//stk_util_util
+      /tpl/gtest//gtest
+      /mpi//mpi
+    ]
+  : 
+    [ ifuserbuild
+      <file>$(stk_unit_test_utils-root)/lib/libstk_unit_main.a
+    ]
+  :
+  :
   ;
 
 lib comparisonUtils

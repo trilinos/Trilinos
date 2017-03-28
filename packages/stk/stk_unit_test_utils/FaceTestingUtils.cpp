@@ -46,7 +46,7 @@
 
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 {
-    std::vector<unsigned> countVec;
+    std::vector<size_t> countVec;
     stk::mesh::count_entities(mesh.mesh_meta_data().universal_part(), mesh, countVec);
     return countVec[mesh.mesh_meta_data().side_rank()];
 }
@@ -270,7 +270,7 @@ stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
                                                   stk::mesh::Part &part)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, mesh.mesh_meta_data().side_rank(), nodes);
-    return mesh.declare_element_side(elem, ordinalAndPermutation.first, {&part});
+    return mesh.declare_element_side(elem, ordinalAndPermutation.first, stk::mesh::ConstPartVector{&part});
 }
 
 stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
@@ -290,11 +290,9 @@ stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, 
     stk::mesh::Entity side = mesh.get_entity(stk::topology::EDGE_RANK, global_sub_topology_id);
     if(!mesh.is_valid(side))
     {
-        side = mesh.declare_entity(stk::topology::EDGE_RANK, global_sub_topology_id, part);
+        side = mesh.declare_edge(global_sub_topology_id, {&part});
         for(unsigned i = 0; i < sub_topology_nodes.size(); ++i)
-        {
             mesh.declare_relation(side, sub_topology_nodes[i], i);
-        }
     }
     else
     {

@@ -1,11 +1,11 @@
 #include "BalanceTestUtilities.hpp"
-
+#include <gtest/gtest.h>
 #include <iomanip>
-
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/Field.hpp>      // for Field
+#include "stk_balance/internal/entityDataToField.hpp"
 
 namespace balance_utils
 {
@@ -34,7 +34,7 @@ void putEntityProcOnMeshField(stk::mesh::BulkData &bulkData, const stk::mesh::En
 {
     const std::string fieldName2 = "Coloring";
     stk::mesh::Field<double> &field2 = *bulkData.mesh_meta_data().get_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName2);
-    putVectorDataIntoField(bulkData, coloring, &field2);
+    stk::balance::internal::put_entity_data_to_field(coloring, &field2);
     putDecompFieldDataOnMesh(bulkData, bulkData.parallel_rank());
 }
 
@@ -42,15 +42,6 @@ void putFieldDataOnMesh(stk::mesh::BulkData &bulkData, const std::vector<int>& c
 {
     stk::mesh::EntityProcVec entity_coloring = convert_vector_data_into_entity_proc_vec(bulkData, coloring);
     putEntityProcOnMeshField(bulkData, entity_coloring);
-}
-
-void putVectorDataIntoField(stk::mesh::BulkData &bulkData, const stk::mesh::EntityProcVec& vector_of_data, stk::mesh::FieldBase *field)
-{
-    for(const stk::mesh::EntityProc& entity_proc : vector_of_data)
-    {
-        double *coloring_data = static_cast<double*>(stk::mesh::field_data(*field, entity_proc.first));
-        *coloring_data = static_cast<double>(entity_proc.second);
-    }
 }
 
 void putDecompFieldDataOnMesh(stk::mesh::BulkData &bulkData, int proc_rank)
@@ -94,6 +85,8 @@ void clearFiles(const std::string &baseFilename, int numProcs)
         unlink(getFilename(baseFilename, numProcs, i).c_str());
     }
 }
+
+
 
 }
 

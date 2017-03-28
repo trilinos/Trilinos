@@ -73,8 +73,6 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 TEST(UnitTestingOfRelation, testRelationCoverage)
 {
   // Test some relation error cases
@@ -96,7 +94,7 @@ TEST(UnitTestingOfRelation, testRelationCoverage)
   bulk.modification_begin();
   std::vector<Part*> empty_parts;
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity edge = bulk.declare_entity( stk::topology::EDGE_RANK , new_id , empty_parts );
+  Entity edge = bulk.declare_edge(new_id, empty_parts);
 
   // Cannot declare a back relation
   ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
@@ -210,11 +208,10 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  Entity elem = mesh.declare_element(p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_node(p_rank+1 /*node_id*/, empty_parts);
 
   // Add degenerate relations
   const unsigned nodes_per_elem = 4;
@@ -263,11 +260,11 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   stk::mesh::PartVector elem_parts;
   elem_parts.push_back(&hex8_part);
   mesh.modification_begin();
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, new_ent_id++, elem_parts);
+  Entity elem = mesh.declare_element(new_ent_id++, elem_parts);
   Entity node;
   for (unsigned i = 0; i < 8; ++i)
   {
-    node = mesh.declare_entity(stk::topology::NODE_RANK, new_ent_id++, empty_parts);
+    node = mesh.declare_node(new_ent_id++, empty_parts);
     mesh.declare_relation(elem, node, i);
   }
   mesh.modification_end();
@@ -415,13 +412,12 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   sides_parts.push_back(&line2_part);
 
   // Create element
-  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, elems_parts);
+  Entity elem = mesh.declare_element(p_rank+1 /*elem_id*/, elems_parts);
 
   // Create nodes
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+      nodes.push_back(mesh.declare_node(id, empty_parts));
   }
 
   // Add relations to nodes

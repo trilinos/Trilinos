@@ -47,7 +47,7 @@
 #include <unordered_map>
 
 namespace stk {
-typedef std::pair<MessageId, std::string> MessageKey;
+  typedef std::pair<MessageId, std::string> MessageKey;
 }
 
 namespace std {
@@ -55,17 +55,17 @@ namespace std {
 template<>
 struct hash<stk::MessageKey>
 {
-    const size_t operator()(const stk::MessageKey& msgkey) const
+    size_t operator()(const stk::MessageKey& msgkey) const
     {
         return hash_messagekey(msgkey);
     }
-    const size_t operator()(const stk::MessageKey& msgkey1, const stk::MessageKey& msgkey2) const
+    size_t operator()(const stk::MessageKey& msgkey1, const stk::MessageKey& msgkey2) const
     {
         return hash_messagekey(msgkey1)^hash_messagekey(msgkey2);
     }
 
 private:
-    const size_t hash_messagekey(const stk::MessageKey& msgkey) const
+    size_t hash_messagekey(const stk::MessageKey& msgkey) const
     {
         return hash<stk::MessageId>()(msgkey.first + hash<std::string>()(msgkey.second));
     }
@@ -306,19 +306,6 @@ report_message(
     }
   }
 }
-
-
-void
-reset_throttle_group(
-  int                   throttle_group)
-{
-  for (auto it = s_messageIdMap.begin(); it != s_messageIdMap.end(); ++it) {
-    if ((*it).second.m_group == throttle_group) {
-      (*it).second.m_count = 0;
-    }
-  }
-}
-
 
 void
 add_deferred_message(

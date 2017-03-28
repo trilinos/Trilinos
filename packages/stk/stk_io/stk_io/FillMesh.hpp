@@ -11,8 +11,12 @@ namespace io
 {
 
 void fill_mesh(const std::string &meshSpec, stk::mesh::BulkData &bulkData);
+void fill_mesh(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo);
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData);
+void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo);
 void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo, const std::string& meshSpec, stk::mesh::BulkData& bulkData);
+void fill_mesh_save_step_info(const std::string& inFile, stk::mesh::BulkData& inBulk, int &numSteps, double &maxTime);
+void fill_mesh_with_auto_decomp_and_save_step_info(const std::string& inFile, stk::mesh::BulkData& inBulk, int &numSteps, double &maxTime);
 
 } // namespace unit_test_util
 } // namespace stk

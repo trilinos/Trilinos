@@ -847,7 +847,7 @@ void createSearchTree(
         const std::pair<RangeBox,RangeIdent> * const arg_range_boxes,
         unsigned Dim,
         const unsigned p_rank,
-        bool local_violations,
+        bool& local_violations,
         std::map< stk::OctTreeKey, std::pair< std::list< std::pair<DomainBox,DomainIdent> >, std::list< std::pair<RangeBox,RangeIdent> > > > &search_tree)
 {
   typedef std::pair<DomainBox,DomainIdent> DomainBoundingBox;

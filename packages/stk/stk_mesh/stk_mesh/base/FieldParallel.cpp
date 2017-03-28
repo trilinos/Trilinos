@@ -33,7 +33,8 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/util/PairIter.hpp>   // for PairIter
@@ -95,32 +96,39 @@ void communicate_field_data(
     }
 
     const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
-    PairIterEntityComm ec(infovec.begin(), infovec.end());
     if ( owned ) {
-      for ( ; ! ec.empty() ; ++ec ) {
-        if (ec->ghost_id == ghost_id) {
-          send_size[ ec->proc ] += e_size ;
+      for (const EntityCommInfo& ec : infovec) {
+        if (ec.ghost_id == ghost_id) {
+          send_size[ ec.proc ] += e_size ;
         }
       }
     }
     else {
-      for ( ; ! ec.empty() ; ++ec ) {
-        if (ec->ghost_id == ghost_id) {
+      for (const EntityCommInfo& ec : infovec) {
+        if (ec.ghost_id == ghost_id) {
           recv_size[ i->owner ] += e_size ;
-          break;//jump out since we know we're only recving 1 msg from the 1-and-only owner
+          break;//jump out since we know we're only recving 1 msg for this entity from the 1-and-only owner
         }
       }
     }
   }
 
-  // Allocate send and receive buffers:
+  std::vector<int> send_procs, recv_procs;
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          send_procs.push_back(p);
+      }
+      if (recv_size[p] > 0) {
+          recv_procs.push_back(p);
+      }
+  }
 
-  CommAll sparse ;
+  CommNeighbors sparse(mesh.parallel(), send_procs, recv_procs);
 
-  {
-    const unsigned * const snd_size = send_size.data() ;
-    const unsigned * const rcv_size = recv_size.data() ;
-    sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          sparse.send_buffer(p).reserve(send_size[p]);
+      }
   }
 
   // Send packing:
@@ -145,19 +153,18 @@ void communicate_field_data(
               reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , bucketId, meshIdx.bucket_ordinal, size ));
 
             const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
-            PairIterEntityComm ec(infovec.begin(), infovec.end());
             if (phase == 0) { // send
-              for ( ; !ec.empty() ; ++ec ) {
-                if (ec->ghost_id == ghost_id) {
-                  CommBuffer & b = sparse.send_buffer( ec->proc );
+              for (const EntityCommInfo& ec : infovec) {
+                if (ec.ghost_id == ghost_id) {
+                  CommBufferV & b = sparse.send_buffer( ec.proc );
                   b.pack<unsigned char>( ptr , size );
                 }
               }
             }
             else { //recv
-              for ( ; !ec.empty(); ++ec ) {
-                if (ec->ghost_id == ghost_id) {
-                  CommBuffer & b = sparse.recv_buffer( i->owner );
+              for (const EntityCommInfo& ec : infovec) {
+                if (ec.ghost_id == ghost_id) {
+                  CommBufferV & b = sparse.recv_buffer( i->owner );
                   b.unpack<unsigned char>( ptr , size );
                   break;
                 }
@@ -209,64 +216,6 @@ struct DoOp<T, MAX>
   T operator()(T lhs, T rhs) const
   { return lhs > rhs ? lhs : rhs; }
 };
-
-template<typename T>
-struct CommMsgs {
-  std::vector<int> comm_procs;
-  std::vector<bool> msg_recvd;
-  std::vector<std::vector<T> > send_data;
-  std::vector<std::vector<T> > recv_data;
-};
-
-template<typename T, typename MsgPacker, typename MsgUnpacker>
-void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
-                                            const std::vector<int>& comm_procs,
-                                            MsgPacker& pack_msg,
-                                            MsgUnpacker& unpack_msg,
-                                            bool deterministic)
-{
-  //
-  //  Determine the number of processors involved in this communication
-  //
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int class_size = sizeof(T);
-
-  int num_comm_procs = comm_procs.size();
-  std::vector<std::vector<T> > send_data(num_comm_procs);
-  std::vector<std::vector<T> > recv_data(num_comm_procs);
-  std::vector<MPI_Request> send_requests(num_comm_procs);
-  std::vector<MPI_Request> recv_requests(num_comm_procs);
-  std::vector<MPI_Status> statuses(num_comm_procs);
-
-  for(int i=0; i<num_comm_procs; ++i) {
-    int iproc = comm_procs[i];
-    pack_msg(iproc, send_data[i]);
-    recv_data[i].resize(send_data[i].size());
-
-    char* recv_buffer = (char*)recv_data[i].data();
-    int buf_size = recv_data[i].size()*class_size;
-    MPI_Irecv(recv_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_requests[i]);
-
-    char* send_buffer = (char*)send_data[i].data();
-    MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
-  }
-
-  MPI_Status status;
-  for(int i = 0; i < num_comm_procs; ++i) {
-      int idx = i;
-      if (deterministic) {
-          MPI_Wait(&recv_requests[i], &status);
-      }
-      else {
-          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
-      }
-      unpack_msg(comm_procs[idx], recv_data[idx]);
-  }
-
-  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
-#endif
-}
 
 template <typename T, Operation OP>
 void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool deterministic = false)
@@ -374,7 +323,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
   };
 
   MPI_Comm comm = mesh.parallel();
-  parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);
+  stk::parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);
 }
 
 template <Operation OP>

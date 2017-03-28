@@ -78,10 +78,9 @@ std::ostream & print_restrictions(std::ostream & s ,
 {
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
 
-  for ( std::vector<FieldBase::Restriction>::const_iterator
-        i = rMap.begin() ; i != rMap.end() ; ++i ) {
+  for ( const FieldBase::Restriction& r : rMap ) {
     s << b;
-    i->print( s, i->selector(), field.field_array_rank() );
+    r.print( s, r.selector(), field.field_array_rank() );
     s << std::endl;
   }
   return s;

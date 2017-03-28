@@ -171,7 +171,7 @@ protected:
     {
         get_bulk().modification_begin();
         if(get_bulk().parallel_rank() == 0)
-            get_bulk().declare_element_side(get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
+            get_bulk().declare_element_side(get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, stk::mesh::ConstPartVector{});
         get_bulk().modification_end();
     }
     void create_adjacent_hex_on_last_proc()
@@ -207,7 +207,6 @@ TEST_F(SingleHexMesh, DISABLED_CreateFacesThenCreateAnotherElement_ConnectivityI
     if(stk::parallel_machine_size(get_comm()) <= 2)
     {
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-        get_bulk().initialize_face_adjacent_element_graph();
         create_hex_on_proc_zero();
         create_face_on_proc_zero();
         create_adjacent_hex_on_last_proc();

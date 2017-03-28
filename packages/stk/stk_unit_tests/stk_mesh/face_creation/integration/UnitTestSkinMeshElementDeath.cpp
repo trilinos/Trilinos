@@ -75,23 +75,7 @@ void compare_faces(const stk::mesh::BulkData& bulkData, const std::vector<size_t
 
     for(size_t i=0;i<skinned_faces.size();++i)
     {
-        if (bulkData.identifier(skinned_faces[i]) != bulkData.identifier(active_faces[i]))
-        {
-            std::cerr << "Skinned faces: ";
-            for(size_t j=0;j<skinned_faces.size();++j)
-            {
-                std::cerr << skinned_faces[j] << "\t";
-            }
-            std::cerr << std::endl;
-
-            std::cerr << "active faces: ";
-            for(size_t j=0;j<active_faces.size();++j)
-            {
-                std::cerr << active_faces[j] << "\t";
-            }
-            std::cerr << std::endl;
-            break;
-        }
+        EXPECT_EQ(bulkData.identifier(skinned_faces[i]), bulkData.identifier(active_faces[i]));
     }
 }
 

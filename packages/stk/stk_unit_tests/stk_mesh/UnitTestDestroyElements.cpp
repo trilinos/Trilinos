@@ -410,4 +410,84 @@ TEST_F(QuadMesh, DeleteProcBoundaryElementWithAura)
     run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
 }
 
+class HexShellHex : public stk::unit_test_util::MeshFixture
+{
+public:
+    void make_hex_shell_hex_mesh()
+    {
+        setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+        std::vector<stk::mesh::EntityId> nodeIds = {5, 6, 7, 8};
+        stk::mesh::EntityId elementId = 8;
+        get_bulk().modification_begin();
+        stk::mesh::Part& partWithTopology = get_meta().get_topology_root_part(stk::topology::SHELL_QUADRILATERAL_4);
+        stk::mesh::declare_element(get_bulk(), partWithTopology, elementId, nodeIds);
+        get_bulk().modification_end();
+    }
+
+    void delete_elements_in_ascending_order(unsigned num_elements, const stk::mesh::Entity* elements)
+    {
+        for(unsigned i=0;i<num_elements;++i)
+        {
+            if(i==0 || i == 1)
+                EXPECT_TRUE(get_bulk().is_valid(elements[i]));
+            else
+                EXPECT_FALSE(get_bulk().is_valid(elements[i]));
+
+            get_bulk().destroy_entity(elements[i]);
+        }
+    }
+
+    void delete_elements_in_descending_order(unsigned num_elements, const stk::mesh::Entity* elements)
+    {
+        ASSERT_TRUE(num_elements==3u);
+
+        for(unsigned i=0;i<num_elements;++i)
+        {
+            unsigned reverse_index = num_elements - i - 1;
+            EXPECT_TRUE(get_bulk().is_valid(elements[reverse_index]));
+            get_bulk().destroy_entity(elements[reverse_index]);
+        }
+    }
+
+    void try_to_delete_incorrectly_all_elements_on_node_5()
+    {
+        stk::mesh::Entity node5 = get_bulk().get_entity(stk::topology::NODE_RANK, 5);
+        get_bulk().modification_begin();
+        delete_elements_in_ascending_order(get_bulk().num_elements(node5),  get_bulk().begin_elements(node5));
+        get_bulk().modification_end();
+    }
+
+    void delete_correctly_all_elements_on_node_5()
+    {
+        stk::mesh::Entity node5 = get_bulk().get_entity(stk::topology::NODE_RANK, 5);
+        get_bulk().modification_begin();
+        delete_elements_in_descending_order(get_bulk().num_elements(node5),  get_bulk().begin_elements(node5));
+        get_bulk().modification_end();
+    }
+};
+
+TEST_F(HexShellHex, testDeletionInAscendingOrder_Wrong)
+{
+    if(stk::parallel_machine_size(get_comm()) == 1)
+    {
+        make_hex_shell_hex_mesh();
+        try_to_delete_incorrectly_all_elements_on_node_5();
+        unsigned numElements = stk::mesh::count_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK));
+        EXPECT_EQ(1u, numElements); // WRONG ANSWER
+    }
+}
+
+TEST_F(HexShellHex, testDeletionInDescendingOrder_Correct)
+{
+    if(stk::parallel_machine_size(get_comm()) == 1)
+    {
+        make_hex_shell_hex_mesh();
+        delete_correctly_all_elements_on_node_5();
+        unsigned numElements = stk::mesh::count_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK));
+        EXPECT_EQ(0u, numElements); // Right Answer
+    }
+}
+
+
 }

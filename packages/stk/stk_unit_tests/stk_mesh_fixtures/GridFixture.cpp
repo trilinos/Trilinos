@@ -89,7 +89,6 @@ void GridFixture::generate_grid()
     fill_node_map(num_nodes, num_quad_faces, i_rank);
   }
 
-  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   std::vector<Entity> all_entities;
 
   // assign ids, quads, nodes, then shells
@@ -126,13 +125,13 @@ void GridFixture::generate_grid()
 
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
-      Entity face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
+      Entity face = m_bulk_data.declare_element(face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity node = m_bulk_data.declare_entity(stk::topology::NODE_RANK, node_id, no_parts);
+        Entity node = m_bulk_data.declare_node(node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
       }

@@ -85,8 +85,7 @@ int testElement(const std::string &name)
   // Get the corresponding stk::topology:
   stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
-    std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '"
-              << name << "'.\n";
+    std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '" << name << "'.\n";
     return 1;
   }
 
@@ -94,9 +93,7 @@ int testElement(const std::string &name)
   // stk::topology to Ioss::ElementToplogy
   Ioss::ElementTopology *new_element = Ioss::ElementTopology::factory(cell.name());
   if (element->name() != new_element->name()) {
-    std::cerr << "\tERROR: New name = '" << new_element->name()
-              << "' doesn't match old name '" << element->name()
-              << "'\n";
+    std::cerr << "\tERROR: New name = '" << new_element->name() << "' doesn't match old name '" << element->name() << "'\n";
     errors++;
   }
 

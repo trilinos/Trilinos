@@ -51,7 +51,6 @@ protected:
     void run(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         setup_mesh("generated:1x1x2", auraOption);
-        get_bulk().initialize_face_adjacent_element_graph();
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
 
         stk::mesh::EntityVector sides;

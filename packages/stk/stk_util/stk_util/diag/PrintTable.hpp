@@ -136,9 +136,9 @@ public:
     return *this;
   }
 
-  bool commaSeparatedValues() const {
-    return m_flags & COMMA_SEPARATED_VALUES;
-  }
+  //bool commaSeparatedValues() const {
+  //  return m_flags & COMMA_SEPARATED_VALUES;
+  //}
 
   PrintTable &setCommaSeparatedValues(bool comma_separated_values = true) {
     if (comma_separated_values) {

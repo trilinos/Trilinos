@@ -21,10 +21,32 @@ struct IdAndSideSet {
     int id;
     stk::mesh::SideSet sideSet;
 };
-
 typedef std::vector<IdAndSideSet> SideSetData;
 
+struct ElemIdSide {
+    int elem_id;
+    int side_ordinal;
+};
+typedef std::vector<ElemIdSide> ElemIdSideVector;
 
+struct SideSetIdAndElemIdSides {
+    int id;
+    ElemIdSideVector sideSet;
+};
+typedef std::vector<SideSetIdAndElemIdSides> SideSetIdAndElemIdSidesVector;
+
+struct ElemIdSideLess {
+  inline bool operator()(const ElemIdSide &lhs, const ElemIdSide &rhs) const
+  {
+      if(lhs.elem_id < rhs.elem_id)
+          return true;
+      else if(lhs.elem_id == rhs.elem_id)
+          return lhs.side_ordinal < rhs.side_ordinal;
+      else
+          return false;
+  }
+  inline ElemIdSideLess& operator=(const ElemIdSideLess& rhs);
+};
 
 enum ReadMode { READ_SERIAL_AND_DECOMPOSE, READ_ALREADY_DECOMPOSED };
 
@@ -36,7 +58,12 @@ public:
     virtual void populate_mesh(bool delay_field_data_allocation = true)
     {
         stk::io::StkMeshIoBroker::populate_mesh(delay_field_data_allocation);
-        extract_sideset_data_from_io(sideset_data);
+        extract_sideset_data_from_io();
+    }
+
+    void write_output_mesh(size_t output_file_index)
+    {
+      m_output_files[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
     }
 
 private:
@@ -83,30 +110,19 @@ private:
         }
     }
 
-    void add_ioss_sideset_to_stk_sideset_with_sideset_id(const stk::mesh::BulkData& bulk, const Ioss::SideSet* sset, std::vector<IdAndSideSet>& sideset_data)
-    {
-        int sset_id = sset->get_property("id").get_int();
-        sideset_data.push_back(IdAndSideSet{sset_id, stk::mesh::SideSet{}});
-        stk::mesh::SideSet& currentSideset = sideset_data.back().sideSet;
-        convert_ioss_sideset_to_stk_sideset(bulk, sset, currentSideset);
-    }
 
-public:
-    void fill_sideset_data(std::vector<IdAndSideSet>& sidesets) const
-    {
-        sidesets = sideset_data;
-    }
 
 private:
-    void extract_sideset_data_from_io(std::vector<IdAndSideSet> &sidesetData)
+    void extract_sideset_data_from_io()
     {
         stk::mesh::BulkData &bulk = this->bulk_data();
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         for ( const Ioss::SideSet * sset : region->get_sidesets() )
-            add_ioss_sideset_to_stk_sideset_with_sideset_id(bulk, sset, sidesetData);
+        {
+            stk::mesh::SideSet &sideSet = bulk.create_sideset(sset->get_property("id").get_int());
+            convert_ioss_sideset_to_stk_sideset(bulk, sset, sideSet);
+        }
     }
-
-    std::vector<IdAndSideSet> sideset_data;
 };
 
 class BulkDataTester : public stk::mesh::BulkData
@@ -117,23 +133,32 @@ public:
     :   stk::mesh::BulkData(mesh_meta_data, parallel)
     {
     }
-
-    void tester_save_sideset_data(int sideset_id, const stk::mesh::SideSet& data)
-    {
-        save_sideset_data(sideset_id, data);
-    }
 };
 
-void write_exo_file(BulkDataTester &bulkData, const std::string &filename, const SideSetData& sidesetData);
-void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo, SideSetData &sidesetData);
+stk::mesh::SideSet get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
+SideSetData get_stk_side_set_data(stk::mesh::BulkData &bulk, const SideSetIdAndElemIdSidesVector &ssData);
+
+void write_exo_file(BulkDataTester &bulkData, const std::string &filename);
+void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, ReadMode read_mode);
+
+void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo);
 void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkData &bulkData, std::string filename, ReadMode readMode);
-SideSetData get_sideset_data_from_written_file(BulkDataTester &bulk, const std::string& outputFileName);
+
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
+
 void compare_sidesets(const std::string& inputFileName,
                       BulkDataTester &bulk1,
-                      const SideSetData &sidesetData1,
-                      BulkDataTester &bulk2,
-                      const SideSetData &sidesetData2);
+                      BulkDataTester &bulk2);
+
+void compare_sidesets(const std::string& inputFileName,
+                      stk::mesh::BulkData &bulk,
+                      const SideSetIdAndElemIdSidesVector &expected);
+
+void compare_sidesets(const std::string& input_file_name,
+                      stk::mesh::BulkData &bulk,
+                      const SideSetIdAndElemIdSidesVector &sideset,
+                      const SideSetIdAndElemIdSidesVector &expected);
+
 
 }
 }

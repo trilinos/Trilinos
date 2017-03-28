@@ -22,12 +22,16 @@ void setParamsGeometricMethod(Teuchos::ParameterList& params, const BalanceSetti
     params.set("imbalance_tolerance", 1.10);
     params.set("num_global_parts", numParts);
     params.set("algorithm", balanceSettings.getDecompMethod());
-//    params.set("mj_parts", "1,4,4"); // multijagged special for x = one element thick
+//    params.set("partitioning_objective", "balance_object_weight"); // RCB1
+//    params.set("partitioning_objective", "multicriteria_minimize_total_weight"); // RCB2
+//    params.set("partitioning_objective", "multicriteria_minimize_maximum_weight"); // RCB3
+//    params.set("partitioning_objective", "multicriteria_balance_total_maximum"); // RCB4
+    //    params.set("mj_parts", "1,4,4"); // multijagged special for x = one element thick
 //    params.set("rectilinear", "1"); // This causes app test failures
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters", false);
     zparams.set("RCB_RECOMPUTE_BOX", "1");
     zparams.set("REMAP", "0");
-    if (balanceSettings.isIncrementalRebalance())
+    if (balanceSettings.getDecompMethod() != "rcb" && balanceSettings.isIncrementalRebalance())
     {
         zparams.set("REMAP", "1");
     }

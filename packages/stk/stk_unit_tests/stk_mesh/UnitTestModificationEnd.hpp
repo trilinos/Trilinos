@@ -555,7 +555,7 @@ void create_edges(stk::unit_test_util::BulkDataTester& stkMeshBulkData, std::vec
 
     for (size_t edge_index=0;edge_index<edgeIds.size();edge_index++)
     {
-        stk::mesh::Entity edge = stkMeshBulkData.declare_entity( stk::topology::EDGE_RANK, edgeIds[edge_index], add_parts);
+        stk::mesh::Entity edge = stkMeshBulkData.declare_edge(edgeIds[edge_index], add_parts);
         edgeEntities[edge_index] = edge;
 
         std::vector<stk::mesh::Entity> ghostedElements(10);

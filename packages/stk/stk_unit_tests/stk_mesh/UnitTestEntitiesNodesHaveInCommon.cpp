@@ -33,8 +33,8 @@
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
-#include <stk_mesh/base/CreateFaces.hpp>       // for comm_mesh_counts, count_entities
+#include <stk_mesh/base/GetEntities.hpp> // for count_entities
+#include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>

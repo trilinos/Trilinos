@@ -25,17 +25,17 @@ bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity 
 
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank)
 {
-    for(stk::mesh::EntityRank rank = stk::topology::ELEM_RANK; rank > conRank; --rank)
+    for(stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count()-1); rank > conRank; rank--)
     {
         unsigned numUpward = bulk.num_connectivity(connectedEntity, rank);
-        const stk::mesh::Entity *upwardEntity = bulk.begin(connectedEntity, rank);
-        for(unsigned j=0; j<numUpward; j++)
+        const stk::mesh::Entity *entities = bulk.begin(connectedEntity, rank);
+        for (unsigned j=0;j<numUpward;++j)
         {
-            if(!bulk.is_valid(upwardEntity[j])) continue;
-
-            if(bulk.bucket(upwardEntity[j]).in_aura())
+            stk::mesh::Entity upwardEntity = entities[numUpward-j-1];
+            if(bulk.is_valid(upwardEntity) && bulk.bucket(upwardEntity).in_aura())
             {
-                bulk.destroy_entity(upwardEntity[j]);
+                destroy_upward_connected_aura_entities(bulk, upwardEntity, rank);
+                bulk.destroy_entity(upwardEntity);
             }
         }
     }

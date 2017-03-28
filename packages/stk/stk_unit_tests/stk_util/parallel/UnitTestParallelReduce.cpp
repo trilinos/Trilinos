@@ -42,10 +42,9 @@
 TEST(ParallelComm, AllReduceLoc)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
-    stk::CommAll comm_all(comm);
 
-    int myProcId = comm_all.parallel_rank();
-    int numProcs = comm_all.parallel_size();
+    int myProcId = stk::parallel_machine_rank(comm);
+    int numProcs = stk::parallel_machine_size(comm);
 
     int nvalues=5;
     uint64_t limit_32bit_integer = std::numeric_limits<uint32_t>::max();
@@ -78,10 +77,9 @@ TEST(ParallelComm, AllReduceLoc)
 TEST(ParallelComm, AllReduce)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
-    stk::CommAll comm_all(comm);
 
-    int myProcId = comm_all.parallel_rank();
-    int numProcs = comm_all.parallel_size();
+    int myProcId = stk::parallel_machine_rank(comm);
+    int numProcs = stk::parallel_machine_size(comm);
 
     int nvalues=5;
 

@@ -57,8 +57,6 @@ TEST(StkIo, test_side_membership)
         std::vector<unsigned> side_ordinal_on_proc = { 5, 4 };
         stk::mesh::PartVector part_on_proc = {&partProc0, &partProc1};
 
-        bulk.initialize_face_adjacent_element_graph();
-
         bulk.modification_begin();
         unsigned side_ord = side_ordinal_on_proc[bulk.parallel_rank()];
         stk::mesh::PartVector parts={part_on_proc[bulk.parallel_rank()]};
@@ -77,27 +75,76 @@ TEST(StkIo, test_side_membership)
     }
 }
 
-void test_serial_write_new_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
-                                   stk::mesh::PartVector &parts,
-                                   const std::string &outputFileName)
+void test_output_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
+                         const std::string &outputFileName,
+                         stk::unit_test_util::sideset::ReadMode readMode)
 {
-  bulk.initialize_face_adjacent_element_graph();
+  stk::unit_test_util::sideset::write_exo_file(bulk, outputFileName);
 
-  stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
-  EXPECT_TRUE(bulk.is_valid(element1));
+  stk::mesh::MetaData meta2;
+  stk::unit_test_util::sideset::BulkDataTester bulk2(meta2, bulk.parallel());
+  stk::unit_test_util::sideset::read_exo_file(bulk2, outputFileName, readMode);
+  EXPECT_NO_THROW(stk::unit_test_util::sideset::compare_sidesets(outputFileName, bulk, bulk2));
+}
 
-  stk::mesh::Entity element2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2u);
-  EXPECT_TRUE(bulk.is_valid(element2));
-
-  const stk::unit_test_util::sideset::SideSetData newSidesetData = {{1, {{element1, 5}, {element2, 1}}}};
-  bulk.create_side_entities(newSidesetData[0].sideSet, parts);
-
+void test_mesh_with_single_face_connected_to_two_elements(stk::unit_test_util::sideset::BulkDataTester &bulk)
+{
   stk::mesh::EntityVector faces;
   stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(bulk.mesh_meta_data().side_rank()), faces);
   EXPECT_EQ(faces.size(), 1u);
   ASSERT_EQ(2u, bulk.num_elements(faces[0]));
+}
 
-  stk::unit_test_util::sideset::write_exo_file(bulk, outputFileName, newSidesetData);
+void create_new_sideset_and_faces(stk::unit_test_util::sideset::BulkDataTester &bulk,
+                                  stk::mesh::PartVector &parts,
+                                  const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
+{
+  stk::mesh::SideSet &sideSet = bulk.create_sideset(1);
+
+  for(unsigned i=0; i<newSideSet.size(); ++i)
+  {
+    stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEMENT_RANK, static_cast<stk::mesh::EntityId>(newSideSet[i].elem_id));
+    EXPECT_TRUE(bulk.is_valid(element));
+    sideSet.push_back({element, static_cast<stk::mesh::ConnectivityOrdinal>(newSideSet[i].side_ordinal)});
+  }
+
+  bulk.create_side_entities(sideSet, parts);
+}
+
+void test_create_and_write_new_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
+                                       stk::mesh::PartVector &parts,
+                                       const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet,
+                                       const std::string &outputFileName)
+{
+  create_new_sideset_and_faces(bulk, parts, newSideSet);
+  test_mesh_with_single_face_connected_to_two_elements(bulk);
+  test_output_sideset(bulk, outputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+}
+
+stk::mesh::PartVector create_parts(stk::mesh::MetaData &meta)
+{
+  stk::mesh::PartVector parts;
+  stk::mesh::Part &part = meta.declare_part("surface_1", meta.side_rank());
+  meta.set_part_id(part, 1);
+  stk::io::put_io_part_attribute(part);
+  parts.push_back(&part);
+  return parts;
+}
+
+void load_mesh_with_no_sidesets(stk::mesh::BulkData &bulk, const std::string &inputFileName)
+{
+  stk::unit_test_util::sideset::read_exo_file(bulk, inputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+  EXPECT_TRUE(bulk.get_sideset_ids().empty());
+}
+
+void test_create_and_write_new_sideset(stk::ParallelMachine pm, const std::string &inputFileName, const std::string &outputFileName, const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
+{
+  stk::mesh::MetaData meta(3);
+  stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+  stk::mesh::PartVector parts = create_parts(meta);
+
+  load_mesh_with_no_sidesets(bulk, inputFileName);
+  test_create_and_write_new_sideset(bulk, parts, newSideSet, outputFileName);
 }
 
 TEST(StkIo, create_and_write_new_sideset)
@@ -107,23 +154,100 @@ TEST(StkIo, create_and_write_new_sideset)
   const unsigned p_size = stk::parallel_machine_size(pm);
   if(p_size == 1)
   {
-      stk::mesh::MetaData meta;
+      test_create_and_write_new_sideset(pm, "Ae.e", "new_ADe.e", {{1, 5}, {2, 1}});
+      test_create_and_write_new_sideset(pm, "Ae.e", "new_ALe.e", {{1, 5}        });
+      test_create_and_write_new_sideset(pm, "Ae.e", "new_ARe.e", {        {2, 1}});
+
+      test_create_and_write_new_sideset(pm, "AA.e", "new_ADA.e", {{1, 5}, {2, 4}});
+      test_create_and_write_new_sideset(pm, "AA.e", "new_ALA.e", {{1, 5}        });
+      test_create_and_write_new_sideset(pm, "AA.e", "new_ARA.e", {        {2, 4}});
+  }
+}
+
+void read_and_test_preexisting_sidesets(stk::unit_test_util::sideset::BulkDataTester& bulk,
+                                       const std::string& inputFileName,
+                                       int inputId,
+                                       const stk::unit_test_util::sideset::ElemIdSideVector& expectedInputElemIdSides)
+{
+    stk::unit_test_util::sideset::read_exo_file(bulk, inputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+    stk::unit_test_util::sideset::SideSetIdAndElemIdSidesVector expectedInputSideset;
+    expectedInputSideset.push_back( {inputId, expectedInputElemIdSides});
+    stk::unit_test_util::sideset::compare_sidesets(inputFileName, bulk, expectedInputSideset);
+}
+
+void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bulk,
+                               int inputId,
+                               const stk::unit_test_util::sideset::ElemIdSideVector& deletedElemIdSides)
+{
+    stk::mesh::SideSet deletedSideset = stk::unit_test_util::sideset::get_stk_side_set(bulk, deletedElemIdSides);
+    stk::mesh::SideSet& sideSet = bulk.get_sideset(inputId);
+    for(const stk::mesh::SideSetEntry &entry : deletedSideset)
+    {
+        stk::mesh::SideSet::iterator iter = std::find(sideSet.begin(), sideSet.end(), entry);
+        EXPECT_TRUE(iter != sideSet.end());
+        sideSet.erase(iter);
+    }
+}
+
+void test_read_and_modify_sideset(stk::ParallelMachine pm,
+                                  const std::string &inputFileName,
+                                  const std::string &outputFileName,
+                                  const stk::unit_test_util::sideset::ElemIdSideVector &expectedInputElemIdSides,
+                                  const stk::unit_test_util::sideset::ElemIdSideVector &deletedElemIdSides,
+                                  const stk::unit_test_util::sideset::ElemIdSideVector &expectedOutputElemIdSides)
+{
+    stk::mesh::MetaData meta;
+    stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+    int inputId = 1;
+
+    read_and_test_preexisting_sidesets(bulk, inputFileName, inputId, expectedInputElemIdSides);
+    delete_sides_from_sideset(bulk, inputId, deletedElemIdSides);
+    EXPECT_NO_THROW(stk::unit_test_util::sideset::compare_sidesets(outputFileName, bulk, {{inputId, expectedOutputElemIdSides}}));
+
+    test_output_sideset(bulk, outputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+}
+
+TEST(StkIo, modify_sideset)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned p_size = stk::parallel_machine_size(pm);
+
+  if(p_size == 1)
+  {
+      test_read_and_modify_sideset(pm, "ADe.e", "new_ARe.e", {{1, 5}, {2, 1}}, {{1, 5}        }, {{2, 1}});
+      test_read_and_modify_sideset(pm, "ADe.e", "new_ALe.e", {{1, 5}, {2, 1}}, {        {2, 1}}, {{1, 5}});
+      test_read_and_modify_sideset(pm, "ADe.e", "new_Ae.e",  {{1, 5}, {2, 1}}, {{1, 5}, {2, 1}}, {      });
+  }
+}
+
+TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned p_size = stk::parallel_machine_size(pm);
+
+  if(p_size == 2)
+  {
+      stk::mesh::MetaData meta(3);
       stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
 
-      stk::unit_test_util::sideset::StkMeshIoBrokerTester stkIo;
-      stk::unit_test_util::sideset::setup_io_broker_for_read(stkIo, bulk, "Ae.e", stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+      stk::mesh::PartVector parts = create_parts(meta);
+      load_mesh_with_no_sidesets(bulk, "AA.e");
 
-      stk::mesh::PartVector parts;
-      stk::mesh::Part &part = meta.declare_part("surface_1", meta.side_rank());
-      meta.set_part_id(part, 1);
-      stk::io::put_io_part_attribute(part);
-      parts.push_back(&part);
+      stk::mesh::SideSet &sideSet = bulk.create_sideset(1);
 
-      stk::unit_test_util::sideset::SideSetData sidesetData;
-      stkIo.populate_bulk_data();
-      stkIo.fill_sideset_data(sidesetData);
-      EXPECT_TRUE(sidesetData.empty());
+      if(bulk.parallel_rank() == 0)
+          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 1u), 5});
+      else
+          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 2u), 4});
 
-      test_serial_write_new_sideset(bulk, parts, "Ae_with_ss.e");
+      bulk.create_side_entities(sideSet, parts);
+      test_output_sideset(bulk,"modified_ADA.e", stk::unit_test_util::sideset::READ_ALREADY_DECOMPOSED);
+
+      if(bulk.parallel_rank() == 0)
+          sideSet.clear();
+
+      test_output_sideset(bulk,"modified_ARA.e", stk::unit_test_util::sideset::READ_ALREADY_DECOMPOSED);
   }
 }

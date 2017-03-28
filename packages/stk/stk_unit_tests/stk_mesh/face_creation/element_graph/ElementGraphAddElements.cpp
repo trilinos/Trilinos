@@ -121,7 +121,6 @@ protected:
         declare_new_hex_element_per_proc();
         add_new_hex_element_to_existing_graph();
         test_edges();
-        test_parallel_consistency_of_graph();
     }
 
     void declare_new_hex_element_per_proc()
@@ -174,21 +173,6 @@ protected:
         GraphEdges graphEdgesThisProc = goldElement1ToElement2SideOrdinalsPerOwningProc[get_bulk().parallel_rank()];
         for(GraphEdgeMock const &graphEdge : graphEdgesThisProc)
             EXPECT_EQ(graphEdge.sideOrdinalConnectingElement1ToElement2, elementGraph->get_side_from_element1_to_element2(graphEdge.element1, graphEdge.element2));
-    }
-
-    void test_parallel_consistency_of_graph()
-    {
-        stk::mesh::EntityIdVector remoteSideIds = get_sides_ids_remotely_connected_through(elementGraph->get_parallel_graph_info());
-        test_for_unique_ids(remoteSideIds);
-        test_similarity_on_both_procs(remoteSideIds);
-    }
-
-    stk::mesh::EntityIdVector get_sides_ids_remotely_connected_through(stk::mesh::impl::ParallelGraphInfo &parallelGraphInfo)
-    {
-        stk::mesh::EntityIdVector chosenIds;
-        for(stk::mesh::impl::ParallelGraphInfo::iterator iter1 = parallelGraphInfo.begin(); iter1 != parallelGraphInfo.end(); ++iter1)
-            chosenIds.push_back(iter1->second.m_chosen_side_id);
-        return chosenIds;
     }
 
     void test_for_unique_ids(stk::mesh::EntityIdVector &chosen_ids)

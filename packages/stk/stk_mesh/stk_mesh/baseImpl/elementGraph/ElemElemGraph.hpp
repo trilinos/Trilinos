@@ -119,7 +119,6 @@ public:
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
     void fill_from_mesh();
-    stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
     stk::mesh::SideNodeConnector get_side_node_connector();
@@ -171,8 +170,6 @@ public:
         return m_idMapper.local_to_entity(localId);
     }
 
-    const SideIdPool& get_side_id_pool() const { return m_sideIdPool; }
-
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
@@ -183,9 +180,6 @@ protected:
                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideToProcAndFaceId& elementSidesToSend);
-
-    stk::mesh::EntityId pick_id_for_side_if_created(const impl::ParallelElementData & elemDataFromOtherProc,
-            const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideDataSent, stk::mesh::Entity localElem, unsigned side_index);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 
@@ -255,7 +249,6 @@ protected:
     std::vector<stk::topology> m_element_topologies;
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_parallel_edges;
-    stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
 private:
@@ -274,8 +267,6 @@ private:
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
 
-    void fix_coincident_chosen_side_ids();
-
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
     unsigned get_max_num_sides_per_element() const;
     bool did_already_delete_a_shell_between_these_elements(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
@@ -287,7 +278,6 @@ private:
                                       int side_index,
                                       const impl::SerialElementData& elemData,
                                       std::vector<stk::mesh::GraphEdge>& coincidentGraphEdges) const;
-    void generate_initial_side_ids(size_t numPotentialParallelBoundarySides);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData,
@@ -436,13 +426,13 @@ inline impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::
     return impl::build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
 }
 
-inline void fill_suggested_side_ids(stk::mesh::SideIdPool& sideIdPool, impl::ElemSideToProcAndFaceId& elements_to_communicate)
+inline void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate)
 {
     impl::ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     impl::ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
     for(; iter != end; ++iter)
     {
-        stk::mesh::EntityId suggested_side_id = sideIdPool.get_available_id();
+        stk::mesh::EntityId suggested_side_id = stk::mesh::impl::side_id_formula(bulkData.identifier(iter->first.entity), iter->first.side_id);
         iter->second.side_id = suggested_side_id;
     }
 }

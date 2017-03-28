@@ -113,9 +113,11 @@ alias install-exe-targets : ;
 exe stk_learning_dgelement_utest
   :
     [ glob $(stk_learning-root)/DGElement/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /sierra/stk_util//stk_util_environment
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_tools//stk_tools_lib
   :
     <tag>@sierra-exec-tag
   ;
@@ -134,6 +136,7 @@ exe stk_learning_mpi_openmp_utest
   :
     [ glob $(stk_learning-root)/MpiPlusOpenMp/*.C ]
     [ glob $(stk_learning-root)/ForEachEntityLoops/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/gtest//gtest
     /mpi//mpi
@@ -166,6 +169,7 @@ lib stk_learning_game_of_life
 exe stk_learning_game_of_life_utest
   :
     [ glob $(stk_learning-root)/GameOfLife/UnitTest/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -201,7 +205,10 @@ lib stk_learning_mesh_builder
 exe stk_learning_imbalance_utest
   :
     [ glob $(stk_learning-root)/LoadImbalanceTimer/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_diag
     /mpi//mpi
     /sierra/stk_unit_test_utils//stk_unit_test_utils
   :
@@ -211,6 +218,7 @@ exe stk_learning_imbalance_utest
 exe stk_learning_mesh_builder_utest
   :
     [ glob $(stk_learning-root)/MeshBuilder/UnitTest/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -246,6 +254,7 @@ lib stk_learning_ngp
 exe stk_learning_kokkos_utest 
   :
     [ glob $(stk_learning-root)/Kokkos/*.C ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
     /mpi//mpi
     /tpl/trilinos-kokkoscore//kokkoscore

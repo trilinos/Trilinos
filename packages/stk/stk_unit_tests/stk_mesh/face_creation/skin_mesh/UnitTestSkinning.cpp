@@ -101,7 +101,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   grid_mesh.generate_grid();
 
   // Add the shells
-  std::vector<unsigned> count;
+  std::vector<size_t> count;
   stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
   const unsigned num_shell_1_faces = 4;
@@ -115,8 +115,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   std::vector<stk::mesh::Entity> shell_faces;
   for (unsigned i = 1; i <= num_shell_faces; ++i) {
-    stk::mesh::Entity new_shell = bulk_data.declare_entity(element_rank,
-                                                           num_entities + i,
+    stk::mesh::Entity new_shell = bulk_data.declare_element(num_entities + i,
                                                            shell_parts);
     shell_faces.push_back(new_shell);
   }

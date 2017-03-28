@@ -17,10 +17,20 @@ void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo, const std::string& 
     stkIo.populate_bulk_data();
 }
 
+void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)
+{
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    fill_mesh_preexisting(stkIo, meshSpec, bulkData);
+}
+
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    fill_mesh_with_auto_decomp(meshSpec, bulkData, stkIo);
+}
+
+void fill_mesh(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)
+{
     fill_mesh_preexisting(stkIo, meshSpec, bulkData);
 }
 
@@ -28,6 +38,31 @@ void fill_mesh(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
     stk::io::StkMeshIoBroker stkIo;
     fill_mesh_preexisting(stkIo, meshSpec, bulkData);
+}
+
+void save_step_info(stk::io::StkMeshIoBroker &stkIo, int &numSteps, double &maxTime)
+{
+    numSteps = stkIo.get_num_time_steps();
+    if(numSteps>0)
+    {
+        stkIo.read_defined_input_fields(numSteps);
+        maxTime = stkIo.get_max_time();
+    }
+}
+
+void fill_mesh_save_step_info(const std::string& inFile, stk::mesh::BulkData& inBulk, int &numSteps, double &maxTime)
+{
+    stk::io::StkMeshIoBroker stkIo;
+    stk::io::fill_mesh_preexisting(stkIo, inFile, inBulk);
+    save_step_info(stkIo, numSteps, maxTime);
+}
+
+void fill_mesh_with_auto_decomp_and_save_step_info(const std::string& inFile, stk::mesh::BulkData& inBulk, int &numSteps, double &maxTime)
+{
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    stk::io::fill_mesh_preexisting(stkIo, inFile, inBulk);
+    save_step_info(stkIo, numSteps, maxTime);
 }
 
 }

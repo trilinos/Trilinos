@@ -741,7 +741,7 @@ void checkStatesAfterCEO_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bul
   /**/  EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, elem_part, topo_part));
   /**/  EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 4), ELEM_RANK, 1));
 
-  /**/  EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));;
+  /**/  EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED));
   /**/  EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
@@ -1470,14 +1470,14 @@ void fillMeshfor3Elem2ProcMoveRightAndTest(stk::unit_test_util::BulkDataTester &
 
     if(p_rank == 0)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 1, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 2, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 3, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 4, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 5, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 6, *node_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 1, *elem_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 2, *elem_part));
+        nodes.push_back(mesh.declare_node(1, {node_part}));
+        nodes.push_back(mesh.declare_node(2, {node_part}));
+        nodes.push_back(mesh.declare_node(3, {node_part}));
+        nodes.push_back(mesh.declare_node(4, {node_part}));
+        nodes.push_back(mesh.declare_node(5, {node_part}));
+        nodes.push_back(mesh.declare_node(6, {node_part}));
+        elements.push_back(mesh.declare_element(1, {elem_part}));
+        elements.push_back(mesh.declare_element(2, {elem_part}));
 
         mesh.declare_relation(elements[0], nodes[0], 0);
         mesh.declare_relation(elements[0], nodes[1], 1);
@@ -1494,11 +1494,11 @@ void fillMeshfor3Elem2ProcMoveRightAndTest(stk::unit_test_util::BulkDataTester &
     }
     else if(p_rank == 1)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 5, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 6, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 7, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 8, *node_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 3, *elem_part));
+        nodes.push_back(mesh.declare_node(5, {node_part}));
+        nodes.push_back(mesh.declare_node(6, {node_part}));
+        nodes.push_back(mesh.declare_node(7, {node_part}));
+        nodes.push_back(mesh.declare_node(8, {node_part}));
+        elements.push_back(mesh.declare_element(3, {elem_part}));
 
         mesh.declare_relation(elements[0], nodes[0], 0);
         mesh.declare_relation(elements[0], nodes[1], 1);
@@ -2089,11 +2089,11 @@ void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::unit_test_util::BulkDataTester &m
 
     if(p_rank == 0)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 1, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 2, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 3, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 4, *node_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 1, *elem_part));
+        nodes.push_back(mesh.declare_node(1, {node_part}));
+        nodes.push_back(mesh.declare_node(2, {node_part}));
+        nodes.push_back(mesh.declare_node(3, {node_part}));
+        nodes.push_back(mesh.declare_node(4, {node_part}));
+        elements.push_back(mesh.declare_element(1, {elem_part}));
 
         mesh.declare_relation(elements[0], nodes[0], 0);
         mesh.declare_relation(elements[0], nodes[1], 1);
@@ -2105,14 +2105,14 @@ void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::unit_test_util::BulkDataTester &m
     }
     else if(p_rank == 1)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 3, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 4, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 5, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 6, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 7, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 8, *node_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 2, *elem_part));
-        elements.push_back(mesh.declare_entity(ELEM_RANK, 3, *elem_part));
+        nodes.push_back(mesh.declare_node(3, {node_part}));
+        nodes.push_back(mesh.declare_node(4, {node_part}));
+        nodes.push_back(mesh.declare_node(5, {node_part}));
+        nodes.push_back(mesh.declare_node(6, {node_part}));
+        nodes.push_back(mesh.declare_node(7, {node_part}));
+        nodes.push_back(mesh.declare_node(8, {node_part}));
+        elements.push_back(mesh.declare_element(2, {elem_part}));
+        elements.push_back(mesh.declare_element(3, {elem_part}));
 
         mesh.declare_relation(elements[0], nodes[0], 0);
         mesh.declare_relation(elements[0], nodes[1], 1);
@@ -2694,7 +2694,6 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
     // proc, one elem per proc. We will take the edge shared by the last
     // two (rightmost) elements and change the ownership to proc 0.
 
-    mesh.initialize_face_adjacent_element_graph();
     int p_rank = mesh.parallel_rank();
 
     Part* elem_part = &meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
@@ -2717,8 +2716,8 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
     EntityKey node_D_key(NODE_RANK, 6 /*id*/);
 
 // Create element
-    stk::mesh::Entity elem = mesh.declare_entity(ELEM_RANK, p_rank + 1, //elem_id
-                                                 *elem_part);
+    stk::mesh::EntityId elemId = p_rank + 1;
+    stk::mesh::Entity elem = mesh.declare_element(elemId, {elem_part});
 
 // If it is 2nd to last element, it is the one changing
     if(p_rank == 2)
@@ -2730,17 +2729,17 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
     stk::mesh::EntityVector nodes;
     if(p_rank == 0)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 1, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 2, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 3, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 4, *node_part));
+        nodes.push_back(mesh.declare_node(1, {node_part}));
+        nodes.push_back(mesh.declare_node(2, {node_part}));
+        nodes.push_back(mesh.declare_node(3, {node_part}));
+        nodes.push_back(mesh.declare_node(4, {node_part}));
     }
     else if(p_rank == 1)
     {
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 3, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 4, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 5, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 6, *node_part));
+        nodes.push_back(mesh.declare_node(3, {node_part}));
+        nodes.push_back(mesh.declare_node(4, {node_part}));
+        nodes.push_back(mesh.declare_node(5, {node_part}));
+        nodes.push_back(mesh.declare_node(6, {node_part}));
     }
     else if(p_rank == 2)
     {
@@ -2748,17 +2747,17 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
         PartVector remove_parts;
         add_parts.push_back(elem_block);
         mesh.change_entity_parts(elem,add_parts,remove_parts);
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 5, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 6, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 7, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 8, *node_part));
+        nodes.push_back(mesh.declare_node(5, {node_part}));
+        nodes.push_back(mesh.declare_node(6, {node_part}));
+        nodes.push_back(mesh.declare_node(7, {node_part}));
+        nodes.push_back(mesh.declare_node(8, {node_part}));
     }
     else
     { // p_rank == 3
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 7, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 8, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 9, *node_part));
-        nodes.push_back(mesh.declare_entity(NODE_RANK, 10,*node_part));
+        nodes.push_back(mesh.declare_node(7, {node_part}));
+        nodes.push_back(mesh.declare_node(8, {node_part}));
+        nodes.push_back(mesh.declare_node(9, {node_part}));
+        nodes.push_back(mesh.declare_node(10,{node_part}));
     }
 
 // Add element relations to nodes
@@ -2790,9 +2789,11 @@ void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh,
 
 // Create edge on p2 (it will be shared to p3 and aura'd to p1)
 
+    mesh.initialize_face_adjacent_element_graph();
+
     mesh.modification_begin();
     if (p_rank == 2) {
-        mesh.declare_element_side(elem, 2, {edge_part});
+        mesh.declare_element_side(elem, 2, stk::mesh::ConstPartVector{edge_part});
     }
     mesh.modification_end();
 
@@ -7149,7 +7150,7 @@ void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::unit_test_util::BulkDataTester &me
     {
         stk::mesh::EntityId elemID = proc_elemIDs[p_rank];
         stk::mesh::Entity elem = stk::mesh::declare_element(mesh, *elem_part, elemID, elem_nodeIDs[p_rank]);
-        stk::mesh::Entity edge = mesh.declare_entity(EDGE_RANK, 1, *edge_part);
+        stk::mesh::Entity edge = mesh.declare_edge(1, {edge_part});
         std::vector<stk::mesh::Entity> nodes;
         nodes.push_back(mesh.get_entity(NODE_RANK, 5));
         nodes.push_back(mesh.get_entity(NODE_RANK, 13 ));

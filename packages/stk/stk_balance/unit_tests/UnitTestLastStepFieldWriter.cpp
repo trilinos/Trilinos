@@ -1,4 +1,3 @@
-#include <stk_balance/internal/LastStepFieldWriter.hpp>
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include <stk_mesh/base/Comm.hpp>
@@ -21,6 +20,8 @@
 #include <iostream>
 #include <unistd.h>                     // for unlink
 
+#include "../stk_balance/internal/LastStepFieldWriter.hpp"
+
 namespace
 {
 
@@ -33,7 +34,7 @@ void read_and_write_mesh_with_added_field_data(const std::string& inputFilename,
     stk::mesh::put_field(nodalTestData, meta.universal_part(), &initialVal);
     stk::io::set_field_role(nodalTestData, Ioss::Field::TRANSIENT);
 
-    stk::balance::internal::LastStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);
+    stk::balance::internal::AllStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);
 
     stk::mesh::EntityVector nodes;
     stk::mesh::get_entities(bulkData, stk::topology::NODE_RANK, nodes);
@@ -104,7 +105,7 @@ size_t get_global_num_nodes_parallel(const std::string& inputFilename, MPI_Comm 
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulkData(meta, comm);
 
-    stk::balance::internal::LastStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);
+    stk::balance::internal::AllStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);
 
     std::vector<size_t> counts;
     stk::mesh::comm_mesh_counts(bulkData, counts);

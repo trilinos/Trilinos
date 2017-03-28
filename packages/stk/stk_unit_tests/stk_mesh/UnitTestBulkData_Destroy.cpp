@@ -99,7 +99,7 @@ void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 
   ASSERT_TRUE( bulk.modification_begin() );
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
+    bulk.declare_node(ids[i] , no_parts );
   }
   ASSERT_TRUE( bulk.modification_end() );
 

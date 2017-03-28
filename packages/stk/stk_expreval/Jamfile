@@ -104,8 +104,8 @@ alias install-exe-targets : ;
 #
 exe stk_expreval_utest
   :
-    $(stk_expreval-root)/unit_tests/UnitTestMain.cpp
     [ glob $(stk_expreval-root)/unit_tests/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_expreval
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_util//stk_util_use_case

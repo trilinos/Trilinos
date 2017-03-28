@@ -28,6 +28,12 @@ protected:
         allocate_meta(spatial_dim);
     }
 
+    MeshFixture(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
+    : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
+    {
+        allocate_meta(spatial_dim, entityRankNames);
+    }
+
     virtual ~MeshFixture()
     {
         delete bulkData;
@@ -38,7 +44,8 @@ protected:
     {
         allocate_bulk(auraOption);
     }
-    void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+
+    virtual void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
         stk::io::fill_mesh(meshSpecification, *bulkData);
@@ -55,7 +62,7 @@ protected:
         return communicator;
     }
 
-    void initialize_mesh()
+    void reset_mesh()
     {
         delete bulkData;
         delete metaData;
@@ -94,10 +101,10 @@ protected:
         bulkData = new stk::mesh::BulkData(get_meta(), communicator, auraOption);
     }
 
-    virtual void allocate_meta(unsigned spatial_dim = 3)
+    virtual void allocate_meta(unsigned spatialDim = 3, const std::vector<std::string>& entityRankNames = {})
     {
         ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
-        metaData = new stk::mesh::MetaData(spatial_dim);
+        metaData = new stk::mesh::MetaData(spatialDim, entityRankNames);
     }
 
     void set_bulk(stk::mesh::BulkData *inBulkData)
@@ -113,7 +120,7 @@ protected:
         metaData = nullptr;
     }
 
-private:
+protected:
     MPI_Comm communicator;
     stk::mesh::MetaData *metaData = nullptr;
     stk::mesh::BulkData *bulkData = nullptr;
