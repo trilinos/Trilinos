@@ -1116,7 +1116,9 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     Ordinal* locIndices = &CRS_colind[start];
 
     Ordinal n = NumEntries;
-    Ordinal m = n/2;
+    Ordinal m = 1;
+    while (m<n) m = m*3+1;
+    m /= 3;
 
     while(m > 0) {
       Ordinal max = n - m;
@@ -1132,7 +1134,7 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
           locIndices[k] = itemp;
         }
       }
-      m = m/2;
+      m = m/3;
     }
   }
 }
@@ -1159,7 +1161,9 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
         size_t NumEntries = CRS_rowptr(i+1) - start;
         
         Ordinal n = (Ordinal) NumEntries;
-        Ordinal m = n/2;
+        Ordinal m = 1;
+        while (m<n) m = m*3+1;
+        m /= 3;
         
         while(m > 0) {
           Ordinal max = n - m;
@@ -1176,7 +1180,7 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
               CRS_colind(sk)   = itemp;
             }
           }
-          m = m/2;
+          m = m/3;
         }
       }
     });  
