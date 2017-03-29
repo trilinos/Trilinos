@@ -114,7 +114,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DZlib_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/include"
     "-DZlib_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/lib"
     )
-    # The Werror build in meulu sets GLM_INCLUDE_DIRS, but this may not be needed.
+    # The Werror build in muir sets GLM_INCLUDE_DIRS, but this may not be needed.
     #"-DGLM_INCLUDE_DIRS:PATH=$ENV{SEMS_GCC_ROOT}/???"
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
