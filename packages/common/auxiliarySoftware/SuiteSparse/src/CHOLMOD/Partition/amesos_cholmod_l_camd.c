@@ -41,7 +41,7 @@
 #include "trilinos_camd.h"
 #include "amesos_cholmod_partition.h"
 
-#if (CAMD_VERSION < CAMD_VERSION_CODE (2,0))
+#if (TRILINOS_CAMD_VERSION < TRILINOS_CAMD_VERSION_CODE (2,0))
 #error "CAMD v2.0 or later is required"
 #endif
 
@@ -62,7 +62,7 @@ int CHOLMOD(camd)
     cholmod_common *Common
 )
 {
-    double Info [CAMD_INFO], Control2 [CAMD_CONTROL], *Control ;
+    double Info [TRILINOS_CAMD_INFO], Control2 [TRILINOS_CAMD_CONTROL], *Control ;
     Int *Cp, *Len, *Nv, *Head, *Elen, *Degree, *Wi, *Next, *BucketSet,
 	*Work3n, *p ;
     cholmod_sparse *C ;
@@ -179,18 +179,18 @@ int CHOLMOD(camd)
     else
     {
 	Control = Control2 ;
-	Control [CAMD_DENSE] = Common->method [Common->current].prune_dense ;
-	Control [CAMD_AGGRESSIVE] = Common->method [Common->current].aggressive;
+	Control [TRILINOS_CAMD_DENSE] = Common->method [Common->current].prune_dense ;
+	Control [TRILINOS_CAMD_AGGRESSIVE] = Common->method [Common->current].aggressive;
     }
 
-    /* CAMD_2 does not use camd_malloc and camd_free, but set these pointers
+    /* TRILINOS_CAMD_2 does not use camd_malloc and camd_free, but set these pointers
      * just be safe. */
     trilinos_camd_malloc = Common->malloc_memory ;
     trilinos_camd_free = Common->free_memory ;
     trilinos_camd_calloc = Common->calloc_memory ;
     trilinos_camd_realloc = Common->realloc_memory ;
 
-    /* CAMD_2 doesn't print anything either, but future versions might,
+    /* TRILINOS_CAMD_2 doesn't print anything either, but future versions might,
      * so set the camd_printf pointer too. */
     trilinos_camd_printf = Common->print_function ;
 
@@ -208,10 +208,10 @@ int CHOLMOD(camd)
      * is a slight upper bound which is often exact (see CAMD/Source/camd_2.c
      * for details).  cholmod_analyze computes an exact flop count and
      * fill-in. */
-    Common->fl = Info [CAMD_NDIV] + 2 * Info [CAMD_NMULTSUBS_LDL] + n ;
+    Common->fl = Info [TRILINOS_CAMD_NDIV] + 2 * Info [TRILINOS_CAMD_NMULTSUBS_LDL] + n ;
 
-    /* Info [CAMD_LNZ] excludes the diagonal */
-    Common->lnz = n + Info [CAMD_LNZ] ;
+    /* Info [TRILINOS_CAMD_LNZ] excludes the diagonal */
+    Common->lnz = n + Info [TRILINOS_CAMD_LNZ] ;
 
     /* ---------------------------------------------------------------------- */
     /* free the CAMD workspace and clear the persistent workspace in Common */

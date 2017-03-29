@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_info =========================================================== */
+/* === TRILINOS_CAMD_info =========================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -17,7 +17,7 @@
 
 #define PRI(format,x) { if (x >= 0) { PRINTF ((format, x)) ; }}
 
-GLOBAL void CAMD_info
+GLOBAL void TRILINOS_CAMD_info
 (
     double Info [ ]
 )
@@ -29,30 +29,30 @@ GLOBAL void CAMD_info
 	return ;
     }
 
-    n = Info [CAMD_N] ;
-    ndiv = Info [CAMD_NDIV] ;
-    nmultsubs_ldl = Info [CAMD_NMULTSUBS_LDL] ;
-    nmultsubs_lu = Info [CAMD_NMULTSUBS_LU] ;
-    lnz = Info [CAMD_LNZ] ;
+    n = Info [TRILINOS_CAMD_N] ;
+    ndiv = Info [TRILINOS_CAMD_NDIV] ;
+    nmultsubs_ldl = Info [TRILINOS_CAMD_NMULTSUBS_LDL] ;
+    nmultsubs_lu = Info [TRILINOS_CAMD_NMULTSUBS_LU] ;
+    lnz = Info [TRILINOS_CAMD_LNZ] ;
     lnzd = (n >= 0 && lnz >= 0) ? (n + lnz) : (-1) ;
 
     /* CAMD return status */
     PRINTF ((
 	"\ncamd:  approximate minimum degree ordering, results:\n"
 	"    status: ")) ;
-    if (Info [CAMD_STATUS] == CAMD_OK)
+    if (Info [TRILINOS_CAMD_STATUS] == TRILINOS_CAMD_OK)
     {
 	PRINTF (("OK\n")) ;
     }
-    else if (Info [CAMD_STATUS] == CAMD_OUT_OF_MEMORY)
+    else if (Info [TRILINOS_CAMD_STATUS] == TRILINOS_CAMD_OUT_OF_MEMORY)
     {
 	PRINTF (("out of memory\n")) ;
     }
-    else if (Info [CAMD_STATUS] == CAMD_INVALID)
+    else if (Info [TRILINOS_CAMD_STATUS] == TRILINOS_CAMD_INVALID)
     {
 	PRINTF (("invalid matrix\n")) ;
     }
-    else if (Info [CAMD_STATUS] == CAMD_OK_BUT_JUMBLED)
+    else if (Info [TRILINOS_CAMD_STATUS] == TRILINOS_CAMD_OK_BUT_JUMBLED)
     {
 	PRINTF (("OK, but jumbled\n")) ;
     }
@@ -64,21 +64,21 @@ GLOBAL void CAMD_info
     /* statistics about the input matrix */
     PRI ("    n, dimension of A:                                  %.20g\n", n);
     PRI ("    nz, number of nonzeros in A:                        %.20g\n",
-	Info [CAMD_NZ]) ;
+	Info [TRILINOS_CAMD_NZ]) ;
     PRI ("    symmetry of A:                                      %.4f\n",
-	Info [CAMD_SYMMETRY]) ;
+	Info [TRILINOS_CAMD_SYMMETRY]) ;
     PRI ("    number of nonzeros on diagonal:                     %.20g\n",
-	Info [CAMD_NZDIAG]) ;
+	Info [TRILINOS_CAMD_NZDIAG]) ;
     PRI ("    nonzeros in pattern of A+A' (excl. diagonal):       %.20g\n",
-	Info [CAMD_NZ_A_PLUS_AT]) ;
+	Info [TRILINOS_CAMD_NZ_A_PLUS_AT]) ;
     PRI ("    # dense rows/columns of A+A':                       %.20g\n",
-	Info [CAMD_NDENSE]) ;
+	Info [TRILINOS_CAMD_NDENSE]) ;
 
     /* statistics about CAMD's behavior  */
     PRI ("    memory used, in bytes:                              %.20g\n",
-	Info [CAMD_MEMORY]) ;
+	Info [TRILINOS_CAMD_MEMORY]) ;
     PRI ("    # of memory compactions:                            %.20g\n",
-	Info [CAMD_NCMPA]) ;
+	Info [TRILINOS_CAMD_NCMPA]) ;
 
     /* statistics about the ordering quality */
     PRINTF (("\n"
@@ -98,7 +98,7 @@ GLOBAL void CAMD_info
     PRI ("    # multiply-subtract operations for LU:              %.20g\n",
 	nmultsubs_lu) ;
     PRI ("    max nz. in any column of L (incl. diagonal):        %.20g\n",
-	Info [CAMD_DMAX]) ;
+	Info [TRILINOS_CAMD_DMAX]) ;
 
     /* total flop counts for various factorizations */
 
