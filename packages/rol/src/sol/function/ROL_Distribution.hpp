@@ -46,11 +46,7 @@
 
 #include "ROL_Types.hpp"
 
-#if defined(_MSC_VER)
- #include "winmath.h"
-#else
- #include <cmath>
-#endif
+#include <cmath>
 #include <iostream>
 
 namespace ROL {
