@@ -17,7 +17,7 @@
  * SuperLU and UMFPACK, since in this case there is little chance to exploit
  * dense matrix kernels (the BLAS).
  *
- * Only one block of A is factorized, in the BTF form.  The input n is the
+ * Only one block of A is factorized, in the TRILINOS_BTF form.  The input n is the
  * size of the block; k1 is the first row and column in the block.
  *
  * NOTE: no error checking is done on the inputs.  This version is not meant to

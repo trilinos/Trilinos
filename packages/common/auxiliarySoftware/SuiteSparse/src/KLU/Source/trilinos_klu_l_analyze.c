@@ -2,7 +2,7 @@
 /* === klu_analyze ========================================================== */
 /* ========================================================================== */
 
-/* Order the matrix using BTF (or not), and then AMD, COLAMD, the natural
+/* Order the matrix using TRILINOS_BTF (or not), and then AMD, COLAMD, the natural
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
@@ -22,8 +22,8 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     Int nblocks,	/* # of blocks */
-    Int Pbtf [ ],	/* BTF row permutation */
-    Int Qbtf [ ],	/* BTF col permutation */
+    Int Pbtf [ ],	/* TRILINOS_BTF row permutation */
+    Int Qbtf [ ],	/* TRILINOS_BTF col permutation */
     Int R [ ],		/* size n+1, but only Rbtf [0..nblocks] is used */
     Int ordering,	/* what ordering to use (0, 1, or 3 for this routine) */
 
@@ -219,7 +219,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	flops = (flops == EMPTY || flops1 == EMPTY) ? EMPTY : (flops + flops1) ;
 
 	/* ------------------------------------------------------------------ */
-	/* combine the preordering with the BTF ordering */
+	/* combine the preordering with the TRILINOS_BTF ordering */
 	/* ------------------------------------------------------------------ */
 
 	PRINTF (("Pblk, 1-based:\n")) ;
@@ -253,7 +253,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 /* === order_and_analyze ==================================================== */
 /* ========================================================================== */
 
-/* Orders the matrix with or with BTF, then orders each block with AMD, COLAMD,
+/* Orders the matrix with or with TRILINOS_BTF, then orders each block with AMD, COLAMD,
  * or the user ordering function.  Does not handle the natural or given
  * ordering cases. */
 
@@ -316,7 +316,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     trilinos_amd_realloc = Common->realloc_memory ;
 
     /* ---------------------------------------------------------------------- */
-    /* allocate workspace for BTF permutation */
+    /* allocate workspace for TRILINOS_BTF permutation */
     /* ---------------------------------------------------------------------- */
 
     Pbtf = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
@@ -330,7 +330,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     }
 
     /* ---------------------------------------------------------------------- */
-    /* get the common parameters for BTF and ordering method */
+    /* get the common parameters for TRILINOS_BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
     do_btf = Common->btf ;
@@ -369,7 +369,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
 	{
 	    for (k = 0 ; k < n ; k++)
 	    {
-		Qbtf [k] = BTF_UNFLIP (Qbtf [k]) ;
+		Qbtf [k] = TRILINOS_BTF_UNFLIP (Qbtf [k]) ;
 	    }
 	}
 
@@ -386,7 +386,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     }
     else
     {
-	/* BTF not requested */
+	/* TRILINOS_BTF not requested */
 	nblocks = 1 ;
 	maxblock = n ;
 	R [0] = 0 ;
@@ -413,7 +413,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
 
     /* ---------------------------------------------------------------------- */
-    /* order each block of the BTF ordering, and a fill-reducing ordering */
+    /* order each block of the TRILINOS_BTF ordering, and a fill-reducing ordering */
     /* ---------------------------------------------------------------------- */
 
     if (Common->status == KLU_OK)
@@ -464,7 +464,7 @@ KLU_symbolic *KLU_analyze	/* returns NULL if error, or a valid
 {
 
     /* ---------------------------------------------------------------------- */
-    /* get the control parameters for BTF and ordering method */
+    /* get the control parameters for TRILINOS_BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
     if (Common == NULL)

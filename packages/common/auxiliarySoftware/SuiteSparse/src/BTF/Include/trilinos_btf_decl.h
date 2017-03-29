@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === BTF package ========================================================== */
+/* === TRILINOS_BTF package ========================================================== */
 /* ========================================================================== */
 
 /* BTF_MAXTRANS:  find a column permutation Q to give A*Q a zero-free diagonal
@@ -88,7 +88,7 @@
 #ifndef TRILINOS_BTF_DECL_H
 #define TRILINOS_BTF_DECL_H
 
-/* make it easy for C++ programs to include BTF */
+/* make it easy for C++ programs to include TRILINOS_BTF */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,7 +133,7 @@ UF_long trilinos_btf_l_maxtrans (UF_long, UF_long, UF_long *, UF_long *, double,
  *
  * If Q is not NULL on input, then the strongly connected components of A*Q are
  * found.  Q may be flagged on input, where Q[k] < 0 denotes a flagged column k.
- * The permutation is j = BTF_UNFLIP (Q [k]).  On output, Q is modified (the
+ * The permutation is j = TRILINOS_BTF_UNFLIP (Q [k]).  On output, Q is modified (the
  * flags are preserved) so that P*A*Q is in block upper triangular form.
  *
  * If Q is NULL, then the permutation P is returned so that P*A*P' is in upper
@@ -182,7 +182,7 @@ UF_long trilinos_btf_l_strongcomp (UF_long, UF_long *, UF_long *, UF_long *, UF_
  * the strongly-connected components.
  *
  * On output, P and Q are the row and column permutations, where i = P[k] if
- * row i of A is the kth row of P*A*Q, and j = BTF_UNFLIP(Q[k]) if column j of
+ * row i of A is the kth row of P*A*Q, and j = TRILINOS_BTF_UNFLIP(Q[k]) if column j of
  * A is the kth column of P*A*Q.  If Q[k] < 0, then the (k,k)th entry in P*A*Q
  * is structurally zero.
  *
@@ -216,46 +216,46 @@ UF_long trilinos_btf_l_order (UF_long, UF_long *, UF_long *, double , double *,
 
 
 /* ========================================================================== */
-/* === BTF marking of singular columns ====================================== */
+/* === TRILINOS_BTF marking of singular columns ====================================== */
 /* ========================================================================== */
 
-/* BTF_FLIP is a "negation about -1", and is used to mark an integer j
- * that is normally non-negative.  BTF_FLIP (-1) is -1.  BTF_FLIP of
- * a number > -1 is negative, and BTF_FLIP of a number < -1 is positive.
- * BTF_FLIP (BTF_FLIP (j)) = j for all integers j.  UNFLIP (j) acts
+/* TRILINOS_BTF_FLIP is a "negation about -1", and is used to mark an integer j
+ * that is normally non-negative.  TRILINOS_BTF_FLIP (-1) is -1.  TRILINOS_BTF_FLIP of
+ * a number > -1 is negative, and TRILINOS_BTF_FLIP of a number < -1 is positive.
+ * TRILINOS_BTF_FLIP (BTF_FLIP (j)) = j for all integers j.  UNFLIP (j) acts
  * like an "absolute value" operation, and is always >= -1.  You can test
- * whether or not an integer j is "flipped" with the BTF_ISFLIPPED (j)
+ * whether or not an integer j is "flipped" with the TRILINOS_BTF_ISFLIPPED (j)
  * macro.
  */
 
-#define BTF_FLIP(j) (-(j)-2)
-#define BTF_ISFLIPPED(j) ((j) < -1)
-#define BTF_UNFLIP(j) ((BTF_ISFLIPPED (j)) ? BTF_FLIP (j) : (j))
+#define TRILINOS_BTF_FLIP(j) (-(j)-2)
+#define TRILINOS_BTF_ISFLIPPED(j) ((j) < -1)
+#define TRILINOS_BTF_UNFLIP(j) ((TRILINOS_BTF_ISFLIPPED (j)) ? TRILINOS_BTF_FLIP (j) : (j))
 
 /* ========================================================================== */
-/* === BTF version ========================================================== */
+/* === TRILINOS_BTF version ========================================================== */
 /* ========================================================================== */
 
-/* All versions of BTF include these definitions.
+/* All versions of TRILINOS_BTF include these definitions.
  * As an example, to test if the version you are using is 1.2 or later:
  *
- *	if (BTF_VERSION >= BTF_VERSION_CODE (1,2)) ...
+ *	if (TRILINOS_BTF_VERSION >= TRILINOS_BTF_VERSION_CODE (1,2)) ...
  *
  * This also works during compile-time:
  *
- *	#if (BTF >= BTF_VERSION_CODE (1,2))
+ *	#if (TRILINOS_BTF >= TRILINOS_BTF_VERSION_CODE (1,2))
  *	    printf ("This is version 1.2 or later\n") ;
  *	#else
  *	    printf ("This is an early version\n") ;
  *	#endif
  */
 
-#define BTF_DATE "May 31, 2007"
-#define BTF_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
-#define BTF_MAIN_VERSION 1
-#define BTF_SUB_VERSION 0
-#define BTF_SUBSUB_VERSION 0
-#define BTF_VERSION BTF_VERSION_CODE(BTF_MAIN_VERSION,BTF_SUB_VERSION)
+#define TRILINOS_BTF_DATE "May 31, 2007"
+#define TRILINOS_BTF_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
+#define TRILINOS_BTF_MAIN_VERSION 1
+#define TRILINOS_BTF_SUB_VERSION 0
+#define TRILINOS_BTF_SUBSUB_VERSION 0
+#define TRILINOS_BTF_VERSION TRILINOS_BTF_VERSION_CODE(TRILINOS_BTF_MAIN_VERSION,TRILINOS_BTF_SUB_VERSION)
 
 #ifdef __cplusplus
 }

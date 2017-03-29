@@ -2,7 +2,7 @@
 /* === klu_analyze_given ==================================================== */
 /* ========================================================================== */
 
-/* Given an input permutation P and Q, create the Symbolic object.  BTF can
+/* Given an input permutation P and Q, create the Symbolic object.  TRILINOS_BTF can
  * be done to modify the user's P and Q (does not perform the max transversal;
  * just finds the strongly-connected components). */
 
@@ -187,7 +187,7 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     }
 
     /* ---------------------------------------------------------------------- */
-    /* get the control parameters for BTF and ordering method */
+    /* get the control parameters for TRILINOS_BTF and ordering method */
     /* ---------------------------------------------------------------------- */
 
     do_btf = Common->btf ;
@@ -338,7 +338,7 @@ KLU_symbolic *KLU_analyze_given	    /* returns NULL if error, or a valid
     {
 
 	/* ------------------------------------------------------------------ */
-	/* BTF not requested */
+	/* TRILINOS_BTF not requested */
 	/* ------------------------------------------------------------------ */
 
 	nzoff = 0 ;

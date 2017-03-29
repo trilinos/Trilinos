@@ -147,7 +147,7 @@ static Int lsolve_symbolic
     Int Llen [ ],	/* size n, Llen [k] = # nonzeros in column k of L */
     Int Lip [ ],	/* size n, Lip [k] is position in LU of column k of L */
 
-    /* ---- the following are only used in the BTF case --- */
+    /* ---- the following are only used in the TRILINOS_BTF case --- */
 
     Int k1,		/* the block of A is from k1 to k2-1 */
     Int PSinv [ ]	/* inverse of P from symbolic factorization */
@@ -161,11 +161,11 @@ static Int lsolve_symbolic
     Lik = (Int *) (LU + lup);
 
     /* ---------------------------------------------------------------------- */
-    /* BTF factorization of A (k1:k2-1, k1:k2-1) */
+    /* TRILINOS_BTF factorization of A (k1:k2-1, k1:k2-1) */
     /* ---------------------------------------------------------------------- */
 
     kglobal = k + k1 ;	/* column k of the block is col kglobal of A */
-    oldcol = Q [kglobal] ;	/* Q must be present for BTF case */
+    oldcol = Q [kglobal] ;	/* Q must be present for TRILINOS_BTF case */
     pend = Ap [oldcol+1] ;
     for (p = Ap [oldcol] ; p < pend ; p++)
     {
@@ -217,7 +217,7 @@ static void construct_column
     /* zero on input, modified on output */
     Entry X [ ],
 
-    /* ---- the following are only used in the BTF case --- */
+    /* ---- the following are only used in the TRILINOS_BTF case --- */
 
     /* inputs, not modified on output */
     Int k1,	    /* the block of A is from k1 to k2-1 */

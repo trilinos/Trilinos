@@ -24,7 +24,7 @@ Int KLU_defaults
     Common->memgrow = 1.2;	/* realloc size ratio increase for LU factors */
     Common->initmem_amd = 1.2 ;	/* init. mem with AMD:  c*nnz(L) + n */
     Common->initmem = 10 ;	/* init. mem otherwise: c*nnz(A) + n */
-    Common->btf = TRUE ;	/* use BTF pre-ordering, or not */
+    Common->btf = TRUE ;	/* use TRILINOS_BTF pre-ordering, or not */
     Common->maxwork = 0 ;	/* no limit to work done by btf_order */
     Common->ordering = 0 ;	/* 0: AMD, 1: COLAMD, 2: user-provided P and Q,
 				 * 3: user-provided function */

@@ -15,11 +15,11 @@
 #ifdef DLONG
 #define Int UF_long
 #define Int_id UF_long_id
-#define BTF(name) trilinos_btf_l_ ## name
+#define TRILINOS_BTF(name) trilinos_btf_l_ ## name
 #else
 #define Int int
 #define Int_id "%d"
-#define BTF(name) trilinos_btf_ ## name
+#define TRILINOS_BTF(name) trilinos_btf_ ## name
 #endif
 
 /* ========================================================================== */

@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* User-callable functions that combine the functions of Paraklete,
- * KLU, and BTF.  See pb.c for examples on how to use these functions.
+ * KLU, and TRILINOS_BTF.  See pb.c for examples on how to use these functions.
  *
  * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
  * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
@@ -34,7 +34,7 @@ static Int paraklete_btf_bcast_symbolic
     n = EMPTY ;
     nblocks = EMPTY ;
 
-    /* broadcast number of diagonal blocks in the BTF form, or -1 if failure */
+    /* broadcast number of diagonal blocks in the TRILINOS_BTF form, or -1 if failure */
     if (Common->myid == 0)
     {
 	LU_btf_symbolic = *LU_btf_symbolic_handle ;
@@ -46,7 +46,7 @@ static Int paraklete_btf_bcast_symbolic
     }
     else
     {
-	/* other processes do not yet have the BTF symbolic object */
+	/* other processes do not yet have the TRILINOS_BTF symbolic object */
 	*LU_btf_symbolic_handle = NULL ;
     }
 
@@ -167,7 +167,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
 	cnz, p, nk ;
 
     /* ---------------------------------------------------------------------- */
-    /* root processor finds the BTF ordering */
+    /* root processor finds the TRILINOS_BTF ordering */
     /* ---------------------------------------------------------------------- */
 
     cm = &(Common->cm) ;
@@ -193,7 +193,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
 	LUsymbolic = LU_btf_symbolic->LUsymbolic ;  /* size n */
 
 	/* ------------------------------------------------------------------ */
-	/* find the BTF ordering */
+	/* find the TRILINOS_BTF ordering */
 	/* ------------------------------------------------------------------ */
 
 	Work = CHOLMOD (malloc) (n, 6*sizeof (Int), cm) ;
@@ -218,7 +218,7 @@ paraklete_btf_symbolic *amesos_paraklete_btf_analyze
     }
 
     /* ---------------------------------------------------------------------- */
-    /* broadcast the BTF information */
+    /* broadcast the TRILINOS_BTF information */
     /* ---------------------------------------------------------------------- */
 
     MPI (paraklete_btf_bcast_symbolic (&LU_btf_symbolic, Common)) ;

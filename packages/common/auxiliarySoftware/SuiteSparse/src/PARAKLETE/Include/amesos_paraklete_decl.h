@@ -38,7 +38,7 @@
 /* all integers are UF_long, or "long" on all but Windows */
 #define MPI_Int MPI_LONG
 
-/* use the long version of KLU and BTF */
+/* use the long version of KLU and TRILINOS_BTF */
 #define KLU_analyze trilinos_klu_l_analyze
 #define KLU_factor trilinos_klu_l_factor
 #define KLU_solve trilinos_klu_l_solve
@@ -420,14 +420,14 @@ typedef struct paraklete_numeric_struct
 typedef struct paraklete_btf_symbolic_struct
 {
     Int n ;		/* dimension of A */
-    Int nblocks ;	/* number of diagonal blocks in BTF form */
+    Int nblocks ;	/* number of diagonal blocks in TRILINOS_BTF form */
     Int cnz ;		/* # of entries in diagonal blocks of A(p,q) */
     Int fnz ;		/* # of entries in off-diagonal blocks of A(p,q) */
     Int *Mem_n ;	/* contains Qbtf, Pbinv, and Rbtf */
-    /* Int *Pbtf ; */	/* BTF row permutation, size n */
-    Int *Qbtf ;		/* BTF column permutation, size n */
+    /* Int *Pbtf ; */	/* TRILINOS_BTF row permutation, size n */
+    Int *Qbtf ;		/* TRILINOS_BTF column permutation, size n */
     Int *Pbinv ;	/* inverse of Pbtf, size n */
-    Int *Rbtf ;		/* BTF block boundaries, size n+1 (0..nblocks used) */
+    Int *Rbtf ;		/* TRILINOS_BTF block boundaries, size n+1 (0..nblocks used) */
 
     /* symbolic analysis of each diagaonal block (NULL for singletons) */
     void **LUsymbolic ;	/* array of pointers, size n */
@@ -441,7 +441,7 @@ paraklete_btf_symbolic ;
 
 typedef struct paraklete_btf_numeric_struct
 {
-    Int nblocks ;	    /* number of diagonal blocks in BTF form */
+    Int nblocks ;	    /* number of diagonal blocks in TRILINOS_BTF form */
     double *Singleton ;	    /* singleton values, size nblocks */
 
     cholmod_sparse *F ;	    /* off-diagonal entries, size n-by-n */

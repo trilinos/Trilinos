@@ -44,9 +44,9 @@ typedef struct
 	nblocks,	/* number of blocks */
 	maxblock,	/* size of largest block */
 	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
-	do_btf ;	/* whether or not BTF preordering was requested */
+	do_btf ;	/* whether or not TRILINOS_BTF preordering was requested */
 
-    /* only computed if BTF preordering requested */
+    /* only computed if TRILINOS_BTF preordering requested */
     int structural_rank ;   /* 0 to n-1 if the matrix is structurally rank
 			* deficient.  -1 if not computed.  n if the matrix has
 			* full structural rank */
@@ -145,9 +145,9 @@ typedef struct klu_common_struct
     double memgrow ;	    /* realloc memory growth size for LU factors */
     double initmem_amd ;    /* init. memory size with AMD: c*nnz(L) + n */
     double initmem ;	    /* init. memory size: c*nnz(A) + n */
-    double maxwork ;	    /* maxwork for BTF, <= 0 if no limit */
+    double maxwork ;	    /* maxwork for TRILINOS_BTF, <= 0 if no limit */
 
-    int btf ;		    /* use BTF pre-ordering, or not */
+    int btf ;		    /* use TRILINOS_BTF pre-ordering, or not */
     int ordering ;	    /* 0: AMD, 1: COLAMD, 2: user P and Q,
 			     * 3: user function */
     int scale ;		    /* row scaling: -1: none (and no error check),
@@ -186,7 +186,7 @@ typedef struct klu_common_struct
     int structural_rank ;	/* 0 to n-1 if the matrix is structurally rank
 	* deficient (as determined by maxtrans).  -1 if not computed.  n if the
 	* matrix has full structural rank.  This is computed by klu_analyze
-	* if a BTF preordering is requested. */
+	* if a TRILINOS_BTF preordering is requested. */
 
     int numerical_rank ;	/* First k for which a zero U(k,k) was found,
 	* if the matrix was singular (in the range 0 to n-1).  n if the matrix
@@ -205,7 +205,7 @@ typedef struct klu_common_struct
     double rcond ;	/* crude reciprocal condition est., from klu_rcond */
     double condest ;	/* accurate condition est., from klu_condest */
     double rgrowth ;	/* reciprocal pivot rgrowth, from klu_rgrowth */
-    double work ;	/* actual work done in BTF, in klu_analyze */
+    double work ;	/* actual work done in TRILINOS_BTF, in klu_analyze */
 
     size_t memusage ;	/* current memory usage, in bytes */
     size_t mempeak ;	/* peak memory usage, in bytes */
@@ -247,7 +247,7 @@ UF_long trilinos_klu_l_defaults (klu_l_common *Common) ;
 /* klu_analyze:  orders and analyzes a matrix */
 /* -------------------------------------------------------------------------- */
 
-/* Order the matrix with BTF (or not), then order each block with AMD, COLAMD,
+/* Order the matrix with TRILINOS_BTF (or not), then order each block with AMD, COLAMD,
  * a natural ordering, or with a user-provided ordering function */
 
 klu_symbolic *trilinos_klu_analyze
@@ -267,7 +267,7 @@ klu_l_symbolic *trilinos_klu_l_analyze (UF_long, UF_long *, UF_long *,
 /* klu_analyze_given: analyzes a matrix using given P and Q */
 /* -------------------------------------------------------------------------- */
 
-/* Order the matrix with BTF (or not), then use natural or given ordering
+/* Order the matrix with TRILINOS_BTF (or not), then use natural or given ordering
  * P and Q on the blocks.  P and Q are interpretted as identity
  * if NULL. */
 
@@ -527,7 +527,7 @@ UF_long trilinos_klu_zl_flops (klu_l_symbolic *, klu_l_numeric *, klu_l_common *
 
 /* Pivot growth is computed after the input matrix is permuted, scaled, and
  * off-diagonal entries pruned.  This is because the LU factorization of each
- * block takes as input the scaled diagonal blocks of the BTF form.  The
+ * block takes as input the scaled diagonal blocks of the TRILINOS_BTF form.  The
  * reciprocal pivot growth in column j of an LU factorization of a matrix C
  * is the largest entry in C divided by the largest entry in U; then the overall
  * reciprocal pivot growth is the smallest such value for all columns j.  Note

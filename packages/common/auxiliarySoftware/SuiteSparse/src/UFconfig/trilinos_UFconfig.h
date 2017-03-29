@@ -86,7 +86,7 @@ extern "C" {
  *  CSparse	    version 2.2.0
  *  CXSparse	    version 2.2.0
  *  KLU		    version 1.0.0
- *  BTF		    version 1.0.0
+ *  TRILINOS_BTF		    version 1.0.0
  *  LDL		    version 2.0.0
  *  UFconfig	    version number is the same as SuiteSparse
  *  UMFPACK	    version 5.1.0
