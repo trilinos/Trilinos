@@ -234,43 +234,43 @@ namespace MueLuTests {
       // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
       RCP<Matrix> B;
       if(lib==Xpetra::UseEpetra) {
-	AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap,B);
+        AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap,B);
       }
       else {
-	// Tpetra is easy
-	B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); 
+        // Tpetra is easy
+        B = rcp(new CrsMatrixWrap(pn_rowmap,pn_colmap,0)); 
       }
 
 
       // Assemble pseudo-poisson matrix
       for(size_t i=0; i<local_num_elements; i++) {
-	// Fill in a fake stiffness matrix
-	for(int j=0; j<degree+1; j++) {
-	  // Dirichlet check
-	  if( (j==0 && pn_colmap->getGlobalElement(elem_to_node(i,j)) == 0) ||
-	      (j==degree &&  pn_colmap->getGlobalElement(elem_to_node(i,j)) ==  global_num_nodes-1))  {
-	    // Stick a 1 on the diagonal
-	    GO row_gid = pn_colmap->getGlobalElement(elem_to_node(i,j));
-	    Teuchos::Array<GO> index(1); index[0]=row_gid;
-	    Teuchos::Array<SC> value(1); value[0]=1.0;
-	    B->insertGlobalValues(row_gid,index(),value());
-	    continue;
-	  }
+        // Fill in a fake stiffness matrix
+        for(int j=0; j<degree+1; j++) {
+          // Dirichlet check
+          if( (j==0 && pn_colmap->getGlobalElement(elem_to_node(i,j)) == 0) ||
+              (j==degree &&  pn_colmap->getGlobalElement(elem_to_node(i,j)) ==  global_num_nodes-1))  {
+            // Stick a 1 on the diagonal
+            GO row_gid = pn_colmap->getGlobalElement(elem_to_node(i,j));
+            Teuchos::Array<GO> index(1); index[0]=row_gid;
+            Teuchos::Array<SC> value(1); value[0]=1.0;
+            B->insertGlobalValues(row_gid,index(),value());
+            continue;
+          }
 
-	  GO rowj =  pn_colmap->getGlobalElement(elem_to_node(i,j));
-	  for(int k=0; k<degree+1; k++) {
-	    GO rowk =  pn_colmap->getGlobalElement(elem_to_node(i,k));
-	    Teuchos::Array<GO> index(1); index[0] = rowk;
-	    Teuchos::Array<SC> value(1);	      
-	    if(j==0 && k==0)                value[0]=1.0;
-	    else if(j==0 && k==degree)      value[0]=-1.0;
-	    else if(j==degree && k==0)      value[0]=-1.0;
-	    else if(j==degree && k==degree) value[0]=1.0;
-	    else if(j==k)                   value[0] = (degree+1) / 100.0;
-	    else                            value[0] = -1.0/100;
-	    B->insertGlobalValues(rowj,index(),value());
-	  }
-	}
+          GO rowj =  pn_colmap->getGlobalElement(elem_to_node(i,j));
+          for(int k=0; k<degree+1; k++) {
+            GO rowk =  pn_colmap->getGlobalElement(elem_to_node(i,k));
+            Teuchos::Array<GO> index(1); index[0] = rowk;
+            Teuchos::Array<SC> value(1);              
+            if(j==0 && k==0)                value[0]=1.0;
+            else if(j==0 && k==degree)      value[0]=-1.0;
+            else if(j==degree && k==0)      value[0]=-1.0;
+            else if(j==degree && k==degree) value[0]=1.0;
+            else if(j==k)                   value[0] = (degree+1) / 100.0;
+            else                            value[0] = -1.0/100;
+            B->insertGlobalValues(rowj,index(),value());
+          }
+        }
       }
       
       B->fillComplete(pn_rowmap,pn_rowmap);

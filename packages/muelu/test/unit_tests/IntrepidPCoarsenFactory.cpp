@@ -990,13 +990,13 @@ namespace MueLuTests {
           return (GID >= startingGID) && (GID < startingGID + numRankLocalElements);
         };
         
-	Teuchos::Array<GlobalOrdinal> myRowGIDs(numRankLocalElements);
+        Teuchos::Array<GlobalOrdinal> myRowGIDs(numRankLocalElements);
         for (int i=0; i<numRankLocalElements; i++)
         {
           myRowGIDs[i] = startingGID + i;
         }
         // colMap sees all local rows, plus any non-local IDs they talk to:
-	Teuchos::Array<GlobalOrdinal> myColGIDs = myRowGIDs;
+        Teuchos::Array<GlobalOrdinal> myColGIDs = myRowGIDs;
         set<GlobalOrdinal> offRankGIDs;
         for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
         {
@@ -1030,10 +1030,10 @@ namespace MueLuTests {
         // add off-rank GIDs to the end of the colMapGIDs:
         myColGIDs.insert(myColGIDs.end(), offRankGIDs.begin(), offRankGIDs.end());
         
-	GlobalOrdinal indexBase = 0;
-	GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
-	rowMapRCP = MapFactory::Build(lib,GO_INVALID,myRowGIDs().getConst(), indexBase,serialComm);
-	colMapRCP = MapFactory::Build(lib,GO_INVALID,myColGIDs().getConst(), indexBase,serialComm);
+        GlobalOrdinal indexBase = 0;
+        GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+        rowMapRCP = MapFactory::Build(lib,GO_INVALID,myRowGIDs().getConst(), indexBase,serialComm);
+        colMapRCP = MapFactory::Build(lib,GO_INVALID,myColGIDs().getConst(), indexBase,serialComm);
 
         
         // rewrite elementToNodeMap to contain only LIDs, and determine expected seeds
@@ -1459,7 +1459,7 @@ namespace MueLuTests {
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
-	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,false);
+        Teuchos::ArrayRCP<const int> is_dirichlet(Nn,false);
 
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
         
@@ -1534,9 +1534,9 @@ namespace MueLuTests {
         }
 
 
-	// Mark of the very first node as Dirichlet
-	Teuchos::ArrayRCP<int> is_dirichlet(Nn,false);
-	is_dirichlet[0] = 1;
+        // Mark of the very first node as Dirichlet
+        Teuchos::ArrayRCP<int> is_dirichlet(Nn,false);
+        is_dirichlet[0] = 1;
 
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
         
@@ -2006,7 +2006,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
 /*********************************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class Basis>
-bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)			       
+bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)                              
   {
 #   include "MueLu_UseShortNames.hpp"
     typedef Scalar SC;
@@ -2561,8 +2561,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // Dummy elem2node map
       Teuchos::Array<GO> hi_colids(numHi);
       for(size_t j=0; j<numHi; j++) {
-	hi_e2n(0,j)    = j;
-	hi_colids[j] = j;
+        hi_e2n(0,j)    = j;
+        hi_colids[j] = j;
       }
 
       // Dummy column map
@@ -2576,11 +2576,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // Compare and make sure we're cool
       bool node_diff = false;
       for(size_t j=0; j<numLo; j++)
-	if(lo_node_in_hi[j]!=(size_t)lo_e2n(0,j)) node_diff=true;
+        if(lo_node_in_hi[j]!=(size_t)lo_e2n(0,j)) node_diff=true;
 #if 0
       printf("[%d] Comparison = ",i);
       for(size_t j=0; j<numLo; j++)
-	printf("%d|%d ",(int)lo_node_in_hi[j],(int)lo_e2n(0,j));
+        printf("%d|%d ",(int)lo_node_in_hi[j],(int)lo_e2n(0,j));
       printf("\n");
 #endif
       TEST_EQUALITY(node_diff,false);
@@ -2639,17 +2639,17 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         int lo_numOwnedNodes=0, lo_numOwnedNodes_mk2=0;
         FC hi_dofCoords;
 
-	// El2node / ownership / colmap
-	Teuchos::Array<GO> hi_colids(Nn);
+        // El2node / ownership / colmap
+        Teuchos::Array<GO> hi_colids(Nn);
         for(int i=0; i<Nn; i++) {
-	  hi_colids[i] = i;
+          hi_colids[i] = i;
           hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
-	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
-	
-	/*** Do stuff the injection way ***/
+        Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
+        
+        /*** Do stuff the injection way ***/
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR 
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
@@ -2657,37 +2657,37 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 #endif  
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
 
-	/*** Do stuff the representative way ***/
-	RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
-	FCi lo_elemToHiRepresentativeNode;
-	double threshold = 1e-10;
-	std::vector<std::vector<size_t> > candidates;
-	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_dofCoords,threshold,candidates);
-	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
-	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
+        /*** Do stuff the representative way ***/
+        RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
+        FCi lo_elemToHiRepresentativeNode;
+        double threshold = 1e-10;
+        std::vector<std::vector<size_t> > candidates;
+        MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_dofCoords,threshold,candidates);
+        MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
+        MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
 
-	// Compare stuff
+        // Compare stuff
         TEST_EQUALITY(lo_numOwnedNodes,2);
         TEST_EQUALITY(lo_numOwnedNodes_mk2,2);
 
-	size_t num_lo_nodes_located=0;
+        size_t num_lo_nodes_located=0;
         for(size_t i=0;i<hi_to_lo_map.size(); i++) {
           if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
             num_lo_nodes_located++;
         }
-	TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
-	TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
+        TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
+        TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
 
-	for(size_t i=0; i<lo_e2n.dimension(0); i++) 
-	  for(size_t j=0; j<lo_e2n.dimension(1); j++) 
-	    TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
+        for(size_t i=0; i<lo_e2n.dimension(0); i++) 
+          for(size_t j=0; j<lo_e2n.dimension(1); j++) 
+            TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
 
-	for(size_t i=0; i<(size_t) lo_owned.size(); i++) 
-	  TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);
+        for(size_t i=0; i<(size_t) lo_owned.size(); i++) 
+          TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);
 
-	TEST_EQUALITY(hi_to_lo_map.size(),hi_to_lo_map_mk2.size());
-	for(size_t i=0; i<(size_t) hi_to_lo_map.size(); i++) 
-	  TEST_EQUALITY(hi_to_lo_map[i],hi_to_lo_map_mk2[i]);
+        TEST_EQUALITY(hi_to_lo_map.size(),hi_to_lo_map_mk2.size());
+        for(size_t i=0; i<(size_t) hi_to_lo_map.size(); i++) 
+          TEST_EQUALITY(hi_to_lo_map[i],hi_to_lo_map_mk2[i]);
 
       }
     }//end QUAD
@@ -2707,7 +2707,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);                                 
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
@@ -2744,7 +2744,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);                                 
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
@@ -2781,7 +2781,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);                                 
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
