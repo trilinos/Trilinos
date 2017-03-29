@@ -2,7 +2,7 @@
 /* === klu_analyze ========================================================== */
 /* ========================================================================== */
 
-/* Order the matrix using TRILINOS_BTF (or not), and then AMD, COLAMD, the natural
+/* Order the matrix using TRILINOS_BTF (or not), and then AMD, TRILINOS_COLAMD, the natural
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
@@ -33,7 +33,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     Int Pblk [ ],	/* size maxblock */
     Int Cp [ ],		/* size maxblock+1 */
     Int Ci [ ],		/* size MAX (nz+1, Cilen) */
-    Int Cilen,		/* nz+1, or COLAMD_recommend(nz,n,n) for COLAMD */
+    Int Cilen,		/* nz+1, or COLAMD_recommend(nz,n,n) for TRILINOS_COLAMD */
     Int Pinv [ ],	/* size maxblock */
 
     /* input/output */
@@ -43,7 +43,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 {
     double amd_Info [TRILINOS_AMD_INFO], lnz, lnz1, flops, flops1 ;
     Int k1, k2, nk, k, block, oldcol, pend, newcol, result, pc, p, newrow,
-	maxnz, nzoff, cstats [COLAMD_STATS], ok, err = KLU_INVALID ;
+	maxnz, nzoff, cstats [TRILINOS_COLAMD_STATS], ok, err = KLU_INVALID ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -172,14 +172,14 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	{
 
 	    /* -------------------------------------------------------------- */
-	    /* order the block with COLAMD (C) */
+	    /* order the block with TRILINOS_COLAMD (C) */
 	    /* -------------------------------------------------------------- */
 
 	    /* order (and destroy) Ci, returning column permutation in Cp.
-	     * COLAMD "cannot" fail since the matrix has already been checked,
+	     * TRILINOS_COLAMD "cannot" fail since the matrix has already been checked,
 	     * and Ci allocated. */
 
-	    ok = COLAMD (nk, nk, Cilen, Ci, Cp, NULL, cstats) ;
+	    ok = TRILINOS_COLAMD (nk, nk, Cilen, Ci, Cp, NULL, cstats) ;
 	    lnz1 = EMPTY ;
 	    flops1 = EMPTY ;
 
@@ -238,10 +238,10 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     ASSERT (nzoff >= 0 && nzoff <= Ap [n]) ;
 
     /* return estimates of # of nonzeros in L including diagonal */
-    Symbolic->lnz = lnz ;	    /* EMPTY if COLAMD used */
+    Symbolic->lnz = lnz ;	    /* EMPTY if TRILINOS_COLAMD used */
     Symbolic->unz = lnz ;
     Symbolic->nzoff = nzoff ;
-    Symbolic->est_flops = flops ;   /* EMPTY if COLAMD or user-ordering used */
+    Symbolic->est_flops = flops ;   /* EMPTY if TRILINOS_COLAMD or user-ordering used */
     return (KLU_OK) ;
 }
 
@@ -250,7 +250,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 /* === order_and_analyze ==================================================== */
 /* ========================================================================== */
 
-/* Orders the matrix with or with TRILINOS_BTF, then orders each block with AMD, COLAMD,
+/* Orders the matrix with or with TRILINOS_BTF, then orders each block with AMD, TRILINOS_COLAMD,
  * or the user ordering function.  Does not handle the natural or given
  * ordering cases. */
 
@@ -290,8 +290,8 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     ordering = Common->ordering ;
     if (ordering == 1)
     {
-	/* COLAMD */
-	Cilen = COLAMD_recommended (nz, n, n) ;
+	/* TRILINOS_COLAMD */
+	Cilen = TRILINOS_COLAMD_recommended (nz, n, n) ;
     }
     else if (ordering == 0 || (ordering == 3 && Common->user_order != NULL))
     {

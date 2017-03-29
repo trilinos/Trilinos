@@ -161,8 +161,8 @@
 #define BTF_strongcomp trilinos_btf_l_strongcomp
 
 #define TRILINOS_AMD_order trilinos_amd_l_order
-#define COLAMD trilinos_colamd_l
-#define COLAMD_recommended trilinos_colamd_l_recommended
+#define TRILINOS_COLAMD trilinos_colamd_l
+#define TRILINOS_COLAMD_recommended trilinos_colamd_l_recommended
 
 #else
 
@@ -185,8 +185,8 @@
 #define BTF_strongcomp trilinos_btf_strongcomp
 
 #define TRILINOS_AMD_order trilinos_amd_order
-#define COLAMD trilinos_colamd
-#define COLAMD_recommended trilinos_colamd_recommended
+#define TRILINOS_COLAMD trilinos_colamd
+#define TRILINOS_COLAMD_recommended trilinos_colamd_recommended
 
 #endif
 

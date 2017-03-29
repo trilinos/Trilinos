@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* Configuration file for SuiteSparse: a Suite of Sparse matrix packages
- * (AMD, COLAMD, CCOLAMD, CAMD, CHOLMOD, UMFPACK, CXSparse, and others).
+ * (AMD, TRILINOS_COLAMD, CCOLAMD, CAMD, CHOLMOD, UMFPACK, CXSparse, and others).
  *
  * UFconfig.h provides the definition of the long integer.  On most systems,
  * a C program can be compiled in LP64 mode, in which long's and pointers are
@@ -70,7 +70,7 @@ extern "C" {
 
 /* SuiteSparse is not a package itself, but a collection of packages, some of
  * which must be used together (UMFPACK requires AMD, CHOLMOD requires AMD,
- * COLAMD, CAMD, and CCOLAMD, etc).  A version number is provided here for the
+ * TRILINOS_COLAMD, CAMD, and CCOLAMD, etc).  A version number is provided here for the
  * collection itself.  The versions of packages within each version of
  * SuiteSparse are meant to work together.  Combining one packge from one
  * version of SuiteSparse, with another package from another version of
@@ -80,7 +80,7 @@ extern "C" {
  *
  *  AMD		    version 2.2.0
  *  CAMD	    version 2.2.0
- *  COLAMD	    version 2.7.0
+ *  TRILINOS_COLAMD	    version 2.7.0
  *  CCOLAMD	    version 2.7.0
  *  CHOLMOD	    version 1.5.0
  *  CSparse	    version 2.2.0

@@ -232,7 +232,7 @@ static void factor2
 
 	    if (Lnz [block] < 0)
 	    {
-		/* COLAMD was used - no estimate of fill-in */
+		/* TRILINOS_COLAMD was used - no estimate of fill-in */
 		/* use 10 times the nnz in A, plus n */
 		lsize = -(Common->initmem) ;
 	    }

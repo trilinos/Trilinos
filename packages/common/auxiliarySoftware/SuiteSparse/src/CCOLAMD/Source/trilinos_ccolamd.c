@@ -26,9 +26,9 @@
  *	pivoting methods, P(AQ) = LU, where Q is computed prior to numerical
  *	factorization, and P is computed during numerical factorization via
  *	conventional partial pivoting with row interchanges.  CCOLAMD is an
- *	extension of COLAMD, available as built-in function in MATLAB Version 6,
+ *	extension of TRILINOS_COLAMD, available as built-in function in MATLAB Version 6,
  *	available from MathWorks, Inc. (http://www.mathworks.com).  This
- *	routine can be used in place of COLAMD in MATLAB.
+ *	routine can be used in place of TRILINOS_COLAMD in MATLAB.
  *
  *	CSYMAMD computes a permutation P of a symmetric matrix A such that the
  *	Cholesky factorization of PAP' has less fill-in and requires fewer
@@ -40,7 +40,7 @@
  *  Authors:
  *
  *	Timothy A. Davis and S. Rajamanickam wrote CCOLAMD, based directly on
- *	COLAMD by Stefan I. Larimore and Timothy A. Davis, University of
+ *	TRILINOS_COLAMD by Stefan I. Larimore and Timothy A. Davis, University of
  *	Florida.  The algorithm was developed in collaboration with John
  *	Gilbert, (UCSB, then at Xerox PARC), and Esmond Ng, (Lawrence Berkeley
  *	National Lab, then at Oak Ridge National Laboratory).
@@ -55,7 +55,7 @@
  *
  *	Copyright (c) 1998-2005 by the University of Florida.
  *	All Rights Reserved.
- *	COLAMD is also available under alternate licenses, contact T. Davis
+ *	TRILINOS_COLAMD is also available under alternate licenses, contact T. Davis
  *	for details.
  *
  *	This library is free software; you can redistribute it and/or
@@ -153,7 +153,7 @@
  *
  *	    double knobs [TRILINOS_CCOLAMD_KNOBS] ;	Output only.
  *
- *	    knobs [0] and knobs [1] behave differently than they did in COLAMD.
+ *	    knobs [0] and knobs [1] behave differently than they did in TRILINOS_COLAMD.
  *	    The other knobs are new to CCOLAMD.
  *
  *	    knobs [0]: dense row control
@@ -372,16 +372,16 @@
  *
  *	    int cmember [n_col] ;		Input argument.
  *
- *		cmember is new to CCOLAMD.  It did not appear in COLAMD.
+ *		cmember is new to CCOLAMD.  It did not appear in TRILINOS_COLAMD.
  *		It places contraints on the output ordering.  s = cmember [j]
  *		gives the constraint set s that contains the column j
  *		(Restriction: 0 <= s < n_col).  In the output column
  *		permutation, all columns in set 0 appear first, followed by
  *		all columns in set 1, and so on.  If NULL, all columns are
  *		treated as if they were in a single constraint set, and you
- *		will obtain the same ordering as COLAMD (with one exception:
+ *		will obtain the same ordering as TRILINOS_COLAMD (with one exception:
  *		the dense row/column threshold and other default knobs in
- *		CCOLAMD and COLAMD are different).
+ *		CCOLAMD and TRILINOS_COLAMD are different).
  *
  *	Example:
  *
@@ -492,7 +492,7 @@
  *
  *	    double knobs [TRILINOS_CCOLAMD_KNOBS] ;	Input argument.
  *
- *		See colamd_set_defaults for a description.
+ *		See trilinos_colamd_set_defaults for a description.
  *
  *	    int stats [TRILINOS_CCOLAMD_STATS] ;		Output argument.
  *
@@ -1040,7 +1040,7 @@ PRIVATE void print_report
  *  and nnz/5 more space is recommended for run time efficiency.
  *
  *  The remaining (((3 * n_col) + 1) + 5 * (n_col + 1) + n_row) space is
- *  for other workspace used in trilinos_ccolamd which did not appear in colamd.
+ *  for other workspace used in trilinos_ccolamd which did not appear in trilinos_colamd.
  */
 
 /* add two values of type size_t, and check for integer overflow */
@@ -1496,7 +1496,7 @@ PUBLIC Int CSYMAMD_MAIN		/* return TRUE if OK, FALSE otherwise */
 /* ========================================================================== */
 
 /*
- *  The colamd routine computes a column ordering Q of a sparse matrix
+ *  The trilinos_colamd routine computes a column ordering Q of a sparse matrix
  *  A such that the LU factorization P(AQ) = LU remains sparse, where P is
  *  selected via partial pivoting.   The routine can also be viewed as
  *  providing a permutation Q such that the Cholesky factorization
@@ -1996,7 +1996,7 @@ PUBLIC Int TRILINOS_CCOLAMD_2	    /* returns TRUE if successful, FALSE otherwise
 
 
 /* ========================================================================== */
-/* === colamd_report ======================================================== */
+/* === trilinos_colamd_report ======================================================== */
 /* ========================================================================== */
 
 PUBLIC void TRILINOS_CCOLAMD_report
@@ -2051,7 +2051,7 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
     Trilinos_CColamd_Col Col [ ],		/* of size n_col+1 */
     Int A [ ],			/* row indices of A, of size Alen */
     Int p [ ],			/* pointers to columns in A, of size n_col+1 */
-    Int stats [TRILINOS_CCOLAMD_STATS]	/* colamd statistics */
+    Int stats [TRILINOS_CCOLAMD_STATS]	/* trilinos_colamd statistics */
 )
 {
     /* === Local variables ================================================== */
@@ -2969,7 +2969,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	/* context, is the column "length", or the number of row indices */
 	/* in that column).  The number of row indices in a column is */
 	/* monotonically non-decreasing, from the length of the original */
-	/* column on input to colamd. */
+	/* column on input to trilinos_colamd. */
 
 	/* === Compute set differences ====================================== */
 

@@ -379,7 +379,7 @@
 				 * node bisector applied recursively, followed
 				 * by constrained minimum degree (CSYMAMD or
 				 * CCOLAMD) */
-#define CHOLMOD_COLAMD 5	/* use AMD for A, COLAMD for A*A' */
+#define CHOLMOD_COLAMD 5	/* use AMD for A, TRILINOS_COLAMD for A*A' */
 
 /* POSTORDERED is not a method, but a result of natural ordering followed by a
  * weighted postorder.  It is used for L->ordering, not method [ ].ordering. */
@@ -573,7 +573,7 @@ typedef struct cholmod_common_struct
      *	    i = 5: NESDIS with nd_small = 20000
      *	    i = 6: NESDIS with nd_small = 4, no constrained minimum degree
      *	    i = 7: NESDIS with no dense node removal
-     *	    i = 8: AMD for A, COLAMD for A*A'
+     *	    i = 8: AMD for A, TRILINOS_COLAMD for A*A'
      *
      * You can modify the suite of methods you wish to try by modifying
      * Common.method [...] after calling cholmod_start or cholmod_defaults.
@@ -640,13 +640,13 @@ typedef struct cholmod_common_struct
 	    *
 	    * If prune_dense < 0, only completely dense rows/cols are removed.
 	    *
-	    * This paramater is also the dense column control for COLAMD and
+	    * This paramater is also the dense column control for TRILINOS_COLAMD and
 	    * CCOLAMD.  For an m-by-n matrix, columns with more than
 	    * MAX (16, prune_dense * sqrt (MIN (m,n))) entries are removed prior
 	    * to ordering.  They appear at the end of the re-ordered matrix.
-	    * CHOLMOD factorizes A*A', so it calls COLAMD and CCOLAMD with A',
+	    * CHOLMOD factorizes A*A', so it calls TRILINOS_COLAMD and CCOLAMD with A',
 	    * not A.  Thus, this parameter affects the dense *row* control for
-	    * CHOLMOD's matrix, and the dense *column* control for COLAMD and
+	    * CHOLMOD's matrix, and the dense *column* control for TRILINOS_COLAMD and
 	    * CCOLAMD.
 	    *
 	    * Removing dense rows and columns improves the run-time of the
@@ -655,16 +655,16 @@ typedef struct cholmod_common_struct
 	    *
 	    * Default: 10. */
 
-	double prune_dense2 ;/* dense row control for COLAMD and CCOLAMD.
+	double prune_dense2 ;/* dense row control for TRILINOS_COLAMD and CCOLAMD.
 			    *  Rows with more than MAX (16, dense2 * sqrt (n))
 	    * for an m-by-n matrix are removed prior to ordering.  CHOLMOD's
-	    * matrix is transposed before ordering it with COLAMD or CCOLAMD,
+	    * matrix is transposed before ordering it with TRILINOS_COLAMD or CCOLAMD,
 	    * so this controls the dense *columns* of CHOLMOD's matrix, and
-	    * the dense *rows* of COLAMD's or CCOLAMD's matrix.
+	    * the dense *rows* of TRILINOS_COLAMD's or CCOLAMD's matrix.
 	    *
 	    * If prune_dense2 < 0, only completely dense rows/cols are removed.
 	    *
-	    * Default: -1.  Note that this is not the default for COLAMD and
+	    * Default: -1.  Note that this is not the default for TRILINOS_COLAMD and
 	    * CCOLAMD.  -1 is best for Cholesky.  10 is best for LU.  */
 
 	double nd_oksep ;   /* in NESDIS, when a node separator is computed, it
@@ -682,7 +682,7 @@ typedef struct cholmod_common_struct
 
 	size_t other2 [4] ; /* future expansion */
 
-	int aggressive ;    /* Aggresive absorption in AMD, COLAMD, SYMAMD,
+	int aggressive ;    /* Aggresive absorption in AMD, TRILINOS_COLAMD, SYMAMD,
 			     * CCOLAMD, and CSYMAMD.  Default: TRUE */
 
 	int order_for_lu ;  /* CCOLAMD can be optimized to produce an ordering

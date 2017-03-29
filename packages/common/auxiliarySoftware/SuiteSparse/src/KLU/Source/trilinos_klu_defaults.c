@@ -23,7 +23,7 @@ Int KLU_defaults
     Common->initmem = 10 ;	/* init. mem otherwise: c*nnz(A) + n */
     Common->btf = TRUE ;	/* use TRILINOS_BTF pre-ordering, or not */
     Common->maxwork = 0 ;	/* no limit to work done by btf_order */
-    Common->ordering = 0 ;	/* 0: AMD, 1: COLAMD, 2: user-provided P and Q,
+    Common->ordering = 0 ;	/* 0: AMD, 1: TRILINOS_COLAMD, 2: user-provided P and Q,
 				 * 3: user-provided function */
     Common->scale = 2 ;		/* scale: -1: none, and do not check for errors
 				 * in the input matrix in KLU_refactor.

@@ -6,7 +6,7 @@
  * optional symmetric pruning by Eisenstat and Liu [2].  The code is by Tim
  * Davis.  This algorithm is what appears as the default sparse LU routine in
  * MATLAB version 6.0, and still appears in MATLAB 6.5 as [L,U,P] = lu (A).
- * Note that no column ordering is provided (see COLAMD or AMD for suitable
+ * Note that no column ordering is provided (see TRILINOS_COLAMD or AMD for suitable
  * orderings).  SuperLU is based on this algorithm, except that it adds the
  * use of dense matrix operations on "supernodes" (adjacent columns with
  * identical).  This code doesn't use supernodes, thus its name ("Kent" LU,

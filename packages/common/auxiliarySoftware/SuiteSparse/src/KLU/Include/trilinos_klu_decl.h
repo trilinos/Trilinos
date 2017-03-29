@@ -43,7 +43,7 @@ typedef struct
 	nzoff,		/* nz in off-diagonal blocks */
 	nblocks,	/* number of blocks */
 	maxblock,	/* size of largest block */
-	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
+	ordering,	/* ordering used (AMD, TRILINOS_COLAMD, or GIVEN) */
 	do_btf ;	/* whether or not TRILINOS_BTF preordering was requested */
 
     /* only computed if TRILINOS_BTF preordering requested */
@@ -148,7 +148,7 @@ typedef struct klu_common_struct
     double maxwork ;	    /* maxwork for TRILINOS_BTF, <= 0 if no limit */
 
     int btf ;		    /* use TRILINOS_BTF pre-ordering, or not */
-    int ordering ;	    /* 0: AMD, 1: COLAMD, 2: user P and Q,
+    int ordering ;	    /* 0: AMD, 1: TRILINOS_COLAMD, 2: user P and Q,
 			     * 3: user function */
     int scale ;		    /* row scaling: -1: none (and no error check),
 			     * 0: none, 1: sum, 2: max */
@@ -247,7 +247,7 @@ UF_long trilinos_klu_l_defaults (klu_l_common *Common) ;
 /* klu_analyze:  orders and analyzes a matrix */
 /* -------------------------------------------------------------------------- */
 
-/* Order the matrix with TRILINOS_BTF (or not), then order each block with AMD, COLAMD,
+/* Order the matrix with TRILINOS_BTF (or not), then order each block with AMD, TRILINOS_COLAMD,
  * a natural ordering, or with a user-provided ordering function */
 
 klu_symbolic *trilinos_klu_analyze
