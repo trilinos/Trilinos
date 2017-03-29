@@ -74,27 +74,27 @@ SET(Trilinos_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTPL_ENABLE_Netcdf:BOOL=ON"
-  "-DTPL_ENABLE_HDF5:BOOL=ON"
+
+  "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DTPL_ENABLE_BoostLib:BOOL=ON"
-  "-DTPL_ENABLE_Zlib:BOOL=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DTPL_ENABLE_Netcdf:BOOL=ON"
+  
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
   
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
+  
   "-DTrilinos_ENABLE_MOOCHO=OFF"
   "-DTrilinos_ENABLE_Optika=OFF"
   "-DTrilinos_ENABLE_Didasko=OFF"
   
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
-  
-  "-DTPL_ENABLE_Pthread:BOOL=ON"
-  
+    
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   )
 
-#
-# Set the rest of the system-specific options and run the dashboard build/test
-#
+# Not enabled in 4.7.2 version from muir
+#  "-DTPL_ENABLE_BoostLib:BOOL=ON"
+#  "-DTPL_ENABLE_Zlib:BOOL=ON"
 
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
