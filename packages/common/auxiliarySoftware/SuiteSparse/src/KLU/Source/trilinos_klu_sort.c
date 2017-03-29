@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === KLU_sort ============================================================= */
+/* === TRILINOS_KLU_sort ============================================================= */
 /* ========================================================================== */
 
 /* sorts the columns of L and U so that the row indices appear in strictly
@@ -21,7 +21,7 @@ static void sort (Int n, Int *Xip, Int *Xlen, Unit *LU, Int *Tp, Int *Tj,
     Entry *Xx ;
     Int p, i, j, len, nz, tp, xlen, pend ;
 
-    ASSERT (KLU_valid_LU (n, FALSE, Xip, Xlen, LU)) ;
+    ASSERT (TRILINOS_KLU_valid_LU (n, FALSE, Xip, Xlen, LU)) ;
 
     /* count the number of entries in each row of L or U */ 
     for (i = 0 ; i < n ; i++)
@@ -80,19 +80,19 @@ static void sort (Int n, Int *Xip, Int *Xlen, Unit *LU, Int *Tp, Int *Tj,
 	}
     }
 
-    ASSERT (KLU_valid_LU (n, FALSE, Xip, Xlen, LU)) ;
+    ASSERT (TRILINOS_KLU_valid_LU (n, FALSE, Xip, Xlen, LU)) ;
 }
 
 
 /* ========================================================================== */
-/* === KLU_sort ============================================================= */
+/* === TRILINOS_KLU_sort ============================================================= */
 /* ========================================================================== */
 
-Int KLU_sort
+Int TRILINOS_KLU_sort
 (
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_numeric *Numeric,
+    TRILINOS_KLU_common *Common
 )
 {
     Int *R, *W, *Tp, *Ti, *Lip, *Uip, *Llen, *Ulen ;
@@ -105,7 +105,7 @@ Int KLU_sort
     {
 	return (FALSE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     n = Symbolic->n ;
     R = Symbolic->R ;
@@ -122,14 +122,14 @@ Int KLU_sort
 
     /* allocate workspace */
     nz = MAX (Numeric->max_lnz_block, Numeric->max_unz_block) ;
-    W  = (Int*) KLU_malloc (maxblock, sizeof (Int), Common) ;
-    Tp = (Int*) KLU_malloc (m1, sizeof (Int), Common) ;
-    Ti = (Int*) KLU_malloc (nz, sizeof (Int), Common) ;
-    Tx = (Entry*) KLU_malloc (nz, sizeof (Entry), Common) ;
+    W  = (Int*) TRILINOS_KLU_malloc (maxblock, sizeof (Int), Common) ;
+    Tp = (Int*) TRILINOS_KLU_malloc (m1, sizeof (Int), Common) ;
+    Ti = (Int*) TRILINOS_KLU_malloc (nz, sizeof (Int), Common) ;
+    Tx = (Entry*) TRILINOS_KLU_malloc (nz, sizeof (Entry), Common) ;
 
     PRINTF (("\n======================= Start sort:\n")) ;
 
-    if (Common->status == KLU_OK)
+    if (Common->status == TRILINOS_KLU_OK)
     {
 	/* sort each block of L and U */
 	for (block = 0 ; block < nblocks ; block++)
@@ -148,9 +148,9 @@ Int KLU_sort
     PRINTF (("\n======================= sort done.\n")) ;
 
     /* free workspace */
-    KLU_free (W, maxblock, sizeof (Int), Common) ;
-    KLU_free (Tp, m1, sizeof (Int), Common) ;
-    KLU_free (Ti, nz, sizeof (Int), Common) ;
-    KLU_free (Tx, nz, sizeof (Entry), Common) ;
-    return (Common->status == KLU_OK) ;
+    TRILINOS_KLU_free (W, maxblock, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Tp, m1, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Ti, nz, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Tx, nz, sizeof (Entry), Common) ;
+    return (Common->status == TRILINOS_KLU_OK) ;
 }

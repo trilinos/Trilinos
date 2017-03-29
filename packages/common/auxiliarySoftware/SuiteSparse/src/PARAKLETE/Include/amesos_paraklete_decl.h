@@ -39,15 +39,15 @@
 #define MPI_Int MPI_LONG
 
 /* use the long version of KLU and TRILINOS_BTF */
-#define KLU_analyze trilinos_klu_l_analyze
-#define KLU_factor trilinos_klu_l_factor
-#define KLU_solve trilinos_klu_l_solve
-#define KLU_symbolic klu_l_symbolic
-#define KLU_numeric klu_l_numeric
-#define KLU_common klu_l_common
-#define KLU_free_symbolic trilinos_klu_l_free_symbolic
-#define KLU_free_numeric trilinos_klu_l_free_numeric
-#define KLU_defaults trilinos_klu_l_defaults
+#define TRILINOS_KLU_analyze trilinos_klu_l_analyze
+#define TRILINOS_KLU_factor trilinos_klu_l_factor
+#define TRILINOS_KLU_solve trilinos_klu_l_solve
+#define TRILINOS_KLU_symbolic trilinos_klu_l_symbolic
+#define TRILINOS_KLU_numeric trilinos_klu_l_numeric
+#define TRILINOS_KLU_common trilinos_klu_l_common
+#define TRILINOS_KLU_free_symbolic trilinos_klu_l_free_symbolic
+#define TRILINOS_KLU_free_numeric trilinos_klu_l_free_numeric
+#define TRILINOS_KLU_defaults trilinos_klu_l_defaults
 
 #define BTF_order trilinos_btf_l_order
 
@@ -99,7 +99,7 @@ typedef struct paraklete_common_struct
 
     cholmod_common cm ;	    /* CHOLMOD workspace for each node */
 
-    KLU_common km ;         /* KLU common */
+    TRILINOS_KLU_common km ;         /* KLU common */
 }
 paraklete_common ;
 

@@ -15,7 +15,7 @@
 /* === analyze_worker ======================================================= */
 /* ========================================================================== */
 
-static Int analyze_worker	/* returns KLU_OK or < 0 if error */
+static Int analyze_worker	/* returns TRILINOS_KLU_OK or < 0 if error */
 (
     /* inputs, not modified */
     Int n,		/* A is n-by-n */
@@ -40,13 +40,13 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     Int Pinv [ ],	/* size maxblock */
 
     /* input/output */
-    KLU_symbolic *Symbolic,
-    KLU_common *Common
+    TRILINOS_KLU_symbolic *Symbolic,
+    TRILINOS_KLU_common *Common
 )
 {
     double amd_Info [TRILINOS_AMD_INFO], lnz, lnz1, flops, flops1 ;
     Int k1, k2, nk, k, block, oldcol, pend, newcol, result, pc, p, newrow,
-	maxnz, nzoff, cstats [TRILINOS_COLAMD_STATS], ok, err = KLU_INVALID ;
+	maxnz, nzoff, cstats [TRILINOS_COLAMD_STATS], ok, err = TRILINOS_KLU_INVALID ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -121,7 +121,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	}
 	Cp [nk] = pc ;
 	maxnz = MAX (maxnz, pc) ;
-	ASSERT (KLU_valid (nk, Cp, Ci, NULL)) ;
+	ASSERT (TRILINOS_KLU_valid (nk, Cp, Ci, NULL)) ;
 
 	/* ------------------------------------------------------------------ */
 	/* order the block C */
@@ -154,7 +154,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	    ok = (result >= TRILINOS_AMD_OK) ;
 	    if (result == TRILINOS_AMD_OUT_OF_MEMORY)
 	    {
-		err = KLU_OUT_OF_MEMORY ;
+		err = TRILINOS_KLU_OUT_OF_MEMORY ;
 	    }
 
 	    /* account for memory usage in AMD */
@@ -245,7 +245,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     Symbolic->unz = lnz ;
     Symbolic->nzoff = nzoff ;
     Symbolic->est_flops = flops ;   /* EMPTY if TRILINOS_COLAMD or user-ordering used */
-    return (KLU_OK) ;
+    return (TRILINOS_KLU_OK) ;
 }
 
 
@@ -257,19 +257,19 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
  * or the user ordering function.  Does not handle the natural or given
  * ordering cases. */
 
-static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
-					   KLU_symbolic object if successful */
+static TRILINOS_KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
+					   TRILINOS_KLU_symbolic object if successful */
 (
     /* inputs, not modified */
     Int n,		/* A is n-by-n */
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     /* --------------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     double work ;
-    KLU_symbolic *Symbolic ;
+    TRILINOS_KLU_symbolic *Symbolic ;
     double *Lnz ;
     Int *Qbtf, *Cp, *Ci, *Pinv, *Pblk, *Pbtf, *P, *Q, *R ;
     Int nblocks, nz, block, maxblock, k1, k2, nk, do_btf, ordering, k, Cilen,
@@ -279,7 +279,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* allocate the Symbolic object, and check input matrix */
     /* ---------------------------------------------------------------------- */
 
-    Symbolic = KLU_alloc_symbolic (n, Ap, Ai, Common) ;
+    Symbolic = TRILINOS_KLU_alloc_symbolic (n, Ap, Ai, Common) ;
     if (Symbolic == NULL)
     {
 	return (NULL) ;
@@ -304,8 +304,8 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     else
     {
 	/* invalid ordering */
-	Common->status = KLU_INVALID ;
-	KLU_free_symbolic (&Symbolic, Common) ;
+	Common->status = TRILINOS_KLU_INVALID ;
+	TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
 	return (NULL) ;
     }
 
@@ -319,13 +319,13 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* allocate workspace for TRILINOS_BTF permutation */
     /* ---------------------------------------------------------------------- */
 
-    Pbtf = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    Qbtf = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
-    if (Common->status < KLU_OK)
+    Pbtf = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    Qbtf = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
+    if (Common->status < TRILINOS_KLU_OK)
     {
-	KLU_free (Pbtf, n, sizeof (Int), Common) ;
-	KLU_free (Qbtf, n, sizeof (Int), Common) ;
-	KLU_free_symbolic (&Symbolic, Common) ;
+	TRILINOS_KLU_free (Pbtf, n, sizeof (Int), Common) ;
+	TRILINOS_KLU_free (Qbtf, n, sizeof (Int), Common) ;
+	TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
 	return (NULL) ;
     }
 
@@ -347,13 +347,13 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
 
     if (do_btf)
     {
-	Work = (Int*) KLU_malloc (5*n, sizeof (Int), Common) ;
-	if (Common->status < KLU_OK)
+	Work = (Int*) TRILINOS_KLU_malloc (5*n, sizeof (Int), Common) ;
+	if (Common->status < TRILINOS_KLU_OK)
 	{
 	    /* out of memory */
-	    KLU_free (Pbtf, n, sizeof (Int), Common) ;
-	    KLU_free (Qbtf, n, sizeof (Int), Common) ;
-	    KLU_free_symbolic (&Symbolic, Common) ;
+	    TRILINOS_KLU_free (Pbtf, n, sizeof (Int), Common) ;
+	    TRILINOS_KLU_free (Qbtf, n, sizeof (Int), Common) ;
+	    TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
 	    return (NULL) ;
 	}
 
@@ -362,7 +362,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
 	Common->structural_rank = Symbolic->structural_rank ;
 	Common->work += work ;
 
-	KLU_free (Work, 5*n, sizeof (Int), Common) ;
+	TRILINOS_KLU_free (Work, 5*n, sizeof (Int), Common) ;
 
 	/* unflip Qbtf if the matrix does not have full structural rank */
 	if (Symbolic->structural_rank < n)
@@ -407,16 +407,16 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* allocate more workspace, for analyze_worker */
     /* ---------------------------------------------------------------------- */
 
-    Pblk = (Int*) KLU_malloc (maxblock, sizeof (Int), Common) ;
-    Cp   = (Int*) KLU_malloc (maxblock + 1, sizeof (Int), Common) ;
-    Ci   = (Int*) KLU_malloc (MAX (Cilen, nz+1), sizeof (Int), Common) ;
-    Pinv = (Int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Pblk = (Int*) TRILINOS_KLU_malloc (maxblock, sizeof (Int), Common) ;
+    Cp   = (Int*) TRILINOS_KLU_malloc (maxblock + 1, sizeof (Int), Common) ;
+    Ci   = (Int*) TRILINOS_KLU_malloc (MAX (Cilen, nz+1), sizeof (Int), Common) ;
+    Pinv = (Int*) TRILINOS_KLU_malloc (n, sizeof (Int), Common) ;
 
     /* ---------------------------------------------------------------------- */
     /* order each block of the TRILINOS_BTF ordering, and a fill-reducing ordering */
     /* ---------------------------------------------------------------------- */
 
-    if (Common->status == KLU_OK)
+    if (Common->status == TRILINOS_KLU_OK)
     {
 	PRINTF (("calling analyze_worker\n")) ;
 	Common->status = analyze_worker (n, Ap, Ai, nblocks, Pbtf, Qbtf, R,
@@ -428,38 +428,38 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* free all workspace */
     /* ---------------------------------------------------------------------- */
 
-    KLU_free (Pblk, maxblock, sizeof (Int), Common) ;
-    KLU_free (Cp, maxblock+1, sizeof (Int), Common) ;
-    KLU_free (Ci, MAX (Cilen, nz+1), sizeof (Int), Common) ;
-    KLU_free (Pinv, n, sizeof (Int), Common) ;
-    KLU_free (Pbtf, n, sizeof (Int), Common) ;
-    KLU_free (Qbtf, n, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Pblk, maxblock, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Cp, maxblock+1, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Ci, MAX (Cilen, nz+1), sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Pinv, n, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Pbtf, n, sizeof (Int), Common) ;
+    TRILINOS_KLU_free (Qbtf, n, sizeof (Int), Common) ;
 
     /* ---------------------------------------------------------------------- */
     /* return the symbolic object */
     /* ---------------------------------------------------------------------- */
 
-    if (Common->status < KLU_OK)
+    if (Common->status < TRILINOS_KLU_OK)
     {
-	KLU_free_symbolic (&Symbolic, Common) ;
+	TRILINOS_KLU_free_symbolic (&Symbolic, Common) ;
     }
     return (Symbolic) ;
 }
 
 
 /* ========================================================================== */
-/* === KLU_analyze ========================================================== */
+/* === TRILINOS_KLU_analyze ========================================================== */
 /* ========================================================================== */
 
-KLU_symbolic *KLU_analyze	/* returns NULL if error, or a valid
-				   KLU_symbolic object if successful */
+TRILINOS_KLU_symbolic *TRILINOS_KLU_analyze	/* returns NULL if error, or a valid
+				   TRILINOS_KLU_symbolic object if successful */
 (
     /* inputs, not modified */
     Int n,		/* A is n-by-n */
     Int Ap [ ],		/* size n+1, column pointers */
     Int Ai [ ],		/* size nz, row indices */
     /* -------------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
 
@@ -471,7 +471,7 @@ KLU_symbolic *KLU_analyze	/* returns NULL if error, or a valid
     {
 	return (NULL) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
     Common->structural_rank = EMPTY ;
 
     /* ---------------------------------------------------------------------- */
@@ -481,7 +481,7 @@ KLU_symbolic *KLU_analyze	/* returns NULL if error, or a valid
     if (Common->ordering == 2)
     {
 	/* natural ordering */
-	return (KLU_analyze_given (n, Ap, Ai, NULL, NULL, Common)) ;
+	return (TRILINOS_KLU_analyze_given (n, Ap, Ai, NULL, NULL, Common)) ;
     }
     else
     {

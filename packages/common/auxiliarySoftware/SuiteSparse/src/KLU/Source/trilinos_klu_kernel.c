@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === KLU_kernel =========================================================== */
+/* === TRILINOS_KLU_kernel =========================================================== */
 /* ========================================================================== */
 
 /* Sparse left-looking LU factorization, with partial pivoting.  Based on
@@ -369,7 +369,7 @@ static Int lpivot
 			 * row i is not yet pivotal.  */
 
     Int *p_firstrow,
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Entry x, pivot, *Lx ;
@@ -620,10 +620,10 @@ static void prune
 
 
 /* ========================================================================== */
-/* === KLU_kernel =========================================================== */
+/* === TRILINOS_KLU_kernel =========================================================== */
 /* ========================================================================== */
 
-size_t KLU_kernel   /* final size of LU on output */
+size_t TRILINOS_KLU_kernel   /* final size of LU on output */
 (
     /* input, not modified */
     Int n,	    /* A is n-by-n */
@@ -667,7 +667,7 @@ size_t KLU_kernel   /* final size of LU on output */
     Int Offi [ ],
     Entry Offx [ ],
     /* --------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Entry pivot ;
@@ -765,15 +765,15 @@ size_t KLU_kernel   /* final size of LU on output */
             if (INT_OVERFLOW (xsize))
             {
                 PRINTF (("Matrix is too large (Int overflow)\n")) ;
-		Common->status = KLU_TOO_LARGE ;
+		Common->status = TRILINOS_KLU_TOO_LARGE ;
                 return (lusize) ;
             }
             newlusize = (size_t) ( memgrow * lusize + 2*n + 1 ) ;
 	    /* Future work: retry mechanism in case of malloc failure */
-	    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+	    LU = (Unit*) TRILINOS_KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
 	    Common->nrealloc++ ;
             *p_LU = LU ;
-            if (Common->status == KLU_OUT_OF_MEMORY)
+            if (Common->status == TRILINOS_KLU_OUT_OF_MEMORY)
             {
                 PRINTF (("Matrix is too large (LU)\n")) ;
                 return (lusize) ;
@@ -869,7 +869,7 @@ size_t KLU_kernel   /* final size of LU on output */
 		    Llen, k, n, Pinv, &firstrow, Common))
 	{
 	    /* matrix is structurally or numerically singular */
-	    Common->status = KLU_SINGULAR ;
+	    Common->status = TRILINOS_KLU_SINGULAR ;
 	    if (Common->numerical_rank == EMPTY)
 	    {
 		Common->numerical_rank = k+k1 ;
@@ -1002,7 +1002,7 @@ size_t KLU_kernel   /* final size of LU on output */
     ASSERT ((size_t) newlusize <= lusize) ;
 
     /* this cannot fail, since the block is descreasing in size */
-    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+    LU = (Unit*) TRILINOS_KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
     *p_LU = LU ;
     return (newlusize) ;
 }
