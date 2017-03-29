@@ -70,7 +70,7 @@ private:
   Real ierf(Real input) const {
     std::vector<Real> coeff;
     Real c   = 1.0;
-    Real tmp = c * (std::sqrt(M_PI)/2.0 * input);
+    Real tmp = c * (std::sqrt(Teuchos::ScalarTraits<Real>::pi())/2.0 * input);
     Real val = tmp;
     coeff.push_back(c);
     int  cnt = 1;
@@ -79,7 +79,7 @@ private:
       for ( unsigned i = 0; i < coeff.size(); i++ ) {
         c += coeff[i]*coeff[coeff.size()-1-i]/((i+1)*(2*i+1));
       }
-      tmp  = c/(2.0*(Real)cnt+1.0) * std::pow(std::sqrt(M_PI)/2.0 * input,2.0*(Real)cnt+1.0);
+      tmp  = c/(2.0*(Real)cnt+1.0) * std::pow(std::sqrt(Teuchos::ScalarTraits<Real>::pi())/2.0 * input,2.0*(Real)cnt+1.0);
       val += tmp;
       coeff.push_back(c);
       cnt++;

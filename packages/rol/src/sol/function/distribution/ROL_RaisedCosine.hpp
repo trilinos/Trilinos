@@ -72,19 +72,20 @@ public:
   Real evaluatePDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     return ((input >= a && input <= b) ?
-             (1.+std::cos(M_PI*(input-mean_)/var_))/(2.0*var_) : 0.);
+             (1.+std::cos(Teuchos::ScalarTraits<Real>::pi()*(input-mean_)/var_))/(2.0*var_) : 0.);
   }
 
   Real evaluateCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     return ((input < a) ? 0. : ((input > b) ? 1. : 
-            0.5*(1.+(input-mean_)/var_+std::sin(M_PI*(input-mean_)/var_)/M_PI)));
+            0.5*(1.+(input-mean_)/var_+std::sin(Teuchos::ScalarTraits<Real>::pi()*(input-mean_)/var_)/Teuchos::ScalarTraits<Real>::pi())));
   }
   Real integrateCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     Real v = input-mean_;
     return ((input < a) ? 0. : ((input > b) ? input - var_ : 
-            0.5*(v+0.5*v*v/var_-var_*((std::cos(M_PI*v/var_)+1.)/(M_PI*M_PI)-0.5))));
+            0.5*(v+0.5*v*v/var_-var_*((std::cos(Teuchos::ScalarTraits<Real>::pi()*v/var_)+1.) /
+                                      (Teuchos::ScalarTraits<Real>::pi()*Teuchos::ScalarTraits<Real>::pi())-0.5))));
   }
   Real invertCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_, c  = 0.;
@@ -108,7 +109,7 @@ public:
   Real moment(const size_t m) const {
     Real a = mean_-var_, b = mean_+var_;
     Real am = std::pow(a,m+1), bm = std::pow(b,m+1);
-    Real omega = M_PI/var_, phi = -M_PI*mean_/var_;
+    Real omega = Teuchos::ScalarTraits<Real>::pi()/var_, phi = -Teuchos::ScalarTraits<Real>::pi()*mean_/var_;
     Real val_cos = 0., val_sin = 0.;
     for (size_t k = 0; k < (m-1)/2; k++) {
       val_cos += ((k%2==0) ? 1. : -1.)*factorial(m)/(factorial(m-2*k-1)*std::pow(omega,2+2*k))

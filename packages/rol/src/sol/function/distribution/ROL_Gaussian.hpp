@@ -61,7 +61,7 @@ private:
   std::vector<Real> d_;
 
   Real erfi(const Real p) const {
-    const Real zero(0), half(0.5), one(1), two(2), pi(M_PI);
+    const Real zero(0), half(0.5), one(1), two(2), pi(Teuchos::ScalarTraits<Real>::pi());
     Real val(0), z(0);
     if ( std::abs(p) > static_cast<Real>(0.7) ) {
       Real sgn = (p < zero) ? -one : one;
@@ -102,7 +102,7 @@ public:
   }
 
   Real evaluatePDF(const Real input) const {
-    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*M_PI*variance_));
+    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*Teuchos::ScalarTraits<Real>::pi()*variance_));
   }
 
   Real evaluateCDF(const Real input) const {

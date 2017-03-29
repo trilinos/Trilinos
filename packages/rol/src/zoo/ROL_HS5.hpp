@@ -58,10 +58,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-#if defined(_MSC_VER)
-#include "winmath.h"
-#endif
-
 namespace ROL {
 namespace ZOO {
 
@@ -154,7 +150,7 @@ void getHS5( Teuchos::RCP<Objective<Real> >       &obj,
 
   // Get Solution
   Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  (*xp)[0] = -M_PI/3.0 + 1.0/2.0; (*xp)[1] = -M_PI/3.0 - 1.0/2.0;
+  (*xp)[0] = -Teuchos::ScalarTraits<Real>::pi()/3.0 + 1.0/2.0; (*xp)[1] = -Teuchos::ScalarTraits<Real>::pi()/3.0 - 1.0/2.0;
   x = Teuchos::rcp(new StdVector<Real>(xp));
 
   // Instantiate Objective Function
