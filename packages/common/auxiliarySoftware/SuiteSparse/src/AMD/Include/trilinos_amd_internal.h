@@ -170,20 +170,20 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define AMD_order trilinos_amd_l_order
-#define AMD_defaults trilinos_amd_l_defaults
-#define AMD_control trilinos_amd_l_control
-#define AMD_info trilinos_amd_l_info
-#define AMD_1 trilinos_amd_l1
-#define AMD_2 trilinos_amd_l2
-#define AMD_valid trilinos_amd_l_valid
-#define AMD_aat trilinos_amd_l_aat
-#define AMD_postorder trilinos_amd_l_postorder
-#define AMD_post_tree trilinos_amd_l_post_tree
-#define AMD_dump trilinos_amd_l_dump
-#define AMD_debug trilinos_amd_l_debug
-#define AMD_debug_init trilinos_amd_l_debug_init
-#define AMD_preprocess trilinos_amd_l_preprocess
+#define TRILINOS_AMD_order trilinos_amd_l_order
+#define TRILINOS_AMD_defaults trilinos_amd_l_defaults
+#define TRILINOS_AMD_control trilinos_amd_l_control
+#define TRILINOS_AMD_info trilinos_amd_l_info
+#define TRILINOS_AMD_1 trilinos_amd_l1
+#define TRILINOS_AMD_2 trilinos_amd_l2
+#define TRILINOS_AMD_valid trilinos_amd_l_valid
+#define TRILINOS_AMD_aat trilinos_amd_l_aat
+#define TRILINOS_AMD_postorder trilinos_amd_l_postorder
+#define TRILINOS_AMD_post_tree trilinos_amd_l_post_tree
+#define TRILINOS_AMD_dump trilinos_amd_l_dump
+#define TRILINOS_AMD_debug trilinos_amd_l_debug
+#define TRILINOS_AMD_debug_init trilinos_amd_l_debug_init
+#define TRILINOS_AMD_preprocess trilinos_amd_l_preprocess
 
 #else
 
@@ -191,20 +191,20 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define AMD_order trilinos_amd_order
-#define AMD_defaults trilinos_amd_defaults
-#define AMD_control trilinos_amd_control
-#define AMD_info trilinos_amd_info
-#define AMD_1 trilinos_amd_1
-#define AMD_2 trilinos_amd_2
-#define AMD_valid trilinos_amd_valid
-#define AMD_aat trilinos_amd_aat
-#define AMD_postorder trilinos_amd_postorder
-#define AMD_post_tree trilinos_amd_post_tree
-#define AMD_dump trilinos_amd_dump
-#define AMD_debug trilinos_amd_debug
-#define AMD_debug_init trilinos_amd_debug_init
-#define AMD_preprocess trilinos_amd_preprocess
+#define TRILINOS_AMD_order trilinos_amd_order
+#define TRILINOS_AMD_defaults trilinos_amd_defaults
+#define TRILINOS_AMD_control trilinos_amd_control
+#define TRILINOS_AMD_info trilinos_amd_info
+#define TRILINOS_AMD_1 trilinos_amd_1
+#define TRILINOS_AMD_2 trilinos_amd_2
+#define TRILINOS_AMD_valid trilinos_amd_valid
+#define TRILINOS_AMD_aat trilinos_amd_aat
+#define TRILINOS_AMD_postorder trilinos_amd_postorder
+#define TRILINOS_AMD_post_tree trilinos_amd_post_tree
+#define TRILINOS_AMD_dump trilinos_amd_dump
+#define TRILINOS_AMD_debug trilinos_amd_debug
+#define TRILINOS_AMD_debug_init trilinos_amd_debug_init
+#define TRILINOS_AMD_preprocess trilinos_amd_preprocess
 
 #endif
 
@@ -225,7 +225,7 @@
 /* AMD routine definitions (not user-callable) */
 /* ------------------------------------------------------------------------- */
 
-GLOBAL size_t AMD_aat
+GLOBAL size_t TRILINOS_AMD_aat
 (
     Int n,
     const Int Ap [ ],
@@ -235,7 +235,7 @@ GLOBAL size_t AMD_aat
     double Info [ ]
 ) ;
 
-GLOBAL void AMD_1
+GLOBAL void TRILINOS_AMD_1
 (
     Int n,
     const Int Ap [ ],
@@ -249,7 +249,7 @@ GLOBAL void AMD_1
     double Info [ ]
 ) ;
 
-GLOBAL void AMD_postorder
+GLOBAL void TRILINOS_AMD_postorder
 (
     Int nn,
     Int Parent [ ],
@@ -261,7 +261,7 @@ GLOBAL void AMD_postorder
     Int Stack [ ]
 ) ;
 
-GLOBAL Int AMD_post_tree
+GLOBAL Int TRILINOS_AMD_post_tree
 (
     Int root,
     Int k,
@@ -274,7 +274,7 @@ GLOBAL Int AMD_post_tree
 #endif
 ) ;
 
-GLOBAL void AMD_preprocess
+GLOBAL void TRILINOS_AMD_preprocess
 (
     Int n,
     const Int Ap [ ],
@@ -298,11 +298,11 @@ GLOBAL void AMD_preprocess
 #define EXTERN extern
 #endif
 
-EXTERN Int AMD_debug ;
+EXTERN Int TRILINOS_AMD_debug ;
 
-GLOBAL void AMD_debug_init ( char *s ) ;
+GLOBAL void TRILINOS_AMD_debug_init ( char *s ) ;
 
-GLOBAL void AMD_dump
+GLOBAL void TRILINOS_AMD_dump
 (
     Int n,
     Int Pe [ ],
@@ -331,20 +331,20 @@ GLOBAL void AMD_dump
 #define ASSERT(expression) (assert (expression))
 #endif
 
-#define AMD_DEBUG0(params) { PRINTF (params) ; }
-#define AMD_DEBUG1(params) { if (AMD_debug >= 1) PRINTF (params) ; }
-#define AMD_DEBUG2(params) { if (AMD_debug >= 2) PRINTF (params) ; }
-#define AMD_DEBUG3(params) { if (AMD_debug >= 3) PRINTF (params) ; }
-#define AMD_DEBUG4(params) { if (AMD_debug >= 4) PRINTF (params) ; }
+#define TRILINOS_AMD_DEBUG0(params) { PRINTF (params) ; }
+#define TRILINOS_AMD_DEBUG1(params) { if (TRILINOS_AMD_debug >= 1) PRINTF (params) ; }
+#define TRILINOS_AMD_DEBUG2(params) { if (TRILINOS_AMD_debug >= 2) PRINTF (params) ; }
+#define TRILINOS_AMD_DEBUG3(params) { if (TRILINOS_AMD_debug >= 3) PRINTF (params) ; }
+#define TRILINOS_AMD_DEBUG4(params) { if (TRILINOS_AMD_debug >= 4) PRINTF (params) ; }
 
 #else
 
 /* no debugging */
 #define ASSERT(expression)
-#define AMD_DEBUG0(params)
-#define AMD_DEBUG1(params)
-#define AMD_DEBUG2(params)
-#define AMD_DEBUG3(params)
-#define AMD_DEBUG4(params)
+#define TRILINOS_AMD_DEBUG0(params)
+#define TRILINOS_AMD_DEBUG1(params)
+#define TRILINOS_AMD_DEBUG2(params)
+#define TRILINOS_AMD_DEBUG3(params)
+#define TRILINOS_AMD_DEBUG4(params)
 
 #endif

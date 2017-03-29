@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_control ========================================================= */
+/* === TRILINOS_AMD_control ========================================================= */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -16,7 +16,7 @@
 
 #include "trilinos_amd_internal.h"
 
-GLOBAL void AMD_control
+GLOBAL void TRILINOS_AMD_control
 (
     double Control [ ]
 )
@@ -26,18 +26,18 @@ GLOBAL void AMD_control
 
     if (Control != (double *) NULL)
     {
-	alpha = Control [AMD_DENSE] ;
-	aggressive = Control [AMD_AGGRESSIVE] != 0 ;
+	alpha = Control [TRILINOS_AMD_DENSE] ;
+	aggressive = Control [TRILINOS_AMD_AGGRESSIVE] != 0 ;
     }
     else
     {
-	alpha = AMD_DEFAULT_DENSE ;
-	aggressive = AMD_DEFAULT_AGGRESSIVE ;
+	alpha = TRILINOS_AMD_DEFAULT_DENSE ;
+	aggressive = TRILINOS_AMD_DEFAULT_AGGRESSIVE ;
     }
 
     PRINTF (("\nAMD version %d.%d.%d, %s: approximate minimum degree ordering\n"
-	"    dense row parameter: %g\n", AMD_MAIN_VERSION, AMD_SUB_VERSION,
-	AMD_SUBSUB_VERSION, AMD_DATE, alpha)) ;
+	"    dense row parameter: %g\n", TRILINOS_AMD_MAIN_VERSION, TRILINOS_AMD_SUB_VERSION,
+	TRILINOS_AMD_SUBSUB_VERSION, TRILINOS_AMD_DATE, alpha)) ;
 
     if (alpha < 0)
     {

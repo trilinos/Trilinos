@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_defaults ======================================================== */
+/* === TRILINOS_AMD_defaults ======================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -19,7 +19,7 @@
 /* === AMD defaults ======================================================== */
 /* ========================================================================= */
 
-GLOBAL void AMD_defaults
+GLOBAL void TRILINOS_AMD_defaults
 (
     double Control [ ]
 )
@@ -28,11 +28,11 @@ GLOBAL void AMD_defaults
 
     if (Control != (double *) NULL)
     {
-	for (i = 0 ; i < AMD_CONTROL ; i++)
+	for (i = 0 ; i < TRILINOS_AMD_CONTROL ; i++)
 	{
 	    Control [i] = 0 ;
 	}
-	Control [AMD_DENSE] = AMD_DEFAULT_DENSE ;
-	Control [AMD_AGGRESSIVE] = AMD_DEFAULT_AGGRESSIVE ;
+	Control [TRILINOS_AMD_DENSE] = TRILINOS_AMD_DEFAULT_DENSE ;
+	Control [TRILINOS_AMD_AGGRESSIVE] = TRILINOS_AMD_DEFAULT_AGGRESSIVE ;
     }
 }

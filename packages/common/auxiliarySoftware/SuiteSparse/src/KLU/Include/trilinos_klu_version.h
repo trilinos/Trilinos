@@ -160,7 +160,7 @@
 #define BTF_order trilinos_btf_l_order
 #define BTF_strongcomp trilinos_btf_l_strongcomp
 
-#define AMD_order trilinos_amd_l_order
+#define TRILINOS_AMD_order trilinos_amd_l_order
 #define COLAMD trilinos_colamd_l
 #define COLAMD_recommended trilinos_colamd_l_recommended
 
@@ -184,7 +184,7 @@
 #define BTF_order trilinos_btf_order
 #define BTF_strongcomp trilinos_btf_strongcomp
 
-#define AMD_order trilinos_amd_order
+#define TRILINOS_AMD_order trilinos_amd_order
 #define COLAMD trilinos_colamd
 #define COLAMD_recommended trilinos_colamd_recommended
 

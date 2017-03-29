@@ -44,7 +44,7 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
     KLU_common *Common
 )
 {
-    double amd_Info [AMD_INFO], lnz, lnz1, flops, flops1 ;
+    double amd_Info [TRILINOS_AMD_INFO], lnz, lnz1, flops, flops1 ;
     Int k1, k2, nk, k, block, oldcol, pend, newcol, result, pc, p, newrow,
 	maxnz, nzoff, cstats [COLAMD_STATS], ok, err = KLU_INVALID ;
 
@@ -150,24 +150,24 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	    /* order the block with AMD (C+C') */
 	    /* -------------------------------------------------------------- */
 
-	    result = AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;
-	    ok = (result >= AMD_OK) ;
-	    if (result == AMD_OUT_OF_MEMORY)
+	    result = TRILINOS_AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;
+	    ok = (result >= TRILINOS_AMD_OK) ;
+	    if (result == TRILINOS_AMD_OUT_OF_MEMORY)
 	    {
 		err = KLU_OUT_OF_MEMORY ;
 	    }
 
 	    /* account for memory usage in AMD */
 	    Common->mempeak = MAX (Common->mempeak,
-		Common->memusage + amd_Info [AMD_MEMORY]) ;
+		Common->memusage + amd_Info [TRILINOS_AMD_MEMORY]) ;
 
 	    /* get the ordering statistics from AMD */
-	    lnz1 = (Int) (amd_Info [AMD_LNZ]) + nk ;
-	    flops1 = 2 * amd_Info [AMD_NMULTSUBS_LU] + amd_Info [AMD_NDIV] ;
+	    lnz1 = (Int) (amd_Info [TRILINOS_AMD_LNZ]) + nk ;
+	    flops1 = 2 * amd_Info [TRILINOS_AMD_NMULTSUBS_LU] + amd_Info [TRILINOS_AMD_NDIV] ;
 	    if (pc == maxnz)
 	    {
 		/* get the symmetry of the biggest block */
-		Symbolic->symmetry = amd_Info [AMD_SYMMETRY] ;
+		Symbolic->symmetry = amd_Info [TRILINOS_AMD_SYMMETRY] ;
 	    }
 
 	}
