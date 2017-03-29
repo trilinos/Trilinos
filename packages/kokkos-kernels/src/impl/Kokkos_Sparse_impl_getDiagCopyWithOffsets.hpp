@@ -48,6 +48,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_Sparse_OrdinalTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -102,7 +103,7 @@ struct CrsMatrixGetDiagCopyWithOffsetsFunctor {
   operator () (const LO& lclRow) const
   {
     const offset_type INV =
-      Tpetra::Details::OrdinalTraits<offset_type>::invalid ();
+      KokkosSparse::OrdinalTraits<offset_type>::invalid ();
     const scalar_type ZERO =
       Kokkos::Details::ArithTraits<scalar_type>::zero ();
 
