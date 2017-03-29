@@ -619,7 +619,7 @@ cholmod_factor *CHOLMOD(analyze_p)
 	    else
 	    {
 		/* Alternative:
-		CHOLMOD(ccolamd) (A, fset, fsize, NULL, Perm, Common) ;
+		CHOLMOD(trilinos_ccolamd) (A, fset, fsize, NULL, Perm, Common) ;
 		*/
 		/* do not postorder, it is done later, below */
 		/* workspace: Iwork (4*nrow+uncol), Flag (nrow), Head (nrow+1)*/
