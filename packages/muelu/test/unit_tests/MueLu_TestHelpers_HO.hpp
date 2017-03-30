@@ -69,11 +69,13 @@ namespace MueLuTests {
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
     {
-      throw std::runtime_error("This does not work for arbitrary node types");
+      throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Kokkos::Compat::KokkosSerialWrapperNode");
     }
 
-
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) && \
+           (!defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) || \
+            (defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_SERIAL)) \
+           )
     template <>
     void AllocateEpetraFECrsMatrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
 
