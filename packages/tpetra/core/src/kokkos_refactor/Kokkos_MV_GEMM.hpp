@@ -51,10 +51,7 @@
 
 #include <Teuchos_BLAS.hpp>
 #include <Kokkos_Blas2_MV.hpp>
-
-#ifdef KOKKOS_HAVE_CUDA
-#include <cublas.h>
-#endif
+#include "Tpetra_Details_cublasGemm.hpp"
 
 namespace Teuchos {
 
@@ -327,39 +324,38 @@ namespace Kokkos {
         ldc = static_cast<int>(Impl::getStride2DView(C));
       const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
         char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-      cublasSgemm (char_transA, char_transB, m, n, k, alpha,
-                   A.ptr_on_device(), lda, B.ptr_on_device(),
-                   ldb, beta, C.ptr_on_device(), ldc);
 
-#ifdef HAVE_KOKKOS_DEBUG
-      const cublasStatus info = cublasGetError ();
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (info != CUBLAS_STATUS_SUCCESS, std::runtime_error,
-         "cublasSgemm failed with status " << info << "." );
-#endif // HAVE_KOKKOS_DEBUG
-      }
+      ::Tpetra::Details::Cublas::sgemm (char_transA, char_transB,
+                                        m, n, k,
+                                        alpha, A.ptr_on_device(), lda,
+                                        B.ptr_on_device(), ldb,
+                                        beta, C.ptr_on_device(), ldc);
+    }
   };
 
   template <>
   struct DeviceGEMM<double,Cuda> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
+  public:
+    static void
+    GEMM (Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
           View<const double**,LayoutLeft,Cuda> A, View<const double**,LayoutLeft,Cuda> B,
-          double beta, View<double**,LayoutLeft,Cuda> C) {
-        const int m = static_cast<int>(C.dimension_0()),
-                  n = static_cast<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = static_cast<int>(Impl::getStride2DView(A)),
-                  ldb = static_cast<int>(Impl::getStride2DView(B)),
-                  ldc = static_cast<int>(Impl::getStride2DView(C));
-        const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
-                   char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-        cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
-#ifdef HAVE_KOKKOS_DEBUG
-        cublasStatus info = cublasGetError();
-        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
-#endif
-      }
+          double beta, View<double**,LayoutLeft,Cuda> C)
+    {
+      const int m = static_cast<int>(C.dimension_0()),
+        n = static_cast<int>(C.dimension_1()),
+        k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
+        lda = static_cast<int>(Impl::getStride2DView(A)),
+        ldb = static_cast<int>(Impl::getStride2DView(B)),
+        ldc = static_cast<int>(Impl::getStride2DView(C));
+      const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
+        char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
+
+      ::Tpetra::Details::Cublas::dgemm (char_transA, char_transB,
+                                        m, n, k,
+                                        alpha, A.ptr_on_device(), lda,
+                                        B.ptr_on_device(), ldb,
+                                        beta, C.ptr_on_device(), ldc);
+    }
   };
 
 

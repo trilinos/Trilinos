@@ -47,7 +47,14 @@ HarmonicOscillatorModel(Teuchos::RCP<Teuchos::ParameterList> pList_):
   x_dot_vec_ = createMember(x_space_);
   Thyra::put_scalar(1.0, x_dot_vec_.ptr());
   x_dot_dot_vec_ = createMember(x_space_);
-  Thyra::put_scalar(f_-c_, x_dot_dot_vec_.ptr());
+  //The following is the initial condition for the acceleration
+  //Commenting this out to check that IC for acceleration
+  //is computed correctly using displacement and velocity ICs
+  //inside 2nd order steppers.
+  //Thyra::put_scalar(f_-c_, x_dot_dot_vec_.ptr());
+  //Instead of real IC, putting arbitrary, incorrect IC to check correctness
+  //in stepper involving calculation of a IC.
+  Thyra::put_scalar(7.0, x_dot_dot_vec_.ptr());
 
   //Set up responses
   numResponses_ = 1;

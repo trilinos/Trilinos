@@ -42,6 +42,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
       TRIBITS_ADD_EXECUTABLE(
         fenl_ensemble
         SOURCES  fenl_ensemble.hpp SampleGrouping.hpp main_ensemble.cpp
+                 VPS.hpp VPS.cpp VPS_ensemble.hpp VPS_ensemble.cpp
         COMM serial mpi
         TESTONLYLIBS fenl
         )
