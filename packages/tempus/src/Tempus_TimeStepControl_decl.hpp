@@ -63,6 +63,9 @@ public:
 
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
+  
+  /** \brief Return initial time. */
+  Scalar getInitialTime() const {return timeMin_; }
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{

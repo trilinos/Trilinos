@@ -282,14 +282,13 @@ void StepperHHTAlpha<Scalar>::takeStep(
     //Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
-    RCP<const Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
+    RCP<Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
 
 #ifdef DEBUG_OUTPUT
     //IKT, 3/21/17, debug output: pring d_old, v_old, a_old to check for
     // correctness.
     *out_ << "IKT d_old = " << Thyra::max(*d_old) << "\n";
     *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
-    *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
 #endif
 
     //Get new values of d, v and a from current workingState
@@ -303,6 +302,25 @@ void StepperHHTAlpha<Scalar>::takeStep(
     const Scalar dt   = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
+    
+    //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
+    //velocity (v_old) if in 1st time step 
+    if (time == solutionHistory->minTime()) {
+      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());  
+      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());  
+      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());  
+      Thyra::copy(*d_old, Teuchos::ptrFromRef(*d_init));  
+      Thyra::copy(*v_old, Teuchos::ptrFromRef(*v_init));  
+      residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      const Thyra::SolveStatus<double> sStatus =
+        this->solveNonLinear(residualModel_, *solver_, a_init, inArgs_);
+      Thyra::copy(*a_init, Teuchos::ptrFromRef(*a_old)); 
+    }
+#ifdef DEBUG_OUTPUT
+    //IKT, 3/30/17, debug output: pring a_old to check for correctness.
+    *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
+#endif
+    
 
     //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
