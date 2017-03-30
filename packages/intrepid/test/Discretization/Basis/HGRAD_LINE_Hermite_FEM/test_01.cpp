@@ -150,10 +150,12 @@ int main(int argc, char *argv[]) {
 
   try {
 
+#ifdef HAVE_INTREPID_DEBUG
     // exception #1: DIV cannot be applied to scalar functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
     vals.resize(lineBasis.getCardinality(), lineNodes.dimension(0) );
     INTREPID_TEST_COMMAND( lineBasis.getValues(vals, lineNodes, OPERATOR_DIV), throwCounter, nException );
+#endif // HAVE_INTREPID_DEBUG
 
     // Exceptions #2-8: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
     // getDofTag() to access invalid array elements thereby causing bounds check exception
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
     // not an exception
     FieldContainer<double> goodVals2(lineBasis.getCardinality(), lineNodes.dimension(0));
     INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals2, lineNodes, OPERATOR_VALUE), throwCounter, nException ); --nException;
-#endif
+#endif // HAVE_INTREPID_DEBUG
   
   }
 
