@@ -270,10 +270,15 @@ void StepperNewmark<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());  
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());  
       Thyra::copy(*d_old, Teuchos::ptrFromRef(*d_init));  
-      Thyra::copy(*v_old, Teuchos::ptrFromRef(*v_init));  
+      Thyra::copy(*v_old, Teuchos::ptrFromRef(*v_init)); 
+      Thyra::put_scalar(0.0, Teuchos::ptrFromRef(*a_init)); 
       residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
         this->solveNonLinear(residualModel_, *solver_, a_init, inArgs_);
+      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      else
+        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
       Thyra::copy(*a_init, Teuchos::ptrFromRef(*a_old)); 
     }
 #ifdef DEBUG_OUTPUT
