@@ -46,5 +46,15 @@ template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
 observeEndIntegrator(const Status integratorStatus){}
 
+template<class Scalar>
+void IntegratorObserverBasic<Scalar>::
+setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
+{ solutionHistory_ = sh; return; }
+
+template<class Scalar>
+void IntegratorObserverBasic<Scalar>::
+setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
+{ timeStepControl_ = tsc; return; }
+
 } // namespace Tempus
 #endif // Tempus_IntegratorObserverBasic_impl_hpp

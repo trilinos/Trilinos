@@ -55,6 +55,10 @@ public:
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(const Status integratorStatus);
+
+    virtual void setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh);
+
+    virtual void setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc);
   //@}
 
   void resetLogCounters();

@@ -361,15 +361,9 @@ StepperBackwardEuler<Scalar>::getDefaultParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<std::string>("Predictor Name", "Default Predictor");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
-
-  // Predictor ParameterList
-  RCP<ParameterList> predPL = Teuchos::parameterList();
-  predPL->set("Stepper Type", "Forward Euler");
-  pl->set("Default Predictor", *predPL);
 
   return pl;
 }

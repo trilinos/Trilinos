@@ -265,6 +265,8 @@ void IntegratorBasic<Scalar>::setObserver(
   } else {
     integratorObserver_ = obs;
   }
+  integratorObserver_->setSolutionHistory(solutionHistory_);
+  integratorObserver_->setTimeStepControl(timeStepControl_);
 }
 
 

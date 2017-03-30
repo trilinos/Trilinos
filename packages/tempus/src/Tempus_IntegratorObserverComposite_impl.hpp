@@ -91,6 +91,16 @@ observeEndIntegrator(const Status integratorStatus)
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
+setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
+{ solutionHistory_ = sh; return; }
+
+template<class Scalar>
+void IntegratorObserverComposite<Scalar>::
+setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
+{ timeStepControl_ = tsc; return; }
+
+template<class Scalar>
+void IntegratorObserverComposite<Scalar>::
 addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer)
 {
     observers_.push_back(observer);

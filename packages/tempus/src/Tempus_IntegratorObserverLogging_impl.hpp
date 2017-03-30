@@ -67,6 +67,16 @@ observeEndIntegrator(const Status integratorStatus)
 { logCall(nameObserveEndIntegrator_); }
 
 template<class Scalar>
+void IntegratorObserverLogging<Scalar>::
+setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
+{ solutionHistory_ = sh; return; }
+
+template<class Scalar>
+void IntegratorObserverLogging<Scalar>::
+setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
+{ timeStepControl_ = tsc; return; }
+
+template<class Scalar>
 void IntegratorObserverLogging<Scalar>::resetLogCounters()
 {
   (*counters_)[nameObserveStartIntegrator_ ] = 0;
