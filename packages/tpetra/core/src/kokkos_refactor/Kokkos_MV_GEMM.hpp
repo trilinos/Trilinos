@@ -239,7 +239,7 @@ namespace Kokkos {
 
   // FIXME (mfh 10 May 2016) Temporary work-around for #243.
   // Don't call MKL for this case.
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   template <typename DeviceType>
   struct DeviceGEMM<double, DeviceType> {
   public:
@@ -283,7 +283,7 @@ namespace Kokkos {
       }
     }
   };
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 #ifdef KOKKOS_HAVE_CUDA
   template <typename Scalar>
