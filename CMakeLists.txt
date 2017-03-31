@@ -72,6 +72,11 @@ PROJECT(${PROJECT_NAME} NONE)
 # Set default C++ standard to C++11
 SET(Trilinos_ENABLE_CXX11_DEFAULT ON)
 
+# Building with Visual Studio requires some extra compiler flags
+IF(MSVC)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+ENDIF()
+
 #
 # B) Pull in the TriBITS system and execute
 #
