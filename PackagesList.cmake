@@ -121,7 +121,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
   Rythmos               packages/rythmos                  PT
-  Tempus                packages/tempus                   ST
+  Tempus                packages/tempus                   PT
   MOOCHO                packages/moocho                   ST
   Stokhos               packages/stokhos                  PT
   ROL                   packages/rol                      PT
