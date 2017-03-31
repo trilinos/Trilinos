@@ -66,11 +66,13 @@ public:
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
-    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	const
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
+    { return tempusPL_; }
+    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
     {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      *pl = *tempusPL_;
-      return pl;
+      if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
+      if (pl != Teuchos::null) *tempusPL_ = *pl;
+      this->setParameterList(Teuchos::null);
     }
   //@}
 

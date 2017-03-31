@@ -52,7 +52,7 @@ void StepperForwardEuler<Scalar>::setSolver(std::string solverName)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
   *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method)\n" << std::endl;
+       << "(i.e., explicit method).\n" << std::endl;
   return;
 }
 
@@ -63,7 +63,7 @@ void StepperForwardEuler<Scalar>::setSolver(
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
   *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method)\n" << std::endl;
+       << "(i.e., explicit method).\n" << std::endl;
   return;
 }
 
@@ -74,7 +74,7 @@ void StepperForwardEuler<Scalar>::setSolver(
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
   *out << "Warning -- No solver to set for StepperForwardEuler "
-       << "(i.e., explicit method)\n" << std::endl;
+       << "(i.e., explicit method).\n" << std::endl;
   return;
 }
 

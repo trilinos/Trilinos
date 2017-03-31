@@ -63,9 +63,6 @@ public:
 
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
-  
-  /** \brief Return initial time. */
-  Scalar getInitialTime() const {return timeMin_; }
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
@@ -82,28 +79,90 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  Scalar timeMin_;        ///< Minimum simulation time
-  Scalar timeMax_;        ///< Maximum simulation time
-  Scalar dtMin_;          ///< Minimum time step
-  Scalar dtInit_;         ///< Initial time step
-  Scalar dtMax_;          ///< Maximum time step
-  int    iStepMin_;       ///< Minimum time step index
-  int    iStepMax_;       ///< Maximum time step index
-  Scalar errorMaxAbs_;    ///< Maximum absolute error
-  Scalar errorMaxRel_;    ///< Maximum relative error
-  int orderMin_;          ///< Minimum time integration order
-  int orderInit_;         ///< Initial time integration order
-  int orderMax_;          ///< Maximum time integration order
+  /// \name Get ParameterList values
+  //@{
+    virtual Scalar getInitTime() const
+      { return tscPL_->get<double>("Initial Time"); }
+    virtual Scalar getFinalTime() const
+      { return tscPL_->get<double>("Final Time"); }
+    virtual Scalar getMinTimeStep() const
+      { return tscPL_->get<double>("Minimum Time Step"); }
+    virtual Scalar getInitTimeStep() const
+      { return tscPL_->get<double>("Initial Time Step"); }
+    virtual Scalar getMaxTimeStep() const
+      { return tscPL_->get<double>("Maximum Time Step"); }
+    virtual int getInitIndex() const
+      { return tscPL_->get<int>   ("Initial Time Index"); }
+    virtual int getFinalIndex() const
+      { return tscPL_->get<int>   ("Final Time Index"); }
+    virtual Scalar getMaxAbsError() const
+      { return tscPL_->get<double>("Maximum Absolute Error"); }
+    virtual Scalar getMaxRelError() const
+      { return tscPL_->get<double>("Maximum Relative Error"); }
+    virtual int getMinOrder() const
+      { return tscPL_->get<int>   ("Minimum Order"); }
+    virtual int getInitOrder() const
+      { return tscPL_->get<int>   ("Initial Order"); }
+    virtual int getMaxOrder() const
+      { return tscPL_->get<int>   ("Maximum Order"); }
+    virtual std::string getStepType() const
+      { return tscPL_->get<std::string>("Integrator Step Type"); }
+    virtual std::vector<int> getOutputIndices() const
+      { return outputIndices_; }
+    virtual std::vector<Scalar> getOutputTimes() const
+      { return outputTimes_; }
+    virtual int getMaxFailures() const
+      { return tscPL_->get<int>("Maximum Number of Stepper Failures"); }
+    virtual int getMaxConsecFailures() const
+      { return tscPL_->
+               get<int>("Maximum Number of Consecutive Stepper Failures"); }
+  //@}
 
-  std::string stepType_;  ///< Integrator step type for step control
+  /// \name Set ParameterList values
+  //@{
+    virtual void setInitTime(Scalar InitTime)
+      { tscPL_->set<double>("Initial Time"             , InitTime    ); }
+    virtual void setFinalTime(Scalar FinalTime)
+      { tscPL_->set<double>("Final Time"               , FinalTime   ); }
+    virtual void setMinTimeStep(Scalar MinTimeStep)
+      { tscPL_->set<double>("Minimum Time Step"        , MinTimeStep ); }
+    virtual void setInitTimeStep(Scalar InitTimeStep)
+      { tscPL_->set<double>("Initial Time Step"        , InitTimeStep); }
+    virtual void setMaxTimeStep(Scalar MaxTimeStep)
+      { tscPL_->set<double>("Maximum Time Step"        , MaxTimeStep ); }
+    virtual void setInitIndex(int InitIndex)
+      { tscPL_->set<int>   ("Initial Time Index"       , InitIndex   ); }
+    virtual void setFinalIndex(int FinalIndex)
+      { tscPL_->set<int>   ("Final Time Index"         , FinalIndex  ); }
+    virtual void setMaxAbsError(Scalar MaxAbsError)
+      { tscPL_->set<double>("Maximum Absolute Error"   , MaxAbsError ); }
+    virtual void setMaxRelError(Scalar MaxRelError)
+      { tscPL_->set<double>("Maximum Relative Error"   , MaxRelError ); }
+    virtual void setMinOrder(int MinOrder)
+     { tscPL_->set<int>   ("Minimum Order"             , MinOrder    ); }
+    virtual void setInitOrder(int InitOrder)
+      { tscPL_->set<int>   ("Initial Order"            , InitOrder   ); }
+    virtual void setMaxOrder(int MaxOrder)
+      { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
+    virtual void setStepType(std::string StepType)
+      { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
+    virtual void setOutputIndices(std::vector<int> OutputIndices)
+      { outputIndices_ = OutputIndices; }
+    virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
+      { outputTimes_ = OutputTimes; }
+    virtual void setMaxFailures(int MaxFailures)
+      { tscPL_->set<int>("Maximum Number of Stepper Failures", MaxFailures); }
+    virtual void setMaxConsecFailures(int MaxConsecFailures)
+      { tscPL_->set<int>
+        ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
+  //@}
+
+private:
+
+  Teuchos::RCP<Teuchos::ParameterList> tscPL_;
 
   std::vector<int>    outputIndices_;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes_;    ///< Vector of output times.
-
-  int nFailuresMax_;            ///< Maximum number of stepper failures
-  int nConsecutiveFailuresMax_; ///< Maximum number of consecutive stepper failures
-
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.

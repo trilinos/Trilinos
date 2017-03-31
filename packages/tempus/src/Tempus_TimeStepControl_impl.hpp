@@ -23,8 +23,8 @@ template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl()
   : outputAdjustedDt_(false), dtAfterOutput_(0.0)
 {
-  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-  this->setParameterList(stepperPL_);
+  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  this->setParameterList(tscPL_);
 }
 
 template<class Scalar>
@@ -37,26 +37,11 @@ TimeStepControl<Scalar>::TimeStepControl(
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
-  : timeMin_                (tsc_.timeMin_                ),
-    timeMax_                (tsc_.timeMax_                ),
-    dtMin_                  (tsc_.dtMin_                  ),
-    dtInit_                 (tsc_.dtInit_                 ),
-    dtMax_                  (tsc_.dtMax_                  ),
-    iStepMin_               (tsc_.iStepMin_               ),
-    iStepMax_               (tsc_.iStepMax_               ),
-    errorMaxAbs_            (tsc_.errorMaxAbs_            ),
-    errorMaxRel_            (tsc_.errorMaxRel_            ),
-    orderMin_               (tsc_.orderMin_               ),
-    orderInit_              (tsc_.orderInit_              ),
-    orderMax_               (tsc_.orderMax_               ),
-    stepType_               (tsc_.stepType_               ),
-    outputIndices_          (tsc_.outputIndices_          ),
-    outputTimes_            (tsc_.outputTimes_            ),
-    nFailuresMax_           (tsc_.nFailuresMax_           ),
-    nConsecutiveFailuresMax_(tsc_.nConsecutiveFailuresMax_),
-    stepperPL_              (tsc_.stepperPL_              ),
-    outputAdjustedDt_       (tsc_.outputAdjustedDt_       ),
-    dtAfterOutput_          (tsc_.dtAfterOutput_          )
+  : tscPL_           (tsc_.tscPL_           ),
+    outputIndices_   (tsc_.outputIndices_   ),
+    outputTimes_     (tsc_.outputTimes_     ),
+    outputAdjustedDt_(tsc_.outputAdjustedDt_),
+    dtAfterOutput_   (tsc_.dtAfterOutput_   )
 {}
 
 
@@ -90,22 +75,22 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       dtAfterOutput_ = 0.0;
     }
 
-    if (dt < dtMin_) {
+    if (dt < getMinTimeStep()) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"getNextTimeStep");
       *out << "Warning - Time step size (=" << dt << ") is less than\n"
-           << "  minimum time step size (=" << dtMin_ << ").\n"
+           << "  minimum time step size (=" << getMinTimeStep() << ").\n"
            << "  Resetting to minimum time step size." << std::endl;
-      dt = dtMin_;
+      dt = getMinTimeStep();
     }
 
-    if (stepType_ == "Constant") {
+    if (getStepType() == "Constant") {
 
-      dt = dtInit_;
+      dt = getInitTimeStep();
 
       // Stepper failure
       if (stepperState->stepperStatus_ == Status::FAILED) {
-        if (order+1 <= orderMax_) {
+        if (order+1 <= getMaxOrder()) {
           order++;
           RCP<Teuchos::FancyOStream> out = this->getOStream();
           Teuchos::OSTab ostab(out,1,"getNextTimeStep");
@@ -124,14 +109,15 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
 
       // Absolute error failure
-      if (errorAbs > errorMaxAbs_) {
-        if (order+1 <= orderMax_) {
+      if (errorAbs > getMaxAbsError()) {
+        if (order+1 <= getMaxOrder()) {
           order++;
           RCP<Teuchos::FancyOStream> out = this->getOStream();
           Teuchos::OSTab ostab(out,1,"getNextTimeStep");
           *out
             <<"Warning - Absolute error is too large with constant time step.\n"
-            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
+            <<getMaxAbsError()<<")"
             <<"  Try increasing order.  order = " << order << std::endl;
         } else {
           RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -141,7 +127,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
             <<"size or order!\n"
             <<"  Time step type == CONSTANT_STEP_SIZE\n"
             <<"  order = " << order
-            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
+            <<getMaxAbsError()<<")"
             << std::endl;
           integratorStatus = FAILED;
           return;
@@ -149,14 +136,15 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
 
       // Relative error failure
-      if (errorRel > errorMaxRel_) {
-        if (order+1 <= orderMax_) {
+      if (errorRel > getMaxRelError()) {
+        if (order+1 <= getMaxOrder()) {
           order++;
           RCP<Teuchos::FancyOStream> out = this->getOStream();
           Teuchos::OSTab ostab(out,1,"getNextTimeStep");
           *out
             <<"Warning - Relative error is too large with constant time step.\n"
-            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="
+            <<getMaxRelError()<<")"
             <<"  Try increasing order.  order = " << order << std::endl;
         } else {
           RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -166,7 +154,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
             <<"size or order!\n"
             <<"  Time step type == CONSTANT_STEP_SIZE\n"
             <<"  order = " << order
-            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="
+            <<getMaxRelError()<<")"
             << std::endl;
           integratorStatus = FAILED;
           return;
@@ -175,32 +164,33 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
       // Consistency checks
       TEUCHOS_TEST_FOR_EXCEPTION(
-        (order < orderMin_ || order > orderMax_), std::out_of_range,
+        (order < getMinOrder() || order > getMaxOrder()), std::out_of_range,
         "Error - Solution order is out of range and can not change "
         "time step size!\n"
         "    Time step type == CONSTANT_STEP_SIZE\n"
-        "    [order_min, order_max] = [" <<orderMin_<< ", " <<orderMax_<< "]\n"
+        "    [order_min, order_max] = [" <<getMinOrder()<< ", "
+        <<getMaxOrder()<< "]\n"
         "    order = " << order << "\n");
 
     } else { // VARIABLE_STEP_SIZE
 
       // \todo The following controls should be generalized to plugable options.
       if (stepperState->stepperStatus_ == Status::FAILED) dt /=2;
-      if (errorAbs > errorMaxAbs_) dt /= 2;
-      if (errorRel > errorMaxRel_) dt /= 2;
-      if (order < orderMin_) dt *= 2;
-      if (order > orderMax_) dt /= 2;
+      if (errorAbs > getMaxAbsError()) dt /= 2;
+      if (errorRel > getMaxRelError()) dt /= 2;
+      if (order < getMinOrder()) dt *= 2;
+      if (order > getMaxOrder()) dt /= 2;
 
-      if (dt < dtMin_) dt = dtMin_;
-      if (dt > dtMax_) dt = dtMax_;
+      if (dt < getMinTimeStep()) dt = getMinTimeStep();
+      if (dt > getMaxTimeStep()) dt = getMaxTimeStep();
     }
 
     // Adjust time step to hit final time or correct for small
     // numerical differences.
     Scalar reltol = 1.0e-6;
-    if ((time + dt > timeMax_ ) ||
-        (std::abs((time+dt-timeMax_)/(time+dt)) < reltol))
-      dt = timeMax_ - time;
+    if ((time + dt > getFinalTime() ) ||
+        (std::abs((time+dt-getFinalTime())/(time+dt)) < reltol))
+      dt = getFinalTime() - time;
 
     // Check if we need to output this step index
     std::vector<int>::const_iterator it =
@@ -210,20 +200,22 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     // Adjust time step to hit output times.
     for (size_t i=0; i < outputTimes_.size(); ++i) {
       const Scalar oTime = outputTimes_[i];
-      if (time < oTime && oTime <= time+dt+dtMin_) {
+      if (time < oTime && oTime <= time+dt+getMinTimeStep()) {
         output = true;
         outputAdjustedDt_ = true;
         dtAfterOutput_ = dt;
-        if (time < oTime && oTime <= time+dt-dtMin_) {
-          // Next output time is not near next time (>dtMin_ away from it).
+        if (time < oTime && oTime <= time+dt-getMinTimeStep()) {
+          // Next output time is not near next time
+          // (>getMinTimeStep() away from it).
           // Take time step to hit output time.
           dt = oTime - time;
         } else if (std::abs((time+dt-oTime)/(time+dt)) < reltol) {
           // Next output time IS VERY near next time (<reltol away from it),
           // e.g., adjust for numerical roundoff.
           dt = oTime - time;
-        } else if (time+dt-dtMin_ < oTime && oTime <= time+dt+dtMin_) {
-          // Next output time IS near next time (<dtMin_ away from it).
+        } else if (time+dt-getMinTimeStep() < oTime &&
+                   oTime <= time+dt+getMinTimeStep()) {
+          // Next output time IS near next time (<getMinTimeStep() away from it)
           // Take two time steps to get to next output time.
           dt = (oTime - time)/2.0;
         }
@@ -233,15 +225,17 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     // Time step always needs to keep time within range.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt < timeMin_), std::out_of_range,
+      (time + dt < getInitTime()), std::out_of_range,
       "Error - Time step does not move time INTO time range.\n"
-      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+      "    [timeMin, timeMax] = [" << getInitTime() << ", "
+      << getFinalTime() << "]\n"
       "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt > timeMax_), std::out_of_range,
+      (time + dt > getFinalTime()), std::out_of_range,
       "Error - Time step move time OUT OF time range.\n"
-      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+      "    [timeMin, timeMax] = [" << getInitTime() << ", "
+      << getFinalTime() << "]\n"
       "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
 
     metaData_->setOrder(order);
@@ -256,14 +250,15 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 template<class Scalar>
 bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const{
   const Scalar relTol = 1.0e-14;
-  bool tir = (timeMin_*(1.0-relTol) <= time and time < timeMax_*(1.0-relTol));
+  bool tir = (getInitTime()*(1.0-relTol) <= time and
+              time < getFinalTime()*(1.0-relTol));
   return tir;
 }
 
 
 template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
-  bool iir = (iStepMin_ <= iStep and iStep < iStepMax_);
+  bool iir = (getInitIndex() <= iStep and iStep < getFinalIndex());
   return iir;
 }
 
@@ -283,22 +278,7 @@ void TimeStepControl<Scalar>::describe(
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
-        << "timeMin      = " << timeMin_      << std::endl
-        << "timeMax      = " << timeMax_      << std::endl
-        << "dtMin        = " << dtMin_        << std::endl
-        << "dtInit       = " << dtInit_       << std::endl
-        << "dtMax        = " << dtMax_        << std::endl
-        << "iStepMin     = " << iStepMin_     << std::endl
-        << "iStepMax     = " << iStepMax_     << std::endl
-        << "orderMin     = " << orderMin_     << std::endl
-        << "orderInit    = " << orderInit_    << std::endl
-        << "orderMax     = " << orderMax_     << std::endl
-        << "errorMaxAbs  = " << errorMaxAbs_  << std::endl
-        << "errorMaxRel  = " << errorMaxRel_  << std::endl
-        << "stepType     = " << stepType_     << std::endl
-        << "nFailuresMax = " << nFailuresMax_ << std::endl
-        << "nConsecutiveFailuresMax = " << nConsecutiveFailuresMax_ << std::endl
-        << "pList        = " << stepperPL_    << std::endl;
+        << "pList        = " << tscPL_    << std::endl;
   }
 }
 
@@ -310,85 +290,87 @@ void TimeStepControl<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   pList->validateParameters(*this->getValidParameters());
   pList->validateParametersAndSetDefaults(*this->getValidParameters());
-  stepperPL_ = pList;
+  tscPL_ = pList;
 
-  timeMin_     = stepperPL_->get<double>("Initial Time");
-  timeMax_     = stepperPL_->get<double>("Final Time");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (timeMin_ > timeMax_ ), std::logic_error,
+    (getInitTime() > getFinalTime() ), std::logic_error,
     "Error - Inconsistent time range.\n"
-    "    (timeMin = "<<timeMin_<<") > (timeMax = "<<timeMax_<<")\n");
+    "    (timeMin = "<<getInitTime()<<") > (timeMax = "<<getFinalTime()<<")\n");
 
-  dtMin_       = stepperPL_->get<double>("Minimum Time Step");
-  dtInit_      = stepperPL_->get<double>("Initial Time Step");
-  dtMax_       = stepperPL_->get<double>("Maximum Time Step");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtMin_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative minimum time step.  dtMin = "<<dtMin_<<")\n");
+    (getMinTimeStep() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative minimum time step.  dtMin = "<<getMinTimeStep()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtMax_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative maximum time step.  dtMax = "<<dtMax_<<")\n");
+    (getMaxTimeStep() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative maximum time step.  dtMax = "<<getMaxTimeStep()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtMin_ > dtMax_ ), std::logic_error,
+    (getMinTimeStep() > getMaxTimeStep() ), std::logic_error,
     "Error - Inconsistent time step range.\n"
-    "    (dtMin = "<<dtMin_<<") > (dtMax = "<<dtMax_<<")\n");
+    "  (dtMin = "<<getMinTimeStep()<<") > (dtMax = "<<getMaxTimeStep()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtInit_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative initial time step.  dtInit = "<<dtInit_<<")\n");
+    (getInitTimeStep() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative initial time step.  dtInit = "<<getInitTimeStep()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtInit_ < dtMin_ || dtInit_ > dtMax_ ),
+    (getInitTimeStep() < getMinTimeStep() ||
+     getInitTimeStep() > getMaxTimeStep() ),
     std::out_of_range,
     "Error - Initial time step is out of range.\n"
-    << "    [dtMin, dtMax] = [" << dtMin_ << ", " << dtMax_ << "]\n"
-    << "    dtInit = " << dtInit_ << "\n");
+    << "    [dtMin, dtMax] = [" << getMinTimeStep() << ", "
+                                << getMaxTimeStep() << "]\n"
+    << "    dtInit = " << getInitTimeStep() << "\n");
 
-  iStepMin_    = stepperPL_->get<int>("Initial Time Index");
-  iStepMax_    = stepperPL_->get<int>("Final Time Index");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (iStepMin_ > iStepMax_ ), std::logic_error,
+    (getInitIndex() > getFinalIndex() ), std::logic_error,
     "Error - Inconsistent time index range.\n"
-    "    (iStepMin = "<<iStepMin_<<") > (iStepMax = "<<iStepMax_<<")\n");
+    "  (iStepMin = "<<getInitIndex()<<") > (iStepMax = "
+    <<getFinalIndex()<<")\n");
 
-  errorMaxAbs_ = stepperPL_->get<double>("Maximum Absolute Error");
-  errorMaxRel_ = stepperPL_->get<double>("Maximum Relative Error");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (errorMaxAbs_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative maximum time step.  errorMaxAbs = "<<errorMaxAbs_<<")\n");
+    (getMaxAbsError() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative maximum time step.  errorMaxAbs = "
+    <<getMaxAbsError()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (errorMaxRel_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative maximum time step.  errorMaxRel = "<<errorMaxRel_<<")\n");
+    (getMaxRelError() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative maximum time step.  errorMaxRel = "
+    <<getMaxRelError()<<")\n");
 
-  orderMin_    = stepperPL_->get<int>("Minimum Order");
-  orderInit_   = stepperPL_->get<int>("Initial Order");
-  orderMax_    = stepperPL_->get<int>("Maximum Order");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (orderMin_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative minimum order.  orderMin = "<<orderMin_<<")\n");
+    (getMinOrder() < Teuchos::ScalarTraits<Scalar>::zero() ),
+    std::logic_error,
+    "Error - Negative minimum order.  orderMin = "<<getMinOrder()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (orderMax_ < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative maximum order.  orderMax = "<<orderMax_<<")\n");
+    (getMaxOrder() < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
+    "Error - Negative maximum order.  orderMax = "<<getMaxOrder()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (orderMin_ > orderMax_ ), std::logic_error,
+    (getMinOrder() > getMaxOrder() ), std::logic_error,
     "Error - Inconsistent order range.\n"
-    "    (orderMin = "<<orderMin_<<") > (orderMax = "<<orderMax_<<")\n");
+    "    (orderMin = "<<getMinOrder()<<") > (orderMax = "
+    <<getMaxOrder()<<")\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (orderInit_ < orderMin_ || orderInit_ > orderMax_), std::out_of_range,
+    (getInitOrder() < getMinOrder() || getInitOrder() > getMaxOrder()),
+    std::out_of_range,
     "Error - Initial order is out of range.\n"
-    << "    [orderMin, orderMax] = [" << orderMin_ << ", " << orderMax_ << "]\n"
-    << "    order = " << orderInit_  << "\n");
+    << "    [orderMin, orderMax] = [" << getMinOrder() << ", "
+                                      << getMaxOrder() << "]\n"
+    << "    order = " << getInitOrder()  << "\n");
 
-  stepType_ = stepperPL_->get<std::string>("Integrator Step Type", "Variable");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (stepType_ != "Constant" and stepType_ != "Variable"), std::out_of_range,
+    (getStepType() != "Constant" and getStepType() != "Variable"),
+    std::out_of_range,
       "Error - 'Integrator Step Type' does not equal none of these:\n"
     << "  'Constant' - Integrator will take constant time step sizes.\n"
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
-    << "  stepType = " << stepType_  << "\n");
+    << "  stepType = " << getStepType()  << "\n");
 
   // Parse output times
   {
     outputTimes_.clear();
-    std::string str = stepperPL_->get<std::string>("Output Time List");
+    std::string str = tscPL_->get<std::string>("Output Time List");
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
@@ -402,9 +384,9 @@ void TimeStepControl<Scalar>::setParameterList(
       pos = str.find_first_of(delimiters, lastPos);
     }
 
-    Scalar outputTimeInterval = stepperPL_->get<double>("Output Time Interval");
-    Scalar output_t = timeMin_;
-    while (output_t <= timeMax_) {
+    Scalar outputTimeInterval = tscPL_->get<double>("Output Time Interval");
+    Scalar output_t = getInitTime();
+    while (output_t <= getFinalTime()) {
       outputTimes_.push_back(output_t);
       output_t += outputTimeInterval;
     }
@@ -416,7 +398,7 @@ void TimeStepControl<Scalar>::setParameterList(
   // Parse output indices
   {
     outputIndices_.clear();
-    std::string str = stepperPL_->get<std::string>("Output Index List");
+    std::string str = tscPL_->get<std::string>("Output Index List");
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
@@ -430,9 +412,9 @@ void TimeStepControl<Scalar>::setParameterList(
       pos = str.find_first_of(delimiters, lastPos);
     }
 
-    Scalar outputIndexInterval = stepperPL_->get<int>("Output Index Interval");
-    Scalar output_i = iStepMin_;
-    while (output_i <= iStepMax_) {
+    Scalar outputIndexInterval = tscPL_->get<int>("Output Index Interval");
+    Scalar output_i = getInitIndex();
+    while (output_i <= getFinalIndex()) {
       outputIndices_.push_back(output_i);
       output_i += outputIndexInterval;
     }
@@ -441,9 +423,6 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices_.begin(),outputIndices_.end());
   }
 
-  nFailuresMax_ = stepperPL_->get<int>("Maximum Number of Stepper Failures");
-  nConsecutiveFailuresMax_ = stepperPL_->get<int>(
-    "Maximum Number of Consecutive Stepper Failures");
   return;
 }
 
@@ -501,7 +480,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 TimeStepControl<Scalar>::getNonconstParameterList()
 {
-  return(stepperPL_);
+  return(tscPL_);
 }
 
 
@@ -509,8 +488,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 TimeStepControl<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = tscPL_;
+  tscPL_ = Teuchos::null;
   return(temp_plist);
 }
 
