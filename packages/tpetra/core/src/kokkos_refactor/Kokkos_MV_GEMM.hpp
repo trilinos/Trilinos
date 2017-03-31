@@ -52,6 +52,7 @@
 #include <Teuchos_BLAS.hpp>
 #include <Kokkos_Blas2_MV.hpp>
 #include "Tpetra_Details_cublasGemm.hpp"
+#include "Tpetra_Details_mklGemm.hpp"
 
 namespace Teuchos {
 
@@ -270,16 +271,32 @@ namespace Kokkos {
       }
       else {
         const int m = static_cast<int> (C.dimension_0 ());
-        const int k = static_cast<int> (transA == Teuchos::NO_TRANS ? A.dimension_1 () : A.dimension_0 ());
+        const int k = static_cast<int> (transA == Teuchos::NO_TRANS ?
+                                        A.dimension_1 () :
+                                        A.dimension_0 ());
         const int lda = static_cast<int> (Impl::getStride2DView (A));
         const int ldb = static_cast<int> (Impl::getStride2DView (B));
         const int ldc = static_cast<int> (Impl::getStride2DView (C));
 
-        Teuchos::BLAS<int,double> blas;
-        blas.GEMM (transA, transB, m, n, k, alpha,
-                   A.ptr_on_device(), lda,
-                   B.ptr_on_device(), ldb,
-                   beta, C.ptr_on_device(), ldc);
+        char ctransA = 'N';
+        if (transA == Teuchos::TRANS) {
+          ctransA = 'T';
+        }
+        else if (transA == Teuchos::CONJ_TRANS) {
+          ctransA = 'C';
+        }
+        char ctransB = 'N';
+        if (transB == Teuchos::TRANS) {
+          ctransB = 'T';
+        }
+        else if (transB == Teuchos::CONJ_TRANS) {
+          ctransB = 'C';
+        }
+        ::Tpetra::Details::Mkl::dgemm (ctransA, ctransB,
+                                       m, n, k,
+                                       alpha, A.data (), lda,
+                                       B.ptr_on_device(), ldb,
+                                       beta, C.data (), ldc);
       }
     }
   };

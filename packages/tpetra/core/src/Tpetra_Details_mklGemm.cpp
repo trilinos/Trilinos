@@ -54,6 +54,7 @@ namespace Tpetra {
 namespace Details {
 namespace Mkl {
 
+#ifdef HAVE_KOKKOSKERNELS_MKL
 namespace { // (anonymous)
 
 CBLAS_TRANSPOSE
@@ -72,6 +73,7 @@ transCharToMklEnum (const char trans)
 }
 
 } // namespace (anonymous)
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 void
 cgemm (const char transA,
