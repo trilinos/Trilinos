@@ -269,9 +269,9 @@ void StepperNewmark<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());  
       RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());  
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());  
-      Thyra::copy(*d_old, Teuchos::ptrFromRef(*d_init));  
-      Thyra::copy(*v_old, Teuchos::ptrFromRef(*v_init)); 
-      Thyra::put_scalar(0.0, Teuchos::ptrFromRef(*a_init)); 
+      Thyra::copy(*d_old, d_init.ptr());  
+      Thyra::copy(*v_old, v_init.ptr()); 
+      Thyra::put_scalar(0.0, a_init.ptr()); 
       residualModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<double> sStatus =
         this->solveNonLinear(residualModel_, *solver_, a_init, inArgs_);
@@ -279,7 +279,7 @@ void StepperNewmark<Scalar>::takeStep(
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
         workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-      Thyra::copy(*a_init, Teuchos::ptrFromRef(*a_old)); 
+      Thyra::copy(*a_init, a_old.ptr()); 
     }
 #ifdef DEBUG_OUTPUT
     //IKT, 3/30/17, debug output: pring a_old to check for correctness.
