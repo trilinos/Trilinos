@@ -61,10 +61,29 @@
 /// It also generally improves encapsulation.
 
 #include "TpetraCore_config.h"
+#include "Kokkos_Complex.hpp"
 
 namespace Tpetra {
 namespace Details {
 namespace Cublas {
+
+/// \brief Wrapped version of cublasCgemm (v1 API).
+///
+/// See the cuBLAS documentation for details.
+void
+cgemm (const char char_transA,
+       const char char_transB,
+       const int m,
+       const int n,
+       const int k,
+       const ::Kokkos::complex<float>& alpha,
+       const ::Kokkos::complex<float> A[],
+       const int lda,
+       const ::Kokkos::complex<float> B[],
+       const int ldb,
+       const ::Kokkos::complex<float>& beta,
+       ::Kokkos::complex<float> C[],
+       const int ldc);
 
 /// \brief Wrapped version of cublasDgemm (v1 API).
 ///
@@ -100,6 +119,24 @@ sgemm (const char char_transA,
        const int ldb,
        const float beta,
        float C[],
+       const int ldc);
+
+/// \brief Wrapped version of cublasZgemm (v1 API).
+///
+/// See the cuBLAS documentation for details.
+void
+zgemm (const char char_transA,
+       const char char_transB,
+       const int m,
+       const int n,
+       const int k,
+       const ::Kokkos::complex<double>& alpha,
+       const ::Kokkos::complex<double> A[],
+       const int lda,
+       const ::Kokkos::complex<double> B[],
+       const int ldb,
+       const ::Kokkos::complex<double>& beta,
+       ::Kokkos::complex<double> C[],
        const int ldc);
 
 } // namespace Cublas

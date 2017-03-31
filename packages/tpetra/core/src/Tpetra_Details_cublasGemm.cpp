@@ -54,6 +54,41 @@ namespace Details {
 namespace Cublas {
 
 void
+cgemm (const char transA,
+       const char transB,
+       const int m,
+       const int n,
+       const int k,
+       const Kokkos::complex<float>& alpha,
+       const Kokkos::complex<float> A[],
+       const int lda,
+       const Kokkos::complex<float> B[],
+       const int ldb,
+       const Kokkos::complex<float>& beta,
+       Kokkos::complex<float> C[],
+       const int ldc)
+{
+#ifdef KOKKOS_ENABLE_CUDA
+  const cuComplex alpha_c = make_cuFloatComplex (alpha.real (), alpha.imag ());
+  const cuComplex beta_c = make_cuFloatComplex (beta.real (), beta.imag ());
+  cublasCgemm (transA, transB,
+               m, n, k,
+               alpha_c, reinterpret_cast<const cuComplex*> (A), lda,
+               reinterpret_cast<const cuComplex*> (B), ldb,
+               beta_c, reinterpret_cast<cuComplex*> (C), ldc);
+  cublasStatus info = cublasGetError ();
+  if (info != CUBLAS_STATUS_SUCCESS) {
+    std::ostringstream err;
+    err << "cublasCgemm failed with status " << info << ".";
+    throw std::runtime_error (err.str ());
+  }
+#else // NOT KOKKOS_ENABLE_CUDA
+  throw std::runtime_error ("You must enable CUDA in your Trilinos build in "
+                            "order to invoke cuBLAS functions in Tpetra.");
+#endif // KOKKOS_ENABLE_CUDA
+}
+
+void
 dgemm (const char char_transA,
        const char char_transB,
        const int m,
@@ -105,6 +140,43 @@ sgemm (const char char_transA,
   if (info != CUBLAS_STATUS_SUCCESS) {
     std::ostringstream err;
     err << "cublasSgemm failed with status " << info << ".";
+    throw std::runtime_error (err.str ());
+  }
+#else // NOT KOKKOS_ENABLE_CUDA
+  throw std::runtime_error ("You must enable CUDA in your Trilinos build in "
+                            "order to invoke cuBLAS functions in Tpetra.");
+#endif // KOKKOS_ENABLE_CUDA
+}
+
+void
+zgemm (const char transA,
+       const char transB,
+       const int m,
+       const int n,
+       const int k,
+       const Kokkos::complex<double>& alpha,
+       const Kokkos::complex<double> A[],
+       const int lda,
+       const Kokkos::complex<double> B[],
+       const int ldb,
+       const Kokkos::complex<double>& beta,
+       Kokkos::complex<double> C[],
+       const int ldc)
+{
+#ifdef KOKKOS_ENABLE_CUDA
+  const cuDoubleComplex alpha_c =
+    make_cuDoubleComplex (alpha.real (), alpha.imag ());
+  const cuDoubleComplex beta_c =
+    make_cuDoubleComplex (beta.real (), beta.imag ());
+  cublasZgemm (transA, transB,
+               m, n, k,
+               alpha_c, reinterpret_cast<const cuDoubleComplex*> (A), lda,
+               reinterpret_cast<const cuDoubleComplex*> (B), ldb,
+               beta_c, reinterpret_cast<cuDoubleComplex*> (C), ldc);
+  cublasStatus info = cublasGetError ();
+  if (info != CUBLAS_STATUS_SUCCESS) {
+    std::ostringstream err;
+    err << "cublasCgemm failed with status " << info << ".";
     throw std::runtime_error (err.str ());
   }
 #else // NOT KOKKOS_ENABLE_CUDA
