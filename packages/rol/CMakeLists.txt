@@ -26,6 +26,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
 
 MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_NAME}_ENABLE_TIMERS})
 
+IF (MSVC AND (NOT CMAKE_CXX_FLAGS MATCHES "/bigobj"))
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples
