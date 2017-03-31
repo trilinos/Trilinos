@@ -52,6 +52,7 @@ INCLUDE(GlobalSet)
 INCLUDE(MultilineSet)
 INCLUDE(ParseVariableArguments)
 INCLUDE(SetNotFound)
+INCLUDE(Split)
 
 #
 # @FUNCTION: TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()
@@ -192,7 +193,11 @@ ENDFUNCTION()
 #   ``MUST_FIND_ALL_LIBS``
 #
 #     If set, then all of the library files listed in ``REQUIRED_LIBS_NAMES``
-#     must be found or the TPL is considered not found!
+#     must be found or the TPL is considered not found!  If the global cache
+#     var ``<Project>_MUST_FIND_ALL_TPL_LIBS`` is set to ``TRUE``, then this
+#     is turned on as well.  WARNING: The default is not to require finding
+#     all of the listed libs.  This is to maintain backward compatibility with
+#     some older ``FindTPL<tplName>.cmake`` modules.
 #
 #   ``NO_PRINT_ENABLE_SUCCESS_FAIL``
 #
@@ -318,14 +323,22 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
       )
     ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES}
       CACHE STRING ${DOCSTR})
+    SPLIT("${${TPL_NAME}_LIBRARY_NAMES}" "," ${TPL_NAME}_LIBRARY_NAMES)
+    PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
 
     # Let the user override what the names of the libraries which might
     # actually mean that no libraries are searched for.
-    SET(PARSE_REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+    SET(REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+
+    IF (${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS)
+      SET(MUST_FIND_ALL_LIBS TRUE) 
+    ELSE()
+      SET(MUST_FIND_ALL_LIBS ${PARSE_MUST_FIND_ALL_LIBS}) 
+    ENDIF()
 
     IF (TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES_VERBOSE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
-      PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+      PRINT_VAR(REQUIRED_LIBS_NAMES)
     ENDIF()
 
   ELSE()
@@ -385,15 +398,21 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
 
   SET(_${TPL_NAME}_ENABLE_SUCCESS TRUE)
 
-  IF (PARSE_REQUIRED_LIBS_NAMES)
+  IF (REQUIRED_LIBS_NAMES)
 
     # Libraries
 
+    IF (MUST_FIND_ALL_LIBS)
+      SET(LIB_NOT_FOUND_MSG_PREFIX "ERROR:")
+    ELSE()
+      SET(LIB_NOT_FOUND_MSG_PREFIX "NOTE:")
+    ENDIF()
+
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
 
-      IF (PARSE_MUST_FIND_ALL_LIBS)
+      IF (MUST_FIND_ALL_LIBS)
         MESSAGE("-- Must find at least one lib in each of the"
-          " lib sets \"${PARSE_REQUIRED_LIBS_NAMES}\"")
+          " lib sets \"${REQUIRED_LIBS_NAMES}\"")
       ENDIF()
 
       MESSAGE( "-- Searching for libs in ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
@@ -445,9 +464,9 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
 
         IF (NOT LIBNAME_SET_LIB)
           MESSAGE(
-            "-- ERROR: Did not find a lib in the lib set \"${LIBNAME_SET}\""
+            "-- ${LIB_NOT_FOUND_MSG_PREFIX} Did not find a lib in the lib set \"${LIBNAME_SET}\""
              " for the TPL '${TPL_NAME}'!")
-          IF (PARSE_MUST_FIND_ALL_LIBS)
+          IF (MUST_FIND_ALL_LIBS)
 	    SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
           ELSE()
             BREAK()

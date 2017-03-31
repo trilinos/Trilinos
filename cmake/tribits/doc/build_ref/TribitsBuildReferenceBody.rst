@@ -1403,6 +1403,18 @@ TPL may not work correctly on the given platform.  In this case, one would
 also want to explicitly disable the TPL as shown above.
 
 
+Require all TPL libraries be found
+----------------------------------
+
+By default, some TPLs don't require that all of the libraries listed in
+``<tplName>_LIBRARY_NAMES`` be found.  To change this behavior so that all
+libraries for all enabled TPLs be found, one can set::
+
+  -D <Project>_MUST_FIND_ALL_TPL_LIBS=TRUE
+
+This makes the configure process catch more mistakes with the env.
+
+
 Disable warnings from TPL header files
 --------------------------------------
 

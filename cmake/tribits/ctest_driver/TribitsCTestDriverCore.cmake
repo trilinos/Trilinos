@@ -612,8 +612,20 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
     #PRINT_VAR(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
     ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
     IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling modified package: ${TRIBITS_PACKAGE}")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+      IF (
+        ${TRIBITS_PACKAGE}_TESTGROUP STREQUAL "PT"
+        OR
+        (
+          ${TRIBITS_PACKAGE}_TESTGROUP STREQUAL "ST"
+           AND
+           ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
+           )
+        )
+        MESSAGE("Enabling modified package: ${TRIBITS_PACKAGE}")
+        SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+      ELSE()
+        MESSAGE("NOT enabling modified ST package: ${TRIBITS_PACKAGE}")
+      ENDIF()
     ELSE()
       MESSAGE("Not enabling explicitly disabled modified package: ${TRIBITS_PACKAGE}")
     ENDIF()
@@ -621,8 +633,20 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
 
   FOREACH(TRIBITS_PACKAGE ${FAILING_PACKAGES_LIST})
     IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+      IF (
+        ${TRIBITS_PACKAGE}_TESTGROUP STREQUAL "PT"
+        OR
+        (
+          ${TRIBITS_PACKAGE}_TESTGROUP STREQUAL "ST"
+           AND
+           ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
+           )
+        )
+        MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
+        SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+      ELSE()
+        MESSAGE("NOT enabling previously failing ST package: ${TRIBITS_PACKAGE}")
+      ENDIF()
     ELSE()
       MESSAGE("Not enabling explicitly disabled previously"
         " failing package: ${TRIBITS_PACKAGE}")
@@ -1468,16 +1492,12 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n*** Determine if to go ahead with configure, build, test ..."
     "\n***")
 
-  IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY)
-    IF (MODIFIED_PACKAGES_LIST)
-      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
-        ":  Found modified packages, processing enabled packages!\n")
-    ELSE()
-      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
-        ":  No modified packages to justify continuous integration test iteration!\n")
-      REPORT_QUEUED_ERRORS()
-      RETURN()
-    ENDIF()
+  IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY
+    AND ${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0
+    AND MODIFIED_PACKAGES_LIST
+    )
+    MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
+      ":  Found modified packages, processing enabled packages!\n")
   ELSE()
     MESSAGE(
       "\nCTEST_ENABLE_MODIFIED_PACKAGES_ONLY=${CTEST_ENABLE_MODIFIED_PACKAGES_ONLY}"
@@ -1705,9 +1725,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # Determine if the build failed or not.
 
       SET(BUILD_LIBS_SUCCESS FALSE)
-      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
-        "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
-        )
+      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
         SET(BUILD_LIBS_SUCCESS TRUE)
       ENDIF()
       # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
@@ -1740,9 +1758,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
           "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
 
-        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
-          NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
-          )
+        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
           SET(BUILD_OR_TEST_FAILED TRUE)
         ENDIF()
 
