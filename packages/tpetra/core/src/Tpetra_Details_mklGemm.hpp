@@ -55,11 +55,41 @@
 /// application code is not exposed to MKL include files.
 
 #include "TpetraCore_config.h"
-#include "Kokkos_Complex.hpp"
+#include "Tpetra_Details_Blas.hpp"
+#include "Tpetra_Details_libGemm.hpp"
 
 namespace Tpetra {
 namespace Details {
+namespace Blas {
 namespace Mkl {
+
+/// \brief For this set of template parameters, can and should we
+///   implement Gemm (see below) using the MKL?
+template<class ViewType1,
+         class ViewType2,
+         class ViewType3,
+         class CoefficientType = typename ViewType1::non_const_value_type,
+         class IndexType = int>
+struct GemmCanUseMkl {
+#ifdef HAVE_KOKKOSKERNELS_MKL
+#  ifdef KOKKOS_HAVE_CUDA
+  static constexpr bool value =
+    ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
+                          CoefficientType, IndexType>::value &&
+    ! std:is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
+    ! std:is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
+    ! std:is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
+#  else // NOT KOKKOS_HAVE_CUDA
+  static constexpr bool value =
+    ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
+                                                CoefficientType, IndexType>::value;
+#  endif // KOKKOS_HAVE_CUDA
+#else // NOT HAVE_KOKKOSKERNELS_MKL
+  static constexpr bool value = false;
+#endif // NOT HAVE_KOKKOSKERNELS_MKL
+};
+
+namespace Impl {
 
 /// \brief Wrapped version of MKL's cblas_cgemm.
 ///
@@ -133,7 +163,139 @@ zgemm (const char char_transA,
        ::Kokkos::complex<double> C[],
        const int ldc);
 
+/// \brief Wrapper for the above wrappers, templated on scalar type
+///   (the type of each entry in the matrices).
+template<class ScalarType> struct Gemm {};
+
+template<>
+struct Gemm< ::Kokkos::complex<float> > {
+  typedef ::Kokkos::complex<float> scalar_type;
+
+  static void
+  gemm (const char transA,
+        const char transB,
+        const int m,
+        const int n,
+        const int k,
+        const scalar_type& alpha,
+        const scalar_type A[],
+        const int lda,
+        const scalar_type B[],
+        const int ldb,
+        const scalar_type& beta,
+        scalar_type C[],
+        const int ldc)
+  {
+    return cgemm (transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+};
+
+template<>
+struct Gemm<double> {
+  typedef double scalar_type;
+
+  static void
+  gemm (const char transA,
+        const char transB,
+        const int m,
+        const int n,
+        const int k,
+        const scalar_type& alpha,
+        const scalar_type A[],
+        const int lda,
+        const scalar_type B[],
+        const int ldb,
+        const scalar_type& beta,
+        scalar_type C[],
+        const int ldc)
+  {
+    return dgemm (transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+};
+
+template<>
+struct Gemm<float> {
+  typedef float scalar_type;
+
+  static void
+  gemm (const char transA,
+        const char transB,
+        const int m,
+        const int n,
+        const int k,
+        const scalar_type& alpha,
+        const scalar_type A[],
+        const int lda,
+        const scalar_type B[],
+        const int ldb,
+        const scalar_type& beta,
+        scalar_type C[],
+        const int ldc)
+  {
+    return sgemm (transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+};
+
+template<>
+struct Gemm< ::Kokkos::complex<double> > {
+  typedef ::Kokkos::complex<double> scalar_type;
+
+  static void
+  gemm (const char transA,
+        const char transB,
+        const int m,
+        const int n,
+        const int k,
+        const scalar_type& alpha,
+        const scalar_type A[],
+        const int lda,
+        const scalar_type B[],
+        const int ldb,
+        const scalar_type& beta,
+        scalar_type C[],
+        const int ldc)
+  {
+    return zgemm (transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+  }
+};
+
+} // namespace Impl
+
+template<class ViewType1,
+         class ViewType2,
+         class ViewType3,
+         class CoefficientType>
+static void
+gemm (const char transA,
+      const char transB,
+      const CoefficientType& alpha,
+      const ViewType1& A,
+      const ViewType2& B,
+      const CoefficientType& beta,
+      const ViewType3& C)
+{
+  typedef CoefficientType scalar_type;
+  typedef Impl::Gemm<scalar_type> impl_type;
+  typedef int index_type;
+
+  const index_type lda = getStride2DView<ViewType1, index_type> (A);
+  const index_type ldb = getStride2DView<ViewType2, index_type> (B);
+  const index_type ldc = getStride2DView<ViewType3, index_type> (C);
+
+  const index_type m = static_cast<index_type> (C.dimension_0 ());
+  const index_type n = static_cast<index_type> (C.dimension_1 ());
+  const bool noTransA = (transA == 'N' || transA == 'n');
+  const index_type k = static_cast<index_type> (noTransA ?
+                                                A.dimension_1 () :
+                                                A.dimension_0 ());
+  impl_type::gemm (transA, transB, m, n, k,
+                   alpha, A.data (), lda,
+                   B.data (), ldb,
+                   beta, C.data (), ldc);
+}
+
 } // namespace Mkl
+} // namespace Blas
 } // namespace Details
 } // namespace Tpetra
 

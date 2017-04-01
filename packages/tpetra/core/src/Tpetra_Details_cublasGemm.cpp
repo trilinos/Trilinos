@@ -51,7 +51,9 @@
 
 namespace Tpetra {
 namespace Details {
+namespace Blas {
 namespace Cublas {
+namespace Impl {
 
 void
 cgemm (const char transA,
@@ -185,6 +187,8 @@ zgemm (const char transA,
 #endif // KOKKOS_ENABLE_CUDA
 }
 
+} // namespace Impl
 } // namespace Cublas
+} // namespace Blas
 } // namespace Details
 } // namespace Tpetra

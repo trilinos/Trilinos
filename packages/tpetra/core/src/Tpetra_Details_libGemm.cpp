@@ -41,40 +41,18 @@
 //@HEADER
 */
 
-#include "Tpetra_Details_mklGemm.hpp"
+#include "Tpetra_Details_libGemm.hpp"
 #include "KokkosKernels_config.h"
-#ifdef HAVE_KOKKOSKERNELS_MKL
-#  include <mkl.h>
-#endif // HAVE_KOKKOSKERNELS_MKL
-#include <sstream>
-#include <stdexcept>
+// For now, just use Teuchos, whatever.  Later, wrap it ourselves.
+// This is way less trivial than you might think, given all the
+// variations in link options and the platforms we must support.
+#include "Teuchos_BLAS.hpp"
 
 namespace Tpetra {
 namespace Details {
 namespace Blas {
-namespace Mkl {
+namespace Lib {
 namespace Impl {
-
-#ifdef HAVE_KOKKOSKERNELS_MKL
-namespace { // (anonymous)
-
-CBLAS_TRANSPOSE
-transCharToMklEnum (const char trans)
-{
-  if (trans == 'T' || trans == 't') {
-    return CblasTrans;
-  }
-  else if (trans == 'C' || trans == 'c' ||
-           trans == 'H' || trans == 'h') {
-    return CblasConjTrans;
-  }
-  else {
-    return CblasNoTrans;
-  }
-}
-
-} // namespace (anonymous)
-#endif // HAVE_KOKKOSKERNELS_MKL
 
 void
 cgemm (const char transA,
@@ -91,20 +69,25 @@ cgemm (const char transA,
        ::Kokkos::complex<float> C[],
        const int ldc)
 {
-#ifdef HAVE_KOKKOSKERNELS_MKL
-  const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
-  const CBLAS_TRANSPOSE etransB = transCharToMklEnum (transB);
-  // MKL's complex interface, unlike real interface, takes alpha and
-  // beta by pointer.
-  ::cblas_cgemm (CblasColMajor, etransA, etransB,
-                 m, n, k,
-                 &alpha, A, lda,
-                 B, ldb,
-                 &beta, C, ldc);
-#else // NOT HAVE_KOKKOSKERNELS_MKL
-  throw std::runtime_error ("You must enable MKL in your Trilinos build in "
-                            "order to invoke MKL functions in Tpetra.");
-#endif // NOT HAVE_KOKKOSKERNELS_MKL
+  typedef std::complex<float> IST; // impl_scalar_type;
+  typedef Teuchos::BLAS<int, IST> blas_type;
+
+  const ::Teuchos::ETransp transA_ =
+    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
+    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const ::Teuchos::ETransp transB_ =
+    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
+    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const IST alpha_ (alpha.real (), alpha.imag ());
+  const IST beta_ (beta.real (), beta.imag ());
+
+  blas_type blas;
+  blas.GEMM (transA_, transB_, m, n, k,
+             alpha_, reinterpret_cast<const IST*> (A), lda,
+             reinterpret_cast<const IST*> (B), ldb,
+             beta_, reinterpret_cast<IST*> (C), ldc);
 }
 
 void
@@ -122,18 +105,23 @@ dgemm (const char transA,
        double C[],
        const int ldc)
 {
-#ifdef HAVE_KOKKOSKERNELS_MKL
-  const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
-  const CBLAS_TRANSPOSE etransB = transCharToMklEnum (transB);
-  ::cblas_dgemm (CblasColMajor, etransA, etransB,
-                 m, n, k,
-                 alpha, A, lda,
-                 B, ldb,
-                 beta, C, ldc);
-#else // NOT HAVE_KOKKOSKERNELS_MKL
-  throw std::runtime_error ("You must enable MKL in your Trilinos build in "
-                            "order to invoke MKL functions in Tpetra.");
-#endif // NOT HAVE_KOKKOSKERNELS_MKL
+  typedef double IST; // impl_scalar_type;
+  typedef Teuchos::BLAS<int, IST> blas_type;
+
+  const ::Teuchos::ETransp transA_ =
+    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
+    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const ::Teuchos::ETransp transB_ =
+    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
+    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+
+  blas_type blas;
+  blas.GEMM (transA_, transB_, m, n, k,
+             alpha, A, lda,
+             B, ldb,
+             beta, C, ldc);
 }
 
 void
@@ -151,18 +139,23 @@ sgemm (const char transA,
        float C[],
        const int ldc)
 {
-#ifdef HAVE_KOKKOSKERNELS_MKL
-  const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
-  const CBLAS_TRANSPOSE etransB = transCharToMklEnum (transB);
-  ::cblas_sgemm (CblasColMajor, etransA, etransB,
-                 m, n, k,
-                 alpha, A, lda,
-                 B, ldb,
-                 beta, C, ldc);
-#else // NOT HAVE_KOKKOSKERNELS_MKL
-  throw std::runtime_error ("You must enable MKL in your Trilinos build in "
-                            "order to invoke MKL functions in Tpetra.");
-#endif // NOT HAVE_KOKKOSKERNELS_MKL
+  typedef float IST; // impl_scalar_type;
+  typedef Teuchos::BLAS<int, IST> blas_type;
+
+  const ::Teuchos::ETransp transA_ =
+    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
+    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const ::Teuchos::ETransp transB_ =
+    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
+    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+
+  blas_type blas;
+  blas.GEMM (transA_, transB_, m, n, k,
+             alpha, A, lda,
+             B, ldb,
+             beta, C, ldc);
 }
 
 void
@@ -180,24 +173,29 @@ zgemm (const char transA,
        ::Kokkos::complex<double> C[],
        const int ldc)
 {
-#ifdef HAVE_KOKKOSKERNELS_MKL
-  const CBLAS_TRANSPOSE etransA = transCharToMklEnum (transA);
-  const CBLAS_TRANSPOSE etransB = transCharToMklEnum (transB);
-  // MKL's complex interface, unlike real interface, takes alpha and
-  // beta by pointer.
-  ::cblas_zgemm (CblasColMajor, etransA, etransB,
-                 m, n, k,
-                 &alpha, A, lda,
-                 B, ldb,
-                 &beta, C, ldc);
-#else // NOT HAVE_KOKKOSKERNELS_MKL
-  throw std::runtime_error ("You must enable MKL in your Trilinos build in "
-                            "order to invoke MKL functions in Tpetra.");
-#endif // NOT HAVE_KOKKOSKERNELS_MKL
+  typedef std::complex<double> IST; // impl_scalar_type;
+  typedef Teuchos::BLAS<int, IST> blas_type;
+
+  const ::Teuchos::ETransp transA_ =
+    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
+    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const ::Teuchos::ETransp transB_ =
+    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
+    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
+     ::Teuchos::NO_TRANS);
+  const IST alpha_ (alpha.real (), alpha.imag ());
+  const IST beta_ (beta.real (), beta.imag ());
+
+  blas_type blas;
+  blas.GEMM (transA_, transB_, m, n, k,
+             alpha_, reinterpret_cast<const IST*> (A), lda,
+             reinterpret_cast<const IST*> (B), ldb,
+             beta_, reinterpret_cast<IST*> (C), ldc);
 }
 
 } // namespace Impl
-} // namespace Mkl
+} // namespace Lib
 } // namespace Blas
 } // namespace Details
 } // namespace Tpetra

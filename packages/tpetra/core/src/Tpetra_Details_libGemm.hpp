@@ -41,59 +41,63 @@
 //@HEADER
 */
 
-#ifndef TPETRA_DETAILS_CUBLASGEMM_HPP
-#define TPETRA_DETAILS_CUBLASGEMM_HPP
+#ifndef TPETRA_DETAILS_LIBGEMM_HPP
+#define TPETRA_DETAILS_LIBGEMM_HPP
 
-/// \file Tpetra_Details_cublasGemm.hpp
-/// \brief Implementation detail of Tpetra::MultiVector
+/// \file Tpetra_Details_libGemm.hpp
+/// \brief Wrappers for the BLAS library's implementation of _GEMM;
+///   implementation detail of Tpetra::MultiVector.
 ///
 /// \warning This file, and its contents, are an implementation detail
 ///   of Tpetra::MultiVector.  Either may disappear or change at any
 ///   time.
 ///
-/// The point of this file is to wrap cuBLAS calls, so that
-/// application code is not exposed to cublas.h or cublas_v2.h.  This
-/// fixes the following issue relating to conflicts at build time
-/// between the old and new cuBLAS API:
-///
-/// https://github.com/trilinos/Trilinos/issues/1194
-///
-/// It also generally improves encapsulation.
+/// The point of this file is to wrap the BLAS library's _GEMM calls,
+/// so that application code is not exposed to BLAS-related \c extern
+/// declarations.
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Blas.hpp"
-#include "Tpetra_Details_libGemm.hpp"
 
 namespace Tpetra {
 namespace Details {
 namespace Blas {
-namespace Cublas {
+namespace Lib {
 
-/// \brief For this set of template parameters, can and should we
-///   implement Gemm (see below) using cuBLAS?
+/// \brief For this set of template parameters, can we implement Gemm
+///   (see below) using any compliant BLAS library, not counting the
+///   memory spaces of the given Kokkos::View specializations?
 template<class ViewType1,
          class ViewType2,
          class ViewType3,
          class CoefficientType,
          class IndexType>
-struct GemmCanUseCublas {
-#ifdef KOKKOS_HAVE_CUDA
+struct GemmCanUseLib {
+  typedef typename ViewType1::non_const_value_type scalar_type;
+  typedef typename std::decay<CoefficientType>::type coeff_type;
+  typedef typename std::decay<IndexType>::type index_type;
+
+  // All three Views must have the same entry types, the coefficient
+  // type must be the same as that, all these four types must be one
+  // of the four types that the BLAS library supports, and IndexType
+  // must be int.
+  //
+  // Modify this if you later add a TPL that can support more types
+  // than this.
   static constexpr bool value =
-    ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
-                          CoefficientType, IndexType>::value &&
-    std::is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
-    std::is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
-    std::is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
-#else // NOT KOKKOS_HAVE_CUDA
-  static constexpr bool value = false;
-#endif // KOKKOS_HAVE_CUDA
+    std::is_same<scalar_type, typename ViewType2::non_const_value_type>::value &&
+    std::is_same<scalar_type, typename ViewType3::non_const_value_type>::value &&
+    std::is_same<scalar_type, coeff_type>::value &&
+    BlasSupportsScalar<scalar_type>::value &&
+    BlasSupportsLayout<typename ViewType1::array_layout>::value &&
+    BlasSupportsLayout<typename ViewType2::array_layout>::value &&
+    BlasSupportsLayout<typename ViewType3::array_layout>::value &&
+    std::is_same<index_type, int>::value;
 };
 
 namespace Impl {
 
-/// \brief Wrapped version of cublasCgemm (v1 API).
-///
-/// See the cuBLAS documentation for details.
+/// \brief Wrapped version of the BLAS library's cgemm.
 void
 cgemm (const char char_transA,
        const char char_transB,
@@ -109,9 +113,7 @@ cgemm (const char char_transA,
        ::Kokkos::complex<float> C[],
        const int ldc);
 
-/// \brief Wrapped version of cublasDgemm (v1 API).
-///
-/// See the cuBLAS documentation for details.
+/// \brief Wrapped version of the BLAS library's dgemm.
 void
 dgemm (const char char_transA,
        const char char_transB,
@@ -127,9 +129,7 @@ dgemm (const char char_transA,
        double C[],
        const int ldc);
 
-/// \brief Wrapped version of cublasSgemm (v1 API).
-///
-/// See the cuBLAS documentation for details.
+/// \brief Wrapped version of the BLAS library's sgemm.
 void
 sgemm (const char char_transA,
        const char char_transB,
@@ -145,9 +145,7 @@ sgemm (const char char_transA,
        float C[],
        const int ldc);
 
-/// \brief Wrapped version of cublasZgemm (v1 API).
-///
-/// See the cuBLAS documentation for details.
+/// \brief Wrapped version of the BLAS library's zgemm.
 void
 zgemm (const char char_transA,
        const char char_transB,
@@ -294,9 +292,9 @@ gemm (const char transA,
                    beta, C.data (), ldc);
 }
 
-} // namespace Cublas
+} // namespace Lib
 } // namespace Blas
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_CUBLASGEMM_HPP
+#endif // TPETRA_DETAILS_LIBGEMM_HPP
