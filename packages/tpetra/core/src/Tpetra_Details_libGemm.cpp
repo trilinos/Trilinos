@@ -199,7 +199,7 @@ zgemm (const char transA,
              reinterpret_cast<const IST*> (B), ldb,
              beta_, reinterpret_cast<IST*> (C), ldc);
 #else
-  throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::cgemm: "
+  throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::zgemm: "
                             "You must configure Teuchos and Tpetra with complex support.");
 #endif
 }
