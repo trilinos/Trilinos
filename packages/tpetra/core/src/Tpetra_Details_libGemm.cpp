@@ -69,6 +69,7 @@ cgemm (const char transA,
        ::Kokkos::complex<float> C[],
        const int ldc)
 {
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
   typedef std::complex<float> IST; // impl_scalar_type;
   typedef Teuchos::BLAS<int, IST> blas_type;
 
@@ -88,6 +89,10 @@ cgemm (const char transA,
              alpha_, reinterpret_cast<const IST*> (A), lda,
              reinterpret_cast<const IST*> (B), ldb,
              beta_, reinterpret_cast<IST*> (C), ldc);
+#else
+  throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::cgemm: "
+                            "You must configure Teuchos and Tpetra with complex support.");
+#endif
 }
 
 void
@@ -173,6 +178,7 @@ zgemm (const char transA,
        ::Kokkos::complex<double> C[],
        const int ldc)
 {
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   typedef std::complex<double> IST; // impl_scalar_type;
   typedef Teuchos::BLAS<int, IST> blas_type;
 
@@ -192,6 +198,10 @@ zgemm (const char transA,
              alpha_, reinterpret_cast<const IST*> (A), lda,
              reinterpret_cast<const IST*> (B), ldb,
              beta_, reinterpret_cast<IST*> (C), ldc);
+#else
+  throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::cgemm: "
+                            "You must configure Teuchos and Tpetra with complex support.");
+#endif
 }
 
 } // namespace Impl
