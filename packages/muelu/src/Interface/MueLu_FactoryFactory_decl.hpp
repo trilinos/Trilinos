@@ -174,17 +174,23 @@ namespace MueLu {
 
   public:
 
-    // Parameter List Parsing:
-    // ---------
-    //     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
-    //
-    // or:
-    //
-    //     <ParameterList name="smootherFact1">
-    //       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-    //       ...
-    //     </ParameterList>
-    //
+    /// \brief: Interpret Factory parameter list and build new factory
+    ///
+    /// \param param [in]: ParameterEntry being either the parameter list containing the "factory" parameter declaring the factory type (e.g., "TrilinosSmoother") or being a plain Parameter containing the factory type as value
+    /// \param factoryMapIn [in]: FactoryMap containing a map between factory name (e.g., "smootherFact1") and corresponding factory of all previously defined factories
+    /// \param factoryManagersIn [in]: FactoryManagerMap containing a map between group names and Factory manager objects. Needed for factories with sub-factory managers.
+    ///
+    /// Parameter List Parsing:
+    /// ---------
+    ///     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
+    ///
+    /// or:
+    ///
+    ///     <ParameterList name="smootherFact1">
+    ///       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+    ///       ...
+    ///     </ParameterList>
+    ///
     virtual RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry& param, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // Find factory
       std::string            factoryName;
