@@ -545,7 +545,7 @@ namespace MueLu {
       if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
 	// P-Coarsening by schedule (new interface)
 	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
 	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
 	if(levelID <  (int)pcoarsen_schedule.size()) {
@@ -592,7 +592,7 @@ namespace MueLu {
       if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
 	// P-Coarsening by schedule (new interface)
 	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
 	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
 	if(levelID <  (int)pcoarsen_schedule.size()) {
@@ -650,7 +650,7 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || 
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos" ||
           coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
@@ -926,7 +926,7 @@ namespace MueLu {
       if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
 	// P-Coarsening by schedule (new interface)
 	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
 	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
 	if(levelID >= (int)pcoarsen_schedule.size()) {
@@ -951,14 +951,14 @@ namespace MueLu {
 	  }
 	  P->SetFactory("P", manager.GetFactory("Ptent"));
 	  manager.SetFactory("P", P);
-       
+
 	  if (reuseType == "tP" && !filteringChangesMatrix)
 	    keeps.push_back(keep_pair("AP reuse data", P.get()));
 	}
 	else {
 	  // P-Coarsening
 	  ParameterList Pparams;
-	  RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());     
+	  RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
 	  std::string hi;
 	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
 	  if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
@@ -966,8 +966,8 @@ namespace MueLu {
 	  Pparams.set("pcoarsen: hi basis",hi);
 	  Pparams.set("pcoarsen: lo basis",lo);
 	  P->SetParameterList(Pparams);
-	  manager.SetFactory("P", P);	  
-	  // Add special nullspace handling       
+	  manager.SetFactory("P", P);
+	  // Add special nullspace handling
 	  nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
 	  manager.SetFactory("Nullspace", nullSpace);
 	}
@@ -975,14 +975,14 @@ namespace MueLu {
       else {
 	// P-Coarsening by manual specification (old interface)
 	ParameterList Pparams;
-	RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());     
+	RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
 	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
 	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
 	P->SetParameterList(Pparams);
 	manager.SetFactory("P", P);
-	// Add special nullspace handling       
+	// Add special nullspace handling
 	nullSpace->SetFactory("Nullspace", manager.GetFactory("P"));
-	manager.SetFactory("Nullspace", nullSpace);	
+	manager.SetFactory("Nullspace", nullSpace);
       }
     }
 #endif
@@ -1547,37 +1547,183 @@ namespace MueLu {
     }
   }
 
-  // Parameter List Parsing:
-  // Create an entry in factoryMap for each parameter of the list paramList
-  // ---------
-  //   <ParameterList name="...">
-  //     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
-  //
-  //     <ParameterList name="smootherFact1">
-  //       <Parameter name="type" type="string" value="TrilinosSmoother"/>
-  //       ...
-  //     </ParameterList>
-  //    </ParameterList>
-  //
+
   //TODO: static?
+  /// \brief Interpret "Factories" sublist
+  ///
+  /// \param paramList [in]: "Factories" ParameterList
+  /// \param factoryMapIn [in]: FactoryMap maps variable names to factories. This factory map is used to resolve data dependencies of previously defined factories.
+  /// \param factoryMapOut [out]: FactoryMap maps variable names to factories. New factory entries are added to that FactoryMap. Usually, factoryMapIn and factoryMapOut should use the same object, such that new factories are added. We have to distinguish input and output if we build sub-factory managers, though.
+  /// \param factoryManagers [in/out]: FacotryManagerMap maps group names to a FactoryManager object.
+  ///
+  /// Interpret "Factories" parameter list. For each "factory" entry, add a new entry in the factoryMapOut map or create a new FacotryManager
+  ///
+  /// Parameter List Parsing:
+  /// Create an entry in factoryMapOut for each parameter of the list paramList
+  /// ---------
+  ///    <ParameterList name="...">
+  ///     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
+  ///
+  ///     <ParameterList name="smootherFact1">
+  ///       <Parameter name="type" type="string" value="TrilinosSmoother"/>
+  ///       ...
+  ///     </ParameterList>
+  ///    </ParameterList>
+  ///
+  /// ---------
+  /// Group factories
+  /// We can group factories using parameter sublists with the "group" parameter
+  ///
+  ///    <ParameterList name="myFirstGroup">
+  ///      <Parameter name="group" type="string" value="FactoryManager"/>
+  ///      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+  ///      <Parameter name="P" type="string" value="myTentativePFact1"/>
+  ///      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+  ///      <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+  ///      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+  ///    </ParameterList>
+
+  ///    <ParameterList name="mySecondGroup">
+  ///      <Parameter name="group" type="string" value="FactoryManager"/>
+  ///      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+  ///      <Parameter name="P" type="string" value="myTentativePFact2"/>
+  ///      <Parameter name="Aggregates" type="string" value="myAggFact1"/><!-- reuse aggs -->
+  ///      <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+  ///      <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+  ///    </ParameterList>
+  ///
+  ///  These factory groups can be used with factories for blocked operators (such as the BlockedPFactory)
+  ///  to easily define the operations on the sub-blocks.
+  ///
+  ///    <ParameterList name="myBlockedPFact">
+  ///      <Parameter name="factory" type="string" value="BlockedPFactory"/>
+  ///      <!-- factory manager for block 1 -->
+  ///      <ParameterList name="block1">
+  ///        <Parameter name="group" type="string" value="myFirstGroup"/>
+  ///      </ParameterList>
+  ///      <!-- factory manager for block 2 -->
+  ///      <ParameterList name="block2">
+  ///        <Parameter name="group" type="string" value="mySecondGroup"/>
+  ///      </ParameterList>
+  ///    </ParameterList>
+  ///
+  ///
+  ///  As an alternative one can also directly specify the factories in the sublists "block1", "block2", etc..., of course.
+  ///  But using blocks has the advantage that one can reuse them in all blocked factories.
+  ///
+  ///    <ParameterList name="myBlockedPFact">
+  ///      <Parameter name="factory" type="string" value="BlockedPFactory"/>
+  ///      <!-- factory manager for block 1 -->
+  ///      <ParameterList name="block1">
+  ///        <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+  ///        <Parameter name="P" type="string" value="myTentativePFact1"/>
+  ///        <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+  ///        <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+  ///        <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+  ///      </ParameterList>
+  ///      <!-- factory manager for block 2 -->
+  ///      <ParameterList name="block2">
+  ///        <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+  ///        <Parameter name="P" type="string" value="myTentativePFact2"/>
+  ///        <Parameter name="Aggregates" type="string" value="myAggFact1"/><!-- reuse aggs -->
+  ///        <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+  ///        <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+  ///      </ParameterList>
+  ///    </ParameterList>
+  ///
+  ///  As an alternative one can also directly specify the factories in the sublists "block1", "block2", etc..., of course.
+  ///
+  ///
+
+  /// ---------
+  /// add more dependencies (circular dependencies)
+  ///
+  ///  The NullspaceFactory needs to know which factory generates the null space on the coarse level (e.g., the TentativePFactory or the RebalancedPFactory).
+  ///  However, we cannot set the information in this place in the xml file, since the tentative prolongator facotry is typically defined later.
+  ///  We have to add that dependency later to the NullspaceFactory:
+  ///
+  ///    <ParameterList name="myNspFact">
+  ///      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+  ///      <!--<Paramter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>-->
+  ///    </ParameterList>
+  ///
+  ///    <ParameterList name="myTentativePFact">
+  ///      <Parameter name="factory"   type="string" value="TentativePFactory"/>
+  ///      <...>
+  ///      <Parameter name="Nullspace" type="string" value="myNspFact"/>
+  ///      <Parameter name="CoarseMap" type="string" value="myCoarseMap"/>
+  ///    </ParameterList>
+  ///
+  ///    <ParameterList name="myRebalanceProlongatorFact">
+  ///      <Parameter name="factory"   type="string" value="RebalanceTransferFactory"/>
+  ///      <...>
+  ///      <Parameter name="Nullspace" type="string" value="myTentativePFact"/>
+  ///    </ParameterList>
+  ///
+  ///  After the definition of the generating factory for the nullspace (in this case myRebalanceProlongatorFact)
+  ///  we add that dependency to the NullspaceFactory instance myNspFact
+  ///
+  ///    <ParameterList name="myNspFactDeps">
+  ///      <Parameter name="dependency for" type="string" value="myNspFact"/>
+  ///      <Parameter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>
+  ///    </ParameterList>
+  ///
+  ///  We have to create a new block (with a different name than myNspFact). In the example we use "myNspFactDeps".
+  ///  It should contain a parameter "dependency for" with the name of the factory that we want the dependencies to be addded to.
+  ///  With above block we do not need the entry for the Nullspace in the global FactoryManager any more.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildFactoryMap(const ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const {
     for (ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {
-      const std::string             & paramName  = paramList.name(param);
-      const Teuchos::ParameterEntry & paramValue = paramList.entry(param);
+      const std::string             & paramName  = paramList.name(param);  //< paramName contains the user chosen factory name (e.g., "smootherFact1")
+      const Teuchos::ParameterEntry & paramValue = paramList.entry(param); //< for factories, paramValue should be either a list or just a MueLu Factory (e.g., TrilinosSmoother)
 
       //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
-
-      // TODO: add support for "factory groups" which are stored in a map.
-      // A factory group has a name and a list of factories
 
       if (paramValue.isList()) {
         ParameterList paramList1 = Teuchos::getValue<ParameterList>(paramValue);
         if (paramList1.isParameter("factory")) { // default: just a factory definition
+          // New Factory is a sublist with internal parameters and/or data dependencies
+          TEUCHOS_TEST_FOR_EXCEPTION(paramList1.isParameter("dependency for") == true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter(): It seems that in the parameter lists for defining " << paramName << " there is both a 'factory' and 'dependency for' parameter. This is not allowed. Please remove the 'dependency for' parameter.");
           factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
+        } else if(paramList1.isParameter("dependency for")) { // add more data dependencies to existing factory
+          TEUCHOS_TEST_FOR_EXCEPTION(paramList1.isParameter("factory") == true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter(): It seems that in the parameter lists for defining " << paramName << " there is both a 'factory' and 'dependency for' parameter. This is not allowed.");
+          std::string factoryName = paramList1.get<std::string>("dependency for");
 
+          RCP<const FactoryBase> factbase = factoryMapIn.find(factoryName /*paramName*/)->second; // access previously defined factory
+          TEUCHOS_TEST_FOR_EXCEPTION(factbase.is_null() == true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter(): could not find factory " + factoryName + " in factory map. Did you define it before?");
+          RCP<const Factory> factoryconst = Teuchos::rcp_dynamic_cast<const Factory>(factbase);
+          RCP<      Factory> factory      = Teuchos::rcp_const_cast<Factory>(factoryconst);
+
+          // Read the RCP<Factory> parameters of the class T
+          RCP<const ParameterList> validParamList = factory->GetValidParameterList();
+          for (ParameterList::ConstIterator vparam = validParamList->begin(); vparam != validParamList->end(); ++vparam) {
+            const std::string& pName = validParamList->name(vparam);
+
+            if (!paramList1.isParameter(pName)) {
+              // Ignore unknown parameters
+              continue;
+            }
+
+            if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
+              // Generate or get factory described by pName and set dependency
+              RCP<const FactoryBase> generatingFact = factFact_->BuildFactory(paramList1.getEntry(pName), factoryMapIn, factoryManagers);
+              factory->SetFactory(pName, generatingFact);
+            } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
+              if (pName == "ParameterList") {
+                // NOTE: we cannot use
+                //     subList = sublist(rcpFromRef(paramList), pName)
+                // here as that would result in sublist also being a reference to a temporary object.
+                // The resulting dereferencing in the corresponding factory would then segfault
+                RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList1)), pName);
+                factory->SetParameter(pName, ParameterEntry(subList));
+              }
+            } else {
+              factory->SetParameter(pName, paramList1.getEntry(pName));
+            }
+          }
         } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
+          // Define a new (sub) FactoryManager
           std::string groupType = paramList1.get<std::string>("group");
           TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
 
