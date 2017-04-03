@@ -1,5 +1,4 @@
 %%MatrixMarket matrix array real general
-%Solution vector for Additive Schwarz test problem (non-overlapping)
 1296 1
  0.4793732105750651
  0.815659797150589
