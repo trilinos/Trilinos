@@ -1484,56 +1484,64 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   if (UseReordering_) {
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
+    typedef ReorderFilter<row_matrix_type> reorder_filter_type;
     Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
+    ReorderingAlgorithm_ = zlist.get<std::string> ("order_method", "rcm");
 
-    // FIXME (mfh 18 Nov 2013) Shouldn't this come from the Zoltan2 sublist?
-    ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
+    ArrayRCP<local_ordinal_type> perm;
+    ArrayRCP<local_ordinal_type> revperm;
 
-    typedef Tpetra::RowGraph
-      <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
-    typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
-    RCP<const row_graph_type> constActiveGraph =
-      Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
-    z2_adapter_type Zoltan2Graph (constActiveGraph);
-
-    typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
+    if(ReorderingAlgorithm_ == "user") {
+      // User-provided reordering
+      perm    = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user ordering");
+      revperm = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user reverse ordering");
+    }
+    else {
+      // Zoltan2 reordering
+      typedef Tpetra::RowGraph
+	<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+      typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
+      RCP<const row_graph_type> constActiveGraph =
+	Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
+      z2_adapter_type Zoltan2Graph (constActiveGraph);
+      
+      typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
 #ifdef HAVE_MPI
-    // Grab the MPI Communicator and build the ordering problem with that
-    MPI_Comm myRawComm;
-
-    RCP<const MpiComm<int> > mpicomm =
-      rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
-    if (mpicomm == Teuchos::null) {
-      myRawComm = MPI_COMM_SELF;
-    } else {
-      myRawComm = * (mpicomm->getRawMpiComm ());
-    }
-    ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
+      // Grab the MPI Communicator and build the ordering problem with that
+      MPI_Comm myRawComm;
+      
+      RCP<const MpiComm<int> > mpicomm =
+	rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+      if (mpicomm == Teuchos::null) {
+	myRawComm = MPI_COMM_SELF;
+      } else {
+	myRawComm = * (mpicomm->getRawMpiComm ());
+      }
+      ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
 #else
-    ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
+      ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
 #endif
-    MyOrderingProblem.solve ();
-
-    // Now create the reordered matrix & mark it as active
-    {
-      typedef ReorderFilter<row_matrix_type> reorder_filter_type;
-      typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
-        ordering_solution_type;
-
-      ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
-
-      // perm[i] gives the where OLD index i shows up in the NEW
-      // ordering.  revperm[i] gives the where NEW index i shows
-      // up in the OLD ordering.  Note that perm is actually the
-      // "inverse permutation," in Zoltan2 terms.
-      ArrayRCP<local_ordinal_type> perm = sol.getPermutationRCPConst (true);
-      ArrayRCP<local_ordinal_type> revperm = sol.getPermutationRCPConst ();
-
-      ReorderedLocalizedMatrix_ =
-        rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
-
-      ActiveMatrix = ReorderedLocalizedMatrix_;
+      MyOrderingProblem.solve ();
+      
+      {
+	typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
+	  ordering_solution_type;
+	
+	ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
+	
+	// perm[i] gives the where OLD index i shows up in the NEW
+	// ordering.  revperm[i] gives the where NEW index i shows
+	// up in the OLD ordering.  Note that perm is actually the
+	// "inverse permutation," in Zoltan2 terms.
+	perm = sol.getPermutationRCPConst (true);
+	revperm = sol.getPermutationRCPConst ();
+      }
     }
+    // All reorderings here...
+    ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
+	  
+	
+    ActiveMatrix = ReorderedLocalizedMatrix_;
 #else
     // This is a logic_error, not a runtime_error, because
     // setParameters() should have excluded this case already.
