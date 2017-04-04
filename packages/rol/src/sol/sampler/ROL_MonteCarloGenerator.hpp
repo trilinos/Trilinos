@@ -131,7 +131,6 @@ private:
     for (int i = 0; i < rank; ++i) {
       offset += frac + ((i < rem) ? 1 : 0);
     }
-std::cout << "RANK: " << rank << "  N: " << N << "  OFFSET: " << offset << std::endl;
     std::vector<std::vector<Real> > mypts;
     for (int i = 0; i < N; ++i) {
       mypts.push_back(pts[offset+i]);
