@@ -18,7 +18,7 @@ public:
     virtual ~RcbSettings() {}
 
     virtual bool isIncrementalRebalance() const { return false; }
-    virtual bool fieldSpecifiedVertexWeights() const { return false; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return false; }
     virtual std::string getDecompMethod() const { return std::string("rcb"); }
     virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
     virtual bool shouldPrintMetrics() const { return true; }
@@ -236,8 +236,8 @@ public:
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
 
-    virtual bool userSpecifiedVertexWeights() const { return !fieldSpecifiedVertexWeights(); }
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedInAVector() const { return !areVertexWeightsProvidedViaFields(); }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.0001; }
@@ -319,7 +319,7 @@ public:
     virtual ~MultipleCriteriaSelectorSettings() = default;
 
     virtual bool isMultiCriteriaRebalance() const { return true;}
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
 protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
@@ -336,9 +336,9 @@ void put_elements_in_different_parts(stk::mesh::BulkData &bulk, stk::mesh::Part 
     {
         stk::mesh::EntityId id = bulk.identifier(element);
         if(id%2 == 0)
-            bulk.change_entity_parts(element, stk::mesh::PartVector{&part1});
+            bulk.change_entity_parts(element, stk::mesh::ConstPartVector{&part1});
         else
-            bulk.change_entity_parts(element, stk::mesh::PartVector{&part2});
+            bulk.change_entity_parts(element, stk::mesh::ConstPartVector{&part2});
     }
     bulk.modification_end();
 }
@@ -390,7 +390,7 @@ public:
     { }
     virtual ~MultipleCriteriaFieldSettings() = default;
 
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual int getNumCriteria() const { return m_critFields.size(); }
     virtual bool isMultiCriteriaRebalance() const { return true;}
 

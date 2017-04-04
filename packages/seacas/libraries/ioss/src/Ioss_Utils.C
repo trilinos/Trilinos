@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -46,6 +47,18 @@
 
 #ifndef _WIN32
 #include <sys/utsname.h>
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/kern_return.h> // for kern_return_t
+#include <mach/mach.h>
+#include <mach/message.h> // for mach_msg_type_number_t
+#include <mach/task_info.h>
+#endif
+
+#if defined(BGQ_LWK) && defined(__linux__)
+#  include <spi/include/kernel/memory.h>
+#  include <spi/include/kernel/location.h>
 #endif
 
 #include <Ioss_SubSystem.h>
@@ -303,6 +316,93 @@ std::string Ioss::Utils::platform_information()
   return info;
 }
 
+/** \brief Return amount of memory being used on this processor */
+size_t Ioss::Utils::get_memory_info()
+{
+  size_t memory_usage = 0;
+#if defined(__APPLE__) && defined(__MACH__)
+  static size_t               original = 0;
+  kern_return_t               error;
+  mach_msg_type_number_t      outCount;
+  mach_task_basic_info_data_t taskinfo;
+
+  taskinfo.virtual_size = 0;
+  outCount              = MACH_TASK_BASIC_INFO_COUNT;
+  error = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&taskinfo, &outCount);
+  if (error == KERN_SUCCESS) {
+    // type is mach_vm_size_t
+    if (original == 0) {
+      original = taskinfo.virtual_size;
+    }
+    memory_usage = taskinfo.virtual_size - original;
+  }
+#elif __linux__
+#if defined(BGQ_LWK)
+  uint64_t heap;
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+  memory_usage = heap;
+#else
+  std::string line(128,'\0');
+
+  /* Read memory size data from /proc/self/status
+   * run "man proc" to get info on the contents of /proc/self/status
+   */
+  std::ifstream proc_status("/proc/self/status");
+  if (!proc_status) {
+    return memory_usage;
+  }
+
+  while (1) {
+    if(!std::getline(proc_status, line)) {
+      return memory_usage;
+    }
+
+    if (line.substr(0, 6) == "VmRSS:") {
+      std::string vmrss = line.substr(7);
+      std::istringstream iss(vmrss);
+      iss >> memory_usage;
+      memory_usage *= 1024;
+      break;
+    }
+  }
+  proc_status.close();
+#endif
+#endif
+  return memory_usage;
+}
+
+size_t Ioss::Utils::get_hwm_memory_info()
+{
+  size_t memory_usage = 0;
+#if defined(__linux__)
+#if defined(BGQ_LWK)
+
+#else
+  std::string line(128,'\0');
+
+  /* Read memory size data from /proc/self/status
+   * run "man proc" to get info on the contents of /proc/self/status
+   */
+  std::ifstream proc_status("/proc/self/status");
+  if (!proc_status) return memory_usage;
+
+  while (1) {
+
+    if(!std::getline(proc_status, line)) return memory_usage;
+    if (line.substr(0, 6) == "VmHWM:") {
+      std::string vmrss = line.substr(7);
+      std::istringstream iss(vmrss);
+      iss >> memory_usage;
+      memory_usage *= 1024;
+      break;
+    }
+  }
+  proc_status.close();
+#endif
+#endif
+  return memory_usage;
+}
+
 /** \brief Determine whether an entity has the property "omitted."
  *
  *  \param[in] block The entity.
@@ -459,6 +559,19 @@ unsigned int Ioss::Utils::hash(const std::string &name)
   return hashval;
 }
 
+double Ioss::Utils::timer()
+{
+#ifdef HAVE_MPI
+    return MPI_Wtime();
+#else
+    static auto begin = std::chrono::high_resolution_clock::now();
+
+    auto now = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration<double>(now - begin).count();
+#endif
+}
+
+
 /** \brief Convert an input file to a vector of strings containing one string for each line of the
  * file.
  *
@@ -549,8 +662,8 @@ std::string Ioss::Utils::lowercase(const std::string &name)
 
 /** \brief Check whether property 'prop_name' exists and if so, set 'prop_value'
  *
- * based on the property value.  Either "TRUE", "YES", "ON", or 1 for true;
- * or "FALSE", "NO", "OFF", or not equal to 1 for false.
+ * based on the property value.  Either "TRUE", "YES", "ON", or nonzero for true;
+ * or "FALSE", "NO", "OFF", or 0 for false.
  * \param[in] properties the Ioss::PropertyManager containing the properties to be checked.
  * \param[in] prop_name the name of the property to check whether it exists and if so, set its
  * value.
@@ -565,7 +678,7 @@ bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &propertie
   if (properties.exists(prop_name)) {
     found_property = true;
     if (properties.get(prop_name).get_type() == Ioss::Property::INTEGER) {
-      prop_value = properties.get(prop_name).get_int() == 1;
+      prop_value = properties.get(prop_name).get_int() != 0;
     }
     else {
       std::string yesno = Ioss::Utils::uppercase(properties.get(prop_name).get_string());

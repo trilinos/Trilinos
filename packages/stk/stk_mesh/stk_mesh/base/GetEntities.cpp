@@ -123,7 +123,7 @@ void get_selected_entities( const Selector & selector ,
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,
-  std::vector< unsigned > & count )
+  std::vector<size_t> & count )
 {
   const size_t nranks = MetaData::get(mesh).entity_rank_count();
 
@@ -147,7 +147,7 @@ void count_entities(
 unsigned get_num_entities(const stk::mesh::BulkData &bulk)
 {
     unsigned numEntities = 0;
-    std::vector<unsigned> countPerRank;
+    std::vector<size_t> countPerRank;
     stk::mesh::count_entities(bulk.mesh_meta_data().universal_part(), bulk, countPerRank);
     for(unsigned count : countPerRank)
         numEntities += count;

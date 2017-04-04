@@ -60,7 +60,7 @@ class SolutionHistory
 public:
 
   /// Contructor
-  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null);
+  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL = Teuchos::null);
 
   /// Destructor
   ~SolutionHistory() {};
@@ -165,7 +165,7 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>      pList_;
+  Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
   StorageType                               storageType;

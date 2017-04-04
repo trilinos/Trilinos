@@ -86,6 +86,8 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
     exerrval = status;

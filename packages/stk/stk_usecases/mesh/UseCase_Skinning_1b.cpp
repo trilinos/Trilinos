@@ -91,7 +91,7 @@ void destroy_entity_and_create_particles(
 
       unsigned dummy_entity_id = 10000 + (1000 * fixture.m_bulk_data.parallel_rank()) + i;
       stk::mesh::Entity dummy_node =
-          fixture.m_bulk_data.declare_entity(stk::topology::NODE_RANK, dummy_entity_id);
+          fixture.m_bulk_data.declare_node(dummy_entity_id);
 
       fixture.m_bulk_data.declare_relation(new_particles[i], dummy_node, 0);
 

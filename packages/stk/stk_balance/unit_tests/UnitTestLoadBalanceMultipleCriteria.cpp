@@ -106,7 +106,7 @@ public:
             }
 
             os << "After - Proc " << get_bulk().parallel_rank() << " Sum weight1: " << weight1 << " and weight2: " << weight2 << std::endl;
-            //std::cerr << os.str();
+            std::cerr << os.str();
 
             std::vector<size_t> counts;
             stk::mesh::Selector sel = get_meta().locally_owned_part();

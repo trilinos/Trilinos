@@ -539,6 +539,23 @@ namespace MueLu {
           preSmootherParams = defaultList.sublist("smoother: params");
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
+
+#ifdef HAVE_MUELU_INTREPID2
+      // Propagate P-coarsening for Topo smoothing
+      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+	// P-Coarsening by schedule (new interface)
+	// NOTE: levelID represents the *coarse* level in this case
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+
+	if(levelID <  (int)pcoarsen_schedule.size()) {
+	  // Topo info for P-Coarsening
+	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  preSmootherParams.set("pcoarsen: hi basis",lo);
+	}
+      }
+#endif
+
 #ifdef HAVE_MUELU_MATLAB
         if(preSmootherType == "matlab")
           preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
@@ -569,6 +586,23 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else {
+
+#ifdef HAVE_MUELU_INTREPID2
+      // Propagate P-coarsening for Topo smoothing
+      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+	// P-Coarsening by schedule (new interface)
+	// NOTE: levelID represents the *coarse* level in this case
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+
+	if(levelID <  (int)pcoarsen_schedule.size()) {
+	  // Topo info for P-Coarsening
+	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  postSmootherParams.set("pcoarsen: hi basis",lo);
+	}
+      }
+#endif
+
 #ifdef HAVE_MUELU_MATLAB
           if(postSmootherType == "matlab")
             postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
@@ -621,7 +655,8 @@ namespace MueLu {
           coarseType == "Amesos" ||
           coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
           coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION")
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION" ||
+          coarseType == "TOPOLOGICAL")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else {
 #ifdef HAVE_MUELU_MATLAB
@@ -881,11 +916,12 @@ namespace MueLu {
 #endif
 #ifdef HAVE_MUELU_INTREPID2
     else if(multigridAlgo == "pcoarsen") {
-      if(paramList.isParameter("pcoarsen: schedule") && paramList.isParameter("pcoarsen: element")) { 
+      // This only makes sense to invoke from the default list.
+      if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
 	// P-Coarsening by schedule (new interface)
 	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(paramList,"pcoarsen: schedule");	  
-	std::string pcoarsen_element = paramList.get<std::string>("pcoarsen: element");
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");	  
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
 
 	if(levelID >= (int)pcoarsen_schedule.size()) {
 	  // Smoothed aggregation

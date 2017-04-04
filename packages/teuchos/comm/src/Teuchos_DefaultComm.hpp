@@ -213,6 +213,8 @@ DefaultComm<OrdinalType>::getComm ()
 {
   if (comm_ == NULL) {
 #ifdef HAVE_MPI
+#  if MPI_VERSION >= 2
+
     comm_ = new MpiComm<OrdinalType> (MPI_COMM_WORLD);
 
     // We want comm_ to be deallocated when MPI_Finalize is called.
@@ -285,6 +287,10 @@ DefaultComm<OrdinalType>::getComm ()
     // leak memory (see Bug 6338).  I've chosen the latter.
     (void) MPI_Comm_free_keyval (&key);
 
+#  else // MPI_VERSION < 2
+#    error "Sorry, you need an MPI implementation that supports at least MPI 2.0 in order to build this code.  MPI 2.0 came out in 1997.  I wrote this comment in 2017.  If you really _really_ want MPI 1.x support, please file a GitHub issue for this feature request at github.com/trilinos/trilinos/issues with an expression of its priority and we will get to it as soon as we can."
+#  endif // MPI_VERSION >= 2
+
 #else // NOT HAVE_MPI
     comm_ = new SerialComm<OrdinalType> ();
     // We want comm_ to be deallocated when main exits, so register
@@ -332,6 +338,7 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
   } else {
     if (defaultSerialComm_ == NULL) {
 #ifdef HAVE_MPI
+#  if MPI_VERSION >= 2
       //defaultSerialComm_ = new MpiComm<OrdinalType> (MPI_COMM_SELF);
       defaultSerialComm_ = new SerialComm<OrdinalType> ();
 
@@ -373,6 +380,10 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
       // _do_ call MPI_Comm_free_keyval here, and why we don't check
       // the return code.
       (void) MPI_Comm_free_keyval (&key);
+
+#  else // MPI_VERSION < 2
+#    error "Sorry, you need an MPI implementation that supports at least MPI 2.0 in order to build this code.  MPI 2.0 came out in 1997.  I wrote this comment in 2017.  If you really _really_ want MPI 1.x support, please file a GitHub issue for this feature request at github.com/trilinos/trilinos/issues with an expression of its priority and we will get to it as soon as we can."
+#  endif // MPI_VERSION >= 2
 
 #else // NOT HAVE_MPI
       defaultSerialComm_ = new SerialComm<OrdinalType> ();

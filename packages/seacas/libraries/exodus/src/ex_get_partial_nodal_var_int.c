@@ -77,6 +77,8 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   size_t start[3], count[3];
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Verify that time_step is within bounds */

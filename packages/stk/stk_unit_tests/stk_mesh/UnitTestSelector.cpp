@@ -194,7 +194,7 @@ TEST(Verify, selectorEmptyDuringMeshMod)
     if (bulk.parallel_rank()==0) {
 
         stk::mesh::EntityId elem1Id = 1;
-        stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
+        stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, {&block1});
 
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
@@ -866,12 +866,12 @@ TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 
     std::array<int, 3> node_ids = {{1,2,3}};
     stk::mesh::PartVector empty;
-    stk::mesh::Entity shell3 = mesh.declare_entity(stk::topology::ELEM_RANK, 1u, *shellPart);
+    stk::mesh::Entity shell3 = mesh.declare_element(1u, {shellPart});
     for(unsigned i = 0; i<node_ids.size(); ++i) {
-        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
+        stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
         mesh.declare_relation(shell3, node, i);
     }
-    mesh.declare_element_side(shell3, 0u, {triPart} );
+    mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
 
     mesh.modification_end();
 

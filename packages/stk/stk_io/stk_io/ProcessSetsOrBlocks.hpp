@@ -123,11 +123,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
-      if (topo == stk::topology::INVALID_TOPOLOGY) {
-        std::ostringstream msg ;
-        msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
-        throw std::runtime_error( msg.str() );
-      }
+      ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
       std::vector<INT> elem_ids ;
       std::vector<INT> connectivity ;

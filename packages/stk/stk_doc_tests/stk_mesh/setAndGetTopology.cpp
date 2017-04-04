@@ -46,13 +46,13 @@ void declare_element_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem1, s
 {
     for(unsigned node_ord = 0; node_ord < 4; ++node_ord)
     {
-        stk::mesh::Entity new_node = mesh.declare_entity(stk::topology::NODE_RANK, node_ord + 100 * mesh.identifier(elem1));
+        stk::mesh::Entity new_node = mesh.declare_node(node_ord + 100 * mesh.identifier(elem1));
         mesh.declare_relation(elem1, new_node, node_ord);
     }
 
     for(unsigned node_ord = 0; node_ord < 8; ++node_ord)
     {
-        stk::mesh::Entity new_node2 = mesh.declare_entity(stk::topology::NODE_RANK, node_ord + 100 * mesh.identifier(elem2));
+        stk::mesh::Entity new_node2 = mesh.declare_node(node_ord + 100 * mesh.identifier(elem2));
         mesh.declare_relation(elem2, new_node2, node_ord);
     }
 }
@@ -73,8 +73,8 @@ TEST(stkMeshHowTo, setAndGetTopology)
 
     bulkData.modification_begin();
     stk::mesh::EntityId elem1Id = 1, elem2Id = 2;
-    stk::mesh::Entity elem1 = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elem1Id, tetPart);
-    stk::mesh::Entity elem2 = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elem2Id, hexPart);
+    stk::mesh::Entity elem1 = bulkData.declare_element(elem1Id, {&tetPart});
+    stk::mesh::Entity elem2 = bulkData.declare_element(elem2Id, {&hexPart});
     declare_element_nodes(bulkData, elem1, elem2);
     bulkData.modification_end();
 

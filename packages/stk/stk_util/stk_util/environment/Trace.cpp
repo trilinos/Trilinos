@@ -202,63 +202,7 @@ get_function_spec_parts(
   }
 }
 
-std::string
-format_memory(
-  int      size)
-{
-  static const char *suffix[] = {" B", " KB", " MB", " GB"};
-
-  char sign = size < 0 ? '-' : '+';
-
-  size = size > 0 ? size : -size;
-
-  int s = size/10240;
-
-  unsigned int i = 0;
-  for (i = 0; i < sizeof(suffix)/sizeof(suffix[0])-1; i++) {
-    if (s == 0)
-      break;
-    size /= 1024;
-    s /= 1024;
-  }
-
-  std::stringstream strout;
-
-  strout << sign << size << suffix[i];
-
-  return strout.str();
-}
-
 } // namespace
-
-
-std::string
-Tracespec::getFunctionNamespace() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return namespace_name;
-}
-
-
-std::string
-Tracespec::getFunctionClass() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return namespace_name + "::" + class_name;
-}
-
 
 std::string
 Tracespec::getFunctionName() const
@@ -321,7 +265,7 @@ Trace::~Trace()
 
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
       m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime)
-                                 << "s, " << format_memory(m_startMemAlloc) << "]" << dendl;
+                                 << "s, " << m_startMemAlloc << "]" << dendl;
     }
 
     m_diagWriter.m(m_lineMask) << (std::uncaught_exception() ? " (throw unwinding) " : "")

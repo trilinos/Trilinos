@@ -31,6 +31,8 @@ struct ConstMeshIndex
 
 namespace ngp {
 
+constexpr int bucketSize = 512;
+
 template <typename T>
 class Entities
 {
@@ -42,7 +44,11 @@ public:
     STK_FUNCTION
     stk::mesh::Entity operator[](unsigned i) const
     {
+#ifdef KOKKOS_HAVE_CUDA
+        return entities[bucketSize*i];
+#else
         return entities[i];
+#endif
     }
     STK_FUNCTION
     unsigned size() const
@@ -53,6 +59,7 @@ private:
     T entities;
     unsigned num;
 };
+
 
 
 inline stk::Vector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
@@ -117,17 +124,12 @@ private:
 
 
 
-#ifdef KOKKOS_HAVE_CUDA
-typedef Kokkos::LayoutLeft   Layout ;
-#else
-typedef Kokkos::LayoutRight   Layout ;
-#endif
-
-typedef Kokkos::View<stk::mesh::Entity*, Kokkos::LayoutStride, MemSpace> ConnectedNodesType;
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
-typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
+typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
 
 struct StaticBucket {
+    typedef Entities<const stk::mesh::Entity *> ConnectedNodes;
+
     STK_FUNCTION
     StaticBucket()
      : bucketId(0), entityRank(stk::topology::NODE_RANK), entities(), connectivity() {}
@@ -137,7 +139,7 @@ struct StaticBucket {
         entityRank = rank;
         entities = EntityViewType("BucketEntities"+std::to_string(bucket_id_in), numEntities);
         hostEntities = Kokkos::create_mirror_view(entities);
-        connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id_in), numEntities, numNodesPerEntity);
+        connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id_in), bucketSize, numNodesPerEntity);
         hostConnectivity = Kokkos::create_mirror_view(connectivity);
     }
 
@@ -160,8 +162,8 @@ struct StaticBucket {
     unsigned get_num_nodes_per_entity() const { return connectivity.extent(1); }
 
     STK_FUNCTION
-    ConnectedNodesType get_nodes(unsigned offsetIntoBucket) const {
-        return Kokkos::subview(connectivity, offsetIntoBucket, Kokkos::ALL());
+    ConnectedNodes get_nodes(unsigned offsetIntoBucket) const {
+        return ConnectedNodes(&connectivity(offsetIntoBucket,0), connectivity.dimension_1());
     }
 
     STK_FUNCTION
@@ -193,10 +195,9 @@ class StaticMesh
 {
 public:
     typedef ngp::ExecSpace MeshExecSpace;
-
+    typedef StaticBucket::ConnectedNodes ConnectedNodes;
     typedef StaticMeshIndex MeshIndex;
     typedef StaticBucket BucketType;
-    typedef Entities<ConnectedNodesType> ConnectedNodes;
 
     StaticMesh() : bulk(nullptr) {}
 
@@ -219,8 +220,7 @@ public:
     STK_FUNCTION
     ConnectedNodes get_nodes(const StaticMeshIndex &elem) const
     {
-        ConnectedNodesType nodes = buckets[elem.bucket->entity_rank()](elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
-        return ConnectedNodes(nodes, nodes.size());
+        return buckets[elem.bucket->entity_rank()](elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
     }
 
     STK_FUNCTION

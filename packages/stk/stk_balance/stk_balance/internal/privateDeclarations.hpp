@@ -2,9 +2,6 @@
 #define BALANCE_PRIVATEDECLARATIONS_HPP
 
 #include <stk_util/environment/ReportHandler.hpp>
-// stk search (order matters!)
-#include <stk_search/IdentProc.hpp>
-#include <stk_search/BoundingBox.hpp>
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
@@ -19,6 +16,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <stk_balance/internal/StkMeshAdapterForZoltan2.hpp>
+#include <stk_balance/internal/StkBalanceUtils.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
@@ -27,12 +25,6 @@
 #include <zoltan.h>
 
 #include <algorithm>
-
-typedef stk::search::IdentProc<stk::mesh::EntityId, int> StkMeshIdent;
-typedef std::vector<std::pair<StkMeshIdent, StkMeshIdent> > StkSearchResults;
-typedef std::pair<stk::search::Box<float>, StkMeshIdent> BoxWithStkId;
-typedef std::vector< BoxWithStkId > BoxVectorWithStkId;
-
 
 namespace stk
 {
@@ -55,7 +47,7 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps
 void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings,
                                    std::vector<GraphEdge>& graphEdges, const stk::mesh::Selector& searchSelector);
 
-void callZoltan2(const BalanceSettings& balanceSettings, const int num_procs_decomp, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
+void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int num_procs_decomp, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
 
 void rebalance(stk::mesh::BulkData& stkMeshBulkData, const stk::mesh::EntityProcVec& mockDecomposition);
 void rebalance(stk::mesh::BulkData& stkMeshBulkData, const std::vector<unsigned>& mappings, const stk::mesh::EntityProcVec& mockDecomposition);

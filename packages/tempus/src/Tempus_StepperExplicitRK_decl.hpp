@@ -57,6 +57,12 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return eODEModel_;}
 
+    virtual void setSolver(std::string solverName);
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(
+        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
       std::string stepperType = "");
@@ -101,7 +107,7 @@ private:
 protected:
 
   std::string                                        description_;
-  Teuchos::RCP<Teuchos::ParameterList>               pList_;
+  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
 

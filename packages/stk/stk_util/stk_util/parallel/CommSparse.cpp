@@ -84,9 +84,6 @@ void communicate_any( ParallelMachine p_comm ,
     }
   }
 
-  // This sync is necessary to ensure the IRecvs happen before the Sends.
-  MPI_Barrier( p_comm );
-
   for ( unsigned i = 0 ; i < num_send ; ++i ) {
     int proc = send_procs[i];
     const unsigned send_size = send[proc].capacity();
@@ -485,9 +482,6 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
       throw std::runtime_error( msg.str() );
     }
   }
-
-  //barrier to make sure recvs have been posted before sends are launched:
-  MPI_Barrier( comm );
 
   // Send the point-to-point message sizes,
 

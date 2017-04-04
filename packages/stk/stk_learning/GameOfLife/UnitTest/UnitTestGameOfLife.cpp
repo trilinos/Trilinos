@@ -8,13 +8,15 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for get_entities
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
+
+#include "../../../stk_io/stk_io/FillMesh.hpp"
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include "stk_unit_test_utils/getOption.h"
-
-
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/WriteMesh.hpp"
 
 
 
@@ -104,7 +106,7 @@ TEST(TriangleGameofLifeClass, 1ProcRandomTest)
         TriGameofLifeMesh FieldMesh(comm, 4, 4);
 
         PartGameofLife PartGame(PartMesh, partMeshName);
-        FieldGameofLife FieldGame(FieldMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 6, 7, 8,
                                              25, 26, 27, 28, 29, 30, 31, 32};
@@ -356,7 +358,7 @@ TEST(QuadGameofLifeClass, 1ProcGliderTest)
         QuadGameofLifeMesh FieldMesh(comm, 10, 10);
 
         PartGameofLife PartGame(PartMesh, meshName1);
-        FieldGameofLife FieldGame(FieldMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {71, 72, 73, 83, 92};
         PartGame.activate_these_ids(elemIds);
@@ -1276,7 +1278,7 @@ void create_nodeset_for_colored_pixels(stk::mesh::BulkData & bulk, SimpleColored
     std::string partName = "nodelist_" + std::to_string(pixelColor);
     stk::mesh::Part& nodesetPart = bulk.mesh_meta_data().declare_part(partName, stk::topology::NODE_RANK);
     for(stk::mesh::Entity node : elementNodes)
-        bulk.change_entity_parts(node, stk::mesh::PartVector {&nodesetPart});
+        bulk.change_entity_parts(node, stk::mesh::ConstPartVector{&nodesetPart});
     bulk.modification_end();
 }
 
@@ -1334,6 +1336,50 @@ TEST(TOSDTWD, hex_mesh_from_png)
     }
 }
 
+void move_colored_pixels_into_separate_block_part(stk::mesh::BulkData & bulk, SimpleColoredPng & image, enum PixelColor pixelColor)
+{
+    std::vector<Pixel> coloredPixels = get_colored_pixels_by_color(image, pixelColor);
+    stk::mesh::EntityIdVector elementIds = image.get_elemIds_for_colored_pixels(coloredPixels);
+
+    stk::mesh::EntityVector elements(elementIds.size());
+    for(size_t elemI = 0; elemI < elementIds.size(); elemI++)
+        elements[elemI] = bulk.get_entity(stk::topology::ELEM_RANK, elementIds[elemI]);
+
+    stk::mesh::Part *originalPart = bulk.mesh_meta_data().get_part("Elem_Part");
+    std::string partName = "block_" + std::to_string(pixelColor);
+    stk::mesh::Part *newPart = bulk.mesh_meta_data().get_part(partName);
+    bulk.modification_begin();
+    for(stk::mesh::Entity elem : elements)
+        bulk.change_entity_parts(elem, stk::mesh::PartVector{newPart}, stk::mesh::PartVector{originalPart});
+    bulk.modification_end();
+}
+
+TEST(TOSDTWD, hex_mesh_from_image_multiple_blocks)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (1 == numProcs)
+    {
+        std::string fileName = stk::unit_test_util::get_option("-i", "Tiny.png");
+        SimpleColoredPng image(fileName);
+        unsigned width = image.get_image_width();
+        unsigned height = image.get_image_height();
+
+        HexGameofLifeMesh FieldMesh(comm, width, height, 1);
+        FieldGameofLife FieldGame(FieldMesh, "junk");
+
+        stk::mesh::EntityIdVector elemIds;
+        image.fill_id_vector_with_active_pixels(elemIds);
+        FieldGame.activate_these_ids(elemIds);
+
+        stk::mesh::BulkData &bulk = FieldMesh.bulk_data();
+        move_colored_pixels_into_separate_block_part(bulk, image, BLUE);
+        move_colored_pixels_into_separate_block_part(bulk, image, GREEN);
+        move_colored_pixels_into_separate_block_part(bulk, image, RED);
+
+        FieldGame.write_mesh();
+    }
+}
 
 TEST(PNGGameofLife, 4ProcTiny)
 {

@@ -152,6 +152,8 @@ struct ScalarTraits
   static inline T squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); }
   //! Returns the result of raising one scalar \c x to the power \c y.
   static inline T pow(T x, T y) { return UndefinedScalarTraits<T>::notDefined(); }
+  //! Returns the value of PI.
+  static inline T pi() { return UndefinedScalarTraits<T>::notDefined();}
 };
 
 

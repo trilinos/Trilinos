@@ -23,7 +23,7 @@ void fill_mesh_with_orphaned_owned_sides(stk::mesh::BulkData& bulkData)
     {
         stk::mesh::EntityVector nodes(4);
         for(stk::mesh::EntityId id=1;id<=4;++id)
-            nodes[id-1] = bulkData.declare_entity(stk::topology::NODE_RANK, id);
+            nodes[id-1] = bulkData.declare_node(id);
 
         stk::mesh::Entity face = bulkData.declare_solo_side(1, {&bulkData.mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4)});
         for(size_t i=0;i<nodes.size();++i)

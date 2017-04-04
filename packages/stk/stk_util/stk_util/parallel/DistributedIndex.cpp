@@ -37,7 +37,9 @@
 #include <limits>                       // for numeric_limits
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
+#include <stk_util/parallel/ParallelReduceBool.hpp>  // for is_true_on_any_proc
+#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/util/RadixSort.hpp>  // for radix_sort_unsigned
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
@@ -71,11 +73,11 @@ void sort_unique( Vector & vec )
 
 // reserve vector size (current size + rev_buffer remaining)
 template < typename Vector >
-inline void reserve_for_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, Vector & v)
+inline void reserve_for_recv_buffer( const CommSparse& sparse, int comm_size, Vector & v)
 {
   unsigned num_remote = 0;
-  for (DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+  for (int p = 0 ; p < comm_size ; ++p ) {
+    const CommBuffer & buf = sparse.recv_buffer( p );
     num_remote += buf.remaining() / sizeof(typename Vector::value_type);
   }
   v.reserve(v.size() + num_remote);
@@ -83,12 +85,12 @@ inline void reserve_for_recv_buffer( const CommAll& all, const DistributedIndex:
 
 // unpack buffer into vector
 template < typename Vector >
-inline void unpack_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, Vector & v)
+inline void unpack_recv_buffer( CommSparse& sparse, int comm_size, Vector & v)
 {
   typedef typename Vector::value_type value_type;
-  reserve_for_recv_buffer(all, comm_size, v);
+  reserve_for_recv_buffer(sparse, comm_size, v);
   for (DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+    CommBuffer & buf = sparse.recv_buffer( p );
     while ( buf.remaining() ) {
       value_type kp;
       buf.unpack( kp );
@@ -99,12 +101,12 @@ inline void unpack_recv_buffer( const CommAll& all, const DistributedIndex::Proc
 
 // unpack buffer into vector, where pair.second is the processor
 template < typename VectorProcPair >
-inline void unpack_with_proc_recv_buffer( const CommAll& all, const DistributedIndex::ProcType& comm_size, VectorProcPair & v)
+inline void unpack_with_proc_recv_buffer( CommSparse& sparse, const DistributedIndex::ProcType& comm_size, VectorProcPair & v)
 {
   typedef typename VectorProcPair::value_type pair_type;
-  reserve_for_recv_buffer(all, comm_size, v);
+  reserve_for_recv_buffer(sparse, comm_size, v);
   for ( DistributedIndex::ProcType p = 0 ; p < comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+    CommBuffer & buf = sparse.recv_buffer( p );
     pair_type kp;
     kp.second = p;
     while ( buf.remaining() ) {
@@ -222,7 +224,7 @@ template <typename KeyUsageVector, typename KeyRequestVector>
 void query_pack_to_usage(
   const KeyUsageVector & key_usage ,
   const KeyRequestVector & request ,
-  CommAll & all )
+  CommSparse & sparse )
 {
   typedef typename KeyUsageVector::const_iterator   usage_iterator_type;
   typedef typename KeyRequestVector::const_iterator request_iterator_type;
@@ -242,7 +244,7 @@ void query_pack_to_usage(
       for ( usage_iterator_type jinfo = i ; jinfo != j ; ++jinfo ) {
         DistributedIndex::ProcType proc = jsend->second;
         DistributedIndex::KeyProc key_proc(*jinfo);
-        all.send_buffer( proc ).pack<DistributedIndex::KeyProc>( key_proc );
+        sparse.send_buffer( proc ).pack<DistributedIndex::KeyProc>( key_proc );
       }
     }
   }
@@ -251,7 +253,7 @@ void query_pack_to_usage(
 template <typename KeyUsageVector, typename KeyRequestVector>
 void query_pack( const KeyUsageVector & key_usage ,
                  const KeyRequestVector & request ,
-                 CommAll & all )
+                 CommSparse & sparse )
 {
   typedef typename KeyUsageVector::const_iterator   usage_iterator_type;
   typedef typename KeyRequestVector::const_iterator request_iterator_type;
@@ -261,9 +263,9 @@ void query_pack( const KeyUsageVector & key_usage ,
   for ( request_iterator_type k = request.begin(); k != request.end() && i != key_usage.end() ; ++k ) {
     for ( ; i != key_usage.end() && i->first < k->first ; ++i ) {}
     for ( usage_iterator_type j = i; j != key_usage.end() && j->first == k->first ; ++j ) {
-      DistributedIndex::ProcType proc = k->second;
+      const int proc = k->second;
       DistributedIndex::KeyProc key_proc(*j);
-      all.send_buffer( proc ).pack<DistributedIndex::KeyProc>( key_proc );
+      sparse.send_buffer( proc ).pack<DistributedIndex::KeyProc>( key_proc );
     }
   }
 }
@@ -274,17 +276,17 @@ void DistributedIndex::query( const KeyProcVector & request , KeyProcVector & sh
 {
   sharing_of_keys.clear();
 
-  CommAll all( m_comm );
+  CommSparse sparse( m_comm );
 
-  query_pack( m_key_usage , request , all ); // Sizing
+  query_pack( m_key_usage , request , sparse ); // Sizing
 
-  all.allocate_buffers( m_comm_size / 4 , false );
+  sparse.allocate_buffers();
 
-  query_pack( m_key_usage , request , all ); // Packing
+  query_pack( m_key_usage , request , sparse ); // Packing
 
-  all.communicate();
+  sparse.communicate();
 
-  unpack_recv_buffer(all, m_comm_size, sharing_of_keys);
+  unpack_recv_buffer(sparse, m_comm_size, sharing_of_keys);
 
   std::sort( sharing_of_keys.begin() , sharing_of_keys.end() );
 }
@@ -300,14 +302,14 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
 
   {
     bool bad_key = false ;
-    CommAll all( m_comm );
+    CommSparse sparse( m_comm );
 
     for ( KeyTypeVector::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
-      const ProcType p = to_which_proc( *k );
+      const int p = to_which_proc( *k );
 
       if ( p < m_comm_size ) {
-        all.send_buffer( p ).pack<KeyType>( *k );
+        sparse.send_buffer( p ).pack<KeyType>( *k );
       }
       else {
         bad_key = true ;
@@ -315,7 +317,8 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
     }
 
     // Error condition becomes global:
-    bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
+    sparse.allocate_buffers();
+    bad_key = stk::is_true_on_any_proc(m_comm, bad_key);
 
     if ( bad_key ) {
       throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
@@ -323,12 +326,12 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
 
     for ( KeyTypeVector::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
-      all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
+      sparse.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
     }
 
-    all.communicate();
+    sparse.communicate();
 
-    unpack_with_proc_recv_buffer(all, m_comm_size, request);
+    unpack_with_proc_recv_buffer(sparse, m_comm_size, request);
   }
 
   sort_unique( request );
@@ -342,14 +345,14 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
 
   {
     bool bad_key = false ;
-    CommAll all( m_comm );
+    CommSparse sparse( m_comm );
 
     for ( KeyTypeVector::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
       const ProcType p = to_which_proc( *k );
 
       if ( p < m_comm_size ) {
-        all.send_buffer( p ).pack<KeyType>( *k );
+        sparse.send_buffer( p ).pack<KeyType>( *k );
       }
       else {
         bad_key = true ;
@@ -358,7 +361,8 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
 
     // Error condition becomes global:
 
-    bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
+    sparse.allocate_buffers();
+    bad_key = stk::is_true_on_any_proc(m_comm, bad_key);
 
     if ( bad_key ) {
       throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
@@ -366,28 +370,28 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
 
     for ( KeyTypeVector::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
-      all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
+      sparse.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
     }
 
-    all.communicate();
+    sparse.communicate();
 
-    unpack_recv_buffer(all, m_comm_size, request);
+    unpack_recv_buffer(sparse, m_comm_size, request);
   }
 
   sort_unique( request );
 
   {
-    CommAll all( m_comm );
+    CommSparse sparse( m_comm );
 
-    query_pack_to_usage( m_key_usage , request , all ); // Sizing
+    query_pack_to_usage( m_key_usage , request , sparse ); // Sizing
 
-    all.allocate_buffers( m_comm_size / 4 , false );
+    sparse.allocate_buffers();
 
-    query_pack_to_usage( m_key_usage , request , all ); // Packing
+    query_pack_to_usage( m_key_usage , request , sparse ); // Packing
 
-    all.communicate();
+    sparse.communicate();
 
-    unpack_recv_buffer(all, m_comm_size, sharing_keys);
+    unpack_recv_buffer(sparse, m_comm_size, sharing_keys);
 
     std::sort( sharing_keys.begin() , sharing_keys.end() );
   }
@@ -492,7 +496,7 @@ void DistributedIndex::update_keys(
     }
   }
 
-  CommAll all( m_comm );
+  CommSparse sparse( m_comm );
 
   // Sizing and add_new_keys bounds checking:
 
@@ -502,7 +506,7 @@ void DistributedIndex::update_keys(
 //  unsigned max_add = 0;
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     if ( count_remove[p] || count_add[p] ) {
-      CommBuffer & buf = all.send_buffer( p );
+      CommBuffer & buf = sparse.send_buffer( p );
       buf.skip<unsigned long>( 1 );
       buf.skip<KeyType>( count_remove[p] );
       buf.skip<KeyType>( count_add[p] );
@@ -511,11 +515,9 @@ void DistributedIndex::update_keys(
   }
 
   // Allocate buffers and perform a global OR of error_flag
-  const bool symmetry_flag = false ;
   const bool error_flag = 0 < local_bad_input ;
-
-  bool global_bad_input =
-    all.allocate_buffers( m_comm_size / 4, symmetry_flag , error_flag );
+  sparse.allocate_buffers();
+  bool global_bad_input = stk::is_true_on_any_proc(m_comm, error_flag);
 
   if ( global_bad_input ) {
     std::ostringstream msg ;
@@ -534,7 +536,7 @@ void DistributedIndex::update_keys(
   // Pack the remove counts for each process
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     if ( count_remove[p] || count_add[p] ) {
-      all.send_buffer( p ).pack<unsigned long>( count_remove[p] );
+      sparse.send_buffer( p ).pack<unsigned long>( count_remove[p] );
     }
   }
 
@@ -544,7 +546,7 @@ void DistributedIndex::update_keys(
         i != remove_existing_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p != m_comm_rank ) {
-      all.send_buffer( p ).pack<KeyType>( *i );
+      sparse.send_buffer( p ).pack<KeyType>( *i );
     }
   }
 
@@ -554,12 +556,12 @@ void DistributedIndex::update_keys(
         i != add_new_keys_end; ++i ) {
     const ProcType p = to_which_proc( *i );
     if ( p != m_comm_rank ) {
-      all.send_buffer( p ).pack<KeyType>( *i );
+      sparse.send_buffer( p ).pack<KeyType>( *i );
     }
   }
 
   // Communicate keys
-  all.communicate();
+  sparse.communicate();
 
   //------------------------------
   // Remove for local keys
@@ -577,7 +579,7 @@ void DistributedIndex::update_keys(
   // Set the process to a negative value for subsequent removal.
 
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer( p );
+    CommBuffer & buf = sparse.recv_buffer( p );
     if ( buf.remaining() ) {
       unsigned long remove_count = 0 ;
 
@@ -615,7 +617,7 @@ void DistributedIndex::update_keys(
 
   // Unpack and append for remote keys:
 
-  unpack_with_proc_recv_buffer(all, m_comm_size, new_key_usage);
+  unpack_with_proc_recv_buffer(sparse, m_comm_size, new_key_usage);
 
   m_key_usage.insert(m_key_usage.end(), new_key_usage.begin(), new_key_usage.end());
   std::sort(m_key_usage.begin(), m_key_usage.end());
@@ -980,7 +982,7 @@ void DistributedIndex::generate_new_keys(
 
   //--------------------------------------------------------------------
 
-  CommAll all( m_comm );
+  CommSparse sparse( m_comm );
 
   // Sizing
 
@@ -988,12 +990,12 @@ void DistributedIndex::generate_new_keys(
     for ( int p = 0 ; p < m_comm_size ; ++p ) {
       const size_t n_to_p = my_donations[ p * m_span_count + i ];
       if ( 0 < n_to_p ) {
-        all.send_buffer(p).skip<KeyType>( n_to_p );
+        sparse.send_buffer(p).skip<KeyType>( n_to_p );
       }
     }
   }
 
-  all.allocate_buffers( m_comm_size / 4 , false );
+  sparse.allocate_buffers();
 
   // Packing
 
@@ -1003,7 +1005,7 @@ void DistributedIndex::generate_new_keys(
       for ( int p = 0 ; p < m_comm_size ; ++p ) {
         const size_t n_to_p = my_donations[ p * m_span_count + i ];
         if ( 0 < n_to_p ) {
-          all.send_buffer(p).pack<KeyType>( & contrib_keys[n] , n_to_p );
+          sparse.send_buffer(p).pack<KeyType>( & contrib_keys[n] , n_to_p );
           for ( size_t k = 0 ; k < n_to_p ; ++k , ++n ) {
             m_key_usage.push_back( KeyProc( contrib_keys[n] , p ) );
           }
@@ -1014,10 +1016,10 @@ void DistributedIndex::generate_new_keys(
 
   std::sort( m_key_usage.begin() , m_key_usage.end() );
 
-  all.communicate();
+  sparse.communicate();
 
   // Unpacking
-  unpack_recv_buffer( all, m_comm_size, new_keys);
+  unpack_recv_buffer( sparse, m_comm_size, new_keys);
 
   stk::util::radix_sort_unsigned(new_keys.data(), new_keys.size());
 
@@ -1037,5 +1039,4 @@ void DistributedIndex::generate_new_keys(
 
 } // namespace util
 } // namespace stk
-
 

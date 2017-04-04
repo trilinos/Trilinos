@@ -63,6 +63,8 @@ int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Find the variable ID for the element block IDs */

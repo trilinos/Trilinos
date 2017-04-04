@@ -266,7 +266,21 @@ namespace Ioex {
   int DatabaseIO::free_file_pointer() const
   {
     if (exodusFilePtr != -1) {
+      bool do_timer = false;
+      if (isParallel) {
+	Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      }
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
       ex_close(exodusFilePtr);
+
+      if (do_timer && isParallel) {
+	double t_end = Ioss::Utils::timer();
+	double duration = util().global_minmax(t_end-t_begin, Ioss::ParallelUtils::DO_MAX);
+	if (myProcessor == 0) {
+	  std::cerr << "File Close Time = " << duration << "\n";
+	}
+      }
     }
     exodusFilePtr = -1;
 
@@ -351,6 +365,10 @@ namespace Ioex {
         std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
         std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
         std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+        qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
+        qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
       }
     }
 

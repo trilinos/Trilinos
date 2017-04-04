@@ -67,6 +67,8 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   char        errmsg[MAX_ERR_LENGTH];
   const char *routine = "ex_get_names";
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */

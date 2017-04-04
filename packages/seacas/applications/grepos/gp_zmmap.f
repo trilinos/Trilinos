@@ -42,7 +42,7 @@ C   --ZMMAP compresses the element/node order map by removing deleted
 C     elements/nodes.
 C   --
 C   --Parameters:
-C   --   NUMEL - IN/OUT - the number of elements/nodes
+C   --   NUMEL - IN - the number of elements/nodes
 C   --   MAPEL - IN/OUT - the element/node order map
 
       INTEGER MAPEL(*)
@@ -54,8 +54,5 @@ C   --   MAPEL - IN/OUT - the element/node order map
             MAPEL(JEL) = MAPEL(IEL)
          END IF
   100 CONTINUE
-
-      NUMEL = JEL
-
       RETURN
       END

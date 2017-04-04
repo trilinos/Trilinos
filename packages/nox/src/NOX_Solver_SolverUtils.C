@@ -50,6 +50,11 @@
 
 #include "NOX_Common.H"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "NOX_Abstract_PrePostOperator.H"
+#include "NOX_MeritFunction_Generic.H"
+#include "NOX_StatusTest_Generic.H"
+
 #include "NOX_Solver_SolverUtils.H"
 
 // ************************************************************************
@@ -57,23 +62,38 @@
 NOX::StatusTest::CheckType NOX::Solver::
 parseStatusTestCheckType(Teuchos::ParameterList& p)
 {
-  // NOTE: we assume that "p" is the solver options sublist!
+  return Teuchos::getIntegralValue<NOX::StatusTest::CheckType>(p,"Status Test Check Type");
+}
 
-  using namespace Teuchos;
-  std::string string_check_type = p.get("Status Test Check Type", "Minimal");
+// ************************************************************************
+// ************************************************************************
+void NOX::Solver::
+validateSolverOptionsSublist(Teuchos::ParameterList& p)
+{
+  Teuchos::ParameterList validParams("Valid Params");
 
-  if (string_check_type == "Complete")
-    return NOX::StatusTest::Complete;
-  else if (string_check_type == "Minimal")
-    return NOX::StatusTest::Minimal;
-  else if (string_check_type == "None")
-    return NOX::StatusTest::None;
-  else {
-    std::string msg = "Error - NOX::Solver::parseStatusTestCheckType() - The value for the key \"Status Test Check Type\" is not valid!.  Please check the spelling of the parameter.";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
+  Teuchos::setStringToIntegralParameter<NOX::StatusTest::CheckType>
+    ("Status Test Check Type",
+     "Minimal",
+     "Sets the StatusTest check type.",
+     Teuchos::tuple<std::string>("Complete","Minimal","None"),
+     Teuchos::tuple<NOX::StatusTest::CheckType>(NOX::StatusTest::Complete,NOX::StatusTest::Minimal,NOX::StatusTest::None),
+     &validParams);
 
-  return NOX::StatusTest::Minimal;
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo;
+  validParams.set("User Defined Pre/Post Operator",ppo);
+
+  Teuchos::RCP<NOX::MeritFunction::Generic> mf;
+  validParams.set("User Defined Merit Function",mf);
+
+  Teuchos::setStringToIntegralParameter<int>
+    ("Fixed Point Iteration Type",
+     "Seidel",
+     "Sets iteration type for the fixed point solver.",
+     Teuchos::tuple<std::string>("Seidel","Jacobi"),
+     &validParams);
+
+  p.validateParametersAndSetDefaults(validParams);  
 }
 
 // ************************************************************************

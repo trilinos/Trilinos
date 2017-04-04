@@ -146,26 +146,12 @@ bool MeshField::operator==(const MeshField &other) const
          m_subsetParts == other.m_subsetParts;
 }
 
-double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
-				   const stk::io::DBStepTimeInterval &sti,
-				   bool ignore_missing_fields)
+double MeshField::restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
+                                             int step, bool ignore_missing_fields)
 {
-  double time_read = -1.0;
-  if (!is_active())
-    return time_read;
-  
-  if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
-    int step = 0;
-    if (m_timeMatch == CLOSEST) {
-      step = sti.get_closest_step();
-    }
-    else if (m_timeMatch == SPECIFIED) {
-      DBStepTimeInterval sti2(sti.region, m_timeToRead);
-      step = sti2.get_closest_step();
-    }
     STKIORequire(step > 0);
     
-    time_read = sti.region->begin_state(step);
+    double time_read = region->begin_state(step);
 
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
@@ -181,39 +167,62 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       // the data to the stk field. The subset will be defined as a
       // selector of the stk part.
       bool subsetted = rank == stk::topology::NODE_RANK &&
-	io_entity->type() == Ioss::NODEBLOCK &&
-	*stk_part != mesh::MetaData::get(bulk).universal_part();
+        io_entity->type() == Ioss::NODEBLOCK &&
+        *stk_part != mesh::MetaData::get(bulk).universal_part();
 
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();
       // If the multi-state field is not "set" at the newest state, then the user has
       // registered the field at a specific state and only that state should be input.
       if(m_singleState || state_count == 1 || state != stk::mesh::StateNew) {
-	if (subsetted) {
-	  stk::io::subsetted_field_data_from_ioss(bulk, m_field, entity_list,
-						  io_entity, stk_part, m_dbName);
-	} else {
-	  stk::io::field_data_from_ioss(bulk, m_field, entity_list,
-					io_entity, m_dbName);
-	}
+        if (subsetted) {
+          stk::io::subsetted_field_data_from_ioss(bulk, m_field, entity_list,
+                                                  io_entity, stk_part, m_dbName);
+        } else {
+          stk::io::field_data_from_ioss(bulk, m_field, entity_list,
+                                        io_entity, m_dbName);
+        }
       } else {
-	if (subsetted) {
-	  stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
-							     io_entity, stk_part, m_dbName, state_count,
-							     ignore_missing_fields);
-	} else {
-	  stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
-						   io_entity, m_dbName, state_count,
-						   ignore_missing_fields);
-	}
+        if (subsetted) {
+          stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
+                                                             io_entity, stk_part, m_dbName, state_count,
+                                                             ignore_missing_fields);
+        } else {
+          stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
+                                                   io_entity, m_dbName, state_count,
+                                                   ignore_missing_fields);
+        }
       }
 
       if (m_oneTimeOnly) {
-	(*I).release_field_data();
+        (*I).release_field_data();
       }
       ++I;
     }
-    sti.region->end_state(step);
+    region->end_state(step);
+
+    return time_read;
+}
+
+double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
+				   const stk::io::DBStepTimeInterval &sti,
+				   bool ignore_missing_fields)
+{
+  double time_read = -1.0;
+  if (!is_active())
+    return time_read;
+
+  if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
+    int step = 0;
+    if (m_timeMatch == CLOSEST) {
+      step = sti.get_closest_step();
+    }
+    else if (m_timeMatch == SPECIFIED) {
+      DBStepTimeInterval sti2(sti.region, m_timeToRead);
+      step = sti2.get_closest_step();
+    }
+
+    time_read = restore_field_data_at_step(sti.region, bulk, step, ignore_missing_fields);
   }
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
     // Interpolation only handles single-state fields with state StateNew

@@ -160,7 +160,12 @@ void all_reduce_impl( ParallelMachine comm ,
 {
   size_t * tmp = const_cast<size_t*>( local );
 
-  if ( sizeof(size_t) == sizeof(unsigned) ) {
+  if(comm == stk::parallel_machine_null())
+  {
+      for(unsigned i=0;i<count;++i)
+          global[i] = local[i];
+  }
+  else if ( sizeof(size_t) == sizeof(unsigned) ) {
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , op , comm );
 
   }

@@ -55,8 +55,6 @@ namespace Iogn {
       return mDashSurfaceData.globalNumberOfElementsSurface2;
     }
     throw std::exception();
-
-    return INVALID;
   }
 
   int64_t DashSurfaceMesh::block_count() const { return NUMBER_OF_SURFACES; }
@@ -81,8 +79,6 @@ namespace Iogn {
       return mDashSurfaceData.surfaceAConnectivity.size() / NUM_NODES_PER_QUAD_FACE;
     }
     throw std::exception();
-
-    return INVALID;
   }
 
   int64_t DashSurfaceMesh::nodeset_node_count_proc(int64_t /*id*/) const { return 0; }

@@ -61,7 +61,6 @@ namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
-namespace stk { namespace mesh { template <typename DataType = void> class Property; } }
 
 
 namespace stk {
@@ -100,8 +99,6 @@ template< typename Scalar = void ,
  */
 enum { MaximumFieldDimension = 7 };
 
-
-typedef Property< void > PropertyBase ;
 
 /** \} */
 

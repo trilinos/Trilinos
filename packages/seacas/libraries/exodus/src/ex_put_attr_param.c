@@ -76,6 +76,9 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
   int         numobjentdim;
   int         obj_id_ndx;
   int         numattrdim;
+  int         fill = NC_FILL_CHAR;
+
+  ex_check_valid_file_id(exoid);
 
   /* Determine index of obj_id in obj_type id array */
   if (obj_type == EX_NODAL) {
@@ -224,6 +227,9 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
     ex_err("ex_put_attr_param", errmsg, exerrval);
     goto error_ret; /* exit define mode and return */
   }
+#if NC_HAS_HDF5
+  nc_def_var_fill(exoid, varid, 0, &fill);
+#endif
 
   /* leave define mode  */
   if ((status = nc_enddef(exoid)) != NC_NOERR) {

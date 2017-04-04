@@ -131,8 +131,6 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 
     stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
 
-    mesh.initialize_face_adjacent_element_graph();
-
     unsigned elem_id = 0;
     if (mesh.parallel_rank()==0)
       elem_id = 1;
@@ -201,7 +199,7 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   for(uint i = 0; i < num_sides; ++i)
   {
     stk::topology sub_topo = topo.side_topology(i);
-    bulk.declare_element_side(elem, i, {&meta.get_topology_root_part(sub_topo)});
+    bulk.declare_element_side(elem, i, stk::mesh::ConstPartVector{&meta.get_topology_root_part(sub_topo)});
 
     side_nodes.clear();
 
@@ -229,8 +227,7 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i],
-                                                 meta.get_topology_root_part(topo.edge_topology()));
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], {&meta.get_topology_root_part(topo.edge_topology())});
 
     for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
     {
@@ -277,7 +274,7 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
     stk::topology sub_topo = topo.side_topology(i);
     side_nodes.clear();
 
-    stk::mesh::Entity side = bulk.declare_entity(sub_topo_rank, side_ids[i], meta.get_topology_root_part(sub_topo));
+    stk::mesh::Entity side = bulk.declare_solo_side(side_ids[i], {&meta.get_topology_root_part(sub_topo)});
 
     for (uint j = 0; j < sub_topo.num_nodes(); ++j)
     {
@@ -313,8 +310,7 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i],
-                                                 meta.get_topology_root_part(topo.edge_topology()));
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], {&meta.get_topology_root_part(topo.edge_topology())});
 
     for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
     {
@@ -631,7 +627,7 @@ TEST(FEMHelper, verify_connectibility_failure)
       case stk::topology::PYRAMID_5:
         {
           stk::mesh::EntityIdVector elem_node_ids {1, 2, 3, 4, 5};
-          stk::mesh::EntityIdVector side_ids {1, 2, 3, 4, 5};
+          stk::mesh::EntityIdVector side_ids {7, 8, 9, 10, 17};
           stk::mesh::EntityIdVector edge_ids {1, 2, 3, 4, 5, 6, 7, 8};
 
           std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,0}}, {{2,3,5,0}},
@@ -653,7 +649,7 @@ TEST(FEMHelper, verify_connectibility_failure)
       case stk::topology::TET_10:
         {
           stk::mesh::EntityIdVector elem_node_ids {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-          stk::mesh::EntityIdVector side_ids {1, 2, 3, 4};
+          stk::mesh::EntityIdVector side_ids {7, 8, 9, 10};
           stk::mesh::EntityIdVector edge_ids {1, 2, 3, 4, 5, 6};
 
           std::array < std::array <unsigned, 6>, 4 > gold_side_node_ids_data = {{ {{1,2,4, 5,9,8}},

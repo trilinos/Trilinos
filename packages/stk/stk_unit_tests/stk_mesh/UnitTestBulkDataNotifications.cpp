@@ -82,7 +82,7 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
 
         mesh.modification_begin();
         if (procId == 0) {
-            mesh.change_entity_parts(node1, {&newPart});
+            mesh.change_entity_parts(node1, stk::mesh::ConstPartVector{&newPart});
         }
         mesh.modification_end();
 

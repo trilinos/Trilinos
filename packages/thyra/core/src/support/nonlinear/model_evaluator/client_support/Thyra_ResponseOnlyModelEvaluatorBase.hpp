@@ -172,7 +172,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W() const
     " this function create_W() may be overridden by the subclass to return"
     " a non-null object!"
     );
-  return Teuchos::null; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -186,7 +186,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
     " this function create_W_op() may be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
-  return Teuchos::null; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -200,7 +200,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W_prec() const
     " this function create_W_prec() may be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
-  return Teuchos::null; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -214,7 +214,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_W_factory() const
     " this function get_W_factory() may be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
-  return Teuchos::null; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 

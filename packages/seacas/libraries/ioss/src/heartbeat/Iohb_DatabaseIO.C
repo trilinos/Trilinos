@@ -165,13 +165,13 @@ namespace Iohb {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), timeLastFlush(0),
-        logStream(nullptr), layout_(nullptr), legend_(nullptr), tsFormat("[%H:%M:%S]"),
-        separator_(", "), precision_(5), fieldWidth_(0), showLabels(false), showLegend(true),
-        appendOutput(false), addTimeField(false), initialized_(false), streamNeedsDelete(false),
-        fileFormat(DEFAULT)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), timeLastFlush_(0),
+	flushInterval_(10), logStream(nullptr), layout_(nullptr), legend_(nullptr),
+	tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5), fieldWidth_(0),
+	showLabels(false), showLegend(true), appendOutput(false), addTimeField(false),
+	initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
   {
-    timeLastFlush = time(nullptr);
+    timeLastFlush_ = time(nullptr);
     dbState       = Ioss::STATE_UNKNOWN;
   }
 
@@ -218,6 +218,10 @@ namespace Iohb {
       }
 
       // Pull variables from the regions property data...
+      if (properties.exists("FLUSH_INTERVAL")) {
+	new_this->flushInterval_ = properties.get("FLUSH_INTERVAL").get_int();
+      }
+      
       if (properties.exists("TIME_STAMP_FORMAT")) {
         new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
@@ -329,15 +333,15 @@ namespace Iohb {
     layout_ = nullptr;
 
     // Flush the buffer to disk...
-    // flush if there is more than 10 seconds since the last flush to avoid
+    // flush if there is more than 'flushInterval_' seconds since the last flush to avoid
     // the flush eating up cpu time for small fast jobs...
 
     // This code is derived from code in finalize_write() in Ioex_DatabaseIO.C
     // See other comments there...
 
     time_t cur_time = time(nullptr);
-    if (cur_time - timeLastFlush >= 10) {
-      timeLastFlush = cur_time;
+    if (cur_time - timeLastFlush_ >= flushInterval_) {
+      timeLastFlush_ = cur_time;
       flush_database();
     }
 

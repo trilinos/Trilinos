@@ -61,9 +61,10 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
 
   const Real eps_;
+  Real sw_, sh_, ow_;
 
   Real weightFunc(const std::vector<Real> & x) const {
-    return (((x[1] <= 0.5+eps_)&&(x[0] >= 1.0-eps_)&&(x[0] <= 3.0+eps_)) ?
+    return (((x[1] <= sh_+eps_)&&(x[0] >= sw_-eps_)&&(x[0] <= sw_+ow_+eps_)) ?
                 static_cast<Real>(1) : static_cast<Real>(0));
   }
 
@@ -71,9 +72,13 @@ public:
   QoI_Vorticity_ThermalFluids(const Teuchos::RCP<FE<Real> > &feVel,
                               const Teuchos::RCP<FE<Real> > &fePrs,
                               const Teuchos::RCP<FE<Real> > &feThr,
-                              const Teuchos::RCP<FieldHelper<Real> > &fieldHelper)
+                              const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
+                              Teuchos::ParameterList &parlist)
     : feVel_(feVel), fePrs_(fePrs), feThr_(feThr),
       fieldHelper_(fieldHelper), eps_(std::sqrt(ROL::ROL_EPSILON<Real>())) {
+    sw_ = parlist.sublist("Geometry").get("Step width",1.0);
+    sh_ = parlist.sublist("Geometry").get("Step height",0.5);
+    ow_ = parlist.sublist("Problem").get("Observation width",2.0);
     int c = feVel_->cubPts()->dimension(0);
     int p = feVel_->cubPts()->dimension(1);
     int d = feVel_->cubPts()->dimension(2);
@@ -103,28 +108,36 @@ public:
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     // Evaluate on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradUX_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradUY_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    feVel_->evaluateGradient(gradUX_eval, U[0]);
-    feVel_->evaluateGradient(gradUY_eval, U[1]);
-    // Compute curl
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > curlU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_vec(d);
+    for (int i = 0; i < d; ++i) {
+      gradU_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      feVel_->evaluateGradient(gradU_vec[i], U[i]);
+    }
+    // Compute weighted curl
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > curlU_eval;
+    if (d==2) {
+      curlU_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    }
+    else if (d==3) {
+      curlU_eval = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    }
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
-        (*curlU_eval)(i,j)   = (*gradUY_eval)(i,j,0) - (*gradUX_eval)(i,j,1);
+        if (d==2) {
+          (*curlU_eval)(i,j) = (*weight_)(i,j)
+                               * ((*gradU_vec[1])(i,j,0) - (*gradU_vec[0])(i,j,1));
+        }
+        else if (d==3) {
+          for (int k = 0; k < d; ++k) {
+            int i1 = (k+2)%d, i2 = (k+1)%d;
+            (*curlU_eval)(i,j,k) = (*weight_)(i,j)
+                                   * ((*gradU_vec[i1])(i,j,i2) - (*gradU_vec[i2])(i,j,i1));
+          }
+        }
       }
     }
-    // Multiply by weight
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > weighted_curlU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*weighted_curlU_eval,
-                                                               *weight_,
-                                                               *curlU_eval);
     // Compute L2 norm squared
-    feVel_->computeIntegral(val,curlU_eval,weighted_curlU_eval,false);
+    feVel_->computeIntegral(val,curlU_eval,curlU_eval,false);
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
     return static_cast<Real>(0);
   }
@@ -151,31 +164,61 @@ public:
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     // Evaluate on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradUX_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradUY_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    feVel_->evaluateGradient(gradUX_eval, U[0]);
-    feVel_->evaluateGradient(gradUY_eval, U[1]);
-    // Compute curl
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > curlU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    for (int i = 0; i < c; ++i) {
-      for (int j = 0; j < p; ++j) {
-        (*curlU_eval)(i,j) = (*weight_)(i,j)*((*gradUY_eval)(i,j,0) - (*gradUX_eval)(i,j,1));
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_vec(d);
+    for (int i = 0; i < d; ++i) {
+      gradU_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      feVel_->evaluateGradient(gradU_vec[i], U[i]);
+    }
+    // Compute weighted curl
+    int size = (d==2) ? 1 : d;
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > curlU_vec(size);
+    if (d==2) {
+      curlU_vec[0] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      for (int i = 0; i < c; ++i) {
+        for (int j = 0; j < p; ++j) {
+          (*curlU_vec[0])(i,j) = (*weight_)(i,j)
+                               * ((*gradU_vec[1])(i,j,0) - (*gradU_vec[0])(i,j,1));
+        }
+      }
+    }
+    else if (d==3) {
+      for (int i = 0; i < d; ++i) {
+        curlU_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+        for (int j = 0; j < c; ++j) {
+          for (int k = 0; k < p; ++k) {
+            int i1 = (i+2)%d, i2 = (i+1)%d;
+            (*curlU_vec[i])(j,k) = (*weight_)(j,k)
+                                   * ((*gradU_vec[i1])(j,k,i2) - (*gradU_vec[i2])(j,k,i1));
+          }
+        }
       }
     }
     // Build local gradient of state tracking term
-    Intrepid::FunctionSpaceTools::integrate<Real>(*G[0],
-                                                  *curlU_eval,
-                                                  *(feVel_->DNDdetJ(1)),
-                                                  Intrepid::COMP_CPP, false);
-    Intrepid::RealSpaceTools<Real>::scale(*G[0],static_cast<Real>(-1));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*G[1],
-                                                  *curlU_eval,
-                                                  *(feVel_->DNDdetJ(0)),
-                                                  Intrepid::COMP_CPP, false);
-
+    if (d==2) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*G[0],
+                                                    *curlU_vec[0],
+                                                    *(feVel_->DNDdetJ(1)),
+                                                    Intrepid::COMP_CPP, false);
+      Intrepid::RealSpaceTools<Real>::scale(*G[0],static_cast<Real>(-1));
+      Intrepid::FunctionSpaceTools::integrate<Real>(*G[1],
+                                                    *curlU_vec[0],
+                                                    *(feVel_->DNDdetJ(0)),
+                                                    Intrepid::COMP_CPP, false);
+    }
+    else if (d==3) {
+      for (int i = 0; i < d; ++i) {
+        int i1 = (i+2)%d, i2 = (i+1)%d;
+        Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
+                                                      *curlU_vec[i1],
+                                                      *(feVel_->DNDdetJ(i2)),
+                                                      Intrepid::COMP_CPP, false);
+        Intrepid::RealSpaceTools<Real>::scale(*G[i],static_cast<Real>(-1));
+        Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
+                                                      *curlU_vec[i2],
+                                                      *(feVel_->DNDdetJ(i1)),
+                                                      Intrepid::COMP_CPP, false);
+      }
+    }
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
@@ -209,30 +252,61 @@ public:
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
     // Evaluate on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVX_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVY_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    feVel_->evaluateGradient(gradVX_eval, V[0]);
-    feVel_->evaluateGradient(gradVY_eval, V[1]);
-    // Compute curl
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > curlV_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    for (int i = 0; i < c; ++i) {
-      for (int j = 0; j < p; ++j) {
-        (*curlV_eval)(i,j) = (*weight_)(i,j)*((*gradVY_eval)(i,j,0) - (*gradVX_eval)(i,j,1));
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradV_vec(d);
+    for (int i = 0; i < d; ++i) {
+      gradV_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      feVel_->evaluateGradient(gradV_vec[i], V[i]);
+    }
+    // Compute weighted curl
+    int size = (d==2) ? 1 : d;
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > curlV_vec(size);
+    if (d==2) {
+      curlV_vec[0] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      for (int i = 0; i < c; ++i) {
+        for (int j = 0; j < p; ++j) {
+          (*curlV_vec[0])(i,j) = (*weight_)(i,j)
+                               * ((*gradV_vec[1])(i,j,0) - (*gradV_vec[0])(i,j,1));
+        }
+      }
+    }
+    else if (d==3) {
+      for (int i = 0; i < d; ++i) {
+        curlV_vec[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+        for (int j = 0; j < c; ++j) {
+          for (int k = 0; k < p; ++k) {
+            int i1 = (i+2)%d, i2 = (i+1)%d;
+            (*curlV_vec[i])(j,k) = (*weight_)(j,k)
+                                   * ((*gradV_vec[i1])(j,k,i2) - (*gradV_vec[i2])(j,k,i1));
+          }
+        }
       }
     }
     // Build local gradient of state tracking term
-    Intrepid::FunctionSpaceTools::integrate<Real>(*H[0],
-                                                  *curlV_eval,
-                                                  *(feVel_->DNDdetJ(1)),
-                                                  Intrepid::COMP_CPP, false);
-    Intrepid::RealSpaceTools<Real>::scale(*H[0],static_cast<Real>(-1));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*H[1],
-                                                  *curlV_eval,
-                                                  *(feVel_->DNDdetJ(0)),
-                                                  Intrepid::COMP_CPP, false);
+    if (d==2) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[0],
+                                                    *curlV_vec[0],
+                                                    *(feVel_->DNDdetJ(1)),
+                                                    Intrepid::COMP_CPP, false);
+      Intrepid::RealSpaceTools<Real>::scale(*H[0],static_cast<Real>(-1));
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[1],
+                                                    *curlV_vec[0],
+                                                    *(feVel_->DNDdetJ(0)),
+                                                    Intrepid::COMP_CPP, false);
+    }
+    else if (d==3) {
+      for (int i = 0; i < d; ++i) {
+        int i1 = (i+2)%d, i2 = (i+1)%d;
+        Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                      *curlV_vec[i1],
+                                                      *(feVel_->DNDdetJ(i2)),
+                                                      Intrepid::COMP_CPP, false);
+        Intrepid::RealSpaceTools<Real>::scale(*H[i],static_cast<Real>(-1));
+        Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                      *curlV_vec[i2],
+                                                      *(feVel_->DNDdetJ(i1)),
+                                                      Intrepid::COMP_CPP, false);
+      }
+    }
 
     fieldHelper_->combineFieldCoeff(hess, H);
   }
@@ -665,7 +739,7 @@ public:
       throw Exception::NotImplemented(">>> (QoI_State_ThermalFluids): Unknown objective type."); 
     }
     if ( stateObj == "Vorticity" ) {
-      qoi_ = Teuchos::rcp(new QoI_Vorticity_ThermalFluids<Real>(feVel,fePrs,feThr,fieldHelper));
+      qoi_ = Teuchos::rcp(new QoI_Vorticity_ThermalFluids<Real>(feVel,fePrs,feThr,fieldHelper,parlist));
     }
     else if ( stateObj == "Directional" ) {
       qoi_ = Teuchos::rcp(new QoI_Horizontal_ThermalFluids<Real>(feVel,fePrs,feThr,fieldHelper));

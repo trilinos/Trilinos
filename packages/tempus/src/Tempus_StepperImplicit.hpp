@@ -12,7 +12,6 @@
 // Tempus
 #include "Tempus_Stepper.hpp"
 //Thrya
-#include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 

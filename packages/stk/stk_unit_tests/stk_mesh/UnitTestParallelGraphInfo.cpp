@@ -43,7 +43,7 @@ public:
     {
         get_bulk().modification_begin();
         for(stk::mesh::Entity element : elements )
-            get_bulk().change_entity_parts(element, {part}, {});
+            get_bulk().change_entity_parts(element, stk::mesh::ConstPartVector{part});
         get_bulk().modification_end();
     }
 
@@ -51,7 +51,7 @@ public:
     {
         get_bulk().modification_begin();
         for(stk::mesh::Entity element : elements )
-            get_bulk().change_entity_parts(element, {}, {part});
+            get_bulk().change_entity_parts(element, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{part});
         get_bulk().modification_end();
     }
 

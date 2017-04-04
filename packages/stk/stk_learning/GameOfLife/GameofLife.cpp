@@ -58,7 +58,7 @@ void GameofLife::put_all_nodes_in_nodeset()
     stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
     stk::mesh::Part& nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
     for(stk::mesh::Entity node : nodes)
-        m_bulkData.change_entity_parts(node, stk::mesh::PartVector {&nodeset1Part});
+        m_bulkData.change_entity_parts(node, stk::mesh::ConstPartVector {&nodeset1Part});
 }
 
 void GameofLife::write_mesh()

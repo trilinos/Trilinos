@@ -118,8 +118,8 @@ import modules ;
 
 exe stk_util_doc_test
   :
-    $(stk_util-root)/testsForDocumentation/UtilDocTestMain.cpp
     [ glob $(stk_util-root)/testsForDocumentation/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_util
     stk_util_environment
@@ -136,11 +136,11 @@ exe stk_util_doc_test
 
 exe stk_util_utest
   :
-    $(stk_util-root)/unit_tests/UtilUnitTestMain.cpp
     [ glob $(stk_util-root)/unit_tests/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/util/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/environment/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/diag/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_util
     stk_util_environment
@@ -158,8 +158,8 @@ exe stk_util_utest
 
 exe stk_util_parallel_utest
   :
-    $(stk_util-root)/unit_tests/parallel/UnitTestParallelMain.cpp
     [ glob $(stk_util-root)/unit_tests/parallel/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
     stk_util_use_case
     /sierra/stk_unit_test_utils//comparisonUtils
@@ -342,7 +342,5 @@ lib stk_util_unit_test_support
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_unit_test_support.a
     ]
-  :
-  :
-    <include>/usr/netpub/valgrind-3.8.1/include&&$(stk_util-root)/stk_util/unit_test_support
   ;
+

@@ -18,7 +18,7 @@ namespace Tempus {
 
   // Non-member ctor
   template Teuchos::RCP<SolutionHistory<double> >
-  solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList_);
+  solutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL);
 
 } // namespace Tempus
 

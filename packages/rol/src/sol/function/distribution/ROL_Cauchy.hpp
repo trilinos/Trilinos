@@ -66,20 +66,20 @@ public:
   }
 
   Real evaluatePDF(const Real input) const {
-    return 1./(M_PI*scale_*(1.+std::pow((input-loc_)/scale_,2.)));
+    return 1./(Teuchos::ScalarTraits<Real>::pi()*scale_*(1.+std::pow((input-loc_)/scale_,2.)));
   }
 
   Real evaluateCDF(const Real input) const {
-    return 0.5+atan((input-loc_)/scale_)/M_PI;
+    return 0.5+atan((input-loc_)/scale_)/Teuchos::ScalarTraits<Real>::pi();
   }
 
   Real integrateCDF(const Real input) const {
     Real v = input-loc_;
-    return 0.5*input + (v*atan(v/scale_) - 0.5*scale_*std::log(v*v+scale_*scale_))/M_PI;
+    return 0.5*input + (v*atan(v/scale_) - 0.5*scale_*std::log(v*v+scale_*scale_))/Teuchos::ScalarTraits<Real>::pi();
   }
 
   Real invertCDF(const Real input) const {
-    return loc_+scale_*tan(M_PI*(input-0.5));
+    return loc_+scale_*tan(Teuchos::ScalarTraits<Real>::pi()*(input-0.5));
   }
 
   Real moment(const size_t m) const {

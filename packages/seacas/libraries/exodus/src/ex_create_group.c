@@ -45,6 +45,8 @@ int ex_create_group(int parent_id, const char *group_name)
   int exoid = -1;
   int status;
 
+  ex_check_valid_file_id(parent_id);
+
   if ((status = nc_redef(parent_id)) != NC_NOERR) {
     exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", parent_id);

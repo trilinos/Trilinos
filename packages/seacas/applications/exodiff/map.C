@@ -46,7 +46,7 @@ namespace {
   double find_range(const double *x, size_t num_nodes);
 
   template <typename INT>
-  size_t Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
+  INT Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
               int dim, bool ignore_dups);
 
   template <typename INT>
@@ -929,7 +929,7 @@ namespace {
   }
 
   template <typename INT>
-  size_t Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
+  INT Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
               int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);

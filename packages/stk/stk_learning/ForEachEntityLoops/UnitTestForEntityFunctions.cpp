@@ -115,10 +115,11 @@ public:
     inline void for_each_selected_entity_run(stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
     {
         const stk::mesh::BucketVector & buckets = this->get_buckets(rank, selector);
+        const size_t numBuckets = buckets.size();
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
+        for(size_t bucketI = 0; bucketI < numBuckets; ++bucketI)
         {
             stk::mesh::Bucket *bucket = buckets[bucketI];
             for(size_t entityI=0; entityI<bucket->size(); entityI++)
@@ -155,10 +156,11 @@ public:
     {
         REDUCTION_VAR localVarToReduceInto = reductionVar;
         const stk::mesh::BucketVector & buckets = this->buckets(stk::topology::NODE_RANK);
+        const size_t numBuckets = buckets.size();
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:localVarToReduceInto)
 #endif
-        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
+        for(size_t bucketI=0; bucketI < numBuckets; ++bucketI)
         {
             stk::mesh::Bucket *bucket = buckets[bucketI];
             for(size_t entityI=0; entityI<bucket->size(); entityI++)
@@ -657,13 +659,6 @@ TEST(ForEntityFunction, test_element_death_using_lambdas)
     }
 }
 
-
-
-
-
-
-
-
 inline double get_cpu_or_wall_time()
 {
 #if defined(_OPENMP)
@@ -672,6 +667,7 @@ inline double get_cpu_or_wall_time()
     return stk::cpu_time();
 #endif
 }
+
 std::string get_timing_data_for_print(double time, double baselineTime)
 {
     std::ostringstream s;

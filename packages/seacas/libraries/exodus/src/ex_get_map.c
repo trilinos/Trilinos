@@ -79,6 +79,8 @@ int ex_get_map(int exoid, void_int *elem_map)
   size_t num_elem, i;
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire id's of previously defined dimensions and variables  */

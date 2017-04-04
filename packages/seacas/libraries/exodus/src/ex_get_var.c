@@ -105,6 +105,8 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
   size_t start[2], count[2];
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications,
      * etc. */

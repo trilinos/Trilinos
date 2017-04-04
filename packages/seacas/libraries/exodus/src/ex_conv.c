@@ -82,6 +82,22 @@ struct ex_file_item *ex_find_file_item(int exoid)
   return ptr;
 }
 
+void ex_check_valid_file_id(int exoid)
+{
+#if 0
+  struct ex_file_item *file = ex_find_file_item(exoid);
+
+  if (!file) {
+    ex_opts(EX_ABORT | EX_VERBOSE);
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: invalid file id %d. Does not refer to an open exodus file.", exoid);
+    ex_err("ex_check_valid_file_id", errmsg, exerrval);
+  }
+#endif
+}
+
 int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
                 int int64_status, int is_parallel, int is_mpiio, int is_pnetcdf)
 {
@@ -132,7 +148,7 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
   if ((sizeof(float) != 4 && sizeof(float) != 8) || (sizeof(double) != 4 && sizeof(double) != 8)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported compute word size for file id: %d", exoid);
     ex_err("ex_conv_ini", errmsg, EX_FATAL);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* check to see if requested word sizes are valid */
@@ -222,7 +238,7 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
     new_file->netcdf_type_code = NC_DOUBLE;
   }
 
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*............................................................................*/

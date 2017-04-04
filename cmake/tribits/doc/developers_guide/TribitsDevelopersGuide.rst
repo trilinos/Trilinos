@@ -7607,6 +7607,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
@@ -7879,6 +7880,23 @@ These options are described below.
   then it makes sense to set the default to::
   
     SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
+
+
+.. _${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS:
+
+**${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS**
+
+  Determines if all of the libraries listed in ``<tplName>_LIBRARY_NAMES`` for
+  a given TPL must be found for each enabled TPL.  By default, this is
+  ``FALSE`` which means that the determination if all of the listed libs for a
+  TPL should be found is determined by the ``MUST_FIND_ALL_LIBS`` option to
+  the `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ function in the TPL
+  find module.  To change the default for this, set::
+
+    SET(${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS_DEFAULT  TRUE)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
 
 .. _${PROJECT_NAME}_REQUIRES_PYTHON:
 

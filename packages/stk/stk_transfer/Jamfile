@@ -59,7 +59,6 @@ alias install-serial-targets ;
 explicit install-targets ;
 alias install-targets
   : stk_transfer_utest
-    stk_transfer_docs_tests
   ;
 
 #
@@ -86,8 +85,8 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : 
-  : 
+  : stk_transfer_impl
+  : <location>$(install-root)/stk/stk_transfer/lib
   ;
 
 explicit install-exe-targets ;
@@ -112,42 +111,34 @@ alias stk_transfer
   : <include>$(stk_transfer-root-inc)
   ;
 
-lib stk_transfer_base
+lib stk_transfer_impl
   :
     [ ifdevbuild
-      [ glob $(stk_transfer-root)/stk_transfer/*.cpp ]
+      [ glob 
+        $(stk_transfer-root)/stk_transfer/copy_by_id/*.cpp 
+      ]
     ]
     /sierra/stk_search//stk_search
     /sierra/stk_util//stk_util_parallel
     /mpi//mpi
   :
     [ ifuserbuild
-        <file>$(stk_transfer-root)/lib/libstk_transfer_base.a
+        <file>$(stk_transfer-root)/lib/libstk_transfer_impl.a
     ]
   ;
 
 exe stk_transfer_utest
   :
-    $(stk_transfer-root)/unit_tests/TransferUnitTestMain.cpp
-    [ glob $(stk_transfer-root)/unit_tests/*.cpp ]
+    [ glob 
+      $(stk_transfer-root)/unit_tests/*.cpp 
+     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_transfer
-    stk_transfer_base
+    stk_transfer_impl
     /sierra/stk_io//stk_io
     /tpl/gtest//gtest
     /sierra/stk_mesh//stk_mesh_base
     /tpl/trilinos//teuchos
-    /mpi//mpi
-  : <tag>@sierra-exec-tag
-  ;
-
-exe stk_transfer_docs_tests
-  :
-    $(stk_transfer-root)/testsForDocumentation/testMain.cpp
-    [ glob $(stk_transfer-root)/testsForDocumentation/*.cpp ]
-    stk_transfer
-    stk_transfer_base
-    /sierra/stk_io//stk_io
-    /tpl/gtest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;

@@ -66,6 +66,8 @@ public:
                               const bool useWeights = true)
     : sampler_(sampler), pcon_(pcon), useWeights_(useWeights) {}
 
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+
   void value(Vector<Real> &c,
              const Vector<Real> &x,
              Real &tol) {
@@ -87,6 +89,7 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
+      pcon_->update(*(pu.get(i)), *zptr);
       pcon_->value(*(pc.get(i)), *(pu.get(i)), *zptr, tol);
       weight = (useWeights_) ? weight : one;
       pc.get(i)->scale(weight);
@@ -131,6 +134,7 @@ public:
       pcon_->setParameter(param);
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> vi(Teuchos::rcp_const_cast<Vector<Real> >(pvu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(vzptr));
+      pcon_->update(xi);
       pcon_->applyJacobian(*(pjv.get(i)), vi, xi, tol);
       weight = (useWeights_) ? weight : one;
       pjv.get(i)->scale(weight);
@@ -176,6 +180,7 @@ public:
       pcon_->setParameter(param);
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> ajvi(pajvu.get(i), tmp1);
+      pcon_->update(xi);
       pcon_->applyAdjointJacobian(ajvi, *(pv.get(i)), xi, tol);
       weight = (useWeights_) ? weight : one;
       ajvi.scale(weight);
@@ -236,6 +241,7 @@ public:
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> vi(Teuchos::rcp_const_cast<Vector<Real> >(pvu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(vzptr));
       Vector_SimOpt<Real> ahuvi(pahuvu.get(i), tmp1);
+      pcon_->update(xi);
       pcon_->applyAdjointHessian(ahuvi, *(pu.get(i)), vi, xi, tol);
       weight = (useWeights_) ? weight : one;
       ahuvi.scale(weight);
@@ -284,6 +290,7 @@ public:
       pcon_->setParameter(param);
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> gi(Teuchos::rcp_const_cast<Vector<Real> >(pgu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(gzptr));
+      pcon_->update(xi);
       pcon_->applyPreconditioner(*(ppv.get(i)), *(pv.get(i)), xi, gi, tol);
       weight = (useWeights_) ? weight : one;
       ppv.get(i)->scale(one/(weight*weight));

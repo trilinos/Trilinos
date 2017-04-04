@@ -62,23 +62,13 @@ enum LogMask {
   LOG_TIMER             = 0x0000040
 };
 
-/**
- * @brief Class <b>message_type</b> ...
- *
- */
 enum message_type {
   MSG_WARNING = stk::MSG_WARNING,
   MSG_FATAL = stk::MSG_DOOMED,
   MSG_INFORMATION,
-  MSG_EXCEPTION,
-  MSG_PARALLEL_EXCEPTION
+  MSG_EXCEPTION
 };
 
-
-/**
- * @brief Class <b>type</b> ...
- *
- */
 enum message_throttle_type {
   MSG_APPLICATION = stk::MSG_APPLICATION,
   MSG_TIME_STEP
@@ -90,11 +80,8 @@ enum TimerSetMask {
   TIMER_SEARCH		= 0x00000004,		///< Enable search timers
   TIMER_TRANSFER	= 0x00000008,		///< Enable transfer timers
   TIMER_ALL		= 0xFFFFFFFF,		///< Force timer to be active
-
   TIMER_FORCE		= 0x00000000		///< Force timer to be active
 };
-
-stk::diag::Writer &dw();
 
 stk::diag::TimerSet &timerSet();
 
@@ -115,9 +102,6 @@ struct UseCaseEnvironment
 {
   // Will initialize a comm
   UseCaseEnvironment(int *argc, char ***argv);
-
-  // Assumes already-initialized comm
-  UseCaseEnvironment(int *argc, char ***argv, stk::ParallelMachine comm);
 
   // shared constructor implementation; do not call directly
   void initialize(int* argc, char ***argv);

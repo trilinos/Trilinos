@@ -726,7 +726,15 @@
       <description>Lower order basis for IntrepidPCoarsening</description>
       <visible>false</visible>
     </parameter>
-  
+
+    <parameter>
+      <name>smoother: neighborhood type</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Valid options: node, edge, face, cell</description>
+      <visible>false</visible>
+    </parameter>
+
     <parameter>
       <name>filtered matrix: use lumping</name>
       <type>bool</type>

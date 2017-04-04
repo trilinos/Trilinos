@@ -66,8 +66,10 @@ private:
 struct ParallelInfo
 {
 public:
+    ParallelInfo(int proc, int perm, stk::topology other_elem_topology) :
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc) {}
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -75,7 +77,6 @@ public:
 
     int m_permutation;
     stk::topology m_remote_element_toplogy;
-    stk::mesh::EntityId m_chosen_side_id;
 
 private:
     RemoteElementData remoteElementData;
@@ -87,7 +88,6 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
     out << "(other_proc=" << info.get_proc_rank_of_neighbor()
             << ", perm=" << info.m_permutation
             << ", remote_top=" << info.m_remote_element_toplogy
-            << ", chosen_side_id=" << info.m_chosen_side_id
             << ")";
     return out;
 }
@@ -139,8 +139,7 @@ private:
 struct ParallelElementData
 {
     ParallelElementData()
-    : m_suggestedFaceId(stk::mesh::InvalidEntityId),
-      remoteElementData(),
+    : remoteElementData(),
       serialElementData()
     {}
 
@@ -179,7 +178,7 @@ struct SharedEdgeInfo
 {
 public:
     SharedEdgeInfo()
-    : m_chosenSideId(stk::mesh::InvalidEntityId), m_sharedNodes(),
+    : m_sharedNodes(),
       m_remoteElementTopology(stk::topology::INVALID_TOPOLOGY),
       remoteElementData(), graphEdgeProc() {}
 
@@ -195,7 +194,6 @@ public:
 
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
-    stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
     stk::topology m_remoteElementTopology;
 
@@ -368,7 +366,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
 
-stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
+stk::mesh::ConstPartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
 int get_element_side_multiplier();
 

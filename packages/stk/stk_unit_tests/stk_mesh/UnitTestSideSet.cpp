@@ -11,7 +11,6 @@ class TestSideSet : public stk::unit_test_util::MeshFixture
 TEST_F(TestSideSet, creatingSideOfOneElem_eachProcHasOneSide)
 {
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
-    get_bulk().initialize_face_adjacent_element_graph();
 
     stk::mesh::EntityVector localElems;
     stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), localElems);

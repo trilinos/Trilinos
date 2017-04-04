@@ -181,7 +181,9 @@ void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank
         size_t bytes_to_delete = 0;
         for(unsigned int i = 0; i < fields.size(); ++i)
         {
-            if(fields[i] == nullptr || static_cast<unsigned>(fields[i]->entity_rank()) != rank)
+            if(fields[i] == nullptr ||
+               static_cast<unsigned>(fields[i]->entity_rank()) != rank ||
+               fields[i]->get_meta_data_for_field().size() <= bucket_id)
                 continue;
             FieldMetaData& field_data = fields[i]->get_meta_data_for_field()[bucket_id];
             if(field_data.m_data != nullptr)

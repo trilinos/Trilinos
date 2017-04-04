@@ -53,10 +53,30 @@ namespace {
 
 class ExodusFileWithAttributes : public stk::unit_test_util::MeshFixture { };
 
+stk::mesh::FieldVector get_attribute_fields_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *ioPart)
+{
+    stk::mesh::FieldVector attributes;
+
+    for(stk::mesh::FieldBase *field : meta.get_fields())
+    {
+        const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
+        if(fieldRole != nullptr && *fieldRole == Ioss::Field::ATTRIBUTE)
+        {
+            for(const stk::mesh::FieldBase::Restriction &restriction : field->restrictions())
+            {
+                const stk::mesh::Selector &selector = restriction.selector();
+                if(selector(ioPart))
+                    attributes.push_back(field);
+            }
+        }
+    }
+    return attributes;
+}
+
 //-BEGIN
 std::vector<double> get_attributes_of_first_element(const stk::mesh::BulkData &bulk, const stk::mesh::Part *ioPart)
 {
-    stk::mesh::FieldVector attributeFields = stk::io::get_attribute_fields_for_part(bulk.mesh_meta_data(), ioPart);
+    stk::mesh::FieldVector attributeFields = get_attribute_fields_for_part(bulk.mesh_meta_data(), ioPart);
 
     stk::mesh::EntityVector elements;
     stk::mesh::get_selected_entities(*ioPart, bulk.buckets(stk::topology::ELEM_RANK), elements);
@@ -86,6 +106,11 @@ TEST_F(ExodusFileWithAttributes, readAttributes_haveFieldsWithAttributes)
     EXPECT_EQ(7u, get_attributes_of_first_element(get_bulk(), partBlock10).size());
 }
 
+void mark_field_as_attribute(stk::mesh::FieldBase &field)
+{
+    stk::io::set_field_role(field, Ioss::Field::ATTRIBUTE);
+}
+
 TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
 {
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
@@ -97,7 +122,8 @@ TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
 
     double initialValue = 0.0;
     auto &newAttrField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "newAttr");
-    stk::io::mark_field_as_attribute(newAttrField);
+    mark_field_as_attribute(newAttrField);
+
     const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
     stk::mesh::put_field(newAttrField, *partBlock10, &initialValue);
 

@@ -58,8 +58,6 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
-typedef PHX::MDField<double>::size_type size_type;
-
 // Dimension tags for this problem
 struct Dim : public PHX::DimTag {
   Dim(){};

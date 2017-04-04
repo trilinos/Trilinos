@@ -65,7 +65,7 @@ bool EpetraExtDiagScaledMatProdTransformer::isCompatible(
       const LinearOpBase<double> &op_in) const
 {
    TEUCHOS_TEST_FOR_EXCEPT(true);
-   return false;
+   TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
 

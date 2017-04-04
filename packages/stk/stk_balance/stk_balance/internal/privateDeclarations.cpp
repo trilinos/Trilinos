@@ -2,6 +2,8 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/GeometricVertices.hpp>
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
+#include <stk_balance/internal/MxNutils.hpp>
+#include <stk_balance/internal/StkBalanceUtils.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -145,43 +147,6 @@ unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh:
     return localIds.entity_to_local(entity);
 }
 
-const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName)
-{
-    //stk::mesh::FieldBase const * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
-    const stk::mesh::FieldBase * coord = meta_data.get_field(stk::topology::NODE_RANK, coordinateFieldName);
-    ThrowRequireMsg(coord != nullptr, "Null coordinate field for name=" << coordinateFieldName << ". Contact sierra-help@sandia.gov for support.");
-    return coord;
-}
-
-void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
-                    unsigned numNodes,
-                    const stk::mesh::Entity* nodes,
-                    const stk::mesh::FieldBase* coord,
-                    const double eps,
-                    stk::mesh::EntityId elementId,
-                    BoxVectorWithStkId& faceBoxes)
-{
-    unsigned dim = stkMeshBulkData.mesh_meta_data().spatial_dimension();
-    std::vector<double> coords(dim * numNodes, 0);
-    for(unsigned j = 0; j < numNodes; j++)
-    {
-        double* xyz = static_cast<double*>(stk::mesh::field_data(*coord, nodes[j]));
-        for(unsigned k = 0; k < dim; k++)
-        {
-            coords[numNodes * k + j] = xyz[k];
-        }
-    }
-    double maxX = *std::max_element(&coords[0], &coords[numNodes]);
-    double maxY = *std::max_element(&coords[numNodes], &coords[2 * numNodes]);
-    double maxZ = *std::max_element(&coords[2 * numNodes], &coords[3 * numNodes]);
-    double minX = *std::min_element(&coords[0], &coords[numNodes]);
-    double minY = *std::min_element(&coords[numNodes], &coords[2 * numNodes]);
-    double minZ = *std::min_element(&coords[2 * numNodes], &coords[3 * numNodes]);
-    stk::search::Box<float> faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
-    StkMeshIdent id(elementId, stkMeshBulkData.parallel_rank());
-    faceBoxes.push_back(std::make_pair(faceBox, id));
-}
-
 void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord)
 {
 
@@ -198,83 +163,26 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
     }
 }
 
-void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &boxes)
-{
-    const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-
-    for (size_t i=0;i<elementBuckets.size();i++)
-    {
-        stk::mesh::Bucket &bucket = *elementBuckets[i];
-        if( bucket.owned() && (bucket.topology() == stk::topology::PARTICLE ) )
-        {
-            for(size_t j = 0; j < bucket.size(); j++)
-            {
-                const stk::mesh::Entity *node = stkMeshBulkData.begin_nodes(bucket[j]);
-                double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, *node));
-                double eps = balanceSettings.getParticleRadius(bucket[j]) * balanceSettings.getToleranceForParticleSearch();
-
-                stk::search::Box<float> box(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps, xyz[0] + eps, xyz[1] + eps, xyz[2] + eps);
-
-                unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
-                int val2 = stkMeshBulkData.parallel_rank();
-                StkMeshIdent id(val1, val2);
-
-                boxes.push_back(std::make_pair(box, id));
-            }
-        }
-    }
-
-}
-
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
-{
-    stk::mesh::Part & skinPart = stkMeshBulkData.mesh_meta_data().declare_part("SkinPart", stk::topology::FACE_RANK);
-    stk::mesh::PartVector addParts(1,&skinPart);
-
-    {
-        stkMeshBulkData.initialize_face_adjacent_element_graph();
-        stk::mesh::ElemElemGraph& elemElemGraph = stkMeshBulkData.get_face_adjacent_element_graph();
-        stk::mesh::Selector airSelector = !searchSelector;
-        stk::mesh::SkinMeshUtil skinMesh(elemElemGraph, addParts, searchSelector, &airSelector);
-        std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-        for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
-        {
-            stk::mesh::Entity sidesetElement = sidesetEntry.element;
-            stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-            stk::mesh::EntityVector sideNodes;
-            stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement, stkMeshBulkData.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
-            addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps, stkMeshBulkData.identifier(sidesetElement), faceBoxes);
-        }
-    }
-}
-
 void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, stk::mesh::EntityId element1Id,
         stk::mesh::EntityId element2Id, unsigned owningProcElement2, std::vector<GraphEdge>& graphEdges)
 {
     stk::mesh::EntityKey entityKeyElement1(stk::topology::ELEMENT_RANK, element1Id);
     stk::mesh::Entity element1 = stkMeshBulkData.get_entity(entityKeyElement1);
     ThrowRequireWithSierraHelpMsg(stkMeshBulkData.entity_rank(element1) == stk::topology::ELEMENT_RANK);
+
     if(stkMeshBulkData.is_valid(element1) && stkMeshBulkData.bucket(element1).owned() && element1Id != element2Id)
     {
         stk::mesh::EntityKey entityKeyElement2(stk::topology::ELEMENT_RANK, element2Id);
         stk::mesh::Entity element2 = stkMeshBulkData.get_entity(entityKeyElement2);
+
         unsigned anyIntersections = 0;
         if ( stkMeshBulkData.is_valid(element2) )
         {
-            unsigned numNodes1 = stkMeshBulkData.num_nodes(element1);
-            unsigned numNodes2 = stkMeshBulkData.num_nodes(element2);
-            const stk::mesh::Entity *nodesElement1 = stkMeshBulkData.begin_nodes(element1);
-            const stk::mesh::Entity *nodesElement2 = stkMeshBulkData.begin_nodes(element2);
-            std::vector<stk::mesh::Entity> nodes1(nodesElement1, nodesElement1+numNodes1);
-            std::vector<stk::mesh::Entity> nodes2(nodesElement2, nodesElement2+numNodes2);
-            std::sort(nodes1.begin(), nodes1.end());
-            std::sort(nodes2.begin(), nodes2.end());
-            std::vector<stk::mesh::Entity> results(std::max(numNodes1,numNodes2));
-            std::vector<stk::mesh::Entity>::iterator iter = std::set_intersection(nodes1.begin(), nodes1.end(),
-                                                                                  nodes2.begin(), nodes2.end(), results.begin());
-            anyIntersections = iter-results.begin();
+            anyIntersections = stk::balance::internal::getNumSharedNodesBetweenElements(stkMeshBulkData, element1, element2);
         }
-        if ( anyIntersections == 0 )
+
+        bool elementIsNotConnectedViaNodes = anyIntersections == 0;
+        if ( elementIsNotConnectedViaNodes )
         {
             double edge_weight = balanceSettings.getGraphEdgeWeightForSearch();
             graphEdges.push_back(GraphEdge(element1, element2Id, owningProcElement2, edge_weight, true));
@@ -282,26 +190,9 @@ void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData
     }
 }
 
-
 void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings, std::vector<GraphEdge>& graphEdges,
                                    const stk::mesh::Selector& searchSelector)
 {
-    bool useLocalIds = balanceSettings.getGraphOption() == BalanceSettings::COLORING;
-    ThrowRequireWithSierraHelpMsg(useLocalIds != true);
-
-    const stk::mesh::FieldBase* coord = get_coordinate_field(stkMeshBulkData.mesh_meta_data(), balanceSettings.getCoordinateFieldName());
-
-    BoxVectorWithStkId faceBoxes;
-    fillFaceBoxesWithIds(stkMeshBulkData, balanceSettings.getToleranceForFaceSearch(), coord, faceBoxes, searchSelector);
-
-    if ( balanceSettings.getEdgesForParticlesUsingSearch() )
-    {
-        fillParticleBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes);
-    }
-
-    StkSearchResults searchResults;
-    logMessage(stkMeshBulkData.parallel(), "Starting search");
-
     std::ostringstream os;
     size_t max = 0, min = 0, avg = 0;
     stk::get_max_min_avg(stkMeshBulkData.parallel(), graphEdges.size(), max, min, avg);
@@ -309,19 +200,16 @@ void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const B
     logMessage(stkMeshBulkData.parallel(), os.str());
     os.str("");
 
-#ifndef __NVCC__
-    stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::BOOST_RTREE, stkMeshBulkData.parallel(), searchResults);
-#else
-    stk::search::coarse_search_octree(faceBoxes, faceBoxes, stkMeshBulkData.parallel(), searchResults, true);
-#endif
+    logMessage(stkMeshBulkData.parallel(), "Starting search");
+
+    StkSearchResults searchResults = stk::balance::internal::getSearchResultsForFacesParticles(stkMeshBulkData, balanceSettings, searchSelector);
+
+    logMessage(stkMeshBulkData.parallel(), "Finished search");
 
     stk::get_max_min_avg(stkMeshBulkData.parallel(), searchResults.size(), max, min, avg);
     os << "Finished search, have following distribution of search results: min = " << min << "\tavg = " << avg << "\tmax = " << max << std::endl;
     logMessage(stkMeshBulkData.parallel(), os.str());
     os.str("");
-
-    StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
-    searchResults.resize(iter - searchResults.begin());
 
     for(size_t i = 0; i < searchResults.size(); i++)
     {
@@ -596,8 +484,7 @@ void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const Ba
     }
 }
 
-void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData,
-                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
+Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate)
 {
     Teuchos::ParameterList params("test params");
     params.set("debug_level", "no_status");
@@ -608,6 +495,12 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     params.set("imbalance_tolerance", imbalance_allowed);
     params.set("num_global_parts", nparts);
     params.set("algorithm", balanceSettings.getDecompMethod());
+
+//    params.set("partitioning_objective", "balance_object_weight");
+//    params.set("partitioning_objective", "multicriteria_minimize_total_weight");
+//    params.set("partitioning_objective", "multicriteria_minimize_maximum_weight");
+//    params.set("partitioning_objective", "multicriteria_balance_total_maximum");
+
     if (balanceSettings.isIncrementalRebalance())
     {
         params.set("partitioning_approach", "repartition");
@@ -618,6 +511,13 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     zparams.set("debug_level", "0");
 //    zparams.set("LB_METHOD", "PHG");
 //    zparams.set("LB_APPROACH", "PARTITION");
+    return params;
+}
+
+void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData,
+                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
+{
+    Teuchos::ParameterList params = getGraphBasedParameters(balanceSettings, numSubdomainsToCreate);
 
     std::ostringstream os;
     os << "Using Zoltan2 version: " << Zoltan2::Zoltan2_Version();
@@ -635,10 +535,22 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
         zoltan2Graph.set_num_field_criteria(selectors.size()*balanceSettings.getNumCriteria());
 
     stk::mesh::Selector selectUnion = stk::mesh::selectUnion(selectors);
-    // set vertex weights using entity's topology and if search is part of algorithm
+
+    // set vertex weights using entity's topology and if search is part of algorithm, use multiplier
     fill_zoltan2_graph(balanceSettings, stkMeshBulkData, zoltan2Graph, selectUnion, localIds);
+
     // now can reset those vertex weights based on fields or other critieria
     zoltan2Graph.adjust_vertex_weights(balanceSettings, stkMeshBulkData, selectors, localIds);
+
+    if (balanceSettings.allowModificationOfVertexWeightsForSmallMeshes())
+    {
+        bool isSmallMesh = (counts[stk::topology::ELEM_RANK] / stkMeshBulkData.parallel_size()) <= 10;
+        if(isSmallMesh)
+        {
+            logMessage(stkMeshBulkData.parallel(), "Changing weights since mesh is small");
+            zoltan2Graph.adjust_weights_for_small_meshes();
+        }
+    }
 
     std::vector<double> copyOrigWeights = zoltan2Graph.get_vertex_weights();
     std::vector<int> all_local_ids(copyOrigWeights.size());
@@ -724,7 +636,7 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     #endif
 }
 
-void callZoltan2(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
     ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
     ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) || balanceSettings.getDecompMethod()=="parmetis" || balanceSettings.getDecompMethod()=="zoltan");

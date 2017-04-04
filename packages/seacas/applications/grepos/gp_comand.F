@@ -1553,6 +1553,32 @@ C ... Field is character
                   GO TO 333
                 END IF
 
+              ELSE IF (MATSTR (WORD2, 'NAMES', 2)) THEN
+                IF (MATSTR(WORD,'MATERIALS',1) .OR.
+     &            MATSTR(WORD, 'BLOCKS',1)) THEN
+                  do i=1, nelblk
+                    ebname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC',
+     *              'All material block names deleted.')
+                ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
+     &              MATSTR(WORD,'NSETS',   1) ) THEN
+                  do i=1, numnps
+                    nsname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
+                ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+     &              MATSTR(WORD,'SSETS',   1) ) THEN
+                  do i=1, numess
+                    ssname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All sideset names deleted.')
+                ELSE
+                  CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
+     &              // '" is an invalid DELETE NAME option')
+                  GO TO 333
+                END IF
+                
               ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
@@ -1606,9 +1632,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .TRUE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .TRUE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 1
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')
@@ -1675,9 +1709,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .FALSE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .FALSE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 0
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')

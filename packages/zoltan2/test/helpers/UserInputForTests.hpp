@@ -1050,6 +1050,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
   RCP<map_t> outMap = rcp(new map_t(nGlobalRows, outRows(), 0,
                                     inMap->getComm()));
 
+#ifdef INCLUDE_LENGTHY_OUTPUT
   // Sanity check output
   {
     std::cout << inMap->getComm()->getRank() << " KDDKDD "
@@ -1064,6 +1065,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
                 << outMap->getMyGlobalIndices()[i] << ") ";
     std::cout << std::endl;
   }
+#endif // INCLUDE_LENGTHY_OUTPUT
 
   // Create a new matrix using the new map
   // Get the length of the longest row; allocate memory.
@@ -1086,6 +1088,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
   }
   outMatrix->fillComplete();
 
+#ifdef INCLUDE_LENGTHY_OUTPUT
   // Sanity check output
   {
     std::cout << inMap->getComm()->getRank() << " KDDKDD Rows "
@@ -1117,6 +1120,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
       std::cout << std::endl;
     }
   }
+#endif // INCLUDE_LENGTHY_OUTPUT
 
   return outMatrix;
 }

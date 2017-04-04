@@ -172,6 +172,8 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
   int       status;
   char      tmp_title[2048];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (ret_char) {

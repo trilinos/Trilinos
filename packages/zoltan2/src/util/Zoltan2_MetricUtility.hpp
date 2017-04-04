@@ -494,7 +494,6 @@ template <typename scalar_t>
       emsg << __FILE__ << ":" << __LINE__ << std::endl;
       emsg << "bug: " << "invalid norm" << std::endl;
       throw std::logic_error(emsg.str());
-      break;
   }
 
   return nweight;

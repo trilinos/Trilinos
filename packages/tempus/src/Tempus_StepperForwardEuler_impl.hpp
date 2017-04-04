@@ -47,6 +47,39 @@ void StepperForwardEuler<Scalar>::setNonConstModel(
 }
 
 template<class Scalar>
+void StepperForwardEuler<Scalar>::setSolver(std::string solverName)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
+  *out << "Warning -- No solver to set for StepperForwardEuler "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setSolver(
+  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
+  *out << "Warning -- No solver to set for StepperForwardEuler "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setSolver(
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setSolver()");
+  *out << "Warning -- No solver to set for StepperForwardEuler "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+
+template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -77,6 +110,7 @@ void StepperForwardEuler<Scalar>::takeStep(
       *(currentState->getX()),dt,*(currentState->getXDot()));
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setOrder(this->getOrder());
   }
   return;
 }
@@ -120,11 +154,11 @@ template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) pList_ = this->getDefaultParameters();
-  else pList_ = pList;
-  pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  else stepperPL_ = pList;
+  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = pList_->get<std::string>("Stepper Type");
+  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
     std::logic_error,
        "Error - Stepper Type is not 'Forward Euler'!\n"
@@ -159,7 +193,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::getNonconstParameterList()
 {
-  return(pList_);
+  return(stepperPL_);
 }
 
 
@@ -167,8 +201,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperForwardEuler<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
-  pList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
+  stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

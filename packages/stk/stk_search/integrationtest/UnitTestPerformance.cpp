@@ -68,6 +68,13 @@ TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
   testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
 }
 
+TEST(Performance, ofAxisAlignedBoundingBoxesUsingKdtree)
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
+  testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
+}
+
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm)
 {
     int proc = stk::parallel_machine_rank(comm);
@@ -172,8 +179,7 @@ TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)
 void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<FloatBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
+    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
 
     SearchResults boxIdPairResults;
     testStkSearchUsingFloatAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
@@ -182,16 +188,13 @@ void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod searchMethod)
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<FloatBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
+    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
 
     SearchResults boxIdPairResults;
     testStkSearchUsingStkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
-
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
-        stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes, stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     int procId = stk::parallel_machine_rank(comm);
 
@@ -208,17 +211,14 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
     printPeformanceStats(elapsedTime, comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber=getGoldValueForTest();
+    size_t goldValueNumber = getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)
         {
             EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
         }
-        else
-        {
-            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
-        }
+        std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
     }
 }
 
@@ -227,8 +227,8 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
 {
     int procId = stk::parallel_machine_rank(comm);
 
-    FlaotBoxVector searchBoxPairs(domainBoxes.size());
-    for(size_t i=0;i<domainBoxes.size();i++)
+    FloatBoxVector searchBoxPairs(domainBoxes.size());
+    for(size_t i = 0; i < domainBoxes.size(); i++)
     {
         Ident domainBoxId(i, procId);
         searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
@@ -244,53 +244,49 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
     printPeformanceStats(elapsedTime, comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber=getGoldValueForTest();
+    size_t goldValueNumber = getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)
         {
             EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
         }
-        else
-        {
-            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
-        }
+        std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
     }
 }
 
-TEST(Performance, getGoldResults)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int procId = stk::parallel_machine_rank(comm);
-
-    std::vector<FloatBox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
-
-    SearchResults boxIdPairResults;
-
-    StkBoxVector stkBoxes(domainBoxes.size());
-    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
-
-    double startTime = stk::wall_time();
-    for (size_t i=0;i<stkBoxes.size();++i)
-    {
-        for (size_t j=0;j<stkBoxes.size();++j)
-        {
-            if ( stk::search::intersects(stkBoxes[i].first, stkBoxes[j].first) )
-            {
-                boxIdPairResults.push_back(std::make_pair(stkBoxes[i].second, stkBoxes[j].second));
-            }
-        }
-    }
-
-    std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
-    SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
-    boxIdPairResults.erase(iter_end, boxIdPairResults.end());
-
-    double elapsedTime = stk::wall_time() - startTime;
-    printPeformanceStats(elapsedTime, comm);
-
-    std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
-}
+//TEST(Performance, getGoldResults)
+//{
+//    MPI_Comm comm = MPI_COMM_WORLD;
+//    int procId = stk::parallel_machine_rank(comm);
+//
+//    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
+//
+//    SearchResults boxIdPairResults;
+//
+//    StkBoxVector stkBoxes(domainBoxes.size());
+//    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
+//
+//    double startTime = stk::wall_time();
+//    for (size_t i=0;i<stkBoxes.size();++i)
+//    {
+//        for (size_t j=0;j<stkBoxes.size();++j)
+//        {
+//            if ( stk::search::intersects(stkBoxes[i].first, stkBoxes[j].first) )
+//            {
+//                boxIdPairResults.push_back(std::make_pair(stkBoxes[i].second, stkBoxes[j].second));
+//            }
+//        }
+//    }
+//
+//    std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
+//    SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+//    boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+//
+//    double elapsedTime = stk::wall_time() - startTime;
+//    printPeformanceStats(elapsedTime, comm);
+//
+//    std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
+//}
 
 }

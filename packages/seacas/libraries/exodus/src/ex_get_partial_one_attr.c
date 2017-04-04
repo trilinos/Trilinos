@@ -90,6 +90,8 @@ int ex_get_partial_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj
   const char *dnumobjatt;
   const char *vattrbname;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (num_ent == 0) {

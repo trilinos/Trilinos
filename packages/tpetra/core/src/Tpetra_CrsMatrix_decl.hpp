@@ -3414,6 +3414,36 @@ namespace Tpetra {
              const size_t numEnt,
              const LocalOrdinal lclRow) const;
 
+    /// \brief Pack data for the current row to send, if the matrix's
+    ///   graph is known to be static (and therefore fill complete,
+    ///   and locally indexed).
+    ///
+    /// \param numEntOut [out] Where to write the number of entries in
+    ///   the row.
+    /// \param valOut [out] Output (packed) array of matrix values.
+    /// \param indOut [out] Output (packed) array of matrix column
+    ///   indices (as global indices).
+    /// \param numEnt [in] Number of entries in the row.
+    /// \param lclRow [in] Local index of the row.
+    ///
+    /// This method does not allocate temporary storage.  We intend
+    /// for this to be safe to call in a thread-parallel way on host
+    /// (not in CUDA).
+    ///
+    /// \return \c true if the method succeeded, else \c false.
+    ///
+    /// \warning (mfh 24 Mar 2017) The current implementation of this
+    ///   kernel assumes CUDA UVM.  If we want to fix that, we need to
+    ///   write a pack kernel for the whole matrix, that runs on
+    ///   device.  As a work-around, consider a fence before and after
+    ///   packing.
+    bool
+    packRowStatic (char* const numEntOut,
+                   char* const valOut,
+                   char* const indOut,
+                   const size_t numEnt,
+                   const LocalOrdinal lclRow) const;
+
     /// \brief Unpack and combine received data for the current row.
     ///
     /// \pre <tt>tmpSize >= numEnt</tt>
@@ -3437,7 +3467,7 @@ namespace Tpetra {
     ///
     /// \return \c true if the method succeeded, else \c false.
     bool
-    unpackRow (Scalar* const valInTmp,
+    unpackRow (impl_scalar_type* const valInTmp,
                GlobalOrdinal* const indInTmp,
                const size_t tmpNumEnt,
                const char* const valIn,
@@ -3705,6 +3735,30 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
                          const Teuchos::ArrayView<const Scalar>& values,
                          const Tpetra::CombineMode combineMode);
+
+    /// \brief Combine in the data using the given combine mode.
+    ///
+    /// The copyAndPermute() and unpackAndCombine() methods may this
+    /// function to combine incoming entries from the source matrix
+    /// with the target matrix's current data.  This method's behavior
+    /// depends on whether the target matrix (that is, this matrix)
+    /// has a static graph.
+    ///
+    /// \param lclRow [in] <i>Local</i> row index of the row to modify.
+    /// \param numEnt [in] Number of entries in the input data.
+    /// \param vals [in] Input values to combine.
+    /// \param cols [in] Input (global) column indices corresponding
+    ///   to the above values.
+    /// \param combineMode [in] The CombineMode to use.
+    ///
+    /// \return The number of modified entries.  No error if and only
+    ///   if equal to numEnt.
+    LocalOrdinal
+    combineGlobalValuesRaw (const LocalOrdinal lclRow,
+                            const LocalOrdinal numEnt,
+                            const impl_scalar_type vals[],
+                            const GlobalOrdinal cols[],
+                            const Tpetra::CombineMode combineMode);
 
     /// \brief Transform CrsMatrix entries, using global indices;
     ///   backwards compatibility version that takes

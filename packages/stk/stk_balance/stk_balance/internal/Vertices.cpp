@@ -33,7 +33,7 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
                                  const stk::mesh::EntityVector &entities,
                                  const std::vector<stk::mesh::Selector> &selectors)
 {
-    if(balanceSettings.fieldSpecifiedVertexWeights())
+    if(balanceSettings.areVertexWeightsProvidedViaFields())
     {
         fillFieldVertexWeights(balanceSettings, bulkData, selectors, entities);
     }

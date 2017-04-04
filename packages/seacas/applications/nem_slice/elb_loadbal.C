@@ -1407,7 +1407,7 @@ namespace {
             ** only the last element in the current list
             */
             if (lb->ext_nodes[proc_n].empty() ||
-                (lb->ext_nodes[proc_n][lb->ext_nodes[proc_n].size() - 1] != (INT)ncnt)) {
+                (lb->ext_nodes[proc_n].back() != (INT)ncnt)) {
               lb->ext_nodes[proc_n].push_back(ncnt);
               lb->ext_procs[proc_n].push_back(proc);
             }
@@ -1439,7 +1439,7 @@ namespace {
         ** then it must be the last element.
         */
         if ((lb->int_elems[proc].empty()) ||
-            (lb->int_elems[proc][lb->int_elems[proc].size() - 1] != (INT)ecnt)) {
+            (lb->int_elems[proc].back() != (INT)ecnt)) {
           lb->int_elems[proc].push_back(ecnt);
         }
       }
@@ -1874,7 +1874,7 @@ namespace {
              * is in the last position in the array
              */
             if ((lb->bor_nodes[proc2].empty()) ||
-                ((INT)ncnt != lb->bor_nodes[proc2][lb->bor_nodes[proc2].size() - 1])) {
+                ((INT)ncnt != lb->bor_nodes[proc2].back())) {
               lb->bor_nodes[proc2].push_back(ncnt);
             }
           } /* if (proc != lb->vertex2proc[graph->sur_elem[ncnt][ecnt]]) */

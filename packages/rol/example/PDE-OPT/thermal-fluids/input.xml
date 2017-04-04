@@ -10,10 +10,13 @@
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Objective type"              type="string"  value="Vorticity"   />
     <Parameter name="Control penalty parameter"   type="double"  value="1e-2"        />
+    <Parameter name="Observation width"           type="double"  value="3.0"         />
     <Parameter name="Reynolds Number"             type="double"  value="200.0"       />
     <Parameter name="Prandtl Number"              type="double"  value="0.72"        />
     <Parameter name="Grashof Number"              type="double"  value="40000.0"     />
     <Parameter name="Robin Coefficient"           type="double"  value="1.0"         />
+    <Parameter name="Inflow Temperature"          type="double"  value="0.0"         />
+    <Parameter name="Step Temperature"            type="double"  value="1.0"         />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="4"           />
   </ParameterList>

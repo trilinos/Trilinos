@@ -46,10 +46,10 @@
 #include "stk_mesh/base/GetEntities.hpp"       // for get_selected_entities, etc.
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 
-#include "CopySearchCommAll.hpp"
-#include "CopySearchGeometric.hpp"
-#include "CopyTransfer.hpp"
-#include "CopyTransferStkMeshAdapter.hpp"
+#include "stk_transfer/copy_by_id/SearchByIdCommAll.hpp"
+#include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
+#include "stk_transfer/copy_by_id/TransferCopyById.hpp"
+#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
 
 
 
@@ -171,9 +171,7 @@ void add_shells_to_mesh(stk::mesh::MetaData & meta,
         const bool i_own_shell = (p_rank == shell_owner_by_elem_side[i][side_id]);
         if (!mesh.is_valid(shell) && i_own_shell) {
           for (size_t shell_index=0; shell_index<num_shells; ++shell_index) {
-            shell = mesh.declare_entity(stk::topology::ELEM_RANK,
-                                        shell_global_id+100*shell_index,
-                                        add_parts);
+            shell = mesh.declare_element(shell_global_id+100*shell_index, add_parts);
             const size_t shell_node_id_index = i*6+side_id;
             for (size_t node_index = 0; node_index < 4 ; ++node_index) {
               stk::mesh::EntityId node_global_id = shell_node_ids[shell_node_id_index][node_index];
@@ -275,16 +273,16 @@ TEST(Transfer, copy0T0)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
@@ -328,17 +326,17 @@ TEST(Transfer, copy0T0)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
       // Unit test for CopySearchCommAll,
       // also verifies do_search can be called twice
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -348,12 +346,12 @@ TEST(Transfer, copy0T0)
         EXPECT_EQ( expected_target_processor, map_iter->second );
       }
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       const MeshIDSet & remote_keys = copySearch.get_remote_keys();
       EXPECT_TRUE( remote_keys.empty() );
     }
 
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -403,16 +401,16 @@ TEST(Transfer, copy0T1)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
 
     const size_t spatial_dimension = 3;
@@ -458,15 +456,15 @@ TEST(Transfer, copy0T1)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -476,7 +474,7 @@ TEST(Transfer, copy0T1)
         EXPECT_EQ( expected_target_processor, map_iter->second );
       }
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       const MeshIDSet & remote_keys = copySearch.get_remote_keys();
       const int p_rank = stk::parallel_machine_rank( pm );
       if (p_rank == 0) {
@@ -485,7 +483,7 @@ TEST(Transfer, copy0T1)
         EXPECT_EQ( 8u, remote_keys.size() );
       }
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -535,16 +533,16 @@ TEST(Transfer, copy1T0)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
@@ -589,15 +587,15 @@ TEST(Transfer, copy1T0)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -607,7 +605,7 @@ TEST(Transfer, copy1T0)
         EXPECT_EQ( expected_target_processor, map_iter->second );
       }
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       const MeshIDSet & remote_keys = copySearch.get_remote_keys();
       const int p_rank = stk::parallel_machine_rank( pm );
       if (p_rank == 0) {
@@ -616,7 +614,7 @@ TEST(Transfer, copy1T0)
         EXPECT_TRUE( remote_keys.empty() );
       }
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
 
     // Do the transfer
@@ -667,16 +665,16 @@ TEST(Transfer, copy01T10)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 2;
@@ -728,12 +726,12 @@ TEST(Transfer, copy01T10)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -745,7 +743,7 @@ TEST(Transfer, copy01T10)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -767,7 +765,7 @@ TEST(Transfer, copy01T10)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
@@ -782,7 +780,7 @@ TEST(Transfer, copy01T10)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -832,16 +830,16 @@ TEST(Transfer, copy001T011)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -893,12 +891,12 @@ TEST(Transfer, copy001T011)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -910,7 +908,7 @@ TEST(Transfer, copy001T011)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -936,7 +934,7 @@ TEST(Transfer, copy001T011)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
       } else {
@@ -947,7 +945,7 @@ TEST(Transfer, copy001T011)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -997,16 +995,16 @@ TEST(Transfer, copy001T011Element)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -1058,16 +1056,16 @@ TEST(Transfer, copy001T011Element)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceElements, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceElements, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetElements, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetElements, targetFields);
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1080,14 +1078,14 @@ TEST(Transfer, copy001T011Element)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::ELEM_RANK,2).m_value);
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -1137,16 +1135,16 @@ TEST(Transfer, copy001T011Face)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -1217,16 +1215,16 @@ TEST(Transfer, copy001T011Face)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceFaces, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceFaces, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetFaces, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetFaces, targetFields);
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1258,7 +1256,7 @@ TEST(Transfer, copy001T011Face)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         stk::mesh::Entity elem2 = meshB.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1271,7 +1269,7 @@ TEST(Transfer, copy001T011Face)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -1321,16 +1319,16 @@ TEST(Transfer, copy001T011Shell)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -1439,16 +1437,16 @@ TEST(Transfer, copy001T011Shell)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceShells, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceShells, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetShells, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetShells, targetFields);
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1476,7 +1474,7 @@ TEST(Transfer, copy001T011Shell)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       for (int shell_index=0; shell_index<num_shells; ++shell_index) {
         if (1 == p_rank) {
@@ -1489,7 +1487,7 @@ TEST(Transfer, copy001T011Shell)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -1540,16 +1538,16 @@ TEST(Transfer, copy012T000)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -1603,12 +1601,12 @@ TEST(Transfer, copy012T000)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -1620,7 +1618,7 @@ TEST(Transfer, copy012T000)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1647,7 +1645,7 @@ TEST(Transfer, copy012T000)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
@@ -1661,7 +1659,7 @@ TEST(Transfer, copy012T000)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -1711,16 +1709,16 @@ TEST(Transfer, copy000T012)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -1774,12 +1772,12 @@ TEST(Transfer, copy000T012)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -1791,7 +1789,7 @@ TEST(Transfer, copy000T012)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1819,7 +1817,7 @@ TEST(Transfer, copy000T012)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
@@ -1835,7 +1833,7 @@ TEST(Transfer, copy000T012)
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
 
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -1885,16 +1883,16 @@ TEST(Transfer, copy0011T1010)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 4;
@@ -1947,12 +1945,12 @@ TEST(Transfer, copy0011T1010)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -1964,7 +1962,7 @@ TEST(Transfer, copy0011T1010)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1997,7 +1995,7 @@ TEST(Transfer, copy0011T1010)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,4).m_value);
@@ -2017,7 +2015,7 @@ TEST(Transfer, copy0011T1010)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -2067,16 +2065,16 @@ TEST(Transfer, copy0T_)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
@@ -2128,12 +2126,12 @@ TEST(Transfer, copy0T_)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -2144,18 +2142,18 @@ TEST(Transfer, copy0T_)
     //  > transfer(transferSource, transferTarget, "copy0T_ unit test");
 
     {
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
       KeyToTargetProcessor gold_map;
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -2187,16 +2185,16 @@ TEST(Transfer, copy_T0)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
@@ -2244,15 +2242,15 @@ TEST(Transfer, copy_T0)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2261,7 +2259,7 @@ TEST(Transfer, copy_T0)
 
       EXPECT_EQ( 8u, copySearch.get_remote_keys().size() );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -2295,16 +2293,16 @@ TEST(Transfer, copy00_T_11)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
@@ -2356,12 +2354,12 @@ TEST(Transfer, copy00_T_11)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -2373,7 +2371,7 @@ TEST(Transfer, copy00_T_11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2391,7 +2389,7 @@ TEST(Transfer, copy00_T_11)
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,2).m_value);
@@ -2411,7 +2409,7 @@ TEST(Transfer, copy00_T_11)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //
@@ -2445,16 +2443,16 @@ TEST(Transfer, copy00___T___11)
     return;
   }
 
-  stk::transfer::CopySearchGeometric geometricSearch;
-  stk::transfer::CopySearchCommAll commAllSearch;
-  stk::transfer::CopySearchBase * copySearchPtr = &commAllSearch;
+  stk::transfer::SearchByIdGeometric geometricSearch;
+  stk::transfer::SearchByIdCommAll commAllSearch;
+  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
   for (int search_index=0 ; search_index<2 ; ++search_index)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
       EXPECT_TRUE( copySearchPtr == &geometricSearch );
     }
-    stk::transfer::CopySearchBase & copySearch = *copySearchPtr;
+    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
     const size_t spatial_dimension = 3;
     const size_t num_elements = 5;
@@ -2508,12 +2506,12 @@ TEST(Transfer, copy00___T___11)
     std::vector<stk::mesh::FieldBase*> sourceFields;
     sourceFields.push_back(&scalarSourceField);
     sourceFields.push_back(&vectorSourceField);
-    stk::transfer::CopyTransferStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetField);
     targetFields.push_back(&vectorTargetField);
-    stk::transfer::CopyTransferStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     //  GeometricTransfer
     //  stk::transfer::GeometricTransfer<
@@ -2525,14 +2523,14 @@ TEST(Transfer, copy00___T___11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
       KeyToTargetProcessor gold_map;
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
-      typedef stk::transfer::CopySearchBase::MeshIDSet MeshIDSet;
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         // none of these get fulfilled
@@ -2553,7 +2551,7 @@ TEST(Transfer, copy00___T___11)
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
-    stk::transfer::CopyTransfer transfer(copySearch, transferSource, transferTarget);
+    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
     // Do the transfer
     //

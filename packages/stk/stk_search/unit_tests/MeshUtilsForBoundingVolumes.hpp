@@ -226,30 +226,19 @@ inline void putCoordinatesInFile(const int exoid, const std::vector<FloatBox>& b
     }
 
     ex_put_coord(exoid, x.data(), y.data(), z.data());
-
 }
 
 inline void fillNumElementsPerBlock(const int num_elements, std::vector<int> &numElementsPerBlock)
 {
-    int numElementsPer=1;
-    if ( num_elements < 100 )
-    {
-        numElementsPer = 1;
-    }
-    else if ( num_elements < 1000 )
-    {
-        numElementsPer=10;
-    }
-    else if ( num_elements < 10000 )
-    {
-        numElementsPer=100;
-    }
-    else
-    {
-        numElementsPer=1000;
-    }
+    const int minNumElementsPer = 1;
+    const int maxNumElementsPer = 1000;
 
-    for (int i=0;i<num_elements;i+=numElementsPer)
+    int numElementsPer = num_elements / 100;
+
+    numElementsPer = std::max( numElementsPer, minNumElementsPer );
+    numElementsPer = std::min( numElementsPer, maxNumElementsPer );
+
+    for (int i = 0; i < num_elements; i += numElementsPer)
     {
         int numElementsThisBlock = (i+numElementsPer) < num_elements ? numElementsPer : num_elements-i;
         numElementsPerBlock.push_back(numElementsThisBlock);
@@ -260,7 +249,7 @@ inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const 
 {
     if ( boxes.size() == 0 )
     {
-        std::cerr << "Skipping writing of file. No boxes to write.\n";
+        // std::cerr << "Skipping writing of file. No boxes to write.\n";
         return;
     }
 
@@ -293,8 +282,10 @@ inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const 
     ex_close(exoid);
 }
 
-inline void fillDomainBoxes(MPI_Comm comm, std::vector<FloatBox>& domainBoxes)
+inline std::vector<FloatBox>
+fillDomainBoxes(MPI_Comm comm)
 {
+    std::vector<FloatBox> domainBoxes;
     std::string filename = stk::unit_test_util::get_option("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
 
@@ -303,6 +294,8 @@ inline void fillDomainBoxes(MPI_Comm comm, std::vector<FloatBox>& domainBoxes)
     {
         writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
     }
+
+    return domainBoxes;
 }
 
 inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
@@ -316,7 +309,7 @@ inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FlaotBoxVector& domainBoxes)
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
 {
     stk::mesh::EntityVector elements;
     stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
@@ -350,8 +343,7 @@ inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkD
     }
 }
 
-inline void fillBoxesUsingElementBlocksFromFile(
-        MPI_Comm comm, const std::string& volumeFilename, FlaotBoxVector &domainBoxes)
+inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxVector &domainBoxes)
 {
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, comm);
@@ -392,8 +384,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     }
 }
 
-inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, FlaotBoxVector &spheres)
+inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxVector &spheres)
 {
     const int spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
@@ -431,7 +422,7 @@ inline void kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_
     stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
 }
 
-enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
+enum NewSearchMethod { BOOST_RTREE, OCTREE, KDTREE };
 inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 {
     if ( method == BOOST_RTREE )
@@ -442,13 +433,13 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
     {
         return stk::search::OCTREE;
     }
-    else if ( method == GTK )
+    else if ( method == KDTREE )
     {
       return stk::search::KDTREE;
     }
     else
     {
-        ThrowRequireMsg(false, "GTK method not implemented for this.");
+        ThrowRequireMsg(false, "Unknown algorithm mysteriously specified");
     }
     return stk::search::BOOST_RTREE;
 }
@@ -456,7 +447,7 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 template <typename Identifier>
 inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    if ( algorithm == GTK )
+    if ( algorithm == KDTREE )
     {
         kdtree_search(local_domain, local_range, comm, searchResults);
     }

@@ -17,6 +17,11 @@
     <Parameter name="Use state storage"        type="bool"    value="true"  />
     <Parameter name="Use Filter"               type="bool"    value="true"  />
     <Parameter name="Filter Radius"            type="double"  value="0.1"   />
+    <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
+    <ParameterList name="Dirichlet">
+      <Parameter name="Sidesets" type="string" value="{3}" />
+      <Parameter name="Types"    type="string" value="{0}" />
+    </ParameterList>
     <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->
     <ParameterList name="Load">
       <Parameter name="Magnitude"     type="string"  value="{1.0, 1.0}"     />

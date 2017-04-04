@@ -111,7 +111,7 @@ TEST( UnitTestEvaluator, testIndexing)
     } 
     catch (std::runtime_error &x) {
       std::string errMess = x.what();
-      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Attempting to access invalid component '3' in analytic function.  Valid components are 0 to '2'.  "));
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Attempting to access invalid component '3' in analytic function.  Valid components are 0 to '2'.  "));
     }
   }
 
@@ -128,7 +128,10 @@ TEST( UnitTestEvaluator, testIndexing)
     } 
     catch (std::runtime_error &x) {
       std::string errMess = x.what();
-      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Attempting to access invalid component '0' in analytic function.  Valid components are 1 to '3'.  "));
+
+
+
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Attempting to access invalid component '0' in analytic function.  Valid components are 1 to '3'.  "));
     }
   }
 
@@ -145,7 +148,7 @@ TEST( UnitTestEvaluator, testIndexing)
     } 
     catch (std::runtime_error &x) {
       std::string errMess = x.what();
-      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Invalid direct access of array variable, must access by index"));
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "In analytic expression evaluator, processing variable 'y'.  Invalid direct access of array variable, must access by index"));
     }
   }
 
@@ -276,10 +279,7 @@ test_one_value(const char *expression, double gold_value)
   double absolute_error = fabs(result - gold_value);
   if (absolute_error > fabs(1.0e-14*result)) 
   {
-    std::cout << expression << " = " << std::setprecision(20) << result
-      << " should be " << gold_value 
-      << " error is " << absolute_error
-      << std::endl;
+    std::cout << expression << " = " << std::setprecision(20) << result << " should be " << gold_value << " error= " << absolute_error << std::endl;
     failed = true;
   } else {
     std::cout << "Expression= " << expression << " == " << result << "\n";
@@ -333,7 +333,6 @@ evaluate_range(
     }
   }
 
-  //std::cout << "KHP: ymin=  " << ymin << ", ymax= " << ymax << "\n";
   if(write_csv) {
     // write a gnuplot input file corresponding to the csv file
     std::string expression_gnu_name = expr + std::string(".gnu");
@@ -387,21 +386,12 @@ test(
     }
     double absolute_error = fabs(result - y);
     if (absolute_error > fabs(1.0e-14*result)) {
-      std::cout << expr << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " should be " << y
-		<< " error is " << absolute_error
+      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " should be " << y << ", error= " << absolute_error
 		<< std::endl;
       failed = true;
     }
     else if (by != result) {
-      std::cout << expr << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " does not match bound value "
-		<< std::setprecision(20) << by
-		<< std::endl;
+      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " does not match bound value " << std::setprecision(20) << by << std::endl;
       failed = true;
     }
   }

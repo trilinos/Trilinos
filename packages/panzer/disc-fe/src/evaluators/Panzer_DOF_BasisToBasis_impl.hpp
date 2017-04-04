@@ -101,8 +101,9 @@ template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
 			                                  PHX::FieldManager<TRAITST>& fm)
 {
-  this->utils.setFieldData(dof_source_coeff,fm);
-  this->utils.setFieldData(dof_target_coeff,fm);
+  // not needed anymore
+  // this->utils.setFieldData(dof_source_coeff,fm);
+  // this->utils.setFieldData(dof_target_coeff,fm);
 }
 
 //**********************************************************************
@@ -110,7 +111,7 @@ template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum!)
-      dof_target_coeff.deep_copy(ScalarT(0.0));
+  dof_target_coeff.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0) {
 

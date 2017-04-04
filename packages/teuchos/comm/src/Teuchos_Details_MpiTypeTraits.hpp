@@ -283,12 +283,12 @@ computeStdComplexMpiDatatype (const std::complex<T>& z)
     //
     // Need the cast to prevent the compiler complaining about
     // subtracting addresses of different types.
-    arrayOfDisplacements[0] = reinterpret_cast<uintptr_t> (&z2.re) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfDisplacements[0] = reinterpret_cast<char*>(&z2.re) - reinterpret_cast<char*>(&z2);
     arrayOfTypes[0] = innerDatatype;
 
     // Second entry in the struct.
     blockLengths[1] = 1;
-    arrayOfDisplacements[1] = reinterpret_cast<uintptr_t> (&z2.im) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfDisplacements[1] = reinterpret_cast<char*>(&z2.im) - reinterpret_cast<char*>(&z2);
     arrayOfTypes[1] = innerDatatype;
 
 #if MPI_VERSION < 2

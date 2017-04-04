@@ -51,6 +51,38 @@ void StepperExplicitRK<Scalar>::setNonConstModel(
 }
 
 template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(std::string solverName)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(
+  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setSolver(
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
+  *out << "Warning -- No solver to set for StepperExplicitRK "
+       << "(i.e., explicit method).\n" << std::endl;
+  return;
+}
+
+template<class Scalar>
 void StepperExplicitRK<Scalar>::setTableau(
   Teuchos::RCP<Teuchos::ParameterList> pList,
   std::string stepperType)
@@ -141,7 +173,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     }
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    workingState->setOrder(ERK_ButcherTableau_->order());
+    workingState->setOrder(this->getOrder());
   }
   return;
 }
@@ -207,12 +239,12 @@ void StepperExplicitRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    pList_ = this->getDefaultParameters();
+    stepperPL_ = this->getDefaultParameters();
   } else {
-    pList_ = pList;
+    stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters.
-  //pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 }
 
 
@@ -253,7 +285,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperExplicitRK<Scalar>::getNonconstParameterList()
 {
-  return(pList_);
+  return(stepperPL_);
 }
 
 
@@ -261,8 +293,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperExplicitRK<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
-  pList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
+  stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

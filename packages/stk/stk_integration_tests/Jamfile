@@ -54,7 +54,7 @@ alias install-serial-targets ;
 
 explicit install-targets ;
 alias install-targets
-  : stk_mesh_integration_tests
+  : stk_integration_tests
   ;
 
 #
@@ -82,16 +82,17 @@ alias install-exe-targets : ;
 local xml-files =
   ;
 
-exe stk_mesh_integration_tests
+exe stk_integration_tests
   :
-    $(stk_integration_tests-root)/stk_mesh/IntegrationTestMain.cpp
     [ glob 
         $(stk_integration_tests-root)/stk_mesh/*.cpp 
+        $(stk_integration_tests-root)/stk_io/*.cpp 
         $(stk_integration_tests-root)/stk_mesh_doc/*.cpp 
         $(stk_integration_tests-root)/stk_mesh/face_creation/skin_mesh/*.cpp  
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_created/*.cpp
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_support/*.cpp
     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_mesh//stk_mesh_fixtures
     /sierra/stk_io//stk_io

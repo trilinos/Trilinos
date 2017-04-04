@@ -69,12 +69,12 @@ public:
 
   Real evaluatePDF(const Real input) const {
     return ((input <= a_) ? 0. : ((input >= b_) ? 0. : 
-             1./(M_PI*std::sqrt((input-a_)*(b_-input)))));
+             1./(Teuchos::ScalarTraits<Real>::pi()*std::sqrt((input-a_)*(b_-input)))));
   }
 
   Real evaluateCDF(const Real input) const {
     return ((input <= a_) ? 0. : ((input >= b_) ? 1. : 
-             2./M_PI * asin(std::sqrt((input-a_)/(b_-a_)))));
+             2./Teuchos::ScalarTraits<Real>::pi() * asin(std::sqrt((input-a_)/(b_-a_)))));
   }
   Real integrateCDF(const Real input) const {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
@@ -83,7 +83,7 @@ public:
   }
 
   Real invertCDF(const Real input) const {
-    Real x = std::pow(std::sin(0.5*M_PI*input),2);
+    Real x = std::pow(std::sin(0.5*Teuchos::ScalarTraits<Real>::pi()*input),2);
     return x*(b_-a_) + a_;
   }
 

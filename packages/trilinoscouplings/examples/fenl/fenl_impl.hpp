@@ -405,6 +405,8 @@ public:
                                              dev_config_elem , qd );
 
       // Create boundary condition functor
+      // This also sets the boundary conditions in the solution vector
+      // and zeros out non BC values
       const DirichletComputationType dirichlet(
         fixture , nodal_solution , jacobian , nodal_residual ,
         2 /* apply at 'z' ends */ ,
@@ -424,7 +426,6 @@ public:
       // Teuchos::RCP<Teuchos::FancyOStream> out =
       //   Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false));
       // out->setShowProcRank(true);
-
 
       Teuchos::RCP< Tpetra::Operator<Scalar,int,int,NodeType> > precOp;
       for ( perf.newton_iter_count = 0 ;
@@ -497,6 +498,9 @@ public:
 
         //--------------------------------
         // Solve for nonlinear update
+
+        // Zero out newton update vector before solve
+        g_nodal_delta.putScalar(0.0);
 
         result_struct cgsolve;
         if (use_belos) {

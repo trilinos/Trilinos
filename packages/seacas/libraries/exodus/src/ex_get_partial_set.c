@@ -83,6 +83,8 @@ int ex_get_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
   char * entryptr = NULL;
   char * extraptr = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* first check if any sets are specified */

@@ -81,33 +81,17 @@ public:
     set_max_corner(point_type(x2, y2, z2));
   }
 
-
   bool operator==(Box<value_type> const& b) const
   { return m_min_corner == b.m_min_corner && m_max_corner == b.m_max_corner; }
 
   bool operator!=(Box<value_type> const& b) const
   { return !(*this == b); }
 
-  //  NKC, keeping track of things may need to put here to support usage of this box in GTK search
-
   void set_box(const Box& b)
   {
     set_min_corner(b.min_corner());
     set_max_corner(b.max_corner());
   }
-
-
-  /*
-  Box<value_type>& operator = (const Box<value_type>& box1) {
-    m_min_corner[0] = box1.m_min_corner[0];
-    m_min_corner[1] = box1.m_min_corner[1];
-    m_min_corner[2] = box1.m_min_corner[2];
-    m_max_corner[0] = box1.m_max_corner[0];
-    m_max_corner[1] = box1.m_max_corner[1];
-    m_max_corner[2] = box1.m_max_corner[2];
-    return *this;
-  }
-  */
 
   friend std::ostream& operator<<(std::ostream & out, Box<value_type> const& b)
   {
@@ -121,8 +105,6 @@ private:
 };
 
 }} //namespace stk::search
-
-
 
 #endif //STK_SEARCH_BOX_HPP
 

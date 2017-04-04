@@ -64,6 +64,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
       Tempus::integratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+    // Remove Predictor for comparison
+    stepperPL->remove("Predictor Name");
+    stepperPL->remove("Default Predictor");
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
     TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))

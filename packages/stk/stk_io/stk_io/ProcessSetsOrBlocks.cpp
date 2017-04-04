@@ -208,7 +208,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                 if (bulk.is_valid(elem)) {
                     // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
                     int side_ordinal = elem_side[is*2+1] - 1;
-                    stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], elem_side[is*2+1]);
+                    stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], side_ordinal);
 
                     if (par_dimen == 1) {
                         if(bulk.mesh_meta_data().spatial_dimension()==2 && behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
@@ -223,8 +223,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     }
                     else if (par_dimen == 2) {
                         if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CLASSIC) {
-                            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_id_for_classic_behavior, elem, side_ordinal);
-                            bulk.change_entity_parts( side, add_parts );
+                            bulk.declare_element_side(elem, side_ordinal, add_parts);
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
                             stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_id_for_classic_behavior,stk::mesh::PartVector(1,sb_part));

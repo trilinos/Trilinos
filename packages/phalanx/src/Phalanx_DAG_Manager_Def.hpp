@@ -648,7 +648,6 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     }
     if (writeEvaluatedFields) {
       ofs << "\\n   Contributes:";
-      const auto& contrib_fields = node.get()->contributedFields(); 
       for (const auto& field : contrib_fields)
 	ofs << "\\n      " << field->identifier();
     }
@@ -810,6 +809,9 @@ void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
     Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();
 
     for (const auto& f : e->evaluatedFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+
+    for (const auto& f : e->contributedFields())
       field_to_evaluators_binding_[f->identifier()].push_back(e);
 
     for (const auto& f : e->dependentFields())

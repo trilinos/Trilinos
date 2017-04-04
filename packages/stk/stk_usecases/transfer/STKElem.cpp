@@ -267,42 +267,42 @@ void STKElem::bounding_boxes (std::vector< std::pair<Box,EntityProc> > &v) const
   }
 }
 
-void STKElem::copy_entities(
-  const EntityProcVec  &keys_to_copy,
-  const std::string    &transfer_name)
-{
-  m_bulk_data.modification_begin();
-  {
-    mesh::EntityProcVec new_entities_to_copy(keys_to_copy.size());
-    for (size_t i=0; i<keys_to_copy.size(); ++i) {
-      // convert from EntityProc based on EntityKey to EntityProc based on raw Entity.
-      const EntityProc key_proc = keys_to_copy[i];
-      const EntityKey       key = key_proc.id();
-      const unsigned       proc = key_proc.proc();
-      const Entity            e = entity(key);
-      const mesh::EntityProc ep( e, proc);
-      new_entities_to_copy[i] = ep;
-    }
-    m_entities_currently_ghosted.insert(m_entities_currently_ghosted.end(),
-                                        new_entities_to_copy.begin(),
-                                        new_entities_to_copy.end());
-
-    std::sort(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
-    mesh::EntityProcVec::iterator del = std::unique(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
-    m_entities_currently_ghosted.resize(std::distance(m_entities_currently_ghosted.begin(), del));
-  }
-  {
-    m_bulk_data.change_ghosting(*m_transfer_entity_ghosting,
-                                m_entities_currently_ghosted);
-
-    std::vector<mesh::EntityKey> receive;
-    std::vector<mesh::EntityProc> send;
-    m_transfer_entity_ghosting->receive_list( receive );
-    m_transfer_entity_ghosting->send_list( send );
-  }
-  m_mesh_modified = true;
-  m_bulk_data.modification_end();
-}
+//void STKElem::copy_entities(
+//  const EntityProcVec  &keys_to_copy,
+//  const std::string    &transfer_name)
+//{
+//  m_bulk_data.modification_begin();
+//  {
+//    mesh::EntityProcVec new_entities_to_copy(keys_to_copy.size());
+//    for (size_t i=0; i<keys_to_copy.size(); ++i) {
+//      // convert from EntityProc based on EntityKey to EntityProc based on raw Entity.
+//      const EntityProc key_proc = keys_to_copy[i];
+//      const EntityKey       key = key_proc.id();
+//      const unsigned       proc = key_proc.proc();
+//      const Entity            e = entity(key);
+//      const mesh::EntityProc ep( e, proc);
+//      new_entities_to_copy[i] = ep;
+//    }
+//    m_entities_currently_ghosted.insert(m_entities_currently_ghosted.end(),
+//                                        new_entities_to_copy.begin(),
+//                                        new_entities_to_copy.end());
+//
+//    std::sort(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
+//    mesh::EntityProcVec::iterator del = std::unique(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
+//    m_entities_currently_ghosted.resize(std::distance(m_entities_currently_ghosted.begin(), del));
+//  }
+//  {
+//    m_bulk_data.change_ghosting(*m_transfer_entity_ghosting,
+//                                m_entities_currently_ghosted);
+//
+//    std::vector<mesh::EntityKey> receive;
+//    std::vector<mesh::EntityProc> send;
+//    m_transfer_entity_ghosting->receive_list( receive );
+//    m_transfer_entity_ghosting->send_list( send );
+//  }
+//  m_mesh_modified = true;
+//  m_bulk_data.modification_end();
+//}
 
 void STKElem::update_values ()
 {

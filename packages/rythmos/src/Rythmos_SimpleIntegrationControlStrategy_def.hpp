@@ -246,9 +246,8 @@ SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
   )
 {
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-
 #ifdef HAVE_RYTHMOS_DEBUG
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   TEUCHOS_ASSERT(integrationTimeDomain_.length() >= ST::zero());
 #endif
 

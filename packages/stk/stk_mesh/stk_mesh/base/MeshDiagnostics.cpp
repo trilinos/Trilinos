@@ -48,10 +48,10 @@ void fill_split_coincident_connections(const stk::mesh::BulkData & bulk, const i
     }
 }
 
-SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::BulkData & bulkData, SideIdPool & sideIdPool)
+SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::BulkData & bulkData)
 {
     impl::ElemSideToProcAndFaceId elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
-    impl::fill_suggested_side_ids(sideIdPool, elementSideIdsToSend);
+    impl::fill_suggested_side_ids(bulkData, elementSideIdsToSend);
     SharedSidesCommunication sharedSidesCommunication(bulkData, elementSideIdsToSend);
     return sharedSidesCommunication.get_received_element_sides();
 }
@@ -77,13 +77,7 @@ SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(st
 
 SplitCoincidentInfo get_split_coincident_elements(stk::mesh::BulkData& bulkData)
 {
-    SideIdPool sideIdPool(bulkData);
-    const int maxNumSidesPerElement = 6;
-    const int numSidesNeededIfCoincident = maxNumSidesPerElement + 2;
-    unsigned numSideIdsNeeded = numSidesNeededIfCoincident * stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
-    sideIdPool.generate_initial_ids(numSideIdsNeeded);
-
-    SideNodeToReceivedElementDataMap elementSidesReceived = get_element_sides_from_other_procs(bulkData, sideIdPool);
+    SideNodeToReceivedElementDataMap elementSidesReceived = get_element_sides_from_other_procs(bulkData);
 
     impl::ElementLocalIdMapper localIdMapper;
     localIdMapper.initialize(bulkData);

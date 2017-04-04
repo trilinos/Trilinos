@@ -125,6 +125,11 @@ namespace {
       }
     }
   }
+
+  bool is_input_or_appending_output(const Ioss::DatabaseIO *iodatabase)
+  {
+      return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
+  }
 } // namespace
 
 namespace Ioss {
@@ -149,7 +154,7 @@ namespace Ioss {
     iodatabase->set_region(this);
 
     if (iodatabase->usage() != Ioss::WRITE_HEARTBEAT &&
-        (iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
+        (is_input_or_appending_output(iodatabase))) {
       // Read metadata -- populates GroupingEntity lists and transient data
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
@@ -242,8 +247,9 @@ namespace Ioss {
 
   MeshType Region::mesh_type() const
   {
+
     if (elementBlocks.empty() && structuredBlocks.empty()) {
-      return MeshType::UNKNOWN;
+      return MeshType::UNSTRUCTURED;
     }
     else if (!elementBlocks.empty() && !structuredBlocks.empty()) {
       return MeshType::HYBRID;
@@ -412,7 +418,7 @@ namespace Ioss {
       DatabaseIO *db = get_database();
 
       if (new_state == STATE_DEFINE_TRANSIENT && db->usage() == Ioss::WRITE_HISTORY &&
-          !(db->is_input() || db->open_create_behavior() == Ioss::DB_APPEND)) {
+          !(is_input_or_appending_output(db))) {
         set_state(STATE_CLOSED);
         Ioss::Utils::generate_history_mesh(this);
         set_state(new_state);
@@ -445,7 +451,7 @@ namespace Ioss {
     if (current_state == STATE_DEFINE_MODEL) {
       // Sort the element blocks based on the idOffset field, followed by
       // name...
-      if (!get_database()->is_input()) {
+      if (!is_input_or_appending_output(get_database())) {
         std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
         std::sort(faceBlocks.begin(), faceBlocks.end(), lessOffset);
         std::sort(edgeBlocks.begin(), edgeBlocks.end(), lessOffset);
@@ -503,12 +509,12 @@ namespace Ioss {
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     if (!get_database()->is_input() && !stateTimes.empty() &&
-        time <= stateTimes[stateTimes.size() - 1]) {
+        time <= stateTimes.back()) {
       // Check that time is increasing...
       if (!warning_output) {
         std::ostringstream errmsg;
         errmsg << "IOSS WARNING: Current time, " << time << ", is not greater than previous time, "
-               << stateTimes[stateTimes.size() - 1] << " in\n"
+               << stateTimes.back() << " in\n"
                << get_database()->get_filename()
                << ". This may cause problems in applications that assume "
                   "monotonically increasing time values.\n";
@@ -803,7 +809,7 @@ namespace Ioss {
       // "original_block_order" property and calculate the offset at that
       // point.  This is done in "end".
 
-      if (get_database()->is_input()) {
+      if (is_input_or_appending_output(get_database())) {
         size_t  nblocks = elementBlocks.size();
         int64_t offset  = 0;
         if (nblocks > 0) {
@@ -855,7 +861,7 @@ namespace Ioss {
       // "original_block_order" property and calculate the offset at that
       // point.  This is done in "end".
 
-      if (get_database()->is_input()) {
+      if (is_input_or_appending_output(get_database())) {
         size_t  nblocks = faceBlocks.size();
         int64_t offset  = 0;
         if (nblocks > 0) {
@@ -906,7 +912,7 @@ namespace Ioss {
       // "original_block_order" property and calculate the offset at that
       // point.  This is done in "end".
 
-      if (get_database()->is_input()) {
+      if (is_input_or_appending_output(get_database())) {
         size_t  nblocks = edgeBlocks.size();
         int64_t offset  = 0;
         if (nblocks > 0) {
@@ -1197,7 +1203,6 @@ namespace Ioss {
     errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
            << "' does not exist in region '" << name() << "'.\n";
     IOSS_ERROR(errmsg);
-    return false;
   }
 
   /** \brief Get the original name for an alias.
@@ -1713,7 +1718,6 @@ namespace Ioss {
            << " is specified.  The valid range is 1 to "
            << get_implicit_property("element_count").get_int();
     IOSS_ERROR(errmsg);
-    return nullptr;
   }
 
   /** \brief Get the structured block containing a specified global-offset-node.
@@ -1734,7 +1738,6 @@ namespace Ioss {
     errmsg << "ERROR: In Ioss::Region::get_structured_block, an invalid global_offset of "
            << global_offset << " is specified.";
     IOSS_ERROR(errmsg);
-    return nullptr;
   }
 
   /** \brief Get an implicit property -- These are calcuated from data stored

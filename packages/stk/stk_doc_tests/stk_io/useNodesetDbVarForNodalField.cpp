@@ -65,9 +65,7 @@ namespace {
     
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 1) {
-      return;
-    }
+    if (numProcs != 1) { return; }
 
     size_t num_elems_per_edge = 9;  
     {

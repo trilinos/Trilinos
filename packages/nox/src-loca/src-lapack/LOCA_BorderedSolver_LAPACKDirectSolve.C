@@ -549,7 +549,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
   else
     numColsRHS = G->numCols();
 
-  bool res;
+  bool res = false;
   if (!isComplex) {
     const NOX::LAPACK::Vector *v;
     NOX::LAPACK::Vector *w;

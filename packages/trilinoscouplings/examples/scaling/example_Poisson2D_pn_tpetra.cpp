@@ -1168,7 +1168,7 @@ int main(int argc, char *argv[]) {
     if ( (smooType == "SPARSE BLOCK RELAXATION" || smooType == "BLOCK RELAXATION") && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
       std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-      int numLocalParts;
+      int numLocalParts = -1;
       std::cout << "setting \"partitioner: map\"" << std::endl;
       if (seedType == "node") {
         ssl.set("partitioner: map", nodeSeeds);
@@ -1180,15 +1180,17 @@ int main(int argc, char *argv[]) {
         ssl.set("partitioner: map", cellSeeds);
         numLocalParts = numCellSeeds;
       }
-      std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-      ssl.set("partitioner: local parts", numLocalParts);
+      if(numLocalParts!=-1){
+	std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	ssl.set("partitioner: local parts", numLocalParts);
+      }
     }
     if(sl.isParameter("coarse: type")) {
 	std::string coarseType = sl.get<std::string>("coarse: type");
 	if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
 	  ParameterList &ssl = sl.sublist("coarse: params");
 	  std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-	  int numLocalParts;
+	  int numLocalParts=-1;
 	  std::cout << "setting \"partitioner: map\"" << std::endl;
 	  if (seedType == "node") {
 	    ssl.set("partitioner: map", nodeSeeds);
@@ -1200,8 +1202,10 @@ int main(int argc, char *argv[]) {
 	    ssl.set("partitioner: map", cellSeeds);
 	    numLocalParts = numCellSeeds;
 	  }
-	  std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-	  ssl.set("partitioner: local parts", numLocalParts);
+	  if(numLocalParts!=-1){
+	    std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	    ssl.set("partitioner: local parts", numLocalParts);
+	  }
 	}
     }
 

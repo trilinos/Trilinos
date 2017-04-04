@@ -154,6 +154,7 @@ public:
   const double *Get_Nodal_Results(int t1, int t2, double proportion,
                                   int var_index) const; // Interpolated results
   void Free_Nodal_Results();
+  void Free_Nodal_Results(int var_index);
 
   // Global data:  (NOTE:  Global and Nodal data are always stored at the same
   //                       time step.  Therefore, if current time step number

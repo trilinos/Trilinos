@@ -391,8 +391,8 @@ struct throw_no_scalar_support_exception {
       solver_supports_scalar<ConcreteSolver, typename MatrixTraits<Matrix>::scalar_t>::value,
         create_solver_with_supported_type<ConcreteSolver,Matrix,Vector>,
         throw_no_scalar_support_exception<ConcreteSolver,Matrix,Vector> >::type::apply(A, X, B);
-  }
-    };
+    }
+  };
 
 
   /////////////////////
@@ -513,18 +513,16 @@ struct throw_no_scalar_support_exception {
     // We use compiler guards in case a user does want to disable KLU2
 #ifdef HAVE_AMESOS2_BASKER
     if((solverName == "Basker") || (solverName == "basker"))
-      {
-	
-	return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
-      }
+    {
+      return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+    }
 #endif
 
 
 
 #ifdef HAVE_AMESOS2_KLU2 
-
-if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
-   (solverName == "amesos2_klu")  || (solverName == "klu")){
+    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+        (solverName == "amesos2_klu")  || (solverName == "klu")){
       return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
 #endif

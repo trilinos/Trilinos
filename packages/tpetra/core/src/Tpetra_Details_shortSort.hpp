@@ -344,7 +344,7 @@ shortSortKeys_8 (KeyType keys[8])
 /// mfh 28 Nov 2016, 17 Dec 2016: I adapted this function from
 /// sh_sort2 in Tpetra_Util.hpp (in this directory).
 template<class KeyType, class ValueType, class IndexType>
-void
+KOKKOS_FUNCTION void
 shellSortKeysAndValues (KeyType keys[],
                         ValueType values[],
                         const IndexType n)

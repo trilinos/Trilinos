@@ -36,6 +36,7 @@
 #define IOSS_DECOMPOSITON_H
 
 #include <Ioss_Map.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <algorithm>
 #include <assert.h>
@@ -197,6 +198,16 @@ namespace Ioss {
       return I->second;
     }
 
+    void show_progress(const std::string &message) const
+    {
+      if (m_showProgress) {
+	// Use the output below for debugging...
+	// std::cerr << "[" << m_processor << "].... " << message << "\n";
+	Ioss::ParallelUtils pu(m_comm);
+	pu.progress(message);
+      }
+    }
+    
     void decompose_model(
 #if !defined(NO_ZOLTAN_SUPPORT)
         Zoltan &zz,
@@ -264,7 +275,9 @@ namespace Ioss {
     size_t m_importPreLocalNodeIndex;
 
     bool m_retainFreeNodes;
-
+    bool m_showProgress;
+    bool m_showHWM;
+    
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes

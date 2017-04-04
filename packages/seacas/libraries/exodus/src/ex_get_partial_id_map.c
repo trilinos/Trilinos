@@ -56,6 +56,8 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   const char *vmap;
   const char *tname;
 
+  ex_check_valid_file_id(exoid);
+
   switch (map_type) {
   case EX_NODE_MAP:
     tname       = "node";

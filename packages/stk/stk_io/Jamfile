@@ -161,8 +161,8 @@ exe stk_io_mesh_read_write_example
 
 exe stk_io_utest
   :
-    $(stk_io-root)/unit_tests/UnitTestIOMain.cpp
     [ glob $(stk_io-root)/unit_tests/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -173,8 +173,8 @@ exe stk_io_utest
 
 exe stk_io_doc_test
   :
-    $(stk_io-root)/testsForDocumentation/testIOMain.cpp
     [ glob $(stk_io-root)/testsForDocumentation/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support

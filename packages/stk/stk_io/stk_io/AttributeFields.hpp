@@ -42,8 +42,9 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace io {
 
-stk::mesh::FieldVector get_attribute_fields_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *part);
-void mark_field_as_attribute(stk::mesh::FieldBase &field);
+stk::mesh::FieldVector get_internal_fields_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *part);
+stk::mesh::FieldBase* get_named_internal_field_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *ioPart, const std::string &fieldName);
+void mark_field_as_internal(stk::mesh::FieldBase &field);
 
 } // namespace io
 } // namespace stk

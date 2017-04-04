@@ -99,7 +99,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
                          meta.globally_shared_part();
   Selector select_all(  meta.universal_part() );
 
-  std::vector<unsigned> local_count;
+  std::vector<size_t> local_count;
   stk::mesh::count_entities( select_used , bulk , local_count );
   ASSERT_EQ( local_count[NODE_RANK]     , nLocalNode );
   ASSERT_EQ( local_count[element_rank] , nLocalElement );
@@ -199,7 +199,7 @@ void test_shift_ring( RingFixture& ring )
   Selector select_used = meta.locally_owned_part() |
                          meta.globally_shared_part();
 
-  std::vector<unsigned> local_count ;
+  std::vector<size_t> local_count ;
   std::vector<EntityProc> change ;
 
   Entity send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );

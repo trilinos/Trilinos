@@ -133,10 +133,10 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
     stkMeshBulkData->modification_begin();
     size_t numToPartA = entities.size() * fractionToPartA;
     for (unsigned int i=0; i<numToPartA; i++)
-        stkMeshBulkData->change_entity_parts(entities[i],{pPartA});
+        stkMeshBulkData->change_entity_parts(entities[i],stk::mesh::ConstPartVector{pPartA});
     size_t numToPartB = entities.size() * fractionToPartB;
     for (unsigned int i=numToPartA; i<numToPartA+numToPartB; i++)
-        stkMeshBulkData->change_entity_parts(entities[i],{pPartB});
+        stkMeshBulkData->change_entity_parts(entities[i],stk::mesh::ConstPartVector{pPartB});
     stkMeshBulkData->modification_end();
 
 

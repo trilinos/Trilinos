@@ -162,11 +162,11 @@ TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
   }
   stk::mesh::EntityId nodeID=1;
   bulk.modification_begin();
-  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  bulk.declare_node(nodeID, {&part});
   nodeID=3;
-  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  bulk.declare_node(nodeID, {&part});
   nodeID=5;
-  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  bulk.declare_node(nodeID, {&part});
   bulk.modification_end();
 
   const stk::mesh::BucketVector& node_buckets_1 = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());
@@ -279,7 +279,7 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
 
         bulk.modification_begin();
 
-        entities[stk::topology::CONSTRAINT_RANK] = bulk.declare_entity(stk::topology::CONSTRAINT_RANK, id);
+        entities[stk::topology::CONSTRAINT_RANK] = bulk.declare_constraint(id);
 
         enum node { FIRST_NODE=0, SECOND_NODE=1, THIRD_NODE=2, FOURTH_NODE=3};
 

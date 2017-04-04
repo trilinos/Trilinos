@@ -82,6 +82,7 @@ bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &f
 
    TEUCHOS_ASSERT(false); // what you doing?
 
+/*
    Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
    Thyra::EOpTransp epetraFwdOpTransp;
    Thyra::EApplyEpetraOpAs epetraFwdOpApplyAs;
@@ -99,6 +100,7 @@ bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &f
 
    if( !dynamic_cast<const Epetra_CrsMatrix*>(&*epetraFwdOp) )
       return false;
+*/
 
    return true;
 }

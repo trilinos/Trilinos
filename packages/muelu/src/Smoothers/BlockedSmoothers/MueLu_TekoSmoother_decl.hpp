@@ -325,7 +325,7 @@ namespace MueLu {
     }
     //@}
 
-    RCP<SmootherPrototype> Copy() const { return rcp (new TekoSmoother (*this)); }
+    RCP<SmootherPrototype> Copy() const { return Teuchos::rcp (new MueLu::TekoSmoother<double,int,GlobalOrdinal,Node> (*this)); }
 
     //! @name Overridden from Teuchos::Describable
     //@{
@@ -349,6 +349,9 @@ namespace MueLu {
       if (verbLevel & Debug)
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
+
+    //! Get a rough estimate of cost per iteration
+    size_t getNodeSmootherComplexity() const {size_t cplx=0; return cplx;}
 
     //@}
 

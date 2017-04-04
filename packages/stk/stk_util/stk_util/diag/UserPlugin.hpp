@@ -98,32 +98,6 @@ public:
    */
   typedef std::pair<const std::type_info *, std::string> NamePair;
 
-//   /**
-//    * @brief Class <b>hash_nocase</b> implements a hash, case insensitive NamePair
-//    * hash functor.
-//    *
-//    */
-//   struct hash_nocase
-//   {
-//     size_t operator()(const NamePair &n) const {
-//       return sierra::hash_string_nocase(n.second.c_str());
-//     }
-//   };
-
-//   /**
-//    * @brief Class <b>hash_nocase</b> implements a hash, case insensitive compare
-//    * equal NamePair functor.
-//    *
-//    */
-//   struct equal_nocase : public std::binary_function<NamePair, NamePair, bool>
-//   {
-//     bool operator()(const NamePair &lhs, const NamePair &rhs) const {
-//       sierra::equal_nocase<NamePair::second_type> second_equal_nocase;
-
-//       return *lhs.first == *rhs.first && second_equal_nocase(lhs.second, rhs.second);
-//     }
-//   };
-
   /**
    * @brief Class <b>less_nocase</b> implements a case insensitive NamePair compare
    * less functor.

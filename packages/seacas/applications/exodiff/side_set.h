@@ -55,6 +55,7 @@ public:
 
   std::pair<INT, INT> Distribution_Factor_Range(size_t side) const;
   const double *Distribution_Factors() const;
+  void          Free_Distribution_Factors() const;
 
   void   Display_Stats(std::ostream & = std::cout) const;
   void   Display(std::ostream & = std::cout) const;

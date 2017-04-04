@@ -82,12 +82,13 @@ public:
    * Creates a new <b>Variable</b> instance.
    *
    */
-  Variable()
+  Variable(const std::string& name)
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(1),
       m_doublePtr(&m_doubleValue),
-      m_doubleValue(0.0)
+      m_doubleValue(0.0),
+      m_name(name)
   {
   }
 
@@ -99,10 +100,11 @@ public:
    *				variable.
    *
    */
-  explicit Variable(Type type)
+  explicit Variable(Type type, const std::string& name)
     : m_type(type),
       m_use(INDEPENDENT),
-      m_size(1)
+      m_size(1),
+      m_name(name)
   {
     switch (type) {
     case DOUBLE:
@@ -126,12 +128,13 @@ public:
    *				variable.
    *
    */
-  explicit Variable(double &address, unsigned definedLength=std::numeric_limits<int>::max())
+  explicit Variable(double &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_doublePtr(&address),
-      m_doubleValue(0.0)
+      m_doubleValue(0.0),
+      m_name(name)
   {
   }
 
@@ -145,12 +148,13 @@ public:
    *				variable.
    *
    */
-  explicit Variable(int &address, unsigned definedLength=std::numeric_limits<int>::max())
+  explicit Variable(int &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_intPtr(&address),
-      m_intValue(0)
+      m_intValue(0),
+      m_name(name)
   {
   }
 
@@ -168,7 +172,9 @@ public:
     m_type = this->m_type;
     m_use = this->m_use;
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      throw std::runtime_error("In analytic expression evaluator, invalid use of equal on multi-component variable");
+      std::stringstream error;
+      error << "In analytic expression evaluator, invalid use of equal on multi-component array variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
     }
     if (m_type == INTEGER)
       *m_intPtr = static_cast<int>(value);
@@ -190,7 +196,9 @@ public:
     m_type = this->m_type;
     m_use = this->m_use;
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      throw std::runtime_error("In analytic expression evaluator, invalid use of equal on multi-component variable");
+      std::stringstream error;
+      error << "In analytic expression evaluator, invalid use of equal on multi-component variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
     }
     if (m_type == INTEGER)
       *m_intPtr = value;
@@ -224,16 +232,21 @@ public:
    */
   inline double& getArrayValue(int index, ArrayOffset offsetType) const {
     if (m_type != DOUBLE) {
-      throw std::runtime_error("Only double arrays allowed");
+      std::stringstream error;
+      error << "In analytic expression evaluator, only double arrays allowed for variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
     }
 
     if (m_doublePtr == nullptr) {
-      throw std::runtime_error("Unbound variable");
+      std::stringstream error;
+      error << "In analytic expression evaluator, unbound variable '"<<m_name<<"'.  ";
+      throw std::runtime_error(error.str());
     }
 
     if(offsetType == ZERO_BASED_INDEX) {
       if(index < 0 || (index+1) > m_size) {
         std::stringstream error;
+        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
         error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
         throw std::runtime_error(error.str());
       }
@@ -241,12 +254,16 @@ public:
     } else if (offsetType == ONE_BASED_INDEX) {
       if(index < 1 || (index) > m_size) {
         std::stringstream error;
+        error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
         error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 1 to '"<<m_size<<"'.  ";
         throw std::runtime_error(error.str());
       }
       return m_doublePtr[index-1];
     } else {
-      throw std::runtime_error("Invalid internal state of expression evalutor");
+      std::stringstream error;
+      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+      error << "Invalid internal state of expression evalutor";
+      throw std::runtime_error(error.str());
       return m_doublePtr[0];
     }
   } 
@@ -261,9 +278,6 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   inline Variable &bind(double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
-
-    //std::cout<<"Bound variable of length: "<<definedLength<<std::endl;
-
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
     m_size = definedLength;
@@ -326,7 +340,10 @@ public:
   inline double getValue() const {
 
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
-      throw std::runtime_error("Invalid direct access of array variable, must access by index");
+      std::stringstream error;
+      error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+      error << "Invalid direct access of array variable, must access by index";
+      throw std::runtime_error(error.str());
     }
 
 
@@ -336,14 +353,17 @@ public:
     case INTEGER:
       return *m_intPtr;
     }
-    throw std::runtime_error("Invalid variable type");
+
+    std::stringstream error;
+    error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
+    error << "Invalid variable type";
+    throw std::runtime_error(error.str());
   }
 
 private:
   Type	        m_type;                 ///< Variable data type
   Use           m_use;                  ///< Variable is dependent or independent
   int           m_size;                 ///< Size of defined values in the double or int pointer  
-
   union {
     double *	m_doublePtr;		///< Pointer to value as double
     int *	m_intPtr;		///< Pointer to value as integer
@@ -352,6 +372,7 @@ private:
     double	m_doubleValue;		///< Local variable value as double
     int	        m_intValue;             ///< Local variable value as integer
   };
+  const std::string  m_name;                 ///< Name given to the variable, used for error messaging
 };
 
 
@@ -479,7 +500,7 @@ public:
   Variable *operator[](const std::string &s) {
     std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)nullptr));
     if (i.second) {
-      (*i.first).second = new Variable();
+      (*i.first).second = new Variable(s);
     }
     return (*i.first).second;
   }

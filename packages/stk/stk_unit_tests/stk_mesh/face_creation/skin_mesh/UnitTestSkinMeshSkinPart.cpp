@@ -35,7 +35,7 @@ using namespace stk::mesh;
 
 void add_element_to_block(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::Part& block)
 {
-    bulkData.change_entity_parts(element, {&block}, {});
+    bulkData.change_entity_parts(element, ConstPartVector{&block}, ConstPartVector{});
 }
 
 stk::mesh::PartVector create_element_blocks(stk::mesh::MetaData& meta, stk::topology top)

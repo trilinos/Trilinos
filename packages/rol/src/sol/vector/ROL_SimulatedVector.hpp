@@ -42,7 +42,7 @@
 // @HEADER
 
 #include "ROL_Vector.hpp"
-#include "ROL_BatchManager.hpp"
+#include "ROL_SampleGenerator.hpp"
 
 #ifndef ROL_SIMULATED_VECTOR_H
 #define ROL_SIMULATED_VECTOR_H
@@ -57,6 +57,12 @@
 
 
 namespace ROL {
+
+template<class Real>
+class PrimalSimulatedVector;
+
+template<class Real>
+class DualSimulatedVector;
 
 template<class Real>
 class SimulatedVector : public Vector<Real> {
@@ -126,7 +132,7 @@ public:
     }
   }
 
-  Real dot( const V &x ) const {
+  virtual Real dot( const V &x ) const {
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(x);
 
@@ -146,18 +152,10 @@ public:
   }
 
   Real norm() const {
-    Real locresult = 0;
-    Real result = 0;
-    for( size_type i=0; i<vecs_.size(); ++i ) {
-      locresult += std::pow(vecs_[i]->norm(),2);
-    }
-
-    bman_->sumAll(&locresult, &result, 1);
-
-    return std::sqrt(result);
+    return std::sqrt(dot(*this));
   }
 
-  RCPV clone() const {
+  virtual RCPV clone() const {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
@@ -168,7 +166,7 @@ public:
     return rcp( new PV(clonevec, bman_) );
   }
 
-  const V& dual(void) const {
+  virtual const V& dual(void) const {
     using Teuchos::rcp;
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
@@ -290,6 +288,121 @@ Teuchos::RCP<Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<Vector<Rea
   RCPV temp[] = {a};
   return rcp( new PV( std::vector<RCPV>(temp, temp+1), bman ) );
 }
+
+template<class Real>
+class PrimalSimulatedVector : public SimulatedVector<Real> {
+private:
+  const std::vector<Teuchos::RCP<Vector<Real> > >   vecs_;
+  const Teuchos::RCP<BatchManager<Real> >           bman_;
+  const Teuchos::RCP<SampleGenerator<Real> >        sampler_;
+  mutable std::vector<Teuchos::RCP<Vector<Real> > > dual_vecs_;
+  mutable Teuchos::RCP<DualSimulatedVector<Real> >  dual_pvec_;
+public:
+
+  PrimalSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
+                        const Teuchos::RCP<BatchManager<Real> >         &bman,
+                        const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
+    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler) {
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      dual_vecs_.push_back((vecs_[i]->dual()).clone());
+    }
+  }
+
+  Real dot(const Vector<Real> &x) const {
+    const SimulatedVector<Real> &xs
+      = Teuchos::dyn_cast<const SimulatedVector<Real> >(x);
+
+   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<int>(xs.numVectors()),
+                               std::invalid_argument,
+                               "Error: Vectors must have the same number of subvectors." );
+
+    Real locresult = 0;
+    Real result = 0;
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      locresult += sampler_->getMyWeight(i) * vecs_[i]->dot(*xs.get(i));
+    }
+
+    bman_->sumAll(&locresult, &result, 1);
+
+    return result;
+  }
+
+  Teuchos::RCP<Vector<Real> > clone(void) const {
+    std::vector<Teuchos::RCP<Vector<Real> > > clonevec;
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      clonevec.push_back(vecs_[i]->clone());
+    }
+    return Teuchos::rcp( new PrimalSimulatedVector<Real>(clonevec, bman_, sampler_) );
+  }
+
+  const Vector<Real>& dual(void) const {
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      dual_vecs_[i]->set(vecs_[i]->dual());
+      dual_vecs_[i]->scale(sampler_->getMyWeight(i));
+    }
+    dual_pvec_ = Teuchos::rcp( new DualSimulatedVector<Real>(dual_vecs_, bman_, sampler_) );
+    return *dual_pvec_;
+  }
+
+};
+
+template<class Real>
+class DualSimulatedVector : public SimulatedVector<Real> {
+private:
+  const std::vector<Teuchos::RCP<Vector<Real> > >    vecs_;
+  const Teuchos::RCP<BatchManager<Real> >            bman_;
+  const Teuchos::RCP<SampleGenerator<Real> >         sampler_;
+  mutable std::vector<Teuchos::RCP<Vector<Real> > >  primal_vecs_;
+  mutable Teuchos::RCP<PrimalSimulatedVector<Real> > primal_pvec_;
+public:
+
+  DualSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
+                      const Teuchos::RCP<BatchManager<Real> >         &bman,
+                      const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
+    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler) {
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      primal_vecs_.push_back((vecs_[i]->dual()).clone());
+    }
+  }
+
+  Real dot(const Vector<Real> &x) const {
+    const SimulatedVector<Real> &xs
+      = Teuchos::dyn_cast<const SimulatedVector<Real> >(x);
+
+   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<Real>(xs.numVectors()),
+                               std::invalid_argument,
+                               "Error: Vectors must have the same number of subvectors." );
+
+    Real locresult = 0;
+    Real result = 0;
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      locresult += vecs_[i]->dot(*xs.get(i)) / sampler_->getMyWeight(i);
+    }
+
+    bman_->sumAll(&locresult, &result, 1);
+
+    return result;
+  }
+
+  Teuchos::RCP<Vector<Real> > clone(void) const {
+    std::vector<Teuchos::RCP<Vector<Real> > > clonevec;
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      clonevec.push_back(vecs_[i]->clone());
+    }
+    return Teuchos::rcp( new DualSimulatedVector<Real>(clonevec, bman_, sampler_) );
+  }
+
+  const Vector<Real>& dual(void) const {
+    const Real one(1);
+    for( int i=0; i<sampler_->numMySamples(); ++i ) {
+      primal_vecs_[i]->set(vecs_[i]->dual());
+      primal_vecs_[i]->scale(one/sampler_->getMyWeight(i));
+    }
+    primal_pvec_ = Teuchos::rcp( new PrimalSimulatedVector<Real>(primal_vecs_, bman_, sampler_) );
+    return *primal_pvec_;
+  }
+
+};
 
 template<class Real>
 Teuchos::RCP<const Vector<Real> > CreateSimulatedVector( const Teuchos::RCP<const Vector<Real> > &a, const Teuchos::RCP<BatchManager<Real> > &bman ) {

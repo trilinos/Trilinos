@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
   stepperPL->set("Stepper Type", "Forward Euler");
   tempusPL->set("Demo Stepper", *stepperPL);
 
-  integrator->setParameterList(tempusPL);
+  integrator->setTempusParameterList(tempusPL);
 
   // 3) Setup the Stepper
   RCP<SinCosModel<double> > model = Teuchos::rcp(new SinCosModel<double> ());

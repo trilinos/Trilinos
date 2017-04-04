@@ -92,20 +92,6 @@ public:
    */
   std::string getFunctionName() const;
 
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionClass() const;
-
-  /**
-   * @brief Member function <b>getFunctionName</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  std::string getFunctionNamespace() const;
-
 protected:
   const char *      m_functionSpec;    ///< The member function specification
 };

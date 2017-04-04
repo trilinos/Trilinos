@@ -91,9 +91,6 @@ class PrePostOperator {
 
 private:
 
-  //! Disallow default ctor.
-  PrePostOperator();
-
   //! Disallow copy ctor.
   PrePostOperator(const PrePostOperator& p);
 
@@ -102,9 +99,12 @@ private:
 
 public:
 
+  //! Ctor. Requires call to reset() to initialize object.
+  PrePostOperator();
+
   //! Ctor.
   PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils,
-          Teuchos::ParameterList& solverOptionsSubList);
+                  Teuchos::ParameterList& solverOptionsSubList);
 
   //! Destructor.
   virtual ~PrePostOperator();
@@ -112,7 +112,7 @@ public:
   //! Resets the pre/post operator.
   virtual void
   reset(const Teuchos::RCP<NOX::Utils>& utils,
-    Teuchos::ParameterList& solverOptionsSublist);
+        Teuchos::ParameterList& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);

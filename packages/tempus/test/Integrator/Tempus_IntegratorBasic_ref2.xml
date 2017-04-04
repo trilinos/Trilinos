@@ -17,9 +17,9 @@
       <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-16"/>
       <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-16"/>
       <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
-      <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="0"/>
-      <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Initial Order" type="int" value="0"/>
-      <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="0"/>
+      <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="1"/>
+      <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Initial Order" type="int" value="1"/>
+      <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="1"/>
       <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Maximum Absolute Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Maximum Relative Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="20" isDefault="true" isUsed="true" name="Integrator Step Type" type="string" value="Variable"/>

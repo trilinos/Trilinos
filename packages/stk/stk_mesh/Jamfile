@@ -51,13 +51,9 @@ project votd
     <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
-    <valgrind>on:<define>BOOST_POOL_VALGRIND
-    <valgrind>on:<include>/usr/netpub/valgrind/include
   : usage-requirements
     <define>SIERRA_MIGRATION
     <include>$(stk_mesh-root-inc)
-    <valgrind>on:<define>BOOST_POOL_VALGRIND
-    <valgrind>on:<include>/usr/netpub/valgrind/include
   : build-dir $(stk_mesh-builddir)
   ;
 
@@ -114,7 +110,6 @@ alias install-exe-targets : ;
 #
 exe stk_mesh_utest
   :
-    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
     [ glob $(stk_mesh-root)/unit_tests/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
            $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
@@ -126,6 +121,7 @@ exe stk_mesh_utest
            $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
            $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_io//stk_io
@@ -139,8 +135,8 @@ exe stk_mesh_utest
 
 exe stk_mesh_utest_field_blas
   :
-    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
     [ glob $(stk_mesh-root)/unit_tests/FieldBlas/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_io//stk_io
@@ -155,8 +151,8 @@ exe stk_mesh_utest_field_blas
 
 exe stk_mesh_docs_tests
   :
-    $(stk_mesh-root)/testsForDocumentation/testMain.cpp
     [ glob $(stk_mesh-root)/testsForDocumentation/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
@@ -179,6 +175,7 @@ lib stk_mesh_base
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_diag
     /sierra/stk_topology//stk_topology
     /tpl/trilinos//shards
     /mpi//mpi

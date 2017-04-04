@@ -176,14 +176,14 @@ function execute_loadbalance {
     # Check for valid executable...
     if [ ! -x $NEM_SLICE ]
     then
-	echo
-	echo ${txtred}
-	echo "ERROR: Could not find or execute $NEM_SLICE"
-	echo "ERROR: Configuration error"
-	echo ${txtrst}
-	echo
+        echo
+        echo ${txtred}
+        echo "ERROR: Could not find or execute $NEM_SLICE"
+        echo "ERROR: Configuration error"
+        echo ${txtrst}
+        echo
 
-	return -1
+        return -1
     fi
 
     date=`date '+%m/%d/%y'`
@@ -192,19 +192,19 @@ function execute_loadbalance {
     
     if [ -n "$input" -a -e "$input" ]
     then
-	echo ${txtblu}
-	echo "Executing:"
-	echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
-	echo ${txtrst}
-	($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis) 
-	load_rc=$?
+        echo ${txtblu}
+        echo "Executing:"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+        echo ${txtrst}
+        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis) 
+        load_rc=$?
     else
-	echo ${txtblu}
-	echo "Executing:"
-	echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
-	echo ${txtrst}
-	($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
-	load_rc=$?
+        echo ${txtblu}
+        echo "Executing:"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+        echo ${txtrst}
+        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
+        load_rc=$?
     fi
     return $load_rc
 }
@@ -226,28 +226,28 @@ function execute_spread {
     # Check for valid executable...
     if [ ! -x $NEM_SPREAD ]
     then
-	echo
-	echo ${txtred}
-	echo "ERROR: Could not find or execute $NEM_SPREAD"
-	echo "ERROR: Configuration error"
-	echo ${txtrst}
-	echo
-	return -1
+        echo
+        echo ${txtred}
+        echo "ERROR: Could not find or execute $NEM_SPREAD"
+        echo "ERROR: Configuration error"
+        echo ${txtrst}
+        echo
+        return -1
     fi
     
     if [ "$subdir" != "." ]
     then
-	dir=$rootdir/$subdir
-	if [ ! -e $dir ]
-	then
-	    echo "making directory $dir"
-	    mkdir -p $dir
-	fi
+        dir=$rootdir/$subdir
+        if [ ! -e $dir ]
+        then
+            echo "making directory $dir"
+            mkdir -p $dir
+        fi
     fi
     
     if [ -e $pexsh ]
     then
-	/bin/rm -rf $pexsh
+        /bin/rm -rf $pexsh
     fi
     
     echo "Input FEM file                   = $genesis"                  >  $pexsh
@@ -308,26 +308,6 @@ ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
 
-# See if Sierra launch command is in path; if it is, use
-# otherwise, run nem_slice directly...
-LAUNCH=`command -v launch`
-if [ ! -z "$LAUNCH" ]
-then
-    if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
-    then
-        LAUNCH=
-        unset OMPI_MCA_btl_openib_ib_retry_count
-        unset OMPI_MCA_btl_openib_ib_timeout
-        export OMPI_MCA_mtl=^psm
-        export OMPI_MCA_pml=^cm
-        export OMPI_MCA_btl=tcp,sm,self
-    else
-        LAUNCH="$LAUNCH -n 1"
-        # If the launch script doesn't work to run something simple, don't use it.
-        $LAUNCH >/dev/null 2>&1 true || LAUNCH=
-    fi
-fi
-
 ########################################################################
 # Test that the getopt being used will handle the long options...
 TEST=`getopt -T`
@@ -358,57 +338,91 @@ if [ $? != 0 ] ; then usage ; exit 1 ; fi
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
 while true ; do
-	case "$1" in
-	    -h|--help)
-	      usage ; shift ;;
-	    -H|--help)
-	      usage_new ; shift ;;
-	    -v|--verbose)
-	      set -x ; shift ;;
-	    -V|--viz_mesh)
-	      do_viz="-y" ; shift ;; 
-	    -d|--debug)
-	      debug_level="$2" ; shift 2 ;;
-	    -n|--nem_slice_flag)
-	      nem_slice_flag="$2" ; shift 2 ;;
-            -N|--nodal)
-	      decomp_type="-n" ; shift ;;
-            -E|--elemental)
-              decomp_type="-e" ; shift ;;
-	    -i|--input)
-	      input=$2 ; shift 2 ;;
-	    -p|-j|--processors)
-	      processors=$2 ; shift 2 ;;
-	    -R|--rootdir)
-	      rootdir=$2 ; shift 2 ;;
-	    -S|--subdir)
-	      subdir=$2 ; shift 2 ;;
-	    -s|--spheres_linear) 
-	      spheres="" ; shift ;;
-	    -6|--64) 
-	      use64="-64" ; shift ;;
-	    --nolaunch)
-              LAUNCH="" ; shift ;;
-	    -l)
-	      decomp_method="-l $2" ; shift 2 ;;
+    case "$1" in
+    (-h|--help)
+        usage ; shift ;;
+    (-H|--help)
+        usage_new ; shift ;;
+    (-v|--verbose)
+        set -x ; shift ;;
+    (-V|--viz_mesh)
+        do_viz="-y" ; shift ;; 
+    (-d|--debug)
+        debug_level="$2" ; shift 2 ;;
+    (-n|--nem_slice_flag)
+        nem_slice_flag="$2" ; shift 2 ;;
+    (-N|--nodal)
+        decomp_type="-n" ; shift ;;
+    (-E|--elemental)
+        decomp_type="-e" ; shift ;;
+    (-i|--input)
+        input=$2 ; shift 2 ;;
+    (-p|-j|--processors)
+        processors=$2 ; shift 2 ;;
+    (-R|--rootdir)
+        rootdir=$2 ; shift 2 ;;
+    (-S|--subdir)
+        subdir=$2 ; shift 2 ;;
+    (-s|--spheres_linear) 
+        spheres="" ; shift ;;
+    (-6|--64) 
+        use64="-64" ; shift ;;
+    (--nolaunch)
+        LAUNCH="nolaunch" ; shift ;;
+    (-l)
+        decomp_method="-l $2" ; shift 2 ;;
 
 # Decomposition Method options...
-	    --multikl)   decomp_method="-l multikl" ; shift ;;
-	    --rcb)       decomp_method="-l rcb" ; shift ;;
-	    --rcb_ignore_z)       decomp_method="-l rcb,ignore_z" ; shift ;;
-	    --rib)       decomp_method="-l rib" ; shift ;;
-	    --hsfc)      decomp_method="-l hsfc" ; shift ;;
-	    --spectral)  decomp_method="-l spectral" ; shift ;;
-	    --inertial)  decomp_method="-l inertial" ; shift ;;
-	    --linear)    decomp_method="-l linear" ; shift ;;
-	    --random)    decomp_method="-l random" ; shift ;;
-	    --scattered) decomp_method="-l scattered" ; shift ;;
-	    --brick)     decomp_method="-l brick" ; shift ;;
-	    --zpinch)    decomp_method="-l zpinch" ; shift ;;
-	    --) shift ; break ;;
-	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
-	esac
+    (--multikl)   decomp_method="-l multikl" ; shift ;;
+    (--rcb)       decomp_method="-l rcb" ; shift ;;
+    (--rcb_ignore_z)       decomp_method="-l rcb,ignore_z" ; shift ;;
+    (--rib)       decomp_method="-l rib" ; shift ;;
+    (--hsfc)      decomp_method="-l hsfc" ; shift ;;
+    (--spectral)  decomp_method="-l spectral" ; shift ;;
+    (--inertial)  decomp_method="-l inertial" ; shift ;;
+    (--linear)    decomp_method="-l linear" ; shift ;;
+    (--random)    decomp_method="-l random" ; shift ;;
+    (--scattered) decomp_method="-l scattered" ; shift ;;
+    (--brick)     decomp_method="-l brick" ; shift ;;
+    (--zpinch)    decomp_method="-l zpinch" ; shift ;;
+    (--) shift ; break ;;
+    (*) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
+    esac
 done
+
+# Figure out how to run nem_slice where we are. 
+if [ "${LAUNCH:-}" == "nolaunch" ]
+then
+    # Ensure launch is NOT used --nolaunch was passed.
+    LAUNCH=
+else
+    # If Sierra launch command is in path and runs on the node we are on
+    # we will try to use that.  If not we will run nem_slice directly
+    # (ie, w/o launch).
+    LAUNCH=$(command -v launch)
+    if [ -n "${LAUNCH}" ]
+    then
+        # Here if launch is in PATH.
+        # Always run nem_slice with -n 1
+        LAUNCH="$LAUNCH -n 1"
+        # If the launch script doesn't work to run something simple, don't use it.
+        $LAUNCH >/dev/null 2>&1 true || LAUNCH=
+    
+        if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
+        then
+            # Unset these if we we are NOT in an allocation.
+            unset OMPI_MCA_btl_openib_ib_retry_count
+            unset OMPI_MCA_btl_openib_ib_timeout
+            export OMPI_MCA_mtl=^psm
+            export OMPI_MCA_pml=^cm
+            export OMPI_MCA_btl=tcp,sm,self
+            if [ -n "${SIERRA_LIBRARY_PATH}" ]
+            then
+                export DYLD_LIBRARY_PATH=$SIERRA_LIBRARY_PATH
+            fi
+        fi
+    fi
+fi
 
 ########################################################################
 if [ $# -eq 0 ] ; then
@@ -423,19 +437,19 @@ if [ $# -eq 0 ] ; then
 else
     if [ -e "$1" ]
     then
-	file=$1
-	suffix_mesh=${file##*.}
-	suffix_spread=$suffix_mesh
-	basename=${file%.*}
+        file=$1
+        suffix_mesh=${file##*.}
+        suffix_spread=$suffix_mesh
+        basename=${file%.*}
     else
     echo ${txtred}
-	echo "ERROR:******************************************************************"
-	echo "ERROR:"
-	echo "ERROR: $1 does not exist."
-	echo "ERROR:"
-	echo "ERROR:******************************************************************"
-	echo ${txtrst}
-	usage
+        echo "ERROR:******************************************************************"
+        echo "ERROR:"
+        echo "ERROR: $1 does not exist."
+        echo "ERROR:"
+        echo "ERROR:******************************************************************"
+        echo ${txtrst}
+        usage
     fi
 fi    
 
@@ -444,28 +458,28 @@ then
    if [ ! -e "$input" ]
    then
     echo ${txtred}
-	echo "ERROR:******************************************************************"
-	echo "ERROR:"
-	echo "ERROR: Input file $input does not exist."
-	echo "ERROR:"
-	echo "ERROR:******************************************************************"
-	echo ${txtrst}
-	usage
+        echo "ERROR:******************************************************************"
+        echo "ERROR:"
+        echo "ERROR: Input file $input does not exist."
+        echo "ERROR:"
+        echo "ERROR:******************************************************************"
+        echo ${txtrst}
+        usage
    fi
 fi
 
 if test -z "$processors"
 then
-  echo
-  echo ${txtred}
-  echo "ERROR:***************************************************"
-  echo "ERROR:"
-  echo "ERROR: Must specify number of processors --processors (-p -j) option"
-  echo "ERROR:"
-  echo "ERROR:***************************************************"
-  echo ${txtrst}
-  echo
-  usage
+    echo
+    echo ${txtred}
+    echo "ERROR:***************************************************"
+    echo "ERROR:"
+    echo "ERROR: Must specify number of processors --processors (-p -j) option"
+    echo "ERROR:"
+    echo "ERROR:***************************************************"
+    echo ${txtrst}
+    echo
+    usage
 fi
 
 if [ $processors -eq 1 ]

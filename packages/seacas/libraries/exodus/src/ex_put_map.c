@@ -92,6 +92,8 @@ int ex_put_map(int exoid, const void_int *elem_map)
   int  map_int_type;
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* inquire id's of previously defined dimensions  */

@@ -207,7 +207,7 @@ private:
 #else
 #pragma message("Kokkos Node type not supported by Basker") 
 #endif // OpenMP vs Serial
-   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  
+   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>
        *basker;
 #else
   #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")

@@ -1228,7 +1228,7 @@ namespace {
 // Singular value decomposition (SVD) for 2x2
 // bidiagonal matrix. Used for general 2x2 SVD.
 // Adapted from LAPAPCK's DLASV2, Netlib's dlasv2.c
-// and LBNL computational crystalography toolbox
+// and LBNL computational crystallography toolbox
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
@@ -1250,11 +1250,12 @@ svd_bidiagonal(T f, T g, T h)
 
   bool swap_diag = (ha > fa);
 
-  if (swap_diag) {
+  if (swap_diag == true) {
     std::swap(fa, ha);
     std::swap(f, h);
   }
 
+  // diagonal matrix
   if (ga == 0.0) {
     s1 = ha;
     s0 = fa;
@@ -1271,9 +1272,7 @@ svd_bidiagonal(T f, T g, T h)
   } else {
     // normal case
     T d = fa - ha;
-    T l = d != fa ?
-        T(d / fa) :
-        T(1.0); // l \in [0,1]
+    T l = d / fa; // l \in [0,1]
     T m = g / f; // m \in (-1/macheps, 1/macheps)
     T t = 2.0 - l; // t \in [1,2]
     T mm = m * m;
@@ -1307,16 +1306,15 @@ svd_bidiagonal(T f, T g, T h)
   s0 = copysign(s0, f);
   s1 = copysign(s1, h);
 
-  if (swap_diag) {
+  if (swap_diag == true) {
     std::swap(cu, sv);
     std::swap(su, cv);
   }
 
   Tensor<T, N, ES> U(cu, -su, su, cu);
-
   Tensor<T, N, ES> S(s0, 0.0, 0.0, s1);
-
   Tensor<T, N, ES> V(cv, -sv, sv, cv);
+
   return boost::make_tuple(U, S, V);
 }
 
@@ -1364,8 +1362,15 @@ template<typename T, Index N, typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd_NxN(Tensor<T, N, ES> const & A)
 {
+  // Scale first
+  T const
+  norm_a = norm(A);
+
+  T const
+  scale = norm_a > 0.0 ? norm_a : T(1.0);
+
   Tensor<T, N, ES>
-  S = A;
+  S = A / scale;
 
   Index const
   dimension = A.get_dimension();
@@ -1380,10 +1385,10 @@ svd_NxN(Tensor<T, N, ES> const & A)
   off = norm_off_diagonal(S);
 
   T const
-  tol = machine_epsilon<T>() * norm(A);
+  tol = machine_epsilon<T>();
 
   Index const
-  max_iter = 128;
+  max_iter = 2048;
 
   Index
   num_iter = 0;
@@ -1455,7 +1460,7 @@ svd_NxN(Tensor<T, N, ES> const & A)
   Tensor<T, N, ES> P(dimension);
 
   boost::tie(s, P) = sort_permutation(diag(S));
-  S = diag(s);
+  S = scale * diag(s);
   U = U * P;
   V = V * P;
 

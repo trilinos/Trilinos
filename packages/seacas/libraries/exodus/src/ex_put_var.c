@@ -235,6 +235,8 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   switch (var_type) {
   case EX_GLOBAL:
     if (num_entries_this_obj <= 0) {

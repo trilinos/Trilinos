@@ -86,6 +86,8 @@ int ex_get_all_times(int exoid, void *time_values)
   int  status;
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0;
 
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {

@@ -37,6 +37,7 @@
 #if defined( STK_HAS_MPI )
 
 #include <stk_util/parallel/MPI.hpp>
+#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
 #include <sstream>                      // for ostringstream, etc
 #include "mpi.h"                        // for MPI_Datatype, etc
 #include <boost/static_assert.hpp> 
@@ -282,11 +283,7 @@ all_reduce(
 
   MPI_Op_free(& mpi_op);
 
-  if (MPI_SUCCESS != result) {
-    std::ostringstream msg ;
-    msg << "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result;
-    throw std::runtime_error(msg.str());
-  }
+  ThrowRequireMsg(MPI_SUCCESS == result, "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result);
 }
 
 struct ReduceCheck : public ReduceInterface
@@ -314,8 +311,8 @@ struct ReduceCheck : public ReduceInterface
     unsigned *t = align_cast<unsigned>(outbuf);
 
     unsigned size = *t++;
-    if (m_size != size)
-      throw std::runtime_error("size mismatch");
+
+    ThrowRequireMsg(m_size == size, __FILE__ << ", " << __FUNCTION__ << ", size mismatch, size= " << size << ", m_size= " << m_size );
 
     outbuf = t;
   }

@@ -51,6 +51,7 @@
 
 #include "../TOOLS/pde.hpp"
 #include "../TOOLS/fe_curl.hpp"
+#include "../TOOLS/fieldhelper.hpp"
 
 #include "Intrepid_HCURL_HEX_I1_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
@@ -59,72 +60,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-
-
-template<class Real>
-class FieldHelper {
-  private:
-  const int numFields_, numDofs_;
-  const std::vector<int> numFieldDofs_;
-  const std::vector<std::vector<int> > fieldPattern_;
-
-  public:
-  FieldHelper(const int numFields, const int numDofs,
-              const std::vector<int> &numFieldDofs,
-              const std::vector<std::vector<int> > &fieldPattern)
-    : numFields_(numFields), numDofs_(numDofs),
-      numFieldDofs_(numFieldDofs), fieldPattern_(fieldPattern) {}
-
-  void splitFieldCoeff(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & U,
-                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> >   & u_coeff) const {
-    U.resize(numFields_);
-    int  c = u_coeff->dimension(0);
-    for (int i=0; i<numFields_; ++i) {
-      U[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,numFieldDofs_[i]));
-      for (int j=0; j<c; ++j) {
-        for (int k=0; k<numFieldDofs_[i]; ++k) {
-          //U[i](j,k) = u_coeff(j,offset[i]+k);
-          (*U[i])(j,k) = (*u_coeff)(j,fieldPattern_[i][k]);
-        }
-      }
-    }
-  }
-
-  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & res,
-                         const std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & R) const {
-    int c = R[0]->dimension(0);  // number of cells
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_));
-    for (int i=0; i<numFields_; ++i) {
-      for (int j=0; j<c; ++j) {
-        for (int k=0; k<numFieldDofs_[i]; ++k) {
-          (*res)(j,fieldPattern_[i][k]) = (*R[i])(j,k);
-        }
-      }
-    }
-  }
-
-  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & jac,
-                         const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & J) const {
-    int c = J[0][0]->dimension(0);  // number of cells
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_, numDofs_));        
-    for (int i=0; i<numFields_; ++i) {
-      for (int j=0; j<numFields_; ++j) {
-        for (int k=0; k<c; ++k) {
-          for (int l=0; l<numFieldDofs_[i]; ++l) {
-            for (int m=0; m<numFieldDofs_[j]; ++m) {
-              (*jac)(k,fieldPattern_[i][l],fieldPattern_[j][m]) = (*J[i][j])(k,l,m);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  int numFields(void) const {
-    return numFields_;
-  }
-
-};
 
 template <class Real>
 class PDE_Maxwells : public PDE<Real> {
@@ -198,7 +133,9 @@ private:
         for (int k = 0; k < d; ++k) {
           x[k] = (*fe_->cubPts())(i,j,k);
         }
-        (*F)(i,j) = -evaluateRHS(x,component);
+        for (int k = 0; k < d; ++k) {
+          (*F)(i,j,k) = -evaluateRHS(x,k,component);
+        }
       }
     }
   }
@@ -261,11 +198,33 @@ public:
   }
 
   virtual Real evaluateKappa(const std::vector<Real> &x, const int component) const {
-    return static_cast<Real>(1);
+    Real val(0);
+    if (component == 0) {
+      val = static_cast<Real>(1);
+    }
+    return val;
   }
 
-  virtual Real evaluateRHS(const std::vector<Real> &x, const int component) const {
-    return static_cast<Real>(0);
+  virtual Real evaluateRHS(const std::vector<Real> &x, const int d, const int component) const {
+    const Real two(2), four(4);
+    const Real pi = M_PI, pi2 = pi*pi;
+    const Real mu = evaluateMu(x);
+    const Real kappa = evaluateKappa(x, component);
+    const Real cx = std::cos(pi*x[0]), sx = std::sin(pi*x[0]); 
+    const Real cy = std::cos(pi*x[1]), sy = std::sin(pi*x[1]); 
+    const Real cz = std::cos(pi*x[2]), sz = std::sin(pi*x[2]);
+    const Real f  = sx*sy*sz;
+    Real val(0);
+    if (d == 0) {
+      val = -pi2/mu * (cx*cy*sz + two*cx*sy*cz + two*f) + kappa*f;
+    }
+    else if (d == 1) {
+      val = -pi2/mu * (cx*cy*sz + two*sx*cy*cz - two*f) - kappa*f;
+    }
+    else {
+      val = -pi2/mu * (cx*sy*cz - sx*cy*cz + four*f) + two*kappa*f;
+    }
+    return val;
   }
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,

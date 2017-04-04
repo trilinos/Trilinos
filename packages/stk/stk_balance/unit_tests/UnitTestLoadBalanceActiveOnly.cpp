@@ -72,7 +72,7 @@ protected:
     {
         get_bulk().modification_begin();
         for(stk::mesh::Entity& element : elementsMarkedForDeactivation)
-            get_bulk().change_entity_parts(element, {}, {&activePart});
+            get_bulk().change_entity_parts(element, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&activePart});
         get_bulk().modification_end();
     }
 

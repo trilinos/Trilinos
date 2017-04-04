@@ -179,6 +179,13 @@ C ... User has specified the RGB components of the color.
          ELSE IF (MATSTR (WORD, 'INVERSE', 3)) THEN
            ISINV = 1
            GO TO 10
+         ELSE IF (MATSTR (WORD, 'HELP', 4)) THEN
+           CALL PRTERR ('CMDSPEC',
+     *       'Valid: RAINBOW, VIRIDIS, GRAY, TERRAIN, THERMAL, ASTRO,')
+           CALL PRTERR ('CMDSPEC',
+     *       '       COOL, METAL, a color, or enter rgb triplet')
+           ERRMSG = 'Unknown Color Map'
+           GO TO 100
          ELSE
            ERRMSG = 'Unknown Color Map'
            GO TO 100

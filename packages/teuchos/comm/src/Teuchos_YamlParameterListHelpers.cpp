@@ -39,65 +39,46 @@
 // ***********************************************************************
 // @HEADER
 
-
 #include "Teuchos_YamlParameterListHelpers.hpp"
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#include <string>
+#include <fstream>
+#include <streambuf>
+
 void Teuchos::updateParametersFromYamlFileAndBroadcast(
-  const std::string &yamlFileName, 
-  const Teuchos::Ptr<Teuchos::ParameterList> &paramList, 
-  const Teuchos::Comm<int> &comm, 
-  bool overwrite)
+  const std::string &yamlFileName,
+  const Ptr<ParameterList> &paramList,
+  const Comm<int> &comm,
+  bool overwrite
+  )
 {
-  struct SafeFile
-  {
-    SafeFile(const char* fname, const char* options)
-    {
-      handle = fopen(fname, options);
-    }
-    ~SafeFile()
-    {
-      if(handle)
-        fclose(handle);
-    }
-    FILE* handle;
-  };
-  //BMK note: see teuchos/comm/src/Teuchos_XMLParameterListHelpers.cpp
-  if(comm.getSize() == 1)
-  {
+  if (comm.getSize()==1)
     updateParametersFromYamlFile(yamlFileName, paramList);
-  }
-  else
-  {
-    if(comm.getRank() == 0)
-    {
-      //BMK: TODO! //reader.setAllowsDuplicateSublists(false);
-      //create a string and load file contents into it
-      //C way for readability and speed, same thing with C++ streams is slow & ugly
-      SafeFile yamlFile(yamlFileName.c_str(), "rb");
-      if(!yamlFile.handle)
-      {
-        throw std::runtime_error(std::string("Failed to open YAML file \"") + yamlFileName + "\"for reading.");
-      }
-      fseek(yamlFile.handle, 0, SEEK_END);
-      int strsize = ftell(yamlFile.handle) + 1;
-      rewind(yamlFile.handle);
-      //Make the array raii
-      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
-      fread((void*) contents.get(), strsize - 1, 1, yamlFile.handle);
-      contents.get()[strsize - 1] = 0;
-      Teuchos::broadcast<int, int>(comm, 0, &strsize);
-      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
-      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
+  else {
+    if (comm.getRank()==0) {
+      std::ifstream stream(yamlFileName.c_str());
+      TEUCHOS_TEST_FOR_EXCEPTION(!stream.is_open(),
+          std::runtime_error,
+          "Could not open YAML file " << yamlFileName);
+      std::istreambuf_iterator<char> stream_iter(stream);
+      std::istreambuf_iterator<char> stream_end;
+      std::string yamlString(stream_iter, stream_end);
+      int strsize = yamlString.size();
+      broadcast<int, int>(comm, 0, &strsize);
+      char* ptr = (strsize) ? (&yamlString[0]) : 0;
+      broadcast<int, char>(comm, 0, strsize, ptr);
+      updateParametersFromYamlString(yamlString, paramList,overwrite);
     }
-    else
-    {
+    else {
       int strsize;
-      Teuchos::broadcast<int, int>(comm, 0, &strsize);
-      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
-      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
-      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
+      broadcast<int, int>(comm, 0, &strsize);
+      std::string yamlString;
+      yamlString.resize(strsize);
+      char* ptr = (strsize) ? (&yamlString[0]) : 0;
+      broadcast<int, char>(comm, 0, strsize, ptr);
+      updateParametersFromYamlString(yamlString, paramList,overwrite);
     }
   }
 }

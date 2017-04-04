@@ -72,6 +72,8 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
 
   /*****************************************************************************/
 
+  ex_check_valid_file_id(exoid);
+
   /* inquire id's of previously defined dimensions */
   if ((el_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH,

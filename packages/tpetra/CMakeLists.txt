@@ -345,6 +345,9 @@ ELSE ()
   # Tpetra currently needs Teuchos to support long long.
   # This may change in the future, though.
   IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+    IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+      MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
+    ENDIF ()
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
   ELSE ()
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)

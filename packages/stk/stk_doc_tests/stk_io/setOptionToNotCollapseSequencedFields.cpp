@@ -21,7 +21,7 @@ TEST_F(MultipleNumberedFieldsWithSameBaseName, whenReading_collapseToSingleStkFi
     EXPECT_EQ(1u, get_meta().get_fields(stk::topology::ELEM_RANK).size());
 }
 
-TEST_F(MultipleNumberedFieldsWithSameBaseName, whenReadingWitlhoutCollapseOption_threeStkFieldsAreRead)
+TEST_F(MultipleNumberedFieldsWithSameBaseName, whenReadingWithoutCollapseOption_threeStkFieldsAreRead)
 {
     stk::unit_test_util::create_mesh_with__field_1__field_2__field_3(filename, get_comm());
     stkIo.set_option_to_not_collapse_sequenced_fields();

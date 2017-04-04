@@ -23,8 +23,8 @@
 
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/internal/StkBalanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
-#include <test_utils/SubMeshCreator.hpp>
 
 #include <zoltan.h>
 
@@ -35,6 +35,8 @@
 #include <test_utils/BalanceTestUtilities.hpp>
 
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
+
+#include <stk_tools/mesh_clone/MeshClone.hpp>
 
 namespace
 {
@@ -65,6 +67,46 @@ void checkMeshIsLoadBalanced(const stk::balance::BalanceSettings& balanceSetting
 
 //====================
 
+
+class ColoringSettings : public stk::balance::BalanceSettings
+{
+public:
+    ColoringSettings() {}
+
+    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+    {
+        return 1;
+    }
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+    {
+        return 1.0;
+    }
+    virtual int getGraphVertexWeight(stk::topology type) const
+    {
+        return 1;
+    }
+    virtual GraphOption getGraphOption() const
+    {
+        return BalanceSettings::LOADBALANCE;
+    }
+
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
+    {
+        return 1.0;
+    }
+};
+
+class OurColoringSettings : public ColoringSettings
+{
+public:
+    OurColoringSettings() {}
+
+    virtual GraphOption getGraphOption() const
+    {
+        return BalanceSettings::COLORING;
+    }
+};
+
 TEST(LoadBalance, writeMesh)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -93,9 +135,9 @@ TEST(LoadBalance, writeMesh)
         fillIoBroker(communicator, output_file_name, inputBroker);
         stk::mesh::BulkData &inputBulkData = inputBroker.bulk_data();
 
-        std::vector<unsigned> outputCounts;
+        std::vector<size_t> outputCounts;
         stk::mesh::count_entities(outputBulkData.mesh_meta_data().universal_part(), outputBulkData, outputCounts);
-        std::vector<unsigned> inputCounts;
+        std::vector<size_t> inputCounts;
         stk::mesh::count_entities(inputBulkData.mesh_meta_data().universal_part(), inputBulkData, inputCounts);
 
         EXPECT_TRUE(inputCounts == outputCounts);
@@ -107,7 +149,7 @@ TEST(LoadBalance, writeMesh)
     }
 }
 
-TEST(LoadBalance, moveElementToAnotherProcessor)
+TEST(LoadBalance, DISABLED_moveElementToAnotherProcessor)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;
@@ -178,7 +220,7 @@ TEST(LoadBalance, moveElementToAnotherProcessor)
     }
 }
 
-TEST(LoadBalance, specifyWhichProcessorYouWantEachElementToBeOnAndWriteOutParFiles)
+TEST(LoadBalance, DISABLED_specifyWhichProcessorYouWantEachElementToBeOnAndWriteOutParFiles)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;
@@ -209,7 +251,7 @@ TEST(LoadBalance, specifyWhichProcessorYouWantEachElementToBeOnAndWriteOutParFil
 
 
 
-TEST(LoadBalance, Zoltan2Parmetis)
+TEST(LoadBalance, DISABLED_Zoltan2Parmetis)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;
@@ -421,7 +463,7 @@ TEST(LoadBalance, zoltan2Adapter)
     }
 }
 
-TEST(LoadBalance, createGraphEdgesUsingNodeConnectivity)
+TEST(LoadBalance, DISABLED_createGraphEdgesUsingNodeConnectivity)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;
@@ -523,7 +565,7 @@ TEST(LoadBalance, zoltan2coloring)
 
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
 
-        stk::balance::ColoringSettings coloringSettings;
+        ColoringSettings coloringSettings;
         Zoltan2ParallelGraph zoltan2Graph;
         std::vector<int> adjacencyProcs;
         zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
@@ -593,7 +635,7 @@ TEST(LoadBalance, ourColoring)
         stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
 
         std::vector<int> adjacencyProcs;
-        stk::balance::OurColoringSettings coloringSettings;
+        OurColoringSettings coloringSettings;
 
         Zoltan2ParallelGraph myGraph;
         myGraph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
@@ -667,21 +709,11 @@ void checkMeshIsLoadBalanced(const stk::balance::BalanceSettings& balanceSetting
 
     if(stkMeshBulkData.parallel_rank() == 0)
     {
-        printLoadBalanceDiagnostics(diagnostics);
+      printLoadBalanceDiagnostics(diagnostics);
     }
-/*
-    double totalVertexWeight = 0;
-    for(size_t i=0; i < diagnostics.sumOfVertexWeightsPerProc.size(); i++)
-    {
-        totalVertexWeight += diagnostics.sumOfVertexWeightsPerProc[i];
-    }
-    double averageVertexWeight = totalVertexWeight / stkMeshBulkData.parallel_size();
-    const double toleranceThatMatchesImbalanceToleranceSettingForZoltan2 = 0.1 * averageVertexWeight;
-    EXPECT_NEAR(averageVertexWeight, diagnostics.sumOfVertexWeightsPerProc[stkMeshBulkData.parallel_rank()], toleranceThatMatchesImbalanceToleranceSettingForZoltan2);
-    */
 }
 
-TEST(LoadBalance, zoltan1decomposition)
+TEST(LoadBalance, DISABLED_zoltan1decomposition)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;
@@ -739,7 +771,7 @@ TEST(LoadBalance, MxN_decomposition)
         unsigned num_procs_decomp = static_cast<unsigned>(options.numSubdomains());
         stk::mesh::EntityProcVec decomp;
         std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().locally_owned_part()};
-        stk::balance::internal::callZoltan2(loadBalanceSettings, num_procs_decomp, decomp, stkMeshBulkData, selectors);
+        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(loadBalanceSettings, num_procs_decomp, decomp, stkMeshBulkData, selectors);
 
         std::string output_file_name = "output.exo";
         balance_utils::putEntityProcOnMeshField(stkMeshBulkData, decomp);
@@ -811,9 +843,9 @@ TEST(LoadBalance, MxN_decomposition)
                 stk::mesh::MetaData &stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
                 stk::mesh::Part& subdomain = *stkMeshMetaData.get_part(partNameForSubdomain);
 
-                stk::mesh::MetaData newMeta(stkMeshMetaData.spatial_dimension());
+                stk::mesh::MetaData newMeta;
                 stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
-                stk::balance::internal::createNewSubMesh(stkMeshBulkData.mesh_meta_data(), stkMeshBulkData, subdomain, newMeta, newBulkData);
+                stk::tools::copy_mesh(stkMeshBulkData, subdomain, newBulkData);
 
                 if(!options.overRideTest())
                 {
@@ -874,7 +906,7 @@ TEST(LoadBalance, findBoundaryNodesAndFaces)
             numFaces += faceBuckets[i]->size();
         }
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData, counts);
 
         if(!options.overRideTest())
@@ -904,22 +936,22 @@ TEST(LoadBalance, checkBBOnFace)
         ASSERT_EQ(1u, faceBuckets.size());
         ASSERT_EQ(1u, faceBuckets[0]->size());
 
-        FloatBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
-        BoxVectorWithStkId faceBoundingBoxesWithIdents;
+        stk::balance::internal::StkBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
+        stk::balance::internal::BoxVectorWithStkId faceBoundingBoxesWithIdents;
         stk::mesh::Entity face = (*faceBuckets[0])[0];
         const double eps = 0.1;
         const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,"coordinates");
         stk::balance::internal::addBoxForFace(stkMeshBulkData, face, eps, faceBoundingBoxesWithIdents, coord);
 
         ASSERT_EQ(1u, faceBoundingBoxesWithIdents.size());
-        FloatBox resultBox = faceBoundingBoxesWithIdents[0].first;
+        stk::balance::internal::StkBox resultBox = faceBoundingBoxesWithIdents[0].first;
         EXPECT_EQ(goldFaceBoundingBox, resultBox);
 
         unsigned numElements = stkMeshBulkData.num_elements(face);
         ASSERT_EQ(1u, numElements);
 
         const stk::mesh::Entity *element = stkMeshBulkData.begin_elements(face);
-        StkMeshIdent resultIdent = faceBoundingBoxesWithIdents[0].second;
+        stk::balance::internal::StkMeshIdent resultIdent = faceBoundingBoxesWithIdents[0].second;
         EXPECT_EQ(stkMeshBulkData.identifier(*element), resultIdent.id());
 
         EXPECT_EQ(stkMeshBulkData.parallel_rank(), resultIdent.proc());
@@ -940,7 +972,7 @@ TEST(LoadBalance, doOneElementSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        BoxVectorWithStkId faceBoxes;
+        stk::balance::internal::BoxVectorWithStkId faceBoxes;
         const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
@@ -948,7 +980,7 @@ TEST(LoadBalance, doOneElementSearch)
         size_t goldNumFaceBoxes = 6u;
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
 
-        StkSearchResults searchResults;
+        stk::balance::internal::StkSearchResults searchResults;
         stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::BOOST_RTREE, communicator, searchResults);
 
         size_t numNonSelfFaceInteractions = 24u;
@@ -956,7 +988,7 @@ TEST(LoadBalance, doOneElementSearch)
         size_t totalNumInterations = numNonSelfFaceInteractions + numSelfInteractions;
         EXPECT_EQ(totalNumInterations, searchResults.size());
 
-        StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
+        stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
         size_t numUniqueInteractions = 1;
         EXPECT_EQ(numUniqueInteractions, searchResults.size());
@@ -1053,12 +1085,12 @@ TEST(LoadBalance, doSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        BoxVectorWithStkId faceBoxes;
+        stk::balance::internal::BoxVectorWithStkId faceBoxes;
         const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
 
-        std::vector<FloatBox> faceItems(faceBoxes.size());
+        std::vector<stk::balance::internal::StkBox> faceItems(faceBoxes.size());
         for(size_t i = 0; i < faceBoxes.size(); i++)
         {
             faceItems[i] = faceBoxes[i].first;
@@ -1072,16 +1104,16 @@ TEST(LoadBalance, doSearch)
             balance_utils::clearFiles(file, numProcs);
         }
 
-        StkSearchResults searchResults;
+        stk::balance::internal::StkSearchResults searchResults;
         kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
 
-        StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
+        stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
 
         for(size_t i = 0; i < searchResults.size(); i++)
         {
-            StkMeshIdent item1 = searchResults[i].first;
-            StkMeshIdent item2 = searchResults[i].second;
+            stk::balance::internal::StkMeshIdent item1 = searchResults[i].first;
+            stk::balance::internal::StkMeshIdent item2 = searchResults[i].second;
             std::ostringstream os;
             os << "For interaction " << i << " on processor " << me << " element " << item1.id() << " on proc " << item1.proc() <<
                     " iteracts with element " << item2.id() << " from proc " << item2.proc() << std::endl;
@@ -1111,7 +1143,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
         stk::mesh::BulkData stkMeshBulkData(meta, MPI_COMM_WORLD);
         create2DisconnectedHex8sStkMesh(meta, stkMeshBulkData);
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(meta.universal_part(), stkMeshBulkData, counts);
         EXPECT_EQ(2u, counts[stk::topology::ELEMENT_RANK]);
         EXPECT_EQ(16u, counts[stk::topology::NODE_RANK]);
@@ -1168,14 +1200,14 @@ TEST(LoadBalance, createNewMeshFromPart_2DisconnectedHex8s)
 
         stk::mesh::Part &outputPart = *meta.get_part(blockName);
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(meta.universal_part(), stkMeshBulkData, counts);
         EXPECT_EQ(2u, counts[stk::topology::ELEMENT_RANK]);
         EXPECT_EQ(16u, counts[stk::topology::NODE_RANK]);
 
-        stk::mesh::MetaData newMeta(spatialDim);
+        stk::mesh::MetaData newMeta;
         stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
-        stk::balance::internal::createNewSubMesh(meta, stkMeshBulkData, outputPart, newMeta, newBulkData);
+        stk::tools::copy_mesh(stkMeshBulkData, outputPart, newBulkData);
 
         stk::mesh::count_entities(newMeta.universal_part(), newBulkData, counts);
         EXPECT_EQ(1u, counts[stk::topology::ELEMENT_RANK]);
@@ -1197,14 +1229,13 @@ TEST(LoadBalance, createNewMeshFromPart_writeFilesTillWeDontNeedThisTestAsADrive
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
         stk::mesh::MetaData &meta = stkMeshBulkData.mesh_meta_data();
-        const unsigned spatialDim = meta.spatial_dimension();
         const std::string blockName = stk::unit_test_util::get_option("-b", "block_1");
 
         stk::mesh::Part &outputPart = *meta.get_part(blockName);
 
-        stk::mesh::MetaData newMeta(spatialDim);
+        stk::mesh::MetaData newMeta;
         stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
-        stk::balance::internal::createNewSubMesh(meta, stkMeshBulkData, outputPart, newMeta, newBulkData);
+        stk::tools::copy_mesh(stkMeshBulkData, outputPart, newBulkData);
 
         std::string filename("block1.exo");
         stk::io::StkMeshIoBroker meshIO(MPI_COMM_SELF);
@@ -1231,7 +1262,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         stk::mesh::BulkData stkMeshBulkData(meta, MPI_COMM_WORLD);
         create2ParticlesStkMesh(meta, stkMeshBulkData);
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(meta.universal_part(), stkMeshBulkData, counts);
         EXPECT_EQ(2u, counts[stk::topology::ELEMENT_RANK]);
         EXPECT_EQ(2u, counts[stk::topology::NODE_RANK]);
@@ -1286,7 +1317,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
         stk::mesh::BulkData stkMeshBulkData(meta, MPI_COMM_WORLD);
         create2Particles2HexStkMesh(meta, stkMeshBulkData);
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(meta.universal_part(), stkMeshBulkData, counts);
         EXPECT_EQ(4u, counts[stk::topology::ELEMENT_RANK]);
         EXPECT_EQ(18u, counts[stk::topology::NODE_RANK]);
@@ -1693,7 +1724,6 @@ std::string getSubdomainPartName(int subdomainId)
 
 // 10. 0+1 = 1
 // 100. 1+1 = 2
-
 
 TEST(LoadBalance, checkWidth)
 {

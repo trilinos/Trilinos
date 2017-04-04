@@ -67,9 +67,11 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return residualModel_->getTransientModel();}
 
-    void setSolver(
-      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &
-      solver = Teuchos::null);
+    virtual void setSolver(std::string solverName);
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -113,7 +115,7 @@ private:
 protected:
 
   std::string                                       description_;
-  Teuchos::RCP<Teuchos::ParameterList>              pList_;
+  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
 

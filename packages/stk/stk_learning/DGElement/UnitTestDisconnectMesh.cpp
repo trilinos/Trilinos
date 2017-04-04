@@ -22,9 +22,11 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stdlib.h>
 
+#include <stk_tools/mesh_clone/MeshClone.hpp>
+
 class DisconnectMesh : public DGTetFixture {};
 
-void disconnectMesh(const stk::mesh::MetaData &oldMeta,
+void disconnectMesh(     stk::mesh::MetaData &oldMeta,
                          stk::mesh::BulkData& oldBulkData,
                          stk::mesh::Selector subMeshSelector,
                          stk::mesh::MetaData &newMeta,
@@ -49,7 +51,7 @@ TEST_F(DisconnectMesh, tet)
 
     //////////////////////////////////////////////////////////////////////////////////////
 
-    stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
+    stk::mesh::MetaData newMetaData;
     stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
     disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
 
@@ -61,6 +63,25 @@ class TOSDTWD : public stk::unit_test_util::MeshFixture
 protected:
     TOSDTWD() : stk::unit_test_util::MeshFixture(3) {}
     virtual ~TOSDTWD() {}
+
+    virtual void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        allocate_bulk(auraOption);
+        stk::io::fill_mesh_save_step_info(meshSpecification, *bulkData, mNumSteps, mMaxTime);
+    }
+
+    int get_num_steps() const
+    {
+        return mNumSteps;
+    }
+
+    double get_max_time() const
+    {
+        return mMaxTime;
+    }
+
+    int mNumSteps = 0;
+    double mMaxTime = 0;
 };
 
 TEST_F(TOSDTWD, disconnect_mesh)
@@ -70,7 +91,7 @@ TEST_F(TOSDTWD, disconnect_mesh)
 
     {
         setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
+        stk::mesh::MetaData newMetaData;
         stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
         disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
         stk::io::write_mesh(mesh_name, newBulkData);
@@ -280,28 +301,48 @@ TEST_F(TOSDTWD, expand_mesh)
     {
         std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
         setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
+        stk::mesh::MetaData newMetaData;
         stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
         disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
-        stk::io::write_mesh(temp_name, newBulkData);
+
+        stk::io::write_mesh_with_fields(temp_name, newBulkData, get_num_steps(), get_max_time());
     }
 
     {
         stk::io::StkMeshIoBroker stkIo(get_comm());
         stkIo.add_mesh_database(temp_name, stk::io::READ_MESH);
         stkIo.create_input_mesh();
+        stkIo.add_all_mesh_fields_as_input_fields();
 
         typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+        CoordFieldType& dispField = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, "disp");
+        stk::mesh::put_field(dispField, stkIo.meta_data().universal_part());
 
-        CoordFieldType& field = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, "disp");
-
-        stk::mesh::put_field(field, stkIo.meta_data().universal_part());
         stkIo.populate_bulk_data();
+
+        int numSteps = stkIo.get_num_time_steps();
+        std::cerr << "Num steps = " << numSteps << std::endl;
+        double maxTime = 0;
+        if(numSteps>0)
+        {
+            stkIo.read_defined_input_fields(numSteps);
+            maxTime = stkIo.get_max_time();
+        }
 
         std::string results_name = stk::unit_test_util::get_option("-o", "output_results.g");
         size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
-        stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+        const stk::mesh::FieldVector fields = stkIo.bulk_data().mesh_meta_data().get_fields();
+        for(stk::mesh::FieldBase* field : fields)
+        {
+            const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*field);
+            if(fieldRole != nullptr && *fieldRole == Ioss::Field::TRANSIENT)
+                stkIo.add_field(fh, *field);
+        }
+
+        stkIo.add_field(fh, dispField); /*@\label{io:results:add_field}*/
+
+        stkIo.write_output_mesh(fh);
 
         std::vector<stk::mesh::Entity> elements;
         stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::ELEM_RANK, elements);
@@ -386,7 +427,7 @@ TEST_F(TOSDTWD, expand_mesh)
 
         std::cerr << "(x,y,z) centroid = (" << xc << ", " << yc << ", " << zc << ")\n";
 
-        double time = 0;
+        double time = maxTime;
         double scalar = 10;
 
         std::vector<std::vector<double>> direct(elementBlocks.size());
@@ -410,7 +451,7 @@ TEST_F(TOSDTWD, expand_mesh)
             std::vector<double> direction = {0, 0, 0};
             for(unsigned j = 0; j < num_nodes; ++j)
             {
-                double *disp = stk::mesh::field_data(field, nodes[j]);
+                double *disp = stk::mesh::field_data(dispField, nodes[j]);
                 for(size_t k=0;k<elementBlocks.size();++k)
                 {
                     stk::mesh::Selector sel = *elementBlocks[k];
@@ -421,96 +462,16 @@ TEST_F(TOSDTWD, expand_mesh)
                         disp[2] = scalar * direct[k][2];
                     }
                 }
-//                    disp[0] = scalar * element_centroid[i][0];
-//                    disp[1] = scalar * element_centroid[i][1];
-//                    disp[2] = scalar * element_centroid[i][2];
             }
         }
 
         stkIo.begin_output_step(fh, time);
         stkIo.write_defined_output_fields(fh);
         stkIo.end_output_step(fh);
-
-        // choose x direction
-//        std::vector<double> goWhere = { 1, 0, 0 };
-//        double scale = 10;
-//
-//        for(size_t i = 0; i < elements.size(); i++)
-//        {
-//            if(!sel(stkIo.bulk_data().bucket(elements[i])))
-//            {
-//                unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
-//                const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
-//
-//                std::vector<double> direction = {0, 0, 0};
-//                for(unsigned j = 0; j < num_nodes; ++j)
-//                {
-//                    double *disp = stk::mesh::field_data(field, nodes[j]);
-//
-//                    disp[0] += scale * goWhere[0];
-//                    disp[1] += scale * goWhere[1];
-//                    disp[2] += scale * goWhere[2];
-//                }
-//            }
-//        }
-//
-//        time += delta_t;
-//        stkIo.begin_output_step(fh, time);
-//        stkIo.write_defined_output_fields(fh);
-//        stkIo.end_output_step(fh);
     }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void copyPartsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
-{
-    const stk::mesh::PartVector &allparts = oldMeta.get_mesh_parts();
-    for(size_t i = 0; i < allparts.size(); i++)
-    {
-        stk::mesh::Part *part = NULL;
-        if(allparts[i]->topology() != stk::topology::INVALID_TOPOLOGY)
-        {
-            part = &newMeta.declare_part_with_topology(allparts[i]->name(), allparts[i]->topology());
-        }
-        else
-        {
-            part = &newMeta.declare_part(allparts[i]->name());
-        }
-        if(stk::io::is_part_io_part(*allparts[i]))
-        {
-            stk::io::put_io_part_attribute(*part);
-        }
-    }
-}
-
-void copyFieldsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
-{
-    const stk::mesh::FieldVector &fields = oldMeta.get_fields();
-    for(size_t i = 0; i < fields.size(); i++)
-    {
-        stk::mesh::FieldBase* newField = newMeta.declare_field_base(fields[i]->name(),
-                                                                    fields[i]->entity_rank(),
-                                                                    fields[i]->data_traits(),
-                                                                    fields[i]->field_array_rank(),
-                                                                    fields[i]->dimension_tags(),
-                                                                    fields[i]->number_of_states());
-
-        stk::mesh::Selector selectFieldParts = stk::mesh::selectField(*fields[i]);
-        stk::mesh::PartVector oldParts;
-        selectFieldParts.get_parts(oldParts);
-        if(!oldParts.empty())
-        {
-            stk::mesh::PartVector newParts(oldParts.size());
-            for(size_t k = 0; k < oldParts.size(); k++)
-            {
-                newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
-            }
-            stk::mesh::Selector selectNewParts = stk::mesh::selectUnion(newParts);
-            stk::mesh::put_field(*newField, selectNewParts, fields[i]->max_size(fields[i]->entity_rank()));
-        }
-    }
-}
 
 void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
                             const stk::mesh::BulkData& oldBulkData,
@@ -569,16 +530,30 @@ void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
 }
 
 
-void disconnectMesh(const stk::mesh::MetaData &oldMeta,
+stk::mesh::PartVector getNewPartVectorFromOldPartVector(stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta, const stk::mesh::PartVector& oldParts)
+{
+    stk::mesh::PartVector allOldParts = oldMeta.get_parts();
+    stk::mesh::PartVector allNewParts = newMeta.get_parts();
+
+    unsigned counter = 0;
+    stk::mesh::PartVector newParts(oldParts.size());
+    for(stk::mesh::Part* oldPart : oldParts)
+    {
+        stk::mesh::Ordinal ord = oldPart->mesh_meta_data_ordinal();
+        stk::mesh::Part *part = allNewParts[ord];
+        newParts[counter++] = part;
+    }
+
+    return newParts;
+}
+
+void disconnectMesh(     stk::mesh::MetaData &oldMeta,
                          stk::mesh::BulkData& oldBulkData,
                          stk::mesh::Selector subMeshSelector,
                          stk::mesh::MetaData &newMeta,
                          stk::mesh::BulkData &newBulkData)
 {
-    copyPartsToNewMesh(oldMeta, newMeta);
-    copyFieldsToNewMesh(oldMeta, newMeta);
-
-    newMeta.commit();
+    stk::tools::copy_meta_with_io_attributes(oldMeta, newMeta);
 
     const stk::mesh::PartVector &allOldparts = oldMeta.get_mesh_parts();
     const stk::mesh::PartVector &allNewparts = newMeta.get_mesh_parts();
@@ -587,10 +562,10 @@ void disconnectMesh(const stk::mesh::MetaData &oldMeta,
     std::map<stk::mesh::Entity, stk::mesh::Entity> oldToNewEntityMap;
 
     stk::mesh::EntityVector node_in_old_mesh;
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(oldMeta.locally_owned_part(), oldBulkData.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::EntityVector elementsFromOldBulkData;
+    stk::mesh::get_selected_entities(oldMeta.locally_owned_part(), oldBulkData.buckets(stk::topology::ELEM_RANK), elementsFromOldBulkData);
     size_t num_nodes_needed = 0;
-    for(stk::mesh::Entity element : elements )
+    for(stk::mesh::Entity element : elementsFromOldBulkData )
     {
         unsigned num_nodes_this_element = oldBulkData.num_nodes(element);
         const stk::mesh::Entity* nodes = oldBulkData.begin_nodes(element);
@@ -614,20 +589,22 @@ void disconnectMesh(const stk::mesh::MetaData &oldMeta,
     for(size_t i=0;i<num_nodes_needed;++i)
     {
         const stk::mesh::PartVector parts = oldBulkData.bucket(node_in_old_mesh[i]).supersets();
-        new_nodes[i] = newBulkData.declare_entity(stk::topology::NODE_RANK, i+offset_this_proc+1, parts);
+        stk::mesh::PartVector newParts = getNewPartVectorFromOldPartVector(oldMeta, newMeta, parts);
+        new_nodes[i] = newBulkData.declare_node(i+offset_this_proc+1, newParts);
     }
     newBulkData.modification_end();
 
     newBulkData.modification_begin();
     size_t node_counter = 0;
-    for(stk::mesh::Entity element : elements)
+    for(stk::mesh::Entity element : elementsFromOldBulkData)
     {
         stk::mesh::PartVector parts = oldBulkData.bucket(element).supersets();
+        stk::mesh::PartVector newParts = getNewPartVectorFromOldPartVector(oldMeta, newMeta, parts);
 
         int index_root_part = -1;
-        for(size_t i=0;i<parts.size();++i)
+        for(size_t i=0;i<newParts.size();++i)
         {
-            if(stk::mesh::is_topology_root_part(*parts[i]))
+            if(stk::mesh::is_topology_root_part(*newParts[i]))
             {
                 index_root_part = i;
                 break;
@@ -635,13 +612,13 @@ void disconnectMesh(const stk::mesh::MetaData &oldMeta,
         }
         ThrowRequireMsg(index_root_part !=-1, "Oops");
 
-        std::swap(parts[0], parts[index_root_part]);
+        std::swap(newParts[0], newParts[index_root_part]);
 
         stk::mesh::EntityIdVector node_ids(oldBulkData.num_nodes(element));
         for(size_t i=0;i<node_ids.size();++i)
             node_ids[i] = node_counter + i + offset_this_proc + 1;
         node_counter += node_ids.size();
-        stk::mesh::declare_element(newBulkData, parts, oldBulkData.identifier(element), node_ids);
+        stk::mesh::declare_element(newBulkData, newParts, oldBulkData.identifier(element), node_ids);
     }
     newBulkData.modification_end();
 
@@ -673,7 +650,7 @@ void disconnectMesh(const stk::mesh::MetaData &oldMeta,
             if(!stk::mesh::is_auto_declared_part(newPart))
                 newParts.push_back(&newPart);
         }
-        newBulkData.declare_element_side(oldBulkData.identifier(sides[i]), newElement, elemSides[i].second, newParts);
+        newBulkData.declare_element_side(newElement, elemSides[i].second, newParts);
     }
     newBulkData.modification_end();
 

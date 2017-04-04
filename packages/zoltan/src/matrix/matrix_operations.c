@@ -442,10 +442,13 @@ Zoltan_Matrix_Mark_Diag(ZZ* zz, const Zoltan_matrix* const m,
   (*n_nnz) = 0;
   for (y = 0 ; y < m->nY ; ++y) {
     int pin;
+    int found_diag = 0;
     for (pin = m->ystart[y] ; pin < m->yend[y] ; ++pin) {
       if (m->pinGNO[pin] == m->yGNO[y]) {
-	(*nnz)[(*n_nnz)] = pin;
-	(*n_nnz)++;
+        if (found_diag) FATAL_ERROR("Diagonal term declared twice");
+        (*nnz)[(*n_nnz)] = pin;
+        (*n_nnz)++;
+        found_diag = 1;
       }
     }
   }

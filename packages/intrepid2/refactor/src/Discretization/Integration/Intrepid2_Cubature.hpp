@@ -160,8 +160,8 @@ namespace Intrepid2 {
     virtual
     ordinal_type
     getNumPoints() const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Cubature::getNumPoints): this method should be over-riden by derived classes.");
+      INTREPID2_TEST_FOR_WARNING( true, 
+                                  ">>> ERROR (Cubature::getNumPoints): this method should be over-riden by derived classes.");
       return 0;
     }
 
@@ -171,8 +171,8 @@ namespace Intrepid2 {
     virtual
     ordinal_type
     getDimension() const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+      INTREPID2_TEST_FOR_WARNING( true, 
+                                  ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
       return 0;
     }
 
@@ -181,8 +181,8 @@ namespace Intrepid2 {
     virtual
     ordinal_type
     getAccuracy() const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+      INTREPID2_TEST_FOR_WARNING( true, 
+                                  ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
       return 0;
     }
 

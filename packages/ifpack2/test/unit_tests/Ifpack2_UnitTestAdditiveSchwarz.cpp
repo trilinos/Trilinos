@@ -332,6 +332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LO, GO)
 }
 
 
+// ///////////////////////////////////////////////////////////////////// //
 // Test RILUK as subdomain solver for AdditiveSchwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LO, GO)
 {
@@ -413,6 +414,105 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LO, GO)
 }
 
 
+
+
+// ///////////////////////////////////////////////////////////////////// //
+// Test RILUK as subdomain solver for AdditiveSchwarz.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Scalar, LO, GO)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Test RILUK as a subdomain solver for AdditiveSchwarz" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  global_size_t num_rows_per_proc = 5;
+
+  out << "Creating row Map and CrsMatrix" << endl;
+
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LO,GO,Node>(rowmap);
+  size_t N = rowmap->getNodeNumElements();
+
+  out << "Creating AdditiveSchwarz instance" << endl;
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
+  Teuchos::ParameterList params;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+
+  // Now let's do some user ordering.  Reverse ordering, because, why not?
+  Teuchos::ArrayRCP<LO> perm(N), revperm(N);
+  for(size_t i=0; i<N; i++) {
+    perm[i]=(N-1)-i;
+    revperm[i]=(N-1)-i;
+  }
+  Teuchos::ParameterList & zlist = params.sublist("schwarz: reordering list");  
+  zlist.set("order_method","user");
+  zlist.set("user ordering",perm);
+  zlist.set("user reverse ordering",revperm);
+
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+  params.set ("inner preconditioner name", "RILUK");
+
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const map_type* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const map_type* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+  const map_type* prec_dom_map_ptr = &*prec.getDomainMap();
+  const map_type* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+  prec.describe(out,Teuchos::VERB_EXTREME);
+
+  MV x(rowmap,2), y(rowmap,2), z(rowmap,2);
+  x.putScalar (STS::one ());
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply (x, y);
+
+  out << "Testing result of AdditiveSchwarz's apply" << endl;
+
+  // The solution should now be full of 1/2s
+  const Scalar one = STS::one ();
+  const Scalar two = one + one;
+  z.putScalar (one / two);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4 * STS::eps ());
+}
+
+
+// ///////////////////////////////////////////////////////////////////// //
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LO, GO)
 {
   // Test that AdditiveSchwarz transfer patterns are correct.
@@ -497,7 +597,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
   }
 }
 
-
+// ///////////////////////////////////////////////////////////////////// //
 #if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_IFPACK2_XPETRA) && (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 // Test sparse direct solver as subdomain solver for AdditiveSchwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC, LO, GO)
@@ -701,7 +801,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 }
 #endif
 
-
+// ///////////////////////////////////////////////////////////////////// //
 // Test multiple sweeps of additive Schwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
@@ -878,6 +978,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal)  \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, RILUK, Scalar, LocalOrdinal,GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Scalar, LocalOrdinal,GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar, LocalOrdinal, GlobalOrdinal) \
      IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)

@@ -48,12 +48,22 @@
 #include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_Property.h"              // for Property
 #include "Ioss_Region.h"                // for Region
+
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/WriteMesh.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+
 namespace Ioss { class DatabaseIO; }
 
 namespace
 {
-  TEST(StkMeshIoBrokerHowTo, writeHistory)
-  {
+
+TEST(StkMeshIoBrokerHowTo, writeHistory)
+{
 
     const std::string file_name = "History.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -108,9 +118,10 @@ namespace
       }
 
       // Now output the global variables...
-      int timestep_count = 1;
+      int timestep_count = 2;
       double time = 0.0;
       for (int step=1; step <= timestep_count; step++) {
+        time = step;
 	stkIo.process_heartbeat_output(hb, step, time);
       }
     }
@@ -121,8 +132,9 @@ namespace
       Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", file_name, Ioss::READ_MODEL, communicator);
       Ioss::Region region(iossDb);
 
-      EXPECT_EQ(region.get_property("state_count").get_int(), 1);
-      region.begin_state(1);
+      // Number steps
+      EXPECT_EQ(region.get_property("state_count").get_int(), 2);
+      region.begin_state(2);
       
       Ioss::NameList fields;
       region.field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -131,6 +143,7 @@ namespace
       std::vector<double> values;
       region.get_field_data("PI", values);
       EXPECT_NEAR(values[0], 3.14159, 1.0e-6);
+      EXPECT_EQ(1u, values.size());
 
       std::vector<int> ages;
       region.get_field_data("Ages", ages);
@@ -144,5 +157,155 @@ namespace
     // ========================================================================
     // CLEANUP:
     unlink(file_name.c_str());
-  }
+}
+
+std::string getElementFieldName()
+{
+    return "SomeElementField";
+}
+
+std::string getNodalFieldName()
+{
+    return "SomeNodalField";
+}
+
+double initialValue()
+{
+    return -1.0;
+}
+
+void setUpMeshWithFieldOnBlock1(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field1, stk::mesh::Field<double>& field2)
+{
+    stk::io::StkMeshIoBroker stkIo(bulk.parallel());
+    stkIo.set_bulk_data(bulk);
+    stkIo.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+
+    double init = initialValue();
+    stk::mesh::Part* block1 = bulk.mesh_meta_data().get_part("block_1");
+    stk::mesh::put_field(field1, *block1, &init);
+    stk::mesh::put_field(field2, *block1, &init);
+
+    stkIo.add_all_mesh_fields_as_input_fields();
+    stkIo.populate_bulk_data();
+}
+
+void putEntityIntoHistoryPart(stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, stk::mesh::EntityId id, stk::mesh::Part& historyPart)
+{
+    stk::mesh::Entity entity = bulk.get_entity(rank, id);
+    bulk.modification_begin();
+    if(bulk.is_valid(entity) && bulk.bucket(entity).owned())
+    {
+        bulk.change_entity_parts(entity, stk::mesh::ConstPartVector{&historyPart});
+    }
+    bulk.modification_end();
+}
+
+double getValue(stk::mesh::EntityId id, int stepNum)
+{
+    return 100*stepNum + id;
+}
+
+void writeHistoryFile(const std::string& historyFilename, stk::mesh::BulkData& bulk,
+                      stk::mesh::Field<double>& elementField, stk::mesh::Field<double>& nodalField,
+                      stk::mesh::Part& elementHistoryPart, stk::mesh::Part& nodeHistoryPart)
+{
+    stk::mesh::Selector subset = elementHistoryPart | nodeHistoryPart;
+    stk::io::StkMeshIoBroker outStkIo;
+    outStkIo.set_bulk_data(bulk);
+
+    size_t outputFileIndex = outStkIo.create_output_mesh(historyFilename, stk::io::WRITE_RESULTS);
+    outStkIo.set_subset_selector(outputFileIndex, subset);
+    outStkIo.add_field(outputFileIndex, elementField);
+    outStkIo.add_field(outputFileIndex, nodalField);
+    outStkIo.write_output_mesh(outputFileIndex);
+
+    stk::mesh::EntityVector elementEntities;
+    stk::mesh::get_selected_entities(elementHistoryPart & bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elementEntities);
+
+    stk::mesh::EntityVector nodeEntities;
+    stk::mesh::get_selected_entities(nodeHistoryPart & bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodeEntities);
+
+    for(int step = 1; step < 10; step++)
+    {
+        for(stk::mesh::Entity entity : elementEntities)
+        {
+            double *data = stk::mesh::field_data(elementField, entity);
+            *data = getValue(bulk.identifier(entity), step);
+        }
+
+        for(stk::mesh::Entity entity : nodeEntities)
+        {
+            double *data = stk::mesh::field_data(nodalField, entity);
+            *data = getValue(bulk.identifier(entity), step);
+        }
+
+        double time = 0.4*step;
+        outStkIo.begin_output_step(outputFileIndex, time);
+        outStkIo.write_defined_output_fields(outputFileIndex);
+        outStkIo.end_output_step(outputFileIndex);
+    }
+}
+
+void verify_data(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field, stk::mesh::EntityRank rank, int stepNum)
+{
+    stk::mesh::EntityVector entities;
+    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank), entities);
+
+    for(stk::mesh::Entity entity : entities)
+    {
+        double *data = stk::mesh::field_data(field, entity);
+        double goldValue = getValue(bulk.identifier(entity), stepNum);
+        if(*data != initialValue())
+            EXPECT_EQ(goldValue, *data);
+    }
+}
+
+void verifyHistoryFileOutput(const std::string& filename)
+{
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+    int numSteps = 0;
+    double maxTime = 0;
+
+    stk::io::fill_mesh_save_step_info(filename, bulk, numSteps, maxTime);
+
+    stk::mesh::Field<double>* field1 = static_cast<stk::mesh::Field<double>*>(meta.get_field(stk::topology::ELEM_RANK, getElementFieldName()));
+    ASSERT_TRUE(field1!=nullptr);
+    verify_data(bulk, *field1, stk::topology::ELEM_RANK, numSteps);
+
+    stk::mesh::Field<double>* field2 = static_cast<stk::mesh::Field<double>*>(meta.get_field(stk::topology::NODE_RANK, getNodalFieldName()));
+    ASSERT_TRUE(field2!=nullptr);
+    verify_data(bulk, *field2, stk::topology::NODE_RANK, numSteps);
+}
+
+TEST(StkMeshIoBrokerHowTo, writeHistoryOfElementAndNode)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)<=2)
+    {
+        stk::mesh::EntityId elementId = 1;
+        stk::mesh::EntityId nodeId = 12;
+
+        stk::mesh::MetaData meta(3);
+        stk::mesh::Field<double>& elemField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, getElementFieldName());
+        stk::mesh::Field<double>& nodalField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, getNodalFieldName());
+
+        stk::mesh::Part& elementHistoryPart = meta.declare_part("ElementHistoryOutput", stk::topology::ELEM_RANK);
+        stk::mesh::Part& nodeHistoryPart = meta.declare_part("NodeHistoryOutput", stk::topology::NODE_RANK);
+
+        stk::mesh::BulkData bulk(meta, comm);
+
+        setUpMeshWithFieldOnBlock1(bulk, elemField, nodalField);
+        putEntityIntoHistoryPart(bulk, stk::topology::ELEM_RANK, elementId, elementHistoryPart);
+        putEntityIntoHistoryPart(bulk, stk::topology::NODE_RANK, nodeId, nodeHistoryPart);
+
+        const std::string historyFilename = "history.e";
+        writeHistoryFile(historyFilename, bulk, elemField, nodalField, elementHistoryPart, nodeHistoryPart);
+
+        verifyHistoryFileOutput(historyFilename);
+    }
+}
+
 }

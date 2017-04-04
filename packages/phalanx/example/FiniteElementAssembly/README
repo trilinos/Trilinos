@@ -1,0 +1,7 @@
+This is an example of using phalanx with a finite element assembly.
+
+1. The scatter is not complete. Need to implement a sparse graph
+object to fill.
+
+2. Right now there is a single workset. Need to add a workset
+constructor and modufy gather scatter for offsets based on cell id.

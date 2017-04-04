@@ -1,6 +1,7 @@
-
 #ifndef IMBALANCETIMER_HPP_
 #define IMBALANCETIMER_HPP_
+
+#include <stk_util/diag/Timer.hpp>
 
 namespace stk { namespace util {
 

@@ -1,2 +1,1 @@
-ADD_SUBDIRECTORY(MultiDimensionalArray)
-#ADD_SUBDIRECTORY(FEM_Nonlinear)
+ADD_SUBDIRECTORY(FiniteElementAssembly)

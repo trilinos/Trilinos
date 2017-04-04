@@ -126,6 +126,15 @@ namespace NOX_UNIT_TEST {
     const Teuchos::ParameterList& getList() const
     {return dummyParamList_;}
 
+    Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const
+    {return Teuchos::null;}
+    
+    Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const
+    {return Teuchos::null;}
+
+    Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const
+    {return Teuchos::null;}
+
   };
 
   TEUCHOS_UNIT_TEST(PrePostOperatorVector, all)

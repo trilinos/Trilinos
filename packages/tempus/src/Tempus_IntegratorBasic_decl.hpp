@@ -66,11 +66,13 @@ public:
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
-    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	const
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
+    { return tempusPL_; }
+    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
     {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      *pl = *tempusPL_;
-      return pl;
+      if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
+      if (pl != Teuchos::null) *tempusPL_ = *pl;
+      this->setParameterList(Teuchos::null);
     }
   //@}
 
@@ -90,9 +92,11 @@ public:
     /// Set the initial state which has the initial conditions
     virtual void setInitialState(
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
-    /// Set the initial state from Thyra::VectorBase
-    virtual void setInitialState(
-      Scalar t0, Teuchos::RCP<Thyra::VectorBase<Scalar> > x0);
+    /// Set the initial state from Thyra::VectorBase(s)
+    virtual void setInitialState(Scalar t0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
       {return solutionHistory_;}

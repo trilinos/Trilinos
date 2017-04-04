@@ -176,21 +176,13 @@ private:
     stk::mesh::Field<double> *m_auraCommMapElementField;
 };
 
-void testSubMesh(stk::unit_test_util::BulkDataTester &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
-void createSerialSubMesh(const stk::mesh::MetaData &oldMeta, stk::unit_test_util::BulkDataTester& oldBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::unit_test_util::BulkDataTester &newBulkData);
-
 void checkCommMaps(std::string message, stk::unit_test_util::BulkDataTester &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[]);
 void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, FieldMgr &fieldMgr);
 
 void writeCommInfoFields(stk::unit_test_util::BulkDataTester &bulkData, FieldMgr &fieldMgr, const std::string& filename, double time);
 
-//////////////////////////////////////////////////
 void moveElements2And3ToProc2(stk::unit_test_util::BulkDataTester &stkMeshBulkData);
-void runProc0(stk::unit_test_util::BulkDataTester &stkMeshBulkData);
-void runProc1(stk::unit_test_util::BulkDataTester &stkMeshBulkData);
-void runProc2(stk::unit_test_util::BulkDataTester &stkMeshBulkData);
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
@@ -225,23 +217,23 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
         double time = 0.5;
         writeCommInfoFields(stkMeshBulkData, fieldMgr, "testBefore.exo",  time);
 
-        {
-            stk::mesh::MetaData newMetaData(3);
-            stk::unit_test_util::BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
-
-            createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
-
-            FieldMgr fieldMgrSubMesh(newMetaData);
-            fieldMgrSubMesh.storeFieldPointers();
-
-            std::ostringstream oss;
-            oss << "testSingleBefore_" << stkMeshBulkData.parallel_rank() << ".exo";
-            std::string filename = oss.str();
-
-            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
-
-            unlink(filename.c_str());
-        }
+//        {
+//            stk::mesh::MetaData newMetaData(3);
+//            stk::unit_test_util::BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
+//
+//            createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
+//
+//            FieldMgr fieldMgrSubMesh(newMetaData);
+//            fieldMgrSubMesh.storeFieldPointers();
+//
+//            std::ostringstream oss;
+//            oss << "testSingleBefore_" << stkMeshBulkData.parallel_rank() << ".exo";
+//            std::string filename = oss.str();
+//
+//            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
+//
+//            unlink(filename.c_str());
+//        }
 
         moveElements2And3ToProc2(stkMeshBulkData);
 
@@ -251,23 +243,23 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-        {
-            stk::mesh::MetaData newMetaData(3);
-            stk::unit_test_util::BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
-
-            createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
-
-            FieldMgr fieldMgrSubMesh(newMetaData);
-            fieldMgrSubMesh.storeFieldPointers();
-
-            std::ostringstream oss;
-            oss << "testSingleAfter_" << stkMeshBulkData.parallel_rank() << ".exo";
-            std::string filename = oss.str();
-
-            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
-
-            unlink(filename.c_str());
-        }
+//        {
+//            stk::mesh::MetaData newMetaData(3);
+//            stk::unit_test_util::BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
+//
+//            createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
+//
+//            FieldMgr fieldMgrSubMesh(newMetaData);
+//            fieldMgrSubMesh.storeFieldPointers();
+//
+//            std::ostringstream oss;
+//            oss << "testSingleAfter_" << stkMeshBulkData.parallel_rank() << ".exo";
+//            std::string filename = oss.str();
+//
+//            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
+//
+//            unlink(filename.c_str());
+//        }
 
         if(stkMeshBulkData.parallel_rank() == 0)
         {
@@ -277,65 +269,6 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
             unlink("testAfter.exo.3.0");
             unlink("testAfter.exo.3.1");
             unlink("testAfter.exo.3.2");
-        }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-TEST(UnitTestChangeEntityOwner, testCreateSubMesh)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(comm, &numProcs);
-    if(numProcs == 2)
-    {
-        std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        const int spatialDim = 3;
-        stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
-
-        stk::io::StkMeshIoBroker exodusFileReader(comm);
-
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-
-        FieldMgr fieldMgr(stkMeshMetaData);
-        fieldMgr.addCommListNodeField();
-        fieldMgr.addSharingCommMapNodeField();
-        fieldMgr.addAuraCommMapNodeField();
-        fieldMgr.addAuraCommMapElementField();
-
-        exodusFileReader.populate_bulk_data();
-        putCommInfoDataOnFields(stkMeshBulkData, fieldMgr);
-
-        {
-            stk::mesh::Selector sel = stkMeshMetaData.universal_part();
-            int elementToTestId = 3;
-            size_t goldNumberNodes = 16;
-            size_t goldNumberElements = 3;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements, fieldMgr);
-        }
-
-        {
-            stk::mesh::Selector sel = stkMeshMetaData.locally_owned_part() | stkMeshMetaData.globally_shared_part();
-            int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
-            size_t goldNumberNodes = 12;
-            size_t goldNumberElements = 2;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements, fieldMgr);
-        }
-
-        {
-            stk::mesh::Part *part = stkMeshMetaData.get_part("block_1");
-            stk::mesh::Selector sel = *part;
-            int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
-            size_t goldNumberNodes = 16;
-            size_t goldNumberElements = 3;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements, fieldMgr);
         }
     }
 }
@@ -717,284 +650,6 @@ void moveElements2And3ToProc2(stk::unit_test_util::BulkDataTester &stkMeshBulkDa
     {
         runProc2(stkMeshBulkData);
     }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void copyPartsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
-{
-    const stk::mesh::PartVector &allparts = oldMeta.get_mesh_parts();
-    for(size_t i = 0; i < allparts.size(); i++)
-    {
-        stk::mesh::Part *part = NULL;
-        if(allparts[i]->topology() != stk::topology::INVALID_TOPOLOGY)
-        {
-            part = &newMeta.declare_part_with_topology(allparts[i]->name(), allparts[i]->topology());
-        }
-        else
-        {
-            part = &newMeta.declare_part(allparts[i]->name());
-        }
-        if(stk::io::is_part_io_part(*allparts[i]))
-        {
-            stk::io::put_io_part_attribute(*part);
-        }
-    }
-}
-
-void copyFieldsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
-{
-    const stk::mesh::FieldVector &fields = oldMeta.get_fields();
-    for(size_t i = 0; i < fields.size(); i++)
-    {
-        stk::mesh::FieldBase* newField = newMeta.declare_field_base(fields[i]->name(),
-                                                                    fields[i]->entity_rank(),
-                                                                    fields[i]->data_traits(),
-                                                                    fields[i]->field_array_rank(),
-                                                                    fields[i]->dimension_tags(),
-                                                                    fields[i]->number_of_states());
-
-        stk::mesh::Selector selectFieldParts = stk::mesh::selectField(*fields[i]);
-        stk::mesh::PartVector oldParts;
-        selectFieldParts.get_parts(oldParts);
-        if(!oldParts.empty())
-        {
-            stk::mesh::PartVector newParts(oldParts.size());
-            for(size_t k = 0; k < oldParts.size(); k++)
-            {
-                newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
-            }
-            stk::mesh::Selector selectNewParts = stk::mesh::selectUnion(newParts);
-            stk::mesh::put_field(*newField, selectNewParts, fields[i]->max_size(fields[i]->entity_rank()));
-        }
-    }
-}
-
-void copySelectedEntitiesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkData,
-                                   const stk::mesh::Selector subMeshSelector,
-                                   std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                                   stk::mesh::MetaData &newMeta,
-                                   stk::unit_test_util::BulkDataTester &newBulkData)
-{
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
-    {
-        // Skip over creating all faces since those will be managed by declare_element_side() later on
-        if (rank != stk::topology::FACE_RANK)
-        {
-            const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-            for(size_t i = 0; i < buckets.size(); i++)
-            {
-                stk::mesh::Bucket &bucket = *buckets[i];
-                for(size_t j = 0; j < bucket.size(); j++)
-                {
-                    const stk::mesh::PartVector &oldParts = bucket.supersets();
-                    stk::mesh::PartVector newParts(oldParts.size(), 0);
-                    for(size_t k = 0; k < oldParts.size(); k++)
-                    {
-                        newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
-                    }
-                    stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, oldBulkData.identifier(bucket[j]), newParts);
-                    oldToNewEntityMap[bucket[j]] = newEntity;
-                }
-            }
-        }
-    }
-}
-
-void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkData,
-                                   const stk::mesh::Selector subMeshSelector,
-                                   std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                                   stk::mesh::MetaData &newMeta,
-                                   stk::unit_test_util::BulkDataTester &newBulkData)
-{
-    const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(stk::topology::FACE_RANK, subMeshSelector);
-    for(size_t i = 0; i < buckets.size(); i++)
-    {
-        stk::mesh::Bucket &bucket = *buckets[i];
-        for(size_t j = 0; j < bucket.size(); j++)
-        {
-            const stk::mesh::Entity oldSide = bucket[j];
-            const stk::mesh::PartVector &oldParts = bucket.supersets();
-            stk::mesh::PartVector newParts;
-            for(size_t k = 0; k < oldParts.size(); k++)
-            {
-                if (!stk::mesh::is_auto_declared_part(*oldParts[k]))
-                {
-                    newParts.push_back( &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal()) );
-                }
-            }
-
-            const stk::mesh::Entity * connected_elements = oldBulkData.begin_elements(oldSide);
-            const Entity oldFirstElement = connected_elements[0];
-            ThrowRequire(oldBulkData.is_valid(oldFirstElement));
-
-            stk::mesh::ConnectivityOrdinal faceOrdinal = stk::mesh::impl::get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, oldSide);
-            stk::mesh::Entity newFirstElement = newBulkData.get_entity(oldBulkData.entity_key(oldFirstElement));
-
-            stk::mesh::Entity newSide = newBulkData.declare_element_side(newFirstElement, faceOrdinal, newParts);
-            oldToNewEntityMap[oldSide] = newSide;
-        }
-    }
-}
-
-void copyRelationsToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkData,
-                            const stk::mesh::Selector subMeshSelector,
-                            const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                            stk::unit_test_util::BulkDataTester &newBulkData)
-{
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
-    {
-        // Skip over all face relations since those will be managed by declare_element_side() later on
-        if (rank != stk::topology::FACE_RANK)
-        {
-            const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-            for(size_t i = 0; i < buckets.size(); i++)
-            {
-                stk::mesh::Bucket &bucket = *buckets[i];
-                for(size_t j = 0; j < bucket.size(); j++)
-                {
-                    stk::mesh::Entity newFromEntity = oldToNewEntityMap.find(bucket[j])->second;
-                    for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
-                    {
-                        if (downRank != stk::topology::FACE_RANK)
-                        {
-                            unsigned numConnectedEntities = oldBulkData.num_connectivity(bucket[j], downRank);
-                            const stk::mesh::Entity *connectedEntities = oldBulkData.begin(bucket[j], downRank);
-                            for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
-                            {
-                                stk::mesh::Entity newToEntity = oldToNewEntityMap.find(connectedEntities[connectOrder])->second;
-                                newBulkData.declare_relation(newFromEntity, newToEntity, connectOrder);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
-                            const stk::unit_test_util::BulkDataTester& oldBulkData,
-                            const stk::mesh::Selector subMeshSelector,
-                            const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                            stk::mesh::MetaData &newMeta)
-{
-    const stk::mesh::FieldVector &oldFields = oldMeta.get_fields();
-    const stk::mesh::FieldVector &newFields = newMeta.get_fields();
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
-    {
-        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-        for(size_t i = 0; i < buckets.size(); i++)
-        {
-            stk::mesh::Bucket &bucket = *buckets[i];
-            for(size_t k = 0; k < oldFields.size(); k++)
-            {
-                if(bucket.field_data_is_allocated(*oldFields[k]))
-                {
-                    for(size_t j = 0; j < bucket.size(); j++)
-                    {
-                        stk::mesh::Entity oldEntity = bucket[j];
-                        stk::mesh::Entity newEntity = oldToNewEntityMap.find(oldEntity)->second;
-                        void *oldData = stk::mesh::field_data(*oldFields[k], oldEntity);
-                        void *newData = stk::mesh::field_data(*newFields[k], newEntity);
-                        memcpy(newData, oldData, stk::mesh::field_bytes_per_entity(*oldFields[k], oldEntity));
-                    }
-                }
-            }
-        }
-    }
-}
-
-void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
-                         stk::unit_test_util::BulkDataTester& oldBulkData,
-                         stk::mesh::Selector subMeshSelector,
-                         stk::mesh::MetaData &newMeta,
-                         stk::unit_test_util::BulkDataTester &newBulkData)
-{
-    copyPartsToNewMesh(oldMeta, newMeta);
-    copyFieldsToNewMesh(oldMeta, newMeta);
-
-    newMeta.commit();
-
-    std::map<stk::mesh::Entity, stk::mesh::Entity> oldToNewEntityMap;
-
-    newBulkData.modification_begin();
-    copySelectedEntitiesToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta, newBulkData);
-    copyRelationsToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newBulkData);
-    copySelectedFacesToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta, newBulkData);
-    newBulkData.modification_end();
-
-    copyFieldDataToNewMesh(oldMeta, oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void testSubMesh(stk::unit_test_util::BulkDataTester &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr)
-{
-    const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
-    stk::mesh::MetaData newMetaData(oldMetaData.spatial_dimension());
-    stk::unit_test_util::BulkDataTester newBulkData(newMetaData, MPI_COMM_SELF);
-
-    createSerialSubMesh(oldMetaData, oldBulkData, select, newMetaData, newBulkData);
-
-    const stk::mesh::PartVector &oldParts = oldMetaData.get_parts();
-    const stk::mesh::PartVector &newParts = newMetaData.get_parts();
-    ASSERT_EQ(oldParts.size(), newParts.size());
-    for(size_t i=0; i<oldParts.size(); i++)
-    {
-        EXPECT_EQ(oldParts[i]->name(), newParts[i]->name());
-        EXPECT_EQ(stk::io::is_part_io_part(*oldParts[i]), stk::io::is_part_io_part(*newParts[i]));
-    }
-
-
-    std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(newMetaData.universal_part(), newBulkData, entityCounts);
-    EXPECT_EQ(goldNumberElements, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(goldNumberNodes, entityCounts[stk::topology::NODE_RANK]);
-
-    stk::mesh::Entity elementParallel = oldBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-    stk::mesh::Entity elementSerial = newBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-    EXPECT_EQ(oldBulkData.identifier(elementParallel), newBulkData.identifier(elementSerial));
-    unsigned numNodesParallel = oldBulkData.num_nodes(elementParallel);
-    unsigned numNodesSerial = newBulkData.num_nodes(elementSerial);
-    ASSERT_EQ(numNodesParallel, numNodesSerial);
-
-    const stk::mesh::Entity *nodesParallel = oldBulkData.begin_nodes(elementParallel);
-    const stk::mesh::Entity *nodesSerial = newBulkData.begin_nodes(elementSerial);
-    std::set<stk::mesh::EntityId> parallelNodeIds;
-    std::set<stk::mesh::EntityId> serialNodeIds;
-    for(unsigned i = 0; i < numNodesParallel; i++)
-    {
-        parallelNodeIds.insert(oldBulkData.identifier(nodesParallel[i]));
-        serialNodeIds.insert(newBulkData.identifier(nodesSerial[i]));
-    }
-    EXPECT_TRUE(parallelNodeIds == serialNodeIds);
-
-
-    const stk::mesh::FieldVector &oldFields = oldMetaData.get_fields();
-    const stk::mesh::FieldVector &newFields = newMetaData.get_fields();
-    ASSERT_EQ(oldFields.size(), newFields.size());
-    for(size_t i=0; i<oldFields.size(); i++)
-    {
-        EXPECT_EQ(oldFields[i]->name(), newFields[i]->name());
-    }
-
-    FieldMgr serialFieldMgr(newMetaData);
-    serialFieldMgr.storeFieldPointers();
-    std::set<stk::mesh::EntityId>::iterator iter = serialNodeIds.begin();
-    for (; iter != serialNodeIds.end(); iter++)
-    {
-        stk::mesh::Entity serialNode = newBulkData.get_entity(stk::topology::NODE_RANK, *iter);
-        stk::mesh::Entity parallelNode = oldBulkData.get_entity(stk::topology::NODE_RANK, *iter);
-        EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getAuraCommMapNodeField(), serialNode),
-                parallelFieldMgr.getFieldValue(parallelFieldMgr.getAuraCommMapNodeField(), parallelNode) );
-        EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getCommListNodeField(), serialNode),
-                parallelFieldMgr.getFieldValue(parallelFieldMgr.getCommListNodeField(), parallelNode) );
-        EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getSharingCommMapNodeField(), serialNode),
-                parallelFieldMgr.getFieldValue(parallelFieldMgr.getSharingCommMapNodeField(), parallelNode) );
-    }
-    EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getAuraCommMapElementField(), elementSerial),
-            parallelFieldMgr.getFieldValue(parallelFieldMgr.getAuraCommMapElementField(), elementParallel) );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -58,23 +58,6 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_elem_topology( stk::topology::HEX_8 )
 {}
 
-Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
-{
-  ThrowRequireMsg((2 == spatial_dimension && stk::topology::EDGE_RANK != rank) ||
-                  (3 == spatial_dimension && stk::topology::FACE_RANK != rank), "Must use declare_element_side");
-
-  if (rank == spatial_dimension)
-  {
-    PartVector elem_part;
-    elem_part.push_back(&m_elem_part);
-    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , elem_part);
-  }
-  else
-  {
-    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1);
-  }
-}
-
 void BoxFixture::generate_boxes( const BOX   root_box,
                                        BOX   local_box )
 {
@@ -123,11 +106,11 @@ void BoxFixture::generate_boxes( const BOX   root_box,
     node_ids[7]= 1 + (i+0) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
 
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
-    Entity elem  = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , elem_id , elem_parts );
+    Entity elem  = m_bulk_data.declare_element(elem_id , elem_parts);
 
     Entity nodes[8];
     for (int en_i = 0; en_i < 8; ++en_i) {
-      nodes[en_i] = m_bulk_data.declare_entity( stk::topology::NODE_RANK , node_ids[en_i] , no_parts );
+      nodes[en_i] = m_bulk_data.declare_node(node_ids[en_i] , no_parts);
       m_bulk_data.declare_relation(elem, nodes[en_i], en_i);
       DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_ids[en_i], nodes[en_i]);
     }

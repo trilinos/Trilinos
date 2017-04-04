@@ -989,7 +989,44 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Fi
 
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::MESH) {
-      if (field.get_name() == "mesh_model_coordinates") {
+
+      if ((field.get_name() == "mesh_model_coordinates_x") ||
+          (field.get_name() == "mesh_model_coordinates_y") ||
+          (field.get_name() == "mesh_model_coordinates_z")) {
+
+        std::vector<double> x(num_to_get);
+        std::vector<double> y(num_to_get);
+        std::vector<double> z;
+        if (spatialDimension == 3)
+          z.resize(num_to_get);
+
+        double *rdata = static_cast<double *>(data);
+
+        int ierr = im_ex_get_coord(get_file_pointer(), &x[0], &y[0], &z[0]);
+        if (ierr < 0) {
+          pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+        }
+        size_t index = 0;
+
+        if (field.get_name() == "mesh_model_coordinates_x") {
+          for (size_t i = 0; i < num_to_get; i++) {
+            rdata[index++] = x[i];
+          }
+        }
+        else if (field.get_name() == "mesh_model_coordinates_y") {
+          for (size_t i = 0; i < num_to_get; i++) {
+            rdata[index++] = y[i];
+          }
+        }
+        else {
+          for (size_t i = 0; i < num_to_get; i++) {
+            if (spatialDimension == 3)
+              rdata[index++] = z[i];
+          }
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates") {
         // Data required by upper classes store x0, y0, z0, ... xn,
         // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
         // ..., yn, z0, ..., zn so we have to allocate some scratch

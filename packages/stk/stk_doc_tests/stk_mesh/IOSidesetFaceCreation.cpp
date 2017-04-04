@@ -43,6 +43,8 @@
 #include <vector>                       // for vector
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
@@ -252,15 +254,14 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 class SideCreationExplanation : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideId)
+    void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideOrdinal)
     {
         setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
-        get_bulk().initialize_face_adjacent_element_graph();
         stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
         get_bulk().modification_begin();
         if(get_bulk().is_valid(elem))
         {
-            stk::mesh::Entity side = get_bulk().declare_element_side(elem, sideId);
+            stk::mesh::Entity side = get_bulk().declare_element_side(elem, sideOrdinal, stk::mesh::ConstPartVector{});
             EXPECT_EQ(16u, get_bulk().identifier(side));
         }
         get_bulk().modification_end();

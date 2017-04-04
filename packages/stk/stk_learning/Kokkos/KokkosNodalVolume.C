@@ -423,7 +423,7 @@ protected:
         get_bulk().modification_begin();
         for(size_t i=start; i<elements.size(); i++)
         {
-            get_bulk().change_entity_parts(elements[i], {&part}, {block1});
+            get_bulk().change_entity_parts(elements[i], stk::mesh::ConstPartVector{&part}, stk::mesh::ConstPartVector{block1});
         }
         get_bulk().modification_end();
     }

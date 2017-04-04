@@ -66,22 +66,11 @@ namespace BaskerNS
     BASKER_INLINE
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
-    template< typename T2 >
-    BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, T2 *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
-
-    BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, size_t *col_ptr, Int *row_idx, Entry *val);
-
     BASKER_INLINE
     int Factor(Int option);
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
-
-    template< typename T2 >
-    BASKER_INLINE
-    int Factor(Int nrow, Int ncol, Int nnz, T2 *col_ptr, Int *row_idx, Entry *val);
 
     BASKER_INLINE
     int Factor_Inc(Int option);
@@ -1156,19 +1145,6 @@ namespace BaskerNS
 			  Entry *val,
 			  BASKER_MATRIX &AT);
 
-    template< typename T2>
-    BASKER_INLINE
-    void matrix_transpose(
-        const Int sm_, 
-        const Int m_,
-			  const Int sn_, 
-        const Int n_,
-			  const Int nnz_,
-			  T2 *col_ptr,
-			  Int *row_idx,
-			  Entry *val,
-			  BASKER_MATRIX &AT);
-
     BASKER_INLINE
     void matrix_transpose(
         const Int sm_, 
@@ -1182,20 +1158,6 @@ namespace BaskerNS
 			  BASKER_MATRIX &AT,
         INT_1DARRAY &vals_transpose_local);
 
-    template< typename T2 >
-    BASKER_INLINE
-    void matrix_transpose(
-        const Int sm_, 
-        const Int m_,
-			  const Int sn_, 
-        const Int n_,
-			  const Int nnz_,
-			  T2 *col_ptr,
-			  Int *row_idx,
-			  Entry *val,
-			  BASKER_MATRIX &AT,
-        INT_1DARRAY &vals_transpose_local);
-   
     //basker_solve_rhs.hpp
     BASKER_INLINE
     int test_solve();

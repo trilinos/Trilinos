@@ -90,33 +90,6 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,
                             int verbosity,std::ostream & os,int indexStart=-1,int indexEnd=-1);
 
-const RCP<const Thyra::VectorSpaceBase<double> > buildCompositeSpace(const Epetra_Comm & Comm)
-{
-   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
-
-   // get process information
-   int numProc = Comm.NumProc();
-   // int myPID   = Comm.MyPID();
-
-   // how big is this vector
-   int uElmts = 4;
-   int vElmts = 8;
-   int pElmts = 6;
-
-   // build vector space
-   Teuchos::Array<RCP<const Thyra::VectorSpaceBase<double> > > uvArray;
-   uvArray.push_back(Thyra::defaultSpmdVectorSpace<double>(tComm,uElmts,uElmts*numProc)); 
-   uvArray.push_back(Thyra::defaultSpmdVectorSpace<double>(tComm,vElmts,vElmts*numProc)); 
-
-   Teuchos::Array<RCP<const Thyra::VectorSpaceBase<double> > > uvpArray;
-   uvpArray.push_back(Thyra::productVectorSpace<double>(uvArray));
-   uvpArray.push_back(Thyra::defaultSpmdVectorSpace<double>(tComm,pElmts,pElmts*numProc)); 
-
-   const RCP<const Thyra::VectorSpaceBase<double> > uvpVS = Thyra::productVectorSpace<double>(uvpArray);
-
-   return uvpVS;
-}
-
 double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,
                             int verbosity,std::ostream & os,int indexStart,int indexEnd)
