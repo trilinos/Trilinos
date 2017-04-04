@@ -1186,10 +1186,12 @@ void UserInputForTests::readMatrixMarketFile(
                       "UserInputForTests unable to read matrix market file");
 
   M_ = toMatrix;
+#ifdef INCLUDE_LENGTHY_OUTPUT
   std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows() 
             << " " << M_->getGlobalNumRows()
             << " " << M_->getNodeNumEntries() 
             << " " << M_->getGlobalNumEntries() << std::endl;
+#endif // INCLUDE_LENGTHY_OUTPUT
 
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
