@@ -60,17 +60,22 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.
 #
 
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_Release_Werror_DEV)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(CTEST_TEST_TYPE Experimental)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-SET(Trilinos_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 
-# SET(Trilinos_PACKAGES NOX EpetraExt TrilinosCouplings Ifpack Isorropia AztecOO Belos Teuchos Amesos Sacado Zoltan Epetra Triutils)
+# 
+# SET(Trilinos_PACKAGES NOX      EpetraExt   TrilinosCouplings 
+#                       Ifpack   Isorropia   AztecOO 
+#                       Belos    Teuchos     Amesos 
+#                       Sacado   Zoltan      Epetra 
+#                       Triutils )
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
