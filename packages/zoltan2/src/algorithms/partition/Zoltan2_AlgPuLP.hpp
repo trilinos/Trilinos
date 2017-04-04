@@ -499,7 +499,7 @@ void AlgPuLP<Adapter>::partition(
 
 
   if (verbose_output) {
-    printf("procid: %d, n: %i, m: %li, vb: %lf, eb: %lf, p: %i\n",
+    printf("procid: %d, n: %i, m: %li, vb: %f, eb: %f, p: %i\n",
       problemComm->getRank(), 
       num_verts, num_edges, vert_imbalance, edge_imbalance, num_parts);
   }
