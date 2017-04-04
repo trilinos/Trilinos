@@ -79,7 +79,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <inttypes.h>
-#include <sys/time.h>
 #include "zz_const.h"
 
 #ifndef M_PI
@@ -418,9 +417,9 @@ int main(int argc, char *argv[])
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   double localMBytes, min, max, avg;
   float cutn[2], cutl[2], imbalance[2];
-  struct timeval t1, t2;
   char factorBuf[64], levelBuf[64];
-  time_t startusecs, endusecs, diff;
+  double t1, t2;
+  double diff;
 
   int use_hg = 1;
   int use_graph = 0;
@@ -683,7 +682,7 @@ int main(int argc, char *argv[])
   Zoltan_Memory_Debug(1);
   Zoltan_Memory_Reset(ZOLTAN_MEM_STAT_MAXIMUM);
 
-  gettimeofday(&t1, NULL);
+  t1 = MPI_Wtime();
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */
@@ -700,7 +699,7 @@ int main(int argc, char *argv[])
         &exportProcs,    /* Process to which I send each of the vertices */
         &exportToPart);  /* Partition to which each vertex will belong */
 
-  gettimeofday(&t2, NULL);
+  t2 = MPI_Wtime();
   localMBytes = (double)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/(1024.0*1024);
 
   if (rc != ZOLTAN_OK){
@@ -774,10 +773,8 @@ int main(int argc, char *argv[])
     printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3f / %12.3f / %12.3f\n",
              min, avg, max);
 
-    startusecs = (t1.tv_sec * 1e6) + t1.tv_usec;
-    endusecs = (t2.tv_sec * 1e6) + t2.tv_usec;
-    diff = endusecs - startusecs;
-    printf("Time spent in partitioning (s): %f\n",(double)diff/1e6);
+    diff = t2 - t1;
+    printf("Time spent in partitioning (s): %f\n", diff);
   }
 
   status = 0;
