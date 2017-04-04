@@ -76,9 +76,13 @@ class ScatterResidual<PHX::MyTraits::Residual,Traits>
   typedef typename PHX::MyTraits::Residual::ScalarT ScalarT;
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
-  Kokkos::View<double*,PHX::Device> global_residual;
+  Kokkos::View<double*,
+               PHX::Device,
+               Kokkos::MemoryTraits<Kokkos::Atomic>> global_residual_atomic;
+  Kokkos::View<const int**,PHX::Device> gids;
   const int equation_index;
   const int num_equations;
+  int cell_global_offset_index;
   
 public:
   
@@ -108,6 +112,7 @@ class ScatterResidual<PHX::MyTraits::Jacobian,Traits>
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
   Kokkos::View<double*,PHX::Device> global_residual;
   Kokkos::View<double**,PHX::Device> global_jacobian;
+  Kokkos::View<const int**,PHX::Device> gids;
   const int equation_index;
   const int num_equations;
   

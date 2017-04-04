@@ -1,7 +1,7 @@
-This is an example of using phalanx with a finite element assembly.
+This is an example of using phalanx with a finite element assembly for
+a single node. It is thread parllel, but not MPI parallel.
 
-1. The scatter is not complete. Need to implement a sparse graph
-object to fill.
+TODO:
 
-2. Right now there is a single workset. Need to add a workset
-constructor and modufy gather scatter for offsets based on cell id.
+1. The scatter is not implemented for Jacobian evaluation. Need to
+implement a sparse graph object to fill.

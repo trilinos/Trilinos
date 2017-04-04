@@ -47,12 +47,27 @@
 
 #include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Kokkos_View.hpp"
 #include "Mesh.hpp"
 
-struct MyWorkset {
+struct Workset {
   int num_cells_;
   int first_cell_global_index_;
-  Teuchos::RCP<phx_example::Mesh> mesh_;
+
+  // Cell global indices <cell,node>
+  Kokkos::View<int**,PHX::Device> gids_;
+  
+  // Weights for integration rule <qp>
+  Kokkos::View<double*> weights_;
+
+  // Determinant of Jacobian <cell,qp>
+  Kokkos::View<double**,PHX::Device> det_jac_;  
+  
+  // Basis <qp,basis>
+  Kokkos::View<double**,PHX::Device> basis_;
+
+  // Gradient of basis in real space <cell,qp,basis,dim>
+  Kokkos::View<double****> grad_basis_real_;
 };
 
 #endif

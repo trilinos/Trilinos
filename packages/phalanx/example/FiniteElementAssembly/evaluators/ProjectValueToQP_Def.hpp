@@ -60,7 +60,7 @@ ProjectValueToQP(const std::string& field_name,
 template<typename EvalT, typename Traits>
 void ProjectValueToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
-  basis_view = workset.mesh_->getBasis();
+  basis_view = workset.basis_;
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
 }
 

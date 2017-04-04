@@ -81,6 +81,7 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
   const int field_index;
   const Kokkos::View<const double*,PHX::Device> x;
   Kokkos::View<const int**,PHX::Device> gids;
+  int cell_global_offset_index;
 
 public:
   GatherSolution(const std::string& field_name,
@@ -107,6 +108,7 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
   const int field_index;
   const Kokkos::View<const double*,PHX::Device> x;
   Kokkos::View<const int**,PHX::Device> gids;
+  int cell_global_offset_index;
   
 public:
   GatherSolution(const std::string& field_name,

@@ -60,7 +60,7 @@ ProjectGradientToQP(const std::string& field_name,
 template<typename EvalT, typename Traits>
 void ProjectGradientToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
-  grad_basis_view = workset.mesh_->getGradBasisReal();
+  grad_basis_view = workset.grad_basis_real_;
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
 }
 

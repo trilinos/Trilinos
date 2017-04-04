@@ -60,7 +60,7 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const Kokkos::View<double*,PHX::Device>& in_global_residual) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
-  global_residual(in_global_residual),
+  global_residual_atomic(in_global_residual),
   equation_index(in_equation_index),
   num_equations(in_num_equations)
 { 
@@ -74,20 +74,21 @@ template<typename Traits>
 void ScatterResidual<PHX::MyTraits::Residual, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  /*  
-  std::size_t cell = 0;
-  for (; element != workset.end; ++element,++cell) {
-    
-    for (int node = 0; node < num_nodes; node++) {
-      int node_GID = element->globalNodeId(node);
-      int firstDOF = f->Map().LID(node_GID * num_eq);
-      for (std::size_t eq = 0; eq < val.size(); eq++) {
-	(*f)[firstDOF + eq] += (val[eq])(cell,node);
-      }
-    }
-    
-  }
-  */
+  gids = workset.gids_;
+  cell_global_offset_index = workset.first_cell_global_index_;
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+}
+
+// **********************************************************************
+template<typename Traits>
+void ScatterResidual<PHX::MyTraits::Residual,Traits>::
+operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+{
+  const int cell = team.league_rank();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,residual_contribution.extent(1)), [=] (const int& node) {
+      global_residual_atomic(gids(cell_global_offset_index+cell,node) * num_equations + equation_index) +=
+        residual_contribution(cell,node);
+  });
 }
 
 // **********************************************************************

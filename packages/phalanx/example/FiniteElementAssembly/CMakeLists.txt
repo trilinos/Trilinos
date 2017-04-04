@@ -10,6 +10,7 @@ SET(example_fem_SOURCES
     Dimension.hpp
     Dimension.cpp
     Workset.hpp
+    WorksetBuilder.hpp
     Mesh.hpp
     Mesh.cpp
     evaluators/Constant.hpp
@@ -58,14 +59,22 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                             ${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
   
 SET(example_element_linear_2D_SOURCES
-    auxiliary_tests/Example_FEM_Mesh_AuxTest.cpp
     Mesh.hpp
     Mesh.cpp
+    Workset.hpp
+    WorksetBuilder.hpp
     )
   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_mesh_aux_test
-  SOURCES ${example_element_linear_2D_SOURCES} ${PHALANX_UNIT_TEST_MAIN}
+  SOURCES auxiliary_tests/Example_FEM_Mesh_AuxTest.cpp ${example_element_linear_2D_SOURCES} ${PHALANX_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+  
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_workset_aux_test
+  SOURCES     auxiliary_tests/Example_FEM_Workset_AuxTest.cpp ${example_element_linear_2D_SOURCES} ${PHALANX_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

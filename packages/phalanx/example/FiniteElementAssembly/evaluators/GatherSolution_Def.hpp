@@ -70,12 +70,9 @@ template<typename Traits>
 void GatherSolution<PHX::MyTraits::Residual, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  gids = workset.mesh_->getGlobalIndices();  
-  for (int cell=0; cell < workset.num_cells_; ++cell) {
-    for (int node = 0; node < static_cast<int>(field.extent(1)); node++) {
-      field(cell,node) = x( gids(cell,node) * num_equations + field_index);
-    }
-  }
+  gids = workset.gids_;
+  cell_global_offset_index = workset.first_cell_global_index_;
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
 }
 
 // **********************************************************************
@@ -84,8 +81,8 @@ void GatherSolution<PHX::MyTraits::Residual,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), KOKKOS_LAMBDA (const int& node) {
-      field(cell,node) = x( gids(cell,node) * num_equations + field_index);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
+      field(cell,node) = x( gids(cell_global_offset_index+cell,node) * num_equations + field_index);
   });
 }
 
@@ -114,7 +111,8 @@ template<typename Traits>
 void GatherSolution<PHX::MyTraits::Jacobian, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  gids = workset.mesh_->getGlobalIndices();
+  gids = workset.gids_;
+  cell_global_offset_index = workset.first_cell_global_index_;
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
 }
 
@@ -124,8 +122,8 @@ void GatherSolution<PHX::MyTraits::Jacobian,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), KOKKOS_LAMBDA (const int& node) {
-      field(cell,node).val() = x(gids(cell,node) * num_equations + field_index);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
+      field(cell,node).val() = x(gids(cell_global_offset_index+cell,node) * num_equations + field_index);
       field(cell,node).fastAccessDx(num_equations * node + field_index) = 1.0;
   });
 }
