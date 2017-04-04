@@ -167,7 +167,7 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
 
   typedef typename XType::non_const_value_type Scalar;
   typedef typename AType::execution_space execution_space;
-  typedef Kokkos::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
+  typedef KokkosSparse::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> y_type;
   typedef typename Kokkos::View<const Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > x_type;
 

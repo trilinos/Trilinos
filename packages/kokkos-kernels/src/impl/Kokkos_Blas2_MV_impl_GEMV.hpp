@@ -530,8 +530,7 @@ struct GEMV {
 //
 
 #define KOKKOSBLAS_IMPL_GEMV_DECL( SCALAR, MATRIX_LAYOUT, VECTOR_LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct GEMV<Kokkos::View<const SCALAR**, \
+extern template struct GEMV<Kokkos::View<const SCALAR**, \
                          MATRIX_LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -544,67 +543,7 @@ struct GEMV<Kokkos::View<const SCALAR**, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
             SCALAR, \
-            SCALAR> \
-{ \
-  typedef Kokkos::View<const SCALAR**, \
-    MATRIX_LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > AVT; \
-  typedef Kokkos::View<const SCALAR*, \
-    VECTOR_LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVT; \
-  typedef Kokkos::View<SCALAR*, \
-    VECTOR_LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT; \
-  typedef SCALAR coeff_type; \
-  \
-  static void \
-  gemv (const char trans[], \
-        const coeff_type& alpha, \
-        const AVT& A, \
-        const XVT& x, \
-        const coeff_type& beta, \
-        const YVT& y); \
-};
-
-//
-// Declarations of full specialization of KokkosBlas::Impl::GEMV.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_GEMV_DECL( int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( long, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-// KOKKOSBLAS_IMPL_GEMV_DECL( int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-// KOKKOSBLAS_IMPL_GEMV_DECL( long, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-// KOKKOSBLAS_IMPL_GEMV_DECL( double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_GEMV_DECL( int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( long, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_GEMV_DECL( int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( long, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_GEMV_DECL( double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+            SCALAR>;
 
 //
 // Macro for declarations of full specialization of
@@ -612,8 +551,7 @@ KOKKOSBLAS_IMPL_GEMV_DECL( double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokko
 //
 
 #define KOKKOSBLAS_IMPL_GEMV_DEF( SCALAR, MATRIX_LAYOUT, VECTOR_LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-GEMV<Kokkos::View<const SCALAR**, \
+template struct GEMV<Kokkos::View<const SCALAR**, \
                   MATRIX_LAYOUT,                                \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,            \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
@@ -626,42 +564,7 @@ GEMV<Kokkos::View<const SCALAR**, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,            \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
      SCALAR,                                                        \
-     SCALAR>::                                                      \
-gemv (const char trans[], \
-      const coeff_type& alpha, \
-      const AVT& A, \
-      const XVT& x, \
-      const coeff_type& beta, \
-      const YVT& y) \
-{ \
-  static_assert (Kokkos::Impl::is_view<AVT>::value, \
-                 "AVT must be a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<XVT>::value, \
-                 "XVT must be a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<YVT>::value, \
-                 "YVT must be a Kokkos::View."); \
-  static_assert (static_cast<int> (AVT::rank) == 2, \
-                 "AVT must have rank 2."); \
-  static_assert (static_cast<int> (XVT::rank) == 1, \
-                 "XVT must have rank 1."); \
-  static_assert (static_cast<int> (YVT::rank) == 1, \
-                 "YVT must have rank 1."); \
-  \
-  typedef AVT::size_type size_type; \
-  typedef SCALAR coeff_type; \
-  const size_type numRows = A.dimension_0 (); \
-  const size_type numCols = A.dimension_1 (); \
-  \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numCols < static_cast<size_type> (INT_MAX)) { \
-    singleLevelGemv<AVT, XVT, YVT, coeff_type, \
-      coeff_type, int> (trans, alpha, A, x, beta, y); \
-  } \
-  else { \
-    singleLevelGemv<AVT, XVT, YVT, coeff_type, \
-      coeff_type, size_type> (trans, alpha, A, x, beta, y); \
-  } \
-}
+     SCALAR>;
 
 } // namespace Impl
 } // namespace KokkosBlas

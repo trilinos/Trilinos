@@ -115,51 +115,51 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
 template<typename AType, typename XType, typename YType>
 void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int vector_length, int test, int schedule) {
 
-	switch(test) {
-	
-	case KOKKOS:
-		if(schedule == AUTO)
- 		  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
+        switch(test) {
+
+        case KOKKOS:
+                if(schedule == AUTO)
+                  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
                 if(schedule == STATIC)
                   kk_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
                 if(schedule == DYNAMIC)
                   kk_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
-	case KK_INSP:
+                break;
+        case KK_INSP:
                 if(schedule == AUTO)
                   schedule = A.nnz()>10000000?DYNAMIC:STATIC;
                 if(schedule == STATIC)
                   kk_inspector_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
                 if(schedule == DYNAMIC)
                   kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
-		
+                break;
+
 #ifdef _OPENMP
-	case OMP_STATIC:
-		openmp_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
-	case OMP_DYNAMIC:
-		openmp_dynamic_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
-	case OMP_INSP:
-		openmp_smart_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
+        case OMP_STATIC:
+                openmp_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
+        case OMP_DYNAMIC:
+                openmp_dynamic_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
+        case OMP_INSP:
+                openmp_smart_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
 #endif
 
 #ifdef HAVE_MKL
-	case MKL:
-		mkl_matvec(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
+        case MKL:
+                mkl_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
 #endif
 #ifdef HAVE_CUSPARSE
-	case CUSPARSE:
-		cusparse_matvec(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
+        case CUSPARSE:
+                cusparse_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
 #endif
-#ifdef HAVE_TRILINOS
-	case KK_KERNELS:
-		kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
-		break;
+#ifdef HAVE_KK_KERNELS
+        case KK_KERNELS:
+                kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                break;
   case KK_KERNELS_INSP:
     if(A.graph.row_block_offsets.data()==NULL) {
       printf("PTR: %p\n",A.graph.row_block_offsets.data());
@@ -169,15 +169,15 @@ void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int 
     kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
     break;
 #endif
-	default:
-		fprintf(stderr, "Selected test is not available.\n");
-		
-	}
+        default:
+                fprintf(stderr, "Selected test is not available.\n");
+
+        }
 }
 
 template<typename Scalar>
 int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile, int rows_per_thread, int team_size, int vector_length,int idx_offset, int schedule, int loop) {
-  typedef Kokkos::CrsMatrix<Scalar,int,execution_space,void,int> matrix_type ;
+  typedef KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int> matrix_type ;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> mv_type;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > mv_random_read_type;
   typedef typename mv_type::HostMirror h_mv_type;
@@ -194,7 +194,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
       nnz = SparseMatrix_MatrixMarket_read<Scalar,int>(filename,numRows,numCols,nnz,val,row,col,false,idx_offset);
     else
       nnz = SparseMatrix_ReadBinaryFormat<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
- 
+
   matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
 
   mv_type x("X",numCols);
@@ -234,9 +234,9 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(A.graph.entries,h_graph.entries);
   Kokkos::deep_copy(A.values,h_values);
-  typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
+  typename KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
   Kokkos::deep_copy(x1,h_x);
-  typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
+  typename KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
 
   int nnz_per_row = A.nnz()/A.numRows();
   matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);

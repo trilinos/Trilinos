@@ -756,7 +756,7 @@ void create_reverse_map(
     const lno_t  multiply_shift_for_scale = 10;
     const lno_t division_shift_for_bucket =
           lno_t (ceil(log(double (num_forward_elements) / scale_size)/log(2)));
-    const lno_t bucket_range_size = pow(2, division_shift_for_bucket);
+    //const lno_t bucket_range_size = pow(2, division_shift_for_bucket);
 
     //coloring indices are base-1. we end up using not using element 1.
     const reverse_lno_t tmp_reverse_size = (num_reverse_elements + 1) << multiply_shift_for_scale;

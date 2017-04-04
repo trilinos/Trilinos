@@ -4,6 +4,8 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+
 #-----------------------------------------------------------------------------
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -12,6 +14,9 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+APPEND_GLOB(HEADERS ${DIR}/generated_specializations_hpp/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*.cpp)
+
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
 
@@ -30,11 +35,15 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 TRIBITS_ADD_LIBRARY(
-  tpetrakernels
+  kokkoskernels
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
 
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl/generated_specializations_hpp)
+APPEND_GLOB(HEADERS_GENERATED  ${DIR}/*.hpp)
+INSTALL(FILES ${HEADERS_GENERATED} DESTINATION ${TRILINOS_INCDIR}/generated_specializations_hpp/)
 #
 # Make a trivial change here if you add a file either to this
 # directory, or to the impl/ subdirectory.  Keep making changes

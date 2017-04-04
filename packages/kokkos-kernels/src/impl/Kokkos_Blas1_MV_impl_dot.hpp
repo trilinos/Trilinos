@@ -693,12 +693,12 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 template<class RV, class XMV, class YMV,
          const int XMV_rank = XMV::rank,
          const int YMV_rnak = YMV::rank>
-struct Dot_MV {};
+struct Dot_MV;
 
-/// \brief Partial specialization for XMV_rank == 2 and YMV_rank == 2
-///   (both X and Y are multivectors).
 template<class RV, class XMV, class YMV>
-struct Dot_MV<RV, XMV, YMV, 2, 2> {
+struct Dot_MV<RV, XMV, YMV, 2, 2> 
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the dot product(s) of the column(s) of the
   ///   multivectors (2-D views) X and Y, and store result(s) in the
   ///   1-D View r.
@@ -716,7 +716,9 @@ struct Dot_MV<RV, XMV, YMV, 2, 2> {
       MV_Dot_Invoke<RV, XMV, YMV, size_type> (r, X, Y);
     }
   }
-};
+}
+#endif
+;
 
 /// \brief Partial specialization for XMV_rank == 2 and YMV_rank == 1
 ///   (X is a multivector, and Y is a single column).
@@ -773,7 +775,9 @@ struct Dot_MV<RV, XV, YMV, 1, 2> {
 /// \brief Partial specialization for XMV_rank == 1 and YMV_rank == 1
 ///   (both X and Y are single vectors).
 template<class RV, class XV, class YV>
-struct Dot_MV<RV, XV, YV, 1, 1> {
+struct Dot_MV<RV, XV, YV, 1, 1> 
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the dot product of the single vectors X and Y,
   ///   and store result in the 0-D View r.
   static void
@@ -793,7 +797,9 @@ struct Dot_MV<RV, XV, YV, 1, 1> {
       Kokkos::parallel_reduce (numRows, op);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -802,9 +808,8 @@ struct Dot_MV<RV, XV, YV, 1, 1> {
 // go in this header file.  We may spread out definitions (see _DEF
 // macro below) across one or more .cpp files.
 //
-#define KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
+#define KOKKOSBLAS1_IMPL_MV_DOT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -816,25 +821,8 @@ struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              2, 2> \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
-    EXEC_SPACE::array_layout, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef Kokkos::View<const SCALAR**, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
- \
-  static void dot (const RV& r, const XMV& X, const YMV& Y); \
-}; \
-template<> \
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
+                           2, 2>; \
+extern template struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -846,23 +834,7 @@ struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              2, 1> \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
-    EXEC_SPACE::array_layout, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef Kokkos::View<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
- \
-  static void dot (const RV& r, const XMV& X, const YV& Y); \
-};
+              2, 1>; 
 
 //
 // Macro for declaration of full specialization of
@@ -871,9 +843,8 @@ struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot
 // go in this header file.  We may spread out definitions (see _DEF
 // macro below) across one or more .cpp files.
 //
-#define KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
+#define KOKKOSBLAS1_IMPL_V_DOT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -885,72 +856,14 @@ struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              1, 1> \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
-    EXEC_SPACE::array_layout, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
-  typedef Kokkos::View<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
- \
-  static void dot (const RV& r, const XV& X, const YV& Y); \
-};
-
-//
-// Declarations of full specializations of Impl::Dot_MV for (XMV_rank
-// == 2 && YMV_rank == 2), and for (XMV_rank == 1 && YMV_rank == 1).
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+              1, 1>;
 
 //
 // Macros for definition of full specializations
 //
 
-#define KOKKOSBLAS_IMPL_MV_DOT_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Dot_MV<Kokkos::View<SCALAR*, \
+#define KOKKOSBLAS1_IMPL_MV_DOT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct Dot_MV<Kokkos::View<SCALAR*, \
                     EXEC_SPACE::array_layout, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -962,23 +875,8 @@ Dot_MV<Kokkos::View<SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-       2, 2>:: \
-dot (const RV& r, const XMV& X, const YMV& Y) \
-{ \
-  typedef XMV::size_type size_type; \
- \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_Dot_Invoke<RV, XMV, YMV, int> (r, X, Y); \
-  } \
-  else { \
-    MV_Dot_Invoke<RV, XMV, YMV, size_type> (r, X, Y); \
-  } \
-} \
-void \
-Dot_MV<Kokkos::View<SCALAR*, \
+       2, 2>; \
+template struct Dot_MV<Kokkos::View<SCALAR*, \
                     EXEC_SPACE::array_layout, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -990,30 +888,10 @@ Dot_MV<Kokkos::View<SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-       2, 1>:: \
-dot (const RV& r, const XMV& X, const YV& Y) \
-{ \
-  static_assert (static_cast<int> (XMV::rank) == 2, "Rank of X must be 2."); \
-  static_assert (static_cast<int> (YV::rank) == 1, "Rank of Y must be 1."); \
-  static_assert (static_cast<int> (RV::rank) == 1, "Rank of r must be 1."); \
-  \
-  typedef XMV::size_type size_type; \
-  \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_V_Dot_Invoke<RV, XMV, YV, int> (r, X, Y, static_cast<int> (numRows)); \
-  } \
-  else { \
-    MV_V_Dot_Invoke<RV, XMV, YV, size_type> (r, X, Y, numRows); \
-  } \
-}
+       2, 1>; 
 
-
-#define KOKKOSBLAS_IMPL_MV_DOT_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Dot_MV<Kokkos::View<SCALAR, \
+#define KOKKOSBLAS1_IMPL_V_DOT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct Dot_MV<Kokkos::View<SCALAR, \
                     EXEC_SPACE::array_layout, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -1025,26 +903,13 @@ Dot_MV<Kokkos::View<SCALAR, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-       1, 1>:: \
-dot (const RV& r, const XV& X, const YV& Y) \
-{ \
-  typedef typename XV::size_type size_type; \
- \
-  const size_type numRows = X.dimension_0 (); \
-  if (numRows < static_cast<size_type> (INT_MAX)) { \
-    typedef V_Dot_Functor<RV, XV, YV, int> op_type; \
-    op_type op (r, X, Y); \
-    Kokkos::parallel_reduce (numRows, op); \
-  } \
-  else { \
-    typedef V_Dot_Functor<RV, XV, YV, size_type> op_type; \
-    op_type op (r, X, Y); \
-    Kokkos::parallel_reduce (numRows, op); \
-  } \
-}
-
+       1, 1>;
 
 } // namespace Impl
 } // namespace KokkosBlas
+
+#include<Kokkos_Blas1_V_impl_dot.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

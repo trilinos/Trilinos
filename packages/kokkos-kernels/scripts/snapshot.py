@@ -27,7 +27,7 @@ import subprocess, argparse, re, doctest, os, datetime, traceback
 def parse_cmdline(description):
   parser = argparse.ArgumentParser(usage="snapshot.py [options] source destination", description=description)
 
-  parser.add_argument("-n", "--no-comit", action="store_false", dest="create_commit", default=True,
+  parser.add_argument("-n", "--no-commit", action="store_false", dest="create_commit", default=True,
                       help="Do not perform a commit or create a commit message.")
   parser.add_argument("-v", "--verbose", action="store_true", dest="verbose_mode", default=False,
                       help="Enable verbose mode.")

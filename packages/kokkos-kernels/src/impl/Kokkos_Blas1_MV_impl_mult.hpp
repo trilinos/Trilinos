@@ -306,7 +306,7 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
 /// to the implementation.  The specializations for rank == 1 and rank
 /// == 2 have meaningful content.
 template<class CMV, class AV, class BMV, int rank = CMV::rank>
-struct Mult {};
+struct Mult;
 
 /// \brief Implementation of entry-wise multiply of multivectors, that
 ///   dispatches to MV_Mult_Generic.
@@ -319,7 +319,9 @@ struct Mult {};
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
 template<class CMV, class AV, class BMV>
-struct Mult<CMV, AV, BMV, 2> {
+struct Mult<CMV, AV, BMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void
   mult (typename CMV::const_value_type& c,
         const CMV& C,
@@ -339,7 +341,9 @@ struct Mult<CMV, AV, BMV, 2> {
       MV_Mult_Generic<CMV, AV, BMV, size_type> (c, C, ab, A, B);
     }
   }
-};
+}
+#endif
+;
 
 /// \brief Implementation of entry-wise multiply of vectors, that
 ///   dispatches to V_Mult_Generic.
@@ -352,7 +356,9 @@ struct Mult<CMV, AV, BMV, 2> {
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual
 /// BLAS update rules.
 template<class CV, class AV, class BV>
-struct Mult<CV, AV, BV, 1> {
+struct Mult<CV, AV, BV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void
   mult (typename CV::const_value_type& c,
         const CV& C,
@@ -370,7 +376,9 @@ struct Mult<CV, AV, BV, 1> {
       V_Mult_Generic<CV, AV, BV, size_type> (c, C, ab, A, B);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -380,9 +388,8 @@ struct Mult<CV, AV, BV, 1> {
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Mult<Kokkos::View<SCALAR**, \
+#define KOKKOSBLAS1_IMPL_MV_MULT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct Mult<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -394,59 +401,7 @@ struct Mult<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CMV; \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BMV; \
- \
-  static void \
-  mult (CMV::const_value_type& c, \
-        const CMV& C, \
-        AV::const_value_type& ab, \
-        const AV& A, \
-        const BMV& B); \
-};
-
-
-//
-// Declarations of full specializations of Impl::Fill for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
+                            2>;
 
 //
 // Macro for definition of full specialization of
@@ -454,9 +409,8 @@ KOKKOSBLAS_IMPL_MV_MULT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Ko
 // may spread out use of this macro across one or more .cpp files in
 // this directory.
 //
-#define KOKKOSBLAS_IMPL_MV_MULT_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Mult<Kokkos::View<SCALAR**, \
+#define KOKKOSBLAS1_IMPL_MV_MULT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct Mult<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -468,27 +422,10 @@ Mult<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     2>:: \
-mult (CMV::const_value_type& c, \
-      const CMV& C, \
-      AV::const_value_type& ab, \
-      const AV& A, \
-      const BMV& B) \
-{ \
-  typedef CMV::size_type size_type; \
- \
-  const size_type numRows = C.dimension_0 (); \
-  const size_type numCols = C.dimension_1 (); \
-  if (numRows < static_cast<int> (INT_MAX) && \
-      numRows * numCols < static_cast<int> (INT_MAX)) { \
-    MV_Mult_Generic<CMV, AV, BMV, int> (c, C, ab, A, B); \
-  } \
-  else { \
-    MV_Mult_Generic<CMV, AV, BMV, size_type> (c, C, ab, A, B); \
-  } \
-}
+                     2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
 
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_MULT_HPP_

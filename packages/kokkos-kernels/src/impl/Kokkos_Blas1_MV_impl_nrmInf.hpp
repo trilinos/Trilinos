@@ -261,12 +261,14 @@ MV_NrmInf_Invoke (const RV& r, const XMV& X)
 /// \brief Implementation of KokkosBlas::nrmInf for multivectors and
 ///   single vectors.
 template<class RV, class XMV, int rank = XMV::rank>
-struct NrmInf_MV {};
+struct NrmInf_MV;
 
 
 //! Special case for multivectors (rank-2 Views).
 template<class RV, class XMV>
-struct NrmInf_MV<RV, XMV, 2> {
+struct NrmInf_MV<RV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the inf-norm(s) of the column(s) of the
   ///   multivector (2-D View) X, and store result(s) in r.
   static void nrmInf (const RV& r, const XMV& X)
@@ -284,12 +286,16 @@ struct NrmInf_MV<RV, XMV, 2> {
       MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 
 //! Special case for single vectors (rank-1 Views).
 template<class RV, class XV>
-struct NrmInf_MV<RV, XV, 1> {
+struct NrmInf_MV<RV, XV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the inf-norm of the vector (1-D View) X, and
   ///   store the result in the 0-D View r.
   static void nrmInf (const RV& r, const XV& X)
@@ -307,7 +313,9 @@ struct NrmInf_MV<RV, XV, 1> {
       V_NrmInf_Invoke<RV, XV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -317,9 +325,8 @@ struct NrmInf_MV<RV, XV, 1> {
 // across one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+#define KOKKOSBLAS1_IMPL_MV_NRMINF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                             EXEC_SPACE::array_layout, \
                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -327,56 +334,15 @@ struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::
                             LAYOUT, \
                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-               2> \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
-                       EXEC_SPACE::array_layout, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  static void nrmInf (const RV& r, const XMV& X); \
-};
-
-//
-// Declarations of full specializations of Impl::NrmInf_MV for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+                                 2>;
 
 //
 // Macro for declaration of full specialization of
 // KokkosBlas::Impl::NrmInf_MV for rank == 2.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+#define KOKKOSBLAS1_IMPL_MV_NRMINF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                        EXEC_SPACE::array_layout, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -384,23 +350,10 @@ NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_typ
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          2>:: \
-nrmInf (const RV& r, const XMV& X) \
-{ \
-  typedef XMV::size_type size_type; \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X); \
-  } \
-  else { \
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X); \
-  } \
-}
+                          2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
 
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_nrmInf_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_NRMINF_HPP_
