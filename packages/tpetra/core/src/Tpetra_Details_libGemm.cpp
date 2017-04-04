@@ -43,10 +43,62 @@
 
 #include "Tpetra_Details_libGemm.hpp"
 #include "KokkosKernels_config.h"
-// For now, just use Teuchos, whatever.  Later, wrap it ourselves.
-// This is way less trivial than you might think, given all the
-// variations in link options and the platforms we must support.
-#include "Teuchos_BLAS.hpp"
+
+// TpetraCore_config.h (included in Tpetra_Details_libGemm.hpp)
+// defines the TPETRACORE_F77_BLAS_MANGLE macro.  First argument is
+// the lower-case version of the BLAS function name, and second
+// argument is the upper-case version of the same name.  The macro
+// handles mangling for calling the Fortran 77 function from C.  We
+// then make an extern "C" declaration here for each BLAS function
+// that we want to use.
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+
+#define TPETRACORE_CGEMM TPETRACORE_F77_BLAS_MANGLE(cgemm,CGEMM)
+
+extern "C" void
+TPETRACORE_CGEMM
+ (const char* transA, const char* transB,
+  const int* m, const int* n, const int* k,
+  const void* alpha, const void* a, const int* lda,
+  const void* b, const int* ldb,
+  const void* beta, void* c, const int* ldc);
+
+#endif // HAVE_TPETRA_INST_COMPLEX_FLOAT
+
+#define TPETRACORE_DGEMM TPETRACORE_F77_BLAS_MANGLE(dgemm,DGEMM)
+
+extern "C" void
+TPETRACORE_DGEMM
+ (const char* transA, const char* transB,
+  const int* m, const int* n, const int* k,
+  const double* alpha, const double* a, const int* lda,
+  const double* b, const int* ldb,
+  const double* beta, double* c, const int* ldc);
+
+#define TPETRACORE_SGEMM TPETRACORE_F77_BLAS_MANGLE(sgemm,SGEMM)
+
+extern "C" void
+TPETRACORE_SGEMM
+  (const char* transA, const char* transB,
+   const int* m, const int* n, const int* k,
+   const float* alpha, const float* a, const int* lda,
+   const float* b, const int* ldb,
+   const float* beta, float* c, const int* ldc);
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+
+#define TPETRACORE_ZGEMM TPETRACORE_F77_BLAS_MANGLE(zgemm,ZGEMM)
+
+extern "C" void
+TPETRACORE_ZGEMM
+  (const char* transA, const char* transB,
+   const int* m, const int* n, const int* k,
+   const void* alpha, const void* a, const int* lda,
+   const void* b, const int* ldb,
+   const void* beta, void* c, const int* ldc);
+
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
 namespace Tpetra {
 namespace Details {
@@ -70,29 +122,11 @@ cgemm (const char transA,
        const int ldc)
 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-  typedef std::complex<float> IST; // impl_scalar_type;
-  typedef Teuchos::BLAS<int, IST> blas_type;
-
-  const ::Teuchos::ETransp transA_ =
-    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
-    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const ::Teuchos::ETransp transB_ =
-    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
-    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const IST alpha_ (alpha.real (), alpha.imag ());
-  const IST beta_ (beta.real (), beta.imag ());
-
-  blas_type blas;
-  blas.GEMM (transA_, transB_, m, n, k,
-             alpha_, reinterpret_cast<const IST*> (A), lda,
-             reinterpret_cast<const IST*> (B), ldb,
-             beta_, reinterpret_cast<IST*> (C), ldc);
+  TPETRACORE_CGEMM (&transA, &transB, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
 #else
   throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::cgemm: "
-                            "You must configure Teuchos and Tpetra with complex support.");
-#endif
+                            "You must configure Tpetra with complex<float> support.");
+#endif // HAVE_TPETRA_INST_COMPLEX_FLOAT
 }
 
 void
@@ -110,23 +144,7 @@ dgemm (const char transA,
        double C[],
        const int ldc)
 {
-  typedef double IST; // impl_scalar_type;
-  typedef Teuchos::BLAS<int, IST> blas_type;
-
-  const ::Teuchos::ETransp transA_ =
-    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
-    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const ::Teuchos::ETransp transB_ =
-    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
-    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-
-  blas_type blas;
-  blas.GEMM (transA_, transB_, m, n, k,
-             alpha, A, lda,
-             B, ldb,
-             beta, C, ldc);
+  TPETRACORE_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
 }
 
 void
@@ -144,23 +162,7 @@ sgemm (const char transA,
        float C[],
        const int ldc)
 {
-  typedef float IST; // impl_scalar_type;
-  typedef Teuchos::BLAS<int, IST> blas_type;
-
-  const ::Teuchos::ETransp transA_ =
-    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
-    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const ::Teuchos::ETransp transB_ =
-    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
-    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-
-  blas_type blas;
-  blas.GEMM (transA_, transB_, m, n, k,
-             alpha, A, lda,
-             B, ldb,
-             beta, C, ldc);
+  TPETRACORE_SGEMM (&transA, &transB, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
 }
 
 void
@@ -179,29 +181,11 @@ zgemm (const char transA,
        const int ldc)
 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  typedef std::complex<double> IST; // impl_scalar_type;
-  typedef Teuchos::BLAS<int, IST> blas_type;
-
-  const ::Teuchos::ETransp transA_ =
-    (transA == 'T' || transA == 't') ? ::Teuchos::TRANS :
-    ((transA == 'C' || transA == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const ::Teuchos::ETransp transB_ =
-    (transB == 'T' || transB == 't') ? ::Teuchos::TRANS :
-    ((transB == 'C' || transB == 'c') ? ::Teuchos::CONJ_TRANS :
-     ::Teuchos::NO_TRANS);
-  const IST alpha_ (alpha.real (), alpha.imag ());
-  const IST beta_ (beta.real (), beta.imag ());
-
-  blas_type blas;
-  blas.GEMM (transA_, transB_, m, n, k,
-             alpha_, reinterpret_cast<const IST*> (A), lda,
-             reinterpret_cast<const IST*> (B), ldb,
-             beta_, reinterpret_cast<IST*> (C), ldc);
+  TPETRACORE_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
 #else
   throw std::runtime_error ("Tpetra::Details::Blas::Lib::Impl::zgemm: "
-                            "You must configure Teuchos and Tpetra with complex support.");
-#endif
+                            "You must configure Tpetra with complex<double> support.");
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 }
 
 } // namespace Impl
