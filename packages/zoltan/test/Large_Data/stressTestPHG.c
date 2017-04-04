@@ -70,7 +70,12 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <stddef.h>
+
+#ifndef _MSC_VER
 #include <getopt.h>
+#endif
+
 #include <stdint.h>
 #include <math.h>
 #include <inttypes.h>
@@ -88,13 +93,11 @@ static int *vertex_part = NULL;
 
 static double mbytes=0;
 
-#define NUM_GLOBAL_VERTICES     2500
-#define VERTEX_WEIGHT_DIMENSION 1
-#define EDGE_WEIGHT_DIMENSION 1
+#define NUM_GLOBAL_VERTICES     10000
 
 static int64_t gid_base = 0x000000000;
 static int64_t high_order_bit = 0x100000000;
-static long long numGlobalVertices;
+static long long numGlobalVertices = NUM_GLOBAL_VERTICES;
 static int vwgt_dim=1;
 static int unit_weights=1;
 
@@ -404,7 +407,11 @@ int main(int argc, char *argv[])
 {
   int i, rc, status;
   float ver;
+
+#ifndef _MSC_VER
   struct option opts[20];
+#endif /* _MSC_VER */
+
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
@@ -448,10 +455,15 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-
-
+#ifdef _MSC_VER
+  if (myRank == 0) {
+    printf("\n***  getopt not supported in Windows; ");
+    printf("command-line arguments will be ignored ***\n\n");
+  }
+#else
   /******************************************************************
-  ** Arguments
+  ** Arguments are accepeted in Unix tests.
+  ** Windoze cannot handle getopt; its tests use only default arguments.
   ******************************************************************/
 
   opts[0].name = "do_rcb";
@@ -563,6 +575,7 @@ int main(int argc, char *argv[])
       break;
     }
   }
+#endif /* _MSC_VER */
 
   sprintf(factorBuf, "%f", hybrid_reduction_factor);
   sprintf(levelBuf, "%d", hybrid_reduction_levels);
@@ -769,7 +782,7 @@ int main(int argc, char *argv[])
 
   status = 0;
 
-  if ((imbalance[1] >= imbalance[0]) && (cutn[1] >= cutn[0])){
+  if ((numProcs > 1) && (imbalance[1] >= imbalance[0]) && (cutn[1] >= cutn[0])){
     if (myRank == 0)
       printf("FAILED: partition quality did not improve\n");
     status = 1;
