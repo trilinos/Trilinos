@@ -244,7 +244,7 @@ namespace Tpetra {
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
+    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
                               typename local_graph_type::size_type> local_matrix_type;
 
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
