@@ -543,6 +543,25 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       RCP<const BlockedCrsMatrix> rcpBopA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpA);
       RCP<const BlockedCrsMatrix> rcpBopB = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpB);
 
+      // Error test early
+      if (A->getRowMap()->lib() == Xpetra::UseEpetra) 
+          throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
+
+      // Global constants, because we need these for some unexplicable reason.
+      if(!A->haveGlobalConstants() && rcpBopA.is_null()) {
+	const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+	Tpetra::CrsMatrix<SC,LO,GO,NO>& tpAnc = Teuchos::rcp_const_cast<Tpetra::CrsMatrix<SC,LO,GO,NO> >(tpA);
+	tpAnc->computeGlobalConstants();
+      }
+      if(!B->haveGlobalConstants() && rcpBopB.is_null()) {
+	const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+	Tpetra::CrsMatrix<SC,LO,GO,NO>& tpBnc = Teuchos::rcp_const_cast<Tpetra::CrsMatrix<SC,LO,GO,NO> >(tpB);
+	tpBnc->computeGlobalConstants();
+      }
+
+
+
+
       // We have to distinguish 4 cases:
       // both matrices are CrsMatrixWrap based, only one of them is CrsMatrixWrap based, or none.
 
@@ -1280,6 +1299,10 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       if(rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
 
+	// CMS: Need to add  haveGlobalConstants() checks here.  Also, wondering why the general case uses global nnz per row and not local.
+	
+
+
         if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
           throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -1288,6 +1311,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           size_t maxNzInB     = 0;
           size_t numLocalRows = 0;
           if (A.isFillComplete() && B.isFillComplete()) {
+
             maxNzInA     = A.getGlobalMaxNumRowEntries();
             maxNzInB     = B.getGlobalMaxNumRowEntries();
             numLocalRows = A.getNodeNumRows();
