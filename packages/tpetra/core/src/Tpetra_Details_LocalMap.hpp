@@ -73,6 +73,15 @@ public:
   typedef GlobalOrdinal global_ordinal_type;
   typedef DeviceType device_type;
 
+  LocalMap () :
+    indexBase_ (0),
+    myMinGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    myMaxGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    firstContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    lastContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    numLocalElements_ (0),
+    contiguous_ (false)
+  {}
   LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
             const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, DeviceType>& lgMap,
             const GlobalOrdinal indexBase,
