@@ -178,6 +178,15 @@ public:
     conVal_->value(c, u, *Sz_, tol);
   }
 
+  virtual void solve(Vector<Real> &c,
+                     Vector<Real> &u, 
+                     const Vector<Real> &z,
+                     Real &tol) 
+  {
+    solveConRed(z, tol);
+    conVal_->solve(c, u, *Sz_, tol);
+  }
+
   void applyJacobian_1(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &u,
                        const Vector<Real> &z, Real &tol) {
     solveConRed(z, tol);
