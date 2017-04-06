@@ -665,6 +665,9 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
 
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const {return false;}
+
     //@}
 
     //! @name Methods implementing Operator
@@ -1008,6 +1011,9 @@ namespace Xpetra {
 
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const {return true;}
 
     //@}
 
