@@ -107,6 +107,8 @@ private:
       conRed_->solve(*primRed_,*Sz_,z,tol);
       // Update equality constraint with new Sim variable.
       conRed_->update_1(*Sz_,updateFlag_,updateIter_);
+      // Update equality constraint.
+      conRed_->update(*Sz_, z, updateFlag_, updateIter_);
       // Store state.
       if (storage_) {
         stateStore_->set(*Sz_,param);
@@ -151,26 +153,25 @@ public:
   }
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    updateFlag_ = flag;
-    updateIter_ = iter;
     // Update this
-    Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    update_1(u, flag, iter);
     update_2(z, flag, iter);
-    // Solve reducible constraint
-    stateStore_->equalityConstraintUpdate(true);
-    solveConRed(z, ctol);
-    // Update constraints with solution to reducible constraint
-    conRed_->update(*Sz_, z, flag, iter);
-    conVal_->update(u, *Sz_, flag, iter);
+    update_1(u, flag, iter);
   }
 
   void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
     conVal_->update_1(u, flag, iter);
+    // Update constraints with solution to reducible constraint
+    conVal_->update(u, *Sz_, flag, iter);
   }
 
   void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    conRed_->update_2(z, flag, iter);
+    //conRed_->update_2(z, flag, iter);
+    // Solve reducible constraint
+    updateFlag_ = flag;
+    updateIter_ = iter;
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
+    stateStore_->equalityConstraintUpdate(flag);
+    solveConRed(z, ctol);
   }
 
   void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
@@ -178,11 +179,7 @@ public:
     conVal_->value(c, u, *Sz_, tol);
   }
 
-  virtual void solve(Vector<Real> &c,
-                     Vector<Real> &u, 
-                     const Vector<Real> &z,
-                     Real &tol) 
-  {
+  void solve(Vector<Real> &c, Vector<Real> &u, const Vector<Real> &z, Real &tol) {
     solveConRed(z, tol);
     conVal_->solve(c, u, *Sz_, tol);
   }
