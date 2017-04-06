@@ -217,8 +217,88 @@ namespace MueLuTests {
     TEST_EQUALITY(AA.get(), A.get());
   } // InputData
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FineLevelInputDataFactory, InputDataMap, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    RCP<Map> map   = MapFactory::Build(lib, 100, 0, comm);
+
+    // build hierarchy
+    RCP<Level> levelOne = rcp(new Level());
+    levelOne->SetLevelID(0);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    levelOne->SetComm(comm);
+#endif
+
+    FineLevelInputDataFactory inputData;
+
+#ifdef HAVE_MUELU_DEBUG
+    inputData.DisableMultipleCallCheck();
+#endif
+
+
+    // Test 1: different fine level variable name and coarse level variable name, default fine level factory (=NoFactory)
+    levelOne->Set("m", map);
+    inputData.SetParameter("Variable", Teuchos::ParameterEntry(std::string("m")));
+
+    levelOne->Request("m", &inputData);
+    RCP<Map> mm = levelOne->Get<RCP<Map> >("m", &inputData);
+
+    TEST_EQUALITY(mm.get(), map.get());
+
+    levelOne->Release("m", &inputData);
+
+    // Test 2: set fine level factory
+    levelOne->Set("m", map);
+    inputData.SetParameter("Fine level factory", Teuchos::ParameterEntry(std::string("NoFactory")));
+    inputData.SetParameter("Coarse level factory", Teuchos::ParameterEntry(std::string("XXX")));
+    inputData.SetParameter("Variable", Teuchos::ParameterEntry(std::string("m")));
+
+    levelOne->Request("m", &inputData);
+    mm = levelOne->Get<RCP<Map> >("m", &inputData);
+    TEST_EQUALITY(mm.get(), map.get());
+    levelOne->Release("m", &inputData);
+
+    // Test 3: same as test 2 on coarse level
+    MueLuTests::DummyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> dummyFact;
+
+    levelOne->SetLevelID(1);
+    levelOne->Request("m", &dummyFact);
+    levelOne->Set("m", map, &dummyFact);
+
+    inputData.SetFactory("XXX", Teuchos::rcpFromRef(dummyFact));
+    inputData.SetParameter("Coarse level factory", Teuchos::ParameterEntry(std::string("XXX")));
+    inputData.SetParameter("Variable", Teuchos::ParameterEntry(std::string("m")));
+
+    levelOne->Request("m", &inputData);
+
+    mm = levelOne->Get<RCP<Map> >("m", &inputData);
+
+    TEST_EQUALITY(mm.get(), map.get());
+
+    // Test 4: same as test 2 on coarse level
+    levelOne->Request("m", &dummyFact);
+    levelOne->Set("m", map, &dummyFact);
+
+    inputData.SetFactory("n", Teuchos::rcpFromRef(dummyFact));
+    inputData.SetParameter("Coarse level factory", Teuchos::ParameterEntry(std::string("m")));
+    inputData.SetParameter("Variable", Teuchos::ParameterEntry(std::string("m")));
+    levelOne->Request("m", &inputData);
+    mm = levelOne->Get<RCP<Map> >("m", &inputData);
+    TEST_EQUALITY(mm.get(), map.get());
+  } // InputDataMap
+
+
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FineLevelInputDataFactory, InputData, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FineLevelInputDataFactory, InputDataMap, SC, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 }
