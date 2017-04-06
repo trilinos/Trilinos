@@ -55,6 +55,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
@@ -79,6 +86,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
@@ -111,6 +125,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(float, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
@@ -135,6 +156,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
@@ -167,6 +195,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
@@ -191,6 +226,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
@@ -223,6 +265,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
@@ -247,6 +296,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
  KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+ KOKKOSBLAS1_IMPL_MV_NRMINF_DECL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \

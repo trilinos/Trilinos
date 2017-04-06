@@ -7,7 +7,7 @@ NameSpace=$4            #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
-ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
 
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp/${Function}
