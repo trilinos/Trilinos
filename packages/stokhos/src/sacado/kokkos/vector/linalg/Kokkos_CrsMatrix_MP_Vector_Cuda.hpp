@@ -87,7 +87,7 @@ template <typename MatrixStorage,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
                                     Kokkos::Cuda,
                                     MatrixMemory,
@@ -110,7 +110,7 @@ public:
   typedef Device execution_space;
   typedef typename execution_space::size_type size_type;
 
-  typedef Kokkos::CrsMatrix<MatrixValue,
+  typedef KokkosSparse::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
                             execution_space,
                             MatrixMemory,
@@ -334,7 +334,7 @@ template <typename MatrixStorage,
           typename OutputStorage,
           typename ... OutputP,
           typename Update>
-class MPMultiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
+class MPMultiply< KokkosSparse::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
                                     Kokkos::Cuda,
                                     MatrixMemory,
@@ -357,7 +357,8 @@ public:
   typedef Device execution_space;
   typedef typename execution_space::size_type size_type;
 
-  typedef Kokkos::CrsMatrix<MatrixValue,
+
+  typedef KokkosSparse::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
                             execution_space,
                             MatrixMemory,
