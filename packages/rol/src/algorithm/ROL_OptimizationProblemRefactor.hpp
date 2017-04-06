@@ -328,27 +328,16 @@ public:
     Teuchos::RCP<V> y = sol_->clone();
     Teuchos::RCP<V> u = sol_->clone();
     Teuchos::RCP<V> v = sol_->clone();
-    Teuchos::RCP<V> c = mul_->dual().clone();
-    Teuchos::RCP<V> l = mul_->clone();
-    Teuchos::RCP<V> w = mul_->clone();    
-    Teuchos::RCP<V> q = mul_->clone();    
 
     RandomizeVector(*x);
     RandomizeVector(*y);
     RandomizeVector(*u);
     RandomizeVector(*v);
-    RandomizeVector(*c);
-    RandomizeVector(*l);
-    RandomizeVector(*w);
-    RandomizeVector(*q);   
 
     outStream << "\nPerforming OptimizationProblem diagnostics.\n\n";
 
     outStream << "Checking vector operations in optimization vector space X." << std::endl;
     x->checkVector(*y,*u,true,outStream);
-
-    outStream << "Checking vector operations in constraint multiplier space C*." << std::endl;
-    l->checkVector(*q,*w,true,outStream);
  
     outStream << "Checking objective function." << std::endl;
 
@@ -357,6 +346,19 @@ public:
     obj_->checkHessSym(*x,*u,*v,true,outStream);                                  outStream << std::endl;
     
     if(con_ != Teuchos::null) {
+      Teuchos::RCP<V> c = mul_->dual().clone();
+      Teuchos::RCP<V> l = mul_->clone();
+      Teuchos::RCP<V> w = mul_->clone();    
+      Teuchos::RCP<V> q = mul_->clone();    
+
+      RandomizeVector(*c);
+      RandomizeVector(*l);
+      RandomizeVector(*w);
+      RandomizeVector(*q);   
+
+      outStream << "Checking vector operations in constraint multiplier space C*." << std::endl;
+      l->checkVector(*q,*w,true,outStream);
+
       outStream << "Checking equality constraint." << std::endl;
       con_->checkApplyJacobian(*x,*v,*c,true,outStream,numSteps,order);             outStream << std::endl;
       con_->checkAdjointConsistencyJacobian(*l,*u,*x,true,outStream);               outStream << std::endl;
