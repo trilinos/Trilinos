@@ -37,6 +37,8 @@ private:
   double _shrinkage_rho;   // Well-spacedness parameter
 
   double* _ei_sur;          // Interpolation error
+  double* _ef_max;          // maximum error estimate on a facet
+
   double* _di;             // iterations dispersion
   double* _Ri;             // Grouping efficiency
   double _Rt;              // Total grouping efficiency
@@ -69,6 +71,9 @@ public:
     // **************
     _ei_sur = new double[_num_samples / _ensemble_size];
     for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _ei_sur[iEnsemble] = 0.0;
+
+    _ef_max = new double[_num_samples / _ensemble_size];
+    for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _ef_max[iEnsemble] = 0.0;
 
     _di = new double[_num_samples / _ensemble_size];
     for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++) _di[iEnsemble] = 0.0;
@@ -144,7 +149,7 @@ public:
       double** yMC = new double*[_numMC];
       double*  yMC_ErrorEst = new double[_numMC];
 
-      double r = _diag;
+      double rsphere = _diag;
       double* dart = new double[_num_dim];
       double* p_facet = new double[_num_dim];
       double p_errest;
@@ -162,6 +167,8 @@ public:
         if (p_errest > facetMaxErrEst) facetMaxErrEst = p_errest;
         iMCp++;
       }
+      _ef_max[iEnsemble] += facetMaxErrEst;
+
       // --------------------------
       // Now loop to collect points
       // --------------------------
@@ -186,7 +193,7 @@ public:
             for (size_t idim = 0; idim < _num_dim; idim++)
               dstsq += (p_facet[idim] - yMC[ip][idim])*(p_facet[idim] - yMC[ip][idim]);
 
-            if ((dstsq - (r * r)) < 1E-10)
+            if ((dstsq - (rsphere * rsphere)) < 1E-10)
             {
               if (p_errest > yMC_ErrorEst[ip])
                 conflict = true; // Conflict = point in a sphere and has a higher error
@@ -198,7 +205,7 @@ public:
             }
           }
           // ------------------
-          if ((miss) || (p_errest < 0.1 * facetMaxErrEst))
+          if (miss || (p_errest < 0.1 * facetMaxErrEst))
           {
             numMisses++;
             continue;    // don't add points, just skip and try a new dart
@@ -206,6 +213,7 @@ public:
           // --------------------------
           // Add point
           yMC[num_points] = p_facet;
+          p_facet = new double[_num_dim];
           yMC_ErrorEst[num_points] = p_errest;
           num_points++;
           numMisses = 0;
@@ -219,7 +227,7 @@ public:
               for (size_t idim = 0; idim < _num_dim; idim++)
                 dstsq += (p_facet[idim] - yMC[ip][idim])*(p_facet[idim] - yMC[ip][idim]);
 
-              if ((dstsq - (r * r)) > 1E-10)
+              if ((dstsq - (rsphere * rsphere)) > 1E-10)
                 continue;
 
               yMC[ip] = yMC[num_points - 1];
@@ -227,8 +235,6 @@ public:
               num_points--;
             }
           }
-          dart = new double[_num_dim];
-          p_facet = new double[_num_dim];
           break;
         }
 
@@ -237,7 +243,7 @@ public:
 
         if ((numMisses == _maxMisses) && (num_points < _numMC))
         {
-          r *= _shrinkage_rho;
+          rsphere *= _shrinkage_rho;
         }
       }
 
@@ -350,6 +356,17 @@ public:
       save_ei_sur();
     }
 
+    if (_proc_rank == 0) {
+      std::cout << "ef_max" << std::endl;
+      std::cout << "=======" << std::endl;
+      for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++)
+      {
+        std::cout << _ef_max[iEnsemble] << std::endl;
+      }
+      std::cout << std::endl;
+      save_ef_max();
+    }
+
     // -----------------------------------------------------
     // Average d over experiments and save
     // -----------------------------------------------------
@@ -392,6 +409,7 @@ public:
     // Clear metrics memory
     // ---------------------
     delete _ei_sur;
+    delete _ef_max;
     delete _di;
     delete _Ri;
   }
@@ -410,6 +428,8 @@ public:
 
   void save_ei_sur();
 
+  void save_ef_max();
+
   void save_di();
 
   void save_Ri();
@@ -418,8 +438,8 @@ public:
 
   double generate_a_random_number();
 
-  double f_test(double* x);
+  double f_test(const double* x);
 
-  double g_test(double* x);
+  double g_test(const double* x);
 
 };

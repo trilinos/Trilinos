@@ -283,55 +283,77 @@ int VPS::suggest_new_sample(double* x)
 
 int VPS::suggest_new_sample(double* xmc, double* x, double &err_est)
 {
-  // Takes an MC point, returns
-  size_t closest_seed; double dst(DBL_MAX);
+  // Takes an MC point, returns a point on vertex/facet
+  size_t closest_seed;
+  double dst(DBL_MAX);
   get_closest_seed_tree(xmc, closest_seed, dst);
-  //sample_voronoi_vertex(closest_seed, x);
-  sample_voronoi_facet(closest_seed, x);
 
-  if (fabs(x[0] - 0.03148) < 0.0001 && fabs(x[1] + 1.286) < 0.001)
+  if (_num_samples < 4)
   {
-    int bug(0);
-    bug++;
+    // Keep the MC point
+    for (size_t idim = 0; idim < _num_dim; idim++)
+      x[idim] = xmc[idim];
 
-  }
+    // find distance to closest boundary
+    double h_dim;
+    double h_shortest= DBL_MAX;
 
-  double rv(0.0);
-  for (size_t idim = 0; idim < _num_dim; idim++)
-  {
-    double dx = _x[closest_seed][idim] - x[idim];
-    rv += dx*dx;
-  }
-  rv = sqrt(rv);
-  size_t capacity = 10;
-  size_t* neighbor_seeds = new size_t[capacity];
-  size_t num_neighbor_seeds = 0;
-  get_seeds_in_sphere_tree(x, rv + 1E-10, num_neighbor_seeds, neighbor_seeds, capacity);
-
-
-  double* fneighbor = new double[num_neighbor_seeds];
-  double* fs = new double[1];
-  for (size_t i = 0; i < num_neighbor_seeds; i++)
-  {
-    size_t seed = neighbor_seeds[i];
-    evaluate_surrogate(seed, x, fs);
-    fneighbor[i] = fs[0];
-  }
-
-  err_est = 0.0;
-
-  for (size_t i = 0; i < num_neighbor_seeds; i++)
-  {
-    for (size_t j = i + 1; j < num_neighbor_seeds; j++)
+    for (size_t idim = 0; idim < _num_dim; idim++)
     {
-      //double df = fabs(fneighbor[i] - fneighbor[j]);
-      double df = fabs(fneighbor[i] - fneighbor[j]) * rv;
-      if (df > err_est) err_est = df;
+      h_dim = fabs(xmc[idim] - _xmin[idim]);
+      if (h_dim < h_shortest) h_shortest = h_dim;
+
+      h_dim = fabs(xmc[idim] - _xmax[idim]);
+      if (h_dim < h_shortest) h_shortest = h_dim;
     }
+
+    // error estimate = min(distance to closest seed, distance to closest boundary)
+    if (h_shortest < dst)
+      err_est = h_shortest;
+    else err_est = dst;
   }
-  delete[] fneighbor;
-  delete[] fs;
-  delete[] neighbor_seeds;
+  else
+  {
+    //sample_voronoi_vertex(closest_seed, x);
+    sample_voronoi_facet(closest_seed, x);
+
+    double rv(0.0);
+    for (size_t idim = 0; idim < _num_dim; idim++)
+    {
+      double dx = _x[closest_seed][idim] - x[idim];
+      rv += dx*dx;
+    }
+    rv = sqrt(rv);
+    size_t capacity = 10;
+    size_t* neighbor_seeds = new size_t[capacity];
+    size_t num_neighbor_seeds = 0;
+    get_seeds_in_sphere_tree(x, rv + 1E-10, num_neighbor_seeds, neighbor_seeds, capacity);
+
+
+    double* fneighbor = new double[num_neighbor_seeds];
+    double* fs = new double[1];
+    for (size_t i = 0; i < num_neighbor_seeds; i++)
+    {
+      size_t seed = neighbor_seeds[i];
+      evaluate_surrogate(seed, x, fs);
+      fneighbor[i] = fs[0];
+    }
+
+    err_est = 0.0;
+
+    for (size_t i = 0; i < num_neighbor_seeds; i++)
+    {
+      for (size_t j = i + 1; j < num_neighbor_seeds; j++)
+      {
+        //double df = fabs(fneighbor[i] - fneighbor[j]);
+        double df = fabs(fneighbor[i] - fneighbor[j]) * rv;
+        if (df > err_est) err_est = df;
+      }
+    }
+    delete[] fneighbor;
+    delete[] fs;
+    delete[] neighbor_seeds;
+  }
   return 0;
 }
 
@@ -1081,11 +1103,11 @@ bool VPS::trim_spoke(size_t num_dim, double* xst, double* xend, double* p, doubl
   if (fabs(dote) > 1E-10)
   {
     double u = dotv / dote;
-    //if (u > -1.0E-10 && u < 1.0 + 1.0E-10)
-    //{
-    for (size_t idim = 0; idim < num_dim; idim++) xend[idim] = xst[idim] + u * (xend[idim] - xst[idim]);
-    trimmed = true;
-    //}
+    if (u > -1.0E-10 && u < 1.0 + 1.0E-10)
+    {
+      for (size_t idim = 0; idim < num_dim; idim++) xend[idim] = xst[idim] + u * (xend[idim] - xst[idim]);
+      trimmed = true;
+    }
   }
 
   return trimmed;
@@ -2852,6 +2874,8 @@ int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
           double t;
           for (size_t ib = 0; ib < 2; ib++)
           {
+            if (fabs(xend[idim] - xst[idim]) < 1E-10) continue;
+
             if (ib == 0) t = (_xmin[idim] - xst[idim]) / (xend[idim] - xst[idim]);
             else         t = (_xmax[idim] - xst[idim]) / (xend[idim] - xst[idim]);
 
@@ -2862,6 +2886,7 @@ int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
               trimming_bound = true;
               for (size_t jdim = 0; jdim < _num_dim; jdim++)
               {
+                if (fabs(xend[jdim] - xst[jdim]) < 1E-10) continue;
                 if (jdim == idim) continue;
 
                 double xx = xst[jdim] + t * (xend[jdim] - xst[jdim]);
@@ -2877,8 +2902,8 @@ int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
             {
               double* mirrored_seed = new double[_num_dim];
               for (size_t jdim = 0; jdim < _num_dim; jdim++) mirrored_seed[jdim] = _x[seed_index][jdim];
-              if (ib == 0) mirrored_seed[idim] = _xmin[idim] - 2.0 * (_x[seed_index][idim] - _xmin[idim]) / 3.0;
-              else         mirrored_seed[idim] = _xmax[idim] + 2.0 * (_xmax[idim] - _x[seed_index][idim]) / 3.0;
+              if (ib == 0) mirrored_seed[idim] = _xmin[idim] - (_x[seed_index][idim] - _xmin[idim]); // 3.0;
+              else         mirrored_seed[idim] = _xmax[idim] + (_xmax[idim] - _x[seed_index][idim]); // 3.0;
 
               trim_spoke(_num_dim, xst, xend, _x[seed_index], mirrored_seed);
 
@@ -2902,7 +2927,7 @@ int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
                 {
                   for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
                   vect[idim] = 1.0;
-                  get_normal_component(_num_dim, num_basis, basis, vect, norm);
+                  get_normal_component(_num_dim, ibasis, basis, vect, norm);
                   if (norm > 0.1) break;
                 }
                 for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
@@ -2938,7 +2963,7 @@ int VPS::sample_voronoi_vertex(size_t seed_index, double* v)
           {
             for (size_t jdim = 0; jdim < _num_dim; jdim++) vect[jdim] = 0.0;
             vect[idim] = 1.0;
-            get_normal_component(_num_dim, num_basis, basis, vect, norm);
+            get_normal_component(_num_dim, ibasis, basis, vect, norm);
             if (norm > 0.1) break;
           }
           for (size_t idim = 0; idim < _num_dim; idim++) basis[ibasis][idim] = vect[idim];
