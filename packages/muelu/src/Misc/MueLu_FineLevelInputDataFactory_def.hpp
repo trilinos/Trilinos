@@ -60,13 +60,17 @@ namespace MueLu {
   RCP<const ParameterList> FineLevelInputDataFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< std::string >("Fine level variable", "A", "Variable name on finest level.");
-    validParamList->set< std::string >("Variable", "A", "Variable name on all coarse levels (except the finest level).");
+    validParamList->set< std::string >("Fine level variable", std::string("A"), "Variable name on finest level.");
+    validParamList->set< std::string >("Variable", std::string("A"), "Variable name on all coarse levels (except the finest level).");
 
-    validParamList->set< std::string >("Fine level factory", "NoFactory", "Generating factory of the fine level variable");
-    validParamList->set< std::string >("Coarse Level factory", "NoFactory", "Generating factory for data on all coarse levels (except the finest)");
+    validParamList->set< std::string >("Fine level factory", std::string("NoFactory"), "Generating factory of the fine level variable");
+    validParamList->set< std::string >("Coarse level factory", std::string("NoFactory"), "Generating factory for data on all coarse levels (except the finest)");
 
-    return validParamList;
+    validParamList->set< RCP<const FactoryBase> >("FinestLevelDataFactory", Teuchos::null, "Generating factory for level data on finest level");
+    validParamList->set< RCP<const FactoryBase> >("CoarseLevelDataFactory", Teuchos::null, "Generating factory for coarse level data");
+
+    //return validParamList;
+    return Teuchos::null;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -75,15 +79,21 @@ namespace MueLu {
     const ParameterList & pL = GetParameterList();
 
     std::string variableName = "";
+    if(pL.isParameter("Variable"))
+      variableName = pL.get<std::string>("Variable");
+
     std::string factoryName  = "NoFactory";
 
     if (currentLevel.GetLevelID() == 0) {
-      variableName = pL.get<std::string>("Fine level variable");
-      factoryName = pL.get<std::string>("Fine level factory");
+      if(pL.isParameter("Fine level factory"))
+        factoryName = pL.get<std::string>("Fine level factory");
     } else {
-      variableName = pL.get<std::string>("Variable");
-      factoryName = pL.get<std::string>("Coarse level factory");
+      if(pL.isParameter("Coarse level factory"))
+        factoryName = pL.get<std::string>("Coarse level factory");
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(variableName == "", MueLu::Exceptions::RuntimeError, "FineLevelInputDataFactory: no variable name provided. Please set \'Variable\' parameter in your input deck.");
+
     RCP<const FactoryBase> fact = GetFactory(factoryName);
     if (fact == Teuchos::null) { fact = currentLevel.GetFactoryManager()->GetFactory(factoryName); }
     currentLevel.DeclareInput(variableName, fact.get(), this);
@@ -95,29 +105,27 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
-    std::string variableName       = pL.get<std::string>("Variable");
+    std::string variableName       = "";
+    if (pL.isParameter("Variable"))
+      variableName = pL.get<std::string>("Variable");
     std::string factoryName        = "NoFactory";
 
     if (currentLevel.GetLevelID() == 0) {
-
-      factoryName        = pL.get<std::string>("Fine level factory");
+      if(pL.isParameter("Fine level factory"))
+        factoryName        = pL.get<std::string>("Fine level factory");
     } else {
-      factoryName        = pL.get<std::string>("Coarse level factory");
+      if(pL.isParameter("Coarse level factory"))
+        factoryName        = pL.get<std::string>("Coarse level factory");
     }
     RCP<const FactoryBase> fact = GetFactory(factoryName);
     if (fact == Teuchos::null) { fact = currentLevel.GetFactoryManager()->GetFactory(factoryName); }
 
-    if (currentLevel.GetLevelID() == 0) {
-      // todo: make it work for other data types
-      std::string finestVariableName = pL.get<std::string>("Fine level variable");
-      RCP<Matrix> data = currentLevel.Get< RCP<Matrix> >(finestVariableName, fact.get());
-      Set(currentLevel, variableName, data);
-    } else {
-      // todo: make it work for other data types
-      RCP<Matrix> data = currentLevel.Get< RCP<Matrix> >(variableName, fact.get());
-      Set(currentLevel, variableName, data);
-    }
+    GetOStream(Debug) << "Use " << variableName << " from " << factoryName << "(" << fact.get() << ")" << std::endl;
 
+    // TODO make it work for other variable types
+    RCP<Matrix> data = currentLevel.Get< RCP<Matrix> >(variableName, fact.get());
+    Set(currentLevel, variableName, data);
+      //Teuchos::TypeNameTraits<T>::name();
 
     //GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
   }

@@ -20,6 +20,7 @@ APPEND_SET(SOURCES
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
+  FineLevelInputDataFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
   IntrepidPCoarsenFactory.cpp
