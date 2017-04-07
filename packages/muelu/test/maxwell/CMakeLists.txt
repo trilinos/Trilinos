@@ -16,18 +16,18 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 # TAW: 10/15/2015  Disabling until bug#6358 is fixed for MueLu tests.
-#    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#      Maxwell3D
-#      SOURCES Maxwell3D.cpp
-#      COMM serial
-#    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Maxwell3D
+      SOURCES Maxwell3D.cpp
+      COMM serial
+    )
 
-#    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#      Maxwell3D
-#      SOURCES Maxwell3D.cpp
-#      NUM_MPI_PROCS 4
-#      COMM mpi
-#    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Maxwell3D
+      SOURCES Maxwell3D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
+    )
 
 # JJH: 8/21/2015  Disabling until LinearSolverFactory is ready.  See bug#6395.
 #    IF(HAVE_MUELU_COMPLEX)
