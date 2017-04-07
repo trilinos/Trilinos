@@ -241,9 +241,10 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
     delete Importer_;
     Importer_ = 0;
   }
+
   if(Exporter_ != 0) {
     delete Exporter_;
-    Importer_ = 0;
+    Exporter_ = 0;
   }
 
   NumMyBlockRows_ = 0;  // are these needed?
