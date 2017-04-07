@@ -43,6 +43,7 @@
 
 #include "Tpetra_Details_libGemm.hpp"
 #include "KokkosKernels_config.h"
+#include <stdexcept>
 
 // TpetraCore_config.h (included in Tpetra_Details_libGemm.hpp)
 // defines the TPETRACORE_F77_BLAS_MANGLE macro.  First argument is
