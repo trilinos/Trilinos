@@ -121,7 +121,6 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   send_array_size_(0),
   comm_plan_reverse_(0)
 {
-  //CMS
   int i;
   if (nsends_>0) {
     lengths_to_ = new int[nsends_];
