@@ -2,8 +2,9 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <!-- OUTPUT -->
-    <Parameter name="Check derivatives"              type="bool"    value="false"       />
-    <Parameter name="Number of output samples"       type="int"     value="4000"        />
+    <Parameter name="Check derivatives"              type="bool"    value="false"     />
+    <Parameter name="Zero initial guess"             type="bool"    value="true"      />
+    <Parameter name="Number of output samples"       type="int"     value="640"       />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"              type="int"     value="8"         />
     <!-- PROBLEM INFORMATION -->
@@ -62,8 +63,8 @@
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
     <ParameterList name="Simulated">
-      <Parameter name="Use Constraint Weights" type="bool"    value="true"   />
-      <Parameter name="Use CVaR"               type="bool"    value="true"   />
+      <Parameter name="Use Constraint Weights" type="bool"    value="false"  />
+      <Parameter name="Use CVaR"               type="bool"    value="false"  />
       <Parameter name="CVaR Confidence Level"  type="double"  value="0.5"    />
       <ParameterList name="Plus Function">
         <Parameter name="Smoothing Parameter"  type="double"  value="1e-4"   />
@@ -81,15 +82,15 @@
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-10" />
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-20" />
       <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
-      <Parameter name="Iteration Limit"               type="int"     value="25"     />
+      <Parameter name="Iteration Limit"               type="int"     value="50"     />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
       <Parameter name="Output Iteration History"      type="bool"    value="true"   />
       <Parameter name="Zero Initial Guess"            type="bool"    value="false"  />
-      <Parameter name="Solver Type"                   type="int"     value="0"      />
+      <Parameter name="Solver Type"                   type="int"     value="1"      />
     </ParameterList>
   </ParameterList>
 
@@ -206,7 +207,7 @@
       <Parameter name="Output Level" type="int" value="0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
-        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-6"  />
         <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
