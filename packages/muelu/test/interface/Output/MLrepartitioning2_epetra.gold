@@ -43,14 +43,18 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33333
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    transpose: use implicit = 0   [default]
    rap: fix zero diagonals = 0   [default]
@@ -139,14 +143,18 @@ Level 2
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33333
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    transpose: use implicit = 0   [default]
    rap: fix zero diagonals = 0   [default]
@@ -235,14 +243,18 @@ Level 3
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33333
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    transpose: use implicit = 0   [default]
    rap: fix zero diagonals = 0   [default]
@@ -331,14 +343,18 @@ Level 4
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33333
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    transpose: use implicit = 0   [default]
    rap: fix zero diagonals = 0   [default]

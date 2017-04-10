@@ -3890,6 +3890,13 @@ namespace Tpetra {
     // getFrobeniusNorm(), and the result is cached there.
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  bool 
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  haveGlobalConstants() const {
+    return getCrsGraph ()->haveGlobalConstants ();
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -4104,6 +4111,7 @@ namespace Tpetra {
     using Teuchos::TimeMonitor;
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph"))));
 #endif
+
 
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),

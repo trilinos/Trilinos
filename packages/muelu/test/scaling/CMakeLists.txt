@@ -32,7 +32,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
+    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -120,13 +120,23 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
       ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
+      ) 
 
     IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverEpetra_IsorropiaPoisson"
         ARGS "--linAlgebra=Epetra --xml=isorropia.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+      )
+    ENDIF()
+    
+    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverEpetra_CircNspDependency"
+        ARGS "--linAlgebra=Epetra --xml=circ_nsp_dependency.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
       )
@@ -189,6 +199,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       COMM mpi # HAVE_MPI required
       )
   ENDIF()
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetra_WithGlobalConstants"
+      ARGS "--linAlgebra=Tpetra --xml=scaling-withglobalconstants.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
     TRIBITS_ADD_TEST(

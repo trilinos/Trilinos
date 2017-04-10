@@ -47,10 +47,12 @@ Level 1
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -111,10 +113,12 @@ Level 2
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -175,10 +179,12 @@ Level 3
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -239,10 +245,12 @@ Level 4
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]

@@ -536,7 +536,7 @@ namespace MueLu {
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
      */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string()) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false, const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
@@ -548,7 +548,7 @@ namespace MueLu {
           // Compute the transpose A of the Tpetra matrix tpetraOp.
           RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
           Tpetra::RowMatrixTransposer<SC,LO,GO,NO> transposer(rcpFromRef(tpetraOp),label);
-          A = transposer.createTranspose();
+          A = transposer.createTranspose(params);
           RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>(A));
           RCP<CrsMatrix>                             AAA  = rcp_implicit_cast<CrsMatrix>(AA);
           RCP<CrsMatrixWrap>                         AAAA = rcp(new CrsMatrixWrap(AAA));

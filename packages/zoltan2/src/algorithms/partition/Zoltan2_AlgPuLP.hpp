@@ -74,38 +74,14 @@ public:
   {
     throw std::runtime_error(
           "BUILD ERROR:  PuLP requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag Zoltan2_ENABLE_PuLP:BOOL=ON.");
+          "Please set CMake flag TPL_ENABLE_PuLP:BOOL=ON.");
   }
 
   /*! \brief Set up validators specific to this algorithm
   */
   static void getValidParameters(ParameterList & pl)
   {
-    pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
-      "maximum load over average load",
-      Environment::getAnyDoubleValidator());
-
-    pl.set("pulp_edge_imbalance", 1.1, "edge imbalance tolerance, ratio of "
-      "maximum load over average load",
-      Environment::getAnyDoubleValidator());
-
-    // bool parameter
-    pl.set("pulp_lp_init", false, "perform label propagation-based "
-      "initialization", Environment::getBoolValidator() );
-
-    // bool parameter
-    pl.set("pulp_minimize_maxcut", false, "perform per-part max cut "
-      "minimization", Environment::getBoolValidator() );
-
-    // bool parameter
-    pl.set("pulp_verbose", false, "verbose output",
-      Environment::getBoolValidator() );
-
-    // bool parameter
-    pl.set("pulp_do_repart", false, "perform repartitioning",
-      Environment::getBoolValidator() );
-
-    pl.set("pulp_seed", 0, "set pulp seed", Environment::getAnyIntValidator());
+    // No parameters needed in this error-handling version of AlgPuLP
   }
 };
 
@@ -236,6 +212,37 @@ public:
       flags.set(VERTICES_ARE_MESH_ELEMENTS);
 
     buildModel(flags);
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
+      "maximum load over average load",
+      Environment::getAnyDoubleValidator());
+
+    pl.set("pulp_edge_imbalance", 1.1, "edge imbalance tolerance, ratio of "
+      "maximum load over average load",
+      Environment::getAnyDoubleValidator());
+
+    // bool parameter
+    pl.set("pulp_lp_init", false, "perform label propagation-based "
+      "initialization", Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_minimize_maxcut", false, "perform per-part max cut "
+      "minimization", Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_verbose", false, "verbose output",
+      Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_do_repart", false, "perform repartitioning",
+      Environment::getBoolValidator() );
+
+    pl.set("pulp_seed", 0, "set pulp seed", Environment::getAnyIntValidator());
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
@@ -492,7 +499,7 @@ void AlgPuLP<Adapter>::partition(
 
 
   if (verbose_output) {
-    printf("procid: %d, n: %i, m: %li, vb: %lf, eb: %lf, p: %i\n",
+    printf("procid: %d, n: %i, m: %li, vb: %f, eb: %f, p: %i\n",
       problemComm->getRank(), 
       num_verts, num_edges, vert_imbalance, edge_imbalance, num_parts);
   }

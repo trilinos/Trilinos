@@ -242,6 +242,9 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
     RealT val = obj0->value(*up,*zp,tol);
     *outStream << "Vorticity Value: " << val << std::endl;
+
+    // Get a summary from the time monitor.
+    Teuchos::TimeMonitor::summarize();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

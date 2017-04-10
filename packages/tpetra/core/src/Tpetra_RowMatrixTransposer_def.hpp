@@ -64,19 +64,16 @@ template<class Scalar,
      class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTranspose ()
+createTranspose (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   using Teuchos::RCP;
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
-    using Teuchos::TimeMonitor;
-    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose Local"))));
-#endif
   // Do the local transpose
-  RCP<crs_matrix_type> transMatrixWithSharedRows = createTransposeLocal ();
+  RCP<crs_matrix_type> transMatrixWithSharedRows = createTransposeLocal (params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose TAFC"))));
+  std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose TAFC"))));
 #endif
 
   // If transMatrixWithSharedRows has an exporter, that's what we
@@ -92,6 +89,7 @@ createTranspose ()
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     labelList.set("Timer Label",label_);
 #endif
+    if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
     // Use the Export object to do a fused Export and fillComplete.
     return exportAndFillCompleteCrsMatrix<crs_matrix_type> (transMatrixWithSharedRows, *exporter,Teuchos::null,Teuchos::null,Teuchos::rcp(&labelList,false));
   }
@@ -108,7 +106,7 @@ template<class Scalar,
          class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTransposeLocal ()
+createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -120,6 +118,12 @@ createTransposeLocal ()
   typedef GlobalOrdinal GO;
   typedef Tpetra::Import<LO, GO, Node> import_type;
   typedef Tpetra::Export<LO, GO, Node> export_type;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose Local"))));
+#endif
 
   //
   // This transpose is based upon the approach in EpetraExt.
@@ -222,9 +226,15 @@ createTransposeLocal ()
   }
 
   // Call ESFC & return
+  Teuchos::ParameterList eParams;
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  eParams.set("Timer Label",label_);
+#endif
+  if(!params.is_null()) eParams.set("compute global constants",params->get("compute global constants",true));
+
   transMatrixWithSharedRows->expertStaticFillComplete (origMatrix_->getRangeMap (),
                                                        origMatrix_->getDomainMap (),
-                                                       myImport, myExport);
+                                                       myImport, myExport,rcp(&eParams,false));
   return transMatrixWithSharedRows;
 }
 //

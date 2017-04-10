@@ -50,14 +50,18 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -77,7 +81,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1ddeeb0,node=0x1df64e0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0xdfcc90,node=0xd9ae40,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -152,14 +156,18 @@ Level 2
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -179,7 +187,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1e3e520,node=0x1e3f880,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0xdefa60,node=0xdf04d0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -262,6 +270,8 @@ Level 1
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
@@ -272,7 +282,8 @@ Level 1
  
  Build (MueLu::RebalanceTransferFactory)
   Transpose P (MueLu::TransPFactory)
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
@@ -328,6 +339,8 @@ Level 2
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
@@ -338,7 +351,8 @@ Level 2
  
  Build (MueLu::RebalanceTransferFactory)
   Transpose P (MueLu::TransPFactory)
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]

@@ -68,6 +68,8 @@ int main(int argc, char *argv[]) {
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
+#if defined(HAVE_TPETRA_INST_INT_INT)
+
 #include <MueLu_UseShortNames.hpp>
 
   typedef Tpetra::Map<LO,GO,NO>               TMap;
@@ -248,5 +250,10 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif // HAVE_TPETRA_INST_INT_INT
 #endif
 } // main
+
+

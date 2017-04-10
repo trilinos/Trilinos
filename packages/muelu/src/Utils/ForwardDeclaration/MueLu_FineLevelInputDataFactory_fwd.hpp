@@ -1,11 +1,12 @@
 // @HEADER
-// ************************************************************************
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+// ***********************************************************************
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,22 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_FINELEVELINPUTDATAFACTORY_FWD_HPP
+#define MUELU_FINELEVELINPUTDATAFACTORY_FWD_HPP
 
-#if !defined(Intrepid_MiniTensor_h)
-#define Intrepid_MiniTensor_h
 
-#include "Intrepid_MiniTensor_Vector.h"
-#include "Intrepid_MiniTensor_Tensor.h"
-#include "Intrepid_MiniTensor_Tensor3.h"
-#include "Intrepid_MiniTensor_Tensor4.h"
-#include "Intrepid_MiniTensor_Matrix.h"
 
-#include "Intrepid_MiniTensor_Geometry.h"
-#include "Intrepid_MiniTensor_LinearAlgebra.h"
-#include "Intrepid_MiniTensor_Mechanics.h"
 
-#endif //Intrepid_MiniTensor_h
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FineLevelInputDataFactory;
+}
+
+#ifndef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
+#define MUELU_FINELEVELINPUTDATAFACTORY_SHORT
+#endif
+
+
+
+#endif // MUELU_FINELEVELINPUTDATAFACTORY_FWD_HPP

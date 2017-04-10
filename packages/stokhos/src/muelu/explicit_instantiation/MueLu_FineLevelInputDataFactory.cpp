@@ -1,11 +1,12 @@
 // @HEADER
-// ************************************************************************
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+// ***********************************************************************
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,18 +35,31 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_TensorBase_t_h)
-#define Intrepid_MiniTensor_TensorBase_t_h
 
-namespace Intrepid {
 
-// Placeholder for now.
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
 
-} // namespace Intrepid
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#endif // Intrepid_MiniTensor_TensorBase_t_h
+// Sacado headers must be included first so that overloaded operators
+// are defined in the muelu template code
+#include "Stokhos_Sacado.hpp"
+#include "MueLu_FineLevelInputDataFactory_def.hpp"
+
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+template class MueLu::FineLevelInputDataFactory<pce_type, int, int>;
+
+#endif
+
+

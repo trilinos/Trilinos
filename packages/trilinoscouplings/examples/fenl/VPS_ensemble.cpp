@@ -153,6 +153,7 @@ int EnsembleVPS::generate_WS_points(size_t num_dim, size_t Npoints, double** &x,
 
   x[0] = dart;
   num_points++;
+  dart = new double[num_dim];
 
   // ------------------------------
   // Loop until you collect Npoints
@@ -185,7 +186,7 @@ int EnsembleVPS::generate_WS_points(size_t num_dim, size_t Npoints, double** &x,
         }
       }
       // ------------------------------
-      if (dart_in_sphere == false)
+      if (!dart_in_sphere)
       {
         point_placed = true;
         x[num_points] = dart;
@@ -193,11 +194,7 @@ int EnsembleVPS::generate_WS_points(size_t num_dim, size_t Npoints, double** &x,
         num_points++;
         break;
       }
-      else
-      {
-        dart = new double[num_dim];
-        numMisses++;
-      }
+      else numMisses++;
       // ------------------------------
     }
 
@@ -272,10 +269,10 @@ int EnsembleVPS::pick_MD_points(size_t numIn, double** x, double* g, size_t numO
 
 ///////////////////////////////////////////////////////////////////////
 
-double EnsembleVPS::g_dispersion(double *x, size_t num_x) {
+double EnsembleVPS::g_dispersion(double* x, size_t num_x) {
   double xmean(0.0), xstdv(0.0);
   for (size_t i = 0; i < num_x; i++) xmean += (x[i] / num_x);
-  for (size_t i = 0; i < num_x; i++) xstdv += ((x[i] - xmean)*(x[i] - xmean) / (num_x - 1));
+  for (size_t i = 0; i < num_x; i++) xstdv += ((x[i] - xmean)*(x[i] - xmean) / num_x);
   return sqrt(xstdv) / xmean;
 }
 
@@ -320,6 +317,20 @@ void EnsembleVPS::save_ei_sur() {
 
   for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++)
     txt_error << _ensemble_size*(iEnsemble + 1) << " " << _ei_sur[iEnsemble] << std::endl;
+
+  txt_error.close();
+}
+
+///////////////////////////////////////////////////////////////////////
+
+void EnsembleVPS::save_ef_max()
+{
+  // uses data stored in _ef_max[]
+  std::ofstream txt_error;
+  txt_error.open("ef_max.txt");
+
+  for (size_t iEnsemble = 0; iEnsemble < (_num_samples / _ensemble_size); iEnsemble++)
+    txt_error << _ensemble_size*(iEnsemble + 1) << " " << _ef_max[iEnsemble] << std::endl;
 
   txt_error.close();
 }
@@ -438,7 +449,7 @@ double EnsembleVPS::generate_a_random_number() {
 
 ///////////////////////////////////////////////////////////////////////
 
-double EnsembleVPS::f_test(double* x)
+double EnsembleVPS::f_test(const double* x)
 {
   if (_eval_test_function == SmoothHerbie)
   {
@@ -511,7 +522,7 @@ double EnsembleVPS::f_test(double* x)
 
 ///////////////////////////////////////////////////////////////////////
 
-double EnsembleVPS::g_test(double* x)
+double EnsembleVPS::g_test(const double* x)
 {
   double* a = new double[_num_dim];
   double* u = new double[_num_dim];

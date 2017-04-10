@@ -69,6 +69,42 @@ IF (${PACKAGE_NAME}_ENABLE_PuLP)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME pulpTestNoDistrib
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/pulpTestNoDistrib.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+#  KDD 4/4/17
+#  Tests with vertex weights are not passing yet;
+#  all vertices assigned to one part.
+#  TRIBITS_ADD_TEST(
+#    test_driver
+#    NAME pulpVwgtTest
+#    NUM_MPI_PROCS 4
+#    COMM serial mpi
+#    ARGS
+#    "./driverinputs/pulpVwgtTest.xml"
+#    PASS_REGULAR_EXPRESSION "PASS"
+#    FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#  TRIBITS_ADD_TEST(
+#    test_driver
+#    NAME pulpVwgtTestNoDistrib
+#    NUM_MPI_PROCS 4
+#    COMM serial mpi
+#    ARGS
+#    "./driverinputs/pulpVwgtTestNoDistrib.xml"
+#    PASS_REGULAR_EXPRESSION "PASS"
+#    FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+
 ENDIF()
 
 TRIBITS_ADD_TEST(

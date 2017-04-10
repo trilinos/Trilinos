@@ -465,6 +465,11 @@ public:
     matrixData_->rightScale(x);
   }
 
+  //! Returns true if globalConstants have been computed; false otherwise
+  bool haveGlobalConstants() const {
+    return matrixData_->haveGlobalConstants();
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods

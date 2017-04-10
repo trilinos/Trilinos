@@ -61,9 +61,9 @@ IntegrateDiffusionTerm(const std::string& flux_name,
 template<typename EvalT, typename Traits>
 void IntegrateDiffusionTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
-  grad_basis = workset.mesh_->getGradBasisReal();
-  weights = workset.mesh_->getWeights();
-  cell_measure = workset.mesh_->getDetJac();
+  grad_basis = workset.grad_basis_real_;
+  weights = workset.weights_;
+  cell_measure = workset.det_jac_;
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
 }
 

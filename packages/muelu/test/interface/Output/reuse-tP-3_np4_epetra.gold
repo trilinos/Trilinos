@@ -44,10 +44,12 @@ Level 1
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -67,7 +69,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1573b20,node=0x14aaf40,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x219a230,node=0x20d7160,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -136,10 +138,12 @@ Level 2
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -159,7 +163,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1644870,node=0x1737210,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x22d25e0,node=0x20df950,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -225,7 +229,8 @@ Level 1
  
  Build (MueLu::RebalanceTransferFactory)
   Transpose P (MueLu::TransPFactory)
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
@@ -296,10 +301,12 @@ Level 2
      Strided block id = -1   [default]
      Domain GID offsets = {0}   [default]
      
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
     Transpose P (MueLu::TransPFactory)
-    [empty list]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -319,7 +326,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1644870,node=0x1737210,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x22d25e0,node=0x20df950,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]

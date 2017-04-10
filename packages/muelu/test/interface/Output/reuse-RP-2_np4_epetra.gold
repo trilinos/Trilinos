@@ -50,11 +50,14 @@ Level 1
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -74,7 +77,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x14b2ff0,node=0x14b1da0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2103620,node=0x224eab0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -141,11 +144,14 @@ Level 2
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
       
-     [empty list]
+     matrixmatrix: kernel params -> 
+      [empty list]
      
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
+    matrixmatrix: kernel params -> 
+     [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -165,7 +171,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x171ad20,node=0x1677610,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2199b70,node=0x21d9150,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]

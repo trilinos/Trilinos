@@ -2793,6 +2793,14 @@ namespace Tpetra {
     void staticAssertions() const;
     void clearGlobalConstants();
   public:
+    //! Returns true if globalConstants have been computed; false otherwise
+    bool haveGlobalConstants() const { return haveGlobalConstants_;}
+
+    /// \brief Forces computation of global constant if they have not been computed yet
+    ///
+    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
+    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
+    ///
     void computeGlobalConstants();
   protected:
     /// \brief Get information about the locally owned row with local

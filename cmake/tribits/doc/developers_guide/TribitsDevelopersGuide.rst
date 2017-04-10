@@ -2246,8 +2246,8 @@ project's build files::
   $ cmake [options] <projectDir>
 
 Below, is a short pseudo-code algorithm for the TriBITS framework processing
-and callbacks that begin in the `<projectDir>/CMakeLists.txt`_ and proceed
-through the call to `TRIBITS_PROJECT()`_.
+and callbacks that begins in the `<projectDir>/CMakeLists.txt`_ file and
+proceeds through the call to `TRIBITS_PROJECT()`_.
 
 .. _Full Processing of TriBITS Project Files:
 
@@ -2256,7 +2256,7 @@ through the call to `TRIBITS_PROJECT()`_.
 | 1.  Read `<projectDir>/ProjectName.cmake`_ (sets `PROJECT_NAME`_)
 | 2.  Call ``PROJECT(${PROJECT_NAME} NONE)`` (sets `${PROJECT_NAME}_SOURCE_DIR`_
 |     and `${PROJECT_NAME}_BINARY_DIR`_)
-| 3.  Execute `TRIBITS_PROJECT()`_:
+| 3.  Call `TRIBITS_PROJECT()`_:
 |   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
 |   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}
 |         ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
@@ -2289,7 +2289,7 @@ through the call to `TRIBITS_PROJECT()`_.
 |       (see `Package Dependencies and Enable/Disable Logic`_)
 |   11) `Probe and set up the environment`_ (finds MPI, compilers, etc.)
 |       (see `TriBITS Environment Probing and Setup`_)
-|   12) For ``<tplName>`` in the set of enabled TPLs:
+|   12) For each ``<tplName>`` in the set of enabled TPLs:
 |       * ``INCLUDE(${<tplName>_FINDMOD})`` (see `TriBITS TPL`_)
 |   13) For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * Read `<repoDir>/Copyright.txt`_
@@ -2305,11 +2305,11 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_ ``)``
 |       * Call ``TRIBITS_REPOSITORY_DEFINE_PACKAGING()``
 
-The TriBITS Framework obviously does a lot more that what is described above
+The TriBITS Framework obviously does a lot more than what is described above
 but the basic trace of major operations and ordering and the processing of
 project, repository, package, and subpackage files should be clear.  All of
 this information should also be clear when enabling `File Processing
-Tracing`_. 
+Tracing`_ and watching the output from the ``cmake`` configure STDOUT.
 
 Reduced Package Dependency Processing 
 ++++++++++++++++++++++++++++++++++++++

@@ -1,11 +1,12 @@
 // @HEADER
-// ************************************************************************
+// ***********************************************************************
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,18 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
-//
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Storage_i_h)
-#define Intrepid_MiniTensor_Storage_i_h
+#ifndef   __Panzer_EvaluatorStyle_hpp__
+#define   __Panzer_EvaluatorStyle_hpp__
 
-namespace Intrepid {
+namespace panzer
+{
+  /**
+   *  \brief An indication of how an `Evaluator` will behave.
+   *
+   *  An `Evaluator` will compute the result of its evaluation and then
+   *  behave according to the table below.
+   */
+  enum class EvaluatorStyle
+  {
+    CONTRIBUTES, /*!< Contribute the result to a specified residual, not saving
+                      anything. */
+    EVALUATES,   /*!< Save the result under a specified name for future use. */
+  }; // end of enum class EnumeratorStyle
 
-// Place holder for now.
+} // end of namespace panzer
 
-} // namespace Intrepid
-
-#endif // Intrepid_MiniTensor_Storage_i_h
+#endif // __Panzer_EvaluatorStyle_hpp__

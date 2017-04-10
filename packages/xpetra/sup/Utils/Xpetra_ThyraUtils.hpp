@@ -594,12 +594,12 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
-    bool bIsTpetra = false;
+    //bool bIsTpetra = false;
 
 #ifdef HAVE_XPETRA_TPETRA
     Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
-      bIsTpetra = true;
+      //bIsTpetra = true;
       Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrix();
@@ -612,13 +612,18 @@ public:
 
       thyraOp = Thyra::createConstLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
-    }
-#endif
-
+    } else {
 #ifdef HAVE_XPETRA_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra == false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to Tpetra::CrsMatrix failed. Assume matrix should be Epetra then. Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to Tpetra::CrsMatrix failed. Assume matrix should be Epetra then. No Epetra available");
 #endif
+    }
     return thyraOp;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    return Teuchos::null;
+#endif
   }
 
   static Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
@@ -626,12 +631,12 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
-    bool bIsTpetra = false;
+    //bool bIsTpetra = false;
 
 #ifdef HAVE_XPETRA_TPETRA
     Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
-      bIsTpetra = true;
+      //bIsTpetra = true;
       Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrixNonConst();
@@ -644,13 +649,19 @@ public:
 
       thyraOp = Thyra::createLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
-    }
-#endif
-
+    } else {
+      // cast to TpetraCrsMatrix failed
 #ifdef HAVE_XPETRA_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra == false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Assuming matrix supposed to be Epetra. Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
 #endif
+    }
     return thyraOp;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    return Teuchos::null;
+#endif
   }
 
   static Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
@@ -663,57 +674,66 @@ public:
     Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
     TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
-    bool bTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
     Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock_wrap->getCrsMatrix());
-    if(tpetraMat!=Teuchos::null) bTpetra = true;
-#endif
+    if(tpetraMat!=Teuchos::null) {
 
-#ifdef HAVE_XPETRA_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(bTpetra == false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
-#endif
+      // create new Thyra blocked operator
+      Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> > blockMat =
+          Thyra::defaultBlockedLinearOp<Scalar>();
 
-    // create new Thyra blocked operator
-    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> > blockMat =
-        Thyra::defaultBlockedLinearOp<Scalar>();
+      blockMat->beginBlockFill(nRows,nCols);
 
-    blockMat->beginBlockFill(nRows,nCols);
+      for (int r=0; r<nRows; ++r) {
+        for (int c=0; c<nCols; ++c) {
+          Teuchos::RCP<Matrix> xpmat = mat->getMatrix(r,c);
 
-    for (int r=0; r<nRows; ++r) {
-      for (int c=0; c<nCols; ++c) {
-        Teuchos::RCP<Matrix> xpmat = mat->getMatrix(r,c);
+          if(xpmat == Teuchos::null) continue; // shortcut for empty blocks
 
-        if(xpmat == Teuchos::null) continue; // shortcut for empty blocks
+          Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock = Teuchos::null;
 
-        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock = Teuchos::null;
-
-        // check whether the subblock is again a blocked operator
-        Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpblock =
-            Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpmat);
-        if(xpblock != Teuchos::null) {
-          if(xpblock->Rows() == 1 && xpblock->Cols() == 1) {
-            // If it is a single block operator, unwrap it
-            Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpblock->getCrsMatrix());
+          // check whether the subblock is again a blocked operator
+          Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpblock =
+              Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpmat);
+          if(xpblock != Teuchos::null) {
+            if(xpblock->Rows() == 1 && xpblock->Cols() == 1) {
+              // If it is a single block operator, unwrap it
+              Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpblock->getCrsMatrix());
+              TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+              thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+            } else {
+              // recursive call for general blocked operators
+              thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpblock);
+            }
+          } else {
+            // check whether it is a CRSMatrix object
+            Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpmat);
             TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
             thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
-          } else {
-            // recursive call for general blocked operators
-            thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpblock);
           }
-        } else {
-          // check whether it is a CRSMatrix object
-          Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpmat);
-          TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
-          thBlock = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
+
+          blockMat->setBlock(r,c,thBlock);
         }
-
-        blockMat->setBlock(r,c,thBlock);
       }
+
+      blockMat->endBlockFill();
+
+      return blockMat;
+    } else {
+      // tpetraMat == Teuchos::null
+#ifdef HAVE_XPETRA_EPETRA
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Assuming matrix supposed to be Epetra. Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
+#endif
+      return Teuchos::null;
     }
+#endif // endif HAVE_XPETRA_TPETRA
 
-    blockMat->endBlockFill();
-
-    return blockMat;
+#ifdef HAVE_XPETRA_EPETRA
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    return Teuchos::null;
+#endif // endif HAVE_XPETRA_EPETRA
   }
 
 }; // end Utils class
@@ -1368,7 +1388,7 @@ public:
       thyraOp = Thyra::createConstLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem EEE. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1413,7 +1433,7 @@ public:
       thyraOp = Thyra::createLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem FFF. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif

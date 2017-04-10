@@ -326,6 +326,12 @@ int main(int argc, char *argv[]) {
       con->solve(*rp,*(vusim->get(i)),*zp,tol);
     }
 
+    bool zeroInit = parlist->sublist("Problem").get("Zero initial guess",true);
+    if (zeroInit) {
+      x.zero();
+      vp->zero();
+    }
+
     /*************************************************************************/
     /***************** SOLVE PROBLEM *****************************************/
     /*************************************************************************/

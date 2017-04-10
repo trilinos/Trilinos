@@ -64,6 +64,9 @@
 // Amesos2
 #include "Amesos2.hpp"
 
+// Ifpack2
+#include "Ifpack2_Factory.hpp"
+
 // MueLu
 #include "MueLu.hpp"
 #include "MueLu_TpetraOperator.hpp"
@@ -90,6 +93,8 @@ private:
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
   Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
   Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
+  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_;
+  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_trans_;
   Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_;
   Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_trans_;
   Teuchos::RCP<Belos::LinearProblem<Real,MV,OP> > problemBelos_;
@@ -97,7 +102,8 @@ private:
 
   // Linear solver options.
   bool useDirectSolver_;
-  std::string solverType_;
+  std::string directSolver_;
+  std::string preconditioner_;
 
   // Matrix transpose.
   Teuchos::RCP<Tpetra::CrsMatrix<> > A_trans_;
@@ -115,15 +121,16 @@ public:
 
   Solver(Teuchos::ParameterList & parlist) : parlist_(parlist), firstSolve_(true) {
     useDirectSolver_ = parlist.get("Use Direct Solver", true);
-    solverType_ = parlist.sublist("Direct").get("Solver Type", "KLU2");
+    directSolver_ = parlist.sublist("Direct").get("Solver Type", "KLU2");
     parlistAmesos2_ = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
+    preconditioner_ = parlist.get("Preconditioner", "Ifpack2");
   }
 
   void setA(Teuchos::RCP<Tpetra::CrsMatrix<> > &A) {
     if (useDirectSolver_) { // using Amesos2 direct solver
       if (firstSolve_) { // construct solver object
         try {
-          solver_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(solverType_, A);
+          solver_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(directSolver_, A);
         }
         catch (std::invalid_argument e) {
           std::cout << e.what() << std::endl;
@@ -132,15 +139,30 @@ public:
         firstSolve_ = false;
       }
       solver_->numericFactorization();
-    } // useDirectSolver_
-    else { // construct MueLu preconditioner and Belos solver
-      Teuchos::ParameterList & parlistMuelu = parlist_.sublist("MueLu");
+    }
+    else { // construct MueLu or Ifpack2 preconditioner and Belos solver
       // Create transpose.
       Tpetra::RowMatrixTransposer<> transposer(A);
       A_trans_ = transposer.createTranspose();
-      // Create preconditioners.
-      mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A_trans_), parlistMuelu);
-      mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A), parlistMuelu);
+      if (preconditioner_ == "Ifpack2") {
+        Teuchos::ParameterList & parlistIfpack2 = parlist_.sublist("Ifpack2");
+        // Create preconditioners.
+        ifpack2Preconditioner_trans_ = Ifpack2::Factory::create<Tpetra::RowMatrix<Real,LO,GO,NO> > ("SCHWARZ", A_trans_);
+        ifpack2Preconditioner_ = Ifpack2::Factory::create<Tpetra::RowMatrix<Real,LO,GO,NO> > ("SCHWARZ", A);
+        ifpack2Preconditioner_trans_->setParameters(parlistIfpack2);
+        ifpack2Preconditioner_->setParameters(parlistIfpack2);
+        ifpack2Preconditioner_trans_->initialize();
+        ifpack2Preconditioner_->initialize();
+        ifpack2Preconditioner_trans_->compute();
+        ifpack2Preconditioner_->compute();
+      }
+      else if (preconditioner_ == "MueLu") {
+        Teuchos::ParameterList & parlistMuelu = parlist_.sublist("MueLu");
+        // Create preconditioners.
+        mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A_trans_), parlistMuelu);
+        mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(A), parlistMuelu);
+      }
+
       // Create Belos solver object and linear problem.
       if (firstSolve_) {
         Teuchos::RCP<Teuchos::ParameterList> parlistBelos = Teuchos::rcpFromRef(parlist_.sublist("Belos"));
@@ -165,24 +187,34 @@ public:
              const bool transpose = false) {
     if (useDirectSolver_) { // using Amesos2 direct solver
       //parlistAmesos2_->set("Transpose", transpose);
-      parlistAmesos2_->sublist(solverType_).set("Transpose", transpose);
+      parlistAmesos2_->sublist(directSolver_).set("Transpose", transpose);
       solver_->setParameters(parlistAmesos2_);
       solver_->setX(x);
       solver_->setB(b);
       solver_->solve();
-    }  // useDirectSolver_
-    else { // use Belos
+    }
+    else { // use Belos with MueLu or Ifpack2
       if ( transpose ) {
         problemBelos_trans_->setLHS(x);
         problemBelos_trans_->setRHS(b);
-        problemBelos_trans_->setRightPrec(mueLuPreconditioner_trans_);
+        if (preconditioner_ == "Ifpack2") {
+          problemBelos_trans_->setRightPrec(ifpack2Preconditioner_trans_);
+        }
+        else if (preconditioner_ == "MueLu") {
+          problemBelos_trans_->setRightPrec(mueLuPreconditioner_trans_);
+        }
         problemBelos_trans_->setProblem();
         solverBelos_trans_->solve();
-      }
+        }
       else {
         problemBelos_->setLHS(x);
         problemBelos_->setRHS(b);
-        problemBelos_->setRightPrec(mueLuPreconditioner_);
+        if (preconditioner_ == "Ifpack2") {
+          problemBelos_->setRightPrec(ifpack2Preconditioner_);
+        }
+        else if (preconditioner_ == "MueLu") {
+          problemBelos_->setRightPrec(mueLuPreconditioner_);
+        }
         problemBelos_->setProblem();
         solverBelos_->solve();
       }

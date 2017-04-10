@@ -103,7 +103,7 @@ public:
 
   void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    con_->update(u,*z_,flag,iter);
+    con_->update_1(u,flag,iter);
     con_->value(*c1_,u,*z_,tol);
     cdual_->set(c1_->dual());
   }

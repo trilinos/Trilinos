@@ -48,7 +48,8 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]
@@ -122,7 +123,8 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]
@@ -196,7 +198,8 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]
@@ -270,7 +273,8 @@ Level 4
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]

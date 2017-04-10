@@ -3882,6 +3882,10 @@ namespace Tpetra {
     /// This method is called in fillComplete().
     void computeGlobalConstants();
 
+  public:
+    //! Returns true if globalConstants have been computed; false otherwise
+    bool haveGlobalConstants() const;
+  protected:
     /// \brief Column Map MultiVector used in apply() and gaussSeidel().
     ///
     /// This is a column Map MultiVector.  It is used as the target of

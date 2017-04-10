@@ -157,6 +157,7 @@ public:
   void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) { }
   void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) { }
   void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const { }
+  bool haveGlobalConstants() const  { return true;}
   void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
@@ -681,6 +682,8 @@ public:
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
 
+  // Epetra always has global constants
+  bool haveGlobalConstants() const  { return true; }
   //! Expert static fill complete
   //** \warning This is an expert-only routine and should not be called from user code. */
   void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
@@ -1712,6 +1715,9 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
+  
+  // Epetra always has global constants
+  bool haveGlobalConstants() const  { return true;}
 
   //! Expert static fill complete
   //** \warning This is an expert-only routine and should not be called from user code. */
