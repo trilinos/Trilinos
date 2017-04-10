@@ -475,6 +475,11 @@ namespace MueLu {
 
     /*! @brief Detect Dirichlet rows
 
+        The routine assumes, that if there is only one nonzero per row, it is on the diagonal and therefore a DBC.
+        This is safe for most of our applications, but one should be aware of that.
+
+        There is an alternative routine (see DetectDirichletRowsExt)
+
         @param[in] A matrix
         @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
 
@@ -495,6 +500,50 @@ namespace MueLu {
               boundaryNodes[row] = false;
               break;
             }
+      }
+      return boundaryNodes;
+    }
+
+
+    /*! @brief Detect Dirichlet rows (extended version)
+
+        Look at each matrix row and mark it as Dirichlet if there is only one
+        "not small" nonzero on the diagonal. In determining whether a nonzero
+        is "not small" use
+               \f abs(A(i,j)) / sqrt(abs(diag[i]*diag[j])) > tol
+
+        @param[in] A matrix
+        @param[in/out] bHasZeroDiagonal Reference to boolean variable. Returns true if there is a zero on the diagonal in the local part of the Matrix. Otherwise it is false. Different processors might return a different value. There is no global reduction!
+        @param[in] tol If a row entry's magnitude is less than or equal to this tolerance, the entry is treated as zero.
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
+    */
+    static Teuchos::ArrayRCP<const bool> DetectDirichletRowsExt(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool & bHasZeroDiagonal, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero()) {
+
+      // assume that there is no zero diagonal in matrix
+      bHasZeroDiagonal = false;
+
+      Teuchos::RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+      A.getLocalDiagCopy(*diagVec);
+      Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+
+      LocalOrdinal numRows = A.getNodeNumRows();
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      ArrayRCP<bool> boundaryNodes(numRows, false);
+      for (LocalOrdinal row = 0; row < numRows; row++) {
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> vals;
+        A.getLocalRowView(row, indices, vals);
+        size_t nnz = 0; // collect nonzeros in row (excluding the diagonal)
+        bool bHasDiag = false;
+        for (size_t col = 0; col < nnz; col++) {
+          if ( indices[col] != row) {
+            if (STS::magnitude(vals[col] / sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col]))   ) > tol) {
+              nnz++;
+            }
+          } else bHasDiag = true; // found a diagonal entry
+        }
+        if (bHasDiag == false) bHasZeroDiagonal = true; // we found at least one row without a diagonal
+        else if(nnz == 0) boundaryNodes[row] = true;
       }
       return boundaryNodes;
     }
@@ -595,6 +644,8 @@ namespace MueLu {
 
 
     // Finds the OAZ Dirichlet rows for this matrix
+    // so far only used in IntrepidPCoarsenFactory
+    // TODO check whether we can use DetectDirichletRows instead
     static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
                                   std::vector<LocalOrdinal>& dirichletRows, bool count_twos_as_dirichlet=false) {
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
@@ -614,7 +665,7 @@ namespace MueLu {
         }
       }
     }
-    
+
     // Applies Ones-and-Zeros to matrix rows
     static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                const std::vector<LocalOrdinal>& dirichletRows) {
@@ -627,14 +678,14 @@ namespace MueLu {
         GlobalOrdinal row_gid = Rmap->getGlobalElement(dirichletRows[i]);
 
         Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;        
+        Teuchos::ArrayView<const Scalar> values;
         A->getLocalRowView(dirichletRows[i],indices,values);
         // NOTE: This won't work with fancy node types.
         Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
         for(size_t j=0; j<(size_t)indices.size(); j++) {
           if(Cmap->getGlobalElement(indices[j])==row_gid)
             valuesNC[j]=one;
-          else 
+          else
             valuesNC[j]=zero;
         }
       }
@@ -647,34 +698,34 @@ namespace MueLu {
 
       for(size_t i=0; i<dirichletRows.size(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;        
+        Teuchos::ArrayView<const Scalar> values;
         A->getLocalRowView(dirichletRows[i],indices,values);
         // NOTE: This won't work with fancy node types.
         Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
         for(size_t j=0; j<(size_t)indices.size(); j++)
-            valuesNC[j]=zero;   
+            valuesNC[j]=zero;
       }
     }
 
     // Finds the OAZ Dirichlet rows for this matrix
-    static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,		
+    static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
 						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletRow,
 						    Teuchos::RCP<Xpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> >& isDirichletCol) {
-      
+
       // Make sure A's RowMap == DomainMap
       if(!A->getRowMap()->isSameAs(*A->getDomainMap())) {
         throw std::runtime_error("UtilitiesBase::FindDirichletRowsAndPropagateToCols row and domain maps must match.");
       }
       RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A->getCrsGraph()->getImporter();
       bool has_import = !importer.is_null();
-    
+
       // Find the Dirichlet rows
       std::vector<LocalOrdinal> dirichletRows;
       FindDirichletRows(A,dirichletRows);
-    
+
 #if 0
     printf("[%d] DirichletRow Ids = ",A->getRowMap()->getComm()->getRank());
-      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) 
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++)
 	printf("%d ",dirichletRows[i]);
     printf("\n");
     fflush(stdout);
@@ -692,7 +743,7 @@ namespace MueLu {
 	if(!has_import) dc[dirichletRows[i]] = 1;
       }
 
-      if(has_import) 
+      if(has_import)
 	isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
 
     }
