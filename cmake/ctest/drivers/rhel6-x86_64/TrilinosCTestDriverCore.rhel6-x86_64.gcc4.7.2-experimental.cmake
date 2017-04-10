@@ -88,9 +88,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTrilinos_PRE_REPOSITORIES=''"
     "-DTrilinos_EXTRA_REPOSITORIES=''"
     "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    
+
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
-    
+
     "-DTrilinos_ENABLE_CXX11=ON"
     "-DTrilinos_CXX11_FLAGS:STRING=--std=c++11"
 
@@ -115,7 +115,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DZlib_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/include"
     "-DZlib_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/lib"
-    
+
     "-DIntrepidCore_ENABLE_DEBUG_INF_CHECK=OFF"
     )
     # The Werror build in muir sets GLM_INCLUDE_DIRS, but this may not be needed.
@@ -128,7 +128,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
        )
   ENDIF()
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.3")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.7.2")
 
   IF (COMM_TYPE STREQUAL MPI)
 
@@ -139,12 +139,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
          "-DTPL_ENABLE_MPI:BOOL=ON"
          "-DMPI_BASE_DIR=$ENV{SEMS_OPENMPI_ROOT}"
        )
-       
+
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_trilinos-test_openmpi_1.2.7.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )      
+        "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_trilinos-test_openmpi_1.2.7.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
 
   ELSE()
-  
+
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DCMAKE_CXX_COMPILER:FILEPATH=$ENV{CXX}"

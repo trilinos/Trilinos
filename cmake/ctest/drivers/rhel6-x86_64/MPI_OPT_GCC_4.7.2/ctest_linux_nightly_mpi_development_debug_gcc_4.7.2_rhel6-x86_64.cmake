@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.9.3.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.7.2-experimental.cmake")
 
 #
 # Set the options specific to this build case
@@ -70,11 +70,11 @@ SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
 SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 
-# 
-# SET(Trilinos_PACKAGES NOX      EpetraExt   TrilinosCouplings 
-#                       Ifpack   Isorropia   AztecOO 
-#                       Belos    Teuchos     Amesos 
-#                       Sacado   Zoltan      Epetra 
+#
+# SET(Trilinos_PACKAGES NOX      EpetraExt   TrilinosCouplings
+#                       Ifpack   Isorropia   AztecOO
+#                       Belos    Teuchos     Amesos
+#                       Sacado   Zoltan      Epetra
 #                       Triutils )
 
 SET(EXTRA_CONFIGURE_OPTIONS
@@ -84,17 +84,17 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DTPL_ENABLE_HDF5:BOOL=ON"
   "-DTPL_ENABLE_Netcdf:BOOL=ON"
-  
+
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  
+
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
-  
+
   "-DTrilinos_ENABLE_MOOCHO=OFF"
   "-DTrilinos_ENABLE_Optika=OFF"
   "-DTrilinos_ENABLE_Didasko=OFF"
-  
+
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
-    
+
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   )
 
