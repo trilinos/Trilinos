@@ -308,6 +308,9 @@ typedef MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilitiesBa
 #ifdef MUELU_UTILITIES_KOKKOS_SHORT
 typedef MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utilities_kokkos;
 #endif
+#ifdef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
+typedef MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> VariableDofLaplacianFactory;
+#endif
 #ifdef MUELU_SEMICOARSENPFACTORY_SHORT
 typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory;
 #endif
