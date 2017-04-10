@@ -1890,8 +1890,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           size_t maxNzInB     = 0;
           size_t numLocalRows = 0;
           if (A.isFillComplete() && B.isFillComplete()) {
-            maxNzInA     = A.getGlobalMaxNumRowEntries();
-            maxNzInB     = B.getGlobalMaxNumRowEntries();
+            maxNzInA     = A.getNodeMaxNumRowEntries();
+            maxNzInB     = B.getNodeMaxNumRowEntries();
             numLocalRows = A.getNodeNumRows();
           }
 
@@ -1915,11 +1915,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
           } else {
             // general case
-            double nnzPerRowInA = Teuchos::as<double>(A.getGlobalNumEntries()) / A.getGlobalNumRows();
-            double nnzPerRowInB = Teuchos::as<double>(B.getGlobalNumEntries()) / B.getGlobalNumRows();
+            double nnzPerRowInA = Teuchos::as<double>(A.getNodeNumEntries()) / A.getNodeNumRows();
+            double nnzPerRowInB = Teuchos::as<double>(B.getNodeNumEntries()) / B.getNodeNumRows();
             LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
 
-            LO maxPossible = A.getGlobalMaxNumRowEntries() + B.getGlobalMaxNumRowEntries();
+            LO maxPossible = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
             //Use static profiling (more efficient) if the estimate is at least as big as the max
             //possible nnz's in any single row of the result.
             Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
