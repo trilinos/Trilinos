@@ -39,8 +39,15 @@ APPEND_SET(SOURCES
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UserData/CreateXpetraPreconditioner.cpp
   Utilities
   VariableContainer.cpp
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp
+  SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/UserData
+  SOURCE_FILES test.xml
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/UserData
 )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
