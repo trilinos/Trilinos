@@ -3388,6 +3388,12 @@ namespace Tpetra {
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
           size_t& constantNumPackets,
           Distributor& distor) const;
+    void
+    packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                   Teuchos::Array<char>& exports,
+                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                   size_t& constantNumPackets,
+                   Distributor& distor) const;
 
   private:
     /// \brief Pack data for the current row to send.
