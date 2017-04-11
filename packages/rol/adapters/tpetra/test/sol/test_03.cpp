@@ -237,7 +237,6 @@ int main(int argc, char* argv[]) {
     simobj.checkHessVec(x, v, true, *outStream);
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);
     vu->zero();
-    x.zero();
     algo.run(x, *vu, simobj, simcon, true, *outStream);
 
     // Output control to file.
