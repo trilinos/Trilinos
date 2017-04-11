@@ -92,37 +92,36 @@ private:
   }
 
   std::vector<std::vector<Real> > sample(int nSamp, bool store = true) {
+    srand(123454321);
     const Real zero(0), one(1), two(2), tol(0.1);
-    // Generate samples
-    std::vector<std::vector<Real> > pts;
-    std::vector<Real> p;
-    for (int i = 0; i < nSamp; ++i) {
-      if ( !useDist_ ) {
-        const int dataSize = data_.size();
-        p.resize(dataSize, zero);
-        for (int j = 0; j < dataSize; ++j) {
-          if ( use_normal_ ) {
-            p[j] = std::sqrt(two*(data_[j])[1])*ierf(two*random()-one) + (data_[j])[0];
+    int rank = SampleGenerator<Real>::batchID();
+    const int dim = (!useDist_ ? data_.size() : dist_.size());
+    std::vector<Real> pts(nSamp*dim, zero);
+    if (rank == 0) { 
+      // Generate samples
+      for (int i = 0; i < nSamp; ++i) {
+        if ( !useDist_ ) {
+          for (int j = 0; j < dim; ++j) {
+            if ( use_normal_ ) {
+              pts[j + i*dim] = std::sqrt(two*(data_[j])[1])*ierf(two*random()-one) + (data_[j])[0];
+            }
+            else {
+              pts[j + i*dim] = ((data_[j])[1]-(data_[j])[0])*random()+(data_[j])[0];
+            }
           }
-          else {
-            p[j] = ((data_[j])[1]-(data_[j])[0])*random()+(data_[j])[0];
+        }
+        else {
+          for (int j = 0; j < dim; ++j) {
+            pts[j + i*dim] = (dist_[j])->invertCDF(random());
+            while (std::abs(pts[j + i*dim]) > tol*ROL::ROL_OVERFLOW<Real>()) {
+              pts[j + i*dim] = (dist_[j])->invertCDF(random());
+            }
           }
         }
       }
-      else {
-        const int distSize = dist_.size();
-        p.resize(distSize, zero);
-        for (int j = 0; j < distSize; ++j) {
-          p[j] = (dist_[j])->invertCDF(random());
-          while (std::abs(p[j]) > tol*ROL::ROL_OVERFLOW<Real>()) {
-            p[j] = (dist_[j])->invertCDF(random());
-          }
-        }
-      }
-      pts.push_back(p);
     }
+    SampleGenerator<Real>::broadcast(&pts[0],nSamp*dim,0);
     // Separate samples across processes
-    int rank   = SampleGenerator<Real>::batchID();
     int nProc  = SampleGenerator<Real>::numBatches();
     int frac   = nSamp / nProc;
     int rem    = nSamp % nProc;
@@ -132,8 +131,13 @@ private:
       offset += frac + ((i < rem) ? 1 : 0);
     }
     std::vector<std::vector<Real> > mypts;
+    std::vector<Real> pt(dim);
     for (int i = 0; i < N; ++i) {
-      mypts.push_back(pts[offset+i]);
+      int I = offset+i;
+      for (int j = 0; j < dim; ++j) {
+        pt[j] = pts[j + I*dim];
+      }
+      mypts.push_back(pt);
     }
     if ( store ) {
       std::vector<Real> mywts(N, one/static_cast<Real>(nSamp));

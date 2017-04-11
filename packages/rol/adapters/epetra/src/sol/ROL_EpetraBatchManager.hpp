@@ -77,6 +77,10 @@ public:
 
   void sumAll(Real* input, Real* output, int dim) { comm_->SumAll(input,output,dim); }
 
+  void broadcast(Real* input, int cnt, int root) {
+    comm_->broadcast(input, cnt, root);
+  }
+
   void barrier(void) {
     comm_->Barrier();
   }
