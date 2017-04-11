@@ -969,5 +969,5 @@ namespace panzer {
        }
     }
   }
-}
 #endif
+}
