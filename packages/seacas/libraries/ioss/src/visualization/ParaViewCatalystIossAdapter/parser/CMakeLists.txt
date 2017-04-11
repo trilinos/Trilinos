@@ -59,3 +59,8 @@ TARGET_LINK_LIBRARIES(catalyst_parser_driver catalystparser)
 
 ADD_EXECUTABLE(catalyst_parser_tester ${CMAKE_CURRENT_SOURCE_DIR}/driver_test.cpp)
 TARGET_LINK_LIBRARIES(catalyst_parser_tester catalystparser)
+
+INSTALL(TARGETS lexer LIBRARY DESTINATION lib)
+INSTALL(TARGETS catalystparser LIBRARY DESTINATION lib)
+INSTALL(TARGETS catalyst_parser_driver RUNTIME DESTINATION bin)
+INSTALL(TARGETS catalyst_parser_tester RUNTIME DESTINATION bin)

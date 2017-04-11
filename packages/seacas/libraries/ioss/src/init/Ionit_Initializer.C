@@ -35,8 +35,10 @@
 #if !defined(NO_EXODUS_SUPPORT)
 #include <exo_fac/Ioex_IOFactory.h>
 #endif
+
 #include <generated/Iogn_DatabaseIO.h>
 #include <heartbeat/Iohb_DatabaseIO.h>
+
 #if !defined(NO_PAMGEN_SUPPORT)
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
@@ -45,21 +47,7 @@
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
-// DO NOT REMOVE THE IF !DEFINED UNLESS GREG SJAARDEMA SAYS IT IS OK!!!!
-// with introduction of paraview sierra catalyst plugin, the Iovs stuff is
-// always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
-// plugin architecture, there is no overhead for sierra when the plugin is
-// not loaded.  The #define test is left here for now in case developers
-// need to use it.
-
-// NOTE: (gdsjaar) -- Do *not* remove the NO_PARAVIEWIMESH_SUPPORT define.
-//                    The Ioss is used in more products than just Sierra,
-//                    so we cannot always rely on the paraview catalyst
-//                    plugin being available.
-// DO NOT REMOVE THE IF !DEFINED UNLESS GREG SJAARDEMA SAYS IT IS OK!!!!
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <visualization/Iovs_IOFactory.h>
-#endif
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
@@ -88,10 +76,7 @@ namespace Ioss {
 #if !defined(NO_PAMGEN_SUPPORT)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
-// DO NOT REMOVE THE IF !DEFINED UNLESS GREG SJAARDEMA SAYS IT IS OK!!!!
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Iovs::IOFactory::factory(); // Visualization
-#endif
 #if !defined(NO_CGNS_SUPPORT)
       Iocgns::IOFactory::factory();
 #endif

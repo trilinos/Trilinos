@@ -1,15 +1,10 @@
 
-#include "include/ParaViewCatalystSierraAdaptor.h"
+#include "include/ParaViewCatalystIossAdapter.h"
 #include "vtkExodusIIMultiBlockDataSet.h"
 #include "vtkCPProcessor.h"
 #include "vtkCPDataDescription.h"
 #include "vtkCPInputDataDescription.h"
-
-#ifdef USE_CPP_PIPE
-#include "vtkCppPipe.h"
-#else
 #include "vtkCPPythonScriptPipeline.h"
-#endif
 
 #include "vtkVariant.h"
 #include "vtkStringArray.h"
@@ -23,22 +18,17 @@
 #include <time.h>
 #include <fstream>
 
-#ifdef USE_CPP_PIPE
-typedef std::pair <vtkCppPipe*, vtkCPDataDescription*> PipelineDataDescPair;
-#else
 typedef std::pair <vtkCPPythonScriptPipeline*, vtkCPDataDescription*> PipelineDataDescPair;
-#endif
-
 typedef std::pair <clock_t, clock_t> TimerPair;
 typedef std::pair <TimerPair, vtkDoubleArray*> LoggingPair;
 
-class ParaViewCatalystSierraAdaptorImplementation
+class ParaViewCatalystIossAdapterImplementation
 {
 public:
 
-  static ParaViewCatalystSierraAdaptorImplementation& getInstance()
+  static ParaViewCatalystIossAdapterImplementation& getInstance()
   {
-    static ParaViewCatalystSierraAdaptorImplementation instance;
+    static ParaViewCatalystIossAdapterImplementation instance;
     return instance;
   }
 
@@ -83,10 +73,8 @@ public:
                          const char* catalyst_output_directory,
                          std::vector<std::string>& catalyst_sierra_data)
   {
-    //std::cerr << "CreateNewPipeline enetered\n";
     if (enable_logging)
       {
-#if 1
       TimerPair tp = std::make_pair(clock(),clock());
       vtkDoubleArray* da = vtkDoubleArray::New();
       da->SetNumberOfComponents(3);
@@ -125,18 +113,12 @@ public:
                 << ",TIME SINCE LAST LOG (S)" << "\n";
         logfile.close();
         }
-#endif
       }
 
     if ( this->pipelines.find(results_output_filename) == this->pipelines.end() )
       {
       vtkCPDataDescription* dd = vtkCPDataDescription::New();
-
-#ifdef USE_CPP_PIPE
-      vtkCppPipe *pl = vtkCppPipe::New();
-#else
       vtkCPPythonScriptPipeline *pl = vtkCPPythonScriptPipeline::New();
-#endif
 
       vtkExodusIIMultiBlockDataSet* mbds = vtkExodusIIMultiBlockDataSet::New();
       mbds->SetUnderscoreVectors(UnderscoreVectors);
@@ -189,15 +171,6 @@ public:
       em->Delete();
       }
 
-#ifdef USE_CPP_PIPE
-    if(this->pipelines[results_output_filename].first->Initialize() == 0)
-      {
-      std::cerr << "Unable to initialize ParaView Catalyst CPP Pipeline.\n"
-                << "ParaView Catalyst CoProcessing will not be available." << std::endl;
-      this->coProcessor->Delete();
-      this->coProcessor = 0;
-      }
-#else
     if(this->pipelines[results_output_filename].first->Initialize(catalyst_python_filename) == 0)
       {
       std::cerr << "Unable to initialize ParaView Catalyst with python script "
@@ -206,9 +179,6 @@ public:
       this->coProcessor->Delete();
       this->coProcessor = 0;
       }
-#endif
-
-    //std::cerr << "CreateNewPipeline returning\n";
   }
 
   void SetTimeData(double currentTime,
@@ -229,7 +199,6 @@ public:
                  std::vector<int>& error_and_warning_codes,
                  std::vector<std::string>& error_and_warning_messages)
   {
-    //std::cerr << "CoProcess entered\n";
     if(!this->coProcessor)
       return;
 
@@ -239,11 +208,7 @@ public:
       error_and_warning_codes.clear();
       error_and_warning_messages.clear();
 
-#ifdef USE_CPP_PIPE
-      vtkCppPipe* pl = this->pipelines[results_output_filename].first;
-#else
       vtkCPPythonScriptPipeline* pl = this->pipelines[results_output_filename].first;
-#endif
 
       vtkCPDataDescription* dd = this->pipelines[results_output_filename].second;
       vtkExodusIIMultiBlockDataSet* mbds = vtkExodusIIMultiBlockDataSet::SafeDownCast(
@@ -289,7 +254,6 @@ public:
       pl->Delete();
       mb->Delete();
       }
-    //std::cerr << "CoProcess returning\n";
   }
 
   vtkExodusIIMultiBlockDataSet* GetMultiBlockDataSet(const char* results_output_filename)
@@ -310,7 +274,6 @@ public:
     if(this->logging.find(results_output_filename) !=
        this->logging.end())
       {
-#if 1
       vtksys::SystemInformation sysInfo;
       vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
       vtkMPIController* mpic = vtkMPIController::SafeDownCast(pm->GetGlobalController());
@@ -321,7 +284,6 @@ public:
       measurements[2] = double( clock () - last_time ) /  (double) CLOCKS_PER_SEC;
       this->logging[results_output_filename].first.second= clock();
       this->logging[results_output_filename].second->InsertNextTuple(measurements);
-#endif
       }
   }
 
@@ -330,7 +292,6 @@ public:
     if(this->logging.find(results_output_filename) !=
        this->logging.end())
       {
-#if 1
       vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
       vtkMPIController* mpic = vtkMPIController::SafeDownCast(pm->GetGlobalController());
       vtkDoubleArray* logData = this->logging[results_output_filename].second;
@@ -397,19 +358,18 @@ public:
         logfile.close();
         }
       logData->SetNumberOfTuples(0);
-#endif
       }
   }
 
 private:
 
-  ParaViewCatalystSierraAdaptorImplementation()
+  ParaViewCatalystIossAdapterImplementation()
   {
   this->coProcessor = vtkCPProcessor::New();
   this->coProcessor->Initialize();
   }
 
-  ~ParaViewCatalystSierraAdaptorImplementation()
+  ~ParaViewCatalystIossAdapterImplementation()
   {
   for(std::map<std::string, PipelineDataDescPair>::iterator it = this->pipelines.begin();
       it != this->pipelines.end(); it++)
@@ -418,41 +378,31 @@ private:
     }
   }
 
-  ParaViewCatalystSierraAdaptorImplementation(ParaViewCatalystSierraAdaptorImplementation const&);
-  void operator=(ParaViewCatalystSierraAdaptorImplementation const&);
+  ParaViewCatalystIossAdapterImplementation(ParaViewCatalystIossAdapterImplementation const&);
+  void operator=(ParaViewCatalystIossAdapterImplementation const&);
 
   vtkCPProcessor *coProcessor; 
   std::map<std::string, PipelineDataDescPair> pipelines;
   std::map<std::string, LoggingPair> logging;
 };
 
-#if 0
-ParaViewCatalystSierraAdaptor::ParaViewCatalystSierraAdaptor()
+void ParaViewCatalystIossAdapter::DeletePipeline(const char* results_output_filename)
 {
-}
-
-ParaViewCatalystSierraAdaptor::~ParaViewCatalystSierraAdaptor()
-{
-}
-#endif
-
-void ParaViewCatalystSierraAdaptor::DeletePipeline(const char* results_output_filename)
-{
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.DeletePipeline(results_output_filename);
 }
 
-void ParaViewCatalystSierraAdaptor::CleanupCatalyst()
+void ParaViewCatalystIossAdapter::CleanupCatalyst()
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.CleanupCatalyst();
 }
 
-void ParaViewCatalystSierraAdaptor::CreateNewPipeline(const char* catalyst_python_filename,
+void ParaViewCatalystIossAdapter::CreateNewPipeline(const char* catalyst_python_filename,
                                                       const char* catalyst_sierra_block_json,
                                                       const char* catalyst_sierra_separator_character,
                                                       const char* catalyst_sierra_input_deck_name,
@@ -465,9 +415,8 @@ void ParaViewCatalystSierraAdaptor::CreateNewPipeline(const char* catalyst_pytho
                                                       const char* catalyst_output_directory,
                                                       std::vector<std::string>& catalyst_sierra_data)
 {
-  //std::cerr << "CreateNewPipeline enetered 2\n";
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.CreateNewPipeline(catalyst_python_filename,
                           catalyst_sierra_block_json,
@@ -481,41 +430,38 @@ void ParaViewCatalystSierraAdaptor::CreateNewPipeline(const char* catalyst_pytho
                           results_output_filename,
                           catalyst_output_directory,
                           catalyst_sierra_data);
-  //std::cerr << "CreateNewPipeline returning 2\n";
 }
 
-void ParaViewCatalystSierraAdaptor::PerformCoProcessing(const char* results_output_filename,
+void ParaViewCatalystIossAdapter::PerformCoProcessing(const char* results_output_filename,
                                                         std::vector<int>& error_and_warning_codes,
                                                         std::vector<std::string>& error_and_warning_messages)
 {
-  //std::cerr << "ParaViewCatalystSierraAdaptor::PerformCoProcessing entered\n";
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.CoProcess(results_output_filename,
                   error_and_warning_codes,
                   error_and_warning_messages);
-  //std::cerr << "ParaViewCatalystSierraAdaptor::PerformCoProcessing returning\n";
 }
 
-void ParaViewCatalystSierraAdaptor::SetTimeData(double currentTime,
+void ParaViewCatalystIossAdapter::SetTimeData(double currentTime,
                                                 int timeStep,
                                                 const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.SetTimeData(currentTime,
                     timeStep,
                     results_output_filename);
 }
 
-void ParaViewCatalystSierraAdaptor::CreateGlobalVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateGlobalVariable(std::vector<std::string>& component_names,
                                                          const int* data,
                                                          const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -526,12 +472,12 @@ void ParaViewCatalystSierraAdaptor::CreateGlobalVariable(std::vector<std::string
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateGlobalVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateGlobalVariable(std::vector<std::string>& component_names,
                                                          const double* data,
                                                          const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -542,13 +488,13 @@ void ParaViewCatalystSierraAdaptor::CreateGlobalVariable(std::vector<std::string
     }
 }
 
-void ParaViewCatalystSierraAdaptor::InitializeGlobalPoints(int num_points,
+void ParaViewCatalystIossAdapter::InitializeGlobalPoints(int num_points,
                                                            int dimension,
                                                            const double* data,
                                                            const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -558,11 +504,11 @@ void ParaViewCatalystSierraAdaptor::InitializeGlobalPoints(int num_points,
     }
 }
 
-void ParaViewCatalystSierraAdaptor::InitializeElementBlocks(const std::vector<int>& element_block_id_list,
+void ParaViewCatalystIossAdapter::InitializeElementBlocks(const std::vector<int>& element_block_id_list,
                                                             const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -570,10 +516,10 @@ void ParaViewCatalystSierraAdaptor::InitializeElementBlocks(const std::vector<in
     }
 }
 
-void ParaViewCatalystSierraAdaptor::ReleaseMemory(const char* results_output_filename)
+void ParaViewCatalystIossAdapter::ReleaseMemory(const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -582,7 +528,7 @@ void ParaViewCatalystSierraAdaptor::ReleaseMemory(const char* results_output_fil
   pcsai.WriteToLogFile(results_output_filename);
 }
 
-void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_name,
+void ParaViewCatalystIossAdapter::CreateElementBlock(const char* elem_block_name,
                                                        int elem_block_id,
                                                        const std::string& elem_type,
                                                        int nodes_per_elem,
@@ -591,8 +537,8 @@ void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_na
                                                        int* connectivity,
                                                        const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -608,7 +554,7 @@ void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_na
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_name,
+void ParaViewCatalystIossAdapter::CreateElementBlock(const char* elem_block_name,
                                                        int elem_block_id,
                                                        const std::string& elem_type,
                                                        int nodes_per_elem,
@@ -617,8 +563,8 @@ void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_na
                                                        int64_t* connectivity,
                                                        const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -635,14 +581,14 @@ void ParaViewCatalystSierraAdaptor::CreateElementBlock(const char* elem_block_na
 }
 
 
-void ParaViewCatalystSierraAdaptor::CreateNodeSet(const char* node_set_name,
+void ParaViewCatalystIossAdapter::CreateNodeSet(const char* node_set_name,
                                                   int node_set_id,
                                                   int num_ids,
                                                   const int* data,
                                                   const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -655,14 +601,14 @@ void ParaViewCatalystSierraAdaptor::CreateNodeSet(const char* node_set_name,
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateNodeSet(const char* node_set_name,
+void ParaViewCatalystIossAdapter::CreateNodeSet(const char* node_set_name,
                                                   int node_set_id,
                                                   int num_ids,
                                                   const int64_t* data,
                                                   const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -675,7 +621,7 @@ void ParaViewCatalystSierraAdaptor::CreateNodeSet(const char* node_set_name,
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
+void ParaViewCatalystIossAdapter::CreateSideSet(/*const char* side_set_name,*/
                                                   const char* ss_owner_name,
                                                   int side_set_id,
                                                   int num_ids,
@@ -697,19 +643,9 @@ void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
      pass in both, but for now we
      are just passing in ss_owner_name to give us correct
      functionality while not chaning the function interface*/
-    /*
-    std::cerr << "ParaViewCatalystSierraAdaptor::CreateSideSet entered (1)\n"
-      //"side_set_name: " << side_set_name << "\n"
-      "ss_owner_name: " << ss_owner_name << "\n"
-      "side_set_id: " << side_set_id << "\n"
-      "num_ids: " << num_ids << "\n"
-      "element_ids: " << element_ids << "\n"
-      "face_ids: " << face_ids << "\n"
-      "results_output_filename: " << results_output_filename << "\n";
-    */
 
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -722,10 +658,9 @@ void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
                         element_ids,
                         face_ids);
     }
-  //std::cerr << "ParaViewCatalystSierraAdaptor::CreateSideSet returning (1)\n";
 }
 
-void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
+void ParaViewCatalystIossAdapter::CreateSideSet(/*const char* side_set_name,*/
                                                   const char* ss_owner_name,
                                                   int side_set_id,
                                                   int num_ids,
@@ -747,19 +682,9 @@ void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
      pass in both, but for now we
      are just passing in ss_owner_name to give us correct
      functionality while not chaning the function interface*/
-    /*
-    std::cerr << "ParaViewCatalystSierraAdaptor::CreateSideSet entered (2)\n"
-      //"side_set_name: " << side_set_name << "\n"
-      "ss_owner_name: " << ss_owner_name << "\n"
-      "side_set_id: " << side_set_id << "\n"
-      "num_ids: " << num_ids << "\n"
-      "element_ids: " << element_ids << "\n"
-      "face_ids: " << face_ids << "\n"
-      "results_output_filename: " << results_output_filename << "\n";
-      */
 
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -772,16 +697,15 @@ void ParaViewCatalystSierraAdaptor::CreateSideSet(/*const char* side_set_name,*/
                         element_ids,
                         face_ids);
     }
-  //std::cerr << "ParaViewCatalystSierraAdaptor::CreateSideSet returning (2)\n";
 }
 
-void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateElementVariable(std::vector<std::string>& component_names,
                                                           int elem_block_id,
                                                           const double* data,
                                                           const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -793,13 +717,13 @@ void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::strin
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateElementVariable(std::vector<std::string>& component_names,
                                                           int elem_block_id,
                                                           const int* data,
                                                           const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -811,13 +735,13 @@ void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::strin
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateElementVariable(std::vector<std::string>& component_names,
                                                           int elem_block_id,
                                                           const int64_t* data,
                                                           const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -829,12 +753,12 @@ void ParaViewCatalystSierraAdaptor::CreateElementVariable(std::vector<std::strin
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateNodalVariable(std::vector<std::string>& component_names,
                                                         const double* data,
                                                         const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -845,12 +769,12 @@ void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateNodalVariable(std::vector<std::string>& component_names,
                                                         const int* data,
                                                         const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -861,12 +785,12 @@ void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>
     }
 }
 
-void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>& component_names,
+void ParaViewCatalystIossAdapter::CreateNodalVariable(std::vector<std::string>& component_names,
                                                         const int64_t* data,
                                                         const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
   vtkExodusIIMultiBlockDataSet* mbds = pcsai.GetMultiBlockDataSet(results_output_filename);
   if(mbds)
     {
@@ -877,32 +801,31 @@ void ParaViewCatalystSierraAdaptor::CreateNodalVariable(std::vector<std::string>
     }
 }
 
-void ParaViewCatalystSierraAdaptor::logMemoryUsageAndTakeTimerReading(const char* results_output_filename)
+void ParaViewCatalystIossAdapter::logMemoryUsageAndTakeTimerReading(const char* results_output_filename)
 {
-  ParaViewCatalystSierraAdaptorImplementation& pcsai =
-  ParaViewCatalystSierraAdaptorImplementation::getInstance();
+  ParaViewCatalystIossAdapterImplementation& pcsai =
+  ParaViewCatalystIossAdapterImplementation::getInstance();
 
   pcsai.logMemoryUsageAndTakeTimerReading(results_output_filename);
 }
 
+int ParaViewCatalystIossAdapter::parseFile(const std::string& filepath,
+                                           CatalystParserInterface::parse_info& pinfo)
+{
+  return CatalystParserInterface::parseFile(filepath,
+                                            pinfo);
+}
+
+int ParaViewCatalystIossAdapter::parseString(const std::string& s,
+                                             CatalystParserInterface::parse_info& pinfo)
+{
+  return CatalystParserInterface::parseString(s,
+                                              pinfo);
+}
+
 extern "C" {
-ParaViewCatalystSierraAdaptorBase *ParaViewCatalystSierraAdaptorCreateInstance() {
-  //std::cerr << "ParaViewCatalystSierraAdaptorCreateInstance entered\n";
-  ParaViewCatalystSierraAdaptorBase * t(new ParaViewCatalystSierraAdaptor());
-  //std::cerr << "ParaViewCatalystSierraAdaptorCreateInstance returning\n";
+ParaViewCatalystIossAdapterBase *ParaViewCatalystIossAdapterCreateInstance() {
+  ParaViewCatalystIossAdapterBase * t(new ParaViewCatalystIossAdapter());
   return t;
 }
 }
-
-#define USE_STK_DIAG_USER_PLUGIN 0
-#if USE_STK_DIAG_USER_PLUGIN
-extern "C"
-void
-dl_register()
-{
-  ParaViewCatalystSierraAdaptorBaseFactory::Register<ParaViewCatalystSierraAdaptor>("ParaViewCatalystSierraAdaptor",
-                                                                                     ParaViewCatalystSierraAdaptorCreateInstance);
-}
-#endif
-
-

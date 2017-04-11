@@ -9,8 +9,7 @@
 #include <Ioss_CodeTypes.h>
 #include <visualization/Iovs_DatabaseIO.h>
 #include <tokenize.h>
-#include <ParaViewCatalystSierraAdaptor.h>
-#include <ParaViewCatalystSierraParser.h>
+#include <ParaViewCatalystIossAdapter.h>
 
 #include <cstring>
 #include <cctype>
@@ -26,25 +25,19 @@
 #include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
 
-//working to remove this dependency
-//#include <stk_util/diag/UserPlugin.hpp>
 #include <sys/stat.h>
 #include <libgen.h>
 
-#ifdef SIERRA_DLOPEN_ENABLED
+#ifdef IOSS_DLOPEN_ENABLED
 #include <dlfcn.h>
 #endif
 
 #include <assert.h>
 
 #if defined(__APPLE__)
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.dylib";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.dylib";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.dylib";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystIossAdapter.dylib";
 #else
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.so";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.so";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.so";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystIossAdapter.so";
 #endif
 
 const char* CATALYST_PLUGIN_PYTHON_MODULE = "PhactoriDriver.py";
@@ -75,8 +68,7 @@ namespace { // Internal helper functions
 } // End anonymous namespace
 
 namespace Iovs {
-  int globalCatalystSierraDlopenSucceeded = false;
-  void *globalCatalystSierraDlHandle = NULL;
+  void *globalCatalystIossDlHandle = NULL;
   int DatabaseIO::useCount = 0;
   std::string DatabaseIO::paraview_script_filename = "";
   int field_warning(const Ioss::GroupingEntity *ge,
@@ -120,7 +112,6 @@ namespace Iovs {
             output_file.open(dbfname.c_str(), std::ios::out | std::ios::trunc );
 
             if(!output_file) {
-                std::ostringstream errmsg;
                 errmsg << "Unable to create output file: " << dbfname << ".\n";
                 IOSS_ERROR(errmsg);
                 return;
@@ -157,12 +148,6 @@ namespace Iovs {
     if(props.exists("CATALYST_APPLY_DISPLACEMENTS"))
       {
       this->applyDisplacements = props.get("CATALYST_APPLY_DISPLACEMENTS").get_int();
-      }
-
-    this->useCppPipe = 0;
-    if(props.exists("CATALYST_USE_CPP_PIPELINE"))
-      {
-      this->useCppPipe = props.get("CATALYST_USE_CPP_PIPELINE").get_int();
       }
 
     this->createNodeSets = 0;
@@ -211,7 +196,14 @@ namespace Iovs {
         if(useCount <= 0)
           this->pvcsa->CleanupCatalyst();
         delete this->pvcsa;
+        this->pvcsa = 0;
         }
+
+#ifdef IOSS_DLOPEN_ENABLED
+      if(globalCatalystIossDlHandle && useCount <= 0) 
+        dlclose(globalCatalystIossDlHandle);
+#endif
+        
     } catch (...) {
     }
   }
@@ -221,24 +213,6 @@ namespace Iovs {
     nodeMap.release_memory();
     elemMap.release_memory();
   }
-
-#if 0
-  bool DatabaseIO::plugin_library_exists(const std::string& plugin_name) {
-    if(plugin_name == "ParaViewCatalystSierraParser")
-      return(ParaViewCatalystSierraParserBaseFactory::exists(plugin_name));
-    else if(plugin_name == "ParaViewCatalystSierraAdaptor")
-      return(ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name));
-    else
-      return(false);
-  }
-#else
-  bool DatabaseIO::plugin_library_exists(const std::string& plugin_name) {
-    //for now, just return false and let dlopen() run again if necesseary,
-    //and it won't reload same library, just reuse
-    //return globalCatalystSierraDlopenSucceeded;
-    return false;
-  }
-#endif
 
   std::string DatabaseIO::create_output_file_path(const std::string& input_deck_name,
                                                   const Ioss::PropertyManager &properties) {
@@ -251,159 +225,60 @@ namespace Iovs {
       return input_deck_name;
   }
   
-  void* DatabaseIO::load_plugin_library(const std::string& plugin_name,
-                                       const std::string& plugin_library_name) {
-      void *dynamicLibraryHandle = NULL;
+  ParaViewCatalystIossAdapterBase* DatabaseIO::load_plugin_library(const std::string& plugin_name,
+                                                                     const std::string& plugin_library_name) {
+
       std::string plugin_library_path;
       std::string plugin_python_module_path;
-      //std::cerr << "DatabaseIO::load_plugin_library entered\n";
-      //std::cerr << "plugin_library_name: " << plugin_library_name << "\n";
 
-      if(!DatabaseIO::plugin_library_exists(plugin_name)) {
-          //std::cerr << "plugin_library_exists returned false\n";
-          if(getenv("CATALYST_PLUGIN")) {
-              //std::cerr << "CATALYST_PLUGIN environment variable exists\n";
-              plugin_library_path = getenv("CATALYST_PLUGIN");
-              //std::cerr << "plugin_library_path: " << plugin_library_path << "\n";
-          }
-          else {
-              //std::cerr << "CATALYST_PLUGIN environment variable does not exist\n";
-              build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path,
-                                          plugin_library_name);
-              //std::cerr << "plugin_library_path: " << plugin_library_path << "\n";
-              //std::cerr << "plugin_python_module_path: " << plugin_python_module_path << "\n";
-              //std::cerr << "plugin_library_name: " << plugin_library_name << "\n";
-          }
-#if 0
-          std::cerr << "about to do registerDL\n";
-          sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
-          std::cerr << "returned from registerDL\n";
-          if(!DatabaseIO::plugin_library_exists(plugin_name)) {
-              std::ostringstream errmsg;
-              errmsg << "Unable to load catalyst plug-in dynamic library.\n"
-                     << "Path: " << plugin_library_path << "\n";
-              IOSS_ERROR(errmsg);
-              std::cerr << "DatabaseIO::load_plugin_library returning 3\n";
-              return;
-          }
-          std::cerr << "plugin_library_exists now returned true\n";
+      build_catalyst_plugin_paths(plugin_library_path,
+                                  plugin_python_module_path,
+                                  plugin_library_name);
 
-          //it is necessary to do this call because the dlopen() in
-          //registerDL does not have the RTLD_GLOBAL flag and it is necessary
-          //for glew in paraview 5
-          //<--extra call to dlopen here
-#endif
-#ifdef SIERRA_DLOPEN_ENABLED
-          //here is where we call dlopen to load the sierra/catalyst plugin.
-          //formerly we used the UserPlugin module in sierra, but to make
-          //the sierra/catalyst plugin more portable to nalu and other
-          //sierra framework codes which use stk, we are removing the
-          //dependency on UserPlugin and calling dlopen and dlsym directly
-          //std::cerr <<
-          //  "about to call dlopen to load the sierra catalyst plugin\n";
-          dynamicLibraryHandle =
-            dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-          //std::cerr << "returned from dlopen\n";
-          if (!dynamicLibraryHandle) {
-            throw std::runtime_error(dlerror());
-          }
-          globalCatalystSierraDlopenSucceeded = true;
-          globalCatalystSierraDlHandle = dynamicLibraryHandle;
-#endif
-      } else {
-          //library already exists, presumably because it was loaded
-          //from the .ini file
-          //we must make the extra dlopen call to make it have
-          //RTLD_GLOBAL, but we don't know the name.  To reenable this
-          //capability we must store the full path to the dynamic library
-          //and use it here
-          //void *dl = dlopen("~/libParaViewCatalystSierraAdaptor.so",
-          //        RTLD_NOW | RTLD_GLOBAL);
-          //if (!dl){
-          //  std::ostringstream errmsg;
-          //  errmsg << "registered-in-file paraview catalyst plugin\n"
-          //         << "missing with expected name:\n"
-          //         << "~/libParaViewCatalystSierraAdaptor.so\n";
-          //  IOSS_ERROR(errmsg);
-          //  throw std::runtime_error(dlerror());
-          //}
-          std::ostringstream errmsg;
-          errmsg << "currently cannot load sierra catalyst plugin\n"
-                 << "via Load User Plugin File command\n"
-                 << "instead, set CATALYST_PLUGIN environment variable\n";
-          IOSS_ERROR(errmsg);
-#if SIERRA_DLOPEN_ENABLED
-          throw std::runtime_error(dlerror());
-#endif
-      }
+      if(getenv("CATALYST_PLUGIN"))
+          plugin_library_path = getenv("CATALYST_PLUGIN");
 
-      if(DatabaseIO::paraview_script_filename.empty()) {
-          if(plugin_python_module_path.empty()) {
-              build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path,
-                                          plugin_library_name);
-          }
-          if ( !file_exists(plugin_python_module_path) ) {
-              std::ostringstream errmsg;
-              errmsg << "Catalyst Python module path does not exist.\n"
-                     << "Python module path: " << plugin_python_module_path << "\n";
-              IOSS_ERROR(errmsg);
-              //std::cerr << "DatabaseIO::load_plugin_library returning 2\n";
-              return dynamicLibraryHandle;
-          }
+      if(DatabaseIO::paraview_script_filename.empty())
           DatabaseIO::paraview_script_filename = plugin_python_module_path;
-      }
-      //std::cerr << "DatabaseIO::load_plugin_library returning\n";
 
-      return dynamicLibraryHandle;
+      if ( !file_exists(DatabaseIO::paraview_script_filename) ) {
+          std::ostringstream errmsg;
+          errmsg << "Catalyst Python module path does not exist.\n"
+                 << "Python module path: " << DatabaseIO::paraview_script_filename << "\n";
+          IOSS_ERROR(errmsg);
+      }
+
+#ifdef IOSS_DLOPEN_ENABLED
+      globalCatalystIossDlHandle =
+          dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+      if (!globalCatalystIossDlHandle)
+          throw std::runtime_error(dlerror());
+
+      typedef ParaViewCatalystIossAdapterBase * (*PvCatSrrAdapterMakerFuncType)();
+
+      PvCatSrrAdapterMakerFuncType mkr =
+        reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
+          dlsym(globalCatalystIossDlHandle,
+            "ParaViewCatalystIossAdapterCreateInstance"));
+      if (!mkr) {
+        throw std::runtime_error("dlsym call failed to load function "
+          "'ParaViewCatalystIossAdapterCreateInstance'");
+      }
+
+      return (*mkr)();
+#else
+      return NULL;
+#endif
   }
 
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;
-    //std::cerr << "DatabaseIO::begin entered\n";
-
-    void *dynamicLibraryHandleToParaViewCatalystSierraAdaptor = NULL;
-
     Ioss::Region *region = this->get_region();
     if(region->model_defined() && !this->pvcsa)
       {
-      if(this->useCppPipe)
-        {
-        dynamicLibraryHandleToParaViewCatalystSierraAdaptor =
-          this->load_plugin_library("ParaViewCatalystSierraAdaptor",
-                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP);
-        }
-      else
-        {
-        dynamicLibraryHandleToParaViewCatalystSierraAdaptor =
-          this->load_plugin_library("ParaViewCatalystSierraAdaptor",
-                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY);
-        }
-
-#if 0
-      this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
-#else
-
-      this->pvcsa = NULL;
-#ifdef SIERRA_DLOPEN_ENABLED
-
-      typedef ParaViewCatalystSierraAdaptorBase * (*PvCatSrrAdaptorMakerFuncType)();
-
-      PvCatSrrAdaptorMakerFuncType mkr =
-        reinterpret_cast<PvCatSrrAdaptorMakerFuncType>(
-          dlsym(dynamicLibraryHandleToParaViewCatalystSierraAdaptor,
-            "ParaViewCatalystSierraAdaptorCreateInstance"));
-      if (!mkr) {
-        throw std::runtime_error("dlsym call failed to load function "
-          "'ParaViewCatalystSierraAdaptorCreateInstance'");
-      }
-
-      this->pvcsa = (*mkr)();
-#endif
-
-#endif
+      this->pvcsa = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
+                                                    CATALYST_PLUGIN_DYNAMIC_LIBRARY);
 
       std::string separator(1, this->get_field_separator());
 
@@ -434,7 +309,7 @@ namespace Iovs {
                                        catalyst_sierra_data);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
-      for(int i = 0;i<ebc.size();i++)
+      for(unsigned int i = 0;i<ebc.size();i++)
         {
         element_block_id_list.push_back(get_id(ebc[i], EX_ELEM_BLOCK, &ids_));
         }
@@ -442,7 +317,6 @@ namespace Iovs {
         this->pvcsa->InitializeElementBlocks(element_block_id_list,
                                              this->DBFilename.c_str());
       }
-    //std::cerr << "DatabaseIO::begin returning\n";
     return true;
   }
 
@@ -507,7 +381,7 @@ namespace Iovs {
          error_messages.size() > 0 &&
          error_codes.size() == error_messages.size())
         {
-        for(int i = 0; i < error_codes.size(); i++)
+        for(unsigned int i = 0; i < error_codes.size(); i++)
           {
           if(error_codes[i] > 0)
             {
@@ -537,50 +411,19 @@ namespace Iovs {
   int DatabaseIO::parseCatalystFile(const std::string& filepath,
                                     std::string& json_result)
   {
-   //std::cerr << "DatabaseIO::parseCatalystFile entered\n";
+  ParaViewCatalystIossAdapterBase* pvcsp = NULL;
 
-   void *dynamicLibraryHandleToParaViewCatalystSierraParser = NULL;
+  pvcsp = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
+                                          CATALYST_PLUGIN_DYNAMIC_LIBRARY);
 
-   dynamicLibraryHandleToParaViewCatalystSierraParser =
-      DatabaseIO::load_plugin_library("ParaViewCatalystSierraParser",
-                                   CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER);
-   ParaViewCatalystSierraParserBase* pvcsp = NULL;
-#if USE_STK_DIAG_USER_PLUGIN
-#error2
-   pvcsp = ParaViewCatalystSierraParserBaseFactory::create("ParaViewCatalystSierraParser")();
-#else
-#ifdef SIERRA_DLOPEN_ENABLED
-    //std::cerr << "load_plugin_library returned\n";
-    typedef ParaViewCatalystSierraParserBase * (*PvCatSrrParserMakerFuncType)();
+  CatalystParserInterface::parse_info pinfo;
 
-    //std::cerr << "about to call ParaViewCatalystSierraParserCreateInstance\n";
-    PvCatSrrParserMakerFuncType mkr =
-      reinterpret_cast<PvCatSrrParserMakerFuncType>(
-        dlsym(dynamicLibraryHandleToParaViewCatalystSierraParser,
-          "ParaViewCatalystSierraParserCreateInstance"));
-    //std::cerr << "returned from ParaViewCatalystSierraParserCreateInstance\n";
-    if (!mkr) {
-      throw std::runtime_error("dlsym call failed to load function "
-        "'ParaViewCatalystSierraParserCreateInstance'");
-    }
+  int ret = pvcsp->parseFile(filepath,
+                               pinfo);
+  json_result = pinfo.json_result;
 
-    pvcsp = (*mkr)();
-#endif
-#endif
-
-   CatalystParserInterface::parse_info pinfo;
-
-   //std::cerr << "about to call parseFile\n";
-   int ret = pvcsp->parseFile(filepath,
-                              pinfo);
-   //std::cerr << "returned from call parseFile\n";
- 
-   json_result = pinfo.json_result;
-
-   //std::cerr << "about to delete pvscp\n";
-   delete pvcsp;
-   //std::cerr << "DatabaseIO::parseCatalystFile returning\n";
-   return ret;
+  delete pvcsp;
+  return ret;
   }
 
   void DatabaseIO::create_global_node_and_element_ids() const
@@ -633,7 +476,6 @@ namespace Iovs {
         int64_t *ivar64 = static_cast<int64_t*>(data);
 
         int comp_count = var_type->component_count();
-        int var_index=0;
 
         int re_im = 1;
         if (field.get_type() == Ioss::Field::COMPLEX)
@@ -750,7 +592,7 @@ namespace Iovs {
                 this->nodeMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
                     temp, begin_offset, num_to_get, stride, 0);
 
-              for(int j=0; j < num_to_get; j++)
+              for(unsigned int j=0; j < num_to_get; j++)
                 interleaved_data[j*comp_count + i] = temp[j];
               }
 
@@ -871,7 +713,7 @@ namespace Iovs {
               else if (ioss_type == Ioss::Field::INT64)
                 this->elemMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
                     temp, begin_offset, num_to_get, stride, eb_offset);
-              for(int j=0; j < num_to_get; j++)
+              for(unsigned int j=0; j < num_to_get; j++)
                  interleaved_data[j*comp_count + i] = temp[j];
             }
             if(this->pvcsa)
@@ -1168,7 +1010,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
-    int64_t cns_save_num_to_get;
+    int64_t cns_save_num_to_get = 0;
 
     if( num_to_get > 0 &&
        (field.get_name() == "ids" ||
@@ -1229,7 +1071,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
-    int64_t css_save_num_to_get;
+    int64_t css_save_num_to_get = 0;
 
     if ( (field.get_name() == "element_side")||
          (field.get_name() == "element_side_raw") )
@@ -1246,7 +1088,7 @@ namespace Iovs {
         Ioss::IntVector side(num_to_get);
         int *el_side = (int *)data;
 
-        for (size_t i=0; i < num_to_get; i++)
+        for (unsigned int i=0; i < num_to_get; i++)
           {
           element[i] = el_side[index++];
           side[i]    = el_side[index++]+side_offset;
@@ -1311,7 +1153,7 @@ namespace Iovs {
         Ioss::Int64Vector side(num_to_get);
         int64_t *el_side = (int64_t *)data;
 
-        for (size_t i=0; i < num_to_get; i++)
+        for (unsigned int i=0; i < num_to_get; i++)
           {
           element[i] = el_side[index++];
           side[i]    = el_side[index++]+side_offset;
@@ -1373,7 +1215,7 @@ namespace Iovs {
     return num_to_get;
   }
 
-};
+}
 
 namespace {
 
@@ -1488,6 +1330,27 @@ namespace {
   void build_catalyst_plugin_paths(std::string& plugin_library_path,
                                    std::string& plugin_python_path,
                                    const std::string& plugin_library_name) {
+ 
+      if(getenv("CATALYST_ADAPTER_INSTALL_DIR")) {
+          std::string catalyst_ins_dir = getenv("CATALYST_ADAPTER_INSTALL_DIR");
+
+          if ( !file_exists(catalyst_ins_dir) ) {
+              std::ostringstream errmsg;
+              errmsg << "CATALYST_ADAPTER_INSTALL_DIR directory does not exist.\n"
+                     << "Directory path: " << catalyst_ins_dir << "\n"
+                     << "Unable to find ParaView catalyst dynamic library.\n";
+              IOSS_ERROR(errmsg);
+              return;
+          }
+
+          plugin_library_path = catalyst_ins_dir + "/lib/" +
+                                plugin_library_name;
+
+          plugin_python_path = catalyst_ins_dir + "/python/"  +
+                               CATALYST_PLUGIN_PYTHON_MODULE;
+          return;
+      }
+
       std::string sierra_ins_dir;
       if(getenv("SIERRA_INSTALL_DIR")) {
           sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
@@ -1546,8 +1409,6 @@ namespace {
             strcmp(dname,".") != 0 &&
             strcmp(bname,"sierra") != 0) 
         {
-        //char* bname = basename(bname);
-        //char* dname = dirname(dname);
         bname = basename(dname);
         dname = dirname(dname);
         }

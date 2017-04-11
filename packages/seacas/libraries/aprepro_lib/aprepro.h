@@ -300,6 +300,7 @@ namespace SEAMS {
 
     void set_error_streams(std::ostream *error, std::ostream *warning, std::ostream *info);
 
+    void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
 
   private:

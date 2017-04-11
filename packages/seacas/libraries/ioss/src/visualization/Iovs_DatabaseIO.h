@@ -27,7 +27,7 @@
 
 #include <exodusII.h>
 
-class ParaViewCatalystSierraAdaptorBase;
+class ParaViewCatalystIossAdapterBase;
 
 /** \brief A namespace for the visualization database format.
  */
@@ -144,6 +144,12 @@ namespace Iovs {
       return 0;
     }
 
+    virtual int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field, void *data,
+                                       size_t data_size) const
+    {
+      return 0;
+    }
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const;
 
@@ -188,16 +194,21 @@ namespace Iovs {
     {
       return 0;
     }
+    virtual int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field, void *data,
+                                       size_t data_size) const
+    {
+      return 0;
+    }
+
 
     void write_meta_data();
-    // static void load_plugin_library(const std::string& plugin_name,
-    //                                const std::string& plugin_library_name);
-    static void *load_plugin_library(const std::string &plugin_name,
-                                     const std::string &plugin_library_name);
+
+    static ParaViewCatalystIossAdapterBase* load_plugin_library(const std::string &plugin_name,
+                                                                const std::string &plugin_library_name);
 
     static std::string create_output_file_path(const std::string &          input_deck_name,
                                                const Ioss::PropertyManager &properties);
-    static bool plugin_library_exists(const std::string &plugin_name);
+    //static bool plugin_library_exists(const std::string &plugin_name);
 
     int64_t handle_node_ids(void *ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void *ids, size_t num_to_get);
@@ -224,7 +235,6 @@ namespace Iovs {
     int                debugLevel;
     int                underscoreVectors;
     int                applyDisplacements;
-    int                useCppPipe;
     int                createSideSets;
     int                createNodeSets;
     int                spatialDimension;
@@ -238,15 +248,15 @@ namespace Iovs {
     int elementBlockCount;
 
     // Handle to the ParaView Catalyst dynamic library
-    // that is loaded via Sierra user plugin at runtime.
-    ParaViewCatalystSierraAdaptorBase *pvcsa;
-    mutable bool                       globalNodeAndElementIDsCreated;
-    void                               create_global_node_and_element_ids() const;
-    mutable EntityIdSet                ids_;
+    // that is loaded via Ioss user plugin at runtime.
+    ParaViewCatalystIossAdapterBase *pvcsa;
+    mutable bool                     globalNodeAndElementIDsCreated;
+    void                             create_global_node_and_element_ids() const;
+    mutable EntityIdSet              ids_;
 
     // Bulk Data
 
-    // MAPS -- Used to convert from local exodusII ids/names to Sierra
+    // MAPS -- Used to convert from local exodusII ids/names to Ioss
     // database global ids/names
     // Maps internal (1..num_entity) ids to global ids used on the
     //               sierra side.   global = XXXMap.map[local]
@@ -255,6 +265,6 @@ namespace Iovs {
     mutable Ioss::Map nodeMap;
     mutable Ioss::Map elemMap;
   };
-};
+}
 
 #endif

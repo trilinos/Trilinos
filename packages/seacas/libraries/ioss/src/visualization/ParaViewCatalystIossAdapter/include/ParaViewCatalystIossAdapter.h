@@ -1,28 +1,22 @@
-#ifndef __PARAVIEW_CATALYST_SIERRA_ADAPTOR_H
-#define __PARAVIEW_CATALYST_SIERRA_ADAPTOR_H
-
-#define USE_STK_DIAG_USER_PLUGIN 0
-
-#if USE_STK_DIAG_USER_PLUGIN
-#include <stk_util/util/Fortran.hpp>
-#include <stk_util/diag/UserPlugin.hpp>
-#endif
+#ifndef __PARAVIEW_CATALYST_IOSS_ADAPTER_H
+#define __PARAVIEW_CATALYST_IOSS_ADAPTER_H
 
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include "CatalystParserInterface.h"
 
-// Base class needed for Sierra's dynamic library
+// Base class needed for Ioss's dynamic library
 // registration.
 
-class ParaViewCatalystSierraAdaptorBase
+class ParaViewCatalystIossAdapterBase
 {
 public:
-  ParaViewCatalystSierraAdaptorBase() {};
-  virtual ~ParaViewCatalystSierraAdaptorBase() {};
+  ParaViewCatalystIossAdapterBase() {};
+  virtual ~ParaViewCatalystIossAdapterBase() {};
   virtual std::string getName() const
   {
-    return "ParaViewCatalystSierraAdaptorBase";
+    return "ParaViewCatalystIossAdapterBase";
   }
   virtual void DeletePipeline(const char* results_output_filename) = 0;
   virtual void CleanupCatalyst() = 0;
@@ -119,31 +113,30 @@ public:
                                    const char* results_output_filename) = 0;
   virtual void ReleaseMemory(const char* results_output_filename) = 0;
   virtual void logMemoryUsageAndTakeTimerReading(const char* results_output_filename) = 0;
+  virtual int parseFile(const std::string& filepath,
+                        CatalystParserInterface::parse_info& pinfo) = 0;
+
+  virtual int parseString(const std::string& s,
+                          CatalystParserInterface::parse_info& pinfo) = 0;
 };
 
-typedef ParaViewCatalystSierraAdaptorBase *(*ParaViewCatalystSierraAdaptorBaseSignature)();
+typedef ParaViewCatalystIossAdapterBase *(*ParaViewCatalystIossAdapterBaseSignature)();
 
 
 extern "C" {
-ParaViewCatalystSierraAdaptorBase *ParaViewCatalystSierraAdaptorCreateInstance();
+ParaViewCatalystIossAdapterBase *ParaViewCatalystIossAdapterCreateInstance();
 }
 
-#if USE_STK_DIAG_USER_PLUGIN
-typedef sierra::Plugin::UserPlugin<ParaViewCatalystSierraAdaptorBase,
-                                   ParaViewCatalystSierraAdaptorBaseSignature>
-                                   ParaViewCatalystSierraAdaptorBaseFactory;
-#endif
-
-// ParaViewCatalystSierraAdaptor is a link between Sierra's mesh 
+// ParaViewCatalystIossAdapter is a link between Ioss's mesh 
 // data structure and a ParaView vtkMultiBlockDataSet data structure.
 
-class ParaViewCatalystSierraAdaptorImplementation;
+class ParaViewCatalystIossAdapterImplementation;
 
-class ParaViewCatalystSierraAdaptor : public ParaViewCatalystSierraAdaptorBase
+class ParaViewCatalystIossAdapter : public ParaViewCatalystIossAdapterBase
 {
 public:
-  ParaViewCatalystSierraAdaptor() {}
-  virtual ~ParaViewCatalystSierraAdaptor() {}
+  ParaViewCatalystIossAdapter() {}
+  virtual ~ParaViewCatalystIossAdapter() {}
 
   // Description:
   // Deletes pipeline with name results_output_filename and any associated
@@ -167,7 +160,7 @@ public:
   //   restart_tag - if not empty, contains the current restart iteration string, ie s0001
   //   enable_logging - turn on logging in the adapter. Default is off.
   //   debug_level - enable catalyst debug output 0, 1, 2. Default is 0.
-  //   results_output_filename - filename associated with the Sierra results output block.
+  //   results_output_filename - filename associated with the Ioss results output block.
   //   catalyst_output_directory - name of the output directory for storing Catalyst output.
   //                               Default is CatalystOutput.
   //   catalyst_sierra_data - string data vector for development and debugging.
@@ -192,7 +185,7 @@ public:
 
   // Description:
   // Sets time data for this ParaView Catalyst co-processing iteration.
-  // currentTime is the current Sierra simulation time and timeStep is 
+  // currentTime is the current Ioss simulation time and timeStep is 
   // the current time iteration count.
   virtual void SetTimeData(double currentTime,
                            int timeStep,
@@ -307,10 +300,16 @@ public:
   // last called.
   virtual void logMemoryUsageAndTakeTimerReading(const char* results_output_filename);
 
+  int parseFile(const std::string& filepath,
+                CatalystParserInterface::parse_info& pinfo);
+
+  int parseString(const std::string& s,
+                  CatalystParserInterface::parse_info& pinfo);
+
   virtual std::string getName() const 
   {
-    return "ParaViewCatalystSierraAdaptor";
+    return "ParaViewCatalystIossAdapter";
   }
 };
 
-#endif /* __PARAVIEW_CATALYST_SIERRA_ADAPTOR_H */
+#endif /* __PARAVIEW_CATALYST_IOSS_ADAPTER_H */
