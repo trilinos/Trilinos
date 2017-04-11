@@ -125,13 +125,74 @@ namespace MueLu {
     //GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
 
-    std::vector<LocalOrdinal> myLocalNodeIds(A->getRowMap()->getNodeNumElements()); // we reserve the absolute possible maximum
-
-    // calculate local node ids for local dof ids.
-    for(size_t i = 0; i < A->getNodeNumRows(); i++)
-      myLocalNodeIds[i] = std::floor<LocalOrdinal>( map[i] / maxDofPerNode );
+    // filled with local node ids (associated with each dof)
+    std::vector<LocalOrdinal> myLocalNodeIds(A->getColMap()->getNodeNumElements()); // possible maximum (we need the ghost nodes, too)
 
     // assign the local node ids for the ghosted nodes
+    size_t nLocalNodes, nLocalPlusGhostNodes;
+    this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, A->getRowMap()->getComm());
+
+    // fill nodal maps
+
+    Teuchos::ArrayView< const GlobalOrdinal > myGids = A->getColMap()->getNodeElementList();
+
+    // vector containing row/col gids of amalgamated matrix (with holes)
+
+    size_t nLocalDofs = A->getRowMap()->getNodeNumElements();
+    size_t nLocalPlusGhostDofs = A->getColMap()->getNodeNumElements(); // TODO remove parameters
+
+    std::vector<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
+    std::vector<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
+
+    // initialize
+    size_t count = 0;
+    if (nLocalDofs > 0) {
+      amalgRowMapGIDs[count] = myGids[0];
+      amalgColMapGIDs[count] = myGids[0];
+      count++;
+    }
+
+    // dofs belonging to the same node must be consecutively only for the local part of myLocalNodeIds[]
+    // fill amalgRowMapGIDs + local part of amalgColMapGIDs
+    for(size_t i = 1; i < nLocalDofs; i++) {
+      if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
+        amalgRowMapGIDs[count] = myGids[i];
+        amalgColMapGIDs[count] = myGids[i];
+        count++;
+      }
+    }
+
+    ArrayView<GlobalOrdinal> amalgRowMapGIDsView(amalgRowMapGIDs.size() ? &amalgRowMapGIDs[0] : 0, amalgRowMapGIDs.size());
+    Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(A->getRowMap()->lib(),
+               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+               amalgRowMapGIDsView,
+               A->getRowMap()->getIndexBase(),
+               A->getRowMap()->getComm());
+
+    // TODO nodalComm(amalgColMapGIDs, myLocalNodeIds...)
+    // TODO create temp copy of myLocalNodeIds
+    //MLVec<T> temp(myLocalNodeIds.size());
+
+    // copy from nodal vector to dof vector
+    //for (int i = 0; i < myLocalNodeIds.size(); i++)
+    //   temp[i] = vector[ myLocalNodeIds[i]];
+
+    // TODO dof comm
+    //dofComm(temp = vector, framework);
+
+    //Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
+    //     vec); //ghosted
+    //Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
+    //     vec); //loc only
+    //X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
+
+
+    // copy from dof vector to nodal vector
+    //for (int i = 0; i < myLocalNodeIds.size(); i++)
+    //   vector[ myLocalNodeIds[i]] = temp[i];
+
+
+    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
 
   }
 
@@ -144,10 +205,342 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::assignGhostLocalNodeIds(const std::vector<LocalOrdinal> & myLocalNodeIds, size_t nLocalDofs, size_t nLocalPlusGhostDofs, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes) const {
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::assignGhostLocalNodeIds(const Teuchos::RCP<const Map> & rowDofMap, const Teuchos::RCP<const Map> & colDofMap, std::vector<LocalOrdinal> & myLocalNodeIds, const std::vector<LocalOrdinal> & dofMap, size_t maxDofPerNode, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes, Teuchos::RCP< const Teuchos::Comm< int > > comm) const {
+
+    size_t nLocalDofs = rowDofMap->getNodeNumElements();
+    size_t nLocalPlusGhostDofs = colDofMap->getNodeNumElements(); // TODO remove parameters
+
+    // create importer for dof-based information
+    Teuchos::RCP<Import> importer = ImportFactory::Build(rowDofMap, colDofMap);
+
+    // create a vector living on column map of A (dof based)
+    Teuchos::RCP<Vector> localNodeIdsTemp = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowDofMap,true);
+    Teuchos::RCP<Vector> localNodeIds = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colDofMap,true);
+
+    // fill local dofs (padded local ids)
+    Teuchos::ArrayRCP< Scalar > localNodeIdsTempData = localNodeIdsTemp->getDataNonConst(0);
+    for(size_t i = 0; i < localNodeIdsTemp->getLocalLength(); i++)
+      localNodeIdsTempData[i] = std::floor<LocalOrdinal>( dofMap[i] / maxDofPerNode );
+
+    localNodeIds->doImport(*localNodeIdsTemp, *importer, Xpetra::INSERT);
+    Teuchos::ArrayRCP< const Scalar > localNodeIdsData = localNodeIds->getData(0);
+
+    // Note: localNodeIds contains local ids for the padded version as vector values
+
+
+    // we use Scalar instead of int as type
+    Teuchos::RCP<Vector> myProcTemp = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowDofMap,true);
+    Teuchos::RCP<Vector> myProc = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colDofMap,true);
+
+    // fill local dofs (padded local ids)
+    Teuchos::ArrayRCP< Scalar > myProcTempData = myProcTemp->getDataNonConst(0);
+    for(size_t i = 0; i < myProcTemp->getLocalLength(); i++)
+      myProcTempData[i] = Teuchos::as<Scalar>(comm->getRank());
+    myProc->doImport(*myProcTemp, *importer, Xpetra::INSERT);
+    Teuchos::ArrayRCP<Scalar > myProcData = myProc->getDataNonConst(0); // we have to modify the data (therefore the non-const version)
+
+    // At this point, the ghost part of localNodeIds corresponds to the local ids
+    // associated with the current owning processor. We want to convert these to
+    // local ids associated with the processor on which these are ghosts.
+    // Thus we have to re-number them. In doing this re-numbering we must make sure
+    // that we find all ghosts with the same id & proc and assign a unique local
+    // id to this group (id&proc). To do this find, we sort all ghost entries in
+    // localNodeIds that are owned by the same processor. Then we can look for
+    // duplicates (i.e., several ghost entries corresponding to dofs with the same
+    // node id) easily and make sure these are all assigned to the same local id.
+    // To do the sorting we'll make a temporary copy of the ghosts via tempId and
+    // tempProc and sort this multiple times for each group owned by the same proc.
+
+
+    std::vector<size_t> location(nLocalPlusGhostDofs - nLocalDofs + 1);
+    std::vector<size_t> tempId  (nLocalPlusGhostDofs - nLocalDofs + 1);
+    std::vector<size_t> tempProc(nLocalPlusGhostDofs - nLocalDofs + 1);
+
+    size_t notProcessed = nLocalDofs; // iteration index over all ghosted dofs
+    size_t tempIndex = 0;
+    size_t first = tempIndex;
+    int neighbor;
+
+    while (notProcessed < nLocalPlusGhostDofs) {
+      neighbor = Teuchos::as<int>(myProcData[notProcessed]); // get processor id of not-processed element
+      first    = tempIndex;
+      location[tempIndex] = notProcessed;
+      tempId[tempIndex++] = localNodeIdsData[notProcessed];
+      myProcData[notProcessed] = Teuchos::as<Scalar>(-1 - neighbor);
+
+      for(size_t i = notProcessed + 1; i < nLocalPlusGhostDofs; i++) {
+        if(myProcData[i] == neighbor) {
+          location[tempIndex] = i;
+          tempId[tempIndex++] = localNodeIdsData[i];
+          myProcData[i] = -1; // mark as visited
+        }
+      }
+      this->MueLu_az_sort(&(tempId[first]), tempIndex - first, &(location[first]), NULL);
+      for(size_t i = first; i < tempIndex; i++) tempProc[i] = neighbor;
+
+      // increment index. Find next notProcessed dof index corresponding to first non-visited element
+      notProcessed++;
+      while ( (notProcessed < nLocalPlusGhostDofs) && (myProcData[notProcessed] < 0))
+        notProcessed++;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(tempIndex != nLocalPlusGhostDofs-nLocalDofs, MueLu::Exceptions::RuntimeError,"Number of nonzero ghosts is inconsistent.");
+
+    // Now assign ids to all ghost nodes (giving the same id to those with the
+    // same myProc[] and the same local id on the proc that actually owns the
+    // variable associated with the ghost
+
+    nLocalNodes = 0; // initialize return value
+    if(nLocalDofs > 0) nLocalNodes = localNodeIdsData[nLocalDofs-1] + 1;
+
+    nLocalPlusGhostNodes = nLocalNodes; // initialize return value
+    if(nLocalDofs < nLocalPlusGhostDofs) nLocalPlusGhostNodes++; // 1st ghost node is unique (not accounted for). number will be increased later, if there are more ghost nodes
+
+    // check if two adjacent ghost dofs correspond to different nodes. To do this,
+    // check if they are from different processors or whether they have different
+    // local node ids
+
+    // loop over all (remaining) ghost dofs
+    size_t lagged = -1;
+    for (size_t i = nLocalDofs+1; i < nLocalPlusGhostDofs; i++) {
+      lagged = nLocalPlusGhostNodes-1;
+
+      // i is a new unique ghost node (not already accounted for)
+      if ((tempId[i-nLocalDofs] != tempId[i-1-nLocalDofs]) ||
+          (tempProc[i-nLocalDofs] != tempProc[i-1-nLocalDofs]))
+        nLocalPlusGhostNodes++; // update number of ghost nodes
+      tempId[i-1-nLocalDofs] = lagged;
+    }
+    if (nLocalPlusGhostDofs > nLocalDofs)
+      tempId[nLocalPlusGhostDofs-1-nLocalDofs] = nLocalPlusGhostNodes - 1;
+
+    // fill myLocalNodeIds array. Start with local part (not ghosted)
+    for(size_t i = 0; i < nLocalDofs; i++)
+      myLocalNodeIds[i] = std::floor<LocalOrdinal>( dofMap[i] / maxDofPerNode );
+
+    // copy ghosted nodal ids into myLocalNodeIds
+    for(size_t i = nLocalDofs; i < nLocalPlusGhostDofs; i++)
+      myLocalNodeIds[location[i-nLocalDofs]] = tempId[i-nLocalDofs];
 
   }
 
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MueLu_az_sort(size_t list[], size_t N, size_t list2[], Scalar list3[]) const {
+    /* local variables */
+
+    size_t RR, K, l, r, j, flag, i;
+    size_t RR2;
+    Scalar RR3;
+
+    /*********************** execution begins ******************************/
+
+    if (N <= 1) return;
+
+    l   = N / 2 + 1;
+    r   = N - 1;
+    l   = l - 1;
+    RR  = list[l - 1];
+    K   = list[l - 1];
+
+    if ((list2 != NULL) && (list3 != NULL)) {
+      RR2 = list2[l - 1];
+      RR3 = list3[l - 1];
+      while (r != 0) {
+        j = l;
+        flag = 1;
+
+        while (flag == 1) {
+          i = j;
+          j = j + j;
+
+          if (j > r + 1)
+            flag = 0;
+          else {
+            if (j < r + 1)
+              if (list[j] > list[j - 1]) j = j + 1;
+
+            if (list[j - 1] > K) {
+              list[ i - 1] = list[ j - 1];
+              list2[i - 1] = list2[j - 1];
+              list3[i - 1] = list3[j - 1];
+            }
+            else {
+              flag = 0;
+            }
+          }
+        }
+
+        list[ i - 1] = RR;
+        list2[i - 1] = RR2;
+        list3[i - 1] = RR3;
+
+        if (l == 1) {
+          RR  = list [r];
+          RR2 = list2[r];
+          RR3 = list3[r];
+
+          K = list[r];
+          list[r ] = list[0];
+          list2[r] = list2[0];
+          list3[r] = list3[0];
+          r = r - 1;
+        }
+        else {
+          l   = l - 1;
+          RR  = list[ l - 1];
+          RR2 = list2[l - 1];
+          RR3 = list3[l - 1];
+          K   = list[l - 1];
+        }
+      }
+
+      list[ 0] = RR;
+      list2[0] = RR2;
+      list3[0] = RR3;
+    }
+    else if (list2 != NULL) {
+      RR2 = list2[l - 1];
+      while (r != 0) {
+        j = l;
+        flag = 1;
+
+        while (flag == 1) {
+          i = j;
+          j = j + j;
+
+          if (j > r + 1)
+            flag = 0;
+          else {
+            if (j < r + 1)
+              if (list[j] > list[j - 1]) j = j + 1;
+
+            if (list[j - 1] > K) {
+              list[ i - 1] = list[ j - 1];
+              list2[i - 1] = list2[j - 1];
+            }
+            else {
+              flag = 0;
+            }
+          }
+        }
+
+        list[ i - 1] = RR;
+        list2[i - 1] = RR2;
+
+        if (l == 1) {
+          RR  = list [r];
+          RR2 = list2[r];
+
+          K = list[r];
+          list[r ] = list[0];
+          list2[r] = list2[0];
+          r = r - 1;
+        }
+        else {
+          l   = l - 1;
+          RR  = list[ l - 1];
+          RR2 = list2[l - 1];
+          K   = list[l - 1];
+        }
+      }
+
+      list[ 0] = RR;
+      list2[0] = RR2;
+    }
+    else if (list3 != NULL) {
+      RR3 = list3[l - 1];
+      while (r != 0) {
+        j = l;
+        flag = 1;
+
+        while (flag == 1) {
+          i = j;
+          j = j + j;
+
+          if (j > r + 1)
+            flag = 0;
+          else {
+            if (j < r + 1)
+              if (list[j] > list[j - 1]) j = j + 1;
+
+            if (list[j - 1] > K) {
+              list[ i - 1] = list[ j - 1];
+              list3[i - 1] = list3[j - 1];
+            }
+            else {
+              flag = 0;
+            }
+          }
+        }
+
+        list[ i - 1] = RR;
+        list3[i - 1] = RR3;
+
+        if (l == 1) {
+          RR  = list [r];
+          RR3 = list3[r];
+
+          K = list[r];
+          list[r ] = list[0];
+          list3[r] = list3[0];
+          r = r - 1;
+        }
+        else {
+          l   = l - 1;
+          RR  = list[ l - 1];
+          RR3 = list3[l - 1];
+          K   = list[l - 1];
+        }
+      }
+
+      list[ 0] = RR;
+      list3[0] = RR3;
+
+    }
+    else {
+      while (r != 0) {
+        j = l;
+        flag = 1;
+
+        while (flag == 1) {
+          i = j;
+          j = j + j;
+
+          if (j > r + 1)
+            flag = 0;
+          else {
+            if (j < r + 1)
+              if (list[j] > list[j - 1]) j = j + 1;
+
+            if (list[j - 1] > K) {
+              list[ i - 1] = list[ j - 1];
+            }
+            else {
+              flag = 0;
+            }
+          }
+        }
+
+        list[ i - 1] = RR;
+
+        if (l == 1) {
+          RR  = list [r];
+
+          K = list[r];
+          list[r ] = list[0];
+          r = r - 1;
+        }
+        else {
+          l   = l - 1;
+          RR  = list[ l - 1];
+          K   = list[l - 1];
+        }
+      }
+
+      list[ 0] = RR;
+    }
+
+  }
 } /* MueLu */
 
 

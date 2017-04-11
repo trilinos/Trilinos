@@ -92,7 +92,9 @@ namespace MueLu {
   private:
 
     void buildPaddedMap(const Teuchos::ArrayRCP<const bool> & dofPresent, std::vector<LocalOrdinal> & map, size_t nDofs) const;
-    void assignGhostLocalNodeIds(const std::vector<LocalOrdinal> & myLocalNodeIds, size_t nLocalDofs, size_t nLocalPlusGhostDofs, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes) const;
+    void assignGhostLocalNodeIds(const Teuchos::RCP<const Map> & rowDofMap, const Teuchos::RCP<const Map> & colDofMap, std::vector<LocalOrdinal> & myLocalNodeIds, const std::vector<LocalOrdinal> & dofMap, size_t maxDofPerNode, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes, Teuchos::RCP< const Teuchos::Comm< int > > comm) const;
+
+    void MueLu_az_sort(size_t list[], size_t N, size_t list2[], Scalar list3[]) const;
 
   }; //class CoalesceDropFactory
 
