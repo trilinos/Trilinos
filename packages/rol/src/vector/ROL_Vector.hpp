@@ -343,7 +343,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - x.dot(*this) - y.dot(*this)));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y)));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.
