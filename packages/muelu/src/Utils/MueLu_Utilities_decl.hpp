@@ -858,6 +858,10 @@ namespace MueLu {
   */
   bool IsParamMuemexVariable(const std::string& name);
 
+  /*! Returns true if a parameter name is a valid user custom level variable, e.g. "MultiVector myArray"
+  */
+  bool IsParamValidVariable(const std::string& name);
+
 #ifdef HAVE_MUELU_EPETRA
   /*! \fn EpetraCrs_To_XpetraMatrix
       @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix

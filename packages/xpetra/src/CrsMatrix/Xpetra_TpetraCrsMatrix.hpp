@@ -1118,7 +1118,7 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
 
-    bool haveGlobalConstants() const  { }
+    bool haveGlobalConstants() const  { return false;}
 
     //@}
 

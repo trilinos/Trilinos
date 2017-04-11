@@ -35,6 +35,23 @@ if [ "$remote_trilinos_base_dir" == "" ] ; then
 fi
 echo "Remote base dir: '$remote_trilinos_base_dir'"
 
+blocking_or_nonblocking=$3
+if [ "$blocking_or_nonblocking" == "" ] ; then
+  # Default is nonblocking
+  blocking_or_nonblocking=nonblocking
+elif [ "$blocking_or_nonblocking" == "blocking" ] ; then
+  # Valid value!
+  blocking_or_nonblocking=blocking
+elif [ "$blocking_or_nonblocking" == "nonblocking" ] ; then
+  # Valid value!
+  blocking_or_nonblocking=nonblocking
+else
+  # Invalid value!
+  echo "Error: Third argument value '$blocking_or_nonblocking' is not acceptable!  Must pass in 'blocking' or 'nonblocking'!"
+  exit 3
+fi
+echo "Blocking or nonblocking: '$blocking_or_nonblocking'"
+
 cd $local_trilinos_base_dir/Trilinos/
 local_branch_name=`git rev-parse --abbrev-ref HEAD`
 
@@ -47,15 +64,11 @@ echo
 cd $local_trilinos_base_dir/Trilinos/
 git push -f intermediate-repo $local_branch_name:$local_branch_name
 
-echo
-echo "***"
-echo "*** 2) Hard reset the 'develop' branch and merge in the '$local_branch_name' branch in Trilinos repo on $remote_pull_test_push_server"
-echo "***"
-echo
+#
+# Run the remote commands blocking or nonblocking mode
+#
 
-ssh -q $remote_pull_test_push_server \
-  "cd $remote_trilinos_base_dir/Trilinos && git checkout develop && git reset --hard @{u} && git fetch intermediate-repo && git merge --no-ff intermediate-repo/$local_branch_name" 
-
+remote_branch_update_cmnds="cd $remote_trilinos_base_dir/Trilinos && git checkout develop && git reset --hard @{u} && git fetch intermediate-repo && git merge --no-ff intermediate-repo/$local_branch_name"
 # NOTE: Above, we do the fetch and merge of the branch before running the
 # checkin-test.py script on the remote machine.  That is needed for some use
 # cases where the checkin-test.py needs to be run given the updated code or it
@@ -65,21 +78,57 @@ ssh -q $remote_pull_test_push_server \
 # will not allow the enable of the package.  (This actually happened with the
 # Tempus package.)
 
-echo
-echo "***"
-echo "*** 3) Doing non-blocking remote test/push on '$remote_pull_test_push_server' (see log file checkin-test-remote.log)"
-echo "***"
+remote_checkin_test_cmnds="cd $remote_trilinos_base_dir/Trilinos/CHECKIN && ./checkin-test-sems.sh --do-all --no-rebase --push" 
 
 cd $local_trilinos_base_dir
 
-ssh -q $remote_pull_test_push_server \
-  "cd $remote_trilinos_base_dir/Trilinos/CHECKIN && ./checkin-test-sems.sh --do-all --no-rebase --push" \
-  &> checkin-test-remote.log \
-  && echo && echo && echo "***" \
-  && echo "*** Final test/push results from '$remote_pull_test_push_server':" \
-  && echo "***" && echo \
-  && tail -n10 checkin-test-remote.log &
+if [ "$blocking_or_nonblocking" == "blocking" ] ; then
 
-echo
-echo "You may now keep working on your local machine and wait for email notifications!  (final result will be printed when complete)"
-echo
+  # blocking
+
+  ssh -q $remote_pull_test_push_server \
+    "echo" \
+    " && echo \"***\"" \
+    " && echo \"*** 2) Hard reset the 'develop' branch and merge in the\"" \
+    " \" '$local_branch_name' branch in Trilinos repo on\"" \
+    " \" $remote_pull_test_push_server\"" \
+    " && echo \"***\"" \
+    " && echo" \
+    " && $remote_branch_update_cmnds" \
+    " && echo" \
+    " && echo \"***\"" \
+    " && echo \"*** 3) Doing non-blocking remote test/push on\"" \
+    " \" '$remote_pull_test_push_server'\"" \
+    " && echo \"***\"" \
+    " && echo" \
+    " && $remote_checkin_test_cmnds" \
+
+else
+
+  # nonblocking
+  
+  echo
+  echo "***"
+  echo "*** 2) Hard reset the 'develop' branch and merge in the '$local_branch_name' branch in Trilinos repo on $remote_pull_test_push_server"
+  echo "***"
+  echo
+  
+  ssh -q $remote_pull_test_push_server "$remote_branch_update_cmnds"
+  
+  echo
+  echo "***"
+  echo "*** 3) Doing non-blocking remote test/push on '$remote_pull_test_push_server' (see log file checkin-test-remote.log)"
+  echo "***"
+  
+  ssh -q $remote_pull_test_push_server "$remote_checkin_test_cmnds" \
+    &> checkin-test-remote.log \
+    && echo && echo && echo "***" \
+    && echo "*** Final test/push results from '$remote_pull_test_push_server':" \
+    && echo "***" && echo \
+    && tail -n10 checkin-test-remote.log &
+  
+  echo
+  echo "You may now keep working on your local machine and wait for email notifications!  (final result will be printed when complete)"
+  echo
+
+fi
