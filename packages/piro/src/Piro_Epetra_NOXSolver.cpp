@@ -57,7 +57,10 @@ Piro::Epetra::NOXSolver::NOXSolver(
   piroParams(piroParams_),
   model(model_),
   observer(observer_),
-  utils(piroParams->sublist("NOX").sublist("Printing"))
+  utils(piroParams->sublist("NOX").sublist("Printing")),
+  totalNewtonIters(0),
+  totalKrylovIters(0),
+  stepNum(0)
 {
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
 	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
@@ -347,9 +350,9 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   // Print stats
   bool print_stats = piroParams->get("Print Convergence Stats", true);
   if (print_stats) {
-    static int totalNewtonIters=0;
-    static int totalKrylovIters=0;
-    static int stepNum=0;
+    // static int totalNewtonIters=0;
+    // static int totalKrylovIters=0;
+    // static int stepNum=0;
     int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
 
@@ -953,4 +956,11 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   for (int i=0; i<num_p; i++)
     interface->inargs_set_p(Teuchos::null, i); 
  
+}
+
+void Piro::Epetra::NOXSolver::resetCounters()
+{
+  totalNewtonIters=0;
+  totalKrylovIters=0;
+  stepNum=0;
 }
