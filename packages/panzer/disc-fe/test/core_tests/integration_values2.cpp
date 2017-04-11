@@ -116,6 +116,7 @@ namespace panzer {
 
   }
 
+#ifndef __CUDACC__
   TEUCHOS_UNIT_TEST(integration_values, control_volume)
   {    
     Teuchos::RCP<shards::CellTopology> topo = 
@@ -249,3 +250,5 @@ namespace panzer {
   }
 
 }
+
+#endif

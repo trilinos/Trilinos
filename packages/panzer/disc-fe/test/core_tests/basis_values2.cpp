@@ -876,6 +876,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
   }
 
+#ifndef __CUDACC__
   TEUCHOS_UNIT_TEST(basis_values, control_vol_hgrad)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
@@ -969,3 +970,4 @@ namespace panzer {
     }
   }
 }
+#endif
