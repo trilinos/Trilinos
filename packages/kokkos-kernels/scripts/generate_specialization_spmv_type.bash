@@ -19,7 +19,7 @@ MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
 
 OffsetType_FileName=`echo ${OffsetType} | sed 's|\ |\_|g'`
 filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_inst_specialization_${Scalar_FileName}_${OffsetType_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
-filename_hpp=generated_specializations_hpp/${Function}/${FunctionExtended}_decl_specializations.hpp
+filename_hpp=generated_specializations_hpp/${FunctionExtended}_decl_specializations.hpp
 
 
 cat ${KokkosKernelsPath}/scripts/header > ${filename_cpp}

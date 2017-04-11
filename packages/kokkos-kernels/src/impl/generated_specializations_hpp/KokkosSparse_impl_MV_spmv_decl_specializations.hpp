@@ -76,16 +76,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, int, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
@@ -132,16 +132,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, int, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
@@ -188,16 +188,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, int, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
@@ -244,16 +244,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, int, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
@@ -300,16 +300,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
@@ -356,16 +356,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
@@ -412,16 +412,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
@@ -468,16 +468,16 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
- && defined (KOKKOSKERNELS_INST_EXECSPACE_PTHREAD) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Pthread, Kokkos::HostSpace)
+ KOKKOSSPARSE_IMPL_MV_SPMV_DECL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \

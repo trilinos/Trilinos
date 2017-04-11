@@ -8,11 +8,11 @@ KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
 OffsetType="int size_t"
-ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace"
 
 mkdir generated_specializations_hpp/${Function}
 mkdir generated_specializations_cpp/${Function}
-filename_hpp=generated_specializations_hpp/${Function}/${FunctionExtended}_decl_specializations.hpp
+filename_hpp=generated_specializations_hpp/${FunctionExtended}_decl_specializations.hpp
 Function_UpperCase=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 
 
