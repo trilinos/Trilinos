@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
     // Build control vectors
-    int nx = 1024;
+    int nx = 256;
     Teuchos::RCP<std::vector<RealT> > x1_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
     ROL::StdVector<RealT> x1(x1_rcp);
     Teuchos::RCP<std::vector<RealT> > x2_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
@@ -121,6 +121,10 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp(new ROL::StdTeuchosBatchManager<RealT,int>(comm));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
+    int nprocs = Teuchos::size<int>(*comm);
+    std::stringstream name;
+    name << "samples_np" << nprocs;
+    sampler->print(name.str());
     /**********************************************************************************************/
     /************************* CONSTRUCT OBJECTIVE FUNCTION ***************************************/
     /**********************************************************************************************/
@@ -153,41 +157,33 @@ int main(int argc, char* argv[]) {
     // Construct SimulatedObjective.
     ROL::SimulatedObjective<RealT> simobj(sampler, pobjSimOpt);
     // Simulated vectors.
-    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > xu_rcp, vu_rcp, yu_rcp;
-    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > dxu_rcp, dvu_rcp, dyu_rcp;
     int nvecloc = sampler->numMySamples();
+    std::vector<Teuchos::RCP<std::vector<RealT> > >  xuk_rcp(nvecloc),  vuk_rcp(nvecloc),  yuk_rcp(nvecloc);
+    std::vector<Teuchos::RCP<std::vector<RealT> > > dxuk_rcp(nvecloc), dvuk_rcp(nvecloc), dyuk_rcp(nvecloc);
+    std::vector<Teuchos::RCP<ROL::Vector<RealT> > >  xu_rcp(nvecloc),   vu_rcp(nvecloc),   yu_rcp(nvecloc);
+    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > dxu_rcp(nvecloc),  dvu_rcp(nvecloc),  dyu_rcp(nvecloc);
     RealT right = 1, left = 0;
     for( int k=0; k<nvecloc; ++k ) {
-      Teuchos::RCP<std::vector<RealT> > xuk_rcp, vuk_rcp, yuk_rcp;
-      Teuchos::RCP<std::vector<RealT> > dxuk_rcp, dvuk_rcp, dyuk_rcp;
-      xuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      vuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      yuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dxuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dvuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      dyuk_rcp = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-      Teuchos::RCP<ROL::Vector<RealT> > xuk, vuk, yuk;
-      Teuchos::RCP<ROL::Vector<RealT> > dxuk, dvuk, dyuk;
-      xuk = Teuchos::rcp( new ROL::StdVector<RealT>( xuk_rcp ) );
-      vuk = Teuchos::rcp( new ROL::StdVector<RealT>( vuk_rcp ) );
-      yuk = Teuchos::rcp( new ROL::StdVector<RealT>( yuk_rcp ) );
-      dxuk = Teuchos::rcp( new ROL::StdVector<RealT>( dxuk_rcp ) );
-      dvuk = Teuchos::rcp( new ROL::StdVector<RealT>( dvuk_rcp ) );
-      dyuk = Teuchos::rcp( new ROL::StdVector<RealT>( dyuk_rcp ) );
+      xuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      vuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      yuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      dxuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      dvuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      dyuk_rcp[k] = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
+      xu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( xuk_rcp[k] ) );
+      vu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( vuk_rcp[k] ) );
+      yu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( yuk_rcp[k] ) );
+      dxu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dxuk_rcp[k] ) );
+      dvu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dvuk_rcp[k] ) );
+      dyu_rcp[k] = Teuchos::rcp( new ROL::StdVector<RealT>( dyuk_rcp[k] ) );
       for( int i=0; i<nx; ++i ) {
-        (*xuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*vuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*yuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dxuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dvuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-        (*dyuk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*xuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*vuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*yuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dxuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dvuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+        (*dyuk_rcp[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       }
-      xu_rcp.push_back(xuk);
-      vu_rcp.push_back(vuk);
-      yu_rcp.push_back(yuk);
-      dxu_rcp.push_back(dxuk);
-      dvu_rcp.push_back(dvuk);
-      dyu_rcp.push_back(dyuk);
     }
     Teuchos::RCP<ROL::PrimalSimulatedVector<RealT> > xu, vu, yu;
     Teuchos::RCP<ROL::DualSimulatedVector<RealT> > dxu, dvu, dyu;
@@ -228,7 +224,9 @@ int main(int argc, char* argv[]) {
     ROL::Vector_SimOpt<RealT> dx(dxu, dxz);
     ROL::Vector_SimOpt<RealT> dv(dvu, dvz);
     ROL::Vector_SimOpt<RealT> dy(dyu, dyz);
+    xu->checkVector(*vu,*yu,true,*outStream);
     x.checkVector(v,y,true,*outStream);
+    dxu->checkVector(*dvu,*dyu,true,*outStream);
     dx.checkVector(dv,dy,true,*outStream);
     *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl; 
     simcon.checkApplyJacobian(x, v, *dvu, true, *outStream);
@@ -239,7 +237,7 @@ int main(int argc, char* argv[]) {
     simobj.checkHessVec(x, v, true, *outStream);
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);
     vu->zero();
-    x.scale(1);
+    x.zero();
     algo.run(x, *vu, simobj, simcon, true, *outStream);
 
     // Output control to file.
