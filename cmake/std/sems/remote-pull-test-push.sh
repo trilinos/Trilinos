@@ -8,10 +8,19 @@
 #
 #  $ cd <local_trilinos_base_dir>/
 #  $ ./Trilinos/cmake/std/sems/remote-pull-test-push.sh \
-#       <remote_pull_test_push_server>  <remote_trilinos_base_dir>
+#       <remote_pull_test_push_server> \
+#       <remote_trilinos_base_dir> \
+#       <blocking_mode>
 #
 # where <local_trilinos_base_dir> is the base directory for Trilinos on the
-# local machine (i.e. <local_trilinos_base_dir>/Trilinos).
+# local machine (i.e. <local_trilinos_base_dir>/Trilinos) and <blocking_mode>
+# is either 'blocking' or 'nonblocking'.
+#
+# If one cannot get public/private SSH access to the remote machine to work
+# without typing a password, then one must use 'blocking' mode.  This will
+# then only the user to type the password for the remote machine one time.
+# Otherwise, for 'nonblocking' mode, the second remote ssh -q invocation that
+# requires a password will not work since it is backgrounded.
 #
  
 echo
