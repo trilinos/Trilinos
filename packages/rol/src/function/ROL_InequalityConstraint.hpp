@@ -55,7 +55,7 @@
 namespace ROL {
 
 template <class Real>
-class InequalityConstraint : public EqualityConstraint<Real> {};  
+class InequalityConstraint : public virtual EqualityConstraint<Real> {};  
 
 }
 
