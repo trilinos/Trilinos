@@ -278,7 +278,7 @@ void ColoredPNGProcessor::find_upper_and_lower_bounds()
 }
 
 SimpleColoredPng::SimpleColoredPng(std::string fileName)
-:PNGProcessor(fileName)
+: PNGProcessor(fileName), mOtherPixelCount(0)
 {
     for (unsigned row = 0; row < m_imageHeight; row++)
         for (unsigned col = 0; col < m_imageWidth; col++)
@@ -318,7 +318,10 @@ void SimpleColoredPng::update_image_value_ignoring_white(unsigned row, unsigned 
     bool isWhite = m_imageVector[row][col] == 0xffffffff;
     bool isTransparent = (m_imageVector[row][col] & 0xff) == 0;
     if(!isWhite && !isTransparent)
+    {
         m_imageVector[row][col] = 0xff;
+        mOtherPixelCount++;
+    }
 }
 
 void SimpleColoredPng::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const

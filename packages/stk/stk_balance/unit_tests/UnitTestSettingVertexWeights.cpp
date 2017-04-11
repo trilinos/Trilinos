@@ -40,7 +40,8 @@ public:
         Zoltan2ParallelGraph zoltan2Graph;
         stk::balance::FieldVertexWeightSettings graphSettings(get_bulk(), *vertexWeightField, 0.0);
         stk::mesh::Selector sel = get_meta().locally_owned_part();
-        stk::balance::internal::fill_zoltan2_graph(graphSettings, get_bulk(), zoltan2Graph, sel, localIds);
+        stk::balance::internal::createZoltanParallelGraph(graphSettings, get_bulk(), std::vector<stk::mesh::Selector>{sel}, localIds, zoltan2Graph);
+
         zoltan2Graph.adjust_vertex_weights(graphSettings, get_bulk(), std::vector<stk::mesh::Selector>{sel}, localIds);
         check_graph_vertex_weights(zoltan2Graph.get_vertex_ids(), zoltan2Graph.get_vertex_weights());
     }

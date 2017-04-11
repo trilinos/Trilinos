@@ -5920,7 +5920,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         mesh.modification_begin();
 
-        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, nodes, 1+procId, meta.get_topology_root_part(stk::topology::QUAD_4_2D));
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, nodes, 1+procId, meta.get_topology_root_part(stk::topology::QUAD_4));
 
         EXPECT_TRUE(mesh.is_valid(side));
 
@@ -5974,7 +5974,7 @@ TEST(BulkData, test_parallel_entity_sharing)
     keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
     keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
 
-    stk::topology topo = stk::topology::QUAD_4_2D;
+    stk::topology topo = stk::topology::QUAD_4;
 
     stk::mesh::shared_entity_type sentity(quad, entity, topo);
     sentity.nodes.resize(num_nodes_on_entity);

@@ -15,7 +15,7 @@
 #elif defined ( STK_SIMD_SSE )
 #include "sse/Sse.hpp"
 #else
-#include "NoSimd.hpp"
+#include "no_simd/NoSimd.hpp"
 #endif // Check SIMD version
 
 #include "AlignedAllocator.hpp"
@@ -93,7 +93,7 @@ inline std::ostream& operator << (std::ostream& output, const Double& a) {
   return output;
 }
 
-STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
   double ret = x[0];
   for (int i=1; i < sumNum; ++i) {
     ret += x[i];
@@ -169,7 +169,7 @@ inline std::ostream& operator << (std::ostream& output, const Float& a) {
   return output;
 }
 
-STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum=nfloats) {
+STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum ) {
   float ret = x[0];
   for (int i=1; i < sumNum; ++i) {
     ret += x[i];
@@ -274,11 +274,19 @@ STK_MATH_FORCE_INLINE void set_data(float& z, int index, const float val) {
 
 // horizonal operations defined for scalar types for portability
 
-STK_MATH_FORCE_INLINE double reduce_sum(const double& x, const int sumNum=1) {
+STK_MATH_FORCE_INLINE double reduce_sum(const double& x) {
   return x;
 }
 
-STK_MATH_FORCE_INLINE float reduce_sum(const float& x, const int sumNum=1) {
+STK_MATH_FORCE_INLINE double reduce_sum(const double& x, const int) {
+  return x;
+}
+
+STK_MATH_FORCE_INLINE float reduce_sum(const float& x) {
+  return x;
+}
+
+STK_MATH_FORCE_INLINE float reduce_sum(const float& x, const int) {
   return x;
 }
 

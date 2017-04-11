@@ -1,7 +1,7 @@
 // Copyright 2013 Sandia Corporation, Albuquerque, NM.
 
-#ifndef STK_SIMD_SSE_H
-#define STK_SIMD_SSE_H
+#ifndef STK_NO_SIMD_H
+#define STK_NO_SIMD_H
 
 #include <stdio.h>
 #include <Kokkos_Macros.hpp>
@@ -68,4 +68,5 @@ KOKKOS_INLINE_FUNCTION void store(float* x, const Float& z, const int offset) {
 } // namespace simd
 } // namespace stk
 
-#endif // SIMD_PROC_SPECIFIC_H__ (SSE)
+#endif // STK_NO_SIMD_H
+

@@ -259,7 +259,7 @@ class StkSimdView1dTester {
   void test_view_equal_to_index_multiple(HostSimdView view, int n) const {
     for (int i=0; i < N; ++i) {
       EXPECT_EQ(n*i, view(i));
-    }    
+    }
   }
   int N;
 };

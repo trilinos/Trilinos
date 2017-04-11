@@ -10,19 +10,27 @@ begin sierra TOSDTWD Bridge
     end values
   end definition for function DUMMY
 
-  begin material hard
-    density = 1.0
+  begin material a36_steel
+      density = 490
+      begin parameters for model elastic
+          youngs modulus = 4176000000.0003
+          poissons ratio = 0.26
+      end
+  end
+
+  begin material car_material
+    density = {490 / 1.0 }
     begin parameters for model elastic
-      youngs modulus = 1000000.
-      poissons ratio = 0.3
+      youngs modulus = { 4176000000.0003 / 50 }
+      poissons ratio = 0.26
     end parameters for model elastic
   end
 
   begin material soft
-    density = {1.0 / 10}
+    density = {490 / 10}
     begin parameters for model elastic
-      youngs modulus = {1000000. / 10}
-      poissons ratio = 0.3
+      youngs modulus = {4176000000.0003 / 10}
+      poissons ratio = 0.26
     end parameters for model elastic
   end
 
@@ -31,11 +39,11 @@ begin sierra TOSDTWD Bridge
     Database type = exodusII
 
     begin parameters for block block_1
-      material = hard
+      material = a36_steel
       model = elastic
     end parameters for block block_1
     begin parameters for block block_2 # red pixels
-      material = hard
+      material = a36_steel
       model = elastic
     end parameters for block block_2 
     begin parameters for block block_3 # green pixels
@@ -43,7 +51,7 @@ begin sierra TOSDTWD Bridge
       model = elastic
     end parameters for block block_3
     begin parameters for block block_4 # blue pixels
-      material = hard
+      material = car_material
       model = elastic
     end parameters for block block_4
   end
@@ -67,7 +75,7 @@ begin sierra TOSDTWD Bridge
         include all blocks
         direction = down
         function = dummy
-        gravitational constant = {9.8 * .5}
+        gravitational constant = {32 * 1.0}
       end
   
       begin fixed displacement
@@ -76,10 +84,11 @@ begin sierra TOSDTWD Bridge
       end fixed displacement
   
       begin fixed displacement
-        block = block_2 
+        block = block_2 block_4
         components = x y 
       end fixed displacement
   
+
       begin results output output_adagio
         database name = bridgeLoads.exo
         database type = exodusII
@@ -134,7 +143,7 @@ begin sierra TOSDTWD Bridge
       begin gravity
         include all blocks
         direction = down
-        gravitational constant = {9.8 * .5}
+        gravitational constant = {32 * 1}
       end
   
       begin fixed displacement
@@ -147,6 +156,14 @@ begin sierra TOSDTWD Bridge
         components = x y 
       end fixed displacement
   
+      begin initial condition
+        block = block_4
+        initialize variable name = velocity
+        variable type = node
+        magnitude = 50 0 0 
+      end
+
+
       begin results output output_adagio
         database name = bridgeFalls.exo
         database type = exodusII
@@ -157,16 +174,37 @@ begin sierra TOSDTWD Bridge
       end results output output_adagio
   
       begin contact definition
-        skin all blocks = on
-        begin interaction defaults
-          general contact = on
-          self contact = off
+        contact surface block_1 contains block_1
+        contact surface block_2 contains block_2
+        contact surface block_3 contains block_3
+        contact surface block_4 contains block_4
+
+        update all surfaces for element death = on
+#        begin interaction defaults
+#          general contact = on
+#          self contact = on
+#        end
+
+        begin interaction
+            surfaces = block_1 block_2
+        end
+        begin interaction
+            surfaces = block_1 block_3
+        end
+        begin interaction
+            surfaces = block_1 block_4
+        end
+        begin interaction
+            surfaces = block_2 block_3
+        end
+        begin interaction
+            surfaces = block_2 block_4
         end
       end
  
       begin element death death1
         block = block_1 block_3 block_4
-        criterion is element value of von_mises > 3e3
+        criterion is element value of von_mises > 3e7
       end
     end
   end

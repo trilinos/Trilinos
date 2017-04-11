@@ -28,4 +28,19 @@ constexpr int nfloats = 8;
 #include "./AvxFloatLoadStore.hpp"
 #include "./AvxFloatMath.hpp"
 
+namespace stk {
+namespace simd {
+
+inline double reduce_sum(const Double& x) {
+  return x[0]+x[1]+x[2]+x[3];
+}
+
+inline float reduce_sum(const Float& x) {
+  return x[0]+x[1]+x[2]+x[3]+
+         x[4]+x[5]+x[6]+x[7];
+}
+
+}
+}
+
 #endif // STK_SIMD_AVX_H

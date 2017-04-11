@@ -35,6 +35,10 @@ public:
                                            std::vector<int>& adjacencyProcs,
                                            const stk::mesh::Selector& searchSelector,
                                            const stk::mesh::impl::LocalIdMapper& localIds);
+
+    void setMechanismCheckFlag() { mCheckingMechanisms = true; }
+    bool amCheckingForMechanisms() const { return mCheckingMechanisms; }
+
 private:
     void convertGraphEdgesToZoltanGraph(const stk::mesh::BulkData& stkMeshBulkData,
                                           const std::vector<stk::balance::GraphEdge> &graphEdges,
@@ -46,6 +50,7 @@ private:
     std::vector<BalanceLocalNumber> mOffsets;
     std::vector<BalanceGlobalNumber> mAdjacency;
     size_t mNumGlobalElements = 0;
+    bool mCheckingMechanisms = false;
 };
 
 

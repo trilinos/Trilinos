@@ -21,6 +21,13 @@ bool is_other_element_shell(const stk::mesh::GraphEdge& graphEdge,
     return stk::mesh::impl::is_shell_or_beam2(topo);
 }
 
+bool is_this_element_shell(const stk::mesh::GraphEdge& graphEdge,
+                          const std::vector<stk::topology>& elementTopologies)
+{
+    stk::topology topo = elementTopologies[graphEdge.elem1()];
+    return stk::mesh::impl::is_shell_or_beam2(topo);
+}
+
 class SideConnections
 {
 public:
@@ -88,12 +95,14 @@ bool SideConnections::does_side_have_both_connection_to_shell_and_to_nonshell(in
 void delete_non_shell_graph_edges(GraphInfo &graphInfo, const stk::mesh::impl::ElementSidePair &elementSidePair)
 {
     for(const stk::mesh::GraphEdge& graphEdge : graphInfo.graph.get_edges_for_element_side(elementSidePair.first, elementSidePair.second))
-        if(!is_other_element_shell(graphEdge, graphInfo.elementTopologies, graphInfo.parGraphInfo))
+    {
+        if(!is_this_element_shell(graphEdge, graphInfo.elementTopologies) && !is_other_element_shell(graphEdge, graphInfo.elementTopologies, graphInfo.parGraphInfo))
         {
             if(!impl::is_local_element(graphEdge.elem2()))
                 graphInfo.parGraphInfo.erase_parallel_info_for_graph_edge(graphEdge);
             graphInfo.graph.delete_edge(graphEdge);
         }
+    }
 }
 
 void remove_graph_edges_blocked_by_shell(GraphInfo &graphInfo)

@@ -15,7 +15,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-#include <stk_balance/balance.hpp>
+#include <stk_balance/fixSplitCoincidentElements.hpp>
 #include "stk_mesh/base/MeshDiagnostics.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 

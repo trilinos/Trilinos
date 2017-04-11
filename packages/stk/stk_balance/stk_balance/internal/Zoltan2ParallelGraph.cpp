@@ -234,7 +234,7 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
     createGraphEdgesUsingNodeConnectivity(stkMeshBulkData, balanceSettings, numElements,
                                           graphEdges, localIds);
 
-    if ( balanceSettings.includeSearchResultsInGraph() )
+    if ( !this->amCheckingForMechanisms() && balanceSettings.includeSearchResultsInGraph() )
     {
         stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results.");
 

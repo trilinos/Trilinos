@@ -1336,6 +1336,20 @@ TEST(TOSDTWD, hex_mesh_from_png)
     }
 }
 
+size_t get_number_of_other_material_hexes(SimpleColoredPng & image)
+{
+    return get_colored_pixels_by_color(image, GREEN).size();
+}
+
+size_t get_number_of_steel_hexes(SimpleColoredPng & image)
+{
+    return image.get_number_other_pixels()
+            - get_number_of_other_material_hexes(image)
+            - get_colored_pixels_by_color(image, RED).size()
+            - get_colored_pixels_by_color(image, BLUE).size();
+}
+
+
 void move_colored_pixels_into_separate_block_part(stk::mesh::BulkData & bulk, SimpleColoredPng & image, enum PixelColor pixelColor)
 {
     std::vector<Pixel> coloredPixels = get_colored_pixels_by_color(image, pixelColor);
@@ -1366,18 +1380,21 @@ TEST(TOSDTWD, hex_mesh_from_image_multiple_blocks)
         unsigned height = image.get_image_height();
 
         HexGameofLifeMesh FieldMesh(comm, width, height, 1);
-        FieldGameofLife FieldGame(FieldMesh, "junk");
+        TodstwdGameOfLife game(FieldMesh, "junk");
 
         stk::mesh::EntityIdVector elemIds;
         image.fill_id_vector_with_active_pixels(elemIds);
-        FieldGame.activate_these_ids(elemIds);
+        game.activate_these_ids(elemIds);
 
         stk::mesh::BulkData &bulk = FieldMesh.bulk_data();
         move_colored_pixels_into_separate_block_part(bulk, image, BLUE);
         move_colored_pixels_into_separate_block_part(bulk, image, GREEN);
         move_colored_pixels_into_separate_block_part(bulk, image, RED);
 
-        FieldGame.write_mesh();
+        std::cout << "Number Steel = " << get_number_of_steel_hexes(image) << std::endl
+                  << "Number Other = " << get_number_of_other_material_hexes(image) << std::endl;
+
+        game.write_mesh();
     }
 }
 

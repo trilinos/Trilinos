@@ -122,12 +122,12 @@ TEST(UnitTestingOfBucket, testBucket)
   //  First, test for streaming IO;
   {
     std::string gold1;
-    gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} {FEM_ROOT_CELL_TOPOLOGY_PART_Hexahedron_8} elem_part )";
+    gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} {FEM_ROOT_CELL_TOPOLOGY_PART_HEXAHEDRON_8} elem_part )";
     Bucket *b1 = bulk.buckets(stk::topology::NODE_RANK)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
     bool equal = (gold1 == out1_str.str());
-    ASSERT_EQ ( equal, true );
+    ASSERT_TRUE(equal);
   }
 
   // Second, update state of bucket until circular cue is filled
@@ -340,7 +340,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_face_to_element)
 
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
         bulk.modification_begin();
-        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4_2D));
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
         bulk.modification_end();
 
         test_nodes_and_permutation(bulk, elem, side, nodes);
@@ -410,7 +410,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
 
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
         bulk.modification_begin();
-        stk::mesh::Entity edge = stk::unit_test_util::declare_element_to_edge_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::LINE_2_1D));
+        stk::mesh::Entity edge = stk::unit_test_util::declare_element_to_edge_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::LINE_2));
         bulk.modification_end();
 
         test_nodes_and_permutation(bulk, elem, edge, nodes);

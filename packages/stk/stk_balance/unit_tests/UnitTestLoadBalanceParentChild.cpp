@@ -240,6 +240,8 @@ public:
         move_related_entities_with_parent_element(decomp);
     };
 
+    virtual bool shouldFixMechanisms() const { return false; }
+
 private:
 
     stk::mesh::EntityVector get_elements_from_selector(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Selector selector) const

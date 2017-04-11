@@ -121,7 +121,7 @@ TEST(Understanding, sierra_topologies)
         ASSERT_TRUE(iossTopology != NULL);
         EXPECT_EQ(goldValues.iossTopologyName, iossTopology->name());
 
-        stk::topology mappedStkTopologyFromIossTopology = stk::io::map_ioss_topology_to_stk(iossTopology);
+        stk::topology mappedStkTopologyFromIossTopology = stk::io::map_ioss_topology_to_stk(iossTopology, spatialDim);
         EXPECT_EQ(goldValues.stkTopology, mappedStkTopologyFromIossTopology);
 
         shards::CellTopology mappedShardsTopologyFromStkTopology = stk::mesh::get_cell_topology(mappedStkTopologyFromIossTopology);

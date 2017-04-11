@@ -514,18 +514,10 @@ Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSet
     return params;
 }
 
-void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData,
-                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
+void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
+                               const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
+                               Zoltan2ParallelGraph& zoltan2Graph)
 {
-    Teuchos::ParameterList params = getGraphBasedParameters(balanceSettings, numSubdomainsToCreate);
-
-    std::ostringstream os;
-    os << "Using Zoltan2 version: " << Zoltan2::Zoltan2_Version();
-    logMessage(stkMeshBulkData.parallel(), os.str());
-    logMessage(stkMeshBulkData.parallel(), "Filling in graph data");
-
-    Zoltan2ParallelGraph zoltan2Graph;
-
     std::vector<size_t> counts;
     stk::mesh::Selector locallyOwnedSelector(stkMeshBulkData.mesh_meta_data().locally_owned_part());
     stk::mesh::comm_mesh_counts(stkMeshBulkData, counts, &locallyOwnedSelector);
@@ -551,6 +543,21 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
             zoltan2Graph.adjust_weights_for_small_meshes();
         }
     }
+}
+
+void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData,
+                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
+{
+    Teuchos::ParameterList params = getGraphBasedParameters(balanceSettings, numSubdomainsToCreate);
+
+    std::ostringstream os;
+    os << "Using Zoltan2 version: " << Zoltan2::Zoltan2_Version();
+    logMessage(stkMeshBulkData.parallel(), os.str());
+    logMessage(stkMeshBulkData.parallel(), "Filling in graph data");
+
+
+    Zoltan2ParallelGraph zoltan2Graph;
+    createZoltanParallelGraph(balanceSettings, stkMeshBulkData, selectors, localIds, zoltan2Graph);
 
     std::vector<double> copyOrigWeights = zoltan2Graph.get_vertex_weights();
     std::vector<int> all_local_ids(copyOrigWeights.size());
@@ -568,7 +575,10 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
     #endif
 
     if (balanceSettings.isMultiCriteriaRebalance())
+    {
+        stk::mesh::Selector selectUnion = stk::mesh::selectUnion(selectors);
         get_multicriteria_parmetis_decomp(stkMeshBulkData, balanceSettings, zoltan2Graph, params, selectUnion, decomp, localIds);
+    }
     else
     {
         for(size_t i=0;i<selectors.size();++i)

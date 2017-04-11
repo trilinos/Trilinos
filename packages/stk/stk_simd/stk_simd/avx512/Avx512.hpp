@@ -28,4 +28,18 @@ constexpr int nfloats = 16;
 #include "./Avx512FloatLoadStore.hpp"
 #include "./Avx512FloatMath.hpp"
 
+namespace stk {
+namespace simd {
+
+inline double reduce_sum(const Double& x) {
+  return _mm512_reduce_add_pd(x._data);
+}
+
+inline float reduce_sum(const Float& x) {
+  return _mm512_reduce_add_ps(x._data);
+}
+
+}
+}
+
 #endif // STK_SIMD_AVX512_H

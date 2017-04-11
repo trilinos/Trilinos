@@ -88,7 +88,7 @@ begin sierra TOSDTWD Puck Game
     begin results output output_adagio
       database name = game_results.exo
       database type = exodusII
-      at step 0 interval = 100
+      at step 0 interval = 50
       nodal variables = displacement as displ
     end results output output_adagio
 

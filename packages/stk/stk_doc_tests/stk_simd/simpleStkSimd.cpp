@@ -36,6 +36,27 @@
 #include <stddef.h>                     // for size_t
 #include <stk_simd/Simd.hpp>
 
+TEST(Simd, basic)
+{
+#if defined(STK_SIMD_AVX512) || defined(STK_SIMD_AVX) || defined(STK_SIMD_SSE)
+    EXPECT_EQ(stk::simd::nfloats, 2*stk::simd::ndoubles);
+#endif
+}
+
+TEST(Simd, whichInstructions)
+{
+#if defined(STK_SIMD_AVX512)
+   std::cout<<"STK_SIMD_AVX512";
+#elif defined(STK_SIMD_AVX)
+   std::cout<<"STK_SIMD_AVX";
+#elif defined(STK_SIMD_SSE)
+   std::cout<<"STK_SIMD_SSE";
+#else
+   std::cout<<"no simd instructions!"<<std::endl;
+#endif
+   std::cout<<", stk::simd::ndoubles="<<stk::simd::ndoubles<<std::endl;
+}
+
 //BEGINsimdSimd
 TEST(stkMeshHowTo, simdSimdTest)
 {
@@ -59,7 +80,7 @@ TEST(stkMeshHowTo, simdSimdTest)
   }  
 
   for (int n=0; n < N; ++n) {
-    EXPECT_EQ( std::abs(x[n]) * std::exp(y[n]), solution[n] );
+    EXPECT_NEAR( std::abs(x[n]) * std::exp(y[n]), solution[n], 1.e-6 );
   }
 } 
 //ENDsimdSimd

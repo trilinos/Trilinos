@@ -415,6 +415,8 @@ private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
 
+using RuntimeDoomed = stk::RuntimeDoomedAdHoc;
+
 ///
 /// @}
 ///

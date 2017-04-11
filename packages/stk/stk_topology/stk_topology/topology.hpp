@@ -177,7 +177,7 @@ struct topology
   topology edge_topology() const;
 
   /// what is the topology of the given face
-  topology face_topology(unsigned face_ordinal = 0) const;
+  topology face_topology(unsigned face_ordinal) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>

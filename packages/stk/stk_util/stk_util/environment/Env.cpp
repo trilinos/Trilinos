@@ -87,17 +87,17 @@ format_time(
 
 namespace Env {
 
-  //
-  //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
-  //
-  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
-    if(ver != GEMINI_SCI_UNKNOWN) {
-      GeminiSCIVersionValue = ver;
-    }
-    ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
-    return GeminiSCIVersionValue;
+//
+//  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
+//
+GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
+  static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
+  if(ver != GEMINI_SCI_UNKNOWN) {
+    GeminiSCIVersionValue = ver;
   }
+  ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
+  return GeminiSCIVersionValue;
+}
 
 const std::string &
 product_name()
@@ -164,13 +164,11 @@ bool is_zapotec()
     return stk::EnvData::instance().m_isZapotec;
 }
 
-
 const std::string &
 architecture()
 {
   return get_param("architecture");
 }
-
 
 const std::string
 working_directory() {
