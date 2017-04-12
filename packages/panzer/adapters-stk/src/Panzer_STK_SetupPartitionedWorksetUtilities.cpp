@@ -67,13 +67,13 @@ namespace workset_utils
 
 template<typename LO, typename GO>
 void
-convertMeshChunkToWorkset(const panzer::LocalMeshChunk<LO,GO> & chunk,
-                      const panzer::WorksetNeeds & needs,
-                      panzer::Workset & workset)
+convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partition,
+                              const panzer::WorksetNeeds & needs,
+                              panzer::Workset & workset)
 {
-  workset.setup(chunk, needs);
+  workset.setup(partition, needs);
 
-  workset.num_cells = chunk.num_cells;
+  workset.num_cells = partition.local_cells.dimension_0();
   workset.subcell_dim = -1;
 
 }
@@ -82,19 +82,20 @@ convertMeshChunkToWorkset(const panzer::LocalMeshChunk<LO,GO> & chunk,
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildPartitionedWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::WorksetDescriptor & description,
-              const panzer::WorksetNeeds & needs)
+                         const panzer::WorksetDescriptor & description,
+                         const panzer::WorksetNeeds & needs)
 {
 
   // Each workset will be represented by a chunk of the mesh
   // These chunks can either be partitioned, or just be a set of cells
-  std::vector<panzer::LocalMeshChunk<int,int> > chunks = panzer_stk::generateLocalMeshChunks<int,int>(mesh, description);
+  std::vector<panzer::LocalMeshPartition<int,int> > partitions;
+  panzer_stk::generateLocalMeshPartitions<int,int>(mesh, description, partitions);
 
   Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
 
-  for(const auto & chunk : chunks){
+  for(const auto & partition : partitions){
     worksets->push_back(panzer::Workset());
-    workset_utils::convertMeshChunkToWorkset<int,int>(chunk, needs, worksets->back());
+    workset_utils::convertMeshPartitionToWorkset<int,int>(partition, needs, worksets->back());
   }
 
   return worksets;

@@ -43,8 +43,19 @@
 #ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 #define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 
-#include "Panzer_LocalMeshInfo.hpp"
 #include <string>
+#include <vector>
+
+namespace panzer
+{
+
+template <typename LO, typename GO>
+class LocalMeshInfo;
+
+template <typename LO, typename GO>
+class LocalMeshInfoBase;
+
+}
 
 namespace panzer_stk
 {
@@ -53,29 +64,24 @@ namespace panzer_stk
 /** Create a structure containing information about the local portion of a given element block
   *
   * \param[in] mesh Reference to STK mesh interface
-  * \param[in] element_block_name Name of the element block of interest
   *
   * \returns Structure containing local mesh information
   */
 template <typename LO, typename GO>
-panzer::LocalMeshInfo<LO,GO>
+void
 generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                      const std::string & element_block_name);
+                      panzer::LocalMeshInfo<LO,GO> & mesh_info);
 
 
-/** Create a structure containing information about the local portion of a given element block's sideset
-  *
-  * \param[in] mesh Reference to STK mesh interface
-  * \param[in] element_block_name Name of the element block of interest
-  * \param[in] sideset_name Name of the sideset on the element block of interest
-  *
-  * \returns Structure containing local mesh information
-  */
-template <typename LO, typename GO>
-panzer::LocalMeshInfo<LO,GO>
-generateLocalSidesetInfo(const panzer_stk::STK_Interface & mesh,
-                      const std::string & element_block_name,
-                      const std::string & sideset_name);
+namespace tools
+{
+template<typename LO, typename GO>
+void
+setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
+                      const std::vector<LO> & owned_parent_cells,
+                      panzer::LocalMeshInfoBase<LO,GO> & sub_info);
+}
 
 }
+
 #endif

@@ -54,31 +54,76 @@ namespace panzer
 {
 
 template <typename LO, typename GO>
-struct LocalMeshInfo {
+struct LocalMeshInfoBase
+{
+
+  LO num_owned_cells;
+  LO num_ghstd_cells;
+  LO num_virtual_cells;
+
+  // Global cell indexes -> [owned] then [ghosted] then [virtual]
+  Kokkos::View<GO*> global_cells;
+
+  // These are the cell indexes in the LocalMeshInfo class
+  Kokkos::View<LO*> local_cells;
+
+  // Vertices
+  Kokkos::View<double***,PHX::Device> cell_vertices;
+
+  // Face to neighbors
+  Kokkos::View<LO*[2]> face_to_cells;
+  Kokkos::View<LO*[2]> face_to_lidx;
+  Kokkos::View<LO**> cell_to_faces;
+
+};
+
+template <typename LO, typename GO>
+struct LocalMeshPartition:
+    public LocalMeshInfoBase<LO,GO>
+{
 
   std::string element_block_name;
+  Teuchos::RCP<const shards::CellTopology> cell_topology;
+
+  // In case this is a sideset
   std::string sideset_name;
+
+};
+
+
+template <typename LO, typename GO>
+struct LocalMeshSidesetInfo:
+    public LocalMeshInfoBase<LO,GO>
+{
+  std::string sideset_name;
+
+  std::string element_block_name;
+
+  // Cell topology associated with element_block_name
+  Teuchos::RCP<const shards::CellTopology> cell_topology;
+
+};
+
+template <typename LO, typename GO>
+struct LocalMeshBlockInfo:
+    public LocalMeshInfoBase<LO,GO>
+{
+  std::string element_block_name;
 
   Teuchos::RCP<const shards::CellTopology> cell_topology;
 
-  // cell ids
-  Kokkos::View<const GO*> owned_cells;
-  Kokkos::View<const GO*> ghstd_cells;
-  Kokkos::View<const LO*> virtual_cells;
+};
 
-  // vertices - convert these to views - these are always rank 3
-  Kokkos::DynRankView<double,PHX::Device> owned_vertices;
-  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices;
+template <typename LO, typename GO>
+struct LocalMeshInfo:
+    public LocalMeshInfoBase<LO,GO>
+{
 
-  // Face to neighbors
-  Kokkos::View<const LO*[2]> face_to_cells;    // this is local numbering
-                                                // that indexes first into
-                                                // the owned_cells and then
-                                                // into ghstd_cells
-  Kokkos::View<const LO*[2]> face_to_lidx;     // maps faces to the cell local
-                                                // face index
-  Kokkos::View<const LO**> cell_to_face;       // using cell local numbering,
-                                                // produce face index
+  // Element block -> block info
+  std::map<std::string, LocalMeshBlockInfo<LO,GO> > element_blocks;
+
+  // Element block, sideset -> sideset info
+  std::map<std::string, std::map<std::string, LocalMeshSidesetInfo<LO,GO> > > sidesets;
 
 };
 

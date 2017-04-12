@@ -42,17 +42,17 @@
 
 #include "Panzer_SubcellConnectivity.hpp"
 
-#include "Panzer_LocalMeshChunk.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 namespace panzer
 {
 
 void
-FaceConnectivity::setup(const panzer::LocalMeshChunk<int,int> & chunk)
+FaceConnectivity::setup(const panzer::LocalMeshPartition<int,int> & partition)
 {
-  const int num_cells = chunk.cell_to_faces.dimension_0();
-  const int num_faces = chunk.face_to_cells.dimension_0();
-  const int num_faces_per_cell = chunk.cell_to_faces.dimension_1();
+  const int num_cells = partition.cell_to_faces.dimension_0();
+  const int num_faces = partition.face_to_cells.dimension_0();
+  const int num_faces_per_cell = partition.cell_to_faces.dimension_1();
   const int num_cells_per_face = 2;
 
   _num_subcells = num_faces;
@@ -66,17 +66,17 @@ FaceConnectivity::setup(const panzer::LocalMeshChunk<int,int> & chunk)
   _subcell_to_cells_adj(0)=0;
   for(int face=0;face<num_faces;++face){
     _subcell_to_cells_adj(face+1) =_subcell_to_cells_adj(face)+num_cells_per_face;
-    _subcell_to_cells(num_cells_per_face*face + 0) = chunk.face_to_cells(face,0);
-    _subcell_to_cells(num_cells_per_face*face + 1) = chunk.face_to_cells(face,1);
-    _subcell_to_local_subcells(num_cells_per_face*face + 0) = chunk.face_to_local_faces(face,0);
-    _subcell_to_local_subcells(num_cells_per_face*face + 1) = chunk.face_to_local_faces(face,1);
+    _subcell_to_cells(num_cells_per_face*face + 0) = partition.face_to_cells(face,0);
+    _subcell_to_cells(num_cells_per_face*face + 1) = partition.face_to_cells(face,1);
+    _subcell_to_local_subcells(num_cells_per_face*face + 0) = partition.face_to_lidx(face,0);
+    _subcell_to_local_subcells(num_cells_per_face*face + 1) = partition.face_to_lidx(face,1);
   }
 
   _cell_to_subcells_adj(0)=0;
   for(int cell=0;cell<num_cells;++cell){
     _cell_to_subcells_adj(cell+1) =_cell_to_subcells_adj(cell)+num_faces_per_cell;
     for(int local_face=0;local_face<num_faces_per_cell;++local_face){
-      _cell_to_subcells(num_faces_per_cell*cell+local_face) = chunk.cell_to_faces(cell,local_face);
+      _cell_to_subcells(num_faces_per_cell*cell+local_face) = partition.cell_to_faces(cell,local_face);
     }
   }
 

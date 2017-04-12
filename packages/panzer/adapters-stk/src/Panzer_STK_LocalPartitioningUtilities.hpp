@@ -43,7 +43,7 @@
 #ifndef PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
 #define PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
 
-#include "Panzer_LocalMeshChunk.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 #include <vector>
 
 namespace panzer
@@ -51,15 +51,16 @@ namespace panzer
 class WorksetDescriptor;
 }
 
-namespace panzer_stk {
+namespace panzer_stk
+{
 
 class STK_Interface;
 
 template<typename LO, typename GO>
-std::vector<panzer::LocalMeshChunk<LO,GO> >
-generateLocalMeshChunks(const panzer_stk::STK_Interface & mesh,
-                        const panzer::WorksetDescriptor & description);
-
+void
+generateLocalMeshPartitions(const panzer_stk::STK_Interface & mesh,
+                            const panzer::WorksetDescriptor & description,
+                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions);
 
 }
 

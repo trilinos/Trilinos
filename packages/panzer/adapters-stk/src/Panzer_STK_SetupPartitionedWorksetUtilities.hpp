@@ -68,8 +68,8 @@ class STK_Interface;
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildPartitionedWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::WorksetDescriptor & description,
-              const panzer::WorksetNeeds & needs);
+                         const panzer::WorksetDescriptor & description,
+                         const panzer::WorksetNeeds & needs);
 
 }
 

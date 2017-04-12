@@ -50,7 +50,7 @@
 namespace panzer {
 
 template <typename LO, typename GO>
-class LocalMeshChunk;
+class LocalMeshPartition;
 
 class SubcellConnectivity
 {
@@ -104,7 +104,7 @@ public:
   FaceConnectivity() = default;
   ~FaceConnectivity() = default;
 
-  void setup(const panzer::LocalMeshChunk<int,int> & chunk);
+  void setup(const panzer::LocalMeshPartition<int,int> & partition);
 
 protected:
 

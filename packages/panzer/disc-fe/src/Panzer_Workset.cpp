@@ -49,7 +49,7 @@
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetNeeds.hpp"
 #include "Panzer_Dimension.hpp"
-#include "Panzer_LocalMeshChunk.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_SubcellConnectivity.hpp"
 
@@ -58,29 +58,31 @@
 namespace panzer {
 
 void
-WorksetDetails::setup(const panzer::LocalMeshChunk<int,int> & chunk,
+WorksetDetails::setup(const panzer::LocalMeshPartition<int,int> & partition,
                       const panzer::WorksetNeeds & needs)
 {
 
-  const size_t num_cells = chunk.num_cells;
+
+  const size_t num_cells = partition.local_cells.dimension_0();
 
   subcell_index = -1;
-  block_id = chunk.element_block_name;
-  cell_local_ids.resize(num_cells,-1);
-  Kokkos::View<int*, PHX::Device> cell_ids = Kokkos::View<int*, PHX::Device>("cell_ids",num_cells);
+  block_id = partition.element_block_name;
 
-  for(size_t cell=0;cell<num_cells;++cell){
-    const int local_cell = chunk.local_mesh_cell_indexes[cell];
-    cell_local_ids[cell] = local_cell;
-    cell_ids(cell) = local_cell;
-  }
+  Kokkos::View<int*, PHX::Device> cell_ids = Kokkos::View<int*, PHX::Device>("cell_ids",num_cells);
+  Kokkos::deep_copy(cell_ids, partition.local_cells);
   cell_local_ids_k = cell_ids;
 
+  cell_local_ids.resize(num_cells,-1);
+  for(size_t cell=0;cell<num_cells;++cell){
+    const int local_cell = partition.local_cells(cell);
+    cell_local_ids[cell] = local_cell;
+  }
+
   auto fc = Teuchos::rcp(new panzer::FaceConnectivity());
-  fc->setup(chunk);
+  fc->setup(partition);
   _face_connectivity = fc;
 
-  setupNeeds(chunk.cell_topology, chunk.cell_vertices, needs);
+  setupNeeds(partition.cell_topology, partition.cell_vertices, needs);
 }
 
 void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
