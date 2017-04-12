@@ -672,14 +672,14 @@ template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap 
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class ElementComputation<
   Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
 {
 public:
 
   typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
 
   typedef DeviceType   execution_space ;
@@ -1018,7 +1018,7 @@ template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap 
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class DirichletComputation<
   Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
 {
 public:
 
@@ -1026,7 +1026,7 @@ public:
   typedef typename mesh_type::node_coord_type                                  node_coord_type ;
   typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
 
   typedef DeviceType   execution_space ;
