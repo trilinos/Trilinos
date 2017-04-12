@@ -259,6 +259,101 @@ namespace MueLu {
     amalgCols.resize(amalgRowPtr[nLocalNodes]);
 
     // end variableDofAmalg
+
+    // begin rm differentDofsCrossings
+
+    // Remove matrix entries (i,j) where the ith node and the jth node have
+    // different dofs that are 'present'
+    // Specifically, on input:
+    //    dofPresent[i*maxDofPerNode+k] indicates whether or not the kth
+    //                                  dof at the ith node is present in the
+    //                                  variable dof matrix (e.g., the ith node
+    //                                  has an air pressure dof). true means
+    //                                  the dof is present while false means it
+    //                                  is not.
+    // We create a unique id for the ith node (i.e. uniqueId[i]) via
+    //    sum_{k=0 to maxDofPerNode-1} dofPresent[i*maxDofPerNode+k]*2^k
+    // and use this unique idea to remove entries (i,j) when uniqueId[i]!=uniqueId[j]
+
+    std::vector<LocalOrdinal> uniqueId(nLocalPlusGhostNodes);       // unique id associated with DOF
+    std::vector<bool> keep(amalgRowPtr[amalgRowPtr.size()-1],true); // keep connection associated with node
+
+    size_t ii = 0; // iteration index for present dofs
+    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+      LocalOrdinal temp = 1; // basis for dof-id
+      uniqueId[i] = 0;
+      for (size_t j = 0; j < maxDofPerNode; j++) {
+        if (dofPresent[ii++]) uniqueId[i] += temp; // encode dof to be present
+        temp = temp * 2; // check next dof
+      }
+    }
+
+    // nodal comm uniqueId, myLocalNodeIds
+
+    // TODO check me!
+    // copy GIDs from nodal vector to dof vector
+    Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(0),true);
+    Teuchos::ArrayRCP< Scalar > uniqueIdVecSrcData = uniqueIdVecSrc->getDataNonConst(0);
+
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+      uniqueIdVecSrcData[i] = uniqueId[ myLocalNodeIds[i]];
+
+    Teuchos::RCP<Vector> uniqueIdVecTarget = VectorFactory::Build(A->getColMap(0),true);
+    uniqueIdVecTarget->doImport(*uniqueIdVecSrc, *importer, Xpetra::INSERT);
+    Teuchos::ArrayRCP< const Scalar > uniqueIdVecTargetData = uniqueIdVecTarget->getData(0);
+
+    // copy from dof vector to nodal vector
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+      uniqueId[ myLocalNodeIds[i]] = uniqueIdVecTargetData[i];
+
+    // uniqueId now should contain ghosted data
+
+    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+      for(size_t j = amalgRowPtr[i]; j < amalgRowPtr[i+1]; j++) {
+        if (uniqueId[i] != uniqueId[amalgCols[j]]) keep [j] = false;
+      }
+    }
+
+    // squeeze out hard-coded zeros from CSR arrays
+    Teuchos::ArrayRCP<Scalar> amalgVals(rowptr[rowptr.size()-1]);
+    this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
+
+    // prepare coordinates for building the laplacian
+    // TODO
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::squeezeOutNnzs(Teuchos::ArrayRCP<size_t> & rowPtr, Teuchos::ArrayRCP<LocalOrdinal> & cols, Teuchos::ArrayRCP<Scalar> & vals, const std::vector<bool>& keep) const {
+    // get rid of nonzero entries that have 0's in them and properly change
+    // the row ptr array to reflect this removal (either vals == NULL or vals != NULL)
+    // Note, the arrays are squeezed. No memory is freed.
+
+    size_t count = 0;
+
+    size_t nRows = rowPtr.size()-1;
+    if(vals.size() > 0) {
+      for(size_t i = 0; i < nRows; i++) {
+        size_t newStart = count;
+        for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+          if(vals[j] != Teuchos::ScalarTraits<Scalar>::zero()) {
+            cols[count  ] = cols[j];
+            vals[count++] = vals[j];
+          }
+        }
+        rowPtr[i] = newStart;
+      }
+    } else {
+      for (size_t i = 0; i < nRows; i++) {
+        size_t newStart = count;
+        for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+          if (keep[j] == true) {
+            cols[count++] = cols[j];
+          }
+        }
+        rowPtr[i] = newStart;
+      }
+    }
+    rowPtr[nRows] = count;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
