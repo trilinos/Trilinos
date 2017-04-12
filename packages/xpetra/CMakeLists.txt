@@ -57,6 +57,10 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra)
     ENDIF()
   ENDIF()
 
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND NOT Kokkos_ENABLE_OpenMP AND NOT Kokkos_ENABLE_Serial)
+    MESSAGE(FATAL_ERROR "If you use Xpetra with both the Epetra and Tpetra stack enabled you have to enable either/or the Serial or OpenMP stack for Kokkos (and Tpetra).")
+  ENDIF()
+
 ELSE()
 
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
