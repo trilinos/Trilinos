@@ -65,9 +65,9 @@ Matrix<T, M, N, ES>::Matrix(Index const rows, Index const cols) :
   return;
 }
 
-///
-/// Create matrix from a specified value
-///
+//
+// Create matrix from a specified value
+//
 template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(ComponentValue const value) :

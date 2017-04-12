@@ -64,9 +64,9 @@ Tensor<T, N, ES>::Tensor(Index const dimension) :
   return;
 }
 
-///
-/// Create tensor from a specified value
-///
+//
+// Create tensor from a specified value
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(ComponentValue const value) :

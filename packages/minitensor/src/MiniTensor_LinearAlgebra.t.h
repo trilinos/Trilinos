@@ -1025,9 +1025,9 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
   return;
 }
 
-///
-/// Apply rank-one update on the left in place
-///
+//
+// Apply rank-one update on the left in place
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
@@ -1037,9 +1037,9 @@ rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
   return;
 }
 
-///
-/// Apply rank-one update on the right in place
-///
+//
+// Apply rank-one update on the right in place
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void

@@ -391,9 +391,9 @@ Tensor4<T, N, ES>::operator()(
   return self[((i * dimension + j) * dimension + k) * dimension + l];
 }
 
-///
-/// 4th-order inverse
-///
+//
+// 4th-order inverse
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES>

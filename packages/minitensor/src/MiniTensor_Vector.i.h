@@ -68,9 +68,9 @@ Vector<T, N, ES>::Vector(Index const dimension) :
   return;
 }
 
-///
-/// Create vector from a specified value
-///
+//
+// Create vector from a specified value
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(Index const dimension, ComponentValue const value) :

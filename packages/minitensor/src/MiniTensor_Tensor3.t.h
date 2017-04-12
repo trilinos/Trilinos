@@ -184,9 +184,9 @@ dot2(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A)
   return dot2(A, u);
 }
 
-///
-/// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
-///
+//
+// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
+//
 template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
@@ -218,9 +218,9 @@ dot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
   return C;
 }
 
-///
-/// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
-///
+//
+// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
+//
 template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
@@ -252,9 +252,9 @@ dot(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
   return C;
 }
 
-///
-/// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
-///
+//
+// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
+//
 template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
@@ -287,9 +287,9 @@ dot2(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
 }
 
 
-///
-/// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
-///
+//
+// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
+//
 template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
