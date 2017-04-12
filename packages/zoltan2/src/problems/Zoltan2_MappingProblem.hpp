@@ -114,13 +114,13 @@ public:
   /*! \brief Constructor that takes an MPI communicator
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
-                 MPI_Comm ucomm_,
+                 MPI_Comm mpicomm_,
                  partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) :
-    Problem<Adapter>(A_, p_, ucomm_) 
-  {
-    HELLO;
-    createMappingProblem(partition_, machine_);
-  };
+  MappingProblem(A_, p_,
+                 rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                           Teuchos::opaqueWrapper(mpicomm_))),
+                 partition_, machine_)
+  {}
 #endif
 
   //!  \brief Direct the problem to create a solution.

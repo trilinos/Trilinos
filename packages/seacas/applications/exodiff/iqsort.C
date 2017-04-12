@@ -36,7 +36,7 @@
 namespace {
   template <typename INT> void swap_(INT v[], size_t i, size_t j);
 
-  template <typename T, typename INT> int median3(const T v[], INT iv[], size_t left, size_t right);
+  template <typename T, typename INT> INT median3(const T v[], INT iv[], size_t left, size_t right);
 
   template <typename T, typename INT> void iqsort(const T v[], INT iv[], size_t left, size_t right);
 
@@ -82,10 +82,9 @@ namespace {
     v[j] = temp;
   }
 
-  template <typename T, typename INT> int median3(const T v[], INT iv[], size_t left, size_t right)
+  template <typename T, typename INT> INT median3(const T v[], INT iv[], size_t left, size_t right)
   {
-    size_t center;
-    center = (left + right) / 2;
+    size_t center = (left + right) / 2;
 
     if (v[iv[left]] > v[iv[center]])
       swap_(iv, left, center);
@@ -100,13 +99,10 @@ namespace {
 
   template <typename T, typename INT> void iqsort(const T v[], INT iv[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i, j;
-
     if (left + QSORT_CUTOFF <= right) {
-      pivot = median3(v, iv, left, right);
-      i     = left;
-      j     = right - 1;
+      size_t pivot = median3(v, iv, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[iv[++i]] < v[pivot])
@@ -129,11 +125,11 @@ namespace {
 
   template <typename T, typename INT> void iisort(const T v[], INT iv[], size_t N)
   {
-    size_t i, j;
+    size_t j;
     size_t ndx = 0;
 
     T small = v[iv[0]];
-    for (i = 1; i < N; i++) {
+    for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < small) {
         small = v[iv[i]];
         ndx   = i;
@@ -142,7 +138,7 @@ namespace {
     /* Put smallest value in slot 0 */
     swap_(iv, 0, ndx);
 
-    for (i = 1; i < N; i++) {
+    for (size_t i = 1; i < N; i++) {
       INT tmp = iv[i];
       for (j = i; v[tmp] < v[iv[j - 1]]; j--) {
         iv[j] = iv[j - 1];

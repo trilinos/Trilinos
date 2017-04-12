@@ -444,6 +444,11 @@ namespace Xpetra {
     //! Right scale matrix using the given vector entries
     virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const = 0;
+
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods

@@ -56,7 +56,7 @@ class RKButcherTableau :
 {
   public:
     /** \brief Return the number of stages */
-    virtual int numStages() const { return A_.numRows(); }
+    virtual std::size_t numStages() const { return A_.numRows(); }
     /** \brief Return the matrix coefficients */
     virtual const Teuchos::SerialDenseMatrix<int,Scalar>& A() const
       { return A_; }
@@ -137,28 +137,30 @@ class RKButcherTableau :
     //@{
       /** \brief . */
       virtual void setParameterList(
-        Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+        Teuchos::RCP<Teuchos::ParameterList> const& pList)
       {
-        TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-        paramList->validateParameters(*this->getValidParameters());
-        Teuchos::readVerboseObjectSublist(&*paramList,this);
-        this->setMyParamList(paramList);
+        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+        if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+        else pl = pList;
+        pl->validateParameters(*this->getValidParameters());
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          pl->get<std::string>("Stepper Type") != this->description()
+          ,std::runtime_error,
+          "  Stepper Type != \""+this->description()+"\"\n"
+          "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+        this->setMyParamList(pl);
+        this->rkbtPL_ = pl;
       }
 
       /** \brief . */
       virtual Teuchos::RCP<const Teuchos::ParameterList>
       getValidParameters() const
       {
-        static Teuchos::RCP<Teuchos::ParameterList> validPL;
-
-        if (is_null(validPL)) {
-          Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-          pl->set("Description",this->getDescription());
-          pl->set("Stepper Type",this->description());
-          Teuchos::setupVerboseObjectSublist(&*pl);
-          validPL = pl;
-        }
-        return validPL;
+        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+        pl->setName("Default Stepper - " + this->description());
+        pl->set<std::string>("Description", this->getDescription());
+        pl->set<std::string>("Stepper Type", this->description());
+        return pl;
       }
     //@}
 
@@ -227,10 +229,11 @@ class RKButcherTableau :
     Teuchos::SerialDenseVector<int,Scalar> bstar_;
 
   protected:
-    Teuchos::RCP<Teuchos::ParameterList> pList_;
+    Teuchos::RCP<Teuchos::ParameterList> rkbtPL_;
 };
 
 
+// ----------------------------------------------------------------------------
 // Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau()
@@ -273,35 +276,56 @@ Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau(
   return(rkbt);
 }
 
-
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class GeneralExplicit_RKBT :
   virtual public RKButcherTableau<Scalar>
 {
   public:
   GeneralExplicit_RKBT()
-    { this->setParameterList(Teuchos::parameterList()); }
+  {
+    std::stringstream Description;
+    Description << this->description() << "\n"
+      << "The format of the Butcher Tableau parameter list is\n"
+      << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
+      << "                                           # # # ;\n"
+      << "                                           # # #\"/>\n"
+      << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
+      << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
+      << "Note the number of stages is implicit in the number of entries.\n"
+      << "The number of stages must be consistent.\n"
+      << "\n"
+      << "Default tableau is RK4 (order=4):\n"
+      << "c = [  0  1/2 1/2  1  ]'\n"
+      << "A = [  0              ]\n"
+      << "    [ 1/2  0          ]\n"
+      << "    [  0  1/2  0      ]\n"
+      << "    [  0   0   1   0  ]\n"
+      << "b = [ 1/6 1/3 1/3 1/6 ]'" << std::endl;
 
-  virtual std::string description() const
-    { return "General ERK"; }
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  virtual std::string description() const { return "General ERK"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
     using Teuchos::as;
 
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
-    pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., bstar).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - GeneralExplicit_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
-    this->setDescription(pl->get<std::string>("Description"));
 
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = sublist(pl,"Tableau",true);
-    std::size_t numStages = -1;
+    std::size_t numStages = 0;
     int order = tableauPL->get<int>("order");
     Teuchos::SerialDenseMatrix<int,Scalar> A;
     Teuchos::SerialDenseVector<int,Scalar> b;
@@ -372,7 +396,8 @@ class GeneralExplicit_RKBT :
         c(i) = values[i];
     }
 
-    if (tableauPL->get<std::string>("bstar") != "1.0") {
+    if (tableauPL->isParameter("bstar") and
+        tableauPL->get<std::string>("bstar") != "1.0") {
       bstar.size(as<int>(numStages));
       // read in the bstar vector
       {
@@ -389,17 +414,17 @@ class GeneralExplicit_RKBT :
         for(std::size_t i=0;i<numStages;i++)
           bstar(i) = values[i];
       }
-      this->initialize(A,b,c,order,this->description(), true, bstar);
+      this->initialize(A,b,c,order,this->getDescription(), true, bstar);
     } else {
-      this->initialize(A,b,c,order,this->description());
+      this->initialize(A,b,c,order,this->getDescription());
     }
 
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
 
     //std::stringstream ss;
-    //this->pList_->unused(ss);
-    //this->pList_->sublist("Tableau").unused(ss);
+    //this->rkbtPL_->unused(ss);
+    //this->rkbtPL_->sublist("Tableau").unused(ss);
     //TEUCHOS_TEST_FOR_EXCEPTION( ss.str().length(), std::logic_error,
     // "Error - GeneralExplicit_RKBT()  Found unused parameters!\n" + ss.str());
   }
@@ -407,44 +432,28 @@ class GeneralExplicit_RKBT :
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    // Tableau ParameterList
+    Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
+    tableauPL->set<std::string>("A",
+     "0.0 0.0 0.0 0.0; 0.5 0.0 0.0 0.0; 0.0 0.5 0.0 0.0; 0.0 0.0 1.0 0.0");
+    tableauPL->set<std::string>("b",
+     "0.166666666666667 0.333333333333333 0.333333333333333 0.166666666666667");
+    //tableauPL->set<std::string>("bstar", "1.0");
+    tableauPL->set<std::string>("c", "0.0 0.5 0.5 1.0");
+    tableauPL->set<int>("order", 4);
+    pl->set("Tableau", *tableauPL);
 
-      std::stringstream Description;
-      Description << this->description() << "\n"
-        << "The format of the Butcher Tableau parameter list is\n"
-        << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
-        << "                                           # # # ;\n"
-        << "                                           # # #\"/>\n"
-        << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
-        << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
-        << "Note the number of stages is implicit in the number of entries.\n"
-        << "The number of stages must be consistent.\n"
-        << "\n"
-        << "Default tableau is Forward Euler (order=1):\n"
-        << "  A = [ 0 ]\n"
-        << "  b = [ 1 ]'\n"
-        << "  c = [ 0 ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      Teuchos::RCP<Teuchos::ParameterList> tableau = Teuchos::parameterList();
-      tableau->set("A", "0.0");
-      tableau->set("b", "1.0");
-      tableau->set("bstar", "1.0");
-      tableau->set("c", "0.0");
-      tableau->set<int>("order", 1);
-      pl->set("Tableau", *tableau);
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class BackwardEuler_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -472,6 +481,7 @@ class BackwardEuler_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class ForwardEuler_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -497,6 +507,7 @@ class ForwardEuler_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit4Stage4thOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -570,6 +581,7 @@ class Explicit4Stage4thOrder_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit3_8Rule_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -644,6 +656,7 @@ class Explicit3_8Rule_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit4Stage3rdOrderRunge_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -716,6 +729,8 @@ class Explicit4Stage3rdOrderRunge_RKBT :
     { return "RK Explicit 4 Stage 3rd order by Runge"; }
 };
 
+
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit5Stage3rdOrderKandG_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -803,6 +818,7 @@ class Explicit5Stage3rdOrderKandG_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit3Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -862,6 +878,7 @@ class Explicit3Stage3rdOrder_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit3Stage3rdOrderTVD_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -930,6 +947,7 @@ class Explicit3Stage3rdOrderTVD_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit3Stage3rdOrderHeun_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -993,6 +1011,7 @@ class Explicit3Stage3rdOrderHeun_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Explicit2Stage2ndOrderRunge_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1045,6 +1064,7 @@ class Explicit2Stage2ndOrderRunge_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class ExplicitTrapezoidal_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1091,6 +1111,7 @@ class ExplicitTrapezoidal_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK1Stage1stOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1098,22 +1119,28 @@ class SDIRK1Stage1stOrder_RKBT :
   public:
   SDIRK1Stage1stOrder_RKBT()
   {
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    std::stringstream Description;
+    Description << this->description() << "\n"
+                << "c = [ 1 ]'\n"
+                << "A = [ 1 ]\n"
+                << "b = [ 1 ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "SDIRK 1 Stage 1st order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - SDIRK1Stage1stOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
@@ -1126,37 +1153,27 @@ class SDIRK1Stage1stOrder_RKBT :
     c(0) = ST::one();
     int order = 1;
 
-    this->initialize(A,b,c,order,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-                  << "c = [ 1 ]'\n"
-                  << "A = [ 1 ]\n"
-                  << "b = [ 1 ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK2Stage2ndOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1164,23 +1181,40 @@ class SDIRK2Stage2ndOrder_RKBT :
   public:
   SDIRK2Stage2ndOrder_RKBT()
   {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Computer Methods for ODEs and DAEs\n"
+                << "U. M. Ascher and L. R. Petzold\n"
+                << "p. 106\n"
+                << "gamma = (2+-sqrt(2))/2\n"
+                << "c = [  gamma   1     ]'\n"
+                << "A = [  gamma   0     ]\n"
+                << "    [ 1-gamma  gamma ]\n"
+                << "b = [ 1-gamma  gamma ]'" << std::endl;
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     const Scalar one = ST::one();
     gamma_default_ = Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one));
     gamma_ = gamma_default_;
 
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "SDIRK 2 Stage 2nd order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
-    //pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
     gamma_ = pl->get<double>("gamma");
 
@@ -1203,43 +1237,27 @@ class SDIRK2Stage2ndOrder_RKBT :
     int order = 1;
     if ( std::abs((gamma_-gamma_default_)/gamma_) < 1.0e-08 ) order = 2;
 
-    this->initialize(A,b,c,order,1,2,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,1,2,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+    pl->set<double>("gamma",gamma_default_,
+      "The default value is gamma = (2-sqrt(2))/2. "
+      "This will produce an L-stable 2nd order method with the stage "
+      "times within the timestep.  Other values of gamma will still "
+      "produce an L-stable scheme, but will only be 1st order accurate.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-                  << "Computer Methods for ODEs and DAEs\n"
-                  << "U. M. Ascher and L. R. Petzold\n"
-                  << "p. 106\n"
-                  << "gamma = (2+-sqrt(2))/2\n"
-                  << "c = [  gamma   1     ]'\n"
-                  << "A = [  gamma   0     ]\n"
-                  << "    [ 1-gamma  gamma ]\n"
-                  << "b = [ 1-gamma  gamma ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type",this->description());
-      pl->set<double>("gamma",gamma_default_,
-        "The default value is gamma = (2-sqrt(2))/2. "
-        "This will produce an L-stable 2nd order method with the stage "
-        "times within the timestep.  Other values of gamma will still "
-        "produce an L-stable scheme, but will only be 1st order accurate.");
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 
   private:
@@ -1248,6 +1266,7 @@ class SDIRK2Stage2ndOrder_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK2Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1255,6 +1274,19 @@ class SDIRK2Stage3rdOrder_RKBT :
   public:
   SDIRK2Stage3rdOrder_RKBT()
   {
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Solving Ordinary Differential Equations I:\n"
+                << "Nonstiff Problems, 2nd Revised Edition\n"
+                << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+                << "Table 7.2, pg 207\n"
+                << "gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable\n"
+                << "gamma = (2+-sqrt(2))/2 -> 2nd order and L-stable\n"
+                << "c = [  gamma     1-gamma  ]'\n"
+                << "A = [  gamma     0        ]\n"
+                << "    [ 1-2*gamma  gamma    ]\n"
+                << "b = [ 1/2        1/2      ]'" << std::endl;
+
     thirdOrderAStable_default_ = true;
     secondOrderLStable_default_ = false;
     thirdOrderAStable_ = true;
@@ -1265,23 +1297,22 @@ class SDIRK2Stage3rdOrder_RKBT :
       Teuchos::as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
     gamma_ = gamma_default_;
 
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., bstar).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - SDIRK2Stage3rdOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
-    this->setDescription(pl->get<std::string>("Description",""));
 
     thirdOrderAStable_  = pl->get<bool>("3rd Order A-stable");
     secondOrderLStable_ = pl->get<bool>("2nd Order L-stable");
@@ -1314,52 +1345,34 @@ class SDIRK2Stage3rdOrder_RKBT :
     int order = 2;
     if ( std::abs((gamma_-gamma_default_)/gamma_) < 1.0e-08 ) order = 3;
 
-    this->initialize(A,b,c,order,2,3,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,2,3,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+    pl->set<bool>("3rd Order A-stable",thirdOrderAStable_default_,
+      "If true, set gamma to gamma = (3+sqrt(3))/6 to obtain "
+      "a 3rd order A-stable scheme. '3rd Order A-stable' and "
+      "'2nd Order L-stable' can not both be true.");
+    pl->set<bool>("2nd Order L-stable",secondOrderLStable_default_,
+      "If true, set gamma to gamma = (2+sqrt(2))/2 to obtain "
+      "a 2nd order L-stable scheme. '3rd Order A-stable' and "
+      "'2nd Order L-stable' can not both be true.");
+    pl->set<double>("gamma",gamma_default_,
+      "If both '3rd Order A-stable' and '2nd Order L-stable' "
+      "are false, gamma will be used. The default value is the "
+      "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-                  << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revised Edition\n"
-                  << "E. Hairer, S. P. Norsett, and G. Wanner\n"
-                  << "Table 7.2, pg 207\n"
-                  << "gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable\n"
-                  << "gamma = (2+-sqrt(2))/2 -> 2nd order and L-stable\n"
-                  << "c = [  gamma     1-gamma  ]'\n"
-                  << "A = [  gamma     0        ]\n"
-                  << "    [ 1-2*gamma  gamma    ]\n"
-                  << "b = [ 1/2        1/2      ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("3rd Order A-stable",thirdOrderAStable_default_,
-        "If true, set gamma to gamma = (3+sqrt(3))/6 to obtain "
-        "a 3rd order A-stable scheme. '3rd Order A-stable' and "
-        "'2nd Order L-stable' can not both be true.");
-      pl->set("2nd Order L-stable",secondOrderLStable_default_,
-        "If true, set gamma to gamma = (2+sqrt(2))/2 to obtain "
-        "a 2nd order L-stable scheme. '3rd Order A-stable' and "
-        "'2nd Order L-stable' can not both be true.");
-      pl->set("gamma",gamma_default_,
-        "If both '3rd Order A-stable' and '2nd Order L-stable' "
-        "are false, gamma will be used. The default value is the "
-        "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 
   virtual std::string description() const { return "SDIRK 2 Stage 3rd order"; }
@@ -1374,6 +1387,7 @@ class SDIRK2Stage3rdOrder_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class DIRK2Stage3rdOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1381,22 +1395,34 @@ class DIRK2Stage3rdOrder_RKBT :
   public:
   DIRK2Stage3rdOrder_RKBT()
   {
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "Hammer & Hollingsworth method\n"
+                << "Solving Ordinary Differential Equations I:\n"
+                << "Nonstiff Problems, 2nd Revised Edition\n"
+                << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+                << "Table 7.1, pg 205\n"
+                << "c = [  0   2/3 ]'\n"
+                << "A = [  0    0  ]\n"
+                << "    [ 1/3  1/3 ]\n"
+                << "b = [ 1/4  3/4 ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "DIRK 2 Stage 3rd order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - DIRK2Stage3rdOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
     this->setDescription(pl->get<std::string>("Description",""));
@@ -1419,44 +1445,28 @@ class DIRK2Stage3rdOrder_RKBT :
     c(1) = as<Scalar>( 2*one/(3*one) );
     int order = 3;
 
-    this->initialize(A,b,c,order,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-                  << "Hammer & Hollingsworth method\n"
-                  << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revised Edition\n"
-                  << "E. Hairer, S. P. Norsett, and G. Wanner\n"
-                  << "Table 7.1, pg 205\n"
-                  << "c = [  0   2/3 ]'\n"
-                  << "A = [  0    0  ]\n"
-                  << "    [ 1/3  1/3 ]\n"
-                  << "b = [ 1/4  3/4 ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1508,6 +1518,7 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1589,6 +1600,7 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1633,6 +1645,7 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class IRK1StageTheta_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1651,21 +1664,26 @@ class IRK1StageTheta_RKBT :
                 << "b = [  1  ]'\n"
                 << std::endl;
 
-    this->setDescription(Description.str());
     typedef Teuchos::ScalarTraits<Scalar> ST;
     theta_default_ = ST::one()/(2*ST::one());
     theta_ = theta_default_;
 
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
-    pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
     theta_ = pl->get<double>("theta",theta_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1680,9 +1698,9 @@ class IRK1StageTheta_RKBT :
     int order = 1;
     if (theta_ == theta_default_) order = 2;
 
-    this->initialize(A, b, c, order, 1, 2, this->description());
+    this->initialize(A, b, c, order, 1, 2, this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   virtual std::string description() const { return "IRK 1 Stage Theta Method"; }
@@ -1690,23 +1708,21 @@ class IRK1StageTheta_RKBT :
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+    pl->set<double>("theta",theta_default_,
+      "Valid values are 0 <= theta <= 1, where theta = 0 "
+      "implies Forward Euler, theta = 1/2 implies midpoint "
+      "method (default), and theta = 1 implies Backward Euler. "
+      "For theta != 1/2, this method is first-order accurate, "
+      "and with theta = 1/2, it is second-order accurate.  "
+      "This method is A-stable, but becomes L-stable with theta=1.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->set("Description","",this->getDescription());
-      pl->set("Stepper Type","",this->description());
-      pl->set<double>("theta",theta_default_,
-        "Valid values are 0 <= theta <= 1, where theta = 0 "
-        "implies Forward Euler, theta = 1/2 implies midpoint "
-        "method (default), and theta = 1 implies Backward Euler. "
-        "For theta != 1/2, this method is first-order accurate, "
-        "and with theta = 1/2, it is second-order accurate.  "
-        "This method is A-stable, but becomes L-stable with theta=1.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 
   private:
@@ -1715,6 +1731,7 @@ class IRK1StageTheta_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class IRK2StageTheta_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1733,21 +1750,26 @@ class IRK2StageTheta_RKBT :
                 << "b = [ 1-theta  theta ]'\n"
                 << std::endl;
 
-    this->setDescription(Description.str());
     typedef Teuchos::ScalarTraits<Scalar> ST;
     theta_default_ = ST::one()/(2*ST::one());
     theta_ = theta_default_;
 
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
-    pl->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
     theta_ = pl->get<double>("theta",theta_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1773,31 +1795,29 @@ class IRK2StageTheta_RKBT :
     int order = 1;
     if (theta_ == theta_default_) order = 2;
 
-    this->initialize(A, b, c, order, 1, 2, this->description());
+    this->initialize(A, b, c, order, 1, 2, this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+    pl->set<double>("theta",theta_default_,
+      "Valid values are 0 < theta <= 1, where theta = 0 "
+      "implies Forward Euler, theta = 1/2 implies trapezoidal "
+      "method, and theta = 1 implies Backward Euler. "
+      "For theta != 1/2, this method is first-order accurate, "
+      "and with theta = 1/2, it is second-order accurate.  "
+      "This method is A-stable, but becomes L-stable with theta=1.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->set("Description",this->getDescription());
-      pl->set("Stepper Type",this->description());
-      pl->set<double>("theta",theta_default_,
-        "Valid values are 0 < theta <= 1, where theta = 0 "
-        "implies Forward Euler, theta = 1/2 implies trapezoidal "
-        "method, and theta = 1 implies Backward Euler. "
-        "For theta != 1/2, this method is first-order accurate, "
-        "and with theta = 1/2, it is second-order accurate.  "
-        "This method is A-stable, but becomes L-stable with theta=1.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 
   virtual std::string description() const { return "IRK 2 Stage Theta Method"; }
@@ -1808,6 +1828,7 @@ class IRK2StageTheta_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit1Stage2ndOrderGauss_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1850,6 +1871,7 @@ class Implicit1Stage2ndOrderGauss_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage4thOrderGauss_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1899,6 +1921,7 @@ class Implicit2Stage4thOrderGauss_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage6thOrderGauss_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1960,6 +1983,7 @@ class Implicit3Stage6thOrderGauss_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit1Stage1stOrderRadauA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -1997,6 +2021,7 @@ class Implicit1Stage1stOrderRadauA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage3rdOrderRadauA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2041,6 +2066,7 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage5thOrderRadauA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2094,6 +2120,7 @@ class Implicit3Stage5thOrderRadauA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit1Stage1stOrderRadauB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2130,6 +2157,7 @@ class Implicit1Stage1stOrderRadauB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage3rdOrderRadauB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2173,6 +2201,7 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage5thOrderRadauB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2232,6 +2261,7 @@ class Implicit3Stage5thOrderRadauB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage2ndOrderLobattoA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2276,6 +2306,7 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage4thOrderLobattoA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2328,6 +2359,7 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit4Stage6thOrderLobattoA_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2404,6 +2436,7 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage2ndOrderLobattoB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2448,6 +2481,7 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage4thOrderLobattoB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2500,6 +2534,7 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit4Stage6thOrderLobattoB_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2563,6 +2598,7 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit2Stage2ndOrderLobattoC_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2607,6 +2643,7 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit3Stage4thOrderLobattoC_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2659,6 +2696,7 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class Implicit4Stage6thOrderLobattoC_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2722,7 +2760,7 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
 };
 
 
-
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK5Stage5thOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2730,22 +2768,67 @@ class SDIRK5Stage5thOrder_RKBT :
   public:
   SDIRK5Stage5thOrder_RKBT()
   {
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "A-stable\n"
+      << "Solving Ordinary Differential Equations II:\n"
+      << "Stiff and Differential-Algebraic Problems,\n"
+      << "2nd Revised Edition\n"
+      << "E. Hairer and G. Wanner\n"
+      << "pg101 \n"
+      << "c = [ (6-sqrt(6))/10   ]\n"
+      << "    [ (6+9*sqrt(6))/35 ]\n"
+      << "    [ 1                ]\n"
+      << "    [ (4-sqrt(6))/10   ]\n"
+      << "    [ (4+sqrt(6))/10   ]\n"
+      << "A = [ A1 A2 A3 A4 A5 ]\n"
+      << "      A1 = [ (6-sqrt(6))/10               ]\n"
+      << "           [ (-6+5*sqrt(6))/14            ]\n"
+      << "           [ (888+607*sqrt(6))/2850       ]\n"
+      << "           [ (3153-3082*sqrt(6))/14250    ]\n"
+      << "           [ (-32583+14638*sqrt(6))/71250 ]\n"
+      << "      A2 = [ 0                           ]\n"
+      << "           [ (6-sqrt(6))/10              ]\n"
+      << "           [ (126-161*sqrt(6))/1425      ]\n"
+      << "           [ (3213+1148*sqrt(6))/28500   ]\n"
+      << "           [ (-17199+364*sqrt(6))/142500 ]\n"
+      << "      A3 = [ 0                       ]\n"
+      << "           [ 0                       ]\n"
+      << "           [ (6-sqrt(6))/10          ]\n"
+      << "           [ (-267+88*sqrt(6))/500   ]\n"
+      << "           [ (1329-544*sqrt(6))/2500 ]\n"
+      << "      A4 = [ 0                     ]\n"
+      << "           [ 0                     ]\n"
+      << "           [ 0                     ]\n"
+      << "           [ (6-sqrt(6))/10        ]\n"
+      << "           [ (-96+131*sqrt(6))/625 ]\n"
+      << "      A5 = [ 0              ]\n"
+      << "           [ 0              ]\n"
+      << "           [ 0              ]\n"
+      << "           [ 0              ]\n"
+      << "           [ (6-sqrt(6))/10 ]\n"
+      << "b = [               0 ]\n"
+      << "    [               0 ]\n"
+      << "    [             1/9 ]\n"
+      << "    [ (16-sqrt(6))/36 ]\n"
+      << "    [ (16+sqrt(6))/36 ]" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "SDIRK 5 Stage 5th order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - SDIRK1Stage1stOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
@@ -2803,76 +2886,27 @@ class SDIRK5Stage5thOrder_RKBT :
 
     int order = 5;
 
-    this->initialize(A,b,c,order,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-        << "A-stable\n"
-        << "Solving Ordinary Differential Equations II:\n"
-        << "Stiff and Differential-Algebraic Problems,\n"
-        << "2nd Revised Edition\n"
-        << "E. Hairer and G. Wanner\n"
-        << "pg101 \n"
-        << "c = [ (6-sqrt(6))/10   ]\n"
-        << "    [ (6+9*sqrt(6))/35 ]\n"
-        << "    [ 1                ]\n"
-        << "    [ (4-sqrt(6))/10   ]\n"
-        << "    [ (4+sqrt(6))/10   ]\n"
-        << "A = [ A1 A2 A3 A4 A5 ]\n"
-        << "      A1 = [ (6-sqrt(6))/10               ]\n"
-        << "           [ (-6+5*sqrt(6))/14            ]\n"
-        << "           [ (888+607*sqrt(6))/2850       ]\n"
-        << "           [ (3153-3082*sqrt(6))/14250    ]\n"
-        << "           [ (-32583+14638*sqrt(6))/71250 ]\n"
-        << "      A2 = [ 0                           ]\n"
-        << "           [ (6-sqrt(6))/10              ]\n"
-        << "           [ (126-161*sqrt(6))/1425      ]\n"
-        << "           [ (3213+1148*sqrt(6))/28500   ]\n"
-        << "           [ (-17199+364*sqrt(6))/142500 ]\n"
-        << "      A3 = [ 0                       ]\n"
-        << "           [ 0                       ]\n"
-        << "           [ (6-sqrt(6))/10          ]\n"
-        << "           [ (-267+88*sqrt(6))/500   ]\n"
-        << "           [ (1329-544*sqrt(6))/2500 ]\n"
-        << "      A4 = [ 0                     ]\n"
-        << "           [ 0                     ]\n"
-        << "           [ 0                     ]\n"
-        << "           [ (6-sqrt(6))/10        ]\n"
-        << "           [ (-96+131*sqrt(6))/625 ]\n"
-        << "      A5 = [ 0              ]\n"
-        << "           [ 0              ]\n"
-        << "           [ 0              ]\n"
-        << "           [ 0              ]\n"
-        << "           [ (6-sqrt(6))/10 ]\n"
-        << "b = [               0 ]\n"
-        << "    [               0 ]\n"
-        << "    [             1/9 ]\n"
-        << "    [ (16-sqrt(6))/36 ]\n"
-        << "    [ (16+sqrt(6))/36 ]" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK5Stage4thOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -2880,22 +2914,39 @@ class SDIRK5Stage4thOrder_RKBT :
   public:
   SDIRK5Stage4thOrder_RKBT()
   {
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+      << "L-stable\n"
+      << "Solving Ordinary Differential Equations II:\n"
+      << "Stiff and Differential-Algebraic Problems,\n"
+      << "2nd Revised Edition\n"
+      << "E. Hairer and G. Wanner\n"
+      << "pg100 \n"
+      << "c  = [ 1/4       3/4        11/20   1/2     1   ]'\n"
+      << "A  = [ 1/4                                      ]\n"
+      << "     [ 1/2       1/4                            ]\n"
+      << "     [ 17/50     -1/25      1/4                 ]\n"
+      << "     [ 371/1360  -137/2720  15/544  1/4         ]\n"
+      << "     [ 25/24     -49/48     125/16  -85/12  1/4 ]\n"
+      << "b  = [ 25/24     -49/48     125/16  -85/12  1/4 ]'\n"
+      << "b' = [ 59/48     -17/96     225/32  -85/12  0   ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "SDIRK 5 Stage 4th order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - SDIRK5Stage4thOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
@@ -2960,48 +3011,27 @@ class SDIRK5Stage4thOrder_RKBT :
 
     int order = 4;
 
-    this->initialize(A,b,c,order,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-        << "L-stable\n"
-        << "Solving Ordinary Differential Equations II:\n"
-        << "Stiff and Differential-Algebraic Problems,\n"
-        << "2nd Revised Edition\n"
-        << "E. Hairer and G. Wanner\n"
-        << "pg100 \n"
-        << "c  = [ 1/4       3/4        11/20   1/2     1   ]'\n"
-        << "A  = [ 1/4                                      ]\n"
-        << "     [ 1/2       1/4                            ]\n"
-        << "     [ 17/50     -1/25      1/4                 ]\n"
-        << "     [ 371/1360  -137/2720  15/544  1/4         ]\n"
-        << "     [ 25/24     -49/48     125/16  -85/12  1/4 ]\n"
-        << "b  = [ 25/24     -49/48     125/16  -85/12  1/4 ]'\n"
-        << "b' = [ 59/48     -17/96     225/32  -85/12  0   ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 };
 
 
+// ----------------------------------------------------------------------------
 template<class Scalar>
 class SDIRK3Stage4thOrder_RKBT :
   virtual public RKButcherTableau<Scalar>
@@ -3009,22 +3039,38 @@ class SDIRK3Stage4thOrder_RKBT :
   public:
   SDIRK3Stage4thOrder_RKBT()
   {
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
+    std::ostringstream Description;
+    Description << this->description() << "\n"
+                << "A-stable\n"
+                << "Solving Ordinary Differential Equations II:\n"
+                << "Stiff and Differential-Algebraic Problems,\n"
+                << "2nd Revised Edition\n"
+                << "E. Hairer and G. Wanner\n"
+                << "pg100 \n"
+                << "gamma = (1/sqrt(3))*cos(pi/18)+1/2\n"
+                << "delta = 1/(6*(2*gamma-1)^2)\n"
+                << "c = [ gamma      1/2        1-gamma ]'\n"
+                << "A = [ gamma                         ]\n"
+                << "    [ 1/2-gamma  gamma              ]\n"
+                << "    [ 2*gamma    1-4*gamma  gamma   ]\n"
+                << "b = [ delta      1-2*delta  delta   ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
   }
 
   virtual std::string description() const { return "SDIRK 3 Stage 4th order"; }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*pl,this);
     TEUCHOS_TEST_FOR_EXCEPTION(
       pl->get<std::string>("Stepper Type") != this->description()
       ,std::runtime_error,
-      "Error - SDIRK3Stage4thOrder_RKBT()\n"
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
@@ -3061,43 +3107,22 @@ class SDIRK3Stage4thOrder_RKBT :
 
     int order = 4;
 
-    this->initialize(A,b,c,order,pl->get<std::string>("Description",""));
+    this->initialize(A,b,c,order,this->getDescription());
     this->setMyParamList(pl);
-    this->pList_ = pl;
+    this->rkbtPL_ = pl;
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
 
-    if (is_null(validPL)) {
-      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-      std::ostringstream Description;
-      Description << this->description() << "\n"
-                  << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:\n"
-                  << "Stiff and Differential-Algebraic Problems,\n"
-                  << "2nd Revised Edition\n"
-                  << "E. Hairer and G. Wanner\n"
-                  << "pg100 \n"
-                  << "gamma = (1/sqrt(3))*cos(pi/18)+1/2\n"
-                  << "delta = 1/(6*(2*gamma-1)^2)\n"
-                  << "c = [ gamma      1/2        1-gamma ]'\n"
-                  << "A = [ gamma                         ]\n"
-                  << "    [ 1/2-gamma  gamma              ]\n"
-                  << "    [ 2*gamma    1-4*gamma  gamma   ]\n"
-                  << "b = [ delta      1-2*delta  delta   ]'" << std::endl;
-
-      pl->set("Description", Description.str(), Description.str());
-      pl->set("Stepper Type", this->description());
-      pl->set("Solver Name", "",
-        "Name of ParameterList containing the solver specifications.");
-      Teuchos::setupVerboseObjectSublist(&*pl);
-      validPL = pl;
-    }
-    return validPL;
+    return pl;
   }
 };
 

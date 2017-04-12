@@ -138,6 +138,7 @@ exe stk_search_integration_tester
   :
     [ glob $(stk_search-root)/integrationtest/*.cpp
       glob $(stk_search-root)/integrationtest/*.[cC] ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_search
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_util//stk_util_use_case
@@ -156,6 +157,7 @@ exe stk_search_utest
   :
     [ glob $(stk_search-root)/unit_tests/*.cpp ]
     [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_search
     /sierra/stk_util//stk_util_use_case
     /sierra/stk_util//stk_util_diag

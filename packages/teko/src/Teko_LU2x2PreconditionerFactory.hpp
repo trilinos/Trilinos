@@ -249,6 +249,8 @@ public:
    { useFullLDU_ = value; }
  
 protected: 
+   using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+
    //! some members
    Teuchos::RCP<LU2x2Strategy> invOpsStrategy_;
 

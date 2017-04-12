@@ -15,10 +15,13 @@ public:
     SoloSideIdGenerator(int nProcs, int proc, uint64_t maxSideId)
       : numProcs(nProcs), pseudoOrdinal(6)
     {
-        ThrowRequire(maxSideId > 10);
-        m_maxPseudoElement = (maxSideId - 10) / 10;
-
+        calculate_max_psuedo_element(maxSideId);
         pseudoElement = proc + 1;
+    }
+
+    void use_fmwk_id_type_to_determine_largest_valid_id()
+    {
+        calculate_max_psuedo_element(std::numeric_limits<int>::max());
     }
 
     stk::mesh::EntityId get_solo_side_id()
@@ -41,6 +44,11 @@ protected:
     }
 
 private:
+    void calculate_max_psuedo_element(uint64_t maxSideId)
+    {
+        ThrowRequire(maxSideId > 10);
+        m_maxPseudoElement = (maxSideId - 10) / 10;
+    }
     void incrementPseudoElementAndOrdinal()
     {
         pseudoOrdinal++;

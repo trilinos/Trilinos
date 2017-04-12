@@ -127,14 +127,20 @@ namespace MueLu {
 
       // Reuse pattern if available (multiple solve)
       RCP<ParameterList> APparams;
-      if(pL.isSublist("matrixmatrix: kernel params")) APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else APparams= rcp(new ParameterList);
+      if(pL.isSublist("matrixmatrix: kernel params")) 
+	APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else 
+	APparams= rcp(new ParameterList);
+      
+      // By default, we don't need global constants for A*P
+      APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
+      APparams->set("compute global constants",APparams->get("compute global constants",false));
 
       if (coarseLevel.IsAvailable("AP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
-
+        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);	
+	
         if (APparams->isParameter("graph"))
           AP = APparams->get< RCP<Matrix> >("graph");
       }
@@ -163,6 +169,10 @@ namespace MueLu {
         // As the matrix values will be updated, we need to reset the eigenvalue.
         Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
+
+      // We *always* need global constants for the RAP, but not for the temps
+      RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
+      RAPparams->set("compute global constants",true);
 
       // Allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.

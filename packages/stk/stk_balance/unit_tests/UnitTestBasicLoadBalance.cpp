@@ -60,7 +60,7 @@ void balance_mesh(stk::mesh::BulkData& bulkData)
 void test_that_mesh_is_balanced(const stk::mesh::BulkData& stkMeshBulkData)
 {
     const unsigned gold_num_elements_per_proc = 3;
-    std::vector<unsigned> counts;
+    std::vector<size_t> counts;
     stk::mesh::count_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData, counts);
     EXPECT_EQ(gold_num_elements_per_proc, counts[stk::topology::ELEM_RANK]);
 }

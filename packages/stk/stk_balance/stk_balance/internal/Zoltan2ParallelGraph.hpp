@@ -23,6 +23,8 @@ public:
                                const std::vector<stk::mesh::Selector>& selectors,
                                const stk::mesh::impl::LocalIdMapper& localIds);
 
+    void adjust_weights_for_small_meshes();
+
     void createGraphEdgesUsingNodeConnectivity(stk::mesh::BulkData &stkMeshBulkData,
                                                const stk::balance::BalanceSettings &balanceSettings,
                                                size_t numElements,
@@ -33,6 +35,10 @@ public:
                                            std::vector<int>& adjacencyProcs,
                                            const stk::mesh::Selector& searchSelector,
                                            const stk::mesh::impl::LocalIdMapper& localIds);
+
+    void setMechanismCheckFlag() { mCheckingMechanisms = true; }
+    bool amCheckingForMechanisms() const { return mCheckingMechanisms; }
+
 private:
     void convertGraphEdgesToZoltanGraph(const stk::mesh::BulkData& stkMeshBulkData,
                                           const std::vector<stk::balance::GraphEdge> &graphEdges,
@@ -44,6 +50,7 @@ private:
     std::vector<BalanceLocalNumber> mOffsets;
     std::vector<BalanceGlobalNumber> mAdjacency;
     size_t mNumGlobalElements = 0;
+    bool mCheckingMechanisms = false;
 };
 
 

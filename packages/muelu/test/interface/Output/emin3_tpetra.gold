@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -50,7 +50,8 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
@@ -61,13 +62,14 @@ Level 1
  emin: num iterations = 1
  emin: num reuse iterations = 1   [default]
  emin: iterative method = gmres
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -79,8 +81,8 @@ Level 1
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -128,7 +130,8 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
@@ -139,13 +142,14 @@ Level 2
  emin: num iterations = 1
  emin: num reuse iterations = 1   [default]
  emin: iterative method = gmres
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -157,8 +161,8 @@ Level 2
  
  Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother -> 
   [empty list]
  
@@ -168,6 +172,7 @@ Level 2
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
+Smoother complexity = 1.78
 Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs

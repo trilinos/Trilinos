@@ -66,6 +66,9 @@ public:
     virtual Scalar getIndex() const = 0;
     /// Get the stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
+    /// Return a copy of the Tempus ParameterList
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	= 0;
+    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) = 0;
   //@}
 
 };

@@ -87,6 +87,11 @@ namespace Amesos2 {
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
 
+    typedef typename MatrixTraits<Matrix>::local_matrix_t     local_matrix_t;
+    typedef typename MatrixTraits<Matrix>::sparse_ptr_type       spmtx_ptr_t;
+    typedef typename MatrixTraits<Matrix>::sparse_idx_type       spmtx_idx_t;
+    typedef typename MatrixTraits<Matrix>::sparse_values_type   spmtx_vals_t;
+
     // template<typename S, typename GO, typename GS, typename Op>
     // friend class Util::get_cxs_helper<MatrixAdapter<Matrix>,S,GO,GS,Op>;
     // template<class M, typename S, typename GO, typename GS, typename Op>
@@ -238,6 +243,14 @@ namespace Amesos2 {
     void describe(Teuchos::FancyOStream &out,
 		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
+    /// Return raw pointer from CRS row pointer of matrixA_
+    spmtx_ptr_t returnRowPtr() const;
+
+    /// Return raw pointer from CRS column indices of matrixA_
+    spmtx_idx_t returnColInd() const;
+
+    /// Return raw pointer from CRS values of matrixA_
+    spmtx_vals_t returnValues() const;
 
   private:
 
@@ -357,7 +370,7 @@ namespace Amesos2 {
     mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > col_map_;
 
     mutable Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    
+
   };				// end class MatrixAdapter
 
 

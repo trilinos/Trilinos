@@ -29,7 +29,6 @@ variables:
 	int node_ns2(num_nod_ns2) ;
 	float dist_fact_ns2(num_nod_ns2) ;
 	int ns_prop2(num_node_sets) ;
-		ns_prop2:_FillValue = 0 ;
 		ns_prop2:name = "FACE" ;
 	int ns_prop3(num_node_sets) ;
 		ns_prop3:name = "VELOCITY" ;

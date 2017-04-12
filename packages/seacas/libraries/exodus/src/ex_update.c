@@ -62,6 +62,8 @@ int ex_update(int exoid)
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   if ((status = nc_sync(exoid)) != NC_NOERR) {
     exerrval = status;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);

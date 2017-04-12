@@ -147,9 +147,11 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
   // build the vector of fields that this is dependent on
+  inFields_.resize(inFieldNames.size());
+  outFields_.resize(inFieldNames.size());
   for (std::size_t eq = 0; eq < inFieldNames.size(); ++eq) {
-    inFields_.push_back(PHX::MDField<const ScalarT>(inFieldNames[eq],fieldLayouts[eq]));
-    outFields_.push_back(PHX::MDField<ScalarT>(outPrefix+inFieldNames[eq],fieldLayouts[eq]));
+    inFields_[eq] = PHX::MDField<const ScalarT>(inFieldNames[eq],fieldLayouts[eq]);
+    outFields_[eq] = PHX::MDField<ScalarT>(outPrefix+inFieldNames[eq],fieldLayouts[eq]);
 
     // tell the field manager that we depend on this field
     this->addDependentField(inFields_[eq]);

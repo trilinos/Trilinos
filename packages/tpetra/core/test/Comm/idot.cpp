@@ -187,6 +187,36 @@ testIdot (bool& success,
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY( gblSuccess, 1 );
     success = (gblSuccess != 0);
+
+    out << "Test special case of (multiple columns) dot (single column)" << endl;
+    auto y_0 = y.getVector (0);
+    req = Tpetra::idot (results, x, *y_0);
+    req->wait ();
+    Kokkos::deep_copy (results_h, results);
+    for (size_t k = 0; k < numVecs; ++k) {
+      TEST_EQUALITY( expectedResult, results_h(k) );
+    }
+
+    lclSuccess = success ? 1 : 0; // input argument
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    success = (gblSuccess != 0);
+
+    out << "Test special case of (single column) dot (multiple columns)" << endl;
+    auto x_0 = x.getVector (0);
+    req = Tpetra::idot (results, *x_0, y);
+    req->wait ();
+    Kokkos::deep_copy (results_h, results);
+    for (size_t k = 0; k < numVecs; ++k) {
+      TEST_EQUALITY( expectedResult, results_h(k) );
+    }
+
+    lclSuccess = success ? 1 : 0; // input argument
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    success = (gblSuccess != 0);
   }
 
   out << "Test noncontiguous Tpetra::MultiVector inputs and raw pointer output" << endl;

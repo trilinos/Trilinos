@@ -101,11 +101,10 @@ public:
   InequalityQL() : coeff({-7.56,0.0,0.0,0.0,0.5}), offset(39.1) {}
 
   void value( std::vector<Real> &c, const std::vector<Real> &x, Real &tol) {
-    c[0] = 0;
+    c[0] = offset;
     for( int i=0; i<5; ++i ) {
       c[0] += coeff[i]*x[i];
     }
-    c[0] += offset;
   }
 
   void applyJacobian(  std::vector<Real> &jv, const std::vector<Real> &v ,const std::vector<Real> &x, Real &tol ) {
@@ -169,11 +168,22 @@ int main(int argc, char *argv[]) {
 
     ROL::OptimizationProblem<RealT> problem( obj, x, bnd, Teuchos::null, Teuchos::null, ineq, li );    
 
+    /* checkAdjointJacobianConsistency fails for the OptimizationProblem if we don't do this first... why? */
+    RCP<ROL::Vector<RealT> > u = x->clone(); 
+    RandomizeVector(*u);
+    ineq->checkAdjointConsistencyJacobian(*li,*x,*u,true,*outStream);
+    /*******************************************************************************************************/
+
     problem.check(*outStream);
 
     ROL::OptimizationSolver<RealT> solver( problem, parlist );
 
     solver.solve(*outStream); 
+
+
+
+     
+
 
     *outStream << "x_opt = [";
     for(int i=0;i<4;++i) {

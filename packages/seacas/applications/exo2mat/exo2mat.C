@@ -84,7 +84,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat output */
 bool   debug    = false;
 
 static const char *qainfo[] = {
-    "exo2mat", "2016/09/08", "4.01",
+    "exo2mat", "2017/03/31", "4.02",
 };
 
 std::string time_stamp(const std::string &format)
@@ -310,6 +310,22 @@ void delete_exodus_names(char **names, int count)
   delete[] names;
 }
 
+void get_put_user_names(int exo_file, ex_entity_type type, int num_blocks, const char *mname)
+{
+  int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  max_name_length     = max_name_length < 32 ? 32 : max_name_length;
+  char **names        = get_exodus_names(num_blocks, max_name_length + 1);
+  ex_get_names(exo_file, type, names);
+
+  std::string user_names;
+  for (int j = 0; j < num_blocks; j++) {
+    user_names += names[j];
+    user_names += "\n";
+  }
+  PutStr(mname, user_names.c_str());
+  delete_exodus_names(names, num_blocks);
+}
+
 void get_put_names(int exo_file, ex_entity_type type, int num_vars, const char *mname)
 {
   int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
@@ -528,8 +544,9 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
     Mat_VarFree(cell_array);
   }
   else {
-    char             str[33];
-    std::vector<int> connect;
+    char                str[33];
+    std::vector<int>    connect;
+    std::vector<double> attr;
 
     PutInt("blkids", num_blocks, 1, TOPTR(ids));
     std::vector<char> type(max_name_length + 1);
@@ -547,7 +564,32 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       ex_get_conn(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(connect), nullptr, nullptr);
       sprintf(str, "blk%02d", i + 1);
       PutInt(str, num_node, num_elem, TOPTR(connect));
+
+      // Handle block attributes (if any...)
+      attr.resize(num_elem);
+      sprintf(str, "blk%02d_nattr", i + 1);
+      PutInt(str, num_attr);
+      if (num_attr > 0) {
+        std::string attr_names;
+        char **     names = get_exodus_names(num_attr, max_name_length + 1);
+        ex_get_attr_names(exo_file, EX_ELEM_BLOCK, ids[i], names);
+        for (int j = 0; j < num_attr; j++) {
+          attr_names += names[j];
+          attr_names += "\n";
+        }
+        sprintf(str, "blk%02d_attrnames", i + 1);
+        PutStr(str, attr_names.c_str());
+        delete_exodus_names(names, num_attr);
+
+        for (int j = 0; j < num_attr; j++) {
+          sprintf(str, "blk%02d_attr%02d", i + 1, j + 1);
+          ex_get_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, attr.data());
+          PutDbl(str, num_elem, 1, attr.data());
+        }
+      }
     }
+
+    get_put_user_names(exo_file, EX_ELEM_BLOCK, num_blocks, "blkusernames");
     PutStr("blknames", types.c_str());
   }
   return num_elem_in_block;
@@ -656,6 +698,8 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         PutDbl(str, dist_fac.size(), 1, TOPTR(dist_fac));
       }
     }
+
+    get_put_user_names(exo_file, EX_NODE_SET, num_sets, "nsusernames");
 
     /* Store # nodes and # dis. factors per node set */
     PutInt("nnsnodes", num_sets, 1, TOPTR(num_nodes));
@@ -849,6 +893,8 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         PutInt(str, n1, 1, TOPTR(elem_list));
       }
     }
+    get_put_user_names(exo_file, EX_SIDE_SET, num_sets, "ssusernames");
+
     /* Store # sides and # dis. factors per side set (dgriffi) */
     PutInt("nsssides", num_sets, 1, TOPTR(num_sideset_sides));
     PutInt("nssdfac", num_sets, 1, TOPTR(num_sideset_dfac));
@@ -1010,6 +1056,8 @@ int main(int argc, char *argv[])
       exit(1);
     }
   }
+
+  ex_opts(EX_VERBOSE);
 
   /* word sizes */
   int cpu_word_size = sizeof(double);

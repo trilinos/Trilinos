@@ -989,7 +989,7 @@ Eval::syntax()
   }
   catch (std::runtime_error & /* x */) {
 //     x << " while parsing expression: " << m_expression;
-//     RuntimeDoomed() << x.what();
+//     stk::RuntimeDoomed() << x.what();
     throw;
   }
 }
@@ -1017,7 +1017,7 @@ Eval::parse()
   }
   catch (std::runtime_error & /* x */) {
 //     x << " while parsing expression: " << m_expression;
-//     RuntimeDoomed() << x.what();
+//     stk::RuntimeDoomed() << x.what();
     throw;
   }
 }

@@ -58,12 +58,14 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
 {
   size_t m;
   char   errmsg[MAX_ERR_LENGTH];
-  exerrval = 0; /* clear error code */
 
   ex_block block;
   block.id   = id;
   block.type = EX_ELEM_BLOCK;
 
+  ex_check_valid_file_id(exoid);
+
+  exerrval = 0; /* clear error code */
   /* read in an element block parameter */
   if ((ex_get_block_param(exoid, &block)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,

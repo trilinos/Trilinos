@@ -275,6 +275,7 @@ namespace BaskerNS
     init_vectors(_m, _n, _nnz);
   }//end init_matrix(Int, Int, Int, Int, Int)//srow and scol
 
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int BaskerMatrix<Int,Entry,Exe_Space>::copy_values

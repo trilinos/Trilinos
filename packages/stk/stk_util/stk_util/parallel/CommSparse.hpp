@@ -104,6 +104,15 @@ public:
     return m_recv[p] ;
   }
 
+  /** Obtain the message buffer for a given processor */
+  const CommBuffer & recv_buffer( int p ) const
+  {
+#ifndef NDEBUG
+    if ( m_size <= p ) { rank_error("recv_buffer",p); }
+#endif
+    return m_recv[p] ;
+  }
+
   //----------------------------------------
   /** Construct for a to-be-sized communication.
    *  Allocate surrogate send buffers to enable
@@ -152,9 +161,6 @@ private:
    *  No buffers are allocated.
    */
   CommSparse();
-
-  CommSparse( const CommAll & );
-  CommSparse & operator = ( const CommAll & );
 
   void rank_error( const char * , int ) const ;
 

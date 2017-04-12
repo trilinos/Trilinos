@@ -121,6 +121,23 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  //! \brief  return if algorithm determins tree to be binary
+  virtual bool isPartitioningTreeBinary() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief  for partitioning methods, fill arrays with partition tree info
+  virtual void getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
   //! \brief  for partitioning methods, return bounding boxes of the 
   //          computed parts
   //          Not all partitioning algorithms will support

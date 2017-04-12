@@ -51,10 +51,7 @@
 
 #include <Teuchos_BLAS.hpp>
 #include <Kokkos_Blas2_MV.hpp>
-
-#ifdef KOKKOS_HAVE_CUDA
-#include <cublas.h>
-#endif
+#include "Tpetra_Details_gemm.hpp"
 
 namespace Teuchos {
 
@@ -214,35 +211,30 @@ namespace Kokkos {
           const View<Scalar**, LayoutLeft, DeviceType>& C)
     {
       const int n = static_cast<int> (C.dimension_1 ());
-      const int lda = static_cast<int> (Impl::getStride2DView (A));
-      Teuchos::BLAS<int,Scalar> blas;
 
       // For some BLAS implementations (e.g., MKL), GEMM when B has
       // one column may be signficantly less efficient than GEMV.
       if (n == 1 && transB == Teuchos::NO_TRANS) {
+        const int lda = static_cast<int> (Impl::getStride2DView (A));
+        Teuchos::BLAS<int,Scalar> blas;
         blas.GEMV (transA, A.dimension_0 (), A.dimension_1 (),
                    alpha, A.ptr_on_device (), lda,
                    B.ptr_on_device (), static_cast<int> (1),
                    beta, C.ptr_on_device (), static_cast<int> (1));
       }
       else {
-        const int m = static_cast<int> (C.dimension_0 ());
-        const int k = static_cast<int> (transA == Teuchos::NO_TRANS ?
-                                        A.dimension_1 () : A.dimension_0 ());
-        const int ldb = static_cast<int> (Impl::getStride2DView (B));
-        const int ldc = static_cast<int> (Impl::getStride2DView (C));
-
-        blas.GEMM (transA, transB, m, n, k, alpha,
-                   A.ptr_on_device(), lda,
-                   B.ptr_on_device(), ldb,
-                   beta, C.ptr_on_device(), ldc);
+        const char ctransA = (transA == Teuchos::CONJ_TRANS ? 'C' :
+                              (transA == Teuchos::TRANS ? 'T' : 'N'));
+        const char ctransB = (transB == Teuchos::CONJ_TRANS ? 'C' :
+                              (transB == Teuchos::TRANS ? 'T' : 'N'));
+        ::Tpetra::Details::Blas::gemm (ctransA, ctransB, alpha, A, B, beta, C);
       }
     }
   };
 
   // FIXME (mfh 10 May 2016) Temporary work-around for #243.
   // Don't call MKL for this case.
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   template <typename DeviceType>
   struct DeviceGEMM<double, DeviceType> {
   public:
@@ -272,39 +264,34 @@ namespace Kokkos {
         KokkosBlas::gemv (&trans, alpha, A, B_0, beta, C_0);
       }
       else {
-        const int m = static_cast<int> (C.dimension_0 ());
-        const int k = static_cast<int> (transA == Teuchos::NO_TRANS ? A.dimension_1 () : A.dimension_0 ());
-        const int lda = static_cast<int> (Impl::getStride2DView (A));
-        const int ldb = static_cast<int> (Impl::getStride2DView (B));
-        const int ldc = static_cast<int> (Impl::getStride2DView (C));
-
-        Teuchos::BLAS<int,double> blas;
-        blas.GEMM (transA, transB, m, n, k, alpha,
-                   A.ptr_on_device(), lda,
-                   B.ptr_on_device(), ldb,
-                   beta, C.ptr_on_device(), ldc);
+        const char ctransA = (transA == Teuchos::CONJ_TRANS ? 'C' :
+                              (transA == Teuchos::TRANS ? 'T' : 'N'));
+        const char ctransB = (transB == Teuchos::CONJ_TRANS ? 'C' :
+                              (transB == Teuchos::TRANS ? 'T' : 'N'));
+        ::Tpetra::Details::Blas::gemm (ctransA, ctransB,
+                                       alpha, A, B, beta, C);
       }
     }
   };
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 #ifdef KOKKOS_HAVE_CUDA
   template <typename Scalar>
-  struct DeviceGEMM<Scalar,Cuda> {
-    public:
-      static void
-      GEMM (const Teuchos::ETransp transA,
-            const Teuchos::ETransp transB,
-            const Scalar& alpha,
-            const View<const Scalar**, LayoutLeft, Cuda>& A,
-            const View<const Scalar**,LayoutLeft,Cuda>& B,
-            const Scalar& beta,
-            const View<Scalar**,LayoutLeft,Cuda>& C)
+  struct DeviceGEMM<Scalar, Cuda> {
+  public:
+    static void
+    GEMM (const Teuchos::ETransp transA,
+          const Teuchos::ETransp transB,
+          const Scalar& alpha,
+          const View<const Scalar**, LayoutLeft, Cuda>& A,
+          const View<const Scalar**,LayoutLeft, Cuda>& B,
+          const Scalar& beta,
+          const View<Scalar**,LayoutLeft,Cuda>& C)
     {
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "DeviceGEMM: Kokkos::Cuda has no support "
          "for GEMM operations over Scalar=" << Teuchos::typeName(alpha) << ".");
-      }
+    }
   };
 
   template <>
@@ -319,51 +306,35 @@ namespace Kokkos {
             const float beta,
             const View<float**,LayoutLeft,Cuda>& C)
     {
-      const int m = static_cast<int>(C.dimension_0()),
-        n = static_cast<int>(C.dimension_1()),
-        k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-        lda = static_cast<int>(Impl::getStride2DView(A)),
-        ldb = static_cast<int>(Impl::getStride2DView(B)),
-        ldc = static_cast<int>(Impl::getStride2DView(C));
-      const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
-        char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-      cublasSgemm (char_transA, char_transB, m, n, k, alpha,
-                   A.ptr_on_device(), lda, B.ptr_on_device(),
-                   ldb, beta, C.ptr_on_device(), ldc);
+      const char ctransA = (transA == Teuchos::NO_TRANS ? 'N' : 'T');
+      const char ctransB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
 
-#ifdef HAVE_KOKKOS_DEBUG
-      const cublasStatus info = cublasGetError ();
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (info != CUBLAS_STATUS_SUCCESS, std::runtime_error,
-         "cublasSgemm failed with status " << info << "." );
-#endif // HAVE_KOKKOS_DEBUG
-      }
+      ::Tpetra::Details::Blas::gemm (ctransA, ctransB,
+                                     alpha, A, B, beta, C);
+    }
   };
 
   template <>
   struct DeviceGEMM<double,Cuda> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
-          View<const double**,LayoutLeft,Cuda> A, View<const double**,LayoutLeft,Cuda> B,
-          double beta, View<double**,LayoutLeft,Cuda> C) {
-        const int m = static_cast<int>(C.dimension_0()),
-                  n = static_cast<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = static_cast<int>(Impl::getStride2DView(A)),
-                  ldb = static_cast<int>(Impl::getStride2DView(B)),
-                  ldc = static_cast<int>(Impl::getStride2DView(C));
-        const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
-                   char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-        cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
-#ifdef HAVE_KOKKOS_DEBUG
-        cublasStatus info = cublasGetError();
-        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
-#endif
-      }
+  public:
+    static void
+    GEMM (const Teuchos::ETransp transA,
+          const Teuchos::ETransp transB,
+          const double alpha,
+          const View<const double**, LayoutLeft, Cuda>& A,
+          const View<const double**, LayoutLeft, Cuda>& B,
+          const double beta,
+          const View<double**, LayoutLeft, Cuda>& C)
+    {
+      const char ctransA = (transA == Teuchos::NO_TRANS ? 'N' : 'T');
+      const char ctransB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
+
+      ::Tpetra::Details::Blas::gemm (ctransA, ctransB,
+                                     alpha, A, B, beta, C);
+    }
   };
+#endif // KOKKOS_HAVE_CUDA
 
-
-#endif
-}
+} // namespace Kokkos
 #endif // KOKKOS_MV_GEMM_HPP
 

@@ -126,6 +126,10 @@ public:
     bman_->sumAll(input,output);
   }
 
+  void broadcast(Real *input, int cnt, int root) const {
+    bman_->broadcast(input,cnt,root);
+  }
+
   void barrier(void) const {
     bman_->barrier();
   }

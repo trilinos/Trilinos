@@ -95,6 +95,8 @@ namespace {
                              int dim_dim, int str_dim);
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type ent_type);
+  template <typename T>
+  size_t get_max_name_length(const std::vector<T> &entities, size_t old_max);
 } // namespace
 
 Redefine::Redefine(int exoid) : exodusFilePtr(exoid)
@@ -597,6 +599,18 @@ int Internals::write_meta_data(Mesh &mesh)
     return (ierr);
   }
 
+  // Determine length of longest name... Reduces calls to put_att
+  size_t lname = 0;
+  lname = get_max_name_length(mesh.edgeblocks, lname);
+  lname = get_max_name_length(mesh.faceblocks, lname);
+  lname = get_max_name_length(mesh.elemblocks, lname);
+  lname = get_max_name_length(mesh.nodesets, lname);
+  lname = get_max_name_length(mesh.edgesets, lname);
+  lname = get_max_name_length(mesh.facesets, lname);
+  lname = get_max_name_length(mesh.elemsets, lname);
+  lname = get_max_name_length(mesh.sidesets, lname);
+  ex_set_max_name_length(exodusFilePtr, lname);
+  
   // For now, put entity names using the ExodusII api...
   output_names(mesh.edgeblocks, exodusFilePtr, EX_EDGE_BLOCK);
   output_names(mesh.faceblocks, exodusFilePtr, EX_FACE_BLOCK);
@@ -3258,6 +3272,15 @@ int Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
 
 namespace {
   template <typename T>
+  size_t get_max_name_length(const std::vector<T> &entities, size_t old_max)
+  {
+    for (size_t i = 0; i < entities.size(); i++) {
+      old_max = std::max(old_max, entities[i].name.size());
+    }
+    return old_max;
+  }
+
+  template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type ent_type)
   {
     if (!entities.empty()) {
@@ -3461,7 +3484,7 @@ namespace {
             ex_err(routine, errmsg, status);
             return (EX_FATAL);
           }
-          ex_compress_variable(exodusFilePtr, varid, 1);
+          ex_compress_variable(exodusFilePtr, varid, 2);
         }
 
         if (dimension > 2) {

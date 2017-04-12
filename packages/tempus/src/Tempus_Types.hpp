@@ -25,16 +25,11 @@ inline
 const char* toString(const Status status)
 {
   switch(status) {
-    case PASSED:
-      return "PASSED";
-    case FAILED:
-      return "FAILED";
-    case WORKING:
-      return "WORKING";
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
+    case PASSED:  return "PASSED";
+    case FAILED:  return "FAILED";
+    case WORKING: return "WORKING";
+    default:      TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
   }
-  return 0; // Should never get here!
 }
 
 

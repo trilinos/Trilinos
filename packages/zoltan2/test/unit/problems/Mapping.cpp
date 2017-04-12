@@ -406,8 +406,19 @@ bool runTest(
 
   psoln.setParts(partList);
 
+#ifdef HAVE_ZOLTAN2_MPI
+  // Use an MPI_Comm, just to exercise that bit of code
+  // In real life, no one should extract the MPI_Comm from the Teuchos::Comm;
+  // he should use the Teuchos::Comm.  But for testing,
+  // we need to exercise the MPI_Comm interface.
+  MPI_Comm mpicomm =  Teuchos::getRawMpiComm(*comm);
+  Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, mpicomm,
+                                                     NULL, &defMachine);
+#else
   Zoltan2::MappingProblem<Adapter, machine_t> mprob3(&ia, &params, comm,
                                                      NULL, &defMachine);
+#endif
+
   mprob3.solve();
 
   Zoltan2::MappingSolution<Adapter> *msoln3 = mprob3.getSolution();

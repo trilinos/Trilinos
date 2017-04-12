@@ -21,17 +21,12 @@
 
 #include <iostream>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
-using Thyra::VectorBase;
-
 
 namespace Tempus_Test {
 
 template<class Scalar>
 VanDerPolModel<Scalar>::
-VanDerPolModel(RCP<ParameterList> pList_)
+VanDerPolModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
   dim_ = 2;
@@ -57,7 +52,7 @@ VanDerPolModel(RCP<ParameterList> pList_)
 }
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 VanDerPolModel<Scalar>::
 getExactSolution(double t) const
 {
@@ -67,7 +62,7 @@ getExactSolution(double t) const
 }
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 VanDerPolModel<Scalar>::
 getExactSensSolution(int j, double t) const
 {
@@ -77,7 +72,7 @@ getExactSensSolution(int j, double t) const
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 VanDerPolModel<Scalar>::
 get_x_space() const
 {
@@ -86,7 +81,7 @@ get_x_space() const
 
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 VanDerPolModel<Scalar>::
 get_f_space() const
 {
@@ -95,7 +90,7 @@ get_f_space() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 VanDerPolModel<Scalar>::
 getNominalValues() const
 {
@@ -106,10 +101,11 @@ getNominalValues() const
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 VanDerPolModel<Scalar>::
 create_W() const
 {
+  using Teuchos::RCP;
   RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
   RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
   {
@@ -120,7 +116,7 @@ create_W() const
     // optimized mode due to the matrix being rank deficient unless I do this.
     RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
     {
-      RCP<VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
       {
         Thyra::DetachedVectorView<Scalar> vec_view( *vec );
         vec_view[0] = 0.0;
@@ -143,28 +139,28 @@ create_W() const
 
 
 template<class Scalar>
-RCP<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 VanDerPolModel<Scalar>::
 create_W_op() const
 {
-  RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
   return(matrix);
 }
 
 
 template<class Scalar>
-RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 VanDerPolModel<Scalar>::
 get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
 
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 VanDerPolModel<Scalar>::
 createInArgs() const
 {
@@ -177,7 +173,7 @@ createInArgs() const
 
 
 template<class Scalar>
-ModelEvaluatorBase::OutArgs<Scalar>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 VanDerPolModel<Scalar>::
 createOutArgsImpl() const
 {
@@ -190,20 +186,21 @@ template<class Scalar>
 void
 VanDerPolModel<Scalar>::
 evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+  using Teuchos::RCP;
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
-  const RCP<const VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  const RCP<const Thyra::VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
   Scalar epsilon = epsilon_;
   if (acceptModelParams_) {
-    const RCP<const VectorBase<Scalar> > p_in =
+    const RCP<const Thyra::VectorBase<Scalar> > p_in =
       inArgs.get_p(0).assert_not_null();
     Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
     epsilon = p_in_view[0];
@@ -211,7 +208,7 @@ evalModelImpl(
 
   Scalar beta = inArgs.get_beta();
 
-  const RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
   RCP<Thyra::MultiVectorBase<Scalar> > DfDp_out;
   if (acceptModelParams_) {
@@ -250,7 +247,7 @@ evalModelImpl(
   } else {
 
     // Evaluate the implicit ODE f(xdot, x, t) [= 0]
-    RCP<const VectorBase<Scalar> > x_dot_in;
+    RCP<const Thyra::VectorBase<Scalar> > x_dot_in;
     x_dot_in = inArgs.get_x_dot().assert_not_null();
     Scalar alpha = inArgs.get_alpha();
     if (!is_null(f_out)) {
@@ -283,7 +280,7 @@ evalModelImpl(
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 VanDerPolModel<Scalar>::
 get_p_space(int l) const
 {
@@ -295,7 +292,7 @@ get_p_space(int l) const
 }
 
 template<class Scalar>
-RCP<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 VanDerPolModel<Scalar>::
 get_p_names(int l) const
 {
@@ -303,14 +300,14 @@ get_p_names(int l) const
     return Teuchos::null;
   }
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
-  RCP<Teuchos::Array<std::string> > p_strings =
-    rcp(new Teuchos::Array<std::string>());
+  Teuchos::RCP<Teuchos::Array<std::string> > p_strings =
+    Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient:  epsilon");
   return p_strings;
 }
 
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 VanDerPolModel<Scalar>::
 get_g_space(int j) const
 {
@@ -331,13 +328,13 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical InArgs
-    ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
+    Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_t );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x_dot );
-    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_alpha );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
     if (acceptModelParams_) {
       inArgs.set_Np(Np_);
     }
@@ -346,13 +343,13 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical OutArgs
-    ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
+    Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_f );
-    outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
     if (acceptModelParams_) {
       outArgs.set_Np_Ng(Np_,Ng_);
-      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_DfDp,0,
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
                            Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
     }
     outArgs_ = outArgs;
@@ -363,7 +360,7 @@ setupInOutArgs_() const
   if (haveIC_)
   {
     nominalValues_.set_t(t0_ic_);
-    const RCP<VectorBase<Scalar> > x_ic = createMember(x_space_);
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = x0_ic_;
@@ -371,14 +368,14 @@ setupInOutArgs_() const
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
-      const RCP<VectorBase<Scalar> > p_ic = createMember(p_space_);
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = epsilon_;
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const RCP<VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = x1_ic_;
@@ -394,14 +391,15 @@ setupInOutArgs_() const
 template<class Scalar>
 void
 VanDerPolModel<Scalar>::
-setParameterList(RCP<ParameterList> const& paramList)
+setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   using Teuchos::get;
-  RCP<ParameterList> tmpPL = rcp(new ParameterList("VanDerPolModel"));
+  using Teuchos::ParameterList;
+  Teuchos::RCP<ParameterList> tmpPL = Teuchos::rcp(new ParameterList("VanDerPolModel"));
   if (paramList != Teuchos::null) tmpPL = paramList;
   tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
   this->setMyParamList(tmpPL);
-  RCP<ParameterList> pl = this->getMyNonconstParamList();
+  Teuchos::RCP<ParameterList> pl = this->getMyNonconstParamList();
   bool acceptModelParams = get<bool>(*pl,"Accept model parameters");
   bool haveIC = get<bool>(*pl,"Provide nominal values");
   if ( (acceptModelParams != acceptModelParams_) ||
@@ -419,13 +417,13 @@ setParameterList(RCP<ParameterList> const& paramList)
 }
 
 template<class Scalar>
-RCP<const ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 VanDerPolModel<Scalar>::
 getValidParameters() const
 {
-  static RCP<const ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters", false);
     pl->set("Provide nominal values", true);
     Teuchos::setDoubleParameter(

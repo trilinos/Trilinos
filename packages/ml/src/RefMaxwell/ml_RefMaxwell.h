@@ -79,6 +79,16 @@ namespace ML_Epetra
                              const bool ComputePrec = true);
     //@}
 
+    // Parameter-list driven version of main constructor
+    // Paramters of relevance (below) should be RCP's to matrices:
+    // D0    - D0_Clean_Matrix
+    // Ms    - Ms_Matrix
+    // M0inv - M0inv_Matrix
+    // M1    - M1_Matrix
+    RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
+                             const Teuchos::ParameterList& List,
+                             const bool ComputePrec = true);
+    //@}
 
     //! @name Destructor
     //@{

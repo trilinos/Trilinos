@@ -115,6 +115,34 @@ namespace Xpetra {
      * \param npr extimated number of entries per row in each block(!)
      * \param pftype Xpetra profile type
      */
+    BlockedCrsMatrix(const Teuchos::RCP<const BlockedMap>& rangeMaps,
+                     const Teuchos::RCP<const BlockedMap>& domainMaps,
+                     size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      domainmaps_ = Teuchos::rcp(new MapExtractor(domainMaps));
+      rangemaps_  = Teuchos::rcp(new MapExtractor(rangeMaps));
+      bRangeThyraMode_  = rangeMaps->getThyraMode();
+      bDomainThyraMode_ = domainMaps->getThyraMode();
+
+      blocks_.reserve(Rows()*Cols());
+
+      // add CrsMatrix objects in row,column order
+      for (size_t r = 0; r < Rows(); ++r)
+        for (size_t c = 0; c < Cols(); ++c)
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
+
+      // Default view
+      CreateDefaultView();
+    }
+
+    //! Constructor
+    /*!
+     * \param rangeMaps range maps for all blocks
+     * \param domainMaps domain maps for all blocks
+     * \param npr extimated number of entries per row in each block(!)
+     * \param pftype Xpetra profile type
+     *
+     * \note This constructor will be deprecated. Please use the constructor which takes BlockedMap objects instead.
+     */
     BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
                      Teuchos::RCP<const MapExtractor>& domainMaps,
                      size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
@@ -888,6 +916,11 @@ namespace Xpetra {
       return Teuchos::ScalarTraits< typename ScalarTraits<Scalar>::magnitudeType >::squareroot(ret);
     }
 
+
+    //! Returns true if globalConstants have been computed; false otherwise
+    virtual bool haveGlobalConstants() const {return true;}
+
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods
@@ -1248,6 +1281,7 @@ namespace Xpetra {
       return bmat->getCrsMatrix();
     }
 
+    /// helper routine recursively returns the first inner-most non-null matrix block from a (nested) blocked operator
     Teuchos::RCP<Matrix> getInnermostCrsMatrix() {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::getInnermostCrsMatrix");
       size_t row = Rows()+1, col = Cols()+1;

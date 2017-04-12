@@ -55,8 +55,8 @@
 namespace ROL {
 
 template<class Real> 
-class StdInequalityConstraint : public virtual StdEqualityConstraint<Real>, 
-                                public virtual InequalityConstraint<Real>  {
+class StdInequalityConstraint : public StdEqualityConstraint<Real>, 
+                                public InequalityConstraint<Real>  {
 
   typedef StdEqualityConstraint<Real>  StdEC;
   typedef Vector<Real>                 V;  

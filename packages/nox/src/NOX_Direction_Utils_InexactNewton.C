@@ -63,8 +63,14 @@
 // *** Constructor
 // **************************************************************************
 NOX::Direction::Utils::InexactNewton::
+InexactNewton() : paramsPtr(0) {}
+
+// **************************************************************************
+// *** Constructor
+// **************************************************************************
+NOX::Direction::Utils::InexactNewton::
 InexactNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-          Teuchos::ParameterList& directionSublist) :
+              Teuchos::ParameterList& directionSublist) :
   paramsPtr(0)
 {
   reset(gd, directionSublist);

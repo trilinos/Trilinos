@@ -39,16 +39,16 @@ public:
 
     inline unsigned get_image_height() const;
 
-    unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
+    //unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
 
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
-    void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
+    //void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
     void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
     //data dump
-    void print_image();
+    //void print_image();
 
 protected:
     unsigned m_imageWidth;
@@ -116,7 +116,7 @@ class ColoredPNGProcessor : public PNGProcessor
 public:
     ColoredPNGProcessor(std::string fileName);
 
-    virtual ~ColoredPNGProcessor() {}
+    virtual ~ColoredPNGProcessor();
 
     virtual void commit_image_vector_to_pixel_vector();
 
@@ -159,6 +159,8 @@ public:
 
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
+    size_t get_number_other_pixels() { return mOtherPixelCount; }
+
     std::vector<Pixel> get_red_color_coords() { return mRedPixels; }
     std::vector<Pixel> get_green_color_coords() { return mGreenPixels; }
     std::vector<Pixel> get_blue_color_coords() { return mBluePixels; }
@@ -168,6 +170,7 @@ private:
     void store_special_colors_with_coordinates(unsigned row, unsigned col);
     void update_image_value_ignoring_white(unsigned row, unsigned col);
 private:
+    size_t mOtherPixelCount;
     stk::mesh::EntityIdVector mRedElementIds;
 
     std::vector<Pixel> mRedPixels;

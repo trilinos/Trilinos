@@ -1,6 +1,7 @@
 
-IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
-   ${PROJECT_NAME}_ENABLE_MueLu  AND
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND
+   ${PROJECT_NAME}_ENABLE_Ifpack2  AND
+   ${PROJECT_NAME}_ENABLE_MueLu    AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
@@ -26,6 +27,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_04
+    SOURCES example_04.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_ADD_TEST(
     example_01
     ARGS PrintItAll
@@ -47,7 +54,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     NavierStokesDataCopy
     SOURCE_FILES
-      input.xml input_ex03.xml plotresults.m plotexample02.m process.sh
+      input.xml input_ex03.xml input_ex04.xml plotresults.m plotexample02.m process.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

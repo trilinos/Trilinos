@@ -160,6 +160,7 @@ public:
  
     maxiterCG_   = steplist.sublist("Tangential Subproblem Solver").get("Iteration Limit", 20);
     tolCG_       = steplist.sublist("Tangential Subproblem Solver").get("Relative Tolerance", 1e-2);
+    Delta_       = steplist.get("Initial Radius", 1e2);
 
     int outLvl   = steplist.get("Output Level", 0);
 
@@ -171,7 +172,6 @@ public:
     tntmax_  = 2.0;
 
     zeta_    = 0.8;
-    Delta_   = 1e2;
     penalty_ = 1.0;
     eta_     = 1e-8;
 

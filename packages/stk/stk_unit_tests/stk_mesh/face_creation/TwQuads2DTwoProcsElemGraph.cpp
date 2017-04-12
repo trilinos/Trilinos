@@ -50,7 +50,7 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
     stk::mesh::get_selected_entities(fixture.m_meta.locally_owned_part(), fixture.m_bulk_data.buckets(stk::topology::ELEM_RANK), elems);
     for(stk::mesh::Entity element : elems)
     {
-        fixture.m_bulk_data.change_entity_parts(element, {&block_1});
+        fixture.m_bulk_data.change_entity_parts(element, stk::mesh::ConstPartVector{&block_1});
     }
     fixture.m_bulk_data.modification_end();
 
@@ -75,7 +75,6 @@ protected:
         set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), aura_option));
         unsigned numX = 2, numY = 1;
         convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, get_bulk());
-        get_bulk().initialize_face_adjacent_element_graph();
     }
 
     virtual stk::mesh::EntityVector get_nodes_of_face_for_this_proc()

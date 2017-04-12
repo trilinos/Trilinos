@@ -113,7 +113,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
   const unsigned ngx = root_box[0][1] - root_box[0][0] ;
   const unsigned ngy = root_box[1][1] - root_box[1][0] ;
 
-  std::vector<unsigned> local_count ;
+  std::vector<size_t> local_count ;
 
   // Verify that the correct entities are on this process
 

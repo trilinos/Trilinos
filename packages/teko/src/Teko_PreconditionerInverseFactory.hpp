@@ -53,6 +53,9 @@ namespace Teko {
 
 class PreconditionerInverseFactory : public InverseFactory {
 public:
+   using InverseFactory::buildInverse;
+   using InverseFactory::rebuildInverse;
+
    //! \name Constructors
    //@{ 
    

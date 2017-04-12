@@ -280,7 +280,10 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
     { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
 
-    //@}
+    bool haveGlobalConstants() const 
+    { return mtx_->haveGlobalConstants();}
+    
+//@}
 
     //! @name Transformational Methods
     //@{
@@ -735,6 +738,9 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
 
+    bool haveGlobalConstants() const  { return false;}
+    
+
     //@}
 
     //! @name Transformational Methods
@@ -1111,6 +1117,8 @@ namespace Xpetra {
 
     //! Gets the 1D pointer arrays of the graph.
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
+
+    bool haveGlobalConstants() const  { return false;}
 
     //@}
 

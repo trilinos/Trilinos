@@ -45,6 +45,7 @@
 #define ROL_COMPOSITE_EQUALITY_CONSTRAINT_SIMOPT_H
 
 #include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_SimController.hpp"
 
 /** @ingroup func_group
     \class ROL::CompositeEqualityConstraint_SimOpt
@@ -83,25 +84,51 @@ private:
   Teuchos::RCP<Vector<Real> > primZ_;
   Teuchos::RCP<Vector<Real> > dualZ_;
   Teuchos::RCP<Vector<Real> > dualZ1_;
+  // State storage through SimController interface
+  Teuchos::RCP<SimController<Real> > stateStore_;
+  // Update information
+  bool updateFlag_;
+  int updateIter_;
   // Boolean variables
-  bool isSolved_;
+  const bool storage_, isConRedParametrized_;
 
   void solveConRed(const Vector<Real> &z, Real &tol) {
-    if ( !isSolved_ ) {
-      conRed_->solve(*primRed_, *Sz_, z, tol);
-      isSolved_ = true;
+    std::vector<Real> param = EqualityConstraint_SimOpt<Real>::getParameter();
+    // Check if state has been computed.
+    bool isComputed = false;
+    if (storage_) {
+      isComputed = stateStore_->get(*Sz_,param);
+    }
+    // Solve state equation if not done already.
+    if (!isComputed || !storage_) {
+      // Update equality constraint with new Opt variable.
+      conRed_->update_2(z,updateFlag_,updateIter_);
+      // Solve state equation.
+      conRed_->solve(*primRed_,*Sz_,z,tol);
+      // Update equality constraint with new Sim variable.
+      conRed_->update_1(*Sz_,updateFlag_,updateIter_);
+      // Update equality constraint.
+      conRed_->update(*Sz_, z, updateFlag_, updateIter_);
+      // Store state.
+      if (storage_) {
+        stateStore_->set(*Sz_,param);
+      }
     }
   }
 
   void applySens(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &z, Real &tol) { 
+    // Solve reducible constraint
     solveConRed(z, tol);
+    // Solve linearization of reducible constraint in direction v
     conRed_->applyJacobian_2(*primRed_, v, *Sz_, z, tol);
     conRed_->applyInverseJacobian_1(jv, *primRed_, *Sz_, z, tol);
     jv.scale(static_cast<Real>(-1));
   }
 
   void applyAdjointSens(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &z, Real &tol) {
+    // Solve reducible constraint
     solveConRed(z, tol);
+    // Solve adjoint of linearized reducible constraint
     conRed_->applyInverseAdjointJacobian_1(*dualRed_, v, *Sz_, z, tol);
     conRed_->applyAdjointJacobian_2(ajv, *dualRed_, *Sz_, z, tol);
     ajv.scale(static_cast<Real>(-1));
@@ -111,37 +138,50 @@ public:
   CompositeEqualityConstraint_SimOpt(const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &conVal,
                                      const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &conRed,
                                      const Vector<Real> &cVal, const Vector<Real> &cRed,
-                                     const Vector<Real> &u, const Vector<Real> &Sz, const Vector<Real> &z)
-    : EqualityConstraint_SimOpt<Real>(), conVal_(conVal), conRed_(conRed), isSolved_(false) {
+                                     const Vector<Real> &u, const Vector<Real> &Sz, const Vector<Real> &z,
+                                     const bool storage = true, const bool isConRedParametrized = false)
+    : EqualityConstraint_SimOpt<Real>(), conVal_(conVal), conRed_(conRed),
+      updateFlag_(true), updateIter_(0), storage_(storage),
+      isConRedParametrized_(isConRedParametrized) {
     Sz_      = Sz.clone();
     primRed_ = cRed.clone();
     dualRed_ = cRed.dual().clone();
     primZ_   = z.clone();
     dualZ_   = z.dual().clone();
     dualZ1_  = z.dual().clone();
+    stateStore_ = Teuchos::rcp(new SimController<Real>());
   }
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    update_1(u, flag, iter);
+    // Update this
     update_2(z, flag, iter);
-    isSolved_ = false;
-    solveConRed(z, ctol);
-    conRed_->update(*Sz_, z, flag, iter);
-    conVal_->update(u, *Sz_, flag, iter);
+    update_1(u, flag, iter);
   }
 
   void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
     conVal_->update_1(u, flag, iter);
+    // Update constraints with solution to reducible constraint
+    conVal_->update(u, *Sz_, flag, iter);
   }
 
   void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    conRed_->update_2(z, flag, iter);
+    //conRed_->update_2(z, flag, iter);
+    // Solve reducible constraint
+    updateFlag_ = flag;
+    updateIter_ = iter;
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
+    stateStore_->equalityConstraintUpdate(flag);
+    solveConRed(z, ctol);
   }
 
   void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
     solveConRed(z, tol);
     conVal_->value(c, u, *Sz_, tol);
+  }
+
+  void solve(Vector<Real> &c, Vector<Real> &u, const Vector<Real> &z, Real &tol) {
+    solveConRed(z, tol);
+    conVal_->solve(c, u, *Sz_, tol);
   }
 
   void applyJacobian_1(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &u,
@@ -227,10 +267,11 @@ public:
 // Definitions for parametrized (stochastic) equality constraints
 public:
   void setParameter(const std::vector<Real> &param) {
-    EqualityConstraint_SimOpt<Real>::setParameter(param);
     conVal_->setParameter(param);
-    conRed_->setParameter(param);
-    isSolved_ = false; // Resolve constraint every time
+    if (isConRedParametrized_) {
+      conRed_->setParameter(param);
+      EqualityConstraint_SimOpt<Real>::setParameter(param);
+    }
   }
 }; // class CompositeEqualityConstraint_SimOpt
 

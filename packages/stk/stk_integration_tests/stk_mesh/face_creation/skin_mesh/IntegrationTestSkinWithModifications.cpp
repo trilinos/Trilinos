@@ -28,7 +28,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
-#include "../FaceCreationTestUtils.hpp"
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
 namespace
 {
@@ -44,8 +44,6 @@ protected:
         boundaryPart = &get_meta().declare_part("boundary", get_meta().side_rank());
 
         thingsToSkin = get_meta().universal_part();
-
-        get_bulk().initialize_face_adjacent_element_graph();
     }
     ~SkinWithModification()
     {
@@ -300,7 +298,7 @@ protected:
         stk::mesh::Entity entity = bulkData.get_entity(stk::topology::ELEM_RANK, id);
         if(bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
         {
-            bulkData.change_entity_parts(entity, stk::mesh::PartVector{&part});
+            bulkData.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
         }
     }
     stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaData, int id, stk::topology topology)
@@ -356,7 +354,7 @@ TEST_F(SkinAAWithModification, TestPartialCoincident2d)
 {
     if(stk::parallel_machine_size(get_comm()) <= 2)
     {
-        initialize_mesh();
+        reset_mesh();
         allocate_meta(2);
         stk::mesh::Part& block1 = create_part_with_id(get_meta(), 1, stk::topology::QUAD_4_2D);
         stk::mesh::Part& block2 = create_part_with_id(get_meta(), 2, stk::topology::QUAD_4_2D);

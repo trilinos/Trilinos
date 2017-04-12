@@ -10,6 +10,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_IntegratorBasic.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -17,6 +19,8 @@
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include <vector>
+
+namespace Tempus_Test {
 
 using Teuchos::RCP;
 using Teuchos::ParameterList;
@@ -27,8 +31,52 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-namespace Tempus_Test {
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ForwardEuler_SinCos.xml");
+
+  //std::ofstream ftmp("PL.txt");
+  //pList->print(ftmp);
+  //ftmp.close();
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+
+  RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
+
+  // Test constructor IntegratorBasic(tempusPL, model)
+  {
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(tempusPL, model);
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<ParameterList> defaultPL =
+      integrator->getStepper()->getDefaultParameters();
+    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  }
+
+  // Test constructor IntegratorBasic(model, stepperType)
+  {
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(model, "Forward Euler");
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<ParameterList> defaultPL =
+      integrator->getStepper()->getDefaultParameters();
+
+    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+  }
+}
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 {
   std::vector<double> StepSize;
@@ -62,6 +110,14 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
       Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
 
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->setInitialState.
+    RCP<Thyra::VectorBase<double> > x0 =
+      model->getNominalValues().get_x()->clone_v();
+    integrator->setInitialState(0.0, x0);
+
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
@@ -89,10 +145,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
         RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
-             << get_ele(*(x_plot), 0) << "   "
-             << get_ele(*(x_plot), 1) << "   "
-             << get_ele(*(x_exact_plot), 0) << "   "
-             << get_ele(*(x_exact_plot), 1) << std::endl;
+             << Thyra::get_ele(*(x_plot), 0) << "   "
+             << Thyra::get_ele(*(x_plot), 1) << "   "
+             << Thyra::get_ele(*(x_exact_plot), 0) << "   "
+             << Thyra::get_ele(*(x_exact_plot), 1) << std::endl;
       }
       ftmp.close();
     }
@@ -233,5 +289,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
+
 
 } // namespace Tempus_Test

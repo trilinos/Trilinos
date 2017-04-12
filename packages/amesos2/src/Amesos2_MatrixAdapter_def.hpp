@@ -178,13 +178,14 @@ namespace Amesos2 {
     return static_cast<const adapter_t*>(this)->getLocalNNZ_impl();
   }
 
+  // NDE: This is broken for Epetra_CrsMatrix
   template < class Matrix >
   std::string
   MatrixAdapter<Matrix>::description() const
   {
     std::ostringstream oss;
     oss << "Amesos2::MatrixAdapter wrapping: ";
-    oss << mat_->description();
+    oss << mat_->description(); // NDE: This is not defined in Epetra_CrsMatrix, only in Tpetra::CrsMatrix
     return oss.str();
   }
   
@@ -194,6 +195,26 @@ namespace Amesos2 {
 				  const Teuchos::EVerbosityLevel verbLevel) const
   {}
   
+  template < class Matrix >
+  typename MatrixAdapter<Matrix>::spmtx_ptr_t
+  MatrixAdapter<Matrix>::returnRowPtr() const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseRowPtr();
+  }
+
+  template < class Matrix >
+  typename MatrixAdapter<Matrix>::spmtx_idx_t
+  MatrixAdapter<Matrix>::returnColInd() const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseColInd();
+  }
+
+  template < class Matrix >
+  typename MatrixAdapter<Matrix>::spmtx_vals_t
+  MatrixAdapter<Matrix>::returnValues() const
+  {
+    return static_cast<const adapter_t*>(this)->getSparseValues();
+  }
 
 
   /******************************
@@ -280,7 +301,7 @@ namespace Amesos2 {
       rowptr[rowptr_ind++] = rowInd;
       size_t rowNNZ = get_mat->getGlobalRowNNZ(*row_it);
       size_t nnzRet = OrdinalTraits<size_t>::zero();
-      ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ);
+      ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ); 
       ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
       
       get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
@@ -293,7 +314,7 @@ namespace Amesos2 {
       // individually, that we instead do a double-transpose at the
       // end, which would also lead to the indices being sorted.
       if( ordering == SORTED_INDICES ){
-	Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
+        Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
       }
       
       TEUCHOS_TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
@@ -429,7 +450,7 @@ namespace Amesos2 {
       // individually, that we instead do a double-transpose at the
       // end, which would also lead to the indices being sorted.
       if( ordering == SORTED_INDICES ){
-	Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
+        Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
       }
       
       TEUCHOS_TEST_FOR_EXCEPTION( colNNZ != nnzRet,

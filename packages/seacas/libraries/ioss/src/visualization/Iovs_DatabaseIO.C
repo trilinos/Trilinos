@@ -9,8 +9,7 @@
 #include <Ioss_CodeTypes.h>
 #include <visualization/Iovs_DatabaseIO.h>
 #include <tokenize.h>
-#include <ParaViewCatalystSierraAdaptor.h>
-#include <ParaViewCatalystSierraParser.h>
+#include <ParaViewCatalystIossAdapter.h>
 
 #include <cstring>
 #include <cctype>
@@ -26,24 +25,19 @@
 #include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
 
-#include <stk_util/diag/UserPlugin.hpp>
 #include <sys/stat.h>
 #include <libgen.h>
 
-#ifdef SIERRA_DLOPEN_ENABLED
+#ifdef IOSS_DLOPEN_ENABLED
 #include <dlfcn.h>
 #endif
 
 #include <assert.h>
 
 #if defined(__APPLE__)
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.dylib";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.dylib";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.dylib";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystIossAdapter.dylib";
 #else
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.so";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.so";
- const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.so";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystIossAdapter.so";
 #endif
 
 const char* CATALYST_PLUGIN_PYTHON_MODULE = "PhactoriDriver.py";
@@ -74,6 +68,7 @@ namespace { // Internal helper functions
 } // End anonymous namespace
 
 namespace Iovs {
+  void *globalCatalystIossDlHandle = NULL;
   int DatabaseIO::useCount = 0;
   std::string DatabaseIO::paraview_script_filename = "";
   int field_warning(const Ioss::GroupingEntity *ge,
@@ -117,7 +112,6 @@ namespace Iovs {
             output_file.open(dbfname.c_str(), std::ios::out | std::ios::trunc );
 
             if(!output_file) {
-                std::ostringstream errmsg;
                 errmsg << "Unable to create output file: " << dbfname << ".\n";
                 IOSS_ERROR(errmsg);
                 return;
@@ -154,12 +148,6 @@ namespace Iovs {
     if(props.exists("CATALYST_APPLY_DISPLACEMENTS"))
       {
       this->applyDisplacements = props.get("CATALYST_APPLY_DISPLACEMENTS").get_int();
-      }
-
-    this->useCppPipe = 0;
-    if(props.exists("CATALYST_USE_CPP_PIPELINE"))
-      {
-      this->useCppPipe = props.get("CATALYST_USE_CPP_PIPELINE").get_int();
       }
 
     this->createNodeSets = 0;
@@ -208,7 +196,14 @@ namespace Iovs {
         if(useCount <= 0)
           this->pvcsa->CleanupCatalyst();
         delete this->pvcsa;
+        this->pvcsa = 0;
         }
+
+#ifdef IOSS_DLOPEN_ENABLED
+      if(globalCatalystIossDlHandle && useCount <= 0) 
+        dlclose(globalCatalystIossDlHandle);
+#endif
+        
     } catch (...) {
     }
   }
@@ -217,15 +212,6 @@ namespace Iovs {
   {
     nodeMap.release_memory();
     elemMap.release_memory();
-  }
-
-  bool DatabaseIO::plugin_library_exists(const std::string& plugin_name) {
-    if(plugin_name == "ParaViewCatalystSierraParser")
-      return(ParaViewCatalystSierraParserBaseFactory::exists(plugin_name));
-    else if(plugin_name == "ParaViewCatalystSierraAdaptor")
-      return(ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name));
-    else
-      return(false);
   }
 
   std::string DatabaseIO::create_output_file_path(const std::string& input_deck_name,
@@ -239,101 +225,60 @@ namespace Iovs {
       return input_deck_name;
   }
   
-  void DatabaseIO::load_plugin_library(const std::string& plugin_name,
-                                       const std::string& plugin_library_name) {
+  ParaViewCatalystIossAdapterBase* DatabaseIO::load_plugin_library(const std::string& plugin_name,
+                                                                     const std::string& plugin_library_name) {
+
       std::string plugin_library_path;
       std::string plugin_python_module_path;
 
-      if(!DatabaseIO::plugin_library_exists(plugin_name)) {
-          if(getenv("CATALYST_PLUGIN")) {
-              plugin_library_path = getenv("CATALYST_PLUGIN");
-          }
-          else {
-              build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path,
-                                          plugin_library_name);
-          }
-          sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
-          if(!DatabaseIO::plugin_library_exists(plugin_name)) {
-              std::ostringstream errmsg;
-              errmsg << "Unable to load catalyst plug-in dynamic library.\n"
-                     << "Path: " << plugin_library_path << "\n";
-              IOSS_ERROR(errmsg);
-              return;
-          }
-          //it is necessary to do this call because the dlopen() in
-          //registerDL does not have the RTLD_GLOBAL flag and it is necessary
-          //for glew in paraview 5
-          //
-#ifdef SIERRA_DLOPEN_ENABLED
-          void *dl = dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-          if (!dl) {
-            throw std::runtime_error(dlerror());
-          }
-#endif
-      } else {
-          //library already exists, presumably because it was loaded
-          //from the .ini file
-          //we must make the extra dlopen call to make it have
-          //RTLD_GLOBAL, but we don't know the name.  To reenable this
-          //capability we must store the full path to the dynamic library
-          //and use it here
-          //void *dl = dlopen("~/libParaViewCatalystSierraAdaptor.so",
-          //        RTLD_NOW | RTLD_GLOBAL);
-          //if (!dl){
-          //  std::ostringstream errmsg;
-          //  errmsg << "registered-in-file paraview catalyst plugin\n"
-          //         << "missing with expected name:\n"
-          //         << "~/libParaViewCatalystSierraAdaptor.so\n";
-          //  IOSS_ERROR(errmsg);
-          //  throw std::runtime_error(dlerror());
-          //}
+      build_catalyst_plugin_paths(plugin_library_path,
+                                  plugin_python_module_path,
+                                  plugin_library_name);
+
+      if(getenv("CATALYST_PLUGIN"))
+          plugin_library_path = getenv("CATALYST_PLUGIN");
+
+      if(DatabaseIO::paraview_script_filename.empty())
+          DatabaseIO::paraview_script_filename = plugin_python_module_path;
+
+      if ( !file_exists(DatabaseIO::paraview_script_filename) ) {
           std::ostringstream errmsg;
-          errmsg << "currently cannot load sierra catalyst plugin\n"
-                 << "via Load User Plugin File command\n"
-                 << "instead, set CATALYST_PLUGIN environment variable\n";
+          errmsg << "Catalyst Python module path does not exist.\n"
+                 << "Python module path: " << DatabaseIO::paraview_script_filename << "\n";
           IOSS_ERROR(errmsg);
-#if SIERRA_DLOPEN_ENABLED
-          throw std::runtime_error(dlerror());
-#endif
       }
 
-      if(DatabaseIO::paraview_script_filename.empty()) {
-          if(plugin_python_module_path.empty()) {
-              build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path,
-                                          plugin_library_name);
-          }
-          if ( !file_exists(plugin_python_module_path) ) {
-              std::ostringstream errmsg;
-              errmsg << "Catalyst Python module path does not exist.\n"
-                     << "Python module path: " << plugin_python_module_path << "\n";
-              IOSS_ERROR(errmsg);
-              return;
-          }
-          DatabaseIO::paraview_script_filename = plugin_python_module_path;
+#ifdef IOSS_DLOPEN_ENABLED
+      globalCatalystIossDlHandle =
+          dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+      if (!globalCatalystIossDlHandle)
+          throw std::runtime_error(dlerror());
+
+      typedef ParaViewCatalystIossAdapterBase * (*PvCatSrrAdapterMakerFuncType)();
+
+      PvCatSrrAdapterMakerFuncType mkr =
+        reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
+          dlsym(globalCatalystIossDlHandle,
+            "ParaViewCatalystIossAdapterCreateInstance"));
+      if (!mkr) {
+        throw std::runtime_error("dlsym call failed to load function "
+          "'ParaViewCatalystIossAdapterCreateInstance'");
       }
+
+      return (*mkr)();
+#else
+      return NULL;
+#endif
   }
 
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;
-
     Ioss::Region *region = this->get_region();
     if(region->model_defined() && !this->pvcsa)
       {
-      if(this->useCppPipe)
-        {
-        this->load_plugin_library("ParaViewCatalystSierraAdaptor",
-                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP);
-        }
-      else
-        {
-        this->load_plugin_library("ParaViewCatalystSierraAdaptor",
-                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY);
-        }
-
-      this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
+      this->pvcsa = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
+                                                    CATALYST_PLUGIN_DYNAMIC_LIBRARY);
 
       std::string separator(1, this->get_field_separator());
 
@@ -364,7 +309,7 @@ namespace Iovs {
                                        catalyst_sierra_data);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
-      for(int i = 0;i<ebc.size();i++)
+      for(unsigned int i = 0;i<ebc.size();i++)
         {
         element_block_id_list.push_back(get_id(ebc[i], EX_ELEM_BLOCK, &ids_));
         }
@@ -436,7 +381,7 @@ namespace Iovs {
          error_messages.size() > 0 &&
          error_codes.size() == error_messages.size())
         {
-        for(int i = 0; i < error_codes.size(); i++)
+        for(unsigned int i = 0; i < error_codes.size(); i++)
           {
           if(error_codes[i] > 0)
             {
@@ -466,20 +411,19 @@ namespace Iovs {
   int DatabaseIO::parseCatalystFile(const std::string& filepath,
                                     std::string& json_result)
   {
-   DatabaseIO::load_plugin_library("ParaViewCatalystSierraParser",
-                                   CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER);
-   ParaViewCatalystSierraParserBase* pvcsp = 
-   ParaViewCatalystSierraParserBaseFactory::create("ParaViewCatalystSierraParser")();
+  ParaViewCatalystIossAdapterBase* pvcsp = NULL;
 
-   CatalystParserInterface::parse_info pinfo;
+  pvcsp = DatabaseIO::load_plugin_library("ParaViewCatalystIossAdapter",
+                                          CATALYST_PLUGIN_DYNAMIC_LIBRARY);
 
-   int ret = pvcsp->parseFile(filepath,
-                              pinfo);
- 
-   json_result = pinfo.json_result;
+  CatalystParserInterface::parse_info pinfo;
 
-   delete pvcsp;
-   return ret;
+  int ret = pvcsp->parseFile(filepath,
+                               pinfo);
+  json_result = pinfo.json_result;
+
+  delete pvcsp;
+  return ret;
   }
 
   void DatabaseIO::create_global_node_and_element_ids() const
@@ -532,7 +476,6 @@ namespace Iovs {
         int64_t *ivar64 = static_cast<int64_t*>(data);
 
         int comp_count = var_type->component_count();
-        int var_index=0;
 
         int re_im = 1;
         if (field.get_type() == Ioss::Field::COMPLEX)
@@ -649,7 +592,7 @@ namespace Iovs {
                 this->nodeMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
                     temp, begin_offset, num_to_get, stride, 0);
 
-              for(int j=0; j < num_to_get; j++)
+              for(unsigned int j=0; j < num_to_get; j++)
                 interleaved_data[j*comp_count + i] = temp[j];
               }
 
@@ -770,7 +713,7 @@ namespace Iovs {
               else if (ioss_type == Ioss::Field::INT64)
                 this->elemMap.map_field_to_db_scalar_order(static_cast<int64_t*>(data),
                     temp, begin_offset, num_to_get, stride, eb_offset);
-              for(int j=0; j < num_to_get; j++)
+              for(unsigned int j=0; j < num_to_get; j++)
                  interleaved_data[j*comp_count + i] = temp[j];
             }
             if(this->pvcsa)
@@ -793,14 +736,14 @@ namespace Iovs {
 
     // Node Blocks --
     {
-      //std::cout << "DatabaseIO::write_meta_data node blocks\n";
+      //std::cerr << "DatabaseIO::write_meta_data node blocks\n";
       Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
       spatialDimension = node_blocks[0]->
                            get_property("component_degree").get_int();
       nodeCount =        node_blocks[0]->
                            get_property("entity_count").get_int();
-      //std::cout << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
+      //std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
     }
     
     // Nodesets ...
@@ -833,20 +776,20 @@ namespace Iovs {
 
       elementBlockCount = 0;
       elementCount = 0;
-      //std::cout << "DatabaseIO::write_meta_data element num blocks:" << element_blocks.size() << "\n";
+      //std::cerr << "DatabaseIO::write_meta_data element num blocks:" << element_blocks.size() << "\n";
       for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
         elementBlockCount ++;
         elementCount += (*I)->get_property("entity_count").get_int();
-        //std::cout << "DatabaseIO::write_meta_data element num in block " << elementBlockCount << ": " << (*I)->get_property("entity_count").get_int() << "\n";
+        //std::cerr << "DatabaseIO::write_meta_data element num in block " << elementBlockCount << ": " << (*I)->get_property("entity_count").get_int() << "\n";
       }
-      //std::cout << "DatabaseIO::write_meta_data elementCount:" << elementCount << "\n";
+      //std::cerr << "DatabaseIO::write_meta_data elementCount:" << elementCount << "\n";
     }
-    //std::cout << "DatabaseIO::write_meta_data returning\n";
+    //std::cerr << "DatabaseIO::write_meta_data returning\n";
   }
 
   int64_t DatabaseIO::handle_node_ids(void* ids, int64_t num_to_get)
   {
-    //std::cout << "DatabaseIO::handle_node_ids executing\n";
+    //std::cerr << "DatabaseIO::handle_node_ids executing\n";
     /*!
      * There are two modes we need to support in this routine:
      * 1. Initial definition of node map (local->global) and
@@ -888,13 +831,13 @@ namespace Iovs {
 
     if (dbState == Ioss::STATE_MODEL) {
       if (nodeMap.map.empty()) {
-        //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
+        //std::cerr << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
         nodeMap.map.resize(nodeCount+1);
 	nodeMap.map[0] = -1;
       }
 
       if (nodeMap.map[0] == -1) {
-        //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
+        //std::cerr << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
 	if (int_byte_size_api() == 4) {
 	  nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
 	} else {
@@ -921,7 +864,7 @@ namespace Iovs {
                   Ioss::Map &entity_map,
                   void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
       {
-        //std::cout << "DatabaseIO::handle_block_ids executing\n";
+        //std::cerr << "DatabaseIO::handle_block_ids executing\n";
     /*!
      * NOTE: "element" is generic for "element", "face", or "edge"
      *
@@ -998,19 +941,19 @@ namespace Iovs {
     // stored in the database...  This is 0-based and used for
     // remapping output and input TRANSIENT fields.
     entity_map.build_reorder_map(eb_offset, num_to_get);
-        //std::cout << "DatabaseIO::handle_block_ids returning\n";
+        //std::cerr << "DatabaseIO::handle_block_ids returning\n";
     return num_to_get;
       }
 
   int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get)
   {
-      //std::cout << "DatabaseIO::handle_element_ids executing num_to_get: " << num_to_get << "\n";
+      //std::cerr << "DatabaseIO::handle_element_ids executing num_to_get: " << num_to_get << "\n";
       if (elemMap.map.empty()) {
-        //std::cout << "DatabaseIO::handle_element_ids elementMap was empty; allocating and marking as sequential\nelmenetCount: " << elementCount << "\n";
+        //std::cerr << "DatabaseIO::handle_element_ids elementMap was empty; allocating and marking as sequential\nelmenetCount: " << elementCount << "\n";
         elemMap.map.resize(elementCount+1);
         elemMap.map[0] = -1;
       }
-      //std::cout << "DatabaseIO::handle_element_ids elementMap size: " << elementMap.size() << "\n";
+      //std::cerr << "DatabaseIO::handle_element_ids elementMap size: " << elementMap.size() << "\n";
       return handle_block_ids(eb, EX_ELEM_MAP, dbState, elemMap,
                               ids, int_byte_size_api(), num_to_get, /*get_file_pointer(),*/ myProcessor);
   }
@@ -1018,11 +961,11 @@ namespace Iovs {
 
   const Ioss::Map& DatabaseIO::get_node_map() const
   {
-    //std::cout << "in new nathan Iovs DatabaseIO::get_node_reorder_map\n";
+    //std::cerr << "in new nathan Iovs DatabaseIO::get_node_reorder_map\n";
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
     if (nodeMap.map.empty()) {
-      //std::cout << "DatabaseIO::get_node_map  nodeMap was empty, resizing and tagging sequential\n";
+      //std::cerr << "DatabaseIO::get_node_map  nodeMap was empty, resizing and tagging sequential\n";
       nodeMap.map.resize(nodeCount+1);
 
       // Output database; nodeMap not set yet... Build a default map.
@@ -1038,7 +981,7 @@ namespace Iovs {
   // Not used...
   const Ioss::Map& DatabaseIO::get_element_map() const
   {
-    //std::cout << "in new nathan Iovs DatabaseIO::get_element_map\n";
+    //std::cercercerrn new nathan Iovs DatabaseIO::get_element_map\n";
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
     if (elemMap.map.empty()) {
@@ -1067,7 +1010,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
-    int64_t cns_save_num_to_get;
+    int64_t cns_save_num_to_get = 0;
 
     if( num_to_get > 0 &&
        (field.get_name() == "ids" ||
@@ -1128,7 +1071,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
-    int64_t css_save_num_to_get;
+    int64_t css_save_num_to_get = 0;
 
     if ( (field.get_name() == "element_side")||
          (field.get_name() == "element_side_raw") )
@@ -1145,7 +1088,7 @@ namespace Iovs {
         Ioss::IntVector side(num_to_get);
         int *el_side = (int *)data;
 
-        for (size_t i=0; i < num_to_get; i++)
+        for (unsigned int i=0; i < num_to_get; i++)
           {
           element[i] = el_side[index++];
           side[i]    = el_side[index++]+side_offset;
@@ -1210,7 +1153,7 @@ namespace Iovs {
         Ioss::Int64Vector side(num_to_get);
         int64_t *el_side = (int64_t *)data;
 
-        for (size_t i=0; i < num_to_get; i++)
+        for (unsigned int i=0; i < num_to_get; i++)
           {
           element[i] = el_side[index++];
           side[i]    = el_side[index++]+side_offset;
@@ -1272,7 +1215,7 @@ namespace Iovs {
     return num_to_get;
   }
 
-};
+}
 
 namespace {
 
@@ -1387,6 +1330,27 @@ namespace {
   void build_catalyst_plugin_paths(std::string& plugin_library_path,
                                    std::string& plugin_python_path,
                                    const std::string& plugin_library_name) {
+ 
+      if(getenv("CATALYST_ADAPTER_INSTALL_DIR")) {
+          std::string catalyst_ins_dir = getenv("CATALYST_ADAPTER_INSTALL_DIR");
+
+          if ( !file_exists(catalyst_ins_dir) ) {
+              std::ostringstream errmsg;
+              errmsg << "CATALYST_ADAPTER_INSTALL_DIR directory does not exist.\n"
+                     << "Directory path: " << catalyst_ins_dir << "\n"
+                     << "Unable to find ParaView catalyst dynamic library.\n";
+              IOSS_ERROR(errmsg);
+              return;
+          }
+
+          plugin_library_path = catalyst_ins_dir + "/lib/" +
+                                plugin_library_name;
+
+          plugin_python_path = catalyst_ins_dir + "/python/"  +
+                               CATALYST_PLUGIN_PYTHON_MODULE;
+          return;
+      }
+
       std::string sierra_ins_dir;
       if(getenv("SIERRA_INSTALL_DIR")) {
           sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
@@ -1445,8 +1409,6 @@ namespace {
             strcmp(dname,".") != 0 &&
             strcmp(bname,"sierra") != 0) 
         {
-        //char* bname = basename(bname);
-        //char* dname = dirname(dname);
         bname = basename(dname);
         dname = dirname(dname);
         }

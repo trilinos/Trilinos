@@ -78,7 +78,6 @@ Basker<Matrix,Vector>::Basker(
 
   // Override some default options
   // TODO: use data_ here to init
-
    
   
 #ifdef SHYLUBASKER
@@ -94,10 +93,9 @@ Basker<Matrix,Vector>::Basker(
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
 		     std::runtime_error,
-	   "Do not have supported Kokkos node type for Basker");
+	   "Amesos2_Basker Exception: Do not have supported Kokkos node type for Basker");
 #endif
-  //std::cout << "MAKE BASKER" << std::endl;
-  basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>(); 
+  basker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   basker->Options.no_pivot      = BASKER_TRUE;
   basker->Options.symmetric     = BASKER_FALSE;
   basker->Options.realloc       = BASKER_FALSE;
@@ -121,7 +119,6 @@ Basker<Matrix,Vector>::~Basker( )
 {  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-  //std::cout << "DELETE BASKER" << std::endl;
   delete basker;
 #endif
 #endif
@@ -149,29 +146,63 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
   
 #ifdef SHYLUBASKER
+
   if(this->root_)
     {     
+      int info = 0;
+
       //std::cout << "setting number of threads " 
       //	<< num_threads << std::endl;
       basker->SetThreads(num_threads); 
       //std::cout << "Set Threads Done" << std::endl;
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+
+    #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before symbolic factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-#endif
-      int info;
-      info =basker->Symbolic(this->globalNumRows_, 
-                            this->globalNumCols_, 
-                            this->globalNumNonZeros_, 
-                            colptr_.getRawPtr(), 
-                            rowind_.getRawPtr(), 
-                            nzvals_.getRawPtr());
+    #endif
+
+      // NDE: Special case 
+      // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
+      // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
+      //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
+
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+      if ( case_check ) {
+
+        // this needs to be checked during loadA_impl...
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
+        auto sp_colind = this->matrixA_->returnColInd();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+        auto sp_values = this->matrixA_->returnValues();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
+
+        // In this case, colptr_, rowind_, nzvals_ are invalid
+        info = basker->Symbolic(this->globalNumRows_,
+                                this->globalNumCols_,
+                                this->globalNumNonZeros_,
+                                sp_rowptr,
+                                sp_colind,
+                                sp_values,
+                                true);
+      }
+      else {   //follow original code path if conditions not met
+        // In this case, loadA_impl updates colptr_, rowind_, nzvals_
+        info = basker->Symbolic(this->globalNumRows_,
+                                this->globalNumCols_,
+                                this->globalNumNonZeros_,
+                                colptr_.getRawPtr(),
+                                rowind_.getRawPtr(),
+                                nzvals_.getRawPtr());
+      }
       //std::cout << "Symbolic Factorization Done" << std::endl; 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
-				 std::runtime_error,
-				 "Error in Basker Symbolic");
+        std::runtime_error, "Error in Basker Symbolic");
  
     }
 #endif
@@ -190,37 +221,77 @@ Basker<Matrix,Vector>::numericFactorization_impl()
   int info = 0;
   if ( this->root_ ){
     { // Do factorization
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
-#endif
+  #endif
 
- #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+  #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before numeric factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-     std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-    #endif
+      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+  #endif
 
      
 #ifdef SHYLUBASKER
-      info = basker->Factor(this->globalNumRows_,
-                           this->globalNumCols_, 
-                           this->globalNumNonZeros_, 
-                           colptr_.getRawPtr(), 
-                           rowind_.getRawPtr(), 
-                           nzvals_.getRawPtr());
+      // NDE: Special case 
+      // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
+      // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
+      //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
+
+      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+      if ( case_check ) {
+
+        auto sp_rowptr = this->matrixA_->returnRowPtr();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
+        auto sp_colind = this->matrixA_->returnColInd();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+        auto sp_values = this->matrixA_->returnValues();
+          TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+            std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
+
+        // In this case, colptr_, rowind_, nzvals_ are invalid
+        info = basker->Factor( this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr,
+            sp_colind,
+            sp_values);
+      }
+      else {
+      // In this case, loadA_impl updates colptr_, rowind_, nzvals_
+        info = basker->Factor(this->globalNumRows_,
+                              this->globalNumCols_,
+                              this->globalNumNonZeros_,
+                              colptr_.getRawPtr(),
+                              rowind_.getRawPtr(),
+                              nzvals_.getRawPtr());
       //We need to handle the realloc options
+      }
 
       //basker->DEBUG_PRINT();
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-				 std::runtime_error,
-				 "Error Basker Factor");
+        std::runtime_error, "Error Basker Factor");
+
+      local_ordinal_type blnnz = local_ordinal_type(0); 
+      local_ordinal_type bunnz = local_ordinal_type(0); 
+      basker->GetLnnz(blnnz); // Add exception handling?
+      basker->GetUnnz(bunnz);
+
+      // This is set after numeric factorization complete as pivoting can be used;
+      // In this case, a discrepancy between symbolic and numeric nnz total can occur.
+      this->setNnzLU( as<size_t>( blnnz + bunnz ) );
 
 #else
-     
-      info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
-     #endif
+      info = basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
+
+      // This is set after numeric factorization complete as pivoting can be used;
+      // In this case, a discrepancy between symbolic and numeric nnz total can occur.
+      this->setNnzLU( as<size_t>(basker.get_NnzLU() ) ) ;
+#endif
 
     }
 
@@ -457,11 +528,47 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE) return (false);
 
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
+  #endif
 
+#ifdef SHYLUBASKER
+  // NDE: Can clean up duplicated code with the #ifdef guards
 
+  bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) ) ;
+
+  if ( case_check ) {
+  // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
+  // In this case, colptr_, rowind_, nzvals_ are invalid
+  }
+  else {
+
+    // Only the root image needs storage allocated
+    if( this->root_ ){
+      nzvals_.resize(this->globalNumNonZeros_);
+      rowind_.resize(this->globalNumNonZeros_);
+      colptr_.resize(this->globalNumCols_ + 1);
+    }
+
+    local_ordinal_type nnz_ret = 0;
+    {
+    #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+    #endif
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, ROOTED, ARBITRARY); // copies from matrixA_ to Basker ConcreteSolver cp, ri, nzval members
+    }
+
+    if( this->root_ ){
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+          std::runtime_error,
+          "Did not get the expected number of non-zero vals");
+    }
+
+  } //end alternative path 
+#else // Not ShyLUBasker
 
   // Only the root image needs storage allocated
   if( this->root_ ){
@@ -472,23 +579,21 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   local_ordinal_type nnz_ret = 0;
   {
-#ifdef HAVE_AMESOS2_TIMERS
+  #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-#endif
-
+  #endif
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
     ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
              nnz_ret, ROOTED, ARBITRARY);
   }
 
-
   if( this->root_ ){
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
   }
-
+#endif //SHYLUBASKER
   return true;
 }
 

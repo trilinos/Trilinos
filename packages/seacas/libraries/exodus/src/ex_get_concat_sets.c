@@ -76,6 +76,8 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   char       errmsg[MAX_ERR_LENGTH];
   ex_inquiry ex_inq_val;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* setup pointers based on set_type

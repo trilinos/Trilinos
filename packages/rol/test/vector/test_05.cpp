@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_01.cpp
-    \brief Test Tpetra_MultiVector interface.
+/*! \file  test_05.cpp
+    \brief Test ScaledStdVector interface.
 */
 
 
@@ -142,8 +142,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Standard tests.
-    // Create Tpetra::MultiVectors (single vectors) 
-    // Create Tpetra::MultiVectors (single vectors) 
     Teuchos::RCP<std::vector<ElementT> > x1_rcp
       = Teuchos::rcp( new std::vector<ElementT>(dim) );
     Teuchos::RCP<std::vector<ElementT> > y1_rcp

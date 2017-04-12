@@ -361,7 +361,6 @@ public:
     for (size_t i = 0; i < n; i++) {
       if (count[i] != 1){
         return -2;
-        break;
       }
     }
 

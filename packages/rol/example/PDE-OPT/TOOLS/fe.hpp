@@ -321,6 +321,15 @@ public:
     divPhysical_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
     valPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
     gradPhysicalWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_, d_));
+    gradPhysicalXWeighted_   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradPhysicalYWeighted_   = Teuchos::null;
+    gradPhysicalZWeighted_   = Teuchos::null;
+    if (d_ > 1) {
+      gradPhysicalYWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    }
+    if (d_ > 2) {
+      gradPhysicalZWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    }
     divPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
     gradgradMats_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
     valvalMats_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
@@ -386,11 +395,14 @@ public:
       for (int f=0; f<f_; ++f) {
         for (int p=0; p<p_; ++p) {
           (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
+          (*gradPhysicalXWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,0);
           if (d_ > 1) {
-            (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+          (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+          (*gradPhysicalYWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,1);
           }
           if (d_ > 2) {
-            (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+          (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+          (*gradPhysicalZWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,2);
           }
         }
       }

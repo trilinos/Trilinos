@@ -44,8 +44,9 @@ public:
 
   /// Constructor
   StepperExplicitRK(
-    Teuchos::RCP<Teuchos::ParameterList>                      pList,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
@@ -56,7 +57,15 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return eODEModel_;}
 
-    void setTableau(std::string stepperType = "");
+    virtual void setSolver(std::string solverName);
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(
+        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
+    void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList,
+      std::string stepperType = "");
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -78,6 +87,7 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -97,7 +107,7 @@ private:
 protected:
 
   std::string                                        description_;
-  Teuchos::RCP<Teuchos::ParameterList>               pList_;
+  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
 

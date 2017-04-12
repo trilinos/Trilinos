@@ -76,6 +76,8 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   const char *routine = "ex_put_name";
   const char *vobj;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {

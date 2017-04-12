@@ -119,10 +119,10 @@ ProductRegistry::addTPL(
   else {
     std::string &current_version = (*it).second[VERSION];
     std::string &current_qualifer = (*it).second[QUALIFIER];
-    if (current_version.empty())
-      current_version = version;
-    if (current_qualifer.empty())
+    if (current_version.empty()) { current_version = version; }
+    if (current_qualifer.empty()) {
       current_qualifer = qualifier;
+    }
     if (current_version != version || current_qualifer != qualifier) {
       (*it).second[ERROR] = std::string("Product registration of ") + (*it).first + " version/qualifier conflict, "
         + " initially " + (*it).second[VERSION] + "/" + (*it).second[QUALIFIER]

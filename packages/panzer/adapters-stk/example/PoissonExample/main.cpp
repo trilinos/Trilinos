@@ -424,7 +424,7 @@ int main(int argc,char * argv[])
 
    //PHX::FinalizeKokkosDevice();
    
-   std::cout << "ALL PASSED" << std::endl;
+   out << "ALL PASSED" << std::endl;
 
    return 0;
 }

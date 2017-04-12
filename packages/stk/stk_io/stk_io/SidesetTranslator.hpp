@@ -13,16 +13,17 @@ namespace io {
 inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
                                           int sideset_id,
                                           stk::mesh::Selector selector,
+                                          const stk::mesh::Selector *subset_selector,
                                           stk::topology stk_element_topology,
                                           const stk::mesh::BucketVector& buckets)
 {
-    if (bulk.has_sideset_data())
+    if (bulk.does_sideset_exist(sideset_id))
     {
         selector &= ( bulk.mesh_meta_data().locally_owned_part() | bulk.mesh_meta_data().globally_shared_part());
 
         size_t num_sides = 0;
 
-        const stk::mesh::SideSet& sset = bulk.get_sideset_data(sideset_id);
+        const stk::mesh::SideSet& sset = bulk.get_sideset(sideset_id);
 
         for(const stk::mesh::SideSetEntry& elem_and_side : sset)
         {
@@ -35,7 +36,10 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
                     if(stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
                        stk_element_topology == bulk.bucket(element).topology())
                     {
-                        ++num_sides;
+                        if(subset_selector==nullptr || (*subset_selector)(bulk.bucket(element)))
+                        {
+                            ++num_sides;
+                        }
                     }
                 }
             }
@@ -59,9 +63,15 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
                                stk::mesh::EntityVector &sides,
                                std::vector<INT>& elem_side_ids)
 {
-    if (bulk_data.has_sideset_data())
+    int sset_id = -1;
+    if(io.property_exists("id"))
     {
-        const stk::mesh::SideSet& sset = bulk_data.get_sideset_data(part->id());
+        sset_id = io.get_property("id").get_int();
+    }
+
+    if (bulk_data.does_sideset_exist(sset_id))
+    {
+        const stk::mesh::SideSet& sset = bulk_data.get_sideset(sset_id);
         size_t num_sides = sset.size();
         elem_side_ids.reserve(num_sides*2);
 
@@ -81,9 +91,12 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
                 {
                     if(stk_element_topology == stk::topology::INVALID_TOPOLOGY || bulk_data.bucket(element).topology() == stk_element_topology)
                     {
-                        elem_side_ids.push_back(elemId);
-                        elem_side_ids.push_back(zero_based_side_ord+1);
-                        sides.push_back(side);
+                        if(subset_selector==nullptr || (*subset_selector)(bulk_data.bucket(element)))
+                        {
+                            elem_side_ids.push_back(elemId);
+                            elem_side_ids.push_back(zero_based_side_ord+1);
+                            sides.push_back(side);
+                        }
                     }
                 }
             }
@@ -137,12 +150,7 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
                 }
             }
 
-            if(!bulk_data.is_valid(suitable_elem))
-            {
-                std::ostringstream oss;
-                oss << "ERROR, no suitable element found";
-                throw std::runtime_error(oss.str());
-            }
+            ThrowRequireMsg( bulk_data.is_valid(suitable_elem), __FILE__ << ", " << __FUNCTION__ << ", ERROR, no suitable element found");
 
             elem_side_ids.push_back(bulk_data.identifier(suitable_elem));
             elem_side_ids.push_back(suitable_ordinal + 1); // Ioss is 1-based, mesh is 0-based.

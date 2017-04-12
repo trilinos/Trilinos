@@ -80,11 +80,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#elif defined(__SUNPRO_CC)
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/utsname.h>
-#include <netdb.h>
 #endif
 
 #if defined(__PUMAGON__)
@@ -92,10 +87,6 @@ extern "C" {
 #include <util.h>
 #include <sys/param.h>
 }
-
-#elif defined(__sgi)
-#include <sys/time.h>
-#include <sys/resource.h>
 
 #elif defined(__JVN)
 #include <sys/param.h>
@@ -305,48 +296,33 @@ username()
 std::string
 hardware()
 {
-#ifndef __sgi
   struct utsname	uts_name;
 
   uname(&uts_name);
 
   return uts_name.machine;
-#else
-  std::string s;
-  return s;
-#endif
 }
 
 
 std::string
 osname()
 {
-#ifndef __sgi
   struct utsname	uts_name;
 
   uname(&uts_name);
 
   return uts_name.sysname;
-#else
-  std::string s;
-  return s;
-#endif
 }
 
 
 std::string
 osversion()
 {
-#ifndef __sgi
   struct utsname	uts_name;
 
   uname(&uts_name);
 
   return uts_name.release;
-#else
-  std::string s;
-  return s;
-#endif
 }
 
 
@@ -405,7 +381,6 @@ file_lock(
   short	type,
   short	whence)
 {
-//  /* %TRACE[SPEC]% */ Tracespec trace__("sierra::Fmwk::<unnamed>::file_lock( short type, short whence)"); /* %TRACE% */
   static struct flock ret;
   ret.l_type = type;
   ret.l_start = 0;
@@ -422,8 +397,6 @@ write_lock(
   int		fd)
 {
   int i =::fcntl(fd, F_SETLK, file_lock(F_WRLCK, SEEK_SET));
-//   if (i == -1)
-//     fmwkout << "Write lock failed " << errno << dendl;
 
   return i != -1;
 }
@@ -434,9 +407,6 @@ release_lock(
   int		fd)
 {
   int i =::fcntl(fd, F_SETLK, file_lock(F_UNLCK, SEEK_SET));
-//   if (i == -1)
-//     fmwkout << "Release lock failed " << errno << dendl;
-
   return i != -1;
 }
 

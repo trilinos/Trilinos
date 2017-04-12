@@ -20,7 +20,6 @@ template <typename T> using ConstField = ngp::ConstStaticField<T>;
 using Mesh = ngp::StkMeshAdapter;
 template <typename T> using Field = ngp::StkFieldAdapter<T>;
 template <typename T> using ConstField = ngp::ConstStkFieldAdapter<T>;
-//template <typename T> using Field = ngp::StaticField<T>;
 #endif
 
 }

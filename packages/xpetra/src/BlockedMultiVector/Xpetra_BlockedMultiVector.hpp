@@ -228,7 +228,12 @@ namespace Xpetra {
     }
 
     //! Destructor.
-    virtual ~BlockedMultiVector() { }
+    virtual ~BlockedMultiVector() {
+      for (size_t r = 0; r < vv_.size(); ++r)
+        vv_[r] = Teuchos::null;
+      map_ = Teuchos::null;
+      numVectors_ = 0;
+    }
 
     /// \brief Assignment operator: Does a deep copy.
     ///

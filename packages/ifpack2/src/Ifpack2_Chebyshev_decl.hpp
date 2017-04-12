@@ -629,6 +629,9 @@ public:
   //! The total time spent in all calls to apply().
   double getApplyTime() const;
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
   //! The estimate of the maximum eigenvalue used in the apply().
   typename MatrixType::scalar_type getLambdaMaxForApply() const;
 

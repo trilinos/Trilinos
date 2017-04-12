@@ -68,13 +68,10 @@ void
       complex_inout[i] += complex_in[i];
   }
 
-
-
 ///
 /// @addtogroup MPIDetail
 /// @{
 ///
-
 
 /**
  * @brief Function <code>float_complex_type</code> returns an MPI complex data type for
@@ -180,11 +177,7 @@ Loc<T> create_Loc(const T &value, int64_t loc){
 
 struct TempLoc
 {
-  TempLoc()
-    : m_value(),
-      m_other(),
-      m_loc(0)
-  {}
+  TempLoc() : m_value(), m_other(), m_loc(0) {}
 
   TempLoc(double value, double other, int64_t loc)
     : m_value(value),
@@ -497,7 +490,6 @@ struct Datatype<TempLoc>
  *
  * @param size		a <code>size_t</code> value of the length of the array pointed to
  *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -754,7 +746,6 @@ struct Reduce : public ReduceInterface
 
 /**
  * @brief Class <code>ReduceSet</code> ...
- *
  */
 class ReduceSet
 {
@@ -778,22 +769,16 @@ public:
   static void void_op(void * inv, void * outv, int *n, MPI_Datatype *datatype);
 
 private:
-  ReduceVector		m_reduceVector;
+  ReduceVector m_reduceVector;
 };
 
 /**
  * @brief Member function <code>AllReduce</code> ...
- *
- * @param comm		a <code>MPI_Comm</code> variable ...
- *
- * @param reduce_set	a <code>ReduceSet</code> variable ...
- *
  */
 void AllReduce(MPI_Comm comm, const ReduceSet &reduce_set);
 
 /**
  * @brief Class <code>Sum</code> ...
- *
  */
 struct Sum
 {
@@ -805,7 +790,6 @@ struct Sum
 
 /**
  * @brief Class <code>Prod</code> ...
- *
  */
 struct Prod
 {
@@ -817,7 +801,6 @@ struct Prod
 
 /**
  * @brief Class <code>Min</code> ...
- *
  */
 struct Min
 {
@@ -829,7 +812,6 @@ struct Min
 
 /**
  * @brief Class <code>Max</code> ...
- *
  */
 struct Max
 {
@@ -841,7 +823,6 @@ struct Max
 
 /**
  * @brief Class <code>MinLoc</code> ...
- *
  */
 struct MinLoc
 {
@@ -858,7 +839,6 @@ struct MinLoc
 
 /**
  * @brief Class <code>MaxLoc</code> ...
- *
  */
 struct MaxLoc
 {
@@ -910,14 +890,6 @@ struct MinTempLoc
 
 /**
  * @brief Member function <code>ReduceSum</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @param length	a <code>size_t</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Sum, T *> *ReduceSum(T *t, T *u, size_t length) {
@@ -926,14 +898,6 @@ Reduce<Sum, T *> *ReduceSum(T *t, T *u, size_t length) {
 
 /**
  * @brief Member function <code>ReduceProd</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @param length	a <code>size_t</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Prod, T *> *ReduceProd(T *t, T *u, size_t length) {
@@ -942,14 +906,6 @@ Reduce<Prod, T *> *ReduceProd(T *t, T *u, size_t length) {
 
 /**
  * @brief Member function <code>ReduceMax</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @param length	a <code>size_t</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Max, T *> *ReduceMax(T *t, T *u, size_t length) {
@@ -958,29 +914,14 @@ Reduce<Max, T *> *ReduceMax(T *t, T *u, size_t length) {
 
 /**
  * @brief Member function <code>ReduceMin</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @param length	a <code>size_t</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Min, T *> *ReduceMin(T *t, T *u, size_t length) {
   return new Reduce<Min, T *>(t, t + length, u, u + length);
 }
 
-
 /**
  * @brief Member function <code>ReduceSum</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Sum, T *> *ReduceSum(T &t, T &u) {
@@ -989,12 +930,6 @@ Reduce<Sum, T *> *ReduceSum(T &t, T &u) {
 
 /**
  * @brief Member function <code>ReduceProd</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Prod, T *> *ReduceProd(T &t, T &u) {
@@ -1003,12 +938,6 @@ Reduce<Prod, T *> *ReduceProd(T &t, T &u) {
 
 /**
  * @brief Member function <code>ReduceMax</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Max, T *> *ReduceMax(T &t, T &u) {
@@ -1017,31 +946,14 @@ Reduce<Max, T *> *ReduceMax(T &t, T &u) {
 
 /**
  * @brief Member function <code>ReduceMin</code> ...
- *
- * @param t		a <code>T</code> variable ...
- *
- * @param u		a <code>T</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T>
 Reduce<Min, T *> *ReduceMin(T &t, T &u) {
   return new Reduce<Min, T *>(&t, &t + 1, &u, &u + 1);
 }
 
-
 /**
  * @brief Member function <code>ReduceSum</code> ...
- *
- * @param local_begin	an <code>LocalIt</code> variable ...
- *
- * @param local_end	an <code>LocalIt</code> variable ...
- *
- * @param global_begin	an <code>GlobalIt</code> variable ...
- *
- * @param global_end	an <code>GlobalIt</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<class LocalIt, class GlobalIt>
 Reduce<Sum, LocalIt, GlobalIt> *ReduceSum(LocalIt local_begin, LocalIt local_end, GlobalIt global_begin, GlobalIt global_end) {
@@ -1050,16 +962,6 @@ Reduce<Sum, LocalIt, GlobalIt> *ReduceSum(LocalIt local_begin, LocalIt local_end
 
 /**
  * @brief Member function <code>ReduceProd</code> ...
- *
- * @param local_begin	an <code>LocalIt</code> variable ...
- *
- * @param local_end	an <code>LocalIt</code> variable ...
- *
- * @param global_begin	an <code>GlobalIt</code> variable ...
- *
- * @param global_end	an <code>GlobalIt</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<class LocalIt, class GlobalIt>
 Reduce<Prod, LocalIt, GlobalIt> *ReduceProd(LocalIt local_begin, LocalIt local_end, GlobalIt global_begin, GlobalIt global_end) {
@@ -1068,16 +970,6 @@ Reduce<Prod, LocalIt, GlobalIt> *ReduceProd(LocalIt local_begin, LocalIt local_e
 
 /**
  * @brief Member function <code>ReduceMin</code> ...
- *
- * @param local_begin	an <code>LocalIt</code> variable ...
- *
- * @param local_end	an <code>LocalIt</code> variable ...
- *
- * @param global_begin	an <code>GlobalIt</code> variable ...
- *
- * @param global_end	an <code>GlobalIt</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T, class LocalIt, class GlobalIt>
 Reduce<Min, LocalIt, GlobalIt> *ReduceMin(LocalIt local_begin, LocalIt local_end, GlobalIt global_begin, GlobalIt global_end) {
@@ -1086,16 +978,6 @@ Reduce<Min, LocalIt, GlobalIt> *ReduceMin(LocalIt local_begin, LocalIt local_end
 
 /**
  * @brief Member function <code>ReduceMax</code> ...
- *
- * @param local_begin	an <code>LocalIt</code> variable ...
- *
- * @param local_end	an <code>LocalIt</code> variable ...
- *
- * @param global_begin	an <code>GlobalIt</code> variable ...
- *
- * @param global_end	an <code>GlobalIt</code> variable ...
- *
- * @return a <code>Reduce</code> ...
  */
 template<typename T, class LocalIt, class GlobalIt>
 Reduce<Max, LocalIt, GlobalIt> *ReduceMax(LocalIt local_begin, LocalIt local_end, GlobalIt global_begin, GlobalIt global_end) {
@@ -1104,13 +986,6 @@ Reduce<Max, LocalIt, GlobalIt> *ReduceMax(LocalIt local_begin, LocalIt local_end
 
 /**
  * @brief Member function <code>AllReduceCollected</code> ...
- *
- * @param mpi_comm	a <code>MPI_Comm</code> variable ...
- *
- * @param op		a <code>MPI_Op</code> variable ...
- *
- * @param collector	an <code>U</code> variable ...
- *
  */
 template<class T, class U>
 inline void

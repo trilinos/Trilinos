@@ -109,7 +109,7 @@ protected:
         {
             stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, id);
             if(get_bulk().is_valid(element) && get_bulk().bucket(element).owned())
-                get_bulk().change_entity_parts(element, {part});
+                get_bulk().change_entity_parts(element, stk::mesh::ConstPartVector{part});
         }
     }
 

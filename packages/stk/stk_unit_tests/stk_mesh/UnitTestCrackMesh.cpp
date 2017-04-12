@@ -164,7 +164,7 @@ TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     const stk::mesh::PartVector no_parts;
 
     // create a new node
-    stk::mesh::Entity new_node = mesh.declare_entity(stk::topology::NODE_RANK, new_node_id, no_parts);
+    stk::mesh::Entity new_node = mesh.declare_node(new_node_id, no_parts);
 
     // destroy right_element's relation to old_node, replace with a
     // relation to new node

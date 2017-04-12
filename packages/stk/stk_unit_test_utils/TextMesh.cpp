@@ -109,6 +109,7 @@ struct ElementData
     stk::topology topology;
     stk::mesh::EntityId identifier;
     stk::mesh::EntityIdVector nodeIds;
+    std::string partName = "";
 };
 
 struct MeshData
@@ -175,6 +176,14 @@ stk::mesh::Part * get_topology_part(stk::mesh::MetaData & meta, stk::topology to
     return meta.get_part("block_" + topology.name());
 }
 
+stk::mesh::Part * get_part_for_element(stk::mesh::MetaData & meta, const ElementData &elementData)
+{
+    if(elementData.partName.empty())
+        return get_topology_part(meta, elementData.topology);
+    else
+        return meta.get_part(elementData.partName);
+}
+
 void setup_mesh(const MeshData& meshData, stk::mesh::BulkData &bulkData)
 {
     stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
@@ -183,8 +192,9 @@ void setup_mesh(const MeshData& meshData, stk::mesh::BulkData &bulkData)
     {
         if(bulkData.parallel_rank() == elementData.proc || bulkData.parallel_size() == 1)
         {
+            stk::mesh::Part *part = get_part_for_element(meta, elementData);
             stk::mesh::declare_element(bulkData,
-                                       *get_topology_part(meta, elementData.topology),
+                                       *part,
                                        elementData.identifier,
                                        elementData.nodeIds);
         }
@@ -220,13 +230,20 @@ MeshData parse_input(const std::string& meshDescription)
         }
         else
             ThrowRequireMsg(elementData.topology.defined_on_spatial_dimension(spatialDim), "Error!  Topology = " << elementData.topology << " is not defined on spatial dimension = " << spatialDim << " that was set on line " << spatialDimLine << ".  Error on line " << userLineNumber << ".");
+
         unsigned numNodes = elementData.topology.num_nodes();
-        ThrowRequireMsg(tokens.size() == numNodes+3u, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
+
+        // should be ok if there's one more entry, for part name :D
+
+        ThrowRequireMsg(tokens.size() >= numNodes+3u, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
         elementData.nodeIds.resize(numNodes);
         for (unsigned i=0 ; i < numNodes ; ++i)
-        {
             elementData.nodeIds[i] = static_cast<stk::mesh::EntityId>(std::stoi(tokens[3+i]));
-        }
+
+        ThrowRequireMsg(tokens.size() <= numNodes+3u+1, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
+        if(tokens.size() == numNodes+4u)
+            elementData.partName = tokens[3+numNodes];
+
         data.elementDataVec.push_back(elementData);
     }
     ThrowRequireMsg(spatialDim>1, "Error!  Spatial dimension not defined to be 2 or 3!");
@@ -238,7 +255,11 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
 {
     for(const ElementData& elementData : meshData.elementDataVec)
     {
-        stk::mesh::Part & part = meta.declare_part_with_topology("block_" + elementData.topology.name(), elementData.topology);
+        std::string partName = elementData.partName;
+        if(partName.empty())
+            partName = "block_" + elementData.topology.name();
+        stk::mesh::Part & part = meta.declare_part_with_topology(partName, elementData.topology);
+
         if(!stk::io::is_part_io_part(part))
             stk::io::put_io_part_attribute(part);
     }

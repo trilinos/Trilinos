@@ -93,7 +93,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
-                                     name != "Nullspace" && name != "Coordinates" && name != "ipc: element to node map" &&
+                                     name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
 
@@ -121,7 +121,7 @@ namespace MueLu {
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
 #ifdef HAVE_MUELU_INTREPID2
-          else if (name == "ipc: element to node map")
+          else if (name == "pcoarsen: element to node map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -165,10 +165,56 @@ namespace MueLu {
           }
 #endif
         }
-      }
-    }   
-  }
+      } else if (paramList.isSublist(levelName) && levelName.find("user data") != std::string::npos) {
+        // So far only put data on level 0
+        int levelID = 0;
+        RCP<Level> level = H.GetLevel(levelID);
 
+        RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
+        TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
+
+        // Grab the user data sublist & loop over parameters
+        const ParameterList& userList = paramList.sublist(levelName);
+        for (ParameterList::ConstIterator it2 = userList.begin(); it2 != userList.end(); it2++) {
+          const std::string& name = it2->first;
+          TEUCHOS_TEST_FOR_EXCEPTION(!IsParamValidVariable(name), Exceptions::InvalidArgument,
+                                     "MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type!");
+          //Custom variable
+          size_t typeNameStart = name.find_first_not_of(' ');
+          size_t typeNameEnd   = name.find(' ', typeNameStart);
+          std::string typeName = name.substr(typeNameStart, typeNameEnd - typeNameStart);
+          size_t varNameStart  = name.find_first_not_of(' ', typeNameEnd);
+          std::string varName  = name.substr(varNameStart, name.size());
+          std::transform(typeName.begin(), typeName.end(), typeName.begin(), ::tolower);
+          level->AddKeepFlag(varName, NoFactory::get(), MueLu::UserData);
+          if(typeName == "matrix")
+            level->Set(varName, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
+          else if(typeName == "multivector")
+            level->Set(varName, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
+          else if(typeName == "map")
+            level->Set(varName, Teuchos::getValue<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+          else if(typeName == "ordinalvector")
+            level->Set(varName, Teuchos::getValue<RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+          else if(typeName == "scalar")
+            level->Set(varName, Teuchos::getValue<Scalar>(it2->second), NoFactory::get());
+          else if(typeName == "double")
+            level->Set(varName, Teuchos::getValue<double>(it2->second), NoFactory::get());
+          else if(typeName == "complex")
+            level->Set(varName, Teuchos::getValue<std::complex<double> >(it2->second), NoFactory::get());
+          else if(typeName == "int")
+            level->Set(varName, Teuchos::getValue<int>(it2->second), NoFactory::get());
+          else if(typeName == "string")
+            level->Set(varName, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
+          else if(typeName == "array<go>")
+            level->Set(varName, Teuchos::getValue<Array<GlobalOrdinal> > (it2->second), NoFactory::get());
+          else if(typeName == "array<lo>")
+            level->Set(varName, Teuchos::getValue<Array<LocalOrdinal> >(it2->second), NoFactory::get());
+          else
+            throw std::runtime_error("Invalid non-serializable data on list");
+        }
+      }
+    }
+  }
 } // namespace MueLu
 
 #define MUELU_HIERARCHY_UTILS_SHORT

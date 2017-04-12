@@ -46,50 +46,22 @@
 
 namespace Ioss {
   class CommSet;
-}
-namespace Ioss {
   class EdgeBlock;
-}
-namespace Ioss {
   class EdgeSet;
-}
-namespace Ioss {
   class ElementBlock;
-}
-namespace Ioss {
   class ElementSet;
-}
-namespace Ioss {
-  class FaceBlock;
-}
-namespace Ioss {
-  class FaceSet;
-}
-namespace Ioss {
-  class Field;
-}
-namespace Ioss {
-  class NodeBlock;
-}
-namespace Ioss {
-  class NodeSet;
-}
-namespace Ioss {
-  class PropertyManager;
-}
-namespace Ioss {
-  class Region;
-}
-namespace Ioss {
-  class SideBlock;
-}
-namespace Ioss {
-  class SideSet;
-}
-
-namespace Ioss {
-  class GroupingEntity;
   class EntityBlock;
+  class FaceBlock;
+  class FaceSet;
+  class Field;
+  class GroupingEntity;
+  class NodeBlock;
+  class NodeSet;
+  class PropertyManager;
+  class Region;
+  class SideBlock;
+  class SideSet;
+  class StructuredBlock;
 }
 
 /** \brief A namespace for the pamgen database format.
@@ -117,8 +89,15 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const { return 0; }
-    int64_t element_global_to_local(int64_t /* global */) const { return 0; }
+    int64_t node_global_to_local(int64_t global, bool must_exist) const override
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
+    int64_t element_global_to_local(int64_t global) const override
+    {
+      return elemMap.global_to_local(global);
+    }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -215,6 +194,12 @@ namespace Iopg {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
 
+    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
+
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
@@ -254,6 +239,11 @@ namespace Iopg {
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                               void *data, size_t data_size) const
+    {
+      return 0;
+    }
 
     std::string databaseTitle;
 

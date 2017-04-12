@@ -51,6 +51,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -483,7 +484,7 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeGradient()
   if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error,
                "NOX Error - compute gradient not implemented yet!");
-    return NOX::Abstract::Group::Ok;
+    //return NOX::Abstract::Group::Ok;
   }
   return NOX::Abstract::Group::Failed;
 }
@@ -685,14 +686,13 @@ const NOX::Abstract::Vector& NOX::Thyra::Group::getF() const
 
 double NOX::Thyra::Group::getNormF() const
 {
-  if ( this->isF() )
-    return f_vec_->norm();
+  if ( !(this->isF()) ) {
+    std::cerr << "ERROR: NOX::Thyra::Group::getNormF() "
+	      << "- F is not up to date.  Please call computeF()!" << std::endl;
+    throw "NOX Error";
+  }
 
-  std::cerr << "ERROR: NOX::Thyra::Group::getNormF() "
-       << "- F is not up to date.  Please call computeF()!" << std::endl;
-  throw "NOX Error";
-
-  return 0.0;
+  return f_vec_->norm();
 }
 
 const NOX::Abstract::Vector& NOX::Thyra::Group::getNewton() const
@@ -856,8 +856,8 @@ NOX::Thyra::Group::getThyraNormType(const std::string& name) const
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error,
                "NOX Error - unknown solve measure " << name);
-    return ::Thyra::SOLVE_MEASURE_ONE;
   }
+  TEUCHOS_UNREACHABLE_RETURN(::Thyra::SOLVE_MEASURE_ONE);
 }
 
 void NOX::Thyra::Group::updateLOWS() const

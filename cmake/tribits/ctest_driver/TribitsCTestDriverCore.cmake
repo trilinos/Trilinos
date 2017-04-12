@@ -152,8 +152,6 @@ INCLUDE(AppendStringVar)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsStripCommentsFromCMakeCacheFile)
 
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsUpdateExtraRepo.cmake)
-
 # Need to include the project's version file to get some Git and CDash
 # settings specific to the given version
 TRIBITS_PROJECT_READ_VERSION_FILE(${TRIBITS_PROJECT_ROOT})
@@ -193,652 +191,20 @@ IF(NOT EXISTS "${GIT_EXE}")
   QUEUE_ERROR("error: GIT_EXE='${GIT_EXE}' does not exist")
 ENDIF()
 
-# Find svn
 
-FIND_PROGRAM(SVN_EXE NAMES svn)
-MESSAGE("SVN_EXE=${SVN_EXE}")
-# If we don't find svn, no big deal unless we have an SVN repo!
+# Find gitdist
+
+SET(GITDIST_EXE "${${PROJECT_NAME}_TRIBITS_DIR}/python_utils/gitdist")
+
 
 # Get the host name
 
 SITE_NAME(CTEST_SITE_DEFAULT)
 
 
-########################
-### Functions/Macros ###
-########################
+# Get helper functions
 
-
-#
-# Wrapper used for unit testing purposes
-#
-
-MACRO(EXTRAREPO_EXECUTE_PROCESS_WRAPPER)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(${ARGN}
-      RESULT_VARIABLE  EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL)
-    IF (NOT EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL STREQUAL "0")
-      MESSAGE(SEND_ERROR
-        "Error: EXECUTE_PROCESS(${ARGN}) returned"
-	" '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
-    ENDIF()
-  ELSE()
-    MESSAGE("EXECUTE_PROCESS(${ARGN})")
-  ENDIF()
-ENDMACRO()
-
-#
-# Wrapper for getting the tracking branch
-#
-FUNCTION(EXTRAREPO_GET_TRACKING_BRANCH  EXTRAREPO_SRC_DIR  TRACKING_BRANCH_OUT)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(
-      COMMAND "${GIT_EXE}" rev-parse --abbrev-ref --symbolic-full-name @{u}
-      WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE  EP_RTN
-      OUTPUT_VARIABLE  TRACKING_BRANCH
-      )
-    IF (NOT EP_RTN STREQUAL "0")
-      MESSAGE(SEND_ERROR "Error: obtaining tracking branch for repo"
-        " '${EXTRAREPO_SRC_DIR}' failed!" )
-    ENDIF()
-  ELSE()
-    SET(TRACKING_BRANCH "tracking/branch")
-  ENDIF()
-  SET(${TRACKING_BRANCH_OUT}  ${TRACKING_BRANCH}  PARENT_SCOPE)
-ENDFUNCTION()
-
-
-#
-# Update or clone a single extra repo
-#
-
-FUNCTION(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
-  EXTRAREPO_REPOTYPE_IN  EXTRAREPO_REPOURL_IN  CHANGES_STR_VAR_INOUT
-  )
-
-  #MESSAGE("CLONE_OR_UPDATE_EXTRAREPO: ${EXTRAREPO_NAME_IN} ${EXTRAREPO_REPOURL_IN}")
-
-  SET(CHANGES_STR "${${CHANGES_STR_VAR_INOUT}}")
-
-  SET(EXTRAREPO_SRC_DIR "${${PROJECT_NAME}_SOURCE_DIRECTORY}/${EXTRAREPO_DIR_IN}")
-  #PRINT_VAR(EXTRAREPO_SRC_DIR)
-
-  SET(EXTRAREPO_CLONE_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.clone.out")
-  SET(EXTRAREPO_CHECKOUT_OUT_FILE
-    "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.checkout.out")
-
-  SET(GIT_LOG_SHORT "${GIT_EXE}" log
-    "--pretty=format:%h:  %s%nAuthor: %an <%ae>%nDate:   %ad%n"
-    --name-status -C)
-
-  IF (NOT EXISTS "${EXTRAREPO_SRC_DIR}")
-
-    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing initial ${EXTRAREPO_REPOTYPE_IN}"
-      " clone/checkout from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_DIR_IN}' ...")
-
-    # Determine the commands to clone/update and find the version
-    IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
-      SET(CLONE_CMND_ARGS
-        COMMAND "${GIT_EXE}" clone "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
-        WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
-        OUTPUT_FILE "${EXTRAREPO_CLONE_OUT_FILE}" )
-      SET(CLONE_VERSION_CMND_ARGS
-        COMMAND ${GIT_LOG_SHORT} -1)
-    ELSEIF (${EXTRAREPO_REPOTYPE_IN} STREQUAL SVN)
-      IF (NOT SVN_EXE)
-        MESSAGE(SEND_ERROR "Error, could not find SVN executable!")
-      ENDIF()
-      SET(CLONE_CMND_ARGS
-        COMMAND "${SVN_EXE}" checkout "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
-        WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
-        OUTPUT_FILE "${EXTRAREPO_CHECKOUT_OUT_FILE}" )
-      SET(CLONE_VERSION_CMND_ARGS "echo") # ToDo: Define this for SVN
-    ELSE()
-      MESSAGE(SEND_ERROR
-	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
-    ENDIF()
-
-    # Do the clone/update
-    EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${CLONE_CMND_ARGS})
-
-    # Determine the cloned/checkout version
-    EXTRAREPO_EXECUTE_PROCESS_WRAPPER(
-      ${CLONE_VERSION_CMND_ARGS}
-      OUTPUT_VARIABLE  CLONE_OR_PULL_OUTPUT
-      WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}")
-
-    SET(VERSION_STATUS_TYPE "cloned version")
-
-  ELSE()
-
-    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing ${EXTRAREPO_REPOTYPE_IN} update"
-      " from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_SRC_DIR}' ...")
-
-    # Pull/update changes
-    IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
-      EXTRAREPO_CLEAN_FETCH_RESET("${GIT_EXE}" "${EXTRAREPO_SRC_DIR}")
-      SET(PULL_DIFF_CMND_ARGS
-        COMMAND ${GIT_LOG_SHORT} HEAD ^ORIG_HEAD)
-    ELSEIF (${EXTRAREPO_REPOTYPE_IN} STREQUAL SVN)
-      SET(PULL_CMND_ARGS
-        COMMAND "${SVN_EXE}" update
-        WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-        OUTPUT_FILE "${EXTRAREPO_UPDATE_OUT_FILE}" )
-      EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${PULL_CMND_ARGS})
-      SET(PULL_DIFF_CMND_ARGS "echo") # ToDo: Determine this for SVN
-    ELSE()
-      MESSAGE(SEND_ERROR
-	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
-    ENDIF()
-
-    # Determine what changed
-    EXTRAREPO_EXECUTE_PROCESS_WRAPPER(
-      ${PULL_DIFF_CMND_ARGS}
-      OUTPUT_VARIABLE  CLONE_OR_PULL_OUTPUT
-      WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}")
-
-    SET(VERSION_STATUS_TYPE "updates")
-
-  ENDIF()
-
-  SET(CHANGES_STR
-    "${CHANGES_STR}\n***\n*** ${EXTRAREPO_NAME_IN} ${VERSION_STATUS_TYPE}:\n***\n\n${CLONE_OR_PULL_OUTPUT}\n\n")
-
-  SET(${CHANGES_STR_VAR_INOUT} "${CHANGES_STR}" PARENT_SCOPE)
-
-ENDFUNCTION()
-
-
-#
-# Clone or update the whole list of extra repositories
-#
-
-FUNCTION(CLONE_OR_UPDATE_ALL_EXTRAREPOS  CHANGES_STR_VAR_OUT)
-
-  SET(CHANGES_STR "")
-
-  SET(EXTRAREPO_IDX 0)
-  FOREACH(EXTRAREPO_NAME ${${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES})
-    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
-    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_VCTYPES ${EXTRAREPO_IDX} EXTRAREPO_REPOTYPE )
-    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_REPOURLS ${EXTRAREPO_IDX} EXTRAREPO_REPOURL )
-    CLONE_OR_UPDATE_EXTRAREPO(${EXTRAREPO_NAME} ${EXTRAREPO_DIR}
-      ${EXTRAREPO_REPOTYPE} ${EXTRAREPO_REPOURL} CHANGES_STR)
-    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
-  ENDFOREACH()
-
-  SET(${CHANGES_STR_VAR_OUT} "${CHANGES_STR}" PARENT_SCOPE)
-
-ENDFUNCTION()
-
-
-#
-# Select the set of extra repositories
-#
-
-MACRO(TRIBITS_SETUP_EXTRAREPOS)
-
-  IF (EXISTS "${${PROJECT_NAME}_EXTRAREPOS_FILE}" )
-    # Repos many not already exist because we have not cloned them yet!
-    SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST FALSE)
-    TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
-  ELSE()
-    MESSAGE("${${PROJECT_NAME}_EXTRAREPOS_FILE} does not exist,"
-       " skipping extra repositories.")
-  ENDIF()
-
-ENDMACRO()
-
-
-#
-# Select the list of packages
-#
-# OUTPUT: Sets ${PROJECT_NAME}_DEFAULT_PACKAGES
-#
-# NOTE: This macro is used to clean up the main TRIBITS_CTEST_DRIVER()
-# macro.
-#
-
-MACRO(TRIBITS_SETUP_PACKAGES)
-
-  # Here, we must point into the source tree just cloned (or updated)
-  # and not the "driver" source dir tree for two reasons.  First, the
-  # list of core packages may be more recent in what was checked out.
-  # Second, the extra repos do not even exist in the "driver" source
-  # tree.
-
-  SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-  SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
-  IF (CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE)
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-       "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
-  ELSE()
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
-  ENDIF()
-  IF (CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE)
-    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
-      "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
-  ELSE()
-    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
-  ENDIF()
-  SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
-
-  # Don't ignore missing repos by default.  This will allow processing to
-  # continue but this outer CTest script will fail (thereby sending a CDash
-  # email from the TDD system).  However, when we configure actual packages,
-  # we do set this to TRUE so that the package configures will not fail due to
-  # missing extra repositories.
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_PRE_REPOSITORIES "")
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_REPOSITORIES "")
-  SPLIT("${${PROJECT_NAME}_PRE_REPOSITORIES}"  ","  ${PROJECT_NAME}_PRE_REPOSITORIES)
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","  ${PROJECT_NAME}_EXTRA_REPOSITORIES)
-
-  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
-  TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
-  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
-
-  # When we get here, we will have the basic dependency structure set up
-  # with only defaults set
-
-  # Set this to "" so that it can be defined in ENABLE_MODIFIED_PACKAGES_ONLY()
-  SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES "")
-
-ENDMACRO()
-
-
-MACRO(ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED  TRIBITS_PACKAGE)
-  IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
-    MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
-    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
-  ELSEIF(NOT ${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-    IF (${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED)
-      MESSAGE("NOT enabling explicitly set package ${TRIBITS_PACKAGE} since it was explicitly excluded!")
-    ELSE()
-       MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} which was default or otherwise disabed!")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
-    ENDIF()
-  ELSE()
-    MESSAGE("Explicitly set package ${TRIBITS_PACKAGE} is already enabled?")
-  ENDIF()
-ENDMACRO()
-
-
-
-#
-# Select packages set by the input
-#
-
-MACRO(ENABLE_USER_SELECTED_PACKAGES)
-
-  # 1) Set the enables for packages already set with
-  # ${PROJECT_NAME}_PACKAGES_USER_SELECTED
-
-  IF (NOT ${PROJECT_NAME}_PACKAGES_USER_SELECTED)
-    SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
-  ELSE()
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_USER_SELECTED})
-      ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED(${TRIBITS_PACKAGE})
-    ENDFOREACH()
-  ENDIF()
-
-  # 2) Set extra package enables from ${PROJECT_NAME}_ADDITIONAL_PACKAGES
-
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_ADDITIONAL_PACKAGES})
-    ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED(${TRIBITS_PACKAGE})
-  ENDFOREACH()
-
-ENDMACRO()
-
-
-#
-# Extract the list of changed files for the main repo on put into an
-# modified files file.
-#
-
-MACRO(TRIBITS_GET_MODIFIED_FILES  WORKING_DIR_IN  MODIFIED_FILES_FILE_NAME_IN)
-  SET(CMND_ARGS
-    COMMAND "${GIT_EXE}" diff --name-only ORIG_HEAD..HEAD
-    WORKING_DIRECTORY "${WORKING_DIR_IN}"
-    OUTPUT_FILE ${MODIFIED_FILES_FILE_NAME_IN}
-    #OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(${CMND_ARGS})
-  ELSE()
-    MESSAGE("EXECUTE_PROCESS(${CMND_ARGS})")
-  ENDIF()
-ENDMACRO()
-
-
-#
-# Select only packages that are modified or failed in the last CI iteration
-#
-
-MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
-
-  #
-  # A) Get the list of changed packages
-  #
-
-  SET(MODIFIED_FILES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/modifiedFiles.txt")
-
-  # A.1) Get changes from main ${PROJECT_NAME} repo
-
-  TRIBITS_GET_MODIFIED_FILES("${CTEST_SOURCE_DIRECTORY}" "${MODIFIED_FILES_FILE_NAME}")
-
-  # A.2) Get changes from extra repos
-
-  SET(EXTRAREPO_IDX 0)
-  FOREACH(EXTRAREPO_NAME ${${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES})
-
-    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIRS
-       ${EXTRAREPO_IDX} EXTRAREPO_DIR )
-    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_HASPKGS
-      ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
-
-    # For now, only look for changes if it has packages.  Later, we need to
-    # generalize this for the general extra repo case with deeper directory
-    # and other than GIT (e.g. SVN with Dakota).  For example, we would like
-    # to pick up changes to Dakota and therefore enable TriKota to build.
-    IF (EXTRAREPO_PACKSTAT STREQUAL HASPACKAGES)
-
-      SET(EXTRAREPO_SRC_DIR "${CTEST_SOURCE_DIRECTORY}/${EXTRAREPO_DIR}")
-      SET(EXTRAREPO_MODIFIED_FILES_FILE_NAME
-        "${CTEST_BINARY_DIRECTORY}/modifiedFiles.${EXTRAREPO_NAME}.txt")
-
-      TRIBITS_GET_MODIFIED_FILES("${EXTRAREPO_SRC_DIR}"
-        "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
-
-      FILE(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
-      SET(EXTRAREPO_FILES_STR "")
-      FOREACH(STR_LINE ${EXTRAREPO_MODIFIED_FILES_STR})
-        APPEND_STRING_VAR(EXTRAREPO_FILES_STR "${EXTRAREPO_DIR}/${STR_LINE}\n")
-      ENDFOREACH()
-      FILE(APPEND "${MODIFIED_FILES_FILE_NAME}" ${EXTRAREPO_FILES_STR})
-
-    ENDIF()
-
-    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
-
-  ENDFOREACH()
-
-  # A.3) Get the names of the modified packages
-
-  IF (NOT PYTHON_EXECUTABLE)
-    MESSAGE(FATAL_ERROR "Error, Python must be enabled to map from modified"
-      " files to packages!")
-  ENDIF()
-
-  IF (EXISTS "${MODIFIED_FILES_FILE_NAME}")
-    EXECUTE_PROCESS(
-      COMMAND ${PYTHON_EXECUTABLE}
-        ${${PROJECT_NAME}_TRIBITS_DIR}/ci_support/get-tribits-packages-from-files-list.py
-        --files-list-file=${MODIFIED_FILES_FILE_NAME}
-        --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
-      OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-  ELSE()
-    SET(MODIFIED_PACKAGES_LIST)
-  ENDIF()
-
-  PRINT_VAR(MODIFIED_PACKAGES_LIST)
-
-  #
-  # B) Get the list of packages that failed last CI iteration
-  #
-
-  # NOTE: It is critical to enable and test packages until they pass.  If you
-  # don't do this, then the package will not show as updated in the above
-  # logic.  In this case only downstream packages will get enabled.  If the
-  # failing packages break the downstream packages, this will be bad (for lots
-  # of reasons).  Therefore, we must enable failing packages from the last CI
-  # iteration and keep enabling and testing them until they do pass!
-
-  IF (EXISTS "${FAILED_PACKAGES_FILE_NAME}")
-    FILE(READ "${FAILED_PACKAGES_FILE_NAME}" FAILING_PACKAGES_LIST)
-    STRING(STRIP "${FAILING_PACKAGES_LIST}" FAILING_PACKAGES_LIST)
-    PRINT_VAR(FAILING_PACKAGES_LIST)
-  ENDIF()
-
-  #
-  # C) Enable the changed and previously failing packages
-  #
-
-  FOREACH(TRIBITS_PACKAGE ${MODIFIED_PACKAGES_LIST})
-    #PRINT_VAR(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-    ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-    IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling modified package: ${TRIBITS_PACKAGE}")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
-    ELSE()
-      MESSAGE("Not enabling explicitly disabled modified package: ${TRIBITS_PACKAGE}")
-    ENDIF()
-  ENDFOREACH()
-
-  FOREACH(TRIBITS_PACKAGE ${FAILING_PACKAGES_LIST})
-    IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
-    ELSE()
-      MESSAGE("Not enabling explicitly disabled previously"
-        " failing package: ${TRIBITS_PACKAGE}")
-    ENDIF()
-  ENDFOREACH()
-
-  #
-  # D) Print the final status
-  #
-
-  TRIBITS_PRINT_ENABLED_SE_PACKAGE_LIST(
-    "\nDirectly modified or failing non-disabled packages that need to be tested" ON FALSE)
-
-ENDMACRO()
-
-
-#
-# Exclude disabled packages from ${PROJECT_NAME}_EXCLUDE_PACKAGES
-#
-# NOTE: These disables need to dominate over the above enables so this code is
-# after all the enable code has run
-#
-
-MACRO(DISABLE_EXCLUDED_PACKAGES)
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
-    MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
-    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} OFF)
-    SET(${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED TRUE)
-  ENDFOREACH()
-ENDMACRO()
-
-
-#
-# Remove packages that are only implicitly enabled but don't have tests
-# enabled.
-#
-#
-MACRO(SELECT_FINAL_SET_OF_PACKAGES_TO_PROCESS)
-
-  SET(${PROJECT_NAME}_PACKAGES_TO_PROCESS)
-
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
-
-    SET(PROCESS_THE_PACKAGE FALSE)
-
-    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}
-      AND ${TRIBITS_PACKAGE}_ENABLE_TESTS
-      )
-      SET(PROCESS_THE_PACKAGE  TRUE)
-    ELSEIF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}
-      AND CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
-      )
-      SET(PROCESS_THE_PACKAGE  TRUE)
-    ENDIF()
-
-    IF(PROCESS_THE_PACKAGE)
-      APPEND_SET(${PROJECT_NAME}_PACKAGES_TO_PROCESS  ${TRIBITS_PACKAGE})
-    ENDIF()
-
-  ENDFOREACH()
-
-  SET(${PROJECT_NAME}_PACKAGES ${${PROJECT_NAME}_PACKAGES_TO_PROCESS})
-
-ENDMACRO()
-
-
-#
-# Select the default generator.
-#
-
-MACRO(SELECT_DEFAULT_GENERATOR)
-  # When the build tree is known and exists, use
-  # its generator.
-  SET(DEFAULT_GENERATOR "DID NOT SET!")
-  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
-    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt"
-      line REGEX "^CMAKE_GENERATOR:" LIMIT_COUNT 1)
-    IF("${line}" MATCHES "=(.+)$")
-      SET(DEFAULT_GENERATOR "${CMAKE_MATCH_1}")
-    ENDIF()
-  ELSE()
-    SET(DEFAULT_GENERATOR "Unix Makefiles")
-  ENDIF()
-ENDMACRO()
-
-
-#
-# Call INITIALIZE_ERROR_QUEUE once at the top of TRIBITS_CTEST_DRIVER
-#
-
-MACRO(INITIALIZE_ERROR_QUEUE)
-  SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE "")
-ENDMACRO()
-
-
-#
-# QUEUE_ERROR should be called only for errors that are not already reported to
-# the dashboard in some other way. For example, if calling ctest_submit fails,
-# then that failure does NOT show up on the dashboard, so it is appropriate to
-# call QUEUE_ERROR for that case. For a build error or test failure, it is NOT
-# appropriate to call QUEUE_ERROR because those already show up on the
-# dashboard (assuming a good ctest_submit...)
-#
-# When adding more callers of QUEUE_ERROR, just make sure that it does not
-# duplicate an existing/reported dashboard failure.
-#
-
-MACRO(QUEUE_ERROR err_msg)
-  SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE
-    ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
-ENDMACRO()
-
-
-#
-# Call REPORT_QUEUED_ERRORS once at the bottom of TRIBITS_CTEST_DRIVER
-#
-
-MACRO(REPORT_QUEUED_ERRORS)
-  IF("${TRIBITS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
-    MESSAGE("TRIBITS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
-  ELSE()
-    MESSAGE("error: TRIBITS_CTEST_DRIVER_ERROR_QUEUE reports the following error message queue:")
-    FOREACH(err_msg ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE})
-      MESSAGE("${err_msg}")
-    ENDFOREACH()
-  ENDIF()
-ENDMACRO()
-
-
-#
-# Override CTEST_SUBMIT to drive multiple submits and to detect failed
-# submissions and track them as queued errors.
-#
-
-MACRO(TRIBITS_CTEST_SUBMIT)
-
-  # Cache the original CTEST_DROP_SITE and CTEST_DROP_LOCATION
-  IF ("${TRIBITS_CTEST_DROP_SITE_ORIG}" STREQUAL "")
-    SET(TRIBITS_CTEST_DROP_SITE_ORIG ${CTEST_DROP_SITE})
-    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
-      PRINT_VAR(TRIBITS_CTEST_DROP_SITE_ORIG)
-    ENDIF()
-  ENDIF()
-  IF ("${TRIBITS_CTEST_DROP_LOCATION_ORIG}" STREQUAL "")
-    SET(TRIBITS_CTEST_DROP_LOCATION_ORIG ${CTEST_DROP_LOCATION})
-    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
-      PRINT_VAR(TRIBITS_CTEST_DROP_LOCATION_ORIG)
-    ENDIF()
-  ENDIF()
-
-  # Do the first submit
-  SET(CTEST_DROP_SITE ${TRIBITS_CTEST_DROP_SITE_ORIG})
-  SET(CTEST_DROP_LOCATION ${TRIBITS_CTEST_DROP_LOCATION_ORIG})
-  IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
-    PRINT_VAR(CTEST_DROP_SITE)
-    PRINT_VAR(CTEST_DROP_LOCATION)
-  ENDIF()
-
-  TRIBITS_CTEST_SUBMIT_DRIVER(${ARGN})
-
-  # Do the second submit if requested!
-  IF (TRIBITS_2ND_CTEST_DROP_SITE OR TRIBITS_2ND_CTEST_DROP_LOCATION)
-
-    MESSAGE("\nDoing submit to second CDash site ...\n")
-
-    IF (NOT "${TRIBITS_2ND_CTEST_DROP_SITE}" STREQUAL "")
-      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
-        PRINT_VAR(TRIBITS_2ND_CTEST_DROP_SITE)
-      ENDIF()
-      SET(CTEST_DROP_SITE ${TRIBITS_2ND_CTEST_DROP_SITE})
-    ENDIF()
-
-    IF (NOT "${TRIBITS_2ND_CTEST_DROP_LOCATION}" STREQUAL "")
-      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
-        PRINT_VAR(TRIBITS_2ND_CTEST_DROP_LOCATION)
-      ENDIF()
-      SET(CTEST_DROP_LOCATION ${TRIBITS_2ND_CTEST_DROP_LOCATION})
-    ENDIF()
-
-    TRIBITS_CTEST_SUBMIT_DRIVER(${ARGN})
-
-  ENDIF()
-
-ENDMACRO()
-
-
-MACRO(TRIBITS_CTEST_SUBMIT_DRIVER)
-
-  # If using a recent enough ctest with RETRY_COUNT, use it to overcome
-  # failed submits:
-  SET(retry_args "")
-  SET(retry_args RETRY_COUNT 25 RETRY_DELAY 120)
-  MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
-
-  # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
-  CTEST_SUBMIT(${ARGN} ${retry_args} RETURN_VALUE rv)
-
-  IF(NOT "${rv}" STREQUAL "0")
-    QUEUE_ERROR("error: ctest_submit failed: rv='${rv}' ARGN='${ARGN}' retry_args='${retry_args}'")
-  ENDIF()
-
-ENDMACRO()
-
-
-#
-# Wrapper for CTEST_UPDATE(...) for unit testing
-#
-
-MACRO(CTEST_UPDATE_WRAPPER)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    CTEST_UPDATE(${ARGN})
-  ELSE()
-    MESSAGE("CTEST_UPDATE(${ARGN})")
-    SET(UPDATE_RETURN_VAL ${CTEST_UPDATE_RETURN_VAL})
-  ENDIF()
-ENDMACRO()
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 
 
 #
@@ -915,6 +281,88 @@ ENDMACRO()
 #
 # ToDo: Document input variables that have defaults, to be set before, and can
 # be overridden from the env.
+#
+# **Repository updates:**
+#
+# Like the rest of TriBITS, ``ctest -S`` scripts written using this function
+# supports a collection of extra repositories in addition to the base
+# repository.  The basic clone of the extra repositories requires all repos to
+# use the version control system.
+#
+# CTest itself is used for handling the cloning and the pull of the base
+# repository by calling ``CTEST_UPDATE()``.  The other extra git repositories
+# are completely handled by the code in this function as described below.
+#
+# After the base repository is cloned for the first time (by calling
+# ``CTEST_UPDATE()``), the extra repositories are cloned using the following
+# command::
+#
+#   git clone <extrarepo_url>
+# 
+# Therefore, by default, whatever the default branch is set to on clone, that
+# is the branch that will be used.  Also, future repository updates will be
+# done on those branches.
+#
+# However, if ``${PROJECT_NAME}_BRANCH`` is set to non-empty, then that branch
+# will be checked out in all of the repositories.  For the base repository,
+# after the clone or update, that branch is checked out using the command::
+#
+#   $ git checkout -B ${${PROJECT_NAME}_BRANCH} \
+#       --track origin/${${PROJECT_NAME}_BRANCH}`
+#
+# That command is robust and will pass even if the current branch is already a
+# tracking branch for ``origin/${${PROJECT_NAME}_BRANCH}``.
+#
+# If ``${PROJECT_NAME}_BRANCH`` is empty, then each extra repository is
+# updated (even after the initial clone) using the commands::
+#
+#   $ git clean -fdx         # Remove untracked ignored files
+#   $ git reset --hard HEAD  # Removed untracked and modified tracked files
+#   $ git fetch origin       # Get updated commits
+#   $ git reset --hard @{u}  # Deal with forced push
+#
+# The command ``git clone -fdx`` removes any untracked ignored files that may
+# have been created since the last update (either by the build process or by
+# someone messing around in that git repository).  The command ``git reset
+# --hard HEAD`` removes any untracked non-ignored files, any modified tracked
+# files, and sets ``ORIG_HEAD`` to the current ``HEAD``.  This sets
+# ``ORIG_HEAD`` after the initial clone (as ``ORIG_HEAD`` is not set after a
+# ``git clone``).  This allows using the range ``ORIG_HEAD..HEAD`` with git
+# diff and log commands even after the initial clone.  The ``git fetch``
+# command followed by the ``git reset --hard @{u}`` command is used to update
+# the local repo to match the remote tracking branch instead of ``git pull` or
+# ``git fetch ; git merge @{u}``.  This is done to deal with a possible forced
+# push of the remote tracking branch.  Using ``git fetch ; git reset --hard
+# @{u}`` ensures that the local branch is exactly the same the remote tracking
+# branch no matter what.
+#
+# If ``${PROJECT_NAME}_BRANCH`` is non-empty, then each extra repository is
+# updated (even after the initial clone) using the commands::
+#
+#   $ git clean -fdx         # Remove untracked ignored files
+#   $ git reset --hard HEAD  # Clean files and set ORIG_HEAD to HEAD
+#   $ git fetch origin       # Get updated commits
+#   $ git checkout -B ${${PROJECT_NAME}_BRANCH} \
+#       --track origin/${${PROJECT_NAME}_BRANCH}  # Put on tracking branch
+#
+# These are the same commands as for the case where ``${PROJECT_NAME}_BRANCH``
+# is empty except for the last command which does a checkout of the tracking
+# branch ``${PROJECT_NAME}_BRANCH``.  In this case, the ``git reset --hard
+# HEAD`` serves an additional purpose.  It sets ``ORIG_HEAD`` to the current
+# ``HEAD`` before the update of the branch.  This is important because the
+# command ``git checkout -B ...`` does not move ``ORIG_HEAD`` so this reset is
+# needed so that the git range ``ORIG_HEAD..HEAD`` gives the changes since the
+# last update.  So for an update where no new commits are pulled,
+# ``ORIG_HEAD..HEAD`` will return no commits.
+#
+# Note that the repository updating approach using non-empty
+# ``${PROJECT_NAME}_BRANCH`` is more robust, because it can recover from a
+# state where someone may have put the repo on a detached head or checked out
+# a different branch.  This might occur when a person is messing around in the
+# Nightly build and source directories to try to figure out what happened and
+# forgot to put the repos back on the correct tracking branch.  Therefore, it
+# is recommended to always set ``${PROJECT_NAME}_BRANCH`` to a non-null value
+# like ``master`` for git repos.
 #
 # ToDo: Finish Documentation!
 #
@@ -1084,6 +532,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   ENDIF()
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_BRANCH "${${PROJECT_NAME}_BRANCH_DEFAULT}" )
 
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_EXTRAREPOS_BRANCH "${${PROJECT_NAME}_BRANCH}" )
+
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE "${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
 
   IF(CTEST_TEST_TYPE STREQUAL "Nightly")
@@ -1181,7 +631,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
     SET(GIT_EXE /somebasedir/git)
-    SET(SVN_EXE /someotherbasedir/svn)
   ENDIF()
 
 
@@ -1254,6 +703,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Setup for the VC update
   #
 
+  SET(CREATE_VC_UPDATE_FILE FALSE)
+
   IF (CTEST_DO_UPDATES)
 
     SET(UPDATE_TYPE "git")
@@ -1261,6 +712,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
     SET(CTEST_UPDATE_COMMAND "${GIT_EXE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
+
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
       SET( CTEST_CHECKOUT_COMMAND
@@ -1268,7 +720,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
+      SET(CREATE_VC_UPDATE_FILE TRUE)
     ENDIF()
+
   ENDIF()
 
   #
@@ -1324,6 +778,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   ELSE()
     CTEST_START(${CTEST_TEST_TYPE})
   ENDIF()
+  # NOTE: If the soruce directory does not yet exist, then CTEST_START() will
+  # clone it!
 
 
   MESSAGE(
@@ -1331,7 +787,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n*** Update the source code repositories ..."
     "\n***\n")
 
-  SET(UPDATE_FAILED TRUE)
+  SET(UPDATE_FAILED FALSE)
 
   IF (CTEST_DO_UPDATES)
 
@@ -1341,69 +797,27 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       RETURN()
     ENDIF()
 
-    MESSAGE("\nDoing GIT update of '${CTEST_SOURCE_DIRECTORY}' ...")
+    MESSAGE("\nCalling CTEST_UPDATE() to update base source repo '${CTEST_SOURCE_DIRECTORY}' ...")
     CTEST_UPDATE_WRAPPER( SOURCE "${CTEST_SOURCE_DIRECTORY}"
-      RETURN_VALUE  UPDATE_RETURN_VAL)
-    MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
+      RETURN_VALUE  CTEST_UPDATE_RETURN_VAL)
+    MESSAGE("CTEST_UPDATE(...) returned '${CTEST_UPDATE_RETURN_VAL}'")
 
-    CLONE_OR_UPDATE_ALL_EXTRAREPOS(EXTRA_REPO_CHANGES_STR)
-
-    IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-      PRINT_VAR(EXTRA_REPO_CHANGES_STR)
-    ENDIF()
-
-    FILE(WRITE "${CTEST_BINARY_DIRECTORY}/Updates.txt"
-     ${EXTRA_REPO_CHANGES_STR})
-    # NOTE: Above, we are making the 'Updates.txt' file come first because
-    # this will be the first Notes file shown on CDash.
-
-    # Setting branch switch to success in case we are not doing a switch to a
-    # different branch.
-
-    SET(GIT_CHECKOUT_RETURN_VAL "0")
-
-    IF(${PROJECT_NAME}_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-
-      MESSAGE("Doing switch to branch ${${PROJECT_NAME}_BRANCH}")
-
-      EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout ${${PROJECT_NAME}_BRANCH}
-        WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-        RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
-        OUTPUT_VARIABLE BRANCH_OUTPUT
-        ERROR_VARIABLE  BRANCH_ERROR
-      )
-
-      IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-        EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout --track origin/${${PROJECT_NAME}_BRANCH}
-          WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-          RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
-          OUTPUT_VARIABLE BRANCH_OUTPUT
-          ERROR_VARIABLE  BRANCH_ERROR
-        )
-      ENDIF()
-
-      IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-        MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-          " error code ${GIT_CHECKOUT_RETURN_VAL}")
-        QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-          " error code ${GIT_CHECKOUT_RETURN_VAL}")
-      ENDIF()
-      #Apparently the successful branch switch is also written to stderr.
-      MESSAGE("${BRANCH_ERROR}")
-
-    ENDIF()
-
-    IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
+    TRIBITS_CLONE_OR_UPDATE_ALL_REPOS(${CTEST_UPDATE_RETURN_VAL}  LOC_UPDATE_FAILED)
+    IF (LOC_UPDATE_FAILED)
       SET(UPDATE_FAILED TRUE)
-    ELSE()
-      SET(UPDATE_FAILED FALSE)
+    ENDIF()
+
+    IF (CREATE_VC_UPDATE_FILE)
+      TRIBITS_CREATE_REPO_UPDATES_FILE()
+      # NOTE: We can only create the Updates.txt file using `gitdist
+      # ... ORIG_HEAD..HEAD` when doing an update and not after the initial
+      # clone.  That is because ORIG_HEAD will not exist for the base git repo
+      # after the initial clone.
     ENDIF()
 
   ELSE()
 
      MESSAGE("Skipping the update by request!")
-
-     SET(UPDATE_FAILED FALSE)
 
   ENDIF()
 
@@ -1468,16 +882,12 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n*** Determine if to go ahead with configure, build, test ..."
     "\n***")
 
-  IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY)
-    IF (MODIFIED_PACKAGES_LIST)
-      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
-        ":  Found modified packages, processing enabled packages!\n")
-    ELSE()
-      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
-        ":  No modified packages to justify continuous integration test iteration!\n")
-      REPORT_QUEUED_ERRORS()
-      RETURN()
-    ENDIF()
+  IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY
+    AND ${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0
+    AND MODIFIED_PACKAGES_LIST
+    )
+    MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
+      ":  Found modified packages, processing enabled packages!\n")
   ELSE()
     MESSAGE(
       "\nCTEST_ENABLE_MODIFIED_PACKAGES_ONLY=${CTEST_ENABLE_MODIFIED_PACKAGES_ONLY}"
@@ -1669,6 +1079,12 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       ELSE()
         SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       ENDIF()
+
+      SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
+      IF (EXISTS "${REPO_VERSION_FILE}")
+        SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
+      ENDIF()
+
       PRINT_VAR(CTEST_NOTES_FILES)
 
       # Submit configure results and the notes to the dashboard
@@ -1705,9 +1121,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # Determine if the build failed or not.
 
       SET(BUILD_LIBS_SUCCESS FALSE)
-      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
-        "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
-        )
+      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
         SET(BUILD_LIBS_SUCCESS TRUE)
       ENDIF()
       # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
@@ -1740,9 +1154,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
           "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
 
-        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
-          NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
-          )
+        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
           SET(BUILD_OR_TEST_FAILED TRUE)
         ENDIF()
 

@@ -1,0 +1,35 @@
+
+namespace stk {
+namespace simd {
+
+inline simd::Float load_aligned(const float* x) {
+  return simd::Float(_mm512_load_ps(x));
+}
+
+inline simd::Float load(const float* x) {
+  return simd::Float(_mm512_loadu_ps(x));
+}
+    
+inline simd::Float load(const float* x, const int offset) {
+  return simd::Float(_mm512_setr_ps(x[0],        x[offset],   x[2*offset], x[3*offset],
+                                     x[4*offset], x[5*offset], x[6*offset], x[7*offset],
+                                     x[8*offset], x[9*offset], x[10*offset],x[11*offset],
+                                     x[12*offset],x[13*offset],x[14*offset],x[15*offset]));
+}
+
+inline void store_aligned(float* x, const simd::Float& z) {
+  _mm512_store_ps(x,z._data);
+}
+
+inline void store(float* x, const simd::Float& z) {
+  _mm512_storeu_ps(x,z._data);
+}
+  
+inline void store(float* x, const simd::Float& z, const int offset) {
+  for (int i=0; i < nfloats; ++i) {
+    x[offset*i] = z[i];
+  }
+}
+
+} // namespace simd
+} // namespace stk

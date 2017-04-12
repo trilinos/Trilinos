@@ -73,6 +73,8 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
   int  connid = -1, blk_id_ndx, status;
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);

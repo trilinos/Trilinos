@@ -92,20 +92,20 @@ unsigned OctTreeKey::index( const unsigned Depth ) const
   return ( m_value[ which ] >> shift ) & MaskIndex ;
 }
 
-OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
-{
-  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
-
-  const value_type m = MaskIndex ;
-  const unsigned which = ( Depth - 1 ) / IndexPerWord ;
-  const unsigned shift = BitsPerWord -
-                         BitsPerIndex * ( (Depth - 1) % IndexPerWord + 1 ) ;
-  const unsigned mask = ~( m << shift );
-
-  m_value[ which ] &= mask ;
-
-  return *this ;
-}
+//OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
+//{
+//  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
+//
+//  const value_type m = MaskIndex ;
+//  const unsigned which = ( Depth - 1 ) / IndexPerWord ;
+//  const unsigned shift = BitsPerWord -
+//                         BitsPerIndex * ( (Depth - 1) % IndexPerWord + 1 ) ;
+//  const unsigned mask = ~( m << shift );
+//
+//  m_value[ which ] &= mask ;
+//
+//  return *this ;
+//}
 
 OctTreeKey &
 OctTreeKey::set_index( const unsigned Depth , const unsigned Index )

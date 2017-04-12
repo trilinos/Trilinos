@@ -83,7 +83,7 @@ namespace Tpetra {
        LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node),
+    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -241,7 +241,7 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node),
+    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -725,7 +725,7 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<Node>& node) :
     comm_ (comm),
-    node_ (node),
+    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {

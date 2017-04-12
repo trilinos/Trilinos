@@ -190,7 +190,6 @@ int main(int narg, char *arg[]) {
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
-  typedef inputAdapter_t::part_t part_t;
 
   inputAdapter_t *ia = new inputAdapter_t(*CommT, "region");
   ia->print(me);
@@ -300,7 +299,7 @@ int main(int narg, char *arg[]) {
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
 
-    Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params);
+    Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
     if (me == 0) cout << "Calling the coloring algorithm ... \n\n";

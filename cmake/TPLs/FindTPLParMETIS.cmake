@@ -61,7 +61,7 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( ParMETIS
 
 # Zoltan2 has a dependency on ParMETIS 4.0.3
 
-include(CheckCSourceRuns)
+include(CheckCSourceCompiles)
 FUNCTION(CHECK_PARMETIS_HAS_VERSION_4_0_3  VARNAME)
   SET(SOURCE
   "
@@ -69,23 +69,23 @@ FUNCTION(CHECK_PARMETIS_HAS_VERSION_4_0_3  VARNAME)
   #include <parmetis.h>
   int main()
   {
-    if( PARMETIS_MAJOR_VERSION > 4 )
+    #if PARMETIS_MAJOR_VERSION > 4
       return 0;
-    if( PARMETIS_MAJOR_VERSION == 4 )
-    if( PARMETIS_MINOR_VERSION > 0 )
+    #elif PARMETIS_MAJOR_VERSION == 4 && PARMETIS_MINOR_VERSION > 0
       return 0;
-    if( PARMETIS_MAJOR_VERSION == 4 )
-    if( PARMETIS_MINOR_VERSION == 0 )
-    if( PARMETIS_SUBMINOR_VERSION >= 3 )
+    #elif PARMETIS_MAJOR_VERSION == 4 && PARMETIS_MINOR_VERSION == 0 && PARMETIS_SUBMINOR_VERSION >= 3
       return 0;
-    return 1;
+    #else
+      parmetis_version_failure
+    #endif
   }
+
   "
   )
   SET(CMAKE_REQUIRED_INCLUDES ${TPL_ParMETIS_INCLUDE_DIRS})
   SET(CMAKE_REQUIRED_LIBRARIES ${TPL_ParMETIS_LIBRARIES})
   SET(CMAKE_REQUIRED_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
-  CHECK_C_SOURCE_RUNS("${SOURCE}" ${VARNAME})
+  CHECK_C_SOURCE_COMPILES("${SOURCE}" ${VARNAME})
 ENDFUNCTION()
 
 # We can't compile ParMETIS without MPI

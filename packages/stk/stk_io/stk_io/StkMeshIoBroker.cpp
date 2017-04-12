@@ -284,9 +284,7 @@ namespace io {
         }
 
         default: {
-          std::cerr << "WARNING: '" << name
-                    << "' is not a supported type. It's value cannot be output."
-                    << std::endl;
+          std::cerr << "WARNING: '" << name << "' is not a supported type. It's value cannot be output." << std::endl;
           break;
         }
         }
@@ -367,9 +365,7 @@ namespace io {
       }
 
       default: {
-        std::cerr << "WARNING: '" << globalVarName
-                  << "' is not a supported type. It's value cannot be input."
-                  << std::endl;
+        std::cerr << "WARNING: '" << globalVarName << "' is not a supported type. It's value cannot be input." << std::endl;
         break;
       }
       }
@@ -415,6 +411,10 @@ namespace io {
     return entities.size();
   }
 
+  bool is_skipped_attribute_field(const std::string &name, size_t numAttrFields)
+  {
+      return name == "attribute" && numAttrFields > 1;
+  }
 
 // ========================================================================
 template <typename INT>
@@ -471,9 +471,9 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       Ioss::NameList names;
       block->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-        if(*I == "attribute" && names.size() > 1)
+        if(is_skipped_attribute_field(*I, names.size()))
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (side_rank, *I);
+        stk::mesh::FieldBase *field = meta.get_field(side_rank, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, sides, block, *I);
       }
@@ -533,7 +533,7 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
   // name "implicit_node_ids", then populate the field with the correct
   // data.
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-  stk::mesh::FieldBase *implicit_node_id_field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, "implicit_node_ids");
+  stk::mesh::FieldBase *implicit_node_id_field = meta.get_field(stk::topology::NODE_RANK, "implicit_node_ids");
   if (implicit_node_id_field) {
     stk::io::field_data_from_ioss(bulk, implicit_node_id_field, nodes, nb, "implicit_ids");
   }
@@ -548,9 +548,9 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
   Ioss::NameList names;
   nb->field_describe(Ioss::Field::ATTRIBUTE, &names);
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-    if(*I == "attribute" && names.size() > 1)
+    if(is_skipped_attribute_field(*I, names.size()))
       continue;
-    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, *I);
+    stk::mesh::FieldBase *field = meta.get_field(stk::topology::NODE_RANK, *I);
     if (field)
       stk::io::field_data_from_ioss(bulk, field, nodes, nb, *I);
   }
@@ -585,14 +585,14 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
 
-      stk::mesh::FieldBase *implicit_elem_id_field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, "implicit_element_ids");
+      stk::mesh::FieldBase *implicit_elem_id_field = meta.get_field(stk::topology::ELEMENT_RANK, "implicit_element_ids");
       if (implicit_elem_id_field) {
         elements_needed = true;
       } else {
         for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-          if(*I == "attribute" && names.size() > 1)
+          if(is_skipped_attribute_field(*I, names.size()))
             continue;
-          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
+          stk::mesh::FieldBase *field = meta.get_field(stk::topology::ELEMENT_RANK, *I);
           if (field) {
             elements_needed = true;
             break;
@@ -629,9 +629,9 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
       // named components of the 'attribute' field, so add them instead.
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-        if(*I == "attribute" && names.size() > 1)
+        if(is_skipped_attribute_field(*I, names.size()))
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
+        stk::mesh::FieldBase *field = meta.get_field(stk::topology::ELEMENT_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
       }
@@ -695,9 +695,9 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-        if(*I == "attribute" && names.size() > 1)
+        if(is_skipped_attribute_field(*I, names.size()))
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, *I);
+        stk::mesh::FieldBase *field = meta.get_field(stk::topology::NODE_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, nodes, entity, *I);
       }
@@ -729,42 +729,62 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::Field::RoleType filter_role,
                     const stk::mesh::Selector *subset_selector)
 {
-    std::vector<stk::mesh::Entity> entities;
-    if(io_entity->type() == Ioss::SIDEBLOCK)
+  std::vector<stk::mesh::Entity> entities;
+  if(io_entity->type() == Ioss::SIDEBLOCK)
+  {
+    // Temporary Kluge to handle sideblocks which contain internally generated sides
+    // where the "ids" field on the io_entity doesn't work to get the correct side...
+    // NOTE: Could use this method for all entity types, but then need to correctly
+    // specify whether shared entities are included/excluded (See IossBridge version).
+
+    Ioss::SideBlock *block = dynamic_cast<Ioss::SideBlock *>(io_entity);
+    if(block==nullptr)
     {
-        // Temporary Kluge to handle sideblocks which contain internally generated sides
-        // where the "ids" field on the io_entity doesn't work to get the correct side...
-        // NOTE: Could use this method for all entity types, but then need to correctly
-        // specify whether shared entities are included/excluded (See IossBridge version).
-        size_t num_sides = get_entities(part, bulk, entities, subset_selector);
-        if(num_sides != static_cast<size_t>(io_entity->get_property("entity_count").get_int()))
-        {
-            std::ostringstream msg;
-            msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
-                    << ") does not match number of sides in the associated Ioss SideBlock named "
-                    << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
-                    << ").";
-            throw std::runtime_error(msg.str());
-        }
-    }
-    else
-    {
-        stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+        std::ostringstream msg;
+        msg << " INTERNAL ERROR: grouping entity failed to a SideBlock. Contact sierra-help@sandia.gov for assistance.\n";
+        throw std::runtime_error(msg.str());
     }
 
-    for (size_t i=0;i<namedFields.size();i++)
+    std::vector<int> elem_side_ids;
+    stk::topology stk_elem_topology = map_ioss_topology_to_stk(block->parent_element_topology(), bulk.mesh_meta_data().spatial_dimension());
+
+    stk::io::fill_element_and_side_ids(*io_entity, &part, bulk,
+                                   stk_elem_topology,
+                                   subset_selector,
+                                   entities,
+                                   elem_side_ids);
+
+    static int counter = 0;
+    counter++;
+    size_t num_sides = entities.size();
+    if(num_sides != static_cast<size_t>(io_entity->get_property("entity_count").get_int()))
     {
-      const stk::mesh::FieldBase *f = namedFields[i].field();
-      std::string field_name = namedFields[i].db_name();
-      // There is ugliness here to deal with the output of fields on the nodes of a part,
-      // either on the nodeblock or on a nodeset part created from the part nodes.
-      if ((namedFields[i].m_forceNodeblockOutput && io_entity->type() == Ioss::NODEBLOCK) ||
-          stk::io::is_field_on_part(f, part_type, part) ||
-          (io_entity->type() != Ioss::NODEBLOCK && io_entity->field_exists(field_name))) {
-        // NOTE: Multi-state issues are currently handled at field_add time
-        stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
-      }
+        std::ostringstream msg;
+        msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
+                << ") does not match number of sides in the associated Ioss SideBlock named "
+                << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
+                << ").";
+        throw std::runtime_error(msg.str());
     }
+  }
+  else
+  {
+    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+  }
+
+  for (size_t i=0;i<namedFields.size();i++)
+  {
+    const stk::mesh::FieldBase *f = namedFields[i].field();
+    std::string field_name = namedFields[i].db_name();
+    // There is ugliness here to deal with the output of fields on the nodes of a part,
+    // either on the nodeblock or on a nodeset part created from the part nodes.
+    if ((namedFields[i].m_forceNodeblockOutput && io_entity->type() == Ioss::NODEBLOCK) ||
+        stk::io::is_field_on_part(f, part_type, part) ||
+        (io_entity->type() != Ioss::NODEBLOCK && io_entity->field_exists(field_name))) {
+      // NOTE: Multi-state issues are currently handled at field_add time
+      stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
+    }
+  }
 }
 
 
@@ -948,6 +968,58 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
       }
 
+      std::vector<std::string> get_ordered_attribute_field_names(const Ioss::GroupingEntity &iossElementBlock)
+      {
+          std::vector<std::string> names;
+          iossElementBlock.field_describe(Ioss::Field::ATTRIBUTE, &names);
+          std::vector<std::pair<int, std::string>> indexAndName;
+          for(size_t i = 0; i < names.size(); i++)
+          {
+              int attributeIndex = iossElementBlock.get_field(names[i]).get_index();
+              if(!is_skipped_attribute_field(names[i], names.size()))
+                  indexAndName.push_back(std::make_pair(attributeIndex, names[i]));
+          }
+          std::sort(indexAndName.begin(), indexAndName.end());
+
+          names.resize(indexAndName.size());
+          for(size_t i=0;i<names.size();++i)
+              names[i] = indexAndName[i].second;
+          return names;
+      }
+
+      stk::mesh::FieldVector get_fields_by_name(const stk::mesh::MetaData &meta, const std::vector<std::string> &names)
+      {
+          stk::mesh::FieldVector attrFields(names.size());
+          for(size_t i=0;i<attrFields.size();++i)
+          {
+              attrFields[i] = meta.get_field(stk::topology::ELEM_RANK, names[i]);
+              ThrowRequireMsg(attrFields[i] != nullptr, "Can't find field named " << names[i]);
+          }
+          return attrFields;
+      }
+
+      void StkMeshIoBroker::store_attribute_field_ordering()
+      {
+          const stk::mesh::PartVector& parts = meta_data().get_parts();
+          attributeFieldOrderingByPartOrdinal.clear();
+          attributeFieldOrderingByPartOrdinal.resize(parts.size());
+          for(const stk::mesh::Part* part : parts)
+          {
+              const Ioss::GroupingEntity* iossGroupingEntity = part->attribute<Ioss::GroupingEntity>();
+              if(iossGroupingEntity != nullptr)
+              {
+                  std::vector<std::string> names = get_ordered_attribute_field_names(*iossGroupingEntity);
+                  const stk::mesh::FieldVector attrFields = get_fields_by_name(*m_meta_data, names);
+                  int partOrd = part->mesh_meta_data_ordinal();
+                  attributeFieldOrderingByPartOrdinal[partOrd].resize(attrFields.size());
+                  for(size_t i = 0; i < attrFields.size(); i++)
+                  {
+                      attributeFieldOrderingByPartOrdinal[partOrd][i] = attrFields[i]->mesh_meta_data_ordinal();
+                  }
+              }
+          }
+      }
+
       void StkMeshIoBroker::create_input_mesh()
       {
         validate_input_file_index(m_active_mesh_index);
@@ -975,6 +1047,20 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         process_elementblocks(*region, meta_data());
         process_sidesets(*region,      meta_data());
         process_nodesets(*region,      meta_data());
+
+        IossBlockMembership blockMemberships = get_block_memberships(*this);
+        for(IossBlockMembership::iterator iter = blockMemberships.begin(); iter != blockMemberships.end(); iter++)
+        {
+          stk::mesh::Part* sidesetPart = meta_data().get_part(iter->first);
+          if(sidesetPart != nullptr && sidesetPart->primary_entity_rank() == meta_data().side_rank())
+          {
+            std::vector<const stk::mesh::Part*> blocks;
+            fill_block_parts_given_names(iter->second, meta_data(), blocks);
+            meta_data().set_surface_to_block_mapping(sidesetPart, blocks);
+          }
+        }
+
+        store_attribute_field_ordering();
       }
 
 
@@ -989,19 +1075,26 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                                  Ioss::PropertyManager &properties,
                                                  char const* type)
       {
+        if(db_type == stk::io::APPEND_RESULTS)
+        {
+            properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND));
+            db_type = stk::io::WRITE_RESULTS;
+        }
+
         std::string out_filename = filename;
         stk::util::filename_substitution(out_filename);
         Ioss::Region *input_region = NULL;
         if (is_index_valid(m_input_files, m_active_mesh_index)) {
           input_region = get_input_io_region().get();
         }
-	// Determine whether 64-bit integers are required for the output mesh...
-	if (!properties.exists("INTEGER_SIZE_DB")){
-	  bool requires_64bit = check_integer_size_requirements() == 8;
-	  if (requires_64bit) {
-	    properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-	  }
-	}
+
+        // Determine whether 64-bit integers are required for the output mesh...
+        if (!properties.exists("INTEGER_SIZE_DB")){
+          bool requires_64bit = check_integer_size_requirements() == 8;
+          if (requires_64bit) {
+            properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+          }
+        }
 
         Teuchos::RCP<impl::OutputFile> output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
                                                                            properties, input_region, type));
@@ -1015,7 +1108,9 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
       void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
       {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
+        stk::io::create_bulkdata_sidesets(bulk_data());
+        m_output_files[output_file_index]->write_output_mesh(*m_bulk_data, attributeFieldOrderingByPartOrdinal);
+        stk::io::clear_bulkdata_sidesets(bulk_data());
       }
 
       void StkMeshIoBroker::flush_output() const
@@ -1038,20 +1133,24 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
       int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
       {
         validate_output_file_index(output_file_index);
-        int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data);
+        stk::io::create_bulkdata_sidesets(bulk_data());
+        int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data, attributeFieldOrderingByPartOrdinal);
+        stk::io::clear_bulkdata_sidesets(bulk_data());
         return current_output_step;
       }
 
       void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
       {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->begin_output_step(time, *m_bulk_data);
+        stk::io::create_bulkdata_sidesets(bulk_data());
+        m_output_files[output_file_index]->begin_output_step(time, *m_bulk_data, attributeFieldOrderingByPartOrdinal);
       }
 
       void StkMeshIoBroker::end_output_step(size_t output_file_index)
       {
         validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->end_output_step();
+        stk::io::clear_bulkdata_sidesets(bulk_data());
       }
 
       void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
@@ -1103,7 +1202,6 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
             bulk_data().initialize_face_adjacent_element_graph();
             process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sideset_face_creation_behavior);
             stk_mesh_modification_end_after_node_sharing_resolution();
-            bulk_data().delete_face_adjacent_element_graph();
         }
 
         // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle
@@ -1245,6 +1343,19 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
       }
 
+      size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName)
+      {
+          validate_input_file_index(m_active_mesh_index);
+          Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+
+          size_t length = 0;
+          if (region->field_exists(globalVarName)) {
+              Ioss::Field field = region->get_field(globalVarName);
+              length = field.raw_count() * field.raw_storage()->component_count();
+          }
+          return length;
+      }
+
       bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
                                        bool abort_if_not_found)
       {
@@ -1279,6 +1390,12 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
         return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                     abort_if_not_found);
+      }
+
+      bool StkMeshIoBroker::has_global(size_t output_file_index, const std::string &globalVarName) const
+      {
+        validate_output_file_index(output_file_index);
+        return m_output_files[output_file_index]->has_global(globalVarName);
       }
 
       void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
@@ -1344,6 +1461,29 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
       }
 
+      FieldNameToPartVector StkMeshIoBroker::get_nodal_var_names()
+      {
+          validate_input_file_index(m_active_mesh_index);
+          return m_input_files[m_active_mesh_index]->get_var_names(Ioss::NODEBLOCK, meta_data());
+      }
+
+      FieldNameToPartVector StkMeshIoBroker::get_elem_var_names()
+      {
+          validate_input_file_index(m_active_mesh_index);
+          return m_input_files[m_active_mesh_index]->get_var_names(Ioss::ELEMENTBLOCK, meta_data());
+      }
+
+      FieldNameToPartVector StkMeshIoBroker::get_nodeset_var_names()
+      {
+          validate_input_file_index(m_active_mesh_index);
+          return m_input_files[m_active_mesh_index]->get_var_names(Ioss::NODESET, meta_data());
+      }
+
+      FieldNameToPartVector StkMeshIoBroker::get_sideset_var_names()
+      {
+          validate_input_file_index(m_active_mesh_index);
+          return m_input_files[m_active_mesh_index]->get_var_names(Ioss::SIDESET, meta_data());
+      }
 
       void StkMeshIoBroker::add_all_mesh_fields_as_input_fields(MeshField::TimeMatchOption tmo)
       {
@@ -1372,6 +1512,16 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
         validate_input_file_index(m_active_mesh_index);
         return m_input_files[m_active_mesh_index]->read_defined_input_fields(step, missing, bulk_data());
+      }
+
+      double StkMeshIoBroker::read_defined_input_fields_at_step(int step,
+                                                        std::vector<stk::io::MeshField> *missing)
+      {
+        if (step <= 0)
+          return 0.0;
+
+        validate_input_file_index(m_active_mesh_index);
+        return m_input_files[m_active_mesh_index]->read_defined_input_fields_at_step(step, missing, bulk_data());
       }
 
       bool StkMeshIoBroker::use_nodeset_for_part_nodes_fields(size_t output_file_index) const
@@ -1404,9 +1554,31 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           return numTimeSteps;
       }
 
+      std::vector<double> StkMeshIoBroker::get_time_steps()
+      {
+          int numTimeSteps = get_num_time_steps();
+          std::vector<double> timeSteps;
+
+          Ioss::Region *ioRegion = get_input_io_region().get();
+          if(ioRegion != nullptr)
+          {
+              for(int istep = 0; istep < numTimeSteps; istep++)
+              {
+                  double state_time = ioRegion->get_state_time(istep + 1);
+                  timeSteps.push_back(state_time);
+              }
+          }
+          return timeSteps;
+      }
+
       double StkMeshIoBroker::get_max_time()
       {
           return get_input_io_region()->get_max_time().second;
+      }
+
+      void StkMeshIoBroker::set_max_num_steps_before_overwrite(size_t outputFileIndex, int maxNumStepsInFile)
+      {
+          get_output_io_region(outputFileIndex)->get_database()->set_cycle_count(maxNumStepsInFile);
       }
 
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
@@ -1445,6 +1617,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 	  }
 	}
 
+
 #if 0
 	// This section causes errors in some codes when enabled.
 	// ifdef'd out until can figure out why.  May be called too early before the counts are available...
@@ -1462,6 +1635,64 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
 	// 5. Default to 4-byte integers...
 	return 4;
+      }
+
+      void StkMeshIoBroker::set_name_and_version_for_qa_record(size_t outputFileIndex, const std::string &codeName, const std::string &codeVersion)
+      {
+          Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+          region->property_add(Ioss::Property(std::string("code_name"), codeName));
+          region->property_add(Ioss::Property(std::string("code_version"), codeVersion));
+      }
+      void StkMeshIoBroker::add_qa_records(size_t outputFileIndex, const std::vector<QaRecord> &qaRecords)
+      {
+          Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+          for(const QaRecord &qaRec : qaRecords)
+            region->add_qa_record(qaRec.name, qaRec.version, qaRec.date, qaRec.time);
+      }
+      void StkMeshIoBroker::add_info_records(size_t outputFileIndex, const std::vector<std::string> &infoRecords)
+      {
+          Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+          region->add_information_records(infoRecords);
+      }
+      std::vector<QaRecord> StkMeshIoBroker::get_qa_records()
+      {
+          std::vector<QaRecord> qaRecords;
+          Ioss::Region *region = get_input_io_region().get();
+          const std::vector<std::string> &qa = region->get_qa_records();
+          for (size_t i = 0; i < qa.size(); i += 4)
+              qaRecords.push_back({qa[i + 0], qa[i + 1], qa[i + 2], qa[i + 3]});
+          return qaRecords;
+      }
+      std::vector<std::string> StkMeshIoBroker::get_info_records()
+      {
+          Ioss::Region *region = get_input_io_region().get();
+          return region->get_information_records();
+      }
+
+      stk::mesh::FieldVector StkMeshIoBroker::get_ordered_attribute_fields(const stk::mesh::Part *blockPart) const
+      {
+          stk::mesh::FieldVector attrFields;
+          if(blockPart->mesh_meta_data_ordinal() < attributeFieldOrderingByPartOrdinal.size())
+          {
+              const std::vector<int> &fieldOrds = attributeFieldOrderingByPartOrdinal[blockPart->mesh_meta_data_ordinal()];
+              attrFields.resize(fieldOrds.size());
+              const stk::mesh::FieldVector &allFields = m_meta_data->get_fields();
+              for(size_t i=0; i<fieldOrds.size(); i++)
+              {
+                  attrFields[i] = allFields[fieldOrds[i]];
+              }
+          }
+          return attrFields;
+      }
+
+      const std::vector<std::vector<int>> & StkMeshIoBroker::get_attribute_field_ordering_stored_by_part_ordinal() const
+      {
+          return attributeFieldOrderingByPartOrdinal;
+      }
+
+      void StkMeshIoBroker::set_attribute_field_ordering_stored_by_part_ordinal(const std::vector<std::vector<int>> &ordering)
+      {
+          attributeFieldOrderingByPartOrdinal = ordering;
       }
 
       impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
@@ -1527,8 +1758,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
             Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
                                                            db_usage, comm, properties);
             if (db == NULL || !db->ok()) {
-              std::cerr << "ERROR: Could not open history/heartbeat database '" << filename
-                        << "'\n";
+              std::cerr << "ERROR: Could not open history/heartbeat database '" << filename << "'\n";
               return;
             }
 
@@ -1583,7 +1813,8 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 	  }
         }
 
-        void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
+        void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data,
+                                                 const std::vector<std::vector<int>> &attributeOrdering)
         {
           if ( m_mesh_defined == false )
             {
@@ -1605,10 +1836,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               // used in stk_adapt/stk_percept
               bool sort_stk_parts_by_name = m_region->property_exists("sort_stk_parts");
 
-              stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
+              stk::io::define_output_db(*m_region, bulk_data, attributeOrdering, m_input_region, m_subset_selector.get(),
                                         sort_stk_parts_by_name, m_use_nodeset_for_part_nodes_fields);
 
-              stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
+              if(!m_appending_to_mesh)
+                  stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
 
               //Attempt to avoid putting state change into the interface.  We'll see . . .
               m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -1665,6 +1897,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
           internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
           m_global_any_fields.push_back(GlobalAnyVariable(name, value, type));
+        }
+
+        bool impl::OutputFile::has_global(const std::string &globalVarName) const
+        {
+            return m_region->field_exists(globalVarName);
         }
 
         void impl::OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
@@ -1741,20 +1978,23 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                                           property_manager);
 
           if (dbo == NULL || !dbo->ok()) {
-            std::cerr << "ERROR: Could not open output database '" << filename
-                      << "' of type 'exodus'\n";
+            std::cerr << "ERROR: Could not open output database '" << filename << "' of type 'exodus'\n";
             std::exit(EXIT_FAILURE);
           }
 
           // There is no "label" for the output region; just use the filename for now so
           // Ioss messages will specify a unique or identifiable instance.
           m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
+
+          if(property_manager.exists("APPEND_OUTPUT") && property_manager.get("APPEND_OUTPUT").get_int() == Ioss::DB_APPEND)
+              m_appending_to_mesh = true;
         }
 
-        void impl::OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
+        void impl::OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data,
+                                                 const std::vector<std::vector<int>> &attributeOrdering)
         {
           if (!m_fields_defined) {
-            define_output_fields(bulk_data);
+            define_output_fields(bulk_data, attributeOrdering);
           }
 
           //Attempt to avoid putting state change into the interface.  We'll see . . .
@@ -1776,13 +2016,14 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         //
         // To export the data to the database, call
         // process_output_request().
-        void impl::OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
+        void impl::OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
+                                                    const std::vector<std::vector<int>> &attributeOrdering)
         {
           if(m_fields_defined) {
             return;
           }
 
-          write_output_mesh(bulk_data);
+          write_output_mesh(bulk_data, attributeOrdering);
 
           Ioss::Region *region = m_region.get();
 
@@ -1806,10 +2047,25 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
               // Get Ioss::GroupingEntity corresponding to this part...
               Ioss::GroupingEntity *entity = region->get_entity(part->name());
-              if(entity != NULL) {
-                stk::io::ioss_add_fields(*part, rank, entity, m_named_fields);
-              }
 
+              if(entity!= nullptr)
+              {
+                if (entity->type() == Ioss::SIDESET)
+                {
+                  Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+                  int block_count = sset->block_count();
+
+                  for(int i = 0; i < block_count; i++)
+                  {
+                      Ioss::SideBlock *fb = sset->get_block(i);
+                      stk::io::ioss_add_fields(*part, rank, fb, m_named_fields);
+                  }
+                }
+                else
+                {
+                  stk::io::ioss_add_fields(*part, rank, entity, m_named_fields);
+                }
+              }
               // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
               // (should probably do edges and faces also...)
               // Get Ioss::GroupingEntity corresponding to the nodes on this part...
@@ -1830,14 +2086,15 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           m_fields_defined = true;
         }
 
-        int impl::OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
+        int impl::OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data,
+                                                     const std::vector<std::vector<int>> &attributeOrdering)
         {
           ThrowErrorMsgIf(m_non_any_global_variables_defined,
                           "The output database " << m_region->name() << " has defined global variables, "
                           "but is calling the process_output_request() function which does not output global "
                           "variables.  Call begin_output_step() instead.");
 
-          begin_output_step(time, bulk_data);
+          begin_output_step(time, bulk_data, attributeOrdering);
           write_defined_output_fields(bulk_data);
           write_defined_global_any_fields(m_region, m_global_any_fields);
           end_output_step();

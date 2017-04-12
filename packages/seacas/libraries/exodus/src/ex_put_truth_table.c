@@ -98,6 +98,8 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   const char *ent_size = NULL;
   exerrval             = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type), &num_entity,
                    &numelblkdim, routine);
 

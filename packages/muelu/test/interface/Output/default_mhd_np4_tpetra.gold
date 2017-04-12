@@ -47,7 +47,8 @@ Level 1
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
@@ -105,7 +106,8 @@ Level 2
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
@@ -128,6 +130,7 @@ Level 2
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
+Smoother complexity = 0.00
 Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs

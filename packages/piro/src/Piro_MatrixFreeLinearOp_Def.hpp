@@ -54,9 +54,9 @@ Piro::MatrixFreeLinearOp<Scalar>::MatrixFreeLinearOp(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model, 
     const double lambda) :
   model_(model),
-  lambda_(lambda),
   basePoint_(),
-  f_base_(Teuchos::null)
+  f_base_(Teuchos::null),
+  lambda_(lambda)
 {
 }
 

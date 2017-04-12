@@ -59,7 +59,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+
+#ifndef _MSC_VER
 #include <getopt.h>
+#endif /* _MSC_VER */
+
 #include "zz_const.h"
 
 #define NUM_GLOBAL_VERTICES     2500    /* default */
@@ -524,14 +528,18 @@ int main(int argc, char *argv[])
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   int generate_files = 0;
   char *platform=NULL, *topology=NULL;
-  char *graph_package=NULL;
+  char *graph_package="PHG";
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
+
+#ifndef _MSC_VER
   struct option opts[10];
+#endif /* _MSC_VER */
+
   double comm_time[10];
   float cut_weight[3] = {0., 0., 0.};
-  long nvert=0;
-  char *debug_level=NULL;
+  long nvert=10000;
+  char *debug_level="1";
 
   status = 0;
 
@@ -559,7 +567,15 @@ int main(int argc, char *argv[])
   ** Initialize zoltan
   ******************************************************************/
 
-  /* options */
+#ifdef _MSC_VER
+  if (myRank == 0) {
+    printf("\n*** getopt not supported in Windows; ");
+    printf("command-line arguments will be ignored ***\n\n");
+  }
+#else
+  /* options for Unix runs; Windoze will use default values because it does
+   * not have getopt
+   */
 
   opts[0].name = "platform";
   opts[0].has_arg = 1;
@@ -660,6 +676,7 @@ int main(int argc, char *argv[])
       break;
     }
   }
+#endif /* _MSC_VER */
 
   if ((platform==NULL) && (topology==NULL)){
     if (myRank == 0)
@@ -826,8 +843,6 @@ int main(int argc, char *argv[])
                         &exportProcs, &exportToPart);
   }
 
-  Zoltan_Destroy(&zz);
-
   free_graph();
 
   if (myRank == 0){
@@ -838,20 +853,21 @@ int main(int argc, char *argv[])
     fflush(stdout);
   }
 
-  if (cut_weight[1] >= cut_weight[0]){
+  if ((numProcs > 1) && (cut_weight[1] >= cut_weight[0])){
     status = 1;
     if (zz->Proc == 0){
       fprintf(stderr,"FAILED: No improvement shown in flat partitioning");
     }
   }
 
-  if (do_hier && (cut_weight[2] > cut_weight[0])){
+  if ((numProcs > 1) && do_hier && (cut_weight[2] > cut_weight[0])){
     status = 1;
     if (zz->Proc == 0){
       fprintf(stderr,"FAILED: No improvement shown in hierarchical partitioning");
     }
   }
 
+  Zoltan_Destroy(&zz);
 
   MPI_Finalize();
 

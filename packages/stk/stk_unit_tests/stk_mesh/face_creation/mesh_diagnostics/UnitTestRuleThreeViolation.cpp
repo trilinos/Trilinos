@@ -96,16 +96,17 @@ protected:
 
         stk::mesh::Part &quad4Part = get_meta().get_topology_root_part(stk::topology::QUAD_4);
 
-        stk::mesh::Entity face = get_bulk().declare_solo_side(1u, {&quad4Part});
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation> (0);
-        for(unsigned i = 0; i<sharedNodes.size(); ++i)
-            get_bulk().declare_relation(face, sharedNodes[i], i, perm);
-
-        if(get_proc_rank() == 1)
-        {
-            stk::mesh::Entity elem5 = get_bulk().get_entity(stk::topology::ELEM_RANK, 5u);
-            get_bulk().declare_relation(elem5, face, 4, perm);
+        if (get_proc_rank() == 0) {
+            stk::mesh::Entity face = get_bulk().declare_solo_side({&quad4Part});
+            stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation> (0);
+            for(unsigned i = 0; i<sharedNodes.size(); ++i)
+                get_bulk().declare_relation(face, sharedNodes[i], i, perm);
         }
+        else if (get_proc_rank() == 1) {
+            stk::mesh::Entity elem5 = get_bulk().get_entity(stk::topology::ELEM_RANK, 5u);
+            get_bulk().declare_element_side(elem5, 4, stk::mesh::ConstPartVector{&quad4Part});
+        }
+
         get_bulk().modification_end();
     }
 

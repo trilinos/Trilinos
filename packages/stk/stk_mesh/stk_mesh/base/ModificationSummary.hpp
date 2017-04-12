@@ -23,7 +23,7 @@ public:
     ~EmptyModificationSummary(){}
 
     // void track_create_ghosting();
-    void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::PartVector& add_parts, const stk::mesh::PartVector& emptyParts)
+    void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts)
     {
 
     }
@@ -64,7 +64,7 @@ public:
     {
     }
 
-    void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts)
+    void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& addParts, const stk::mesh::OrdinalVector& rmParts)
     {
     }
 
@@ -120,7 +120,7 @@ public:
     ~ModificationSummary();
 
     // void track_create_ghosting();
-    void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::PartVector& add_parts, const stk::mesh::PartVector& emptyParts);
+    void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts);
 
     void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityKey> & remove_receive );
 
@@ -140,7 +140,7 @@ public:
 
     void track_destroy_entity(stk::mesh::Entity entity);
 
-    void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts);
+    void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& addParts, const stk::mesh::OrdinalVector& rmParts);
 
     void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val);
 
@@ -174,7 +174,7 @@ private:
 
     int my_proc_id() const;
 
-    void writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::PartVector& parts);
+    void writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::OrdinalVector& parts);
 
     stk::mesh::BulkData &m_bulkData;
     std::vector<std::pair<stk::mesh::EntityKey, std::string> > m_stringTracker;

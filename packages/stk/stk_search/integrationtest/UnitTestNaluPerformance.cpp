@@ -39,7 +39,7 @@
 namespace
 {
 
-void printGoldResults(const FlaotBoxVector &domainBoxes, const std::vector< std::pair<Sphere, Ident> > &spheres)
+void printGoldResults(const FloatBoxVector &domainBoxes, const std::vector< std::pair<Sphere, Ident> > &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -55,7 +55,7 @@ void printGoldResults(const FlaotBoxVector &domainBoxes, const std::vector< std:
     std::cerr << "Gold: Found " << boxIdPairResults.size() << " interactions.\n";
 }
 
-void printGoldResults(const FlaotBoxVector &domainBoxes, const FlaotBoxVector &spheres)
+void printGoldResults(const FloatBoxVector &domainBoxes, const FloatBoxVector &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -110,7 +110,7 @@ struct Options
          }
          else if ( searchString == "gtk" )
          {
-             mSearchMethod = GTK;
+             mSearchMethod = KDTREE;
          }
      }
 
@@ -172,9 +172,9 @@ void printOptions(const Options& options)
         {
             std::cerr << "OCTREE" << std::endl;
         }
-        else if (options.mSearchMethod == GTK )
+        else if (options.mSearchMethod == KDTREE )
         {
-            std::cerr << "GTK" << std::endl;
+            std::cerr << "KDTREE" << std::endl;
         }
         else
         {
@@ -191,7 +191,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
     std::vector< std::pair<Sphere, Ident> > spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    FlaotBoxVector domainBoxes;
+    FloatBoxVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
@@ -214,7 +214,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
     {
         gatherResultstoProcZero(comm, searchResults);
 
-        int procId=-1;
+        int procId = -1;
         MPI_Comm_rank(comm, &procId);
         if ( procId == 0 )
         {
@@ -254,17 +254,17 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    FlaotBoxVector spheres;
+    FloatBoxVector spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    FlaotBoxVector domainBoxes;
+    FloatBoxVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
 
     double startTime = stk::wall_time();
 
-    int procId=-1;
+    int procId = -1;
     MPI_Comm_rank(comm, &procId);
 
     if ( options.mSpheresFirstThenBoxes )

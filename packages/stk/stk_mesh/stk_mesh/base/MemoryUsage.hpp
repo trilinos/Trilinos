@@ -57,7 +57,7 @@ struct MemoryUsage {
   unsigned num_parts;
   unsigned part_bytes;
   std::vector<std::string> entity_rank_names;
-  std::vector<unsigned> entity_counts;
+  std::vector<size_t> entity_counts;
   unsigned bytes_per_entity;
   std::vector<unsigned> downward_relation_counts;
   std::vector<unsigned> upward_relation_counts;

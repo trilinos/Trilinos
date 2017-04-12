@@ -127,8 +127,11 @@ namespace MueLu {
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "ipc: hi basis") { ss << "<Parameter name=\"ipc: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "ipc: lo basis") { ss << "<Parameter name=\"ipc: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -208,8 +211,11 @@ namespace MueLu {
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
   "<ParameterList name=\"transfer: params\"/>"
-  "<Parameter name=\"ipc: hi basis\" type=\"string\" value=\"\"/>"
-  "<Parameter name=\"ipc: lo basis\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -477,9 +483,15 @@ namespace MueLu {
       
          ("transfer: params","transfer: params")
       
-         ("ipc: hi basis","ipc: hi basis")
+         ("pcoarsen: element","pcoarsen: element")
       
-         ("ipc: lo basis","ipc: lo basis")
+         ("pcoarsen: schedule","pcoarsen: schedule")
+      
+         ("pcoarsen: hi basis","pcoarsen: hi basis")
+      
+         ("pcoarsen: lo basis","pcoarsen: lo basis")
+      
+         ("smoother: neighborhood type","smoother: neighborhood type")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       

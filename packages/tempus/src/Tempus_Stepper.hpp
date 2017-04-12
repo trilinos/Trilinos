@@ -16,6 +16,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 // Thyra
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_NonlinearSolverBase.hpp"
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -77,6 +78,15 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel() = 0;
 
+    /// Set solver via ParameterList solver name.
+    virtual void setSolver(std::string solverName) = 0;
+    /// Set solver via solver ParameterList.
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null) = 0;
+    /// Set solver.
+    virtual void setSolver(
+        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
+
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
 
@@ -89,6 +99,7 @@ public:
     virtual Scalar getOrder() const = 0;
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;
+    virtual Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const=0;
   //@}
 
   /// \name Helper functions
@@ -167,9 +178,8 @@ public:
       return;
     }
 
-
     /// Validate ME supports 2nd order implicit ODE/DAE evaluation, f(xdotdot,xdot,x,t) [= 0]
-    void validImplicitSecondOrderODE_DAE(
+    void validSecondOrderODE_DAE(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
       TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
@@ -214,6 +224,77 @@ public:
         << "  OUT_ARG_W                = true\n");
 
       return;
+    }
+
+    Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters() const
+    {
+      using Teuchos::RCP;
+      using Teuchos::ParameterList;
+
+      // NOX Solver ParameterList
+      RCP<ParameterList> noxPL = Teuchos::parameterList();
+
+        // Direction ParameterList
+        RCP<ParameterList> directionPL = Teuchos::parameterList();
+        directionPL->set<std::string>("Method", "Newton");
+          RCP<ParameterList> newtonPL = Teuchos::parameterList();
+          newtonPL->set<std::string>("Forcing Term Method", "Constant");
+          newtonPL->set<bool>       ("Rescue Bad Newton Solve", 1);
+          directionPL->set("Newton", *newtonPL);
+        noxPL->set("Direction", *directionPL);
+
+        // Line Search ParameterList
+        RCP<ParameterList> lineSearchPL = Teuchos::parameterList();
+        lineSearchPL->set<std::string>("Method", "Full Step");
+          RCP<ParameterList> fullStepPL = Teuchos::parameterList();
+          fullStepPL->set<double>("Full Step", 1);
+          lineSearchPL->set("Full Step", *fullStepPL);
+        noxPL->set("Line Search", *lineSearchPL);
+
+        noxPL->set<std::string>("Nonlinear Solver", "Line Search Based");
+
+        // Printing ParameterList
+        RCP<ParameterList> printingPL = Teuchos::parameterList();
+        printingPL->set<int>("Output Precision", 3);
+        printingPL->set<int>("Output Processor", 0);
+          RCP<ParameterList> outputPL = Teuchos::parameterList();
+          outputPL->set<bool>("Error", 1);
+          outputPL->set<bool>("Warning", 1);
+          outputPL->set<bool>("Outer Iteration", 0);
+          outputPL->set<bool>("Parameters", 0);
+          outputPL->set<bool>("Details", 0);
+          outputPL->set<bool>("Linear Solver Details", 1);
+          outputPL->set<bool>("Stepper Iteration", 1);
+          outputPL->set<bool>("Stepper Details", 1);
+          outputPL->set<bool>("Stepper Parameters", 1);
+          printingPL->set("Output Information", *outputPL);
+        noxPL->set("Printing", *printingPL);
+
+        // Solver Options ParameterList
+        RCP<ParameterList> solverOptionsPL = Teuchos::parameterList();
+        solverOptionsPL->set<std::string>("Status Test Check Type", "Minimal");
+        noxPL->set("Solver Options", *solverOptionsPL);
+
+        // Status Tests ParameterList
+        RCP<ParameterList> statusTestsPL = Teuchos::parameterList();
+        statusTestsPL->set<std::string>("Test Type", "Combo");
+        statusTestsPL->set<std::string>("Combo Type", "OR");
+        statusTestsPL->set<int>("Number of Tests", 2);
+          RCP<ParameterList> test0PL = Teuchos::parameterList();
+          test0PL->set<std::string>("Test Type", "NormF");
+          test0PL->set<double>("Tolerance", 1e-08);
+          statusTestsPL->set("Test 0", *test0PL);
+          RCP<ParameterList> test1PL = Teuchos::parameterList();
+          test1PL->set<std::string>("Test Type", "MaxIters");
+          test1PL->set<int>("Maximum Iterations", 10);
+          statusTestsPL->set("Test 1", *test1PL);
+        noxPL->set("Status Tests", *statusTestsPL);
+
+      // Solver ParameterList
+      RCP<ParameterList> solverPL = Teuchos::parameterList();
+      solverPL->set("NOX", *noxPL);
+
+      return solverPL;
     }
   //@}
 

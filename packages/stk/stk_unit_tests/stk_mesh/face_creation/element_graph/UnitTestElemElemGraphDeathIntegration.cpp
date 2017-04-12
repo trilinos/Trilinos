@@ -29,7 +29,7 @@ namespace
 
 unsigned count_elements(const stk::mesh::BulkData &bulk, stk::mesh::Part &activePart)
 {
-    std::vector<unsigned> countsPerEntityType;
+    std::vector<size_t> countsPerEntityType;
     stk::mesh::count_entities(activePart, bulk, countsPerEntityType);
     return countsPerEntityType[stk::topology::ELEMENT_RANK];
 }
@@ -55,24 +55,20 @@ public:
     ElementDeathMock(BulkDataElementGraphTester &bulk_, stk::mesh::Part &activePart_, stk::mesh::Part &boundaryPart_) :
             bulk(bulk_),
             activePart(activePart_),
-            boundaryPart(boundaryPart_),
-            elemGraph(bulk),
-            observer(bulk, elemGraph)
-    {
-        bulk.register_observer(&observer);
-    }
+            boundaryPart(boundaryPart_)
+    { }
 
     void kill_elements(stk::mesh::EntityVector &elementsToKill)
     {
         deactivate_elements(elementsToKill);
 
         stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
-        stk::mesh::impl::populate_selected_value_for_remote_elements(bulk, elemGraph, activePart, remoteActiveSelector);
+        stk::mesh::impl::populate_selected_value_for_remote_elements(bulk, bulk.get_face_adjacent_element_graph(), activePart, remoteActiveSelector);
 
         stk::mesh::PartVector newlyCreatedBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
         stk::mesh::PartVector exposedButExistingBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
         process_killed_elements(bulk,
-                                elemGraph,
+                                bulk.get_face_adjacent_element_graph(),
                                 elementsToKill,
                                 activePart,
                                 remoteActiveSelector,
@@ -92,14 +88,12 @@ private:
 
     void deactivate_element(stk::mesh::Entity elementToDeactivate)
     {
-        bulk.change_entity_parts(elementToDeactivate, {}, {&activePart});
+        bulk.change_entity_parts(elementToDeactivate, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&activePart});
     }
 private:
     BulkDataElementGraphTester &bulk;
     stk::mesh::Part &activePart;
     stk::mesh::Part &boundaryPart;
-    stk::mesh::ElemElemGraph elemGraph;
-    stk::mesh::ElemElemGraphUpdater observer;
 };
 
 class MeshRefinementMock
@@ -144,7 +138,6 @@ public:
         boundaryPart(meta.declare_part("boundary"))
     {
         stk::io::fill_mesh("generated:1x1x4", bulk);
-
         stk::unit_test_util::put_mesh_into_part(bulk, activePart);
     }
 

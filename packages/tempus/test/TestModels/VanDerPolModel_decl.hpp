@@ -15,8 +15,6 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-using Thyra::ModelEvaluatorBase;
-
 namespace Tempus_Test {
 
 /** \brief van der Pol model problem for nonlinear electrical circuit.
@@ -57,21 +55,21 @@ class VanDerPolModel
   VanDerPolModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   // Exact solution
-  ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
   // Exact sensitivity solution
-  ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
-  ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
@@ -91,10 +89,10 @@ private:
 
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
     ) const;
   //@}
 
@@ -106,9 +104,9 @@ private:
   bool haveIC_;     ///< false => no nominal values are provided (default=true)
   bool acceptModelParams_; ///< Changes inArgs to require parameters
   mutable bool isInitialized_;
-  mutable ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
-  mutable ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-  mutable ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;

@@ -161,6 +161,8 @@ int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   switch (obj_type) {
   case EX_GLOBAL:
     ex_put_var_names_int(exoid, "global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR, &varid);

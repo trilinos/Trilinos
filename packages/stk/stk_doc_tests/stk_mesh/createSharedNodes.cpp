@@ -87,11 +87,11 @@ TEST(stkMeshHowTo, createSharedNodes)
         std::vector<stk::mesh::EntityIdVector> elemNodeIds = { {1, 3, 2}, {4, 2, 3} };
         const int myproc = bulkData.parallel_rank();
 
-        stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemIds[myproc], triPart);
+        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc], {&triPart});
         stk::mesh::EntityVector elemNodes(nodesPerElem);
-        elemNodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][0]);
-        elemNodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][1]);
-        elemNodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][2]);
+        elemNodes[0] = bulkData.declare_node(elemNodeIds[myproc][0]);
+        elemNodes[1] = bulkData.declare_node(elemNodeIds[myproc][1]);
+        elemNodes[2] = bulkData.declare_node(elemNodeIds[myproc][2]);
 
         bulkData.declare_relation(elem, elemNodes[0], 0);
         bulkData.declare_relation(elem, elemNodes[1], 1);
@@ -125,9 +125,9 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
         std::vector<stk::mesh::EntityIdVector> nodeIds = { {1, 3, 2}, {4, 2, 3} };
         const int myproc = bulkData.parallel_rank();
         stk::mesh::EntityVector nodes(nodesPerProc);
-        nodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
-        nodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
-        nodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+        nodes[0] = bulkData.declare_node(nodeIds[myproc][0]);
+        nodes[1] = bulkData.declare_node(nodeIds[myproc][1]);
+        nodes[2] = bulkData.declare_node(nodeIds[myproc][2]);
 
         int otherproc = testUtils::get_other_proc(myproc);
         bulkData.add_node_sharing(nodes[1], otherproc);
@@ -159,9 +159,9 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
         const int myproc = bulkData.parallel_rank();
 
         stk::mesh::EntityVector nodes(nodesPerProc);
-        nodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
-        nodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
-        nodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+        nodes[0] = bulkData.declare_node(nodeIds[myproc][0]);
+        nodes[1] = bulkData.declare_node(nodeIds[myproc][1]);
+        nodes[2] = bulkData.declare_node(nodeIds[myproc][2]);
 
         int otherproc = testUtils::get_other_proc(myproc);
         bulkData.add_node_sharing(nodes[1], otherproc);
@@ -179,7 +179,7 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
         stk::mesh::EntityId elemIds[][elemsPerProc] = { {1}, {2}};
 
         bulkData.modification_begin();
-        stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elemIds[myproc][0], triPart);
+        stk::mesh::Entity elem = bulkData.declare_element(elemIds[myproc][0], {&triPart});
         bulkData.declare_relation(elem, nodes[0], 0);
         bulkData.declare_relation(elem, nodes[1], 1);
         bulkData.declare_relation(elem, nodes[2], 2);

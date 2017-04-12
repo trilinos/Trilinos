@@ -64,10 +64,7 @@ namespace BaskerNS
     int Symbolic(Int option);
 
     BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
-
-    BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, size_t *col_ptr, Int *row_idx, Entry *val);
+    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
     int Factor(Int option);
@@ -1137,7 +1134,8 @@ namespace BaskerNS
     void matrix_transpose(BASKER_MATRIX_VIEW &, BASKER_MATRIX &);
 
     BASKER_INLINE
-    void matrix_transpose(const Int sm_, 
+    void matrix_transpose(
+        const Int sm_, 
         const Int m_,
 			  const Int sn_, 
         const Int n_,
@@ -1146,7 +1144,20 @@ namespace BaskerNS
 			  Int *row_idx,
 			  Entry *val,
 			  BASKER_MATRIX &AT);
-   
+
+    BASKER_INLINE
+    void matrix_transpose(
+        const Int sm_, 
+        const Int m_,
+			  const Int sn_, 
+        const Int n_,
+			  const Int nnz_,
+			  Int *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT,
+        INT_1DARRAY &vals_transpose_local);
+
     //basker_solve_rhs.hpp
     BASKER_INLINE
     int test_solve();
@@ -1271,6 +1282,48 @@ namespace BaskerNS
     // Matrix dims stored within Symbolic
     Int sym_gn;
     Int sym_gm;
+
+    // sfactor_copy2 mapping of input vals to reordered vals
+    INT_1DARRAY vals_perm_composition; //this will store the btf permutation+sorts of val (for use in Factor)
+    INT_1DARRAY_PAIRS vals_block_map_perm_pair; //this will map perm(val) indices to BTF_A, BTF_B, and BTF_C 
+
+    // These store the permutation of indices of val during permute_col and sort calls
+    INT_1DARRAY vals_order_btf_array;
+    INT_1DARRAY vals_order_blk_amd_array;
+    INT_1DARRAY vals_order_scotch_array;
+    INT_1DARRAY vals_order_csym_array;
+
+    // These store the permutation indices of the block vals during ND permute_col and sort calls
+    INT_1DARRAY vals_order_ndbtfa_array;
+    INT_1DARRAY vals_order_ndbtfb_array;
+    INT_1DARRAY vals_order_ndbtfc_array;
+
+    INT_1DARRAY inv_vals_order_ndbtfa_array;
+    INT_1DARRAY inv_vals_order_ndbtfb_array;
+    INT_1DARRAY inv_vals_order_ndbtfc_array;
+
+    // For transpose
+    INT_1DARRAY vals_crs_transpose; //this will store shuffling and sort of vals due to transpose
+
+    // To hold the nnz and avoid some compiler errors if BTF_A.nnz undefined, for example
+    Int btfa_nnz; 
+    Int btfb_nnz;
+    Int btfc_nnz;
+
+    ENTRY_1DARRAY input_vals_unordered; //may be needed if a copy of val input is needed to be stored
+
+
+    BASKER_INLINE
+    int permute_col_store_valperms
+    (
+     BASKER_MATRIX &M,
+     INT_1DARRAY &col,
+     INT_1DARRAY &vals_order_perm
+    );
+
+    BASKER_INLINE
+    int sort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
+
     //end NDE
 
 

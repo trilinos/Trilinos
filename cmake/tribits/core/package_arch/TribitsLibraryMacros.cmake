@@ -364,10 +364,49 @@ ENDFUNCTION()
 #
 # Any base directories for the header files listed in the arguments
 # ``HEADERS`` or ``NOINSTALLHEADERS`` should be passed into the standard CMake
-# command ``INCLUDE_DIRECTORIES()`` *before* calling this function.  These
-# include directories will then be added to current packages list of include
-# directories ``${PACKAGE_NAME}_INCLUDE_DIRS`` which is then exported to
-# downstream SE packages..
+# command ``INCLUDE_DIRECTORIES()`` **before** calling this function.  For
+# example, a CMakeLists.txt file will look like::
+#
+#   ...
+#
+#   TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+#   CONFIGURE_FILE(...)
+#
+#   ...
+#
+#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+#
+#   ...
+#
+#   TRIBITS_ADD_LIBRARY( <libName>
+#     SOURCES
+#       <src0>.c
+#       <subdir0>/<src1>.cpp
+#       <subdir1>/<src2>.F90
+#       ...
+#     HEADERS
+#        <header0>.h
+#        <subdir0>/<header1>.hpp
+#         ...
+#     NONINSTALLHEADERS <header2>.hpp <header3>.hpp ...
+#     ...
+#     )
+#
+# The include of ``${CMAKE_CURRENT_BINARY_DIR}`` is needed for any generated
+# header files (e.g. using raw ``CONFIGURE_FILE()`` or
+# `TRIBITS_CONFIGURE_FILE()`_) or any generated Fortran ``*.mod`` module files
+# generated as a byproduct of compiling F90+ source files (that contain one or
+# more Fortran module declarations).
+#
+# The function ``TRIBITS_ADD_LIBRARY()`` will grab the list of all of the
+# include directories in scope from prior calls to ``INCLUDE_DIRECTORIES()``
+# and will append these to the variable ``${PACKAGE_NAME}_INCLUDE_DIRS``.
+# This list of include directories is exported to downstream SE packages so
+# they appear on the compile lines of all downstream object file compiles.
+# This is a critical part of the "glue" that allows TriBITS packages to link
+# up automatically (just by clearing dependencies in
+# `<packageDir>/cmake/Dependencies.cmake`_ files).
 #
 # .. _Install Targets (TRIBITS_ADD_LIBRARY()):
 #

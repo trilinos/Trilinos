@@ -63,6 +63,8 @@ public:
                      const Teuchos::RCP<Objective_SimOpt<Real> > & pobj)
     : sampler_(sampler), pobj_(pobj) {}
 
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+
   Real value(const Vector<Real> &x,
              Real &tol) {
     const Vector_SimOpt<Real> &uz = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
@@ -79,6 +81,7 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pobj_->setParameter(param);
+      pobj_->update(*(pu.get(i)), *zptr);
       tmpval = pobj_->value(*(pu.get(i)), *zptr, tol);
       tmpsum += tmpval*weight;
     }
@@ -111,6 +114,7 @@ public:
       pobj_->setParameter(param);
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> gi(pgu.get(i), tmp1);
+      pobj_->update(xi);
       pobj_->gradient(gi, xi, tol);
       gi.scale(weight);
       tmp2->plus(*tmp1);
@@ -152,6 +156,7 @@ public:
       Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> vi(Teuchos::rcp_const_cast<Vector<Real> >(pvu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(vzptr));
       Vector_SimOpt<Real> hvi(phvu.get(i), tmp1);
+      pobj_->update(xi);
       pobj_->hessVec(hvi, vi, xi, tol);
       hvi.scale(weight);
       tmp2->plus(*tmp1);

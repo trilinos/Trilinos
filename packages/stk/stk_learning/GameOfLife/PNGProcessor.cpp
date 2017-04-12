@@ -47,10 +47,11 @@ void PNGProcessor::add_this_much_pixel_padding_to_bottom(unsigned amount)
 }
 
 //IO and Checking
-unsigned PNGProcessor::get_ideal_rows_per_processor(unsigned numProcs) const
-{
-    return m_imageHeight/numProcs + !!(m_imageHeight%numProcs);
-}
+//unsigned PNGProcessor::get_ideal_rows_per_processor(unsigned numProcs) const
+//{
+//    return m_imageHeight/numProcs + !!(m_imageHeight%numProcs);
+//}
+
 void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const
 {
     unsigned id = 1;
@@ -59,15 +60,17 @@ void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& 
             if (m_pixelVector[rowIndex][colIndex])
                 elemIds.push_back(id);
 }
-void PNGProcessor::get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>&
-                                                    coordinates) const
-{
-    coordinates.clear();
-    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
-        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
-            if (m_pixelVector[rowIndex][colIndex])
-                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
-}
+
+//void PNGProcessor::get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>&
+//                                                    coordinates) const
+//{
+//    coordinates.clear();
+//    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
+//        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
+//            if (m_pixelVector[rowIndex][colIndex])
+//                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
+//}
+
 void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned,
                                                       unsigned>>& coordinates) const
 {
@@ -78,16 +81,16 @@ void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsi
                 coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
 }
 
-void PNGProcessor::print_image()
-{
-    for (unsigned row = 0; row < m_imageHeight; row++)
-    {
-        for (unsigned col = 0; col < m_imageWidth;
-                col++)
-            printf("%8x ", m_imageVector[row][col]);
-        printf("\n");
-    }
-}
+//void PNGProcessor::print_image()
+//{
+//    for (unsigned row = 0; row < m_imageHeight; row++)
+//    {
+//        for (unsigned col = 0; col < m_imageWidth;
+//                col++)
+//            printf("%8x ", m_imageVector[row][col]);
+//        printf("\n");
+//    }
+//}
 
 //private
 void PNGProcessor::process_bytes_into_image_vector()
@@ -177,6 +180,8 @@ ColoredPNGProcessor::ColoredPNGProcessor(std::string fileName)
 {
     convert_to_grey_bits();
 }
+ColoredPNGProcessor::~ColoredPNGProcessor() { }
+
 void ColoredPNGProcessor::commit_image_vector_to_pixel_vector()
 {
     find_median_grey_bit_value();
@@ -273,7 +278,7 @@ void ColoredPNGProcessor::find_upper_and_lower_bounds()
 }
 
 SimpleColoredPng::SimpleColoredPng(std::string fileName)
-:PNGProcessor(fileName)
+: PNGProcessor(fileName), mOtherPixelCount(0)
 {
     for (unsigned row = 0; row < m_imageHeight; row++)
         for (unsigned col = 0; col < m_imageWidth; col++)
@@ -313,7 +318,10 @@ void SimpleColoredPng::update_image_value_ignoring_white(unsigned row, unsigned 
     bool isWhite = m_imageVector[row][col] == 0xffffffff;
     bool isTransparent = (m_imageVector[row][col] & 0xff) == 0;
     if(!isWhite && !isTransparent)
+    {
         m_imageVector[row][col] = 0xff;
+        mOtherPixelCount++;
+    }
 }
 
 void SimpleColoredPng::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const

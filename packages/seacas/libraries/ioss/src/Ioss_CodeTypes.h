@@ -68,6 +68,10 @@ using MPI_Comm       = int;
 #endif
 #endif
 
+#if !defined(SIERRA_PARALLEL_MPI)
+#include <SEACASIoss_KOKKOS_config.h>
+#endif
+
 #ifdef SEACAS_HAVE_KOKKOS
 #include <Kokkos_Core.hpp> // for Kokkos::complex
 #endif

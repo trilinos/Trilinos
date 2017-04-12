@@ -74,6 +74,8 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error flag */
 
   /* Check the file version information */

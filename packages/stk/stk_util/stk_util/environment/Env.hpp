@@ -93,10 +93,7 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
 
-
-
 bool is_comm_valid();
-
 
 /**
  * @ingroup EnvCommandLineDetail
@@ -110,7 +107,6 @@ bool is_comm_valid();
  *				or an empty string if not found.
  */
 const std::string &get_param(const char * const option);
-
 
 /**
  * @brief Member function <b>set_param</b> assigns the value to the parameter option.
@@ -133,7 +129,6 @@ void set_param(const char *option, const std::string &value);
  */
 const std::string &product_name();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>developer_mode</b> returns true if the
@@ -153,7 +148,6 @@ void set_input_file_required(bool value);
 
 void setInputFileName(std::string value);
 std::string getInputFileName();
-
 
 /**
  * @brief Function <b>set_sm_preprocessing</b> sets whether to check input

@@ -1,13 +1,19 @@
-
 #include <vector>
 
 #include "balance.hpp"
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
+#include "internal/balanceCoincidentElements.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
-#include "stk_mesh/base/MeshDiagnostics.hpp"
-#include "stk_util/parallel/ParallelReduceBool.hpp"
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/WriteMesh.hpp>
+#include "stk_io/StkIoUtils.hpp"
+#include <stk_tools/mesh_clone/MeshClone.hpp>
+#include "internal/LastStepFieldWriter.hpp"
+#include "stk_balance/internal/TransientFieldTransferById.hpp"
+#include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include "fixSplitCoincidentElements.hpp"
 
 namespace stk
 {
@@ -19,16 +25,23 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
     internal::logMessage(stkMeshBulkData.parallel(), "Starting rebalance.");
 
     stk::mesh::EntityProcVec decomp;
-    internal::callZoltan2(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
+    internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
 
     DecompositionChangeList changeList(stkMeshBulkData, decomp);
     balanceSettings.modifyDecomposition(changeList);
+    keep_coincident_elements_together(stkMeshBulkData, changeList);
     const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
     const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
 
     if (num_global_entity_migrations > 0)
     {
         internal::rebalance(changeList);
+        if(balanceSettings.shouldFixMechanisms())
+        {
+            bool mechanismsFound = stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
+            if(mechanismsFound)
+                internal::logMessage(stkMeshBulkData.parallel(), "Mechanisms were found and fixed during decomposition\n");
+        }
         if(balanceSettings.shouldPrintMetrics())
             internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
     }
@@ -58,48 +71,56 @@ bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData&
     return false;
 }
 
-stk::mesh::EntityProcVec get_rebalance_by_moving_split_coincident_elements(stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
+void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, stk::mesh::BulkData &inputBulk, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
 {
-    stk::mesh::EntityProcVec elementsToMigrate;
-    elementsToMigrate.reserve(splitCoincidentElements.size());
-    for(const stk::mesh::SplitCoincidentInfo::value_type& item : splitCoincidentElements)
+    stk::mesh::MetaData metaB;
+    stk::mesh::BulkData bulkB(metaB, comm);
+
+    stk::mesh::BulkData *balancedBulk = nullptr;
+    if(stk::io::get_transient_fields(inputBulk.mesh_meta_data()).empty())
     {
-        int min_proc = bulkData.parallel_size();
-        stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK,item.first);
-        for(size_t i=0;i<item.second.size();++i)
-            min_proc=std::min(min_proc, item.second[i].second);
-        if(min_proc<bulkData.parallel_rank())
-            elementsToMigrate.push_back(stk::mesh::EntityProc(element, min_proc));
+        balancedBulk = &inputBulk;
     }
-    return elementsToMigrate;
+    else
+    {
+        stk::tools::copy_mesh(inputBulk, inputBulk.mesh_meta_data().universal_part(), bulkB);
+        balancedBulk = &bulkB;
+    }
+
+    stk::balance::balanceStkMesh(graphOptions, *balancedBulk);
+
+    stk::io::StkMeshIoBroker stkOutput;
+    stkOutput.set_bulk_data(*balancedBulk);
+    stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
+
+    stk::balance::internal::TransientFieldTransferById transfer(stkInput, stkOutput);
+    transfer.transfer_and_write_transient_fields(outputFilename);
 }
 
-void rebalance_elements(stk::mesh::BulkData& bulkData, const stk::mesh::EntityProcVec &elementsToMove)
+void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
+                      stk::balance::BalanceSettings& graphOptions,
+                      const std::string& exodusFilename,
+                      const std::string& outputFilename)
 {
-    stk::balance::DecompositionChangeList changeList(bulkData, elementsToMove);
-    if(bulkData.parallel_rank()==0)
-        std::cerr << "Fixing up mesh due to detection of violation of parallel mesh rule #1.\n";
-    stk::balance::internal::rebalance(changeList);
+    stk::io::StkMeshIoBroker stkInput;
+    stkInput.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+    stk::io::fill_mesh_preexisting(stkInput, exodusFilename, bulk);
+    make_mesh_consistent_with_parallel_mesh_rule1(bulk);
+    run_static_stk_balance_with_settings(stkInput, bulk, outputFilename, bulk.parallel(), graphOptions);
 }
 
-stk::mesh::EntityIdProcMap rebalance_mesh_to_avoid_split_coincident_elements(stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
+void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
 {
-    stk::mesh::EntityProcVec elementsToMove = get_rebalance_by_moving_split_coincident_elements(bulkData, splitCoincidentElements);
-    stk::mesh::EntityIdProcMap entityIdProcMap;
-    for(size_t i=0;i<elementsToMove.size();++i)
-        entityIdProcMap[bulkData.identifier(elementsToMove[i].first)] = elementsToMove[i].second;
-    rebalance_elements(bulkData, elementsToMove);
-    return entityIdProcMap;
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, comm);
+    initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
 }
 
-stk::mesh::EntityIdProcMap make_mesh_consistent_with_parallel_mesh_rule1(stk::mesh::BulkData& bulkData)
+void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm)
 {
-    stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
-    bool allOkThisProc = splitCoincidentElements.empty();
-    bool allOkEverywhere = stk::is_true_on_all_procs(bulkData.parallel(), allOkThisProc);
-    if(!allOkEverywhere)
-        return rebalance_mesh_to_avoid_split_coincident_elements(bulkData, splitCoincidentElements);
-    return stk::mesh::EntityIdProcMap();
+    stk::balance::GraphCreationSettings graphOptions;
+    std::string outputFilename = outputDirectory + "/" + exodusFilename;
+    run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
 }
 
 }

@@ -62,9 +62,9 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HDIV_QUAD_In_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType  input,
-               /**/  workViewType   work,
+                     workViewType   work,
                const vinvViewType   vinvLine,
                const vinvViewType   vinvBubble) {
       const ordinal_type cardLine = vinvLine.dimension(0);
@@ -208,7 +208,7 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HDIV_QUAD_In_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
@@ -240,7 +240,7 @@ namespace Intrepid2 {
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                                       ">>> ERROR (Basis_HDIV_QUAD_In_FEM): Operator type not implemented" );
-        break;
+        // break;commented out since exception is thrown
       }
       }
     }

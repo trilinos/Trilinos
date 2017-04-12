@@ -42,8 +42,8 @@ public:
     virtual ~FieldVertexWeightSettingsWithSearchForParticles() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool userSpecifiedVertexWeights() const { return false; }
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedInAVector() const { return false; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual bool includeSearchResultsInGraph() const { return true; }
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
@@ -320,7 +320,7 @@ protected:
         out.close();
 
         size_t num_elements_migrated_to_me = calculate_migrated_elements();
-        EXPECT_EQ(0u, num_elements_migrated_to_me);
+        EXPECT_EQ(12u, num_elements_migrated_to_me);
     }
 
     void decomposeWithRcbThenParmetisAndCheckMigration()
@@ -478,8 +478,8 @@ protected:
             destroy_element_and_lower(elements[i]);
             for (int particleIndex=0 ; particleIndex < numParticlesPerElement ; ++particleIndex)
             {
-                stk::mesh::Entity node = get_bulk().declare_entity(stk::topology::NODE_RANK, ++entityId, nodeTopologyPart);
-                stk::mesh::Entity particle = get_bulk().declare_entity(stk::topology::ELEM_RANK, entityId, {&particleTopologyPart,block2Part});
+                stk::mesh::Entity node = get_bulk().declare_node(++entityId, {&nodeTopologyPart});
+                stk::mesh::Entity particle = get_bulk().declare_element(entityId, {&particleTopologyPart,block2Part});
                 get_bulk().declare_relation(particle, node, 0);
 
                 set_coords(node, centroid);

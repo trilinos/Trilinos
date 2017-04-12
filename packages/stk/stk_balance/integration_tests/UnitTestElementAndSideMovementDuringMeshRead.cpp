@@ -8,7 +8,7 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_io/InputFile.hpp"         // for InputFile
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_balance/balance.hpp"
+#include <stk_balance/fixSplitCoincidentElements.hpp>
 
 class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 {
@@ -75,8 +75,6 @@ public:
         bulk_data().modification_end();
 
         // stk_mesh_modification_end_after_node_sharing_resolution();
-
-        bulk_data().delete_face_adjacent_element_graph();
 
         // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle
         if(!i_started_modification_cycle)

@@ -40,20 +40,18 @@ local seacas-root-inc ;
 if $(RTenv-arg) = "user" {
   seacas-root-inc = $(seacas-root)/include ;
 } else {
-  seacas-root-inc = $(seacas-root) ;
+  seacas-root-inc = $(seacas-root)
+                    $(seacas-root)/libraries/ioss/src
+                    $(seacas-root)/libraries/ioss/src/init ;
 }
 
 project votd
   : requirements
     $(tpl-warnings)
     <include>$(seacas-root-inc)
-    <include>$(seacas-root-inc)/libraries/ioss/src
-    <include>$(seacas-root-inc)/libraries/ioss/src/init
     <address-model>64:<define>Build64
   : usage-requirements
     <include>$(seacas-root-inc)
-    <include>$(seacas-root-inc)/libraries/ioss/src
-    <include>$(seacas-root-inc)/libraries/ioss/src/init
     <address-model>64:<define>Build64
   : build-dir $(seacas-builddir)
   ;
@@ -102,6 +100,7 @@ alias install-targets
     Utst_database_io
     Utst_sort
     $(seacas-root)/scripts/decomp
+    /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
     /tpl/matio//matdump
@@ -163,6 +162,7 @@ alias install-targets
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
+    /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
     /tpl/matio//matdump
@@ -348,6 +348,7 @@ install install-user-bin
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
+    /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
     /tpl/matio//matdump
@@ -403,6 +404,7 @@ install install-user-bin
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
+    /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
     /tpl/matio//matdump
@@ -686,14 +688,13 @@ lib iovs
         [ glob $(seacas-root)/libraries/ioss/src/visualization/*.C ]
     ]
     ioss
-    /sierra/stk_util//stk_util_util
-    /sierra/stk_util//stk_util_diag
     exodus
   :
+    <runtime-link>shared:<define>IOSS_DLOPEN_ENABLED
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/../TPLs_src/ParaViewCatalystSierraAdaptor/include
+        <include>$(seacas-root)/libraries/ioss/src/visualization/ParaViewCatalystIossAdapter/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -950,7 +951,7 @@ lib suplib
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/suplib
+        <include>$(seacas-root)/libraries/suplib
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -991,7 +992,7 @@ lib suplib_cpp
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/suplib_cpp
+        <include>$(seacas-root)/libraries/suplib_cpp
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1023,7 +1024,7 @@ lib suplib_c
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/suplib_c
+        <include>$(seacas-root)/libraries/suplib_c
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1065,7 +1066,7 @@ lib plt
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/plt
+        <include>$(seacas-root)/libraries/plt
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1118,7 +1119,7 @@ lib svdi_cdr
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/plt
+        <include>$(seacas-root)/libraries/plt
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1181,7 +1182,7 @@ lib svdi_cgi
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/svdi/cgi
+        <include>$(seacas-root)/libraries/svdi/cgi
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1381,7 +1382,7 @@ lib mapvarlib
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/mapvarlib
+        <include>$(seacas-root)/libraries/mapvarlib
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1434,7 +1435,7 @@ lib supes
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root-inc)/libraries/supes
+        <include>$(seacas-root)/libraries/supes
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1547,11 +1548,10 @@ exe aprepro
   $(seacas-root)/applications/aprepro/aprepro.C
     aprepro_lib
   : <include>$(seacas-root)/applications/aprepro
-    <include>$(seacas-root-inc)/applications/aprepro
+    <include>$(seacas-root)/applications/aprepro
     <tag>@utility-exec-tag
   :
   : <include>$(seacas-root)/applications/aprepro
-    <include>$(seacas-root-inc)/applications/aprepro
   ;
 
 exe conjoin
@@ -1565,11 +1565,9 @@ exe conjoin
     exodus
     /tpl/netcdf//netcdf
   : <include>$(seacas-root)/applications/conjoin
-    <include>$(seacas-root-inc)/applications/conjoin
     <tag>@utility-exec-tag
   :
   : <include>$(seacas-root)/applications/conjoin
-    <include>$(seacas-root-inc)/applications/conjoin
   ;
 
 exe ejoin
@@ -1648,6 +1646,7 @@ exe exo2mat
 exe mat2exo
   :
   $(seacas-root)/applications/mat2exo/mat2exo.C
+    suplib_cpp
     suplib_c
     exodus
     /tpl/matio//matio

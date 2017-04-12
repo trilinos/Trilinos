@@ -78,15 +78,12 @@ namespace {
       }
       errmsg << "ERROR: Failed to locate number of " << label << " in superelement file.";
       IOSS_ERROR(errmsg);
-
-      return -1;
     }
 
     status = nc_inq_dimlen(ncid, dimid, count);
     if (status != NC_NOERR) {
       errmsg << "ERROR: failed to get number of " << label << " in superelement file.";
       IOSS_ERROR(errmsg);
-      return -1;
     }
     return status;
   }

@@ -80,6 +80,42 @@ TEST_F(TestTextMesh, singleHexWithCoordinates)
        stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
        verify_single_element(get_bulk(), 1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1, 2, 3, 4, 5, 6, 7, 8});
        verify_coordinates(coordinates, get_bulk(), 3);
+
+    }
+}
+
+struct ElementInfo
+{
+    std::string blockName;
+    stk::mesh::EntityId id;
+};
+
+void verify_part_membership(std::vector<ElementInfo> golds, const stk::mesh::MetaData &meta, const stk::mesh::BulkData &bulk)
+{
+    for(const ElementInfo gold : golds)
+    {
+        stk::mesh::Part *blockPart = meta.get_part(gold.blockName);
+        ASSERT_TRUE(blockPart != nullptr);
+        stk::mesh::EntityVector elems;
+        stk::mesh::get_selected_entities(*blockPart, bulk.buckets(stk::topology::ELEM_RANK), elems);
+        ASSERT_EQ(1u, elems.size());
+        EXPECT_EQ(gold.id, bulk.identifier(elems[0]));
+    }
+}
+
+TEST_F(TestTextMesh, twoHexDisconnectedWithCoordinatesAndParts)
+{
+    std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,block_1\n\
+                            0,2,HEX_8,9,10,11,12,13,14,15,16,block_2";
+    if (get_bulk().parallel_size() == 1)
+    {
+       std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1,
+                                           0,0,1, 1,0,1, 1,1,1, 0,1,1, 0,0,2, 1,0,2, 1,1,2, 0,1,2 };
+       stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+       verify_single_element(get_bulk(), 1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1, 2, 3, 4, 5, 6, 7, 8});
+       verify_coordinates(coordinates, get_bulk(), 3);
+
+       verify_part_membership({{"block_1", 1u}, {"block_2", 2u}}, get_meta(), get_bulk());
     }
 }
 
@@ -119,7 +155,7 @@ TEST_F(TestTextMesh, tooFewNodes)
 
 TEST_F(TestTextMesh, tooManyNodes)
 {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9";
+    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9,10";
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
@@ -201,7 +237,7 @@ TEST_F(TestTextMesh2d, threeQuadsWithCoordinates)
         std::vector<double> coordinates = { 0,0, 1,0, 1,1, 0,1, 2,0, 2,1, 3,0, 3,1, };
         stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
 
-        std::vector<unsigned> counts;
+        std::vector<size_t> counts;
         stk::mesh::count_entities(get_meta().universal_part(), get_bulk(), counts);
         EXPECT_EQ(3u, counts[stk::topology::ELEM_RANK]);
 

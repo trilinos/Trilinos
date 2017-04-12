@@ -345,6 +345,10 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData&
                              const OrdinalVector       & omit ,
                              EntityRank            entity_rank_to ,
                              OrdinalVector       & induced_parts);
+void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
+                             const Entity entity_from ,
+                             EntityRank            entity_rank_to ,
+                             OrdinalVector       & induced_parts);
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
@@ -352,8 +356,9 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::EntityId new_face_global_id,
                                                      const stk::mesh::PartVector & parts = stk::mesh::PartVector());
 
+template<typename PARTVECTOR>
 stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
-        const unsigned relationOrdinal, const stk::mesh::PartVector& parts, stk::topology entity_top);
+        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top);
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,

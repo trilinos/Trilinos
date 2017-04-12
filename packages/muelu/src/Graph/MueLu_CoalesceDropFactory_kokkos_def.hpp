@@ -47,7 +47,10 @@
 #define MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+
+#include "Xpetra_Matrix.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
@@ -60,6 +63,7 @@
 #include "MueLu_Utilities_kokkos.hpp"
 
 namespace MueLu {
+
 
   namespace { // anonymous
 
@@ -181,6 +185,180 @@ namespace MueLu {
       double            threshold;
     };
 
+    // collect number nonzeros of blkSize rows in nnz_(row+1)
+    template<class MatrixType, class NnzType, class blkSizeType>
+    class Stage1aVectorFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+
+    public:
+      Stage1aVectorFunctor(MatrixType kokkosMatrix_, NnzType nnz_, blkSizeType blkSize_) :
+        kokkosMatrix(kokkosMatrix_),
+        nnz(nnz_),
+        blkSize(blkSize_) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO row, LO& totalnnz) const {
+
+        // the following code is more or less what MergeRows is doing
+        // count nonzero entries in all dof rows associated with node row
+        LO nodeRowMaxNonZeros = 0;
+        for (LO j = 0; j < blkSize; j++) {
+          auto rowView = kokkosMatrix.row(row * blkSize + j);
+          nodeRowMaxNonZeros += rowView.length;
+        }
+        nnz(row + 1) = nodeRowMaxNonZeros;
+        totalnnz += nodeRowMaxNonZeros;
+      }
+
+
+    private:
+      MatrixType kokkosMatrix; //< local matrix part
+      NnzType nnz;             //< View containing number of nonzeros for current row
+      blkSizeType blkSize;     //< block size (or partial block size in strided maps)
+    };
+
+
+    // build the dof-based column map containing the local dof ids belonging to blkSize rows in matrix
+    // the DofIds may not be sorted.
+    template<class MatrixType, class NnzType, class blkSizeType, class ColDofType>
+    class Stage1bVectorFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+      //typedef typename MatrixType::value_type   SC;
+      //typedef typename MatrixType::device_type  NO;
+
+    private:
+      MatrixType kokkosMatrix; //< local matrix part
+      NnzType nnz;             //< View containing dof offsets for dof columns
+      blkSizeType blkSize;     //< block size (or partial block size in strided maps)
+      ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
+
+    public:
+      Stage1bVectorFunctor(MatrixType kokkosMatrix_,
+                           NnzType nnz_,
+                           blkSizeType blkSize_,
+                           ColDofType coldofs_) :
+        kokkosMatrix(kokkosMatrix_),
+        nnz(nnz_),
+        blkSize(blkSize_),
+        coldofs(coldofs_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO rowNode) const {
+
+        LO pos = nnz(rowNode);
+        for (LO j = 0; j < blkSize; j++) {
+          auto rowView = kokkosMatrix.row(rowNode * blkSize + j);
+          auto numIndices = rowView.length;
+
+          for (decltype(numIndices) k = 0; k < numIndices; k++) {
+            auto dofID = rowView.colidx(k);
+            coldofs(pos) = dofID;
+            pos ++;
+          }
+        }
+      }
+
+    };
+
+    // sort column ids
+    // translate them into (unique) node ids
+    // count the node column ids per node row
+    template<class MatrixType, class ColDofNnzType, class ColDofType, class Dof2NodeTranslationType, class BdryNodeType>
+    class Stage1cVectorFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+
+    private:
+      ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
+      ColDofNnzType coldofnnz; //< view containing start and stop indices for subviews
+      Dof2NodeTranslationType dof2node; //< view containing the local node id associated with the local dof id
+      ColDofNnzType colnodennz; //< view containing number of column nodes for each node row
+      BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
+
+    public:
+      Stage1cVectorFunctor(ColDofNnzType coldofnnz_, ColDofType coldofs_, Dof2NodeTranslationType dof2node_, ColDofNnzType colnodennz_, BdryNodeType bdrynode_) :
+        coldofnnz(coldofnnz_),
+        coldofs(coldofs_),
+        dof2node(dof2node_),
+        colnodennz(colnodennz_),
+        bdrynode(bdrynode_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO rowNode, LO& nnz) const {
+        LO begin = coldofnnz(rowNode);
+        LO end   = coldofnnz(rowNode+1);
+        LO n     = end - begin;
+
+        for (LO i = 0; i < (n-1); i++) {
+          for (LO j = 0; j < (n-i-1); j++) {
+            if (coldofs(j+begin) > coldofs(j+begin+1)) {
+              LO temp = coldofs(j+begin);
+              coldofs(j+begin) = coldofs(j+begin+1);
+              coldofs(j+begin+1) = temp;
+            }
+          }
+        }
+
+        size_t cnt = 0;
+        LO lastNodeID = -1;
+        for (LO i = 0; i < n; i++) {
+          LO dofID  = coldofs(begin + i);
+          LO nodeID = dof2node(dofID);
+          if(nodeID != lastNodeID) {
+            lastNodeID = nodeID;
+            coldofs(begin+cnt) = nodeID;
+            cnt++;
+          }
+        }
+        if(cnt == 1)
+          bdrynode(rowNode) = true;
+        else
+          bdrynode(rowNode) = false;
+        colnodennz(rowNode+1) = cnt;
+        nnz += cnt;
+      }
+
+    };
+
+    // fill column node id view
+    template<class MatrixType, class ColDofNnzType, class ColDofType, class ColNodeNnzType, class ColNodeType>
+    class Stage1dVectorFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+      typedef typename MatrixType::value_type SC;
+
+    private:
+      ColDofType     coldofs;    //< view containing mixed node and dof indices (only input)
+      ColDofNnzType  coldofnnz;  //< view containing the start and stop indices for subviews (dofs)
+      ColNodeType colnodes;      //< view containing the local node ids associated with columns
+      ColNodeNnzType colnodennz; //< view containing start and stop indices for subviews
+
+    public:
+      Stage1dVectorFunctor(ColDofType coldofs_, ColDofNnzType coldofnnz_, ColNodeType colnodes_, ColNodeNnzType colnodennz_) :
+        coldofs(coldofs_),
+        coldofnnz(coldofnnz_),
+        colnodes(colnodes_),
+        colnodennz(colnodennz_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO rowNode) const {
+        auto dofbegin  = coldofnnz(rowNode);
+        auto nodebegin = colnodennz(rowNode);
+        auto nodeend   = colnodennz(rowNode+1);
+        auto n = nodeend - nodebegin;
+
+        for (decltype(nodebegin) i = 0; i < n; i++) {
+          colnodes(nodebegin + i) = coldofs(dofbegin + i);
+        }
+      }
+    };
+
+
   } // namespace
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -269,11 +447,102 @@ namespace MueLu {
     } else if (blkSize > 1 && threshold == zero) {
       // Case 3:  block problem without filtering
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Block systems without filtering are not implemented");
+      const RCP<const Map> rowMap = A->getRowMap();
+      const RCP<const Map> colMap = A->getColMap();
 
-      // Detect and record rows that correspond to Dirichlet boundary conditions
-      // boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      // build a node row map (uniqueMap = non-overlapping) and a node column map
+      // (nonUniqueMap = overlapping). The arrays rowTranslation and colTranslation
+      // stored in the AmalgamationInfo class container contain the local node id
+      // given a local dof id. The data is calculated in the AmalgamationFactory and
+      // stored in the variable "UnAmalgamationInfo" (which is of type AmalagamationInfo)
+      const RCP<const Map> uniqueMap = amalInfo->getNodeRowMap();
+      const RCP<const Map> nonUniqueMap = amalInfo->getNodeColMap();
+      Array<LO> rowTranslationArray = *(amalInfo->getRowTranslation()); // TAW should be transform that into a View?
+      Array<LO> colTranslationArray = *(amalInfo->getColTranslation());
 
+      // get number of local nodes
+      LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+
+      typedef typename Kokkos::View<LocalOrdinal*, DeviceType> id_translation_type;
+      id_translation_type rowTranslation("dofId2nodeId",rowTranslationArray.size());
+      id_translation_type colTranslation("ov_dofId2nodeId",colTranslationArray.size());
+
+      // TODO change this to lambdas
+      for (decltype(rowTranslationArray.size()) i = 0; i < rowTranslationArray.size(); ++i)
+        rowTranslation(i) = rowTranslationArray[i];
+      for (decltype(colTranslationArray.size()) i = 0; i < colTranslationArray.size(); ++i)
+        colTranslation(i) = colTranslationArray[i];
+
+      // extract striding information
+      blkSize = A->GetFixedBlockSize();  //< the full block size (number of dofs per node in strided map)
+      LocalOrdinal blkId   = -1;         //< the block id within a strided map or -1 if it is a full block map
+      LocalOrdinal blkPartSize = A->GetFixedBlockSize(); //< stores block size of part blkId (or the full block size)
+      if(A->IsView("stridedMaps") == true) {
+        const RCP<const Map> myMap = A->getRowMap("stridedMaps");
+        const RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+        TEUCHOS_TEST_FOR_EXCEPTION(strMap.is_null() == true, Exceptions::RuntimeError, "Map is not of type stridedMap");
+        blkSize = Teuchos::as<const LocalOrdinal>(strMap->getFixedBlockSize());
+        blkId   = strMap->getStridedBlockId();
+        if (blkId > -1)
+          blkPartSize = Teuchos::as<LocalOrdinal>(strMap->getStridingData()[blkId]);
+      }
+
+      auto kokkosMatrix = A->getLocalMatrix(); // access underlying kokkos data
+
+      //
+      typedef typename Matrix::local_matrix_type          local_matrix_type;
+      typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
+      typedef typename kokkos_graph_type::row_map_type    row_map_type;
+      //typedef typename row_map_type::HostMirror           row_map_type_h;
+      typedef typename kokkos_graph_type::entries_type    entries_type;
+
+      // Stage 1c: get number of dof-nonzeros per blkSize node rows
+      typename row_map_type::non_const_type dofNnz("nnz_map", numNodes + 1);
+
+      LO numDofCols = 0;
+      Stage1aVectorFunctor<decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize)> stage1aFunctor(kokkosMatrix, dofNnz, blkPartSize);
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1a", numNodes, stage1aFunctor, numDofCols);
+
+      // parallel_scan (exclusive)
+      ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
+      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numNodes+1, scanFunctor);
+
+
+      typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
+      Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
+      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", numNodes, stage1bFunctor);
+
+
+      // we have dofcols and dofids from Stage1dVectorFunctor
+      LO numNodeCols = 0;
+      typename row_map_type::non_const_type rows("nnz_nodemap", numNodes + 1);
+      typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numNodes);
+      Stage1cVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(colTranslation), decltype(bndNodes)> stage1cFunctor(dofNnz, dofcols, colTranslation,rows,bndNodes);
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", numNodes, stage1cFunctor,numNodeCols);
+
+      // parallel_scan (exclusive)
+      ScanFunctor<LO,decltype(rows)> scanNodeFunctor(rows);
+      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numNodes+1, scanNodeFunctor);
+
+      // create column node view
+      typename entries_type::non_const_type cols("nodecols", numNodeCols);
+
+
+      Stage1dVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(rows), decltype(cols)> stage1dFunctor(dofcols, dofNnz, cols, rows);
+      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", numNodes, stage1dFunctor);
+
+      kokkos_graph_type kokkosGraph(cols, rows);
+
+      // create LW graph
+      graph = rcp(new LWGraph_kokkos(kokkosGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+
+
+      boundaryNodes = bndNodes;
+      graph->SetBoundaryNodeMap(boundaryNodes);
+
+      numTotal = A->getNodeNumEntries();
+
+      dofsPerNode = blkSize;
     } else if (algo == "classical") {
 
       if (blkSize == 1 && threshold != zero) {

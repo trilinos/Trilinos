@@ -86,10 +86,14 @@ namespace NOX {
 
     //! Constructor taking a ref-count pointer to each global object.
     GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
-           const Teuchos::RCP<NOX::MeritFunction::Generic>& mf);
+               const Teuchos::RCP<NOX::MeritFunction::Generic>& mf);
 
     //! Destructor.
     virtual ~GlobalData();
+
+    //! Initiialize the global data from a top level (validated) nox
+    //! parameter list.
+    void initialize(const Teuchos::RCP<Teuchos::ParameterList>& noxParams);
 
     //! Returns the print utils object.
     Teuchos::RCP<NOX::Utils> getUtils() const;

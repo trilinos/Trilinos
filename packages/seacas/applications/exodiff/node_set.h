@@ -53,6 +53,7 @@ public:
   size_t Node_Index(size_t position) const;
 
   const double *Distribution_Factors() const;
+  void          Free_Distribution_Factors() const;
 
   void Display(std::ostream & = std::cout);
   int  Check_State() const;

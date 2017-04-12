@@ -225,7 +225,11 @@ main (int argc, char* argv[])
     success = false;
   }
 
+#ifdef HAVE_TPETRACORE_MPI
+  // This label only gets used in an MPI build.
+  // Some compilers warn on unused labels.
  EndOfTest:
+#endif // HAVE_TPETRACORE_MPI
 
   // Clean up, if possible.
 #ifdef HAVE_TPETRACORE_MPI

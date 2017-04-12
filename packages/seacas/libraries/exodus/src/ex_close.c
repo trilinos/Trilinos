@@ -82,6 +82,8 @@ int ex_close(int exoid)
   int parent_id = 0;
 #endif
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
                 /*
                  * NOTE: If using netcdf-4, exoid must refer to the root group.

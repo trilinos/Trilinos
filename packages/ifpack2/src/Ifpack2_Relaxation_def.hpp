@@ -437,6 +437,18 @@ double Relaxation<MatrixType>::getApplyFlops() const {
 }
 
 
+
+template<class MatrixType>
+size_t Relaxation<MatrixType>::getNodeSmootherComplexity() const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // Relaxation methods cost roughly one apply + one diagonal inverse per iteration
+  return A_->getNodeNumRows() + A_->getNodeNumEntries();
+}
+
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::

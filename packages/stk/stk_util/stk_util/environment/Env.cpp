@@ -87,19 +87,17 @@ format_time(
 
 namespace Env {
 
-  //
-  //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
-  //
-  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
-    if(ver != GEMINI_SCI_UNKNOWN) {
-      GeminiSCIVersionValue = ver;
-    }
-    ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
-    return GeminiSCIVersionValue;
+//
+//  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
+//
+GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
+  static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
+  if(ver != GEMINI_SCI_UNKNOWN) {
+    GeminiSCIVersionValue = ver;
   }
-    
-
+  ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
+  return GeminiSCIVersionValue;
+}
 
 const std::string &
 product_name()
@@ -107,13 +105,11 @@ product_name()
   return stk::EnvData::instance().m_productName;
 }
 
-
 const std::string &
 executable_file()
 {
   return stk::EnvData::instance().m_executablePath;
 }
-
 
 const std::string &
 startup_date()
@@ -127,38 +123,16 @@ startup_date()
   return startup_date;
 }
 
-
 double
 start_time()
 {
   return stk::EnvData::instance().m_startTime;
 }
 
-
 bool
 developer_mode()
 {
   return !get_param("developer-mode").empty();
-}
-
-
-// Similar to Platform.cpp's get_heap_info, but no 'largest_free' and no log output.
-void get_heap_used(size_t &heap_size)
-{
-  heap_size = 0;
-
-#if defined(SIERRA_HEAP_INFO)
-
-# if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
-  heap_size = malloc_used();
-  
-# elif defined(__linux__) && ! defined(__IBMCPP__)
-  static struct mallinfo minfo;
-  minfo = mallinfo();
-  heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
-
-# endif
-#endif // defined(SIERRA_HEAP_INFO)
 }
 
 void setInputFileName(std::string name) {
@@ -190,13 +164,11 @@ bool is_zapotec()
     return stk::EnvData::instance().m_isZapotec;
 }
 
-
 const std::string &
 architecture()
 {
   return get_param("architecture");
 }
-
 
 const std::string
 working_directory() {
@@ -399,7 +371,6 @@ void abort() {
   std::exit( EXIT_FAILURE );                    // Second try to die
 }
 
-
 const std::string &
 get_param(
   const char * const	option)
@@ -413,7 +384,6 @@ get_param(
   else
     return stk::EnvData::instance().m_emptyString;
 }
-
 
 void
 set_param(

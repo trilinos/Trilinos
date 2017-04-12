@@ -87,6 +87,7 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
   int  status;
   int  varid;
   char errmsg[MAX_ERR_LENGTH];
+  int  fill = NC_FILL_CHAR;
 
   if (count > 0) {
     dim[0] = dimension_var;
@@ -99,6 +100,9 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
       ex_err("ex_put_init_ext", errmsg, exerrval);
       return status; /* exit define mode and return */
     }
+#if NC_HAS_HDF5
+    nc_def_var_fill(exoid, varid, 0, &fill);
+#endif
   }
   return NC_NOERR;
 }
@@ -250,6 +254,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   char errmsg[MAX_ERR_LENGTH];
 
   int rootid = exoid & EX_FILE_ID_MASK;
+
+  ex_check_valid_file_id(exoid);
 
   exerrval = 0; /* clear error code */
 

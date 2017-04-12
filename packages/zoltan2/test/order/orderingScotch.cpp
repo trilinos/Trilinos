@@ -325,7 +325,8 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
   ////// Create and solve ordering problem
 
   try {
-    Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
+    Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params,
+                                                          comm);
 
     if( rank == 0 ) {
       cout << "Going to solve" << endl;

@@ -178,6 +178,13 @@ public:
   void set_2(const Vector<Real>& vec) { 
     vec2_->set(vec); 
   }
+
+  void print( std::ostream &outStream ) const {
+    outStream << "Sim: ";
+    vec1_->print(outStream);
+    outStream << "Opt: ";
+    vec2_->print(outStream);
+  }
 };
 
 }

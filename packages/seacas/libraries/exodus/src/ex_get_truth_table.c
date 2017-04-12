@@ -81,6 +81,8 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   const char *ent_type = NULL;
   const char *var_name = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {

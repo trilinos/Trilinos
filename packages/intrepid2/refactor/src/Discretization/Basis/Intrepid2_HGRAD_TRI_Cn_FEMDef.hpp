@@ -63,9 +63,9 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_TRI_Cn_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType  input,
-               /**/  workViewType   work,
+                     workViewType   work,
                const vinvViewType   vinv,
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
@@ -160,7 +160,7 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HGRAD_TRI_Cn_FEM::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                const EOperator operatorType ) {
@@ -317,10 +317,10 @@ namespace Intrepid2 {
       ordinal_type eid[3] = {}, iid = 0;
       for (ordinal_type i=0;i<card;++i) {
         const double x = dofCoords(i,0), y = dofCoords(i,1);
-        bicentric(x, y, /**/ xi0, xi1, xi2);
+        bicentric(x, y,  xi0, xi1, xi2);
         
         // vertex
-        /**/ if ((std::abs(xi0) - 1.0) < eps) { // vert 0
+             if ((std::abs(xi0) - 1.0) < eps) { // vert 0
           tags[i][0] = 0; // vertex dof
           tags[i][1] = 0; // vertex id 
           tags[i][2] = 0; // local dof id

@@ -76,6 +76,8 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   char errmsg[MAX_ERR_LENGTH];
   int  err_stat = EX_NOERR;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* first check if any side sets are specified */

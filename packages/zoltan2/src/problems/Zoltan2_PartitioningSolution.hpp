@@ -383,6 +383,35 @@ public:
     else                   return NULL;
   }
 
+  /*! \brief calculate if partition tree is binary.
+   */
+  virtual bool isPartitioningTreeBinary() const
+  {
+    if (this->algorithm_ == Teuchos::null)
+      throw std::logic_error("no partitioning algorithm has been run yet");
+    return this->algorithm_->isPartitioningTreeBinary();
+  }
+
+  /*! \brief get the partition tree - fill the relevant arrays
+   */
+  void getPartitionTree(part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const {
+
+    part_t numParts = static_cast<part_t>(getTargetGlobalNumberOfParts());
+
+    if (this->algorithm_ == Teuchos::null)
+      throw std::logic_error("no partitioning algorithm has been run yet");
+    this->algorithm_->getPartitionTree(
+      numParts, // may want to change how this is passed through
+      numTreeVerts,
+      permPartNums,
+      splitRangeBeg,
+      splitRangeEnd,
+      treeVertParents);
+  }
 
   /*! \brief returns the part box boundary list.
    */

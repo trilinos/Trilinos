@@ -72,6 +72,8 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   const char *dnumentries;
   const char *vmap;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   switch (map_type) {

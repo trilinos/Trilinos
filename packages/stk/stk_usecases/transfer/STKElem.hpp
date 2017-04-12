@@ -121,8 +121,7 @@ public :
 
   void bounding_boxes (std::vector< std::pair<Box,EntityProc> > &v) const;
 
-  void copy_entities(const EntityProcVec    &entities_to_copy,
-                     const std::string         &transfer_name);
+  //void copy_entities(const EntityProcVec    &entities_to_copy, const std::string         &transfer_name);
 
   void update_values();
 

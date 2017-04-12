@@ -1,0 +1,7 @@
+This is an example of using phalanx with a finite element assembly for
+a single node. It is thread parllel, but not MPI parallel.
+
+TODO:
+
+1. The scatter is not implemented for Jacobian evaluation. Need to
+implement a sparse graph object to fill.

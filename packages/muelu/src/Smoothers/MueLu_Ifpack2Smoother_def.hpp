@@ -55,6 +55,9 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Relaxation.hpp>
+#include <Ifpack2_ILUT.hpp>
+#include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
@@ -69,6 +72,18 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+
+#ifdef HAVE_MUELU_INTREPID2
+  #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
+  #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
+  #include "Intrepid2_Basis.hpp"
+
+  #ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    #include "Kokkos_DynRankView.hpp"
+  #else
+    #include "Intrepid2_FieldContainer.hpp"
+  #endif
+#endif
 
 // #define IFPACK2_HAS_PROPER_REUSE
 
@@ -117,6 +132,11 @@ namespace MueLu {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
     }
+    else if (type_ == "TOPOLOGICAL")
+    {
+      // for the topological smoother, we require an element to node map:
+      this->Input(currentLevel, "pcoarsen: element to node map");
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -139,8 +159,18 @@ namespace MueLu {
     else if (type_ == "CHEBYSHEV")
       SetupChebyshev(currentLevel);
 
+    else if (type_ == "TOPOLOGICAL")
+    {
+#ifdef HAVE_MUELU_INTREPID2
+      SetupTopological(currentLevel);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
+#endif
+    }
     else
+    {
       SetupGeneric(currentLevel);
+    }
 
     SmootherPrototype::IsSetup(true);
 
@@ -259,6 +289,93 @@ namespace MueLu {
 
     prec_->compute();
   }
+
+#ifdef HAVE_MUELU_INTREPID2
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopological(Level& currentLevel) {
+    /*
+     
+     basic notion:
+     
+     Look for user input indicating topo dimension, something like "topological domain type: {node|edge|face}"
+     Call something like what you can find in Poisson example line 1180 to set seeds for a smoother
+     
+     */
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupTopological(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupTopological(): reuse of this type is not available, reverting to full construction" << std::endl;
+    }
+    
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    
+    typedef typename Node::device_type::execution_space ES;
+    
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
+#else
+    typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
+#endif
+    
+    LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    
+    using namespace std;
+    
+    const Teuchos::RCP<FCO> elemToNode = Factory::Get<Teuchos::RCP<FCO> >(currentLevel,"pcoarsen: element to node map");
+    
+    string basisString = paramList.get<string>("pcoarsen: hi basis");
+    int degree;
+    // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
+    // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
+    // care about the assignment of basis ordinals to topological entities, so this code is actually
+    // independent of the Scalar type--hard-coding double here won't hurt us.
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
+#else
+    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
+#endif
+    
+    string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
+    int dimension;
+    if (topologyTypeString == "node")
+      dimension = 0;
+    else if (topologyTypeString == "edge")
+      dimension = 1;
+    else if (topologyTypeString == "face")
+      dimension = 2;
+    else if (topologyTypeString == "cell")
+      dimension = basis->getBaseCellTopology().getDimension();
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized smoother neighborhood type.  Supported types are node, edge, face.");
+    vector<vector<LocalOrdinal>> seeds;
+    MueLuIntrepid::FindGeometricSeedOrdinals(basis, *elemToNode, seeds, *A_->getRowMap(), *A_->getColMap());
+    
+    // Ifpack2 wants the seeds in an array of the same length as the number of local elements,
+    // with local partition #s marked for the ones that are seeds, and invalid for the rest
+    int myNodeCount = A_->getRowMap()->getNodeNumElements();
+    ArrayRCP<LocalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
+    int localPartitionNumber = 0;
+    for (LocalOrdinal seed : seeds[dimension])
+    {
+      nodeSeeds[seed] = localPartitionNumber++;
+    }
+    
+    paramList.remove("smoother: neighborhood type");
+    paramList.remove("pcoarsen: hi basis");
+    
+    paramList.set("partitioner: map", nodeSeeds);
+    paramList.set("partitioner: type", "user");
+    paramList.set("partitioner: overlap", 1);
+    paramList.set("partitioner: local parts", int(seeds[dimension].size()));
+
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
+    
+    type_ = "BLOCKRELAXATION";
+    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+    SetPrecParameters();
+    prec_->initialize();
+    prec_->compute();
+  }
+#endif
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmoothing(Level& currentLevel) {
@@ -554,6 +671,27 @@ namespace MueLu {
            << "RCP<prec_>: " << prec_ << std::endl;
     }
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> MatrixType;
+    // NOTE: Only works for a subset of Ifpack2's smoothers
+    RCP<Ifpack2::Relaxation<MatrixType> > pr     = rcp_dynamic_cast<Ifpack2::Relaxation<MatrixType> >(prec_);
+    if(!pr.is_null()) return pr->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::Chebyshev<MatrixType> > pc       = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
+    if(!pc.is_null()) return pc->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::BlockRelaxation<MatrixType> > pb = rcp_dynamic_cast<Ifpack2::BlockRelaxation<MatrixType> >(prec_);
+    if(!pb.is_null()) return pb->getNodeSmootherComplexity();
+
+    RCP<Ifpack2::ILUT<MatrixType> > pi            = rcp_dynamic_cast<Ifpack2::ILUT<MatrixType> >(prec_);
+    if(!pi.is_null()) return pi->getNodeSmootherComplexity();
+
+
+    return Teuchos::OrdinalTraits<size_t>::invalid();
+  }
+
 
 } // namespace MueLu
 

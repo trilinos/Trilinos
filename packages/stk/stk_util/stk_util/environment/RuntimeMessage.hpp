@@ -245,15 +245,6 @@ const std::string &get_message_name(unsigned message_type);
 void register_message_type(unsigned message_type, unsigned max_count, const char *name);
 
 /**
- * @brief Function <b>reset_message_group</b> sets the count to zero of all messages in the
- * specified throttle group.
- *
- * @param throttle_group	an <b>int</b> value of the throttle group to reset.
- *
- */
-void reset_throttle_group(int throttle_group);
-
-/**
  * @brief Member function <b>report_message</b> ...
  *
  * @param message		an <b>char</b> const pointer ...

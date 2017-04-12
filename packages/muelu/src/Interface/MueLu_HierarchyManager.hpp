@@ -63,6 +63,14 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_PerfUtils.hpp"
 
+#ifdef HAVE_MUELU_INTREPID2
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+#include "Kokkos_DynRankView.hpp"
+#else
+#include "Intrepid2_FieldContainer.hpp"
+#endif
+#endif
+
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -235,6 +243,15 @@ namespace MueLu {
       WriteData<Matrix>(H, restrictorsToPrint_,  "R");
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
       WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
+#ifdef HAVE_MUELU_INTREPID2
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+      typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+      typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
+#endif
+      WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
+#endif    
+
 
     } //SetupHierarchy
 
@@ -283,13 +300,14 @@ namespace MueLu {
     Teuchos::Array<int>   restrictorsToPrint_;
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
+    Teuchos::Array<int>   elementToNodeMapsToPrint_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 
   private:
 
     template<class T>
-    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
+    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, bool isFieldContainer=false) const {
       for (int i = 0; i < data.size(); ++i) {
         std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
@@ -298,12 +316,62 @@ namespace MueLu {
 
           if (L->IsAvailable(name)) {
             RCP<T> M = L->template Get< RCP<T> >(name);
-            if (!M.is_null())
-              Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
-          }
-        }
+            if (!M.is_null()) {
+	      Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);              		
+	    }
+	  }
+	}
       }
     }
+
+
+    template<class T>
+    void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname, bool isFieldContainer=false) const {
+      for (int i = 0; i < data.size(); ++i) {
+        const std::string fileName = ofname + "_" + Teuchos::toString(data[i]) + ".m";
+
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+
+          if (L->IsAvailable(name)) {
+            RCP<T> M = L->template Get< RCP<T> >(name);
+            if (!M.is_null()) {
+	      RCP<Matrix> A = L->template Get<RCP<Matrix> >("A");
+	      RCP<const CrsGraph> AG = A->getCrsGraph();
+	      WriteFieldContainer<T>(fileName,*M,*AG->getColMap());
+	    }
+	  }
+	}
+      }
+    }
+
+    // For dumping an IntrepidPCoarsening element-to-node map to disk     
+    template<class T>
+    void WriteFieldContainer(const std::string& fileName, T & fcont,const Map &colMap) const {
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      typedef Node NO;
+      typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;  
+
+      size_t num_els = (size_t) fcont.dimension(0);
+      size_t num_vecs =(size_t) fcont.dimension(1);
+      
+      // Generate rowMap
+      Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.dimension(0),colMap.getIndexBase(),colMap.getComm());
+            
+      // Fill multivector to use *petra dump routines
+      RCP<GOMultiVector> vec = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(rowMap,num_vecs);
+      
+      for(size_t j=0; j<num_vecs; j++)  {
+	Teuchos::ArrayRCP<GO> v = vec->getDataNonConst(j);
+	for(size_t i=0; i<num_els; i++) 
+	  v[i] = colMap.getGlobalElement(fcont(i,j));
+      }
+      
+      Xpetra::IO<GO,LO,GO,NO>::Write(fileName,*vec);
+    }
+
+    
 
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level (the last levelManager is used for all the remaining levels)

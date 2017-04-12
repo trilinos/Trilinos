@@ -70,6 +70,8 @@ int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
   int  attrid, blk_id_ndx;
   char errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (blk_type != EX_NODAL) {

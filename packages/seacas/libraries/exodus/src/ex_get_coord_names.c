@@ -80,6 +80,8 @@ int ex_get_coord_names(int exoid, char **coord_names)
   size_t num_dim;
   char   errmsg[MAX_ERR_LENGTH];
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0;
 
   /* inquire previously defined dimensions and variables  */

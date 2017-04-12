@@ -82,9 +82,11 @@ namespace MueLu {
     ### User parameters of IntrepidPCoarsenFactory ###
     Parameter | type | default | master.xml | validated | requested | description
     ----------|------|---------|:----------:|:---------:|:---------:|------------
-    | ipc: hi basis                          | string  | ""    | * | * |   | String describing higher-order basis function used |
-    | ipc: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid|
-    | inc: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
+    | pcoarsen: schedule                          | string  | ""    | * | * |   | String describing the higher order coarsening scheme to use |
+    | pcoarsen: element                          | string  | ""    | * | * |   | String describing the class of element to use for higher order coarsening |
+    | pcoarsen: hi basis                          | string  | ""    | * | * |   | String describing higher-order basis function used |
+    | pcoarsen: lo basis                          | string  | ""    | * | * |   | String describing lower-order basis function to be used for coarse grid|
+    | pcoarsen: element to node map               | RCP<Intrepid::FieldContainer<LocalOrdinal> > | null | * | * | A FieldContainer with the element-to-node map in local ids compatible with the matrix column map |
     | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
 
 
@@ -250,6 +252,15 @@ namespace MueLu {
     template<class Basis, class SCFieldContainer>
     void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContainer & ReferenceNodeLocations, const double threshold, std::vector<std::vector<size_t> > & representative_node_candidates);
 
+    // ! Given an element to (global) node map and a basis, determine one global ordinal per geometric entity (vertex, edge, face,
+    // ! interior).  On exit, seeds container is of dimension (spaceDim+1), and contains a sorted vector of local ordinals
+    // ! belonging to entities of that dimension.  Only locally-owned degrees of freedom (as determined by rowMap and columnMap)
+    // ! will be stored in seeds.
+    template<class Basis, class LOFieldContainer, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void FindGeometricSeedOrdinals(Teuchos::RCP<Basis> basis, const LOFieldContainer &elementToNodeMap,
+                                   std::vector<std::vector<LocalOrdinal> > &seeds,
+                                   const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap,
+                                   const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &columnMap);
 
   }//namespace MueLuIntrepid
 } //namespace MueLu

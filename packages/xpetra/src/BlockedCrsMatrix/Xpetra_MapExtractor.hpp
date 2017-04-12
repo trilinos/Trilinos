@@ -124,6 +124,11 @@ namespace Xpetra {
       map_ = Teuchos::rcp(new BlockedMap(*(input.getBlockedMap())));
     }
 
+    //! Destructor.
+    virtual ~MapExtractor() {
+      map_ = Teuchos::null;
+    }
+
     /** \name Extract subblocks from full map */
     //@{
     void ExtractVector(const Vector& full, size_t block, Vector& partial) const {

@@ -298,6 +298,48 @@ namespace Amesos2 {
 #endif
   }
 
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_ptr_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_rowptr;
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_idx_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_colind;
+  }
+
+  template <class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
+  ::super_t::spmtx_vals_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const 
+  { 
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+
+    this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
+
+    return sp_values;
+  }
+
 } // end namespace Amesos2
 
 #endif  // AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP

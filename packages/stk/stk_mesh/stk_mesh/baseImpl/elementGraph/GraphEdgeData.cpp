@@ -119,7 +119,6 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
 {
     std::ostringstream s;
     s << "    other proc: " << parInfo.get_proc_rank_of_neighbor() << std::endl;
-    s << "    chosen id: " << parInfo.m_chosen_side_id << std::endl;
     s << "    permutation: " << parInfo.m_permutation << std::endl;
     s << "    remote topology: " << parInfo.m_remote_element_toplogy << std::endl;
     return s.str();

@@ -17,7 +17,6 @@ namespace mesh {
 class SkinMeshUtil {
 public:
     SkinMeshUtil(ElemElemGraph& elemElemGraph,
-                 const stk::mesh::PartVector& skinParts,
                  const stk::mesh::Selector& inputSkinSelector,
                  const stk::mesh::Selector* inputAirSelector = nullptr);
 

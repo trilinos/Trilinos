@@ -76,6 +76,8 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   char * numentryptr = NULL;
   char * numdfptr    = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {

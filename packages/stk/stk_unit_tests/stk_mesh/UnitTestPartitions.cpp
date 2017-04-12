@@ -103,9 +103,7 @@ addEntitiesToFixture(SelectorFixture& fixture, stk::mesh::EntityId start_id, siz
   stk::mesh::EntityId ent_id = start_id;
   for (size_t i = 0; i < num_to_add; ++i)
   {
-    stk::mesh::Entity ent =
-      fixture.m_bulk_data.declare_entity(stk::topology::NODE_RANK,
-                                         ent_id, partMembership);
+    stk::mesh::Entity ent = fixture.m_bulk_data.declare_node(ent_id, partMembership);
     collector.push_back(ent);
     ++ent_id;
   }

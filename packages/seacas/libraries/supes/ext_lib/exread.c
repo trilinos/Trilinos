@@ -78,8 +78,8 @@ C
     icnt = my_getline(input, InputLength);
 
     /* Next evaluate the error status. */
-    /* For icnt <= 0 indicate an error condition. */
-    *iostat = (icnt > 0) ? 0 : -1;
+    /* For icnt < 0 indicate an error condition. */
+    *iostat = (icnt >= 0) ? 0 : -1;
   }
   else {
     static char internal_prompt[128];

@@ -129,6 +129,8 @@ class NOXSolver
 
   //@}
 
+  void resetCounters();
+
   private:
 
    //These are set in the constructor and used in evalModel
@@ -149,6 +151,10 @@ class NOXSolver
    Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
 
    enum DerivativeLayout { OP, COL, ROW };
+
+  mutable int totalNewtonIters;
+  mutable int totalKrylovIters;
+  mutable int stepNum;
 };
 
 }

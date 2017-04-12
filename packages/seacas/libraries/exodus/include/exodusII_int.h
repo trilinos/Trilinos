@@ -696,6 +696,7 @@ void ex_rm_stat_ptr(int exoid, struct obj_stats **obj_ptr);
 
 void ex_compress_variable(int exoid, int varid, int type);
 int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
+void ex_check_valid_file_id(int exoid); /** Abort if exoid does not refer to valid file */
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count, int *dimid,
                      const char *routine);

@@ -131,6 +131,7 @@ Type is set to:
 int ex_set_max_name_length(int exoid, int length)
 {
   char errmsg[MAX_ERR_LENGTH];
+  ex_check_valid_file_id(exoid);
   if (length <= 0) {
     exerrval = NC_EMAXNAME;
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Max name length must be positive.");
@@ -156,6 +157,7 @@ void ex_update_max_name_length(int exoid, int length)
   int db_length = 0;
   int rootid    = exoid & EX_FILE_ID_MASK;
 
+  ex_check_valid_file_id(exoid);
   /* Get current value of the maximum_name_length attribute... */
   if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
@@ -167,6 +169,7 @@ void ex_update_max_name_length(int exoid, int length)
 
   if (length > db_length) {
     /* Update with new value... */
+    ex_set_max_name_length(exoid, length);
     nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length);
     nc_sync(rootid);
   }
@@ -177,54 +180,54 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
 {
   size_t i;
   int    status;
-  size_t start[2], count[2];
   char   errmsg[MAX_ERR_LENGTH];
   int    max_name_len = 0;
   size_t name_length;
+  size_t length;
+  char * int_names  = NULL;
+  size_t idx        = 0;
+  int    found_name = 0;
 
+  ex_check_valid_file_id(exoid);
   /* inquire previously defined dimensions  */
   name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH) + 1;
 
+  int_names = calloc(num_entity * name_length, 1);
+
   for (i = 0; i < num_entity; i++) {
     if (names[i] != '\0') {
-      int too_long = 0;
-      start[0]     = i;
-      start[1]     = 0;
-
-      count[0] = 1;
-      count[1] = strlen(names[i]) + 1;
-
-      if (count[1] > name_length) {
+      found_name = 1;
+      strncpy(&int_names[idx], names[i], name_length - 1);
+      int_names[idx + name_length - 1] = '\0';
+      length                           = strlen(names[i]) + 1;
+      if (length > name_length) {
         fprintf(stderr, "Warning: The %s %s name '%s' is too long.\n\tIt will "
                         "be truncated from %d to %d characters\n",
-                ex_name_of_object(obj_type), subtype, names[i], (int)strlen(names[i]),
+                ex_name_of_object(obj_type), subtype, names[i], (int)length - 1,
                 (int)name_length - 1);
-        count[1] = name_length;
-        too_long = 1;
+        length = name_length;
       }
 
-      if (count[1] > max_name_len) {
-        max_name_len = count[1];
-      }
-
-      if ((status = nc_put_vara_text(exoid, varid, start, count, names[i])) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s names in file id %d",
-                 ex_name_of_object(obj_type), exoid);
-        ex_err(routine, errmsg, exerrval);
-        return (EX_FATAL);
-      }
-
-      /* Add the trailing null if the variable name was too long */
-      if (too_long) {
-        start[1] = name_length - 1;
-        nc_put_var1_text(exoid, varid, start, "\0");
+      if (length > max_name_len) {
+        max_name_len = length;
       }
     }
+    idx += name_length;
   }
 
-  /* Update the maximum_name_length attribute on the file. */
-  ex_update_max_name_length(exoid, max_name_len - 1);
+  if (found_name) {
+    if ((status = nc_put_var_text(exoid, varid, int_names)) != NC_NOERR) {
+      exerrval = status;
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s names in file id %d",
+               ex_name_of_object(obj_type), exoid);
+      ex_err(routine, errmsg, exerrval);
+      return (EX_FATAL);
+    }
+
+    /* Update the maximum_name_length attribute on the file. */
+    ex_update_max_name_length(exoid, max_name_len - 1);
+  }
+  free(int_names);
 
   return (EX_NOERR);
 }
@@ -236,6 +239,8 @@ int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
   size_t start[2], count[2];
   char   errmsg[MAX_ERR_LENGTH];
   size_t name_length;
+
+  ex_check_valid_file_id(exoid);
 
   /* inquire previously defined dimensions  */
   name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH) + 1;

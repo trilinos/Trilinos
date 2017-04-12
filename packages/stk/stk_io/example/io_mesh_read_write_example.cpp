@@ -336,6 +336,10 @@ int main(int argc, char** argv)
     mesh = mesh.substr(5, mesh.size());
     type = "cgns";
   }
+  else if (strncasecmp("pamgen:", mesh.c_str(), 7) == 0) {
+    mesh = mesh.substr(7, mesh.size());
+    type = "pamgen";
+  }
 
   stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output
   if (heartbeat_format == "none")

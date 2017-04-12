@@ -1010,8 +1010,6 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
 
   // maybe container dimension is different from num_dim and num_ip
   const int num_cell  = basis_layout->numCells(); // orientations.size();
-//  const int num_basis = basis_layout->cardinality();
-  //const int num_ip   = basis_layout->numPoints();
   const int num_dim   = basis_layout->dimension();
 
   TEUCHOS_TEST_FOR_EXCEPTION(num_cell != static_cast<int>(orientations.size()),

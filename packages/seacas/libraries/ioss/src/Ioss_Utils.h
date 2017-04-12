@@ -98,7 +98,7 @@ namespace Ioss {
         index[i] = sum;
         sum += cnt;
       }
-      index[index.size() - 1] = sum;
+      index.back() = sum;
     }
 
     template <typename T> static T find_index_location(T node, const std::vector<T> &index)
@@ -121,8 +121,13 @@ namespace Ioss {
           return p - 1;
         }
       }
+      std::cerr << "FATAL ERROR: find_index_location. Searching for " << node << " in:\n";
+      for (auto idx : index) {
+        std::cerr << idx << ", ";
+      }
+      std::cerr << "\n";
       assert(1 == 0); // Cannot happen...
-      return -1;
+      return 0;
 #else
       return std::distance(index.begin(), std::upper_bound(index.begin(), index.end(), node)) - 1;
 #endif
@@ -171,10 +176,10 @@ namespace Ioss {
     // was created.
     static std::string platform_information();
 
-    // The following functions are wrappers around the sierra::Env functions
-    // or similar substitutes to reduce coupling of the Sierra framewk to
-    // the rest of the IO Subsystem. When compiled without the Framework code,
-    // Only these functions need to be reimplemented.
+    // Return amount of memory being used on this processor
+    static size_t get_memory_info();
+    static size_t get_hwm_memory_info();
+
     static void abort();
 
     // Return a filename relative to the specified working directory (if any)
@@ -204,10 +209,11 @@ namespace Ioss {
 
     static unsigned int hash(const std::string &name);
 
+    static double timer();
+
     // Return a vector of strings containing the lines of the input file.
     // Should only be called by a single processor or each processor will
     // be accessing the file at the same time...
-    //
     static void input_file(const std::string &file_name, std::vector<std::string> *lines,
                            size_t max_line_length = 0);
 

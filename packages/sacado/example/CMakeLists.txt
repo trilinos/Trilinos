@@ -147,6 +147,13 @@ IF(Sacado_ENABLE_Teuchos)
       SOURCES view_factory_example.cpp
       COMM serial mpi
       )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      dfad_view_handle_example
+      SOURCES dfad_view_handle_example.cpp
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
   ENDIF()
 
 ENDIF()

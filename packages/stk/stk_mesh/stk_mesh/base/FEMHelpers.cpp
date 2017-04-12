@@ -95,7 +95,7 @@ Entity declare_element(BulkData & mesh,
 
     PartVector empty;
 
-    Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, elem_id, parts);
+    Entity elem = mesh.declare_element(elem_id, parts);
 
     Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     OrdinalVector ordinal_scratch;
@@ -109,7 +109,7 @@ Entity declare_element(BulkData & mesh,
         Entity node = mesh.get_entity(stk::topology::NODE_RANK, node_ids[i]);
         if(!mesh.is_valid(node))
         {
-            node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
+            node = mesh.declare_node(node_ids[i], empty);
         }
 
         mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);
@@ -117,7 +117,7 @@ Entity declare_element(BulkData & mesh,
     return elem;
 }
 
-Entity declare_element_side( BulkData & mesh ,
+Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
@@ -131,16 +131,6 @@ Entity declare_element_side( BulkData & mesh ,
     stk::topology elem_top = mesh.bucket(elem).topology();
     stk::topology side_top = elem_top.side_topology(local_side_id);
     return impl::connect_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
-}
-
-Entity declare_element_side(
-        BulkData & mesh,
-        const stk::mesh::EntityId global_side_id,
-        Entity elem,
-        const unsigned local_side_id,
-        const stk::mesh::PartVector& parts)
-{
-    return mesh.declare_element_side(global_side_id, elem, local_side_id, parts);
 }
 
 Entity declare_element_edge(
@@ -164,7 +154,7 @@ Entity declare_element_edge(
     Entity edge = mesh.get_entity(edge_top.rank(), global_edge_id);
     if(!mesh.is_valid(edge))
     {
-        edge = mesh.declare_entity(edge_top.rank(), global_edge_id, empty_parts);
+        edge = mesh.declare_edge(global_edge_id, empty_parts);
         impl::connect_element_to_entity(mesh, elem, edge, local_edge_id, parts, edge_top);
     }
     return edge;

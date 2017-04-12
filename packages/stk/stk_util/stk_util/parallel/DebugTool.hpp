@@ -160,45 +160,45 @@ inline std::string getStackTrace()
 #endif
 }
 
-inline void sendStackTrace(MPI_Comm globalComm)
-{
-//    std::string stringToSend(testStringValue);
-    std::string stringToSend(getStackTrace());
-    int lengthOfString = stringToSend.length();
-    lengthOfString += oneForNullTerminator;
+//inline void sendStackTrace(MPI_Comm globalComm)
+//{
+////    std::string stringToSend(testStringValue);
+//    std::string stringToSend(getStackTrace());
+//    int lengthOfString = stringToSend.length();
+//    lengthOfString += oneForNullTerminator;
+//
+//    MPI_Send(&lengthOfString, 1, MPI_INT, getDestinationProc(globalComm), STRING_SIZE_TAG, globalComm);
+//    MPI_Send(const_cast<char*>(stringToSend.c_str()), lengthOfString, MPI_CHAR, getDestinationProc(globalComm), STRING_TAG, globalComm);
+//}
 
-    MPI_Send(&lengthOfString, 1, MPI_INT, getDestinationProc(globalComm), STRING_SIZE_TAG, globalComm);
-    MPI_Send(const_cast<char*>(stringToSend.c_str()), lengthOfString, MPI_CHAR, getDestinationProc(globalComm), STRING_TAG, globalComm);
-}
+//inline void receiveString(int source, MPI_Comm localComm, MPI_Comm globalComm)
+//{
+//    MPI_Status status;
+//    int lengthOfString = -1;
+//    MPI_Recv(&lengthOfString, 1, MPI_INT, source, STRING_SIZE_TAG, globalComm, &status);
+//
+////    EXPECT_EQ(std::string(testStringValue).length(), static_cast<size_t>(lengthOfString-oneForNullTerminator));
+//
+//    char *receiveString = new char[lengthOfString];
+//    MPI_Recv(receiveString, lengthOfString, MPI_CHAR, source, STRING_TAG, globalComm, &status);
+//
+////    EXPECT_EQ(std::string(testStringValue), std::string(receiveString));
+//
+//    if(getProcId(localComm) == 0)
+//    {
+//        std::cerr << "Stack Trace from proc " << source << ":\n" << receiveString << std::endl;
+//    }
+//
+//    delete[] receiveString;
+//}
 
-inline void receiveString(int source, MPI_Comm localComm, MPI_Comm globalComm)
-{
-    MPI_Status status;
-    int lengthOfString = -1;
-    MPI_Recv(&lengthOfString, 1, MPI_INT, source, STRING_SIZE_TAG, globalComm, &status);
-
-//    EXPECT_EQ(std::string(testStringValue).length(), static_cast<size_t>(lengthOfString-oneForNullTerminator));
-
-    char *receiveString = new char[lengthOfString];
-    MPI_Recv(receiveString, lengthOfString, MPI_CHAR, source, STRING_TAG, globalComm, &status);
-
-//    EXPECT_EQ(std::string(testStringValue), std::string(receiveString));
-
-    if(getProcId(localComm) == 0)
-    {
-        std::cerr << "Stack Trace from proc " << source << ":\n" << receiveString << std::endl;
-    }
-
-    delete[] receiveString;
-}
-
-inline void receiveStackTrace(MPI_Comm localComm, MPI_Comm globalComm)
-{
-    int source0 = getProcId(localComm);
-    receiveString(source0, localComm, globalComm);
-    int source1 = getProcId(localComm) + getProcSize(localComm);
-    receiveString(source1, localComm, globalComm);
-}
+//inline void receiveStackTrace(MPI_Comm localComm, MPI_Comm globalComm)
+//{
+//    int source0 = getProcId(localComm);
+//    receiveString(source0, localComm, globalComm);
+//    int source1 = getProcId(localComm) + getProcSize(localComm);
+//    receiveString(source1, localComm, globalComm);
+//}
 
 //inline void sendMeshAndFieldData(std::vector<uint64_t> &meshData, std::vector<double> &meshFieldData, MPI_Comm globalComm)
 //{

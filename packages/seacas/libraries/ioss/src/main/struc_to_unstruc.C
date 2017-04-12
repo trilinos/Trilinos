@@ -43,7 +43,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -66,18 +65,6 @@
 // ========================================================================
 
 namespace {
-
-  double timer()
-  {
-#ifdef HAVE_MPI
-    return MPI_Wtime();
-#else
-    static auto begin = std::chrono::high_resolution_clock::now();
-
-    auto now = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration<double>(now - begin).count();
-#endif
-  }
 
   int rank = 0;
 
@@ -136,9 +123,9 @@ int main(int argc, char *argv[])
   OUTPUT << "Unstructured Output: '" << out_file << "'\n";
   OUTPUT << '\n';
 
-  double begin = timer();
+  double begin = Ioss::Utils::timer();
   create_unstructured(in_file, out_file);
-  double end = timer();
+  double end = Ioss::Utils::timer();
 
   OUTPUT << "\n\tElapsed time = " << end - begin << " seconds.\n";
 

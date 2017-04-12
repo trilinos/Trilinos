@@ -901,7 +901,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     "--ctest-timeout", dest="ctestTimeOut", type="float", default=300,
     help="timeout (in seconds) for each single 'ctest' test (e.g. 180" \
-    +" for three minutes)." )
+    +" for three minutes).  This sets the CMake cache var DART_TESTING_TIMEOUT"
+    +" which becomes the default timeout for tests, even when running raw"
+    +" ctest.  This value can be overridden using the ctest argument --timeout."
+    +"  Individual tests may have their own timeouts set which will not be"
+    +" impacted by this default global timeout.  See the configure variable"
+    +" <Project>_SCALE_TEST_TIMEOUT to scale up timeouts for"
+    +" all tests, even those that have individuals timeouts set." )
 
   clp.add_option(
     "--show-all-tests", dest="showAllTests", action="store_true",

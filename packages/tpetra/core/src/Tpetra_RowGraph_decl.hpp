@@ -213,6 +213,66 @@ namespace Tpetra {
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
                      size_t &NumIndices) const = 0;
 
+    /// \brief Whether this class implements getLocalRowView() and
+    ///   getGlobalRowView().
+    ///
+    /// If subclasses override the default (trivial) implementation of
+    /// getLocalRowView() and getGlobalRowView(), then they need to
+    /// override this method as well.
+    bool supportsRowViews () const {
+      return false;
+    }
+
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the graph.
+    ///
+    /// The returned views of the column indices are not guaranteed to
+    /// persist beyond the lifetime of <tt>this</tt>.  Furthermore,
+    /// some RowGraph implementations allow changing the values, or
+    /// the indices and values.  Any such changes invalidate the
+    /// returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the graph has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>indices.size () == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] Local indices of the columns in the
+    ///   row.  If the given row is not a valid row index on the
+    ///   calling process, then the result has no entries (its size is
+    ///   zero).
+    ///
+    /// Subclasses are expected to implement this method.  We would
+    /// have made this method pure virtual, but that would have broken
+    /// backwards compatibility, since we added the method at least
+    /// one major release after introducing this class.
+    virtual void
+    getLocalRowView (const LocalOrdinal lclRow,
+                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const;
+
+    /// \brief Get a const, non-persisting view of the given global
+    ///   row's global column indices, as a Teuchos::ArrayView.
+    ///
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
+    ///
+    /// \pre <tt>! isLocallyIndexed()</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
+    ///
+    /// Subclasses are expected to implement this method.  We would
+    /// have made this method pure virtual, but that would have broken
+    /// backwards compatibility, since we added the method at least
+    /// one major release after introducing this class.
+    virtual void
+    getGlobalRowView (const GlobalOrdinal gblRow,
+                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const;
+
     //@}
     //! \name Implementation of Packable interface
     //@{

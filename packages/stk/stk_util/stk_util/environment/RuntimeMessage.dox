@@ -129,13 +129,13 @@
 /// \code
 ///
 ///     if (runtime_warning_condition) // Unlimited warning output
-///	    RuntimeWarning() << "My useful message about " << some_data;
+///	    stk::RuntimeWarning() << "My useful message about " << some_data;
 ///
 ///     if (runtime_doomed_condition) // Unlimited doomed output
-///	    RuntimeDoomed() << "My useful message about " << some_data;
+///	    stk::RuntimeDoomed() << "My useful message about " << some_data;
 ///
 ///     if (root_processor_runtime_warning_condition) // Unlimited warning output
-///	    RuntimeWarning() << "My useful message about " << some_data;
+///	    stk::RuntimeWarning() << "My useful message about " << some_data;
 ///
 ///     if (handler_doomed_condition) { // limited to 5 fatal error messages on this processor
 ///         static MessageCode message_code(5);

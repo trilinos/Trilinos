@@ -51,6 +51,10 @@
 
 #include "../../TOOLS/pde.hpp"
 #include "../../TOOLS/fe.hpp"
+#include "../../TOOLS/fieldhelper.hpp"
+
+#include "dirichlet.hpp"
+#include "load.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
@@ -58,212 +62,6 @@
 #include "Intrepid_CellTools.hpp"
 
 #include "Teuchos_RCP.hpp"
-
-// Default loading: multiple point loads
-template<class Real>
-class Load {
-private:
-  std::vector<Real> loadMagnitude_;
-  std::vector<Real> loadPolar_, loadAzimuth_;
-  std::vector<Real> loadX_, loadY_, loadZ_;
-  std::vector<Real> loadWidthX_, loadWidthY_, loadWidthZ_;
-
-protected:
-  Real DegreesToRadians(const Real deg) const {
-    return deg * static_cast<Real>(M_PI) / static_cast<Real>(180);
-  }
-
-public:
-  virtual ~Load() {}
-
-  Load(Teuchos::ParameterList & parlist) {
-    // Grab Magnitudes
-    Teuchos::Array<Real> magnitude
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Magnitude");
-    loadMagnitude_ = magnitude.toVector();
-    // Grab Polar Angle
-    Teuchos::Array<Real> polar
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Polar Angle");
-    loadPolar_ = polar.toVector();
-    // Grab Azimuth Angle
-    Teuchos::Array<Real> azimuth
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Azimuth Angle");
-    loadAzimuth_ = azimuth.toVector();
-    // Grab X Location
-    Teuchos::Array<Real> Xlocation
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "X Location");
-    loadX_ = Xlocation.toVector();
-    // Grab Y Location
-    Teuchos::Array<Real> Ylocation
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Y Location");
-    loadY_ = Ylocation.toVector();
-    // Grab Z Location
-    Teuchos::Array<Real> Zlocation
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Z Location");
-    loadZ_ = Zlocation.toVector();
-    // Grab X Width
-    Teuchos::Array<Real> Xwidth
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "X Width");
-    loadWidthX_ = Xwidth.toVector();
-    // Grab Y Width
-    Teuchos::Array<Real> Ywidth
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Y Width");
-    loadWidthY_ = Ywidth.toVector();
-    // Grab Z Width
-    Teuchos::Array<Real> Zwidth
-      = Teuchos::getArrayFromStringParameter<double>(parlist.sublist("Load"), "Z Width");
-    loadWidthZ_ = Zwidth.toVector();
-
-    int polarSize = loadPolar_.size();
-    for (int i=0; i<polarSize; ++i) {
-      loadPolar_[i] = DegreesToRadians(loadPolar_[i]);
-    }
-
-    int azimuthSize = loadAzimuth_.size();
-    for (int i=0; i<azimuthSize; ++i) {
-      loadAzimuth_[i] = DegreesToRadians(loadAzimuth_[i]);
-    }
-  }
-
-  virtual Real loadFunc(const std::vector<Real> &coords,
-                        const int                dir,
-                        const std::vector<Real> &param) const {
-    Real val(0);
-    const Real half(0.5);
-    const int numLoads  = loadMagnitude_.size();
-    const int paramSize = param.size();
-    const int d         = coords.size();
-    for (int i = 0; i < numLoads; ++i) {
-      Real loadMagNoise(0), loadAngNoise0(0);
-      if (paramSize > 0 + d*i) {
-        loadMagNoise  = param[0 + d*i];
-      }
-      if (paramSize > 1 + d*i) {
-        loadAngNoise0 = DegreesToRadians(param[1 + d*i]);
-      }
-      const Real loadMagnitude = loadMagnitude_[i] + loadMagNoise;
-      const Real loadAngle0    = loadPolar_[i] + loadAngNoise0;
-      const Real Gx = std::exp(-half*std::pow(coords[0]-loadX_[i],2)/std::pow(loadWidthX_[i],2));
-      const Real Gy = std::exp(-half*std::pow(coords[1]-loadY_[i],2)/std::pow(loadWidthY_[i],2));
-
-      if (d==2) {
-        if (dir==0) {
-          val += loadMagnitude*std::cos(loadAngle0)*Gx*Gy;
-        }
-        if (dir==1) {
-          val += loadMagnitude*std::sin(loadAngle0)*Gx*Gy;
-        }
-      }
-      if (d==3) {
-        Real loadAngNoise1(0);
-        if (paramSize > 2 + d*i) {
-          loadAngNoise1 = DegreesToRadians(param[2 + d*i]);
-        }
-        const Real loadAngle1 = loadAzimuth_[i] + loadAngNoise1;
-        const Real Gz = std::exp(-half*std::pow(coords[2]-loadZ_[i],2)/std::pow(loadWidthZ_[i],2));
-
-        if (dir==0) {
-          val += loadMagnitude*std::sin(loadAngle0)*std::cos(loadAngle1)*Gx*Gy*Gz;
-        }
-        if (dir==1) {
-          val += loadMagnitude*std::sin(loadAngle0)*std::sin(loadAngle1)*Gx*Gy*Gz;
-        }
-        if (dir==2) {
-          val += loadMagnitude*std::cos(loadAngle0)*Gx*Gy*Gz;
-        }
-      }
-    }
-    return val;
-  }
-
-  void compute(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &load,
-               const Teuchos::RCP<FE<Real> >                               &fe,
-               const std::vector<Real>                                     &param,
-               const Real                                                   scale = 1) const {
-    // Retrieve dimensions.
-    int c = fe->gradN()->dimension(0);
-    int p = fe->gradN()->dimension(2);
-    int d = fe->gradN()->dimension(3);
-    std::vector<Real> coord(d);
-
-    for (int i=0; i<c; ++i) {
-      for (int j=0; j<p; ++j) {
-        for (int k=0; k<d; ++k) {
-          coord[k] = (*fe->cubPts())(i,j,k);
-        }
-        for (int k=0; k<d; ++k) {
-          (*load[k])(i,j) = loadFunc(coord, k, param)*scale;
-        }
-      }
-    }
-  }
-};
-
-
-template<class Real>
-class FieldHelper {
-  private:
-  const int numFields_, numDofs_;
-  const std::vector<int> numFieldDofs_;
-  const std::vector<std::vector<int> > fieldPattern_;
-
-  public:
-  FieldHelper(const int numFields, const int numDofs,
-              const std::vector<int> &numFieldDofs,
-              const std::vector<std::vector<int> > &fieldPattern)
-    : numFields_(numFields), numDofs_(numDofs),
-      numFieldDofs_(numFieldDofs), fieldPattern_(fieldPattern) {}
-
-  void splitFieldCoeff(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & U,
-                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> >   & u_coeff) const {
-    U.resize(numFields_);
-    int  c = u_coeff->dimension(0);
-    for (int i=0; i<numFields_; ++i) {
-      U[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,numFieldDofs_[i]));
-      for (int j=0; j<c; ++j) {
-        for (int k=0; k<numFieldDofs_[i]; ++k) {
-          //U[i](j,k) = u_coeff(j,offset[i]+k);
-          (*U[i])(j,k) = (*u_coeff)(j,fieldPattern_[i][k]);
-        }
-      }
-    }
-  }
-
-  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & res,
-                         const std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & R) const {
-    int c = R[0]->dimension(0);  // number of cells
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_));
-    for (int i=0; i<numFields_; ++i) {
-      for (int j=0; j<c; ++j) {
-        for (int k=0; k<numFieldDofs_[i]; ++k) {
-          (*res)(j,fieldPattern_[i][k]) = (*R[i])(j,k);
-        }
-      }
-    }
-  }
-
-  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & jac,
-                         const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & J) const {
-    int c = J[0][0]->dimension(0);  // number of cells
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_, numDofs_));        
-    for (int i=0; i<numFields_; ++i) {
-      for (int j=0; j<numFields_; ++j) {
-        for (int k=0; k<c; ++k) {
-          for (int l=0; l<numFieldDofs_[i]; ++l) {
-            for (int m=0; m<numFieldDofs_[j]; ++m) {
-              (*jac)(k,fieldPattern_[i][l],fieldPattern_[j][m]) = (*J[i][j])(k,l,m);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  int numFields(void) const {
-    return numFields_;
-  }
-
-};
 
 template <class Real>
 class PDE_TopoOpt : public PDE<Real> {
@@ -300,9 +98,10 @@ private:
   Real minDensity_;
   Real maxDensity_;
   Real powerSIMP_;
-  Teuchos::RCP<Load<Real> > load_; 
   std::vector<std::vector<Real> > materialMat_;
 
+  Teuchos::RCP<Load<Real> > load_; 
+  Teuchos::RCP<Dirichlet<Real> > dirichlet_;
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
   // Precomputed quantities.
@@ -312,47 +111,47 @@ private:
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > NdetJMat_;
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > CBdetJMat_;
 
-  Real dirichletFunc(const std::vector<Real> & coords, const int sideset, const int locSideId, const int dir) const {
-    Real val(0);
-    return val;
-  }
-
-  void computeDirichlet(void) {
-    // Compute Dirichlet values at DOFs.
-    int d = basisPtr_->getBaseCellTopology().getDimension();
-    int numSidesets = bdryCellLocIds_.size();
-    bdryCellDofValues_.resize(numSidesets);
-    for (int i=0; i<numSidesets; ++i) {
-      int numLocSides = bdryCellLocIds_[i].size();
-      bdryCellDofValues_[i].resize(numLocSides);
-      for (int j=0; j<numLocSides; ++j) {
-        int c = bdryCellLocIds_[i][j].size();
-        int f = basisPtr_->getCardinality();
-        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
-          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-        if (c > 0) {
-          fe_->computeDofCoords(coords, bdryCellNodes_[i][j]);
-        }
-        for (int k=0; k<c; ++k) {
-          for (int l=0; l<f; ++l) {
-            std::vector<Real> dofpoint(d);
-            //std::cout << "Sideset " << i << " LocalSide " << j << "  Cell " << k << "  Field " << l << "  Coord ";
-            for (int m=0; m<d; ++m) {
-              dofpoint[m] = (*coords)(k, l, m);
-              //std::cout << dofpoint[m] << "  ";
-            }
-
-            for (int m=0; m<d; ++m) {
-              (*bdryCellDofValues_[i][j])(k, l, m) = dirichletFunc(dofpoint, i, j, m);
-              //std::cout << "  " << m << "-Value " << dirichletFunc(dofpoint, i, j, m);
-            }
-            //std::cout << std::endl;
-          }
-        }
-      }
-    }
-  }
+//  Real dirichletFunc(const std::vector<Real> & coords, const int sideset, const int locSideId, const int dir) const {
+//    Real val(0);
+//    return val;
+//  }
+//
+//  void computeDirichlet(void) {
+//    // Compute Dirichlet values at DOFs.
+//    int d = basisPtr_->getBaseCellTopology().getDimension();
+//    int numSidesets = bdryCellLocIds_.size();
+//    bdryCellDofValues_.resize(numSidesets);
+//    for (int i=0; i<numSidesets; ++i) {
+//      int numLocSides = bdryCellLocIds_[i].size();
+//      bdryCellDofValues_[i].resize(numLocSides);
+//      for (int j=0; j<numLocSides; ++j) {
+//        int c = bdryCellLocIds_[i][j].size();
+//        int f = basisPtr_->getCardinality();
+//        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+//        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
+//          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+//        if (c > 0) {
+//          fe_->computeDofCoords(coords, bdryCellNodes_[i][j]);
+//        }
+//        for (int k=0; k<c; ++k) {
+//          for (int l=0; l<f; ++l) {
+//            std::vector<Real> dofpoint(d);
+//            //std::cout << "Sideset " << i << " LocalSide " << j << "  Cell " << k << "  Field " << l << "  Coord ";
+//            for (int m=0; m<d; ++m) {
+//              dofpoint[m] = (*coords)(k, l, m);
+//              //std::cout << dofpoint[m] << "  ";
+//            }
+//
+//            for (int m=0; m<d; ++m) {
+//              (*bdryCellDofValues_[i][j])(k, l, m) = dirichletFunc(dofpoint, i, j, m);
+//              //std::cout << "  " << m << "-Value " << dirichletFunc(dofpoint, i, j, m);
+//            }
+//            //std::cout << std::endl;
+//          }
+//        }
+//      }
+//    }
+//  }
 
   void computeMaterialTensor(const int d) {
     int matd = (d*(d+1))/2;
@@ -586,6 +385,7 @@ public:
     computeMaterialTensor(d);
 
     load_  = Teuchos::rcp(new Load<Real>(parlist.sublist("Problem")));
+    dirichlet_ = Teuchos::rcp(new Dirichlet<Real>(parlist.sublist("Problem")));
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -664,29 +464,30 @@ public:
     }
 
     // APPLY DIRICHLET CONDITIONS
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      computeDirichlet();
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],0);
-                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],1);
-                for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l],m);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    dirichlet_->applyResidual(R,U);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      computeDirichlet();
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],0);
+//                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],1);
+//                for (int m=0; m < d; ++m) {
+//                  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l],m);
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Combine the residuals.
     fieldHelper_->combineFieldCoeff(res, R);
@@ -741,31 +542,32 @@ public:
     }
 
     // APPLY DIRICHLET CONDITIONS
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                for (int m=0; m < f; ++m) {
-                  for (int n=0; n < d; ++n) {
-                    for (int p=0; p < d; ++p) {
-                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-                    }
-                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    dirichlet_->applyJacobian1(J);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                for (int m=0; m < f; ++m) {
+//                  for (int n=0; n < d; ++n) {
+//                    for (int p=0; p < d; ++p) {
+//                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+//                    }
+//                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(jac, J);
@@ -834,30 +636,31 @@ public:
     }
 
     // APPLY DIRICHLET CONDITIONS
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                for (int m=0; m < f; ++m) {
-                  for (int n=0; n < d; ++n) {
-                    for (int p=0; p < d; ++p) {
-                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-                    }
-                  }
-                }
-              }
-            }
-          }
-	}
-      }
-    }
+    dirichlet_->applyJacobian2(J);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                for (int m=0; m < f; ++m) {
+//                  for (int n=0; n < d; ++n) {
+//                    for (int p=0; p < d; ++p) {
+//                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+//                    }
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(jac, J);
@@ -899,27 +702,28 @@ public:
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Apply Dirichlet conditions to the multipliers.
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < d; ++m) {
-                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    dirichlet_->applyMultiplier(L);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+//                for (int m=0; m < d; ++m) {
+//                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Evaluate/interpolate finite element fields on cells.
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rho =
@@ -988,27 +792,28 @@ public:
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Apply Dirichlet conditions to the multipliers.
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < d; ++m) {
-                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    dirichlet_->applyMultiplier(L);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+//                for (int m=0; m < d; ++m) {
+//                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Evaluate/interpolate finite element fields on cells.
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rho =
@@ -1079,27 +884,28 @@ public:
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Apply Dirichlet conditions to the multipliers.
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        if ((i==3)) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m=0; m < d; ++m) {
-                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    dirichlet_->applyMultiplier(L);
+//    int numSideSets = bdryCellLocIds_.size();
+//    if (numSideSets > 0) {
+//      for (int i = 0; i < numSideSets; ++i) {
+//        if ((i==3)) {
+//          int numLocalSideIds = bdryCellLocIds_[i].size();
+//          for (int j = 0; j < numLocalSideIds; ++j) {
+//            int numCellsSide = bdryCellLocIds_[i][j].size();
+//            int numBdryDofs = fidx_[j].size();
+//            for (int k = 0; k < numCellsSide; ++k) {
+//              int cidx = bdryCellLocIds_[i][j][k];
+//              for (int l = 0; l < numBdryDofs; ++l) {
+//                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+//                for (int m=0; m < d; ++m) {
+//                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
     // Evaluate/interpolate finite element fields on cells.
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rho =
@@ -1209,6 +1015,7 @@ public:
     // Finite element definition.
     fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
     fidx_ = fe_->getBoundaryDofs();
+    dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
     // Construct boundary FE
     /*int sideset = 6;
     int numLocSides = bdryCellNodes[sideset].size();

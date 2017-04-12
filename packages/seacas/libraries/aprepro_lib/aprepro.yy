@@ -269,7 +269,7 @@ sexp:     QSTRING		{ $$ = $1;				}
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::SVAR);		}
-	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMSVAR EQUAL sexp	{ $$ = (char*)$1->value.svar; immutable_modify(aprepro, $1); }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | SFNCT LPAR sexp RPAR	{
 	  if (arg_check($1, $1->value.strfnct_c == NULL))
@@ -345,17 +345,17 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = $1->value.var; 
 				  SEAMS::math_error(aprepro, "Power");
 				}
-        | INC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
-	| DEC IMMVAR		{ immutable_modify(aprepro, $2); YYERROR; }
-	| IMMVAR INC		{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR DEC		{ immutable_modify(aprepro, $1); YYERROR; }
-        | IMMVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
+        | INC IMMVAR		{ $$ = $2->value.var; immutable_modify(aprepro, $2);  }
+	| DEC IMMVAR		{ $$ = $2->value.var; immutable_modify(aprepro, $2);  }
+	| IMMVAR INC		{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR DEC		{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+        | IMMVAR EQUAL exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
 	| IMMSVAR EQUAL exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_PLUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_MINUS exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_TIME exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_DIV exp	{ immutable_modify(aprepro, $1); YYERROR; }
-	| IMMVAR EQ_POW exp	{ immutable_modify(aprepro, $1); YYERROR; }
+	| IMMVAR EQ_PLUS exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_MINUS exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_TIME exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_DIV exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
+	| IMMVAR EQ_POW exp	{ $$ = $1->value.var; immutable_modify(aprepro, $1);  }
 
 	| UNDVAR		{ $$ = $1->value.var;
 				  undefined_error(aprepro, $1->name);          }

@@ -148,6 +148,65 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
+template<typename FunctionDerived, typename S, Index M>
+void
+Function_Base<FunctionDerived, S, M>::
+set_failed(char const * const msg)
+{
+  failed = true;
+  failure_message = msg;
+  return;
+}
+
+//
+//
+//
+template<typename FunctionDerived, typename S, Index M>
+bool
+Function_Base<FunctionDerived, S, M>::
+get_failed()
+{
+  return failed;
+}
+
+//
+//
+//
+template<typename FunctionDerived, typename S, Index M>
+void
+Function_Base<FunctionDerived, S, M>::
+clear_failed()
+{
+  failed = false;
+  return;
+}
+
+//
+//
+//
+template<typename FunctionDerived, typename S, Index M>
+void
+Function_Base<FunctionDerived, S, M>::
+set_failure_message(char const * const msg)
+{
+  failure_message = msg;
+  return;
+}
+
+//
+//
+//
+template<typename FunctionDerived, typename S, Index M>
+char const * const
+Function_Base<FunctionDerived, S, M>::
+get_failure_message()
+{
+  return failure_message;
+}
+
+//
+//
+//
 template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
 Vector<T, NC>
@@ -242,7 +301,8 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
 
   initial_value = fn.value(soln);
   previous_value = initial_value;
-  failed = failed || fn.failed;
+  failed = failed || fn.get_failed();
+  if (fn.get_failed() == true) failure_message = fn.get_failure_message();
   initial_norm = norm(resi);
 
   updateConvergenceCriterion(initial_norm);
@@ -258,7 +318,8 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
 
     resi = fn.gradient(soln);
 
-    failed = failed || fn.failed;
+    failed = failed || fn.get_failed();
+    if (fn.get_failed() == true) failure_message = fn.get_failure_message();
 
     T const
     norm_resi = norm(resi);
@@ -268,7 +329,8 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
     T const
     value = fn.value(soln);
 
-    failed = failed || fn.failed;
+    failed = failed || fn.get_failed();
+    if (fn.get_failed() == true) failure_message = fn.get_failure_message();
 
     updateDivergenceCriterion(value);
 
@@ -353,6 +415,7 @@ updateDivergenceCriterion(T const fn_value)
 
   if (enforce_monotonicity == true && monotonic == false) {
     failed = true;
+    failure_message = "Non-monotonic";
   }
 
   previous_value = fn_value;
@@ -361,6 +424,7 @@ updateDivergenceCriterion(T const fn_value)
 
   if (enforce_boundedness == true && bounded == false) {
     failed = true;
+    failure_message = "Growing unbounded";
   }
 
   return;

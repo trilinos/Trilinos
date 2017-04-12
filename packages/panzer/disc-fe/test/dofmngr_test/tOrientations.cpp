@@ -150,35 +150,35 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    // otherwise. The local definition of the edge direction is defined by 
    // the shards cell topology.
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(-1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],-1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[1], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(-1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(1));
+      TEST_EQUALITY(orientations[0],-1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[2], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[3], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    // lets now test an aggregate basis
@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    patterns.push_back(std::make_pair(2,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
-   std::vector<char> orientations(aggPattern->numberIds(),0);
+   std::vector<signed char> orientations(aggPattern->numberIds(),0);
    orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[2], *aggPattern, orientations);
    int nonzeroCount = 0;
    for(std::size_t s=0;s<orientations.size();s++)
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    TEST_EQUALITY(nonzeroCount,6);
 
    // loop over edges
-   char tests[] = { 1,1,-1}; // for element 2
+   signed char tests[] = { 1,1,-1}; // for element 2
    for(std::size_t e=0;e<3;e++) {
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
@@ -260,39 +260,39 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    // otherwise. The local definition of the edge direction is defined by 
    // the shards cell topology.
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[1], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[2], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[3], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    // lets now test an aggregate basis
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    patterns.push_back(std::make_pair(2,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
-   std::vector<char> orientations(aggPattern->numberIds(),0);
+   std::vector<signed char> orientations(aggPattern->numberIds(),0);
    orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity[2], *aggPattern, orientations);
    int nonzeroCount = 0;
    for(std::size_t s=0;s<orientations.size();s++)
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    TEST_EQUALITY(nonzeroCount,8);
 
    // loop over edges
-   char tests[] = { 1,1,1,-1}; // for element 2
+   signed char tests[] = { 1,1,1,-1}; // for element 2
    for(std::size_t e=0;e<4;e++) {
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
@@ -377,35 +377,35 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    // otherwise. The local definition of the face direction is defined by 
    // the shards cell topology.
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(-1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],-1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[1], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(-1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(1));
+      TEST_EQUALITY(orientations[0],-1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[2], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[3], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
    }
 
    // lets now test an aggregate basis
@@ -415,7 +415,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    patterns.push_back(std::make_pair(2,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
-   std::vector<char> orientations(aggPattern->numberIds(),0);
+   std::vector<signed char> orientations(aggPattern->numberIds(),0);
    orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[2], *aggPattern, orientations);
    int nonzeroCount = 0;
    for(std::size_t s=0;s<orientations.size();s++)
@@ -423,7 +423,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    TEST_EQUALITY(nonzeroCount,6);
 
    // loop over faces
-   char tests[] = { 1,1,-1}; // for element 2
+   signed char tests[] = { 1,1,-1}; // for element 2
    for(std::size_t e=0;e<3;e++) {
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
@@ -487,39 +487,39 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    // otherwise. The local definition of the face direction is defined by 
    // the shards cell topology.
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[1], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[2], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[3], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],-1);
    }
 
    // lets now test an aggregate basis
@@ -529,7 +529,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    patterns.push_back(std::make_pair(2,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
-   std::vector<char> orientations(aggPattern->numberIds(),0);
+   std::vector<signed char> orientations(aggPattern->numberIds(),0);
    orientation_helpers::computeCellEdgeOrientations(topFaceIndices, connectivity[2], *aggPattern, orientations);
    int nonzeroCount = 0;
    for(std::size_t s=0;s<orientations.size();s++)
@@ -537,7 +537,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    TEST_EQUALITY(nonzeroCount,8);
 
    // loop over faces
-   char tests[] = { 1,1,1,-1}; // for element 2
+   signed char tests[] = { 1,1,1,-1}; // for element 2
    for(std::size_t e=0;e<4;e++) {
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
@@ -637,12 +637,12 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
    connectivity[0][0] = 6; connectivity[0][1] = 2; connectivity[0][2] = 9; connectivity[0][3] = 7; 
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(-1));
-      TEST_EQUALITY(orientations[1],char(-1));
-      TEST_EQUALITY(orientations[2],char(1));
-      TEST_EQUALITY(orientations[3],char(1));
+      TEST_EQUALITY(orientations[0],-1);
+      TEST_EQUALITY(orientations[1],-1);
+      TEST_EQUALITY(orientations[2],1);
+      TEST_EQUALITY(orientations[3],1);
    }
 }
 
@@ -707,14 +707,14 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_hex)
    connectivity[0][4] = 0; connectivity[0][5] = 8; connectivity[0][6] = 9; connectivity[0][7] = 1; 
 
    {
-      std::vector<char> orientations(patternB->numberIds(),0);
+      std::vector<signed char> orientations(patternB->numberIds(),0);
       orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
-      TEST_EQUALITY(orientations[0],char(1));
-      TEST_EQUALITY(orientations[1],char(1));
-      TEST_EQUALITY(orientations[2],char(-1));
-      TEST_EQUALITY(orientations[3],char(1));
-      TEST_EQUALITY(orientations[4],char(1));
-      TEST_EQUALITY(orientations[5],char(-1));
+      TEST_EQUALITY(orientations[0],1);
+      TEST_EQUALITY(orientations[1],1);
+      TEST_EQUALITY(orientations[2],-1);
+      TEST_EQUALITY(orientations[3],1);
+      TEST_EQUALITY(orientations[4],1);
+      TEST_EQUALITY(orientations[5],-1);
    }
 }
 

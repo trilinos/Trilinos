@@ -93,17 +93,14 @@ variables:
 	int connect7(num_el_in_blk7, num_nod_per_el7) ;
 		connect7:elem_type = "tri" ;
 	int eb_prop2(num_el_blk) ;
-		eb_prop2:_FillValue = 0 ;
 		eb_prop2:name = "MATERIAL_PROPERTY_LONG_NAME_32CH" ;
 	int eb_prop3(num_el_blk) ;
-		eb_prop3:_FillValue = 0 ;
 		eb_prop3:name = "DENSITY" ;
 	int node_ns1(num_nod_ns1) ;
 	double dist_fact_ns1(num_nod_ns1) ;
 	int node_ns2(num_nod_ns2) ;
 	double dist_fact_ns2(num_nod_ns2) ;
 	int ns_prop2(num_node_sets) ;
-		ns_prop2:_FillValue = 0 ;
 		ns_prop2:name = "FACE" ;
 	int ns_prop3(num_node_sets) ;
 		ns_prop3:name = "VELOCITY" ;
@@ -122,7 +119,6 @@ variables:
 	int elem_ss5(num_side_ss5) ;
 	int side_ss5(num_side_ss5) ;
 	int ss_prop2(num_side_sets) ;
-		ss_prop2:_FillValue = 0 ;
 		ss_prop2:name = "COLOR" ;
 
 // global attributes:

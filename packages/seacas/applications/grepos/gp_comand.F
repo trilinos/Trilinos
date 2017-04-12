@@ -1041,6 +1041,9 @@ C=======================================================================
         VERB = ' '
         
 C=======================================================================
+C NAME BLOCK|SIDESET|SSET|NODESET|NSET id newname
+C NAME ATTRIBUTE attindex BLOCK id newname
+
       ELSE IF (VERB .EQ. 'NAME') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
@@ -1053,10 +1056,18 @@ C=======================================================================
         ELSE IF (MATSTR(WORD,'NODESETS',3) .OR.
      $      MATSTR(WORD,'NSETS',   3) ) THEN
           itype = 'N'
+        ELSE IF (MATSTR(WORD,'ATTRIBUTE',3)) THEN
+          itype = 'A'
         END IF
 
         CALL FFINTG (IFLD, INTYP, IFIELD,
-     $    'block ID', 0, IDOLD, *420)
+     $    'entity ID', 0, IDOLD, *420)
+        if (itype .eq. 'A') then
+C.. Skip over 'block' and get block id 
+          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+          CALL FFINTG (IFLD, INTYP, IFIELD,
+     $      'block ID', 0, IDBLK, *420)
+        end if
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
         if (itype .eq. 'B') then
           CALL NEWNAM ('B', IDELB, EBNAME, NELBLK, IDOLD, WORD)
@@ -1064,6 +1075,9 @@ C=======================================================================
           CALL NEWNAM ('N', IDNPS, NSNAME, NUMNPS, IDOLD, WORD)
         else if (itype .eq. 'S') then
           CALL NEWNAM ('S', IDESS, SSNAME, NUMESS, IDOLD, WORD)
+        else if (itype .eq. 'A') then
+          CALL NEWATT (IDELB, IDBLK,  NELBLK, IDOLD, NUMATR, ATNAME,
+     *      WORD)
         end if
         verb = ' '
 C=======================================================================
@@ -1073,7 +1087,7 @@ C=======================================================================
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
         if (.NOT. MATSTR (WORD2, 'VARIABLE', 2)) THEN
           call PRTERR('CMDERR',
-     *      'SYNTAX: RENAME [global|nodal|node|elemnet|nodeset|nset|',
+     *      'SYNTAX: RENAME [global|nodal|node|element|nodeset|nset|',
      *      'sideset|sset] VARIABLE [oldname] [newname]')
           go to 399
         end if
@@ -1553,6 +1567,32 @@ C ... Field is character
                   GO TO 333
                 END IF
 
+              ELSE IF (MATSTR (WORD2, 'NAMES', 2)) THEN
+                IF (MATSTR(WORD,'MATERIALS',1) .OR.
+     &            MATSTR(WORD, 'BLOCKS',1)) THEN
+                  do i=1, nelblk
+                    ebname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC',
+     *              'All material block names deleted.')
+                ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
+     &              MATSTR(WORD,'NSETS',   1) ) THEN
+                  do i=1, numnps
+                    nsname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
+                ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+     &              MATSTR(WORD,'SSETS',   1) ) THEN
+                  do i=1, numess
+                    ssname(i) = ""
+                  end do
+                  CALL PRTERR ('CMDSPEC','All sideset names deleted.')
+                ELSE
+                  CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
+     &              // '" is an invalid DELETE NAME option')
+                  GO TO 333
+                END IF
+                
               ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
@@ -1606,9 +1646,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .TRUE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .TRUE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 1
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')
@@ -1675,9 +1723,17 @@ C         --Store the range selected
               ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
      &            MATSTR(WORD,'NSETS',   1) ) THEN
                 CALL DELID ('N', IDNPS, INPSST, NUMNPS, I, .FALSE.)
-              ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
+              ELSE IF (MATSTR(WORD,'SIDESETS',2) .OR.
      &            MATSTR(WORD,'SSETS',   1) ) THEN
                 CALL DELID ('S', IDESS, IESSST, NUMESS, I, .FALSE.)
+              ELSE IF (MATSTR(WORD,'STEPS',2) .OR.
+     &            MATSTR(WORD,'TIMES',   1) ) THEN
+                if (i .le. nsteps) then
+                  ITIMST(I) = 0
+                else
+                  CALL PRTERR ('CMDERR',
+     *              'Step number is out of range')
+                end if
               ELSE
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')

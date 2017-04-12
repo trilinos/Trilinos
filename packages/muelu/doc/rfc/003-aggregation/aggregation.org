@@ -33,7 +33,7 @@ The =UncoupledAggregationFactory= is mainly a vector/list of
 algorithms (see below). It is responsible for the parameter handling
 (but we could/should move this into the different aggregation
 algorithms!) and the preparation of the input for the algorithms
-(e.g. marking the boundary nodes, etc…).
+(e.g. marking the boundary nodes, etc...).
 
 First, the =UncoupledAggregationRoutine= generates an empty
 =Aggregates= object (using the amalgamated graph that is provided by
@@ -92,7 +92,7 @@ follows:
   =OnePtAlgorithm=. The =UncoupledAggregationFactory= allows to define
   a DOF map whose corresponding nodes are set to =SMALLAGG=. Then all
   these =SMALLAGG= nodes are aggregated. There are no restrictions for
-  the aggregates (no minimum size,…) except that only nodes with the
+  the aggregates (no minimum size, ...) except that only nodes with the
   =SMALLAGG= status can be aggregated (and only if they are
   neighbours).
 
@@ -141,7 +141,7 @@ follows:
   The option "ordering" defines how we loop over all nodes. The
   options are =NATURAL= (follow the numbering of the nodes), =GRAPH=
   (start with one node and then proceed with all it's direct
-  neighbours…) and =RANDOM= (randomly pick out the next non-aggregated
+  neighbours) and =RANDOM= (randomly pick out the next non-aggregated
   node).
 
   #+BEGIN_COMMENT

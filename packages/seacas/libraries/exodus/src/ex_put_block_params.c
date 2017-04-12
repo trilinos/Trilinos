@@ -85,6 +85,9 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   const char *dnnpe       = NULL;
   const char *dnepe       = NULL;
   const char *dnfpe       = NULL;
+  int         fill        = NC_FILL_CHAR;
+
+  ex_check_valid_file_id(exoid);
 
   exerrval = 0; /* clear error code */
 
@@ -373,6 +376,9 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
         ex_err("ex_put_block_params", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
+#if NC_HAS_HDF5
+      nc_def_var_fill(exoid, att_name_varid, 0, &fill);
+#endif
     }
 
     conn_int_type = NC_INT;

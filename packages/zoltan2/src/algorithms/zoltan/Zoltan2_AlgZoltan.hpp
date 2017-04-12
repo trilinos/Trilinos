@@ -55,6 +55,7 @@
 
 #include <Zoltan2_AlgZoltanCallbacks.hpp>
 #include <zoltan_cpp.h>
+#include <zoltan_partition_tree.h>
 
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltan.hpp
@@ -212,6 +213,288 @@ private:
     //                         (void *) &(*adp));
   }
   
+  //! \brief  rcb is always binary
+  virtual bool isPartitioningTreeBinary() const
+  {
+    return true;
+  }
+
+  //! \brief  handles the building of the splitRangeBeg and splitRangeEnd arrays
+  void rcb_recursive_partitionTree_calculations(
+                        part_t arrayIndex,
+                        part_t numParts,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd) const
+  {
+    // Note the purpose of the recursive method is make sure the children of a
+    // node have updated their values for splitRangeBeg and splitRangeEnd
+    // Then we can set our own values simply based on the union
+    // first load the rcb data for the node
+    int parent = -1;
+    int left_leaf = -1;
+    int right_leaf = -1;
+    int err = Zoltan_RCB_Partition_Tree(zz->Get_C_Handle(),
+      arrayIndex - numParts + 1, // rcb starts as 1 but does not include terminals
+      &parent, &left_leaf, &right_leaf);
+    if(err != 0) {
+      throw std::logic_error( "Zoltan_RCB_Partition_Tree returned in error." );
+    }
+    // check that children both have their ranges set and if not, do those
+    // range first so we can build them to make our range
+    if(left_leaf > 0) { // neg is terminal and always already built
+      rcb_recursive_partitionTree_calculations(left_leaf+numParts-1, numParts,
+        splitRangeBeg, splitRangeEnd);
+    }
+    if(right_leaf > 0) { // neg is terminal and always already built
+      rcb_recursive_partitionTree_calculations(right_leaf+numParts-1, numParts,
+        splitRangeBeg, splitRangeEnd);
+    }
+    // now we can build our ranges from the children
+    // note this exploits the rcb conventions for right and left so we know
+    // that left_leaf will be our smaller indices
+    int leftIndex = (left_leaf > 0) ? (left_leaf-1+numParts) : (-left_leaf);
+    int rightIndex = (right_leaf > 0) ? (right_leaf-1+numParts) : (-right_leaf);
+    splitRangeBeg[arrayIndex] = splitRangeBeg[leftIndex];
+    splitRangeEnd[arrayIndex] = splitRangeEnd[rightIndex];
+    // for debugging sanity check verify left_leaf is a set of indices which
+    // goes continuously into the right_leaf
+    if(splitRangeBeg[rightIndex] != splitRangeEnd[leftIndex]) { // end is non-inclusive
+      throw std::logic_error( "RCB expected left_leaf indices and right leaf"
+        " indices to be continuous but it was not so." );
+    }
+  }
+
+  //! \brief  fill arrays with rcb partition tree info
+  void rcb_getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
+  {
+    // CALCULATE: numTreeVerts
+    // For rcb a tree node always takes 2 nodes and turns them into 1 node
+    // That means it takes numParts - 1 nodes to reduce a tree of numParts to
+    // a single root node - but we do 2 * numParts - 1 because we are currently
+    // treating all of the 'trivial' terminals as tree nodes - something we
+    // discussed we may change later
+    part_t numTreeNodes = 2 * numParts - 1;
+    numTreeVerts = numTreeNodes - 1; // by design convention root not included
+    // CALCULATE: permPartNums
+    permPartNums.resize(numParts);
+    for(part_t n = 0; n < numParts; ++n) {
+      permPartNums[n] = n; // for rcb we can assume this is trivial and in order
+    }
+    // CALCULATE: treeVertParents
+    treeVertParents.resize(numTreeNodes); // allocate space for numTreeNodes array
+    // scan all the non terminal nodes and set all children to have us as parent
+    // that will set all parents except for the root node which we will set to -1
+    // track the children of the root and final node for swapping later. Couple
+    // ways to do this - all seem a bit awkward but at least this is efficient.
+    part_t rootNode = 0; // track index of the root node for swapping
+    // a bit awkward but efficient - save the children of root and final node
+    // for swap at end to satisfy convention that root is highest index node
+    part_t saveRootNodeChildrenA = -1;
+    part_t saveRootNodeChildrenB = -1;
+    part_t saveFinalNodeChildrenA = -1;
+    part_t saveFinalNodeChildrenB = -1;
+    for(part_t n = numParts; n < numTreeNodes; ++n) { // scan and set all parents
+      int parent = -1;
+      int left_leaf = -1;
+      int right_leaf = -1;
+      int err = Zoltan_RCB_Partition_Tree(zz->Get_C_Handle(),
+        static_cast<int>(n - numParts) + 1, // rcb starts as 1 but does not include terminals
+        &parent, &left_leaf, &right_leaf);
+      if(err != 0) {
+        throw std::logic_error("Zoltan_RCB_Partition_Tree returned in error.");
+      }
+      part_t leftIndex = (left_leaf > 0) ? (left_leaf-1+numParts) : (-left_leaf);
+      part_t rightIndex = (right_leaf > 0) ? (right_leaf-1+numParts) : (-right_leaf);
+      treeVertParents[leftIndex] = n;
+      treeVertParents[rightIndex] = n;
+      // save root node for final swap
+      if(parent == 1 || parent == -1) { // is it the root?
+        rootNode = n; // remember I am the root
+        saveRootNodeChildrenA = leftIndex;
+        saveRootNodeChildrenB = rightIndex;
+      }
+      if(n == numTreeNodes-1) {
+        saveFinalNodeChildrenA = leftIndex;
+        saveFinalNodeChildrenB = rightIndex;
+      }
+    }
+    treeVertParents[rootNode] = -1; // convention parent is root -1
+    // splitRangeBeg and splitRangeEnd
+    splitRangeBeg.resize(numTreeNodes);
+    splitRangeEnd.resize(numTreeNodes);
+    // for terminal nodes this is trivial
+    for(part_t n = 0; n < numParts; ++n) {
+      splitRangeBeg[n] = n;
+      splitRangeEnd[n] = n + 1;
+    }
+    if(numParts > 1) { // not relevant for 1 part
+      // build the splitRangeBeg and splitRangeEnd recursively which forces the
+      // children of each node to be calculated before the parent so parent can
+      // just take the union of the two children
+      rcb_recursive_partitionTree_calculations(rootNode, numParts, splitRangeBeg,
+        splitRangeEnd);
+      // now as a final step handle the swap to root is the highest index node
+      // swap the parent of the two nodes
+      std::swap(treeVertParents[rootNode], treeVertParents[numTreeNodes-1]);
+      // get the children of the swapped nodes to have updated parents
+      treeVertParents[saveFinalNodeChildrenA] = rootNode;
+      treeVertParents[saveFinalNodeChildrenB] = rootNode;
+      // handle case where final node is child of the root
+      if(saveRootNodeChildrenA == numTreeNodes - 1) {
+        saveRootNodeChildrenA = rootNode;
+      }
+      if(saveRootNodeChildrenB == numTreeNodes - 1) {
+        saveRootNodeChildrenB = rootNode;
+      }
+      treeVertParents[saveRootNodeChildrenA] = numTreeNodes - 1;
+      treeVertParents[saveRootNodeChildrenB] = numTreeNodes - 1;
+      // update the beg and end indices - simply swap them
+      std::swap(splitRangeBeg[rootNode], splitRangeBeg[numTreeNodes-1]);
+      std::swap(splitRangeEnd[rootNode], splitRangeEnd[numTreeNodes-1]);
+    }
+  }
+
+  //! \brief  fill arrays with rcb partition tree info
+  void phg_getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
+  {
+    // First thing is to get the length of the tree from zoltan.
+    // The tree is a list of pairs (lo,hi) for each node.
+    // Here tree_array_size is the number of pairs.
+    // In phg indexing the first pairt (i=0) is empty garbage.
+    // The second pair (index 1) will be the root.
+    // Some nodes will be empty nodes, determined by hi = -1.
+    int tree_array_size = -1; // will be set by Zoltan_PHG_Partition_Tree_Size
+    int err = Zoltan_PHG_Partition_Tree_Size(
+      zz->Get_C_Handle(), &tree_array_size);
+    if(err != 0) {
+      throw std::logic_error("Zoltan_PHG_Partition_Tree_Size returned error.");
+    }
+    // Determine the number of valid nodes (PHG will have empty slots)
+    // We scan the list of pairs and count each node which does not have hi = -1
+    // During the loop we will also construct mapIndex which maps initial n
+    // to final n due to some conversions we apply to meet the design specs.
+    // The conversions implemented by mapIndex are:
+    //    Move all terminals to the beginning (terminals have hi = lo)
+    //    Resort the terminals in order (simply map to index lo works)
+    //    Move non-terminals after the terminals (they start at index numParts)
+    //    Map the first pair (root) to the be last to meet the design spec
+    part_t numTreeNodes = 0;
+    std::vector<part_t> mapIndex(tree_array_size); // maps n to final index
+    part_t trackNonTerminalIndex = numParts; // starts after terminals
+    for(part_t n = 0; n < static_cast<part_t>(tree_array_size); ++n) {
+      part_t phgIndex = n + 1; // phg indexing starts at 1
+      int lo_index = -1;
+      int hi_index = -1;
+      err = Zoltan_PHG_Partition_Tree(
+        zz->Get_C_Handle(), phgIndex, &lo_index, &hi_index);
+      if(hi_index != -1) { // hi -1 means it's an unused node
+        ++numTreeNodes; // increase the total count because this is a real node
+        if(n != 0) { // the root is mapped last but we don't know the length yet
+          mapIndex[n] = (lo_index == hi_index) ? // is it a terminal?
+            lo_index : // terminals map in sequence - lo_index is correct
+            (trackNonTerminalIndex++); // set then bump trackNonTerminalIndex +1
+        }
+      }
+    }
+    // now complete the map by setting root to the length-1 for the design specs
+    mapIndex[0] = numTreeNodes - 1;
+    // CALCULATE: numTreeVerts
+    numTreeVerts = numTreeNodes - 1; // this is the design - root not included
+    // CALCULATE: permPartNums
+    permPartNums.resize(numParts);
+    for(part_t n = 0; n < numParts; ++n) {
+      permPartNums[n] = n; // for phg we can assume this is trivial and in order
+    }
+    // CALCULATE: treeVertParents, splitRangeBeg, splitRangeEnd
+    // we will determine all of these in this second loop using mapIndex
+    // First set the arrays to have the proper length
+    treeVertParents.resize(numTreeNodes);
+    splitRangeBeg.resize(numTreeNodes);
+    splitRangeEnd.resize(numTreeNodes);
+    // Now loop a second time
+    for(part_t n = 0; n < tree_array_size; ++n) {
+      part_t phgIndex = n + 1; // phg indexing starts at 1
+      int lo_index = -1; // zoltan Zoltan_PHG_Partition_Tree will set this
+      int hi_index = -1; // zoltan Zoltan_PHG_Partition_Tree will set this
+      err = Zoltan_PHG_Partition_Tree( // access zoltan phg tree data
+        zz->Get_C_Handle(), phgIndex, &lo_index, &hi_index);
+      if(err != 0) {
+        throw std::logic_error("Zoltan_PHG_Partition_Tree returned in error.");
+      }
+      if(hi_index != -1) { // hi -1 means it's an unused node (a gap)
+        // get final index using mapIndex - so convert from phg to design plan
+        part_t finalIndex = mapIndex[n]; // get the index for the final output
+        // now determine the parent
+        // In the original phg indexing, the parent can be directly calculated
+        // from the pair index using the following rules:
+        // if phgIndex even, then parent is phgIndex/2
+        //   here we determine even by ((phgIndex%2) == 0)
+        // if phgIndex odd, then parent is (phgIndex-1)/2
+        // but after getting parentPHGIndex we convert back to this array
+        // indexing by subtracting 1
+        part_t parentPHGIndex =
+          ((phgIndex%2) == 0) ? (phgIndex/2) : ((phgIndex-1)/2);
+        // map the parent phg index to the final parent index
+        // however, for the special case of the root (n=1), set the parent to -1
+        treeVertParents[finalIndex] = (n==0) ? -1 : mapIndex[parentPHGIndex-1];
+        // set begin (inclusive) and end (non-inclusive), so end is hi+1
+        splitRangeBeg[finalIndex] = static_cast<part_t>(lo_index);
+        splitRangeEnd[finalIndex] = static_cast<part_t>(hi_index+1);
+      }
+    }
+  }
+
+  //! \brief  fill arrays with partition tree info
+  void getPartitionTree(part_t numParts,
+                        part_t & numTreeVerts,
+                        std::vector<part_t> & permPartNums,
+                        std::vector<part_t> & splitRangeBeg,
+                        std::vector<part_t> & splitRangeEnd,
+                        std::vector<part_t> & treeVertParents) const
+  {
+    // first check that our parameters requested we keep the tree
+    const Teuchos::ParameterList &pl = env->getParameters();
+    bool keep_partition_tree = false;
+    const Teuchos::ParameterEntry * pe = pl.getEntryPtr("keep_partition_tree");
+    if(pe) {
+      keep_partition_tree = pe->getValue(&keep_partition_tree);
+      if(!keep_partition_tree) {
+        throw std::logic_error(
+          "Requested tree when param keep_partition_tree is off.");
+      }
+    }
+
+    // now call the appropriate method based on LB_METHOD in the zoltan
+    // parameters list.
+    const Teuchos::ParameterList & zoltan_pl = pl.sublist("zoltan_parameters");
+    std::string lb_method;
+    pe = zoltan_pl.getEntryPtr("LB_METHOD");
+    if(pe) {
+      lb_method = pe->getValue(&lb_method);
+    }
+    if(lb_method == "phg") {
+      phg_getPartitionTree(numParts, numTreeVerts, permPartNums,
+          splitRangeBeg, splitRangeEnd, treeVertParents);
+    }
+    else if(lb_method == "rcb") {
+      rcb_getPartitionTree(numParts, numTreeVerts, permPartNums,
+          splitRangeBeg, splitRangeEnd, treeVertParents);
+    }
+    else {
+      throw std::logic_error("Did not recognize LB_METHOD: " + lb_method);
+    }
+  }
+
 public:
 
   /*! Zoltan constructor
@@ -292,7 +575,6 @@ public:
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   // void color(const RCP<ColoringSolution<Adapter> > &solution);
-
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -343,6 +625,23 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("RCB_MULTICRITERIA_NORM", "2");
     else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
       zz->Set_Param("RCB_MULTICRITERIA_NORM", "3");
+  }
+
+  // perhaps make this a bool stored in the AlgZoltan if we want to follow
+  // the pattern of multijagged mj_keep_part_boxes for example. However we can
+  // collect the error straight from Zoltan if we attempt to access the tree
+  // when we never stored it so that may not be necessary
+  bool keep_partition_tree = false;
+  pe = pl.getEntryPtr("keep_partition_tree");
+  if (pe) {
+    keep_partition_tree = pe->getValue(&keep_partition_tree);
+    if (keep_partition_tree) {
+      // need to resolve the organization of this
+      // when do we want to use the zoltan parameters directly versus
+      // using the zoltan2 parameters like this
+      zz->Set_Param("KEEP_CUTS", "1");      // rcb zoltan setting
+      zz->Set_Param("PHG_KEEP_TREE", "1");  // phg zoltan setting
+    }
   }
 
   pe = pl.getEntryPtr("rectilinear");

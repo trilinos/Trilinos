@@ -104,27 +104,31 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~OrderingProblem() {};
+  virtual ~OrderingProblem() {}
 
+  OrderingProblem(Adapter *A, ParameterList *p,
+                  const RCP<const Teuchos::Comm<int> > &comm) :
+    Problem<Adapter>(A, p, comm) 
+  {
+    HELLO;
+    createOrderingProblem();
+  }
 
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm)
-                      : Problem<Adapter>(A, p, comm) 
-  {
-    HELLO;
-    createOrderingProblem();
-  };
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm) :
+  OrderingProblem(A, p, 
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                            Teuchos::opaqueWrapper(mpicomm))))
+  {}
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
-  {
-    HELLO;
-    createOrderingProblem();
-  };
+  OrderingProblem(Adapter *A, ParameterList *p) : 
+  OrderingProblem(A, p, Teuchos::DefaultComm<int>::getComm())
+  {}
 
   /*! \brief Set up validators specific to this Problem
   */
@@ -326,14 +330,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  std::cout << __func__zoltan2__ << " input adapter type " 
-//       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << std::endl;
-
-#ifdef HAVE_ZOLTAN2_OVIS
-  ovis_enabled(this->comm_->getRank());
-#endif
-
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
@@ -378,7 +374,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
       this->graphModel_);
 
     break;
-
 
 
   case IdentifierModelType:

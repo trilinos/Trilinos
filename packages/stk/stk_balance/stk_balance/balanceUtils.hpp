@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
+#include "stk_mesh/base/FieldBase.hpp"
 
 namespace stk
 {
@@ -48,288 +49,98 @@ public:
         COLORING
     };
 
-    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const { return 1;}
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1; }
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const { return 1; }
-    virtual GraphOption getGraphOption() const { return BalanceSettings::LOADBALANCE; }
-
+    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
+    virtual int getGraphVertexWeight(stk::topology type) const;
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
+    virtual GraphOption getGraphOption() const;
 
     // Graph (parmetis) based options only
-    virtual bool includeSearchResultsInGraph() const { return false; }
-    virtual double getToleranceForFaceSearch() const { return 0.0; }
-    virtual double getToleranceForParticleSearch() const { return 0.0; }
-    virtual double getGraphEdgeWeightForSearch() const { return 1.0; }
-    virtual bool getEdgesForParticlesUsingSearch() const { return false; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return 15; }
+    virtual bool includeSearchResultsInGraph() const;
+    virtual double getToleranceForFaceSearch() const;
+    virtual double getToleranceForParticleSearch() const;
+    virtual double getGraphEdgeWeightForSearch() const;
+    virtual bool getEdgesForParticlesUsingSearch() const;
+    virtual double getVertexWeightMultiplierForVertexInSearch() const;
 
-    virtual bool isIncrementalRebalance() const { return false; }
-    virtual bool isMultiCriteriaRebalance() const { return false; }
+    virtual bool isIncrementalRebalance() const;
+    virtual bool isMultiCriteriaRebalance() const;
 
-    virtual bool userSpecifiedVertexWeights() const { return false; }
-    virtual bool fieldSpecifiedVertexWeights() const { return false; }
-    virtual std::vector<double> getVertexWeights() const { return std::vector<double>(); }
+    virtual bool areVertexWeightsProvidedInAVector() const;
+    virtual std::vector<double> getVertexWeightsViaVector() const;
+    virtual bool areVertexWeightsProvidedViaFields() const;
 
-    virtual double getImbalanceTolerance() const { return 1.05; }
+    virtual double getImbalanceTolerance() const;
 
-    virtual void setDecompMethod(const std::string& method) {}
-    virtual std::string getDecompMethod() const { return std::string("parmetis"); }
+    virtual void setDecompMethod(const std::string& method) ;
+    virtual std::string getDecompMethod() const ;
 
-    virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
+    virtual std::string getCoordinateFieldName() const ;
 
-    virtual bool shouldPrintMetrics() const { return false; }
+    virtual bool shouldPrintMetrics() const;
 
-    virtual int getNumCriteria() const { return 1; }
+    virtual int getNumCriteria() const;
 
     // Given an element/proc pair, can modify decomposition before elements are migrated
-    virtual void modifyDecomposition(DecompositionChangeList & decomp) const {};
+    virtual void modifyDecomposition(DecompositionChangeList & decomp) const ;
 
     // Need to implement getting particle radius from field
-    virtual double getParticleRadius(stk::mesh::Entity particle) const { return 0.5; }
+    virtual double getParticleRadius(stk::mesh::Entity particle) const ;
 
     // experimental
-    virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
-};
+    virtual bool setVertexWeightsBasedOnNumberAdjacencies() const;
 
-class ColoringSettings : public BalanceSettings
-{
-public:
-    ColoringSettings() {}
+    virtual bool allowModificationOfVertexWeightsForSmallMeshes() const;
 
-    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
-    {
-        return 1;
-    }
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
-    {
-        return 1.0;
-    }
-    virtual int getGraphVertexWeight(stk::topology type) const
-    {
-        return 1;
-    }
-    virtual GraphOption getGraphOption() const
-    {
-        return BalanceSettings::LOADBALANCE;
-    }
-
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-    {
-        return 1.0;
-    }
-};
-
-class OurColoringSettings : public ColoringSettings
-{
-public:
-    OurColoringSettings() {}
-
-    virtual GraphOption getGraphOption() const
-    {
-        return BalanceSettings::COLORING;
-    }
+    virtual bool shouldFixMechanisms() const;
 };
 
 class GraphCreationSettings : public BalanceSettings
 {
 public:
-    GraphCreationSettings(): mToleranceForFaceSearch(0.0001),
-                             mToleranceForParticleSearch( 0.0001),
-                             edgeWeightForSearch (1000),
-                             method(std::string("parmetis")),
-                             vertexWeightMultiplierForVertexInSearch(6.0)
+    GraphCreationSettings(): GraphCreationSettings(0.0001, 3, 15, "parmetis", 5.0)
     {}
 
-    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
-    {
-        const int noConnection = 1000;
-        const int s = noConnection;
-        const static int connectionTable[7][7] = {
-            {1, 1, 1, 1, 1, 1, s}, // 0 dim
-            {1, 1, 1, 1, 1, 1, s}, // 1 dim
-            {1, 1, 2, 3, 2, 3, s}, // 2 dim linear
-            {1, 1, 3, 3, 3, 3, s}, // 3 dim linear
-            {1, 1, 2, 3, 3, 4, s}, // 2 dim higher-order
-            {1, 1, 3, 3, 4, 4, s}, // 3 dim higher-order
-            {s, s, s, s, s, s, s}  // super element
-        };
+    GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
+                           : mToleranceForFaceSearch(faceSearchTol),
+                             mToleranceForParticleSearch(particleSearchTol),
+                             edgeWeightForSearch (edgeWeightSearch),
+                             method(decompMethod),
+                             vertexWeightMultiplierForVertexInSearch(multiplierVWSearch)
+    {}
 
-        int element1Index = getConnectionTableIndex(element1Topology);
-        int element2Index = getConnectionTableIndex(element2Topology);
+    virtual ~GraphCreationSettings() {}
 
-        return connectionTable[element1Index][element2Index];
-    }
+    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
 
-    virtual double getGraphEdgeWeightForSearch() const
-    {
-        return edgeWeightForSearch;
-    }
+    virtual double getGraphEdgeWeightForSearch() const;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
-    {
-        const double noConnection = 0;
-        const double s = noConnection;
-        const double largeWeight = 1000;
-        const double L = largeWeight;
-        const double twoDimWeight = 5;
-        const double q = twoDimWeight;
-        const double defaultWeight = 1.0;
-        const double D = defaultWeight;
-        const static double weightTable[7][7] = {
-            {L, L, L, L, L, L, s}, // 0 dim
-            {L, L, L, L, L, L, s}, // 1 dim
-            {L, L, q, q, q, q, s}, // 2 dim linear
-            {L, L, q, D, q, D, s}, // 3 dim linear
-            {L, L, q, q, q, q, s}, // 2 dim higher-order
-            {L, L, q, D, q, D, s}, // 3 dim higher-order
-            {s, s, s, s, s, s, s}  // super element
-        };
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
 
-        int element1Index = getConnectionTableIndex(element1Topology);
-        int element2Index = getConnectionTableIndex(element2Topology);
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const;
 
-        return weightTable[element1Index][element2Index];
-    }
+    virtual int getGraphVertexWeight(stk::topology type) const;
 
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const { return 1.0; }
+    virtual GraphOption getGraphOption() const;
+    virtual bool includeSearchResultsInGraph() const ;
+    virtual double getToleranceForParticleSearch() const ;
+    virtual double getToleranceForFaceSearch() const ;
+    virtual bool getEdgesForParticlesUsingSearch() const ;
+    virtual double getVertexWeightMultiplierForVertexInSearch() const ;
+    virtual std::string getDecompMethod() const ;
 
-    virtual int getGraphVertexWeight(stk::topology type) const
-    {
-        switch(type)
-        {
-            case stk::topology::PARTICLE:
-            case stk::topology::LINE_2:
-            case stk::topology::BEAM_2:
-                return 1;
-                break;
-            case stk::topology::SHELL_TRIANGLE_3:
-                return 3;
-                break;
-            case stk::topology::SHELL_TRIANGLE_6:
-                return 6;
-                break;
-            case stk::topology::SHELL_QUADRILATERAL_4:
-                return 6;
-                break;
-            case stk::topology::SHELL_QUADRILATERAL_8:
-                return 12;
-                break;
-            case stk::topology::HEXAHEDRON_8:
-                return 3;
-                break;
-            case stk::topology::HEXAHEDRON_20:
-                return 12;
-                break;
-            case stk::topology::TETRAHEDRON_4:
-                return 1;
-                break;
-            case stk::topology::TETRAHEDRON_10:
-                return 3;
-                break;
-            case stk::topology::WEDGE_6:
-                return 2;
-                break;
-            case stk::topology::WEDGE_15:
-                return 12;
-                break;
-            default:
-                if ( type.is_superelement( ))
-                {
-                    return 10;
-                }
-                throw("Invalid Element Type In WeightsOfElement");
-                break;
-        }
-        return 0;
-    }
-
-    virtual GraphOption getGraphOption() const
-    {
-        return BalanceSettings::LOADBALANCE;
-    }
-
-    virtual bool includeSearchResultsInGraph() const { return true; }
-    virtual double getToleranceForParticleSearch() const { return mToleranceForParticleSearch; }
-    virtual double getToleranceForFaceSearch() const { return mToleranceForFaceSearch; }
-    virtual bool getEdgesForParticlesUsingSearch() const { return true; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return vertexWeightMultiplierForVertexInSearch; }
-    virtual std::string getDecompMethod() const { return method; }
-
-    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-    virtual void setToleranceForFaceSearch(double tol) { mToleranceForFaceSearch = tol; }
-    virtual void setToleranceForParticleSearch(double tol) { mToleranceForParticleSearch = tol; }
+    virtual void setDecompMethod(const std::string& input_method);
+    virtual void setToleranceForFaceSearch(double tol);
+    virtual void setToleranceForParticleSearch(double tol) ;
+    virtual bool shouldFixMechanisms() const;
 
 protected:
-    int getConnectionTableIndex(stk::topology elementTopology) const
-    {
-        int tableIndex = -1;
-        switch(elementTopology)
-        {
-            case stk::topology::PARTICLE:
-                tableIndex = 0;
-                break;
-            case stk::topology::LINE_2:
-            case stk::topology::LINE_2_1D:
-            case stk::topology::LINE_3_1D:
-            case stk::topology::BEAM_2:
-            case stk::topology::BEAM_3:
-            case stk::topology::SHELL_LINE_2:
-            case stk::topology::SHELL_LINE_3:
-                tableIndex = 1;
-                break;
-            case stk::topology::TRI_3_2D:
-            case stk::topology::TRI_4_2D:
-            case stk::topology::QUAD_4_2D:
-            case stk::topology::SHELL_TRI_3:
-            case stk::topology::SHELL_TRI_4:
-            case stk::topology::SHELL_QUAD_4:
-                tableIndex = 2;
-                break;
-            case stk::topology::TET_4:
-            case stk::topology::PYRAMID_5:
-            case stk::topology::WEDGE_6:
-            case stk::topology::HEX_8:
-                tableIndex = 3;
-                break;
-            case stk::topology::TRI_6_2D:
-            case stk::topology::QUAD_8_2D:
-            case stk::topology::QUAD_9_2D:
-            case stk::topology::SHELL_TRI_6:
-            case stk::topology::SHELL_QUAD_8:
-            case stk::topology::SHELL_QUAD_9:
-                tableIndex = 4;
-                break;
-            case stk::topology::TET_8:
-            case stk::topology::TET_10:
-            case stk::topology::TET_11:
-            case stk::topology::PYRAMID_13:
-            case stk::topology::PYRAMID_14:
-            case stk::topology::WEDGE_15:
-            case stk::topology::WEDGE_18:
-            case stk::topology::HEX_20:
-            case stk::topology::HEX_27:
-                tableIndex = 5;
-                break;
-            default:
-                if(elementTopology.is_superelement())
-                {
-                    tableIndex = 6;
-                }
-                else
-                {
-                    std::cerr << "Topology is " << elementTopology << std::endl;
-                    throw("Invalid Element Type in GetDimOfElement");
-                }
-                break;
-        };
-        return tableIndex;
-    }
+    int getConnectionTableIndex(stk::topology elementTopology) const;
     double mToleranceForFaceSearch;
     double mToleranceForParticleSearch;
     double edgeWeightForSearch;
     std::string method;
     double vertexWeightMultiplierForVertexInSearch;
-
 };
 
 class GraphCreationSettingsWithCustomTolerances : public GraphCreationSettings
@@ -371,16 +182,17 @@ class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
 {
 public:
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool userSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedInAVector() const { return true; }
     virtual bool includeSearchResultsInGraph() const { return false; }
     void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
-    virtual std::vector<double> getVertexWeights() const { return vertex_weights; }
+    virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     //virtual double getImbalanceTolerance() const { return 1.05; }
     virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
     virtual std::string getDecompMethod() const { return method; }
     void setCoordinateFieldName(const std::string& field_name) { m_field_name = field_name; }
     virtual std::string getCoordinateFieldName() const { return m_field_name; }
+    virtual bool shouldFixMechanisms() const { return false; }
 
 private:
     std::vector<double> vertex_weights;
@@ -406,8 +218,8 @@ public:
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool userSpecifiedVertexWeights() const { return false; }
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool areVertexWeightsProvidedInAVector() const { return false; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual bool includeSearchResultsInGraph() const { return false; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
@@ -440,15 +252,20 @@ public:
                              const double default_weight = 0.0)
       : m_critFields(critFields), m_defaultWeight(default_weight)
     { }
+
+    MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch, const std::vector<stk::mesh::Field<double>*> critFields,
+                             bool includeSearchResults, const double default_weight = 0.0)
+      : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch),
+        m_critFields(critFields), m_includeSearchResults(includeSearchResults), m_defaultWeight(default_weight)
+    { }
+
     virtual ~MultipleCriteriaSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
+    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
+    virtual bool includeSearchResultsInGraph() const { return m_includeSearchResults; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-    virtual std::string getDecompMethod() const { return method; }
     virtual int getNumCriteria() const { return m_critFields.size(); }
     virtual bool isMultiCriteriaRebalance() const { return true;}
 
@@ -473,8 +290,8 @@ protected:
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
 
     const std::vector<stk::mesh::Field<double>*> m_critFields;
+    bool m_includeSearchResults = false;
     const double m_defaultWeight;
-    std::string method = std::string("rcb");
 };
 
 class GraphEdge
@@ -521,4 +338,5 @@ inline bool operator==(const GraphEdge &a, const GraphEdge &b)
 
 }
 }
+
 #endif

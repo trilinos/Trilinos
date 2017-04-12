@@ -1003,30 +1003,34 @@ namespace Tpetra {
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
     ///
-    /// \param GlobalRow [in] Global index of the row.
-    /// \param Indices [out] Global column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isLocallyIndexed()</tt>
-    /// \post <tt>Indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
     void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal>& Indices) const;
+    getGlobalRowView (const GlobalOrdinal gblRow,
+                      Teuchos::ArrayView<const GlobalOrdinal>& gblColInds) const;
+
+    /// \brief Whether this class implements getLocalRowView() and
+    ///   getGlobalRowView() (it does).
+    bool supportsRowViews () const;
 
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
     ///
-    /// \param LocalRow [in] Local index of the row.
-    /// \param indices [out] Local column indices in the row.  If the
-    ///   given row is not a valid row index on the calling process,
-    ///   then the result has no entries (its size is zero).
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] Local column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
     ///
     /// \pre <tt>! isGloballyIndexed()</tt>
-    /// \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+    /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
     void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices) const;
+    getLocalRowView (const LocalOrdinal lclRow,
+                     Teuchos::ArrayView<const LocalOrdinal>& lclColInds) const;
 
     //@}
     //! @name Overridden from Teuchos::Describable
@@ -1408,8 +1412,13 @@ namespace Tpetra {
     //! \name Methods governing changes between global and local indices
     //@{
 
-    //! Make the graph's column Map, if it does not already have one.
+    /// \brief Make and set the graph's column Map.
+    ///
+    /// This method makes the column Map, even if the graph already
+    /// has one.  It is the caller's responsibility not to call this
+    /// method unnecessarily.
     void makeColMap ();
+
     void makeIndicesLocal ();
     void makeImportExport ();
 
@@ -2783,8 +2792,17 @@ namespace Tpetra {
 
     void staticAssertions() const;
     void clearGlobalConstants();
-    void computeGlobalConstants();
+  public:
+    //! Returns true if globalConstants have been computed; false otherwise
+    bool haveGlobalConstants() const { return haveGlobalConstants_;}
 
+    /// \brief Forces computation of global constant if they have not been computed yet
+    ///
+    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
+    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
+    ///
+    void computeGlobalConstants();
+  protected:
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const LocalOrdinal myRow) const;

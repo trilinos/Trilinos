@@ -50,3 +50,18 @@
 
 /* Define to enable C++11 support*/
 #cmakedefine HAVE_SACADO_CXX11
+
+/* Define to enable hierarchical parallelism support */
+#if !defined(SACADO_VIEW_CUDA_HIERARCHICAL) && !defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#cmakedefine SACADO_VIEW_CUDA_HIERARCHICAL
+#endif
+
+/* Define to enable hierarchical parallelism support specific to DFad */
+#if !defined(SACADO_VIEW_CUDA_HIERARCHICAL) && !defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#cmakedefine SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
+#endif
+
+/* Define to enable Kokkos memory pool in Sacado */
+#ifndef SACADO_KOKKOS_USE_MEMORY_POOL
+#cmakedefine SACADO_KOKKOS_USE_MEMORY_POOL
+#endif

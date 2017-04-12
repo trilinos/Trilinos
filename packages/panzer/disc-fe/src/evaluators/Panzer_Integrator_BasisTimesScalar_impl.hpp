@@ -40,163 +40,224 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_BASISTIMESSCALAR_IMPL_HPP
-#define PANZER_EVALUATOR_BASISTIMESSCALAR_IMPL_HPP
+#ifndef   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
+#define   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
 
-#include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Panzer_IntegrationRule.hpp"
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Include Files
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Panzer
 #include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Kokkos_ViewFactory.hpp"
 
-#define PANZER_USE_FAST_QUAD 1
-// #define PANZER_USE_FAST_QUAD 0
-
-namespace panzer {
-
-//**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_BasisTimesScalar,p) :
-  residual( p.get<std::string>("Residual Name"), 
-	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  scalar( p.get<std::string>("Value Name"), 
-	  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+namespace panzer
 {
-  using Teuchos::RCP;
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  Main Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_BasisTimesScalar<EvalT, Traits>::
+  Integrator_BasisTimesScalar(
+    const panzer::EvaluatorStyle&   evalStyle,
+    const std::string&              resName,
+    const std::string&              valName,
+    const panzer::BasisIRLayout&    basis,
+    const panzer::IntegrationRule&  ir,
+    const double&                   multiplier, /* = 1 */
+    const std::vector<std::string>& fmNames     /* =
+      std::vector<std::string>() */)
+    :
+    evalStyle_(evalStyle),
+    multiplier_(multiplier),
+    basisName_(basis.name())
+  {
+    using panzer::BASIS;
+    using panzer::Cell;
+    using panzer::EvaluatorStyle;
+    using panzer::IP;
+    using PHX::MDField;
+    using PHX::typeAsString;
+    using std::invalid_argument;
+    using std::logic_error;
+    using std::string;
+    using Teuchos::RCP;
 
-  Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
-  p.validateParameters(*valid_params);
+    // Ensure the input makes sense.
+    TEUCHOS_TEST_FOR_EXCEPTION(resName == "", invalid_argument, "Error:  "    \
+      "Integrator_BasisTimesScalar called with an empty residual name.")
+    TEUCHOS_TEST_FOR_EXCEPTION(valName == "", invalid_argument, "Error:  "    \
+      "Integrator_BasisTimesScalar called with an empty value name.")
+    RCP<const PureBasis> tmpBasis = basis.getBasis();
+    TEUCHOS_TEST_FOR_EXCEPTION(not tmpBasis->isScalarBasis(), logic_error,
+      "Error:  Integrator_BasisTimesScalar:  Basis of type \""
+      << tmpBasis->name() << "\" is not a scalar basis.")
 
-  Teuchos::RCP<const PureBasis> basis 
-     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+    // Create the field for the scalar quantity we're integrating.
+    scalar_ = MDField<const ScalarT, Cell, IP>(valName, ir.dl_scalar);
+    this->addDependentField(scalar_);
 
-  // Verify that this basis supports the gradient operation
-  TEUCHOS_TEST_FOR_EXCEPTION(!basis->isScalarBasis(),std::logic_error,
-                             "Integrator_BasisTimesScalar: Basis of type \"" << basis->name() << "\" is not "
-                             "a scalar basis");
+    // Create the field that we're either contributing to or evaluating
+    // (storing).
+    field_ = MDField<ScalarT, Cell, BASIS>(resName, basis.functional);
+    if (evalStyle == EvaluatorStyle::CONTRIBUTES)
+      this->addContributedField(field_);
+    else // if (evalStyle == EvaluatorStyle::EVALUATES)
+      this->addEvaluatedField(field_);
 
-  this->addEvaluatedField(residual);
-  this->addDependentField(scalar);
-    
-  multiplier = p.get<double>("Multiplier");
+    // Add the dependent field multipliers, if there are any.
+    for (const auto& name : fmNames)
+      fieldMults_.push_back(MDField<const ScalarT, Cell, IP>(name,
+        ir.dl_scalar));
+    for (const auto& mult : fieldMults_)
+      this->addDependentField(mult);
 
+    // Set the name of this object.
+    string n("Integrator_BasisTimesScalar (");
+    if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
+      n += "Cont";
+    else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      n += "Eval";
+    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+    this->setName(n);
+  } // end of Main Constructor
 
-  // build field multpliers if vector is nonnull (defaults to null)
-  if(p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    RCP<const std::vector<std::string> > field_multiplier_names = 
-      p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers");
-    if(field_multiplier_names!=Teuchos::null) {
-      for (std::vector<std::string>::const_iterator name = 
-  	     field_multiplier_names->begin(); 
-  	   name != field_multiplier_names->end(); ++name) {
-        PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-        field_multipliers.push_back(tmp_field);
-      }
-    }
-  }
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  ParameterList Constructor
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  Integrator_BasisTimesScalar<EvalT, Traits>::
+  Integrator_BasisTimesScalar(
+    const Teuchos::ParameterList& p)
+    :
+    Integrator_BasisTimesScalar(
+      panzer::EvaluatorStyle::EVALUATES,
+      p.get<std::string>("Residual Name"),
+      p.get<std::string>("Value Name"),
+      (*p.get<Teuchos::RCP<panzer::BasisIRLayout>>("Basis")),
+      (*p.get<Teuchos::RCP<panzer::IntegrationRule>>("IR")),
+      p.get<double>("Multiplier"),
+      p.isType<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers") ?
+        (*p.get<Teuchos::RCP<const std::vector<std::string>>>
+        ("Field Multipliers")) : std::vector<std::string>())
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
 
-  // add dependent field multiplers
-  for (const auto & field : field_multipliers)
-    this->addDependentField(field);
+    // Ensure that the input ParameterList didn't contain any bogus entries.
+    RCP<ParameterList> validParams = this->getValidParameters();
+    p.validateParameters(*validParams);
+  } // end of ParameterList Constructor
 
-  std::string n = "Integrator_BasisTimesScalar: " + residual.fieldTag().name();
-  this->setName(n);
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  postRegistrationSetup()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_BasisTimesScalar<EvalT, Traits>::
+  postRegistrationSetup(
+    typename Traits::SetupData sd,
+    PHX::FieldManager<Traits>& fm)
+  {
+    using Kokkos::createDynRankView;
+    using panzer::getBasisIndex;
 
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesScalar,sd,fm)
-{
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(scalar,fm);
-  
-  for (auto & field : field_multipliers)
-    this->utils.setFieldData(field,fm);
+    // Determine the number of nodes and quadrature points.
+    numNodes_ = static_cast<int>(field_.extent(1));
+    numQP_    = static_cast<int>(scalar_.extent(1));
 
-  num_nodes = residual.dimension(1);
-  num_qp = scalar.dimension(1);
+    // Determine the index in the Workset bases for our particular basis name.
+    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+    // Create a temporary View that we'll use in computing the integral.
+    tmp_ = createDynRankView(scalar_.get_static_view(), "tmp",
+      scalar_.dimension(0), numQP_);
+  } // end of postRegistrationSetup()
 
-  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
-}
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  evaluateFields()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename Traits>
+  void
+  Integrator_BasisTimesScalar<EvalT, Traits>::
+  evaluateFields(
+    typename Traits::EvalData workset)
+  {
+    using panzer::BasisValues2;
+    using panzer::EvaluatorStyle;
+    using panzer::index_t;
+    using PHX::MDField;
 
-//**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
-{ 
- // for (int i=0; i < residual.size(); ++i)
- //   residual[i] = 0.0;
- //   Irina modified
-  residual.deep_copy(ScalarT(0.0));
+    // Initialize the evaluated field.
+    if (evalStyle_ == EvaluatorStyle::EVALUATES)
+      field_.deep_copy(ScalarT(0));
 
-#if PANZER_USE_FAST_QUAD
-  // do a scaled copy
-  // Irina modified
-  // for (int i=0; i < scalar.size(); ++i)
-  //   tmp[i] = multiplier * scalar[i];
-  for (int i=0; i < scalar.extent_int(0); ++i)
-    for (int j=0; j < scalar.extent_int(1); ++j)
-       tmp(i,j) = multiplier * scalar(i,j);
+    // Scale the integrand by the multiplier, and any field multipliers, out in
+    // front of the integral.
+    for (index_t cell(0); cell < workset.num_cells; ++cell)
+    {
+      for (int qp(0); qp < numQP_; ++qp)
+      {
+        tmp_(cell, qp) = multiplier_ * scalar_(cell, qp);
+        for (const auto& mult : fieldMults_)
+          tmp_(cell, qp) *= mult(cell, qp);
+      } // end loop over the quadrature points
+    } // end loop over the cells in the workset
 
-  for (const auto & field_data : field_multipliers) {
+    // Do the actual integration, looping over the cells in the workset, the
+    // bases, and the quadrature points.
+    const BasisValues2<double>& bv = *this->wda(workset).bases[basisIndex_];
+    for (index_t cell(0); cell < workset.num_cells; ++cell)
+      for (int basis(0); basis < numNodes_; ++basis)
+        for (int qp(0); qp < numQP_; ++qp)
+          field_(cell, basis) += tmp_(cell, qp) *
+            bv.weighted_basis_scalar(cell, basis, qp);
+  } // end of evaluateFields()
 
-    //Irina modified
-    //for (int i=0; i < field_data.size(); ++i)
-    //  tmp[i] *= field_data[i];
-    for (int i=0; i < scalar.extent_int(0); ++i)
-       for (int j=0; j < scalar.extent_int(1); ++j)
-          tmp(i,j) = tmp(i,j) * field_data(i,j);
-  }
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  getValidParameters()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename EvalT, typename TRAITS>
+  Teuchos::RCP<Teuchos::ParameterList>
+  Integrator_BasisTimesScalar<EvalT, TRAITS>::
+  getValidParameters() const
+  {
+    using panzer::BasisIRLayout;
+    using panzer::IntegrationRule;
+    using std::string;
+    using std::vector;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-  // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
-  const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
+    // Create a ParameterList with all the valid keys we support.
+    auto p = rcp(new ParameterList);
+    p->set<string>("Residual Name", "?");
+    p->set<string>("Value Name", "?");
+    RCP<BasisIRLayout> basis;
+    p->set("Basis", basis);
+    RCP<IntegrationRule> ir;
+    p->set("IR", ir);
+    p->set<double>("Multiplier", 1.0);
+    RCP<const vector<string>> fms;
+    p->set("Field Multipliers", fms);
+    return p;
+  } // end of getValidParameters()
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (std::size_t basis = 0; basis < num_nodes; ++basis) {
-      for (std::size_t qp = 0; qp < num_qp; ++qp) {
-        residual(cell,basis) += tmp(cell,qp)*bv.weighted_basis_scalar(cell,basis,qp);
-      }
-    }
-  }
+} // end of namespace panzer
 
-#else
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (std::size_t qp = 0; qp < num_qp; ++qp) {
-      tmp(cell,qp) = multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-	tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
-    }
-  }
-
-  if(workset.num_cells>0)
-     Intrepid2::FunctionSpaceTools::
-       integrate<ScalarT>(residual, tmp, 
-   		          (this->wda(workset).bases[basis_index])->weighted_basis, 
-		          Intrepid2::COMP_CPP);
-#endif
-}
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_BasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
-  p->set<std::string>("Residual Name", "?");
-  p->set<std::string>("Value Name", "?");
-  Teuchos::RCP<panzer::BasisIRLayout> basis;
-  p->set("Basis", basis);
-  Teuchos::RCP<panzer::IntegrationRule> ir;
-  p->set("IR", ir);
-  p->set<double>("Multiplier", 1.0);
-  Teuchos::RCP<const std::vector<std::string> > fms;
-  p->set("Field Multipliers", fms);
-  return p;
-}
-
-//**********************************************************************
-
-}
-
-#endif
-
+#endif // __Panzer_Integrator_BasisTimesScalar_impl_hpp__

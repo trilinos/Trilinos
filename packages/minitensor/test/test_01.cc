@@ -1105,7 +1105,7 @@ TEST(MiniTensor, SVD3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, machine_epsilon<Real>());
+  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
 }
 
 TEST(MiniTensor, SVD3x3Fad)
@@ -1123,7 +1123,7 @@ TEST(MiniTensor, SVD3x3Fad)
   Sacado::Fad::DFad<Real> const
   error = norm(B - A) / norm(A);
 
-  ASSERT_LE(error, machine_epsilon<Real>());
+  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
 }
 
 TEST(MiniTensor, MixedTypes)

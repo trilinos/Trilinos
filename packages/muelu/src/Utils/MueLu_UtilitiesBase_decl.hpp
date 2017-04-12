@@ -672,12 +672,13 @@ namespace MueLu {
       std::vector<LocalOrdinal> dirichletRows;
       FindDirichletRows(A,dirichletRows);
     
+#if 0
     printf("[%d] DirichletRow Ids = ",A->getRowMap()->getComm()->getRank());
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++) 
 	printf("%d ",dirichletRows[i]);
     printf("\n");
     fflush(stdout);
-
+#endif
       // Allocate all as non-Dirichlet
       isDirichletRow = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),true);
       isDirichletCol = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap(),true);

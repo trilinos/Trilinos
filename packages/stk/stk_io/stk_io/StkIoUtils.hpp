@@ -4,42 +4,40 @@
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
+
+namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace io { class MetaData; } }
+namespace stk { namespace io { class BulkData; } }
 
 namespace stk {
 namespace io {
 
-inline
 size_t get_entities(stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     const stk::mesh::BulkData &bulk,
                     stk::mesh::EntityVector &entities,
                     bool include_shared,
-                    const stk::mesh::Selector *subset_selector)
-{
-    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+                    const stk::mesh::Selector *subset_selector);
 
-    stk::mesh::Selector own_share = meta.locally_owned_part();
-    if(include_shared)
-        own_share |= meta.globally_shared_part();
+stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part);
 
-    stk::mesh::Selector selector = part & own_share;
-    if(subset_selector)
-        selector &= *subset_selector;
+typedef std::map<std::string, std::vector<std::string>> IossBlockMembership;
 
-    get_selected_entities(selector, bulk.buckets(type), entities);
-    return entities.size();
-}
+IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo);
 
-inline
-stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
-{
-  if (stk::mesh::MetaData::get(part).universal_part() == part) {
-    return stk::topology::NODE_RANK;
-  }
-  else {
-    return part.primary_entity_rank();
-  }
-}
+void fill_block_parts_given_names(const std::vector<std::string>& side_block_names,
+                                              stk::mesh::MetaData& meta,
+                                              std::vector<const stk::mesh::Part*>& blocks);
+
+void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
+
+void clear_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
+
+bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &sides, const stk::mesh::impl::ParallelPartInfo &parallelPartInfo);
+
+stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta);
+stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank);
 
 }}
 

@@ -116,12 +116,11 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   comm_(Distributor.comm_),
   request_(0),
   status_(0),
-  no_delete_(Distributor.no_delete_),
+  no_delete_(0),// NOTE: Stuff is being copied... you can always delete it
   send_array_(0),
   send_array_size_(0),
   comm_plan_reverse_(0)
 {
-  //CMS
   int i;
   if (nsends_>0) {
     lengths_to_ = new int[nsends_];

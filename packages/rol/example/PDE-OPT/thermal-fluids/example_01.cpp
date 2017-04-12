@@ -55,6 +55,7 @@
 
 #include <iostream>
 #include <algorithm>
+//#include <fenv.h>
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
@@ -70,6 +71,8 @@
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
@@ -109,36 +112,23 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
     Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
+    pdecon->outputTpetraData();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
-    u_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
-    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = assembler->createStateVector();
-    p_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > pp
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
-    // Create control vector and set to ones
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
-    z_rcp->randomize();  //putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
-    // Create residual vector and set to zeros
-    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
-    r_rcp->putScalar(0.0);
-    Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
-    // Create state direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
-    du_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
-    // Create control direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
-    dz_rcp->randomize();
-    Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, du_rcp, r_rcp, z_rcp, dz_rcp;
+    u_rcp  = assembler->createStateVector();     u_rcp->randomize();
+    p_rcp  = assembler->createStateVector();     p_rcp->randomize();
+    du_rcp = assembler->createStateVector();     du_rcp->randomize();
+    r_rcp  = assembler->createResidualVector();  r_rcp->randomize();
+    z_rcp  = assembler->createControlVector();   z_rcp->randomize();
+    dz_rcp = assembler->createControlVector();   dz_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > up, pp, dup, rp, zp, dzp;
+    up  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+    pp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
+    dup = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+    rp  = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
+    zp  = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
+    dzp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -173,16 +163,44 @@ int main(int argc, char *argv[]) {
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
     if ( checkDeriv ) {
+      *outStream << "Check Gradient of Full Objective Function" << std::endl;
       obj->checkGradient(x,d,true,*outStream);
+      *outStream << std::endl << "Check Hessian of Full Objective Function" << std::endl;
       obj->checkHessVec(x,d,true,*outStream);
+      *outStream << std::endl << "Check Jacobian of Constraint" << std::endl;
       con->checkApplyJacobian(x,d,*up,true,*outStream);
+      *outStream << std::endl << "Check Jacobian_1 of Constraint" << std::endl;
+      con->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);
+      *outStream << std::endl << "Check Jacobian_2 of Constraint" << std::endl;
+      con->checkApplyJacobian_2(*up,*zp,*dzp,*rp,true,*outStream);
+      *outStream << std::endl << "Check Hessian of Constraint" << std::endl;
       con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
+      *outStream << std::endl << "Check Hessian_11 of Constraint" << std::endl;
+      con->checkApplyAdjointHessian_11(*up,*zp,*pp,*dup,*rp,true,*outStream);
+      *outStream << std::endl << "Check Hessian_12 of Constraint" << std::endl;
+      con->checkApplyAdjointHessian_12(*up,*zp,*pp,*dup,*dzp,true,*outStream);
+      *outStream << std::endl << "Check Hessian_21 of Constraint" << std::endl;
+      con->checkApplyAdjointHessian_21(*up,*zp,*pp,*dzp,*rp,true,*outStream);
+      *outStream << std::endl << "Check Hessian_22 of Constraint" << std::endl;
+      con->checkApplyAdjointHessian_22(*up,*zp,*pp,*dzp,*dzp,true,*outStream);
+
+      *outStream << std::endl << "Check Adjoint Jacobian of Constraint" << std::endl;
       con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-      u_rcp->putScalar(1);
-      pdecon->outputTpetraData();
-      con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
-      con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      *outStream << std::endl << "Check Adjoint Jacobian_1 of Constraint" << std::endl;
+      con->checkAdjointConsistencyJacobian_1(*pp,*dup,*up,*zp,true,*outStream);
+      *outStream << std::endl << "Check Adjoint Jacobian_2 of Constraint" << std::endl;
+      con->checkAdjointConsistencyJacobian_2(*pp,*dzp,*up,*zp,true,*outStream);
+
+      *outStream << std::endl << "Check Constraint Solve" << std::endl;
+      con->checkSolve(*up,*zp,*rp,true,*outStream);
+      *outStream << std::endl << "Check Inverse Jacobian_1 of Constraint" << std::endl;
+      con->checkInverseJacobian_1(*rp,*dup,*up,*zp,true,*outStream);
+      *outStream << std::endl << "Check Inverse Adjoint Jacobian_1 of Constraint" << std::endl;
+      con->checkInverseAdjointJacobian_1(*rp,*pp,*up,*zp,true,*outStream);
+
+      *outStream << std::endl << "Check Gradient of Reduced Objective Function" << std::endl;
       robj->checkGradient(*zp,*dzp,true,*outStream);
+      *outStream << std::endl << "Check Hessian of Reduced Objective Function" << std::endl;
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
     up->zero();

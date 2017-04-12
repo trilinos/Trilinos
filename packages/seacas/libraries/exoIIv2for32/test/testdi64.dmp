@@ -80,17 +80,14 @@ variables:
 	int64 connect5(num_el_in_blk5, num_nod_per_el5) ;
 		connect5:elem_type = "wedge" ;
 	int64 eb_prop2(num_el_blk) ;
-		eb_prop2:_FillValue = 0LL ;
 		eb_prop2:name = "MATL" ;
 	int64 eb_prop3(num_el_blk) ;
-		eb_prop3:_FillValue = 0LL ;
 		eb_prop3:name = "DENSITY" ;
 	int64 node_ns1(num_nod_ns1) ;
 	double dist_fact_ns1(num_nod_ns1) ;
 	int64 node_ns2(num_nod_ns2) ;
 	double dist_fact_ns2(num_nod_ns2) ;
 	int64 ns_prop2(num_node_sets) ;
-		ns_prop2:_FillValue = 0LL ;
 		ns_prop2:name = "FACE" ;
 	int64 ns_prop3(num_node_sets) ;
 		ns_prop3:name = "VELOCITY" ;
@@ -107,7 +104,6 @@ variables:
 	int64 elem_ss5(num_side_ss5) ;
 	int64 side_ss5(num_side_ss5) ;
 	int64 ss_prop2(num_side_sets) ;
-		ss_prop2:_FillValue = 0LL ;
 		ss_prop2:name = "COLOR" ;
 	char qa_records(num_qa_rec, four, len_string) ;
 	char info_records(num_info, len_line) ;

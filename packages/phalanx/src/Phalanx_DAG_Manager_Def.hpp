@@ -113,7 +113,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 
   // insert evaluated fields into map, check for multiple evaluators
   // that provide the same field.
-  nodes_.push_back(PHX::DagNode<Traits>(static_cast<const int>(nodes_.size()),p));
+  nodes_.push_back(PHX::DagNode<Traits>(static_cast<int>(nodes_.size()),p));
   const std::vector<Teuchos::RCP<PHX::FieldTag>>& evaluatedFields = 
     p->evaluatedFields();
   for (auto i=evaluatedFields.cbegin(); i != evaluatedFields.cend(); ++i) {
@@ -648,7 +648,6 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     }
     if (writeEvaluatedFields) {
       ofs << "\\n   Contributes:";
-      const auto& contrib_fields = node.get()->contributedFields(); 
       for (const auto& field : contrib_fields)
 	ofs << "\\n      " << field->identifier();
     }
@@ -810,6 +809,9 @@ void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
     Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();
 
     for (const auto& f : e->evaluatedFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+
+    for (const auto& f : e->contributedFields())
       field_to_evaluators_binding_[f->identifier()].push_back(e);
 
     for (const auto& f : e->dependentFields())

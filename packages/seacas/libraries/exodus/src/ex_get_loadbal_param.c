@@ -95,6 +95,8 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     *(int *)num_elem_cmaps = 0;
   }
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Check the file version information */

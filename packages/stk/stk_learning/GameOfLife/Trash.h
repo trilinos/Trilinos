@@ -1983,7 +1983,7 @@ TEST(Trash, PartTestTrash)
         {
             *stk::mesh::field_data(lifeField, elements[lollipop]) = 1;
             localActiveElements.push_back(elements[lollipop]);
-            bulkData.change_entity_parts(elements[lollipop], {&activePart}, {});
+            bulkData.change_entity_parts(elements[lollipop], stk::mesh::ConstPartVector{&activePart}, stk::mesh::ConstPartVector{});
         }
     }
     bulkData.modification_end();
@@ -2103,11 +2103,11 @@ TEST(Trash, PartTestTrash)
                 case 4:
                     break;
                 case 5:
-                    bulkData.change_entity_parts(localElem, {&activePart}, {});
+                    bulkData.change_entity_parts(localElem, stk::mesh::ConstPartVector{&activePart}, stk::mesh::ConstPartVector{});
                     *lifeVal = 1;
                     break;
                 default:
-                    bulkData.change_entity_parts(localElem, {}, {&activePart});
+                    bulkData.change_entity_parts(localElem, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&activePart});
                     *lifeVal = 0;
                     break;
             }

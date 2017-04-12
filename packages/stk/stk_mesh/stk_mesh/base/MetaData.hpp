@@ -42,11 +42,9 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
-#include <stk_mesh/base/PartField.hpp>    // for PartField
 #include <stk_mesh/base/Part.hpp>       // for Part
-#include <stk_mesh/base/PropertyBase.hpp>  // for Property
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/Types.hpp>      // for EntityRank, PropertyBase, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldRepository, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
 #include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
@@ -105,7 +103,7 @@ stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, co
 void set_topology(Part &part, stk::topology topology);
 
 /** get the stk::topology given a Shards Cell Topology */
-stk::topology get_topology(shards::CellTopology shards_topology, int spatial_dimension = 3);
+stk::topology get_topology(shards::CellTopology shards_topology, unsigned spatial_dimension = 3);
 
 /** Get the Shards Cell Topology given a stk::topology  */
 shards::CellTopology get_cell_topology(stk::topology topo);
@@ -139,21 +137,21 @@ shards::CellTopology get_cell_topology(stk::topology topo);
 class MetaData {
 public:
 
+  typedef std::map<const stk::mesh::Part*, std::vector<const stk::mesh::Part*>> SurfaceBlockMap;
+
   /** \} */
   //------------------------------------
   /** \name  Meta data manager construction and destruction
    *  \{
    */
 
-  /// CellTopologyPartEntityRankMap maps each Cell Topology to its root cell topology part and its associated rank
-  typedef std::map<shards::CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
-  /// PartCellTopologyVector is a fast-lookup vector of size equal to the number of parts
-  typedef std::vector<shards::CellTopology> PartCellTopologyVector;
+  typedef std::map<stk::topology, Part*> TopologyPartMap;
+
+  typedef std::vector<stk::topology> PartTopologyVector;
 
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
   inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
-  inline static MetaData & get( const PropertyBase & property ) { return property.meta_data(); }
 
   static const MetaData & get( const BulkData & bulk_data );
   static const MetaData & get( const Bucket & bucket );
@@ -423,15 +421,6 @@ public:
   template<class T>
   bool remove_attribute( FieldBase & field, const T * attribute);
 
-  template< class data_type >
-  PartField<data_type>& declare_part_field(unsigned itemsPerPart = 1)
-  {
-    unsigned part_field_index = m_part_fields.size();
-    PartField<data_type>* new_part_field = new PartField<data_type>(this, part_field_index, itemsPerPart);
-    m_part_fields.push_back(new_part_field);
-    return *new_part_field;
-  }
-
   /** \} */
   //------------------------------------
 
@@ -456,32 +445,6 @@ public:
   /** \name  Declare and query properties associated with parts
    *  \{
    */
-
-  /** \brief  Get a property, return NULL if it does not exist.
-   *
-   *  \exception std::runtime_error
-   *    If the property exits and the
-   *    \ref stk::mesh::Property "type" does not match or
-   */
-  template< typename DataType >
-  Property<DataType> * get_property( const std::string & name ) const ;
-
-  /** \brief  Get all defined properties */
-  const std::vector< PropertyBase * > & get_properties() const
-    { return m_properties ; }
-
-  /** \brief  Declare a property of the given
-   *          \ref stk::mesh::Property "type", name, and dimensions.
-   *
-   *  A compatible redeclaration returns the previously declared property.
-   *  \exception std::runtime_error  If a redeclaration is incompatible
-   */
-  template< typename DataType >
-  Property<DataType> & declare_property( const std::string & name ,
-                                         unsigned size = 1 );
-
-  /** \brief  Put a property on the given part */
-  void put_property( PropertyBase & property, Part & part);
 
   /** get the spatial-dimension. */
   unsigned spatial_dimension() const { return m_spatial_dimension; }
@@ -550,6 +513,8 @@ public:
    */
   void register_cell_topology(const shards::CellTopology cell_topology, EntityRank in_entity_rank);
 
+  Part& register_topology(stk::topology stkTopo);
+
   shards::CellTopology register_super_cell_topology(stk::topology t);
 
   /** \brief Return the root cell topology part associated with the given cell topology.
@@ -560,8 +525,7 @@ public:
 
   /** \brief Return the topology part given a stk::topology.
    */
-  Part &get_topology_root_part(stk::topology topology) const
-  { return get_cell_topology_root_part(stk::mesh::get_cell_topology(topology)); }
+  Part &get_topology_root_part(stk::topology topology) const;
 
   /** \brief Return the cell topology associated with the given part.
    * The cell topology is set on a part through part subsetting with the root
@@ -576,6 +540,16 @@ public:
 
   void set_mesh_on_fields(BulkData* bulk);
 
+  void set_surface_to_block_mapping(const stk::mesh::Part* surface, const std::vector<const stk::mesh::Part*> &blocks)
+  {
+      m_surfaceToBlock[surface] = blocks;
+  }
+
+  const SurfaceBlockMap& get_surface_to_block_mapping() const
+  {
+      return m_surfaceToBlock;
+  }
+
 protected:
 
   Part & declare_internal_part( const std::string & p_name);
@@ -587,14 +561,13 @@ private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
-  void add_new_part_in_part_fields();
-  void synchronize_part_fields_with_parts();
-
   virtual Part & declare_internal_part( const std::string & p_name, EntityRank rank);
 
   void internal_declare_known_cell_topology_parts();
 
   void internal_declare_part_subset( Part & superset , Part & subset );
+
+  void assign_topology(Part& part, stk::topology stkTopo);
 
   void assign_cell_topology( Part & part, shards::CellTopology topo);
 
@@ -613,18 +586,16 @@ private:
   impl::FieldRepository        m_field_repo ;
   mutable FieldBase* m_coord_field;
 
-  std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
   std::vector<shards::CellTopologyManagedData*> m_created_topologies;
 
   unsigned m_spatial_dimension;
+  SurfaceBlockMap m_surfaceToBlock;
 
-  std::vector<PartFieldBase*> m_part_fields;
-
-  /// Used to store mapping between Cell Topologies and their associated root parts and specified ranks:
-  CellTopologyPartEntityRankMap m_cellTopologyPartEntityRankMap;
+  /// Used to store mapping between Topologies and their associated root parts and specified ranks:
+  TopologyPartMap m_topologyPartMap;
   /// Fast-lookup vector that maps part ordinals to Cell Topologies.
-  PartCellTopologyVector        m_partCellTopologyVector;
+  PartTopologyVector m_partTopologyVector;
 
   /** \name  Invariants/preconditions for MetaData.
    * \{
@@ -638,21 +609,9 @@ private:
   void require_valid_entity_rank( EntityRank rank) const ;
 
   /** \} */
-  //------------------------------------
-
-  Property<void> * get_property_base( const std::string & ,
-                                      const std::type_info & ,
-                                      unsigned = 0 ) const ;
 
   void clean_field_restrictions();
 };
-
-template< typename part_field_type >
-typename part_field_type::PartFieldDataType* part_field_data(part_field_type& part_field, const Part& part)
-{
-  unsigned part_ordinal = part.mesh_meta_data_ordinal();
-  return part_field.data(part_ordinal);
-}
 
 /** \brief  Verify that the meta data is identical on all processors */
 void verify_parallel_consistency( const MetaData & , ParallelMachine );
@@ -806,19 +765,18 @@ field_type * MetaData::get_field( stk::mesh::EntityRank arg_entity_rank, const s
   typedef FieldTraits< field_type > Traits ;
 
   const DataTraits & dt = data_traits< typename Traits::data_type >();
+  const DataTraits & dt_void = data_traits< void >();
 
   const shards::ArrayDimTag * tags[8] ;
 
   Traits::assign_tags( tags );
 
-  FieldBase * const field =
-    m_field_repo.get_field( static_cast<stk::topology::rank_t>(arg_entity_rank), name , dt , Traits::Rank , tags , 0 );
-  if (field == NULL) {
-    return static_cast<field_type*>(NULL);
-  }
-  else {
-    return dynamic_cast< field_type * >( field );
-  }
+  FieldBase * const field = m_field_repo.get_field( arg_entity_rank, name , dt , Traits::Rank , tags , 0 );
+
+  ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
+                  "field " << field->name() << " has type " << field->data_traits().type_info.name() << " when expecting type " << dt.type_info.name());
+
+  return static_cast<field_type*>(field);
 }
 
 
@@ -863,7 +821,7 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   // Check that the field of this name has not already been declared
 
-  field_type * f[ MaximumFieldStates ] ;
+  field_type * f[ MaximumFieldStates ] = {nullptr};
 
   f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
       arg_entity_rank , name ,
@@ -1210,47 +1168,6 @@ MetaData::remove_attribute( FieldBase & field , const T * attribute )
 }
 
 //----------------------------------------------------------------------
-
-
-template< typename DataType >
-inline
-Property<DataType> *
-MetaData::get_property( const std::string & name ) const
-{
-  Property<void> * const pv = get_property_base( name, typeid(DataType) );
-  return pv ? pv->property<DataType>() : static_cast<Property<DataType>*>(NULL) ;
-}
-
-template< typename DataType >
-inline
-Property<DataType> &
-MetaData::declare_property( const std::string & name , unsigned size )
-{
-  Property<void> * pv = get_property_base(name,typeid(DataType),size);
-  Property<DataType> * prop = NULL ;
-
-  if ( pv != NULL ) {
-    prop = pv->property<DataType>();
-  }
-  else {
-    if ( 1 == size ) {
-      pv = prop = new Property<DataType>( *this , m_properties.size() , name );
-    }
-    else {
-      pv = prop = new Property< std::vector<DataType> >(
-                    *this , m_properties.size() , name , size );
-    }
-    m_properties.push_back( pv );
-    ThrowRequire(prop);
-  }
-  return *prop ;
-}
-
-inline
-void MetaData::put_property( PropertyBase & property , Part & part )
-{
-  property.add_property( part.mesh_meta_data_ordinal() );
-}
 
 inline
 bool MetaData::check_rank(EntityRank rank) const

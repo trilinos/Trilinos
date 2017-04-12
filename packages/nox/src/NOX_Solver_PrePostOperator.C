@@ -54,12 +54,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Solver_Generic.H"
 
-
-// Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator():
-  havePrePostOperator(false)
-{ }
-
 // Disallowed
 NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p):
   havePrePostOperator(false)
@@ -70,11 +64,15 @@ NOX::Solver::PrePostOperator& NOX::Solver::PrePostOperator::
 operator=(const PrePostOperator& p)
 { return *this; }
 
+NOX::Solver::PrePostOperator::PrePostOperator():
+  havePrePostOperator(false)
+{ }
+
 NOX::Solver::PrePostOperator::
 PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils,
-        Teuchos::ParameterList& p) :
+                Teuchos::ParameterList& p) :
   havePrePostOperator(false)
-{ reset(utils, p); }
+{ this->reset(utils, p); }
 
 NOX::Solver::PrePostOperator::~PrePostOperator()
 { }
@@ -84,13 +82,13 @@ reset(const Teuchos::RCP<NOX::Utils>& utils, Teuchos::ParameterList& p)
 {
   havePrePostOperator = false;
 
-  if (p.INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP<NOX::Abstract::PrePostOperator> >
-      ("User Defined Pre/Post Operator"))
-  {
-    prePostOperatorPtr = p.INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RCP<NOX::Abstract::PrePostOperator> >
-      ("User Defined Pre/Post Operator");
-    havePrePostOperator = true;
+  typedef NOX::Abstract::PrePostOperator PPO;
+
+  if (p.isType< Teuchos::RCP<PPO> >("User Defined Pre/Post Operator")) {
+    prePostOperatorPtr = p.get< Teuchos::RCP<PPO> >("User Defined Pre/Post Operator");
+    
+    // Validated PL sets default to null. Check for that here.
+    if (nonnull(prePostOperatorPtr))
+      havePrePostOperator = true;
   }
 }

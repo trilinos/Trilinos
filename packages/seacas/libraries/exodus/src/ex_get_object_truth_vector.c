@@ -71,6 +71,8 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   const char *ent_type = NULL;
   const char *var_name = NULL;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {

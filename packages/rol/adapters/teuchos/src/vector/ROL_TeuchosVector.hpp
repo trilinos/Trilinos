@@ -131,6 +131,10 @@ public:
     return vec_;
   }
   
+  void print( std::ostream &outStream ) const {
+    vec_->print(outStream);
+  }
+
   // Add element access operators to circumvent needing to create and get SerialDenseVectors
   Real& operator() ( Ordinal i ) {
     return (*vec_)(i);

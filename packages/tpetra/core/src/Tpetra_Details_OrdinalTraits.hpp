@@ -45,75 +45,20 @@
 #define TPETRA_DETAILS_ORDINALTRAITS_HPP
 
 /// \file Tpetra_Details_OrdinalTraits.hpp
-/// \brief Traits class for "invalid" (flag) values of integer types
-///   that Tpetra uses as local ordinals or global ordinals.
+/// \brief Import KokkosSparse::OrdinalTraits, a traits class for
+///   "invalid" (flag) values of integer types, into the
+///   Tpetra::Details namespace.
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <climits>
+#include "Kokkos_Sparse_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-/// \brief Traits class for "invalid" (flag) values of integer types
-///   that Tpetra uses as local ordinals or global ordinals.
-///
-/// \tparam T Built-in integer type.
-///
-/// I didn't choose these values.  For backwards compatibility, they
-/// are the same as the values found in
-/// Teuchos::OrdinalTraits<T>::invalid().  I can't call
-/// Teuchos::OrdinalTraits<T>::invalid() because it is not marked as a
-/// Kokkos device function.  I also can't use std::numeric_limits for
-/// the same reason.
-template<class T>
-struct OrdinalTraits {
-  static KOKKOS_INLINE_FUNCTION T invalid () { return -1; }
-};
-
-// template<>
-// struct OrdinalTraits<char> {
-//   static KOKKOS_INLINE_FUNCTION char invalid () { return CHAR_MAX; }
-// };
-
-template<>
-struct OrdinalTraits<short int> {
-  static KOKKOS_INLINE_FUNCTION short int invalid () { return -1; }
-};
-
-template<>
-struct OrdinalTraits<unsigned short int> {
-  static KOKKOS_INLINE_FUNCTION unsigned short int invalid () { return USHRT_MAX; }
-};
-
-template<>
-struct OrdinalTraits<int> {
-  static KOKKOS_INLINE_FUNCTION int invalid () { return -1; }
-};
-
-template<>
-struct OrdinalTraits<unsigned int> {
-  static KOKKOS_INLINE_FUNCTION unsigned int invalid () { return UINT_MAX; }
-};
-
-template<>
-struct OrdinalTraits<long> {
-  static KOKKOS_INLINE_FUNCTION long invalid () { return -1; }
-};
-
-template<>
-struct OrdinalTraits<unsigned long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long invalid () { return ULONG_MAX; }
-};
-
-template<>
-struct OrdinalTraits<long long> {
-  static KOKKOS_INLINE_FUNCTION long long invalid () { return -1; }
-};
-
-template<>
-struct OrdinalTraits<unsigned long long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long long invalid () { return ULLONG_MAX; }
-};
+// KokkosSparse::OrdinalTraits is a traits class for "invalid" (flag)
+// values of integer types.  Tpetra uses those flag values with both
+// local and global indices.
+using ::KokkosSparse::OrdinalTraits;
 
 } // namespace Details
 } // namespace Tpetra

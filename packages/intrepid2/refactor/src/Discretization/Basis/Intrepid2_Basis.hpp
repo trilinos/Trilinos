@@ -77,7 +77,7 @@ namespace Intrepid2 {
               functions associated with that subcell; see Section \ref basis_dof_tag_ord_sec for details.
 
       \remark To limit memory use by factory-type objects (basis factories will be included in future
-              releases of Intrepid), tag data is not initialized by basis ctors,
+              releases of Intrepid2), tag data is not initialized by basis ctors,
               instead, whenever a function that requires tag data is invoked for a first time, it calls
               initializeTags() to fill <var>ordinalToTag_</var> and <var>tagToOrdinal_</var>. Because
               tag data is basis specific, every concrete basis class requires its own implementation
@@ -91,28 +91,56 @@ namespace Intrepid2 {
            typename pointValueType = double>
   class Basis {
   public:
+
+    /**  \brief View type for ordinal
+    */
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;
+
+    /**  \brief View for basis type
+    */
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
-    typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordiantes_view_type;
+
+    /**  \brief View for coordinate system type
+    */
+    typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordinates_view_type;
 
     // ** tag interface
     //  - tag interface is not decorated with Kokkos inline so it should be allocated on hostspace
 
-    // host array
+    /**  \brief View type for 1d host array
+    */
     typedef Kokkos::View<ordinal_type*  ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_1d_host;
+
+    /**  \brief View type for 2d host array
+    */
     typedef Kokkos::View<ordinal_type** ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_2d_host;
+
+    /**  \brief View type for 3d host array
+    */
     typedef Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_3d_host;
 
+    /**  \brief View type for 1d host array
+    */
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, Kokkos::HostSpace> ordinal_type_array_stride_1d_host;
 
-    // device array
+    /**  \brief View type for 1d device array
+    */
     typedef Kokkos::View<ordinal_type*  ,ExecSpaceType> ordinal_type_array_1d;
+
+    /**  \brief View type for 2d device array
+    */
     typedef Kokkos::View<ordinal_type** ,ExecSpaceType> ordinal_type_array_2d;
+
+    /**  \brief View type for 3d device array
+    */
     typedef Kokkos::View<ordinal_type***,ExecSpaceType> ordinal_type_array_3d;
 
+    /**  \brief View type for 1d device array 
+    */
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
 
-    // coord value_type
+    /**  \brief Scalar type for point values
+    */
     typedef typename ScalarTraits<pointValueType>::scalar_type scalarType;
 
   protected:
@@ -125,8 +153,9 @@ namespace Intrepid2 {
      */
     ordinal_type basisDegree_;
 
-    /** \brief  Base topology of the cells for which the basis is defined. See  the Shards package
-        http://trilinos.sandia.gov/packages/shards for definition of base cell topology.
+    /** \brief  Base topology of the cells for which the basis is defined. See
+         the <a href="https://trilinos.org/packages/shards/">Shards</a> package
+         for definition of base cell topology.
     */
     shards::CellTopology basisCellTopology_;
 
@@ -182,8 +211,8 @@ namespace Intrepid2 {
     template<typename OrdinalTypeView3D,
              typename OrdinalTypeView2D,
              typename OrdinalTypeView1D>
-    void setOrdinalTagData( /**/  OrdinalTypeView3D &tagToOrdinal,
-                            /**/  OrdinalTypeView2D &ordinalToTag,
+    void setOrdinalTagData(       OrdinalTypeView3D &tagToOrdinal,
+                                  OrdinalTypeView2D &ordinalToTag,
                             const OrdinalTypeView1D  tags,
                             const ordinal_type       basisCard,
                             const ordinal_type       tagSize,
@@ -232,6 +261,8 @@ namespace Intrepid2 {
     }
 
     // dof coords
+    /** \brief Coordinates of degrees-of-freedom for basis functions defined in physical space.
+     */
     Kokkos::DynRankView<scalarType,ExecSpaceType> dofCoords_;
 
   public:
@@ -239,12 +270,25 @@ namespace Intrepid2 {
     Basis() = default;
     virtual~Basis() = default;
 
-    // receives input arguements
+    // receives input arguments
+    /** \brief Dummy array to receive input arguments
+    */
     outputValueType getDummyOutputValue() { return outputValueType(); }
+
+    /** \brief Dummy array to receive input arguments
+    */
     pointValueType getDummyPointValue() { return pointValueType(); }
 
+    /** \brief View type for basis value output
+    */
     typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
+
+    /** \brief View type for input points
+    */
     typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
+
+    /** \brief View type for scalars 
+    */
     typedef Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>      scalarViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
@@ -267,7 +311,7 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues( /**/  outputViewType outputValues,
+    getValues(       outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
@@ -295,7 +339,7 @@ namespace Intrepid2 {
     */
     virtual
     void
-    getValues(  /**/  outputViewType outputValues,
+    getValues(        outputViewType outputValues,
                 const pointViewType  inputPoints,
                 const pointViewType  cellVertices,
                 const EOperator operatorType = OPERATOR_VALUE ) const {
@@ -324,12 +368,18 @@ namespace Intrepid2 {
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
 
+    /** \brief  Returns basis name
+
+        \return the name of the basis
+    */
     virtual
     const char*
     getName() const {
       return "Intrepid2_Basis";
     }
 
+    /** \brief True if orientation is required
+    */
     virtual
     bool
     requireOrientation() const {
@@ -357,7 +407,7 @@ namespace Intrepid2 {
 
 
     /** \brief  Returns the base cell topology for which the basis is defined. See Shards documentation
-        http://trilinos.sandia.gov/packages/shards for definition of base cell topology.
+        https://trilinos.org/packages/shards for definition of base cell topology.
 
         \return Base cell topology
     */
@@ -386,6 +436,30 @@ namespace Intrepid2 {
       return basisCoordinates_;
     }
 
+    /** \brief  DoF count for specified subcell
+     
+     \param  subcDim           [in]  - tag field 0: dimension of the subcell associated with the DoFs
+     \param  subcOrd           [in]  - tag field 1: ordinal of the subcell defined by cell topology
+     
+     \return the number of DoFs associated with the specified subcell.
+     */
+    ordinal_type
+    getDofCount( const ordinal_type subcDim,
+                 const ordinal_type subcOrd ) const {
+      if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
+           subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) )
+      {
+        int firstDofOrdinal = tagToOrdinal_(subcDim, subcOrd, 0); // will be -1 if no dofs for subcell
+        if (firstDofOrdinal == -1) return static_cast<ordinal_type>(0);
+        // otherwise, lookup its tag and return the dof count stored there
+        return static_cast<ordinal_type>(this->getDofTag(firstDofOrdinal)[3]);
+      }
+      else
+      {
+        // subcDim and/or subcOrd out of bounds -> no dofs associated with subcell
+        return static_cast<ordinal_type>(0);
+      }
+    }
 
     /** \brief  DoF tag to ordinal lookup.
 

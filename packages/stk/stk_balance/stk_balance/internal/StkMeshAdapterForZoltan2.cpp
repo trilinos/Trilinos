@@ -107,6 +107,7 @@ int StkMeshZoltanAdapter::getNumWeightsPerOf(Zoltan2::MeshEntityType etype) cons
     {
         numWeightsPerVertex = mGraph.get_num_field_criteria();
     }
+    //std::cerr << "Num weights per = " << numWeightsPerVertex << std::endl;
     return numWeightsPerVertex;
 }
 
@@ -121,6 +122,7 @@ void StkMeshZoltanAdapter::getWeightsViewOf(Zoltan2::MeshEntityType etype, const
             weights = mGraph.get_vertex_weights().data() + idx;
         }
     }
+    //std::cerr << "Weights = " << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << std::endl;
 }
 
 bool StkMeshZoltanAdapter::avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const

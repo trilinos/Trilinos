@@ -111,21 +111,20 @@ const RCP<TempusSolver<double> > solverNew(
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
-  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
-  tempusPL->sublist("Demo Integrator").set("Initial Time", 0.0); 
-  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
-  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", 0.0); 
-  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler"); 
-  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver"); 
-  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton"); 
+  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
+  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", 0.0);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
+  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
+  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
-  
+
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(stepperPL, thyraModel));
+  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime));
 }
 
@@ -137,26 +136,24 @@ const RCP<TempusSolver<double> > solverNew(
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
-  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
-  tempusPL->sublist("Demo Integrator").set("Initial Time", initialTime); 
-  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
-  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", initialTime); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Simulation Time", finalTime); 
-  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler"); 
-  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver"); 
-  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton"); 
+  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
+  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
+  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
+  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
   const RCP<Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-  
+
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(stepperPL, thyraModel));
+  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }
@@ -170,29 +167,27 @@ const RCP<TempusSolver<double> > solverNew(
 {
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
-  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
-  tempusPL->sublist("Demo Integrator").set("Initial Time", initialTime); 
-  tempusPL->sublist("Demo Integrator").set("Initial Time Step", fixedTimeStep); 
-  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
-  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
-  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", initialTime); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Simulation Time", finalTime); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", fixedTimeStep); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep); 
-  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler"); 
-  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver"); 
-  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton"); 
+  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
+  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", fixedTimeStep);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", fixedTimeStep);
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep);
+  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
+  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
   const RCP<Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-  
+
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
-  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(stepperPL, thyraModel));
+  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(thyraModel, stepperPL));
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }

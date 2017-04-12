@@ -47,16 +47,14 @@ public:
 
   DiffData() : diff(0.0), val1(0.0), val2(0.0), id(0), blk(0), type(mm_unknown) {}
 
-  void set_max(double d, double val_1, double val_2, int id_ = -1, int blk_ = 0)
+  void set_max(double d, double val_1, double val_2, size_t id_ = 0, size_t blk_ = 0)
   {
     if (diff < d) {
       diff = d;
       val1 = val_1;
       val2 = val_2;
-      if (id_ != -1)
-        id = id_;
-      if (blk_ != 0)
-        blk = blk_;
+      id = id_;
+      blk = blk_;
     }
   }
 
@@ -88,24 +86,20 @@ public:
   {
   }
 
-  void spec_min_max(double val, int step, int id = -1, int blk = 0)
+  void spec_min_max(double val, int step, size_t id = 0, size_t blk = 0)
   {
     if (std::fabs(val) < min_val) {
       min_val  = std::fabs(val);
       min_step = step;
-      if (id != -1)
-        min_id = id;
-      if (blk != 0)
-        min_blk = blk;
+      min_id = id;
+      min_blk = blk;
     }
 
     if (std::fabs(val) > max_val) {
       max_val  = std::fabs(val);
       max_step = step;
-      if (id != -1)
-        max_id = id;
-      if (blk != 0)
-        max_blk = blk;
+      max_id = id;
+      max_blk = blk;
     }
   }
 

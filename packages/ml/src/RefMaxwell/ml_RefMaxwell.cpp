@@ -98,6 +98,56 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
 
+// ================================================ ====== ==== ==== == =
+ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
+							      const Teuchos::ParameterList& List,
+							      const bool ComputePrec):
+  ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
+  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
+#ifdef HAVE_ML_IFPACK
+  IfSmoother(0),
+#endif
+  aggregate_with_sigma(false),lump_m1(false),
+  use_local_nodal_solver(false),LocalNodalSolver(0),NodesToLocalNodes(0),LocalNodalMatrix(0),
+  verbose_(false),very_verbose_(false)
+{
+  using Teuchos::RCP;
+  D0_Clean_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("D0");
+  ML_CHK_ERRV((D0_Clean_Matrix_==0));
+#ifdef ENABLE_MS_MATRIX
+  Ms_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("Ms");
+  ML_CHK_ERRV((Ms_Matrix_==0));
+#endif
+  M0inv_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("M0inv");
+  ML_CHK_ERRV((M0inv_Matrix_==0));
+  M1_Matrix_ = (Epetra_CrsMatrix*)&*List.get<RCP<const Epetra_CrsMatrix> >("M1");
+  ML_CHK_ERRV((M1_Matrix_==0));
+
+  /* Set the Epetra Goodies */
+  Comm_ = &(SM_Matrix_->Comm());
+  DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
+  RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
+  NodeMap_ = &(D0_Clean_Matrix_->OperatorDomainMap());
+
+  Label_=new char [80];
+  strcpy(Label_,"ML reformulated Maxwell preconditioner");
+  List_=List;
+  SetDefaultsRefMaxwell(List_,false);
+
+#ifdef ML_TIMING
+  /* Internal Timings */
+  NumApplications_ = 0;
+  ApplicationTime_ = 0.0;
+  FirstApplication_ = true;
+  FirstApplicationTime_ = 0.0;
+  NumConstructions_ = 0;
+  ConstructionTime_ = 0.0;
+#endif
+
+  if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
+
+}
+
 
 // ================================================ ====== ==== ==== == =
 ML_Epetra::RefMaxwellPreconditioner::~RefMaxwellPreconditioner()

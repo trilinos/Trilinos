@@ -1722,8 +1722,8 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
-   BASKER_MATRIX &M,
-   BASKER_MATRIX &AT
+   BASKER_MATRIX &M, //BTF_A
+   BASKER_MATRIX &AT //T, blank
   )
   {
     //const Int brow = M.srow; Not used
@@ -1995,13 +1995,131 @@ namespace BaskerNS
         }
         //AT.row_idx(ws(row_idx[j])++) = k;
         AT.row_idx(ws(row_idx[j])) = k;
-        AT.val(ws(row_idx[j])) = val[j];
+        AT.val(ws(row_idx[j])) = val[j]; // NDE: This will need to be tracked...
         ws(row_idx[j])++;
         //starting at zero
       }
     }
 
     sort_matrix(AT);
+    //printMTX("A_TRANS.mtx", AT);
+
+    FREE_INT_1DARRAY(ws);
+  }//end matrix_transpos
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::matrix_transpose
+  (
+   const Int sm_ ,
+   const Int m_,
+   const Int sn_ ,
+   const Int n_,
+   const Int nnz_, 
+   Int *col_ptr,
+   Int *row_idx,
+   Entry *val,
+   BASKER_MATRIX &AT,
+   INT_1DARRAY &vals_transpose_local
+  )
+  {
+    AT.srow  = sn_;
+    AT.nrow  = n_;
+    AT.scol  = sm_;
+    AT.ncol  = m_;
+    AT.nnz   = nnz_;
+
+    if(matrix_flag == BASKER_FALSE)
+    {
+      BASKER_ASSERT((AT.ncol+1)>0, "Basker matrix_transpose assert: ncol > 0 failed");
+      MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
+      BASKER_ASSERT((AT.nnz)>0, "Basker matrix_transpose assert: nnz > 0 failed");
+      MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
+      MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+    }    
+
+    init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+    init_value(AT.row_idx, AT.nnz, (Int)0);
+    init_value(AT.val,     AT.nnz, (Entry)1.0);
+
+    //Setup a litte workspace
+    const Int ws_size = m_;
+    INT_1DARRAY ws;
+    BASKER_ASSERT(ws_size > 0, "util trans ws");
+    MALLOC_INT_1DARRAY(ws, ws_size);
+
+    for(Int j = 0; j < ws_size; ++j)
+    {
+      ws(j) = (Int) 0;
+    }
+
+    Int total =0 ;
+    Int maxv  =0;
+    for(Int j = col_ptr[0]; j < col_ptr[n_]; ++j)
+    {
+      if(row_idx[j] > maxv)
+      {
+        maxv = row_idx[j];
+      }
+      if(row_idx[j] > (ws_size-1))
+      {
+        printf("error type 1\n");
+      }
+      ws(row_idx[j]) = ws(row_idx[j]) + 1;
+
+      total++;
+    }
+
+    //write stupid code!
+    //add them all up
+    total = 0;
+    //Int total2 = 0; //Not used
+    for(Int j = 0; j < ws_size; ++j)
+    {
+      total = total + ws(j);
+      //total2 = total2 + ws_test[j];
+    }
+
+    for(Int j = 1; j < n_; ++j)
+    {
+      ws(j)  = ws(j) + ws(j-1);
+
+    }//for-j
+
+    //copy over to AT
+    AT.col_ptr(0) = (Int) 0;
+    for(Int j = 1; j <= n_; ++j)
+    {
+      AT.col_ptr(j) = ws(j-1);
+    }
+
+    //set ws
+    for(Int j = 0; j < n_; ++j)
+    {
+      ws(j) = AT.col_ptr(j);
+    }
+
+    for(Int k = 0; k < n_; ++k)
+    {
+      for(Int j = col_ptr[k]; j < col_ptr[k+1]; ++j)
+      {
+        if(ws(row_idx[j]) >= AT.nnz)
+        { 
+          printf("error \n");
+        }
+        //AT.row_idx(ws(row_idx[j])++) = k;
+        AT.row_idx(ws(row_idx[j])) = k;
+        AT.val(ws(row_idx[j])) = val[j]; // NDE: This will need to be tracked...
+          vals_transpose_local(j) = ws(row_idx[j]); // NDE: Added to track the transpose operation
+          //vals_transpose_local(ws(row_idx[j])) = j; // NDE: Added to track the transpose operation
+        ws(row_idx[j])++;
+        //starting at zero
+      }
+    }
+
+    sort_matrix_store_valperms(AT,vals_transpose_local);
+   // sort_matrix(AT);
     //printMTX("A_TRANS.mtx", AT);
 
     FREE_INT_1DARRAY(ws);

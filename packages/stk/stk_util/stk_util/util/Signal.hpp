@@ -85,13 +85,6 @@ void deactivate_signals();
  */
 sigjmp_buf *get_sigjmpbuf();
 
-// /**
-//  * @brief Function <b>disable_siglongjmp</b> disables the long jump buffer.  When
-//  * signals are received, they return to the caller without long jumping to the set jump point.
-//  *
-//  */
-// void disable_siglongjmp();
-
 /**
  * @brief Function <b>get_signal_message</b> returns the message associated with the
  * most recent signal.

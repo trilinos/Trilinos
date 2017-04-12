@@ -4,16 +4,12 @@
 
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/Inputs.hpp>
-#include <stk_balance/internal/LastStepFieldWriter.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-
-#include <stk_io/FillMesh.hpp>
-#include <stk_io/WriteMesh.hpp>
 
 #include <string>
 #include <iostream>
@@ -25,7 +21,6 @@ void print_usage_msg(const std::string &programName);
 void print_file_not_found_msg(const std::string &filename);
 void print_running_msg(const stk::balance::Inputs& parsedInputs);
 void print_directory_does_not_exist_msg(const std::string& directoryName);
-void run_stk_rebalance(const stk::balance::Inputs& parsedInputs, MPI_Comm comm);
 
 enum { OK=0, NOT_OK = 1 };
 
@@ -91,7 +86,7 @@ int main(int argc, const char**argv)
     if(are_inputs_valid(parsedInputs))
     {
         print_running_msg(parsedInputs);
-        run_stk_rebalance(parsedInputs, comm);
+        stk::balance::run_stk_rebalance(parsedInputs.get_output_directory(), parsedInputs.get_exodus_filename(), comm);
         returnCode = OK;
     }
 
@@ -142,21 +137,6 @@ void print_directory_does_not_exist_msg(const std::string& directoryName)
         std::cerr << "Could not create or find directory: " <<  directoryName<< ". Exiting." << std::endl;
 }
 
-
-
-void run_stk_rebalance(const stk::balance::Inputs& parsedInputs, MPI_Comm comm)
-{
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, comm);
-
-    stk::balance::internal::LastStepFieldWriterAutoDecomp fieldWriter(bulk, parsedInputs.get_exodus_filename());
-
-    stk::balance::GraphCreationSettings graphOptions;
-    stk::balance::balanceStkMesh(graphOptions, bulk);
-
-    std::string outputFilename = parsedInputs.get_output_directory() + "/" + parsedInputs.get_exodus_filename();
-    fieldWriter.write_mesh(outputFilename);
-}
 
 
 

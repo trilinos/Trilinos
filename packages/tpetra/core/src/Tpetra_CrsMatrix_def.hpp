@@ -60,7 +60,9 @@
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "Tpetra_Details_packCrsMatrix.hpp"
 #include <typeinfo>
+#include <vector>
 
 namespace Tpetra {
 //
@@ -2264,20 +2266,20 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                       const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                       const Teuchos::ArrayView<const Scalar>& values,
+  sumIntoGlobalValues (const GlobalOrdinal gblRow,
+                       const Teuchos::ArrayView<const GlobalOrdinal>& gblInputInds,
+                       const Teuchos::ArrayView<const Scalar>& inputVals,
                        const bool atomic)
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
 
-    if (! isFillActive ()) {
+    if (! this->isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
@@ -2286,56 +2288,111 @@ namespace Tpetra {
     // because they touch RCP's reference count, which is not thread
     // safe.  Dereferencing an RCP or calling op-> does not touch the
     // reference count.
-    const LO lrow = this->staticGraph_.is_null () ?
-      myGraph_->rowMap_->getLocalElement (globalRow) :
-      staticGraph_->rowMap_->getLocalElement (globalRow);
-    //const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
+    const LO lclRow = this->staticGraph_.is_null () ?
+      this->myGraph_->rowMap_->getLocalElement (gblRow) :
+      this->staticGraph_->rowMap_->getLocalElement (gblRow);
+    //const LO lclRow = this->getRowMap ()->getLocalElement (gblRow);
 
-    if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
-      // globalRow is not in the row Map, so stash the given entries
+    if (lclRow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // gblRow is not in the row Map, so stash the given entries
       // away in a separate data structure.  globalAssemble() (called
       // during fillComplete()) will exchange that data and sum it in
       // using sumIntoGlobalValues().
-      this->insertNonownedGlobalValues (globalRow, indices, values);
+      this->insertNonownedGlobalValues (gblRow, gblInputInds, inputVals);
       // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
-      // since we won't know whether the given indices were valid
+      // since we won't know whether the input indices were valid
       // until globalAssemble (called in fillComplete) is called.
       // That's why insertNonownedGlobalValues doesn't return
       // anything.  Just for consistency, I'll return the number of
       // entries that the user gave us.
-      return static_cast<LO> (indices.size ());
+      return static_cast<LO> (gblInputInds.size ());
     }
-
-    if (staticGraph_.is_null ()) {
+    else if (this->staticGraph_.is_null ()) {
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const RowInfo rowInfo = this->staticGraph_->getRowInfo (lrow);
-
-    auto curVals = this->getRowViewNonConst (rowInfo);
-    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-    View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
-    View<const GO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
-                                                 indices.size ());
-    return staticGraph_->template sumIntoGlobalValues<ST, HD, DD> (rowInfo,
-                                                                   curVals,
-                                                                   indsIn,
-                                                                   valsIn,
-                                                                   atomic);
+    else {
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      const IST* inputValsRaw = reinterpret_cast<const IST*> (inputVals.getRawPtr ());
+      // 'inputVals' and 'gblInputInds' come from the user, so they are host data.
+      View<const IST*, HD, MemoryUnmanaged> valsIn (inputValsRaw, inputVals.size ());
+      View<const GO*, HD, MemoryUnmanaged> indsIn (gblInputInds.getRawPtr (),
+                                                   gblInputInds.size ());
+      return staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn,
+                                                                      atomic);
+    }
   }
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValues (const GlobalOrdinal globalRow,
+  sumIntoGlobalValues (const GlobalOrdinal gblRow,
                        const LocalOrdinal numEnt,
-                       const Scalar vals[],
-                       const GlobalOrdinal cols[],
+                       const Scalar inputVals[],
+                       const GlobalOrdinal gblInputInds[],
                        const bool atomic)
   {
-    Teuchos::ArrayView<const GlobalOrdinal> colsIn (cols, numEnt);
-    Teuchos::ArrayView<const Scalar> valsIn (vals, numEnt);
-    return this->sumIntoGlobalValues (globalRow, colsIn, valsIn, atomic);
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
+    if (! this->isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    // mfh 26 Nov 2015: Avoid calling getRowMap() or getCrsGraph(),
+    // because they touch RCP's reference count, which is not thread
+    // safe.  Dereferencing an RCP or calling op-> does not touch the
+    // reference count.
+    const LO lclRow = this->staticGraph_.is_null () ?
+      this->myGraph_->rowMap_->getLocalElement (gblRow) :
+      this->staticGraph_->rowMap_->getLocalElement (gblRow);
+    //const LO lclRow = this->getRowMap ()->getLocalElement (gblRow);
+
+    if (lclRow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // mfh 23 Mar 2017: This branch is not thread safe in a debug
+      // build, in part because it uses Teuchos::ArrayView.
+      using Teuchos::ArrayView;
+      ArrayView<const GO> gblInputInds_av (numEnt == 0 ? NULL : gblInputInds, numEnt);
+      ArrayView<const Scalar> inputVals_av (numEnt == 0 ? NULL : inputVals, numEnt);
+
+      // gblRow is not in the row Map, so stash the given entries away
+      // in a separate data structure.  globalAssemble() (called
+      // during fillComplete()) will exchange that data and sum it in
+      // using sumIntoGlobalValues().
+      this->insertNonownedGlobalValues (gblRow, gblInputInds_av, inputVals_av);
+      // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
+      // since we won't know whether the given indices were valid
+      // until globalAssemble (called in fillComplete) is called.
+      // That's why insertNonownedGlobalValues doesn't return
+      // anything.  Just for consistency, I'll return the number of
+      // entries that the user gave us.
+      return numEnt;
+    }
+    else if (this->staticGraph_.is_null ()) {
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else {
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      const IST* inputValsIST = reinterpret_cast<const IST*> (inputVals);
+      View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : inputValsIST, numEnt);
+      View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : gblInputInds, numEnt);
+      return staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn,
+                                                                      atomic);
+    }
   }
 
 
@@ -3834,6 +3891,13 @@ namespace Tpetra {
     // getFrobeniusNorm(), and the result is cached there.
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  bool 
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  haveGlobalConstants() const {
+    return getCrsGraph ()->haveGlobalConstants ();
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -4049,6 +4113,7 @@ namespace Tpetra {
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph"))));
 #endif
 
+
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, "Matrix fill state must be active (isFillActive() "
@@ -4063,8 +4128,8 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
 #endif
-
-    computeGlobalConstants ();
+    if(params.is_null() || params->get("compute global constants",true))
+      computeGlobalConstants ();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM"))));
@@ -5818,11 +5883,10 @@ namespace Tpetra {
     return true;
   }
 
-
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackRow (Scalar* const valInTmp,
+  unpackRow (impl_scalar_type* const valInTmp,
              GlobalOrdinal* const indInTmp,
              const size_t tmpSize,
              const char* const valIn,
@@ -5836,11 +5900,21 @@ namespace Tpetra {
     }
     memcpy (valInTmp, valIn, numEnt * sizeof (Scalar));
     memcpy (indInTmp, indIn, numEnt * sizeof (GlobalOrdinal));
-    const GlobalOrdinal gblRow = this->getRowMap ()->getGlobalElement (lclRow);
-    Teuchos::ArrayView<Scalar> val ((numEnt == 0) ? NULL : valInTmp, numEnt);
-    Teuchos::ArrayView<GlobalOrdinal> ind ((numEnt == 0) ? NULL : indInTmp, numEnt);
-    this->combineGlobalValues (gblRow, ind, val, combineMode);
-    return true;
+
+    // FIXME (mfh 23 Mar 2017) It would make sense to use the return
+    // value here as more than just a "did it succeed" Boolean test.
+
+    // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
+    // expects this method to ignore incoming entries that do not
+    // exist on the process that owns those rows.  We would like to
+    // distinguish between "errors" resulting from ignored entries,
+    // vs. actual errors.
+
+    //const LocalOrdinal numModified =
+      this->combineGlobalValuesRaw (lclRow, numEnt, valInTmp, indInTmp,
+                                    combineMode);
+    return true; // FIXME (mfh 23 Mar 2013) See above.
+    //return numModified == numEnt;
   }
 
 
@@ -5851,15 +5925,18 @@ namespace Tpetra {
                      size_t& totalNumEntries,
                      const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const
   {
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     //const char tfecfFuncName[] = "allocatePackSpace: ";
-    const size_type numExportLIDs = exportLIDs.size ();
 
-    // Count the total number of entries to send.
+    // The number of export LIDs must fit in LocalOrdinal, assuming
+    // that the LIDs are distinct and valid on the calling process.
+    const LO numExportLIDs = static_cast<LO> (exportLIDs.size ());
+
+    // Count the total number of matrix entries to send.
     totalNumEntries = 0;
-    for (size_type i = 0; i < numExportLIDs; ++i) {
+    for (LO i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs[i];
       size_t curNumEntries = this->getNumEntriesInLocalRow (lclRow);
       // FIXME (mfh 25 Jan 2015) We should actually report invalid row
@@ -5870,8 +5947,8 @@ namespace Tpetra {
       totalNumEntries += curNumEntries;
     }
 
-    // FIXME (mfh 24 Feb 2013) This code is only correct if
-    // sizeof(Scalar) is a meaningful representation of the amount of
+    // FIXME (mfh 24 Feb 2013, 24 Mar 2017) This code is only correct
+    // if sizeof(IST) is a meaningful representation of the amount of
     // data in a Scalar instance.  (LO and GO are always built-in
     // integer types.)
     //
@@ -5880,7 +5957,7 @@ namespace Tpetra {
     // receive buffers.
     const size_t allocSize =
       static_cast<size_t> (numExportLIDs) * sizeof (LO) +
-      totalNumEntries * (sizeof (Scalar) + sizeof (GO));
+      totalNumEntries * (sizeof (IST) + sizeof (GO));
     if (static_cast<size_t> (exports.size ()) < allocSize) {
       exports.resize (allocSize);
     }
@@ -5895,20 +5972,37 @@ namespace Tpetra {
         size_t& constantNumPackets,
         Distributor& distor) const
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
-    using Teuchos::RCP;
+    if (this->isStaticGraph ()) {
+      const map_type& colMap = * (this->staticGraph_->colMap_);
+      Details::packCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,classic> (
+                          exportLIDs, exports, numPacketsPerLID,
+                          constantNumPackets, distor, colMap, this->lclMatrix_);
+    }
+    else {
+      this->packNonStatic (exportLIDs, exports, numPacketsPerLID,
+                           constantNumPackets, distor);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                 Teuchos::Array<char>& exports,
+                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                 size_t& constantNumPackets,
+                 Distributor& distor) const
+  {
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "pack: ";
 
-    const size_type numExportLIDs = exportLIDs.size ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numExportLIDs != numPacketsPerLID.size (), std::invalid_argument,
-      "exportLIDs.size() = " << numExportLIDs << " != numPacketsPerLID.size()"
-      " = " << numPacketsPerLID.size () << ".");
+    const size_t numExportLIDs = static_cast<size_t> (exportLIDs.size ());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numExportLIDs != static_cast<size_t> (numPacketsPerLID.size ()),
+       std::invalid_argument, "exportLIDs.size() = " << numExportLIDs
+       << " != numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
 
     // Setting this to zero tells the caller to expect a possibly
     // different ("nonconstant") number of packets per local index
@@ -5919,7 +6013,7 @@ namespace Tpetra {
     // unallocated.  Do the first two parts of "Count, allocate, fill,
     // compute."
     size_t totalNumEntries = 0;
-    allocatePackSpace (exports, totalNumEntries, exportLIDs);
+    this->allocatePackSpace (exports, totalNumEntries, exportLIDs);
     const size_t bufSize = static_cast<size_t> (exports.size ());
 
     // Compute the number of "packets" (in this case, bytes) per
@@ -5932,7 +6026,7 @@ namespace Tpetra {
     // integer types.)
 
     // Variables for error reporting in the loop.
-    size_type firstBadIndex = 0; // only valid if outOfBounds == true.
+    size_t firstBadIndex = 0; // only valid if outOfBounds == true.
     size_t firstBadOffset = 0;   // only valid if outOfBounds == true.
     size_t firstBadNumBytes = 0; // only valid if outOfBounds == true.
     bool outOfBounds = false;
@@ -5940,11 +6034,16 @@ namespace Tpetra {
 
     char* const exportsRawPtr = exports.getRawPtr ();
     size_t offset = 0; // current index into 'exports' array.
-    for (size_type i = 0; i < numExportLIDs; ++i) {
+    for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs[i];
-      const size_t numEnt = this->getNumEntriesInLocalRow (lclRow);
 
-      // Only pad this row if it has a nonzero number of entries.
+      size_t numEnt;
+      numEnt = this->getNumEntriesInLocalRow (lclRow);
+
+      // Only pack this row's data if it has a nonzero number of
+      // entries.  We can do this because receiving processes get the
+      // number of packets, and will know that zero packets means zero
+      // entries.
       if (numEnt == 0) {
         numPacketsPerLID[i] = 0;
       }
@@ -5955,7 +6054,7 @@ namespace Tpetra {
         char* const valEnd = valBeg + numEnt * sizeof (Scalar);
         char* const indBeg = valEnd;
         const size_t numBytes = sizeof (LO) +
-          numEnt * (sizeof (Scalar) + sizeof (GO));
+          numEnt * (sizeof (IST) + sizeof (GO));
         if (offset > bufSize || offset + numBytes > bufSize) {
           firstBadIndex = i;
           firstBadOffset = offset;
@@ -5963,7 +6062,7 @@ namespace Tpetra {
           outOfBounds = true;
           break;
         }
-        packErr = ! packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
+        packErr = ! this->packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
         if (packErr) {
           firstBadIndex = i;
           firstBadOffset = offset;
@@ -5989,6 +6088,95 @@ namespace Tpetra {
       << ", bufSize: " << bufSize << ", offset: " << firstBadOffset
       << ", numBytes: " << firstBadNumBytes << ".");
   }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  combineGlobalValuesRaw (const LocalOrdinal lclRow,
+                          const LocalOrdinal numEnt,
+                          const impl_scalar_type vals[],
+                          const GlobalOrdinal cols[],
+                          const Tpetra::CombineMode combineMode)
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef Kokkos::Device<typename View<LO*, DD>::HostMirror::execution_space, Kokkos::HostSpace> HD;
+    //const char tfecfFuncName[] = "combineGlobalValuesRaw: ";
+
+    if (this->isStaticGraph ()) {
+      // INSERT doesn't make sense for a static graph, since you
+      // aren't allowed to change the structure of the graph.
+      // However, all the other combine modes work.
+
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
+      if (static_cast<LO> (rowInfo.localRow) != lclRow) {
+        return static_cast<LO> (0); // invalid local row
+      }
+      auto curVals = this->getRowViewNonConst (rowInfo);
+
+      if (combineMode == ADD) {
+        View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : vals, numEnt);
+        View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : cols, numEnt);
+        // NOTE (mfh 23 Mar 2017): For now, different threads will
+        // unpack different rows, so we don't need atomic updates.  If
+        // we change that in the future, we'll need to change this.
+        constexpr bool atomic = false;
+        return this->staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
+                                                                              curVals,
+                                                                              indsIn,
+                                                                              valsIn,
+                                                                              atomic);
+      }
+      else if (combineMode == REPLACE) {
+        typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+        typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+        typedef typename std::decay<decltype (curVals) >::type OSVT; // output scalar view type
+        ISVT valsIn (numEnt == 0 ? NULL : vals, numEnt);
+        GIVT indsIn (numEnt == 0 ? NULL : cols, numEnt);
+
+        // // NOTE (mfh 23 Mar 2017): For now, different threads will
+        // // unpack different rows, so we don't need atomic updates.  If
+        // // we change that in the future, we'll need to change this.
+        // constexpr bool atomic = false;
+        return this->staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
+                                                                                   curVals,
+                                                                                   indsIn,
+                                                                                   valsIn);
+      }
+      else {
+        // mfh 23 Mar 2017: This branch is not thread safe in a debug
+        // build, due to use of Teuchos::ArrayView; see #229.
+        const GO gblRow = this->staticGraph_->rowMap_->getGlobalElement (lclRow);
+        Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+        Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
+
+        // FIXME (mfh 23 Mar 2017) This is a work-around for less
+        // common combine modes.  combineGlobalValues throws on error;
+        // it does not return an error code.  Thus, if it returns, it
+        // succeeded.
+        this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+        return numEnt;
+      }
+    }
+    else { // no static graph
+      // mfh 23 Mar 2017: This branch is not thread safe in a debug
+      // build, due to use of Teuchos::ArrayView; see #229.
+      const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
+      Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+      Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
+
+      // FIXME (mfh 23 Mar 2017) This is a work-around for less common
+      // combine modes.  combineGlobalValues throws on error; it does
+      // not return an error code.  Thus, if it returns, it succeeded.
+      this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+      return numEnt;
+    }
+  }
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -6150,32 +6338,11 @@ namespace Tpetra {
                         Distributor & /* distor */,
                         CombineMode combineMode)
   {
-    using Teuchos::Array;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine: ";
-
-#ifdef HAVE_TPETRA_DEBUG
-    const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
-    const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
-    const int numValidModes = 4;
-
-    if (std::find (validModes, validModes+numValidModes, combineMode) ==
-        validModes+numValidModes) {
-      std::ostringstream os;
-      os << "Invalid combine mode.  Valid modes are {";
-      for (int k = 0; k < numValidModes; ++k) {
-        os << validModeNames[k];
-        if (k < numValidModes - 1) {
-          os << ", ";
-        }
-      }
-      os << "}.";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::invalid_argument, os.str ());
-    }
-#endif // HAVE_TPETRA_DEBUG
 
     const size_type numImportLIDs = importLIDs.size ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -6214,8 +6381,8 @@ namespace Tpetra {
     // aliasing rules, we memcpy each incoming row's data into these
     // temporary arrays.  We double their size every time we run out
     // of storage.
-    Array<Scalar> valInTmp;
-    Array<GO> indInTmp;
+    std::vector<IST> valInTmp;
+    std::vector<GO> indInTmp;
     for (size_type i = 0; i < numImportLIDs; ++i) {
       const LO lclRow = importLIDs[i];
       const size_t numBytes = numPacketsPerLID[i];
@@ -6231,10 +6398,10 @@ namespace Tpetra {
 
         const char* const valBeg = numEntEnd;
         const char* const valEnd =
-          valBeg + static_cast<size_t> (numEnt) * sizeof (Scalar);
+          valBeg + static_cast<size_t> (numEnt) * sizeof (IST);
         const char* const indBeg = valEnd;
         const size_t expectedNumBytes = sizeof (LO) +
-          static_cast<size_t> (numEnt) * (sizeof (Scalar) + sizeof (GO));
+          static_cast<size_t> (numEnt) * (sizeof (IST) + sizeof (GO));
 
         if (expectedNumBytes > numBytes) {
           firstBadIndex = i;
@@ -6263,7 +6430,7 @@ namespace Tpetra {
           indInTmp.resize (tmpNumEnt);
         }
         unpackErr =
-          ! unpackRow (valInTmp.getRawPtr (), indInTmp.getRawPtr (), tmpNumEnt,
+          ! unpackRow (valInTmp.data (), indInTmp.data (), tmpNumEnt,
                        valBeg, indBeg, numEnt, lclRow, combineMode);
         if (unpackErr) {
           firstBadIndex = i;
@@ -7376,6 +7543,8 @@ namespace Tpetra {
 
     esfc_params.set("Timer Label",prefix + std::string("TAFC"));
 #endif
+    if(!params.is_null())
+      esfc_params.set("compute global constants",params->get("compute global constants",true));
 
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
   }

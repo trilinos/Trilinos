@@ -80,13 +80,16 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
     
     valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
+    valid_parameters.set("HGrad Basis Order",-1,"Polynomial order of hgrad basis");
+    valid_parameters.set("HDiv Basis Order",-1,"Polynomial order of hdiv basis");
     
     params->validateParametersAndSetDefaults(valid_parameters);
   }
   
   std::string basis_type = "HGrad";
   std::string grad_basis_type = "HDiv";
-  int basis_order = 1;
+  int basis_order = params->get<int>("HGrad Basis Order");
+  int grad_basis_order = params->get<int>("HDiv Basis Order");
   int integration_order = params->get<int>("Integration Order");
   std::string model_id = params->get<std::string>("Model ID");
 
@@ -113,7 +116,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   this->addDOF("PHI",basis_type,basis_order,integration_order);
   this->addDOFGrad("PHI");
 
-  this->addDOF("GRADPHI_FIELD",grad_basis_type,basis_order,integration_order);
+  this->addDOF("GRADPHI_FIELD",grad_basis_type,grad_basis_order,integration_order);
   this->addDOFDiv("GRADPHI_FIELD");
 
    // ********************

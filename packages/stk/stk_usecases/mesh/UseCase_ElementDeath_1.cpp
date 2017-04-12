@@ -257,24 +257,12 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       mesh.change_entity_parts(*itr, dead_parts);
     }
 
-    // Ask for new entities to represent the sides between the live and dead entities
-    //
-    std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
-    requests[side_rank] = skin.size();
-
-    // generate_new_entities creates new blank entities of the requested ranks
-    stk::mesh::EntityVector requested_entities;
-    mesh.generate_new_entities(requests, requested_entities);
-
     // Create boundaries between live and dead entities
     // by creating a relation between the new entities and the live entities
     for ( size_t i = 0; i < skin.size(); ++i) {
       stk::mesh::Entity entity = skin[i].entity;
       const unsigned side_ordinal  = skin[i].side_ordinal;
-      stk::mesh::Entity side   = requested_entities[i];
-      mesh.change_entity_parts(side, add_line2_parts, empty_parts);
-
-      stk::mesh::declare_element_side(mesh, entity, side, side_ordinal);
+      mesh.declare_element_side(entity, side_ordinal, add_line2_parts);
     }
 
     mesh.modification_end();

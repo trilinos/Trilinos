@@ -231,6 +231,10 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const { XPETRA_MONITOR("TpetraCrsGraph::getLocalRowView"); graph_->getLocalRowView(LocalRow, indices); }
 
+
+    //! Force the computation of global constants if we don't have them
+    void computeGlobalConstants() {graph_->computeGlobalConstants();}
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -516,6 +520,9 @@ namespace Xpetra {
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -742,6 +749,9 @@ namespace Xpetra {
 
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
+
+    //! Dummy implementation for computeGlobalConstants
+    void computeGlobalConstants() { }
 
     //@}
 

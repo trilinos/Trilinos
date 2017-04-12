@@ -74,6 +74,8 @@ int ex_get_processor_node_maps(int exoid, void_int *node_mapi, void_int *node_ma
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* Get the file type */

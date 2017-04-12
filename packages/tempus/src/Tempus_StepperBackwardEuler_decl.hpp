@@ -25,8 +25,8 @@ public:
 
   /// Constructor
   StepperBackwardEuler(
-    Teuchos::RCP<Teuchos::ParameterList>                      pList,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
@@ -37,9 +37,12 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return residualModel_->getTransientModel();}
 
-    /// Set the solver
-    void setSolver(std::string solverName);
-    void setSolver(Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(std::string solverName);
+    virtual void setSolver(
+      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    virtual void setSolver(
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+
     /// Set the predictor
     void setPredictor(std::string predictorName);
     void setPredictor(Teuchos::RCP<Teuchos::ParameterList> predPL=Teuchos::null);
@@ -68,6 +71,7 @@ public:
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -84,7 +88,7 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>              pList_;
+  Teuchos::RCP<Teuchos::ParameterList>              stepperPL_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;

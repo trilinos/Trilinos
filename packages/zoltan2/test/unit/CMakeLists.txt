@@ -332,6 +332,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  componentMetrics
+  SOURCES util/componentMetrics.cpp
+  COMM serial mpi
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   findUniqueGids
   SOURCES util/findUniqueGids.cpp
   COMM serial mpi

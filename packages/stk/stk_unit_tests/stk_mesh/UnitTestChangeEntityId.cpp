@@ -85,12 +85,12 @@ TEST( UnitTestChangeEntityId, change_id_small )
 
   mesh.modification_begin();
 
-  Entity elem                 = mesh.declare_entity(stk::topology::ELEMENT_RANK, p_rank + 1 /*id*/, elem_parts);
+  Entity elem                 = mesh.declare_element(p_rank + 1 /*id*/, elem_parts);
 
-  Entity node0                = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 5000 /*id*/);
-  Entity node1_local_chg_id   = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 1 /*id*/);
-  Entity node2_shared_chg_id  = mesh.declare_entity(stk::topology::NODE_RANK,            2 /*id*/);
-  Entity node3                = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 3 /*id*/);
+  Entity node0                = mesh.declare_node(p_rank*3 + 5000 /*id*/);
+  Entity node1_local_chg_id   = mesh.declare_node(p_rank*3 + 1 /*id*/);
+  Entity node2_shared_chg_id  = mesh.declare_node(           2 /*id*/);
+  Entity node3                = mesh.declare_node(p_rank*3 + 3 /*id*/);
 
   mesh.declare_relation(elem, node0              , 0 /*relation ordinal*/);
   mesh.declare_relation(elem, node1_local_chg_id , 1 /*relation ordinal*/);

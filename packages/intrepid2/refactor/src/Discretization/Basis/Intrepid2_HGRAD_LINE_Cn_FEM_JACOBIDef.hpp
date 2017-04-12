@@ -63,7 +63,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType  input,
                const ordinal_type   order,
                const double         alpha,
@@ -148,7 +148,7 @@ namespace Intrepid2 {
              typename inputPointValueType,  class ...inputPointProperties>
     void 
     Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const ordinal_type order,
                const double alpha,

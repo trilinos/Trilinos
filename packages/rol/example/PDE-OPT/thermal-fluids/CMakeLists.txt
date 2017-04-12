@@ -1,6 +1,7 @@
 
-IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
-   ${PROJECT_NAME}_ENABLE_MueLu  AND
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND
+   ${PROJECT_NAME}_ENABLE_Ifpack2  AND
+   ${PROJECT_NAME}_ENABLE_MueLu    AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
@@ -11,6 +12,36 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_ADD_EXECUTABLE(
     example_01
     SOURCES example_01.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_03
+    SOURCES example_03.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_04
+    SOURCES example_04.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_05
+    SOURCES example_05.cpp
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    example_06
+    SOURCES example_06.cpp
     ADD_DIR_TO_NAME
   )
 
@@ -27,7 +58,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ThermalFluidsDataCopy
     SOURCE_FILES
-      input.xml plotresults.m
+      input.xml input_ex03.xml input_ex04.xml input_ex05.xml input_ex06.xml plotresults.m plotresults_ex03.m plotresults_ex04.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

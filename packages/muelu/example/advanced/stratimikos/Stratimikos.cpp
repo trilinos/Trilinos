@@ -63,7 +63,9 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra includes
+#ifdef HAVE_MUELU_EPETRA
 #include <Epetra_Vector.h>
+#endif
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>

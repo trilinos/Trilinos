@@ -118,7 +118,6 @@ namespace Amesos2 {
     typedef typename MatrixAdapter<matrix_type>::global_size_t      global_size_type;
     typedef typename MatrixAdapter<matrix_type>::node_t             node_type;
 
-
     /// \name Constructor/Destructor methods
     //@{
 

@@ -52,18 +52,20 @@
 #include "NOX_GlobalData.H"    // class definition
 #include "NOX_Abstract_Group.H"    // class definition
 #include "NOX_Abstract_Group.H"    // class definition
+#include "NOX_Solver_SolverUtils.H"
 #include "Teuchos_ParameterList.hpp"  // class data element
 
 NOX::Solver::SingleStep::
 SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
        const Teuchos::RCP<Teuchos::ParameterList>& p) :
-  globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()),
   solnPtr(xGrp),                         // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
-  paramsPtr(p),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  paramsPtr(p)
 {
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  utilsPtr = globalDataPtr->getUtils();
+  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
   init();
 }
 
@@ -122,9 +124,9 @@ bool NOX::Solver::SingleStep::check(NOX::Abstract::Group::ReturnType ret,
 
 bool NOX::Solver::SingleStep::try_step()
 {
-  if (!check(solnPtr->computeF(), "compute F"))
-    return false;
   if (!check(solnPtr->computeJacobian(), "compute Jacobian"))
+    return false;
+  if (!check(solnPtr->computeF(), "compute F"))
     return false;
   if (!check(solnPtr->computeNewton(paramsPtr->sublist("Linear Solver")),
              "solve Newton system"))

@@ -46,6 +46,7 @@ namespace BaskerNS
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz);
+
     BASKER_INLINE
     void init_matrix(string _label, Int _m, Int _n, Int _nnz,
                     Int *_col_ptr, Int *_row_idx, Entry *_val);

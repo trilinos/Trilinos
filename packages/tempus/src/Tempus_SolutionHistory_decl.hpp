@@ -60,7 +60,7 @@ class SolutionHistory
 public:
 
   /// Contructor
-  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null);
+  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL = Teuchos::null);
 
   /// Destructor
   ~SolutionHistory() {};
@@ -99,7 +99,7 @@ public:
     /// Subscript operator
     Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        !((0 <= i) and (i < history_->size())), std::out_of_range,
+        !((0 <= i) and (i < (int)history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
         << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
         << "    index = " << i << "\n");
@@ -165,7 +165,7 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>      pList_;
+  Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
   StorageType                               storageType;

@@ -74,6 +74,8 @@ int ex_put_variable_name(int exoid, ex_entity_type obj_type, int var_num, const 
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
   /* inquire previously defined variables  */
   switch (obj_type) {
   case EX_GLOBAL: vname     = VAR_NAME_GLO_VAR; break;

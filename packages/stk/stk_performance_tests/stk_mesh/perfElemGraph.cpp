@@ -186,7 +186,7 @@ void print_delete_info(const stk::mesh::BulkData &bulkData, DeletedMeshInfo &mes
 void print_skin_info(const stk::mesh::BulkData &bulkData, const stk::mesh::Part& surface)
 {
     stk::mesh::Selector selector(surface & bulkData.mesh_meta_data().locally_owned_part());
-    std::vector<unsigned> skin_count;
+    std::vector<size_t> skin_count;
     stk::mesh::count_entities(selector, bulkData, skin_count);
     int minFaces, maxFaces, sumFaces, localFaces = skin_count[2];
     stk::all_reduce_min(bulkData.parallel(), &localFaces, &minFaces, 1);
@@ -396,65 +396,18 @@ void get_perforated_mesh_ids(const stk::mesh::BulkData &bulkData, const stk::mes
     print_delete_info(bulkData, meshInfo);
 }
 
-class ElemElemGraphUpdaterWithTiming : public stk::mesh::ElemElemGraphUpdater
-{
-public:
-    ElemElemGraphUpdaterWithTiming(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_, stk::diag::Timer &addElemTimer_, stk::diag::Timer &deleteElemTimer_)
-    : ElemElemGraphUpdater(bulk, elemGraph_), addElemTimer(addElemTimer_), deleteElemTimer(deleteElemTimer_), bulkData(bulk)
-
-    {
-    }
-
-    virtual void finished_modification_end_notification()
-    {
-        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(addElemTimer, bulkData.parallel());
-        stk::mesh::ElemElemGraphUpdater::finished_modification_end_notification();
-    }
-
-    virtual void started_modification_end_notification()
-    {
-        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(deleteElemTimer, bulkData.parallel());
-        stk::mesh::ElemElemGraphUpdater::started_modification_end_notification();
-    }
-
-private:
-    stk::diag::Timer &addElemTimer;
-    stk::diag::Timer &deleteElemTimer;
-    stk::mesh::BulkData &bulkData;
-};
-
 class ElementGraphPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
     ElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec) :
             stk::unit_test_util::PerformanceTester(bulk.parallel()),
             bulkData(bulk),
-            meshSpec(fileSpec),
-            CHILDMASK2(2),
-            addElemTimer("add elements", CHILDMASK2, rootTimer),
-            deleteElemTimer("delete elements", CHILDMASK2, rootTimer),
-            createGraphTimer("create graph", CHILDMASK2, rootTimer)
+            meshSpec(fileSpec)
     {
-        double startTime = stk::wall_time();
-
-        enabledTimerSet.setEnabledTimerMask(CHILDMASK2);
-        {
-            print_memory(bulk.parallel(), "Before elem graph creation");
-            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
-            elemGraph = new stk::mesh::ElemElemGraph(bulk);
-            print_memory(bulk.parallel(), "After elem graph creation");
-        }
-
-        elemGraphUpdater = new ElemElemGraphUpdaterWithTiming(bulk, *elemGraph, addElemTimer, deleteElemTimer);
-        bulk.register_observer(elemGraphUpdater);
-
-        duration += stk::wall_time() - startTime;
     }
 
     virtual ~ElementGraphPerformance()
     {
-        delete elemGraph;
-        delete elemGraphUpdater;
     }
 
 protected:
@@ -484,7 +437,7 @@ protected:
         for(size_t i = 0; i < meshInfo.elemIds.size(); ++i)
         {
             stk::mesh::EntityId elemId = meshInfo.elemIds[i];
-            stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemId, parts);
+            stk::mesh::Entity elem = bulkData.declare_element(elemId, parts);
 
             for(size_t j = 0; j<meshInfo.elemNodes[i].size(); ++j)
             {
@@ -497,19 +450,24 @@ protected:
 
     virtual void run_algorithm_to_time()
     {
+        // Add graph creation (and, consequently, deletion) to the timing
+        bulkData.delete_face_adjacent_element_graph();
+        bulkData.initialize_face_adjacent_element_graph();
+
+        stk::mesh::ElemElemGraph & elemGraph = bulkData.get_face_adjacent_element_graph();
         DeletedMeshInfo meshInfo;
 
-        unsigned oldGraphEdgeCount = elemGraph->num_edges();
+        unsigned oldGraphEdgeCount = elemGraph.num_edges();
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
         delete_elements(meshInfo);
         //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
-        unsigned newGraphEdgeCount = elemGraph->num_edges();
+        unsigned newGraphEdgeCount = elemGraph.num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
         add_elements(meshInfo);
 
-        unsigned finalGraphEdgeCount = elemGraph->num_edges();
+        unsigned finalGraphEdgeCount = elemGraph.num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
     }
     virtual size_t get_value_to_output_as_iteration_count()
@@ -518,14 +476,7 @@ protected:
     }
 
     stk::mesh::BulkData &bulkData;
-    stk::mesh::ElemElemGraph *elemGraph = nullptr;
-    ElemElemGraphUpdaterWithTiming *elemGraphUpdater = nullptr;
     const std::string meshSpec;
-
-    const int CHILDMASK2;
-    stk::diag::Timer addElemTimer;
-    stk::diag::Timer deleteElemTimer;
-    stk::diag::Timer createGraphTimer;
 };
 
 
@@ -535,8 +486,6 @@ class PerforatedElementGraphPerformance : public ElementGraphPerformance
 public:
   PerforatedElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec, const std::string &animateFile = "") :
       ElementGraphPerformance(bulk, fileSpec),
-      createBulkGraphTimer("create bulk graph", CHILDMASK2, rootTimer),
-      createBoundaryTimer("create boundary", CHILDMASK2, rootTimer),
       animationFile(animateFile)
     {
 
@@ -547,25 +496,66 @@ public:
 
     }
 
+    void delete_graph()
+    {
+        bulkData.delete_face_adjacent_element_graph();
+    }
+
+    void create_graph()
+    {
+        bulkData.initialize_face_adjacent_element_graph();
+    }
+
+    void delete_sides()
+    {
+        const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+        stk::mesh::EntityVector elems;
+        stk::mesh::get_selected_entities(meta.locally_owned_part(),
+                                         bulkData.buckets(stk::topology::ELEM_RANK), elems);
+        bulkData.modification_begin();
+
+        for(stk::mesh::Entity elem : elems)
+        {
+           unsigned numSides = bulkData.num_sides(elem);
+           const stk::mesh::Entity* sides = bulkData.begin(elem, meta.side_rank());
+           const stk::mesh::ConnectivityOrdinal* side_ords = bulkData.begin_ordinals(elem, meta.side_rank());
+           for(unsigned i=0; i<numSides; ++i)
+           {
+               bulkData.destroy_relation(elem, sides[i], side_ords[i]);
+           }
+        }
+
+        stk::mesh::EntityVector sides;
+        stk::mesh::get_selected_entities(meta.locally_owned_part(),
+                                         bulkData.buckets(meta.side_rank()), sides);
+        for(stk::mesh::Entity side : sides)
+        {
+            bulkData.destroy_entity(side);
+        }
+
+        bulkData.modification_end();
+    }
+
 protected:
     virtual void run_algorithm_to_time()
     {
+        stk::mesh::ElemElemGraph & elemGraph = bulkData.get_face_adjacent_element_graph();
         DeletedMeshInfo meshInfo;
 
-	stk::mesh::Part& surface = bulkData.mesh_meta_data().declare_part("Skinned Surface");
-	create_exposed_boundary(surface);
+        stk::mesh::Part& surface = bulkData.mesh_meta_data().declare_part("Skinned Surface");
+        create_exposed_boundary(surface);
 
-        unsigned oldGraphEdgeCount = elemGraph->num_edges();
-        get_perforated_mesh_ids(bulkData, *elemGraph, meshInfo);
+        unsigned oldGraphEdgeCount = elemGraph.num_edges();
+        get_perforated_mesh_ids(bulkData, elemGraph, meshInfo);
 
         delete_elements(meshInfo);
         //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
-        unsigned newGraphEdgeCount = elemGraph->num_edges();
+        unsigned newGraphEdgeCount = elemGraph.num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
         add_elements(meshInfo);
         //stk::io::write_mesh("afterAdd.g", bulkData, bulkData.parallel());
-        unsigned finalGraphEdgeCount = elemGraph->num_edges();
+        unsigned finalGraphEdgeCount = elemGraph.num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
 
         animate_death(bulkData, meshInfo.elemIds, animationFile);
@@ -573,40 +563,12 @@ protected:
 
     void create_exposed_boundary(stk::mesh::Part& surface)
     {
-        print_memory(bulkData.parallel(), "Before bulk data elem graph creation");
-        {
-            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createBulkGraphTimer, communicator);
-            bulkData.initialize_face_adjacent_element_graph();
-        }
-        print_memory(bulkData.parallel(), "After bulk data elem graph creation");
-
-        {
-            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createBoundaryTimer, bulkData.parallel());
-            stk::mesh::create_exposed_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), {&surface});
-        }
-
+        print_memory(bulkData.parallel(), "Before create exposed boundary sides");
+        stk::mesh::create_exposed_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), {&surface});
         print_skin_info(bulkData, surface);
     }
 
-    stk::diag::Timer createBulkGraphTimer;
-    stk::diag::Timer createBoundaryTimer;
     std::string animationFile;
-};
-
-class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
-{
-protected:
-    void run_element_graph_perf_test()
-    {
-        PerforatedElementGraphPerformance perfTester(get_bulk(), get_mesh_spec(), animationFile);
-        perfTester.run_performance_test();
-    }
-    std::string get_mesh_spec()
-    {
-        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
-    }
-
-    std::string animationFile = "";
 };
 
 class ElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
@@ -615,7 +577,10 @@ protected:
     void run_element_graph_perf_test()
     {
         ElementGraphPerformance perfTester(get_bulk(), get_mesh_spec());
-        perfTester.run_performance_test();
+        const int numTimes = 30;
+    	for (int i=0; i < numTimes; ++i) {
+    		perfTester.run_performance_test();
+    	}
     }
     std::string get_mesh_spec()
     {
@@ -623,21 +588,27 @@ protected:
     }
 };
 
-TEST_F(ElementGraphPerformanceTest, read_mesh_with_auto_decomp)
+class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
 {
-    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
-    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+protected:
+    void run_element_graph_perf_test()
+    {
+        PerforatedElementGraphPerformance perfTester(get_bulk(), get_mesh_spec(), animationFile);
+        const int numTimes = 12;
+    	for (int i=0; i < numTimes; ++i) {
+    		perfTester.delete_sides();
+    		perfTester.delete_graph();
+    		perfTester.create_graph();
+    		perfTester.run_performance_test();
+    	}
+    }
+    std::string get_mesh_spec()
+    {
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
+    }
 
-    run_element_graph_perf_test();
-}
-
-TEST_F(ElementGraphPerformanceTest, read_mesh_with_auto_decomp_no_aura)
-{
-    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
-
-    run_element_graph_perf_test();
-}
+    std::string animationFile = "";
+};
 
 TEST_F(ElementGraphPerformanceTest, read_mesh)
 {

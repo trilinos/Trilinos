@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   chebyshev: ratio eigenvalue = 20
   chebyshev: boost factor = 1.1   [unused]
@@ -51,14 +51,18 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -70,8 +74,8 @@ Level 1
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   chebyshev: ratio eigenvalue = 20
   chebyshev: boost factor = 1.1   [unused]
@@ -120,14 +124,18 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
@@ -139,8 +147,8 @@ Level 2
  
  Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother -> 
   [empty list]
  
@@ -150,6 +158,7 @@ Level 2
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
+Smoother complexity = 1.78
 Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs
@@ -157,9 +166,9 @@ level  rows    nnz  nnz/row  c ratio  procs
   1    3333   9997     3.00     3.00      1
   2    1111   3331     3.00     3.00      1
 
-Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.9468, alpha: 20, lambdaMin: 0.0973399, boost factor: 1.1}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95138, alpha: 20, lambdaMin: 0.0975692, boost factor: 1.1}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95018, alpha: 20, lambdaMin: 0.0975091, boost factor: 1.1}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94982, alpha: 20, lambdaMin: 0.0974912, boost factor: 1.1}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
 Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother

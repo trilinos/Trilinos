@@ -75,9 +75,9 @@ public:
 
         if (parallel_size() > 1)
         {
-            stk::mesh::PartVector shared_part, owned_part, empty;
-            shared_part.push_back(&m_mesh_meta_data.globally_shared_part());
-            owned_part.push_back(&m_mesh_meta_data.locally_owned_part());
+            stk::mesh::OrdinalVector shared_part, owned_part, empty;
+            shared_part.push_back(m_mesh_meta_data.globally_shared_part().mesh_meta_data_ordinal());
+            owned_part.push_back(m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal());
 
             stk::mesh::EntityVector modified_entities(shared_modified.size());
             for(size_t i = 0; i < shared_modified.size(); ++i)

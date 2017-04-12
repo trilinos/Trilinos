@@ -66,7 +66,7 @@ namespace Iogn {
     // of the last '/' (if any)...
     auto params = Ioss::tokenize(parameters, "/");
 
-    auto groups = Ioss::tokenize(params[params.size() - 1], "|+");
+    auto groups = Ioss::tokenize(params.back(), "|+");
 
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");

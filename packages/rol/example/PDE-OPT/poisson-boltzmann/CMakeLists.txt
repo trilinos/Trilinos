@@ -1,11 +1,15 @@
 
-IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
-   ${PROJECT_NAME}_ENABLE_MueLu   AND
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND
+   ${PROJECT_NAME}_ENABLE_Ifpack2  AND
+   ${PROJECT_NAME}_ENABLE_MueLu    AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
   # Need ROL_TpetraMultiVector.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
+
+  # Need ROL_TpetraTeuchosBatchManager.hpp
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_01
@@ -17,10 +21,16 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     PoissonBoltzmannDataCopy
     SOURCE_FILES
-      input.xml plotresults.m
+      input.xml input_ex02.xml plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

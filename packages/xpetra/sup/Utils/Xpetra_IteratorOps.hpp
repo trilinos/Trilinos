@@ -172,7 +172,7 @@ namespace Xpetra {
       }
 
 
-      Xpetra::Jacobi<Scalar,LocalOrdinal,GlobalOrdinal,Node>(omega, Dinv, A, B, *C, true, true,label);
+      Xpetra::Jacobi<Scalar,LocalOrdinal,GlobalOrdinal,Node>(omega, Dinv, A, B, *C, true, true,label,params);
       C->CreateView("stridedMaps", rcpFromRef(A), false, rcpFromRef(B), false);
 
       return C;

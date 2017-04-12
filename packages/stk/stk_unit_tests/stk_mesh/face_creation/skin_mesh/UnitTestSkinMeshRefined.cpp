@@ -67,7 +67,7 @@ TEST(ElementGraph, RefinedQuad)
             stk::mesh::Entity element = stk::mesh::declare_element(mesh, quad_part, elems_this_proc[i], connectivity[index]);
             if(ids[index]!=1)
             {
-                mesh.change_entity_parts(element, {&active}, {});
+                mesh.change_entity_parts(element, stk::mesh::ConstPartVector{&active}, stk::mesh::ConstPartVector{});
             }
         }
 

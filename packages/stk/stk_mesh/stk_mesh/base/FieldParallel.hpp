@@ -40,7 +40,8 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
@@ -70,7 +71,7 @@ inline
 void copy_owned_to_shared( const BulkData& mesh,
                            const std::vector< const FieldBase *> & fields )
 {
-  communicate_field_data(*mesh.ghostings()[0], fields);
+  communicate_field_data(*mesh.ghostings()[BulkData::SHARED], fields);
 }
 
 //----------------------------------------------------------------------
@@ -200,7 +201,6 @@ inline void communicate_field_data(
               {
                   unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
                   std::memcpy(field_data_ptr+e_size, ptr, size);
- //                 field_data.insert(field_data.end(), ptr, ptr+size);
               }
               e_size += size;
           }
@@ -275,14 +275,14 @@ inline void communicate_field_data(
 }
 
 template<typename FIELD_DATA_TYPE>
-inline void send_or_recv_field_data_for_assembly(stk::CommAll& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
+inline void send_or_recv_field_data_for_assembly(stk::CommNeighbors& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
 {
     FIELD_DATA_TYPE * ptr =
       reinterpret_cast<FIELD_DATA_TYPE *>(stk::mesh::field_data( f , bucketId, bucket_ordinal, scalars_per_entity*sizeof(FIELD_DATA_TYPE) ));
 
     if (phase == 0)
     { // send
-        CommBuffer & b = sparse.send_buffer( owner );
+        CommBufferV & b = sparse.send_buffer( owner );
         for(unsigned i=0; i<scalars_per_entity; ++i)
         {
           b.pack<FIELD_DATA_TYPE>( ptr[i] );
@@ -293,7 +293,7 @@ inline void send_or_recv_field_data_for_assembly(stk::CommAll& sparse, int phase
         PairIterEntityComm ec(infovec.begin(), infovec.end());
         for ( ; !ec.empty() ; ++ec )
         {
-            CommBuffer & b = sparse.recv_buffer( ec->proc );
+            CommBufferV & b = sparse.recv_buffer( ec->proc );
             for(unsigned i=0; i<scalars_per_entity; ++i)
             {
                 FIELD_DATA_TYPE recvd_value;
@@ -320,8 +320,8 @@ inline void parallel_sum_including_ghosts(
   // Sizing for send and receive
 
   const unsigned zero = 0 ;
-  std::vector<unsigned> send_size( parallel_size , zero );
-  std::vector<unsigned> recv_size( parallel_size , zero );
+  std::vector<int> send_size( parallel_size , zero );
+  std::vector<int> recv_size( parallel_size , zero );
 
   const EntityCommListInfoVector& comm_info_vec = mesh.internal_comm_list();
   size_t comm_info_vec_size = comm_info_vec.size();
@@ -360,14 +360,22 @@ inline void parallel_sum_including_ghosts(
     }
   }
 
-  // Allocate send and receive buffers:
+  std::vector<int> send_procs, recv_procs;
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          send_procs.push_back(p);
+      }
+      if (recv_size[p] > 0) {
+          recv_procs.push_back(p);
+      }
+  }
 
-  CommAll sparse ;
+  CommNeighbors sparse(mesh.parallel(), send_procs, recv_procs);
 
-  {
-    const unsigned * const snd_size = send_size.data() ;
-    const unsigned * const rcv_size = recv_size.data() ;
-    sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
+  for(int p=0; p<mesh.parallel_size(); ++p) {
+      if (send_size[p] > 0) {
+          sparse.send_buffer(p).reserve(send_size[p]);
+      }
   }
 
   // Send packing:

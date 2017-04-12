@@ -52,14 +52,18 @@ Level 1
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0
@@ -122,14 +126,18 @@ Level 2
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0
@@ -195,14 +203,18 @@ Level 3
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0
@@ -212,7 +224,7 @@ Level 3
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -225,6 +237,7 @@ Level 3
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.36
+Smoother complexity = 1.59
 Cycle type          = V
 
 level   rows    nnz  nnz/row  c ratio  procs
@@ -239,6 +252,6 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [216, 216], Global nnz: 2150}
 
-Smoother (level 3) pre  : SuperLU solver interface, direct solve
+Smoother (level 3) pre  : KLU2 solver interface
 Smoother (level 3) post : no smoother
 

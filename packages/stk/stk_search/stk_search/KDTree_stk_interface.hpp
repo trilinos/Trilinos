@@ -97,7 +97,7 @@ namespace stk {
             for(unsigned ilist = 0; ilist < overlapList.size(); ++ilist) {
               const int jboxRange = overlapList[ilist];
               if(intersects(local_domain[iboxDomain].first, rangeObjs[jboxRange])) {
-                if(jboxRange < (const int)local_range.size()) {
+                if(jboxRange < (int)local_range.size()) {
                   interList.emplace_back( local_domain[iboxDomain].second, local_range[jboxRange].second );
                 } else {
                   interList.emplace_back( local_domain[iboxDomain].second, rangeGhostIdentifiers[jboxRange-local_range.size()] );
@@ -184,7 +184,7 @@ namespace stk {
             proxSearch.SearchForOverlap(local_domain[iboxDomain].first, overlapList);
             for(unsigned ilist = 0; ilist < overlapList.size(); ++ilist) {
               const int jboxRange = overlapList[ilist];
-              if(jboxRange < (const int)local_range.size()) {
+              if(jboxRange < (int)local_range.size()) {
                 interList.emplace_back( local_domain[iboxDomain].second, local_range[jboxRange].second );
               } else {
                 interList.emplace_back( local_domain[iboxDomain].second, rangeGhostIdentifiers[jboxRange-local_range.size()] );

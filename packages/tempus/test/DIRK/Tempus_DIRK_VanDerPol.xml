@@ -8,21 +8,21 @@
     <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
-    <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
+    <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
 
-    <ParameterList name="Demo Integrator">
+    <ParameterList name="Default Integrator">
       <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
       <Parameter name="Screen Output Index List"     type="string" value="1"/>
       <Parameter name="Screen Output Index Interval" type="int"   value="1000"/>
-      <Parameter name="Stepper Name"       type="string" value="Demo Stepper"/>
+      <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Unlimited"/>
         <Parameter name="Storage Limit" type="int"    value="20"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time"             type="double" value="3.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
@@ -42,12 +42,12 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Demo Stepper">
+    <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
-      <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
+      <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
-      <ParameterList name="Demo Solver">
+      <ParameterList name="Default Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">
             <Parameter name="Method" type="string" value="Newton"/>

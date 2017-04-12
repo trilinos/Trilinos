@@ -135,7 +135,7 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalO
 
   std::size_t myOwnedCount = owned.size();
  
-  std::size_t sum=-1,min=-1,max=-1;
+  std::size_t sum=0,min=0,max=0;
 
   // get min,max and sum
   Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&myOwnedCount,&sum);
@@ -389,7 +389,7 @@ template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation)
+                                 std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an edge from node 0 to node 1. As a result if the GID of
@@ -410,7 +410,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
       GlobalOrdinalT v1 = topology[nodes.second];
 
       // using simple rule make a decision about orientation
-      char edgeOrientation = 1; 
+      signed char edgeOrientation = 1;
       if(v1>v0)
          edgeOrientation = 1; 
       else if(v0>v1)
@@ -429,7 +429,7 @@ template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
                                  const FieldPattern & fieldPattern, 
-                                 std::vector<char> & orientation)
+                                 std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
    // direction away from the cell (counter clockwise rotation of the face). To determine
@@ -490,7 +490,7 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
       // vbefore < *itr  and *itr < vafter
 
       // Based on the next lowest global id starting from the minimum
-      char faceOrientation = 1; 
+      signed char faceOrientation = 1;
       if(vafter>vbefore) // means smaller in clockwise direction
          faceOrientation = -1; 
       else if(vbefore>vafter) // means smaller in counter clockwise direction

@@ -120,6 +120,7 @@ namespace Iocgns {
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), cgnsFilePtr(-1),
         nodeCount(0), elementCount(0), m_zoneType(CG_ZoneTypeNull)
   {
+    usingParallelIO = true;
     dbState = Ioss::STATE_UNKNOWN;
 
     if (!is_input()) {

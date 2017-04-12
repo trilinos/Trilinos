@@ -72,6 +72,8 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
 
   exerrval = 0; /* clear error code */
 
+  ex_check_valid_file_id(exoid);
+
 #define EX_LOOK_UP_VAR(VOBJID, VVAR, VOBJTAB, DNUMOBJ, DNUMOBJVAR)                                 \
   /* Determine index of obj_id in VOBJID array */                                                  \
   obj_id_ndx = ex_id_lkup(exoid, var_type, obj_id);                                                \

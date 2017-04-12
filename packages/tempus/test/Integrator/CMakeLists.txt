@@ -9,6 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_Integrator_CopyFiles
-  DEST_FILES Tempus_default.xml Tempus_IntegratorBasic_ref.xml
+  DEST_FILES Tempus_default.xml Tempus_IntegratorBasic_ref.xml Tempus_IntegratorBasic_ref2.xml
   EXEDEPS Integrator
   )

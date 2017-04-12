@@ -57,30 +57,30 @@ echo "testwt ..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f32_testwt${SUFFIX} >> test.output
 echo "end testwt" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 
 # testrd - single precision read test
 echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 
 # testrdd - double precision read of single precision file
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 
 # testwtd - double precision write test
 echo "testwtd ..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtd${SUFFIX} >> test.output
 echo "end testwtd" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
 
 # testrdd - double precision read test
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 
 # testrd - single precision read of double precision file
 echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 
 echo "************************************************************************"
 echo "************************************************************************"

@@ -212,6 +212,18 @@ double Chebyshev<MatrixType>::getApplyFlops () const {
   return ApplyFlops_;
 }
 
+template<class MatrixType>
+size_t Chebyshev<MatrixType>::getNodeSmootherComplexity() const {
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chevyshev::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // Chevyshev costs roughly one apply + one diagonal inverse per iteration
+  return A->getNodeNumRows() + A->getNodeNumEntries();
+}
+
+
 
 template<class MatrixType>
 void

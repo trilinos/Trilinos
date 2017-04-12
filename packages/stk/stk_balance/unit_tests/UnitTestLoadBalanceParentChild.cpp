@@ -156,7 +156,7 @@ private:
     stk::mesh::Entity create_family_tree(stk::mesh::Entity entity) const
     {
         stk::mesh::EntityId id = m_stkMeshBulkData.identifier(entity);
-        stk::mesh::Entity familyTree = m_stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, id);
+        stk::mesh::Entity familyTree = m_stkMeshBulkData.declare_constraint(id);
         m_stkMeshBulkData.declare_relation(familyTree, entity, 0);
         return familyTree;
     }
@@ -203,6 +203,8 @@ public:
     {
     }
 
+    virtual bool allowModificationOfVertexWeightsForSmallMeshes() const { return false; }
+
     virtual ~StkFieldWeightRebalance() = default;
 
     virtual std::string getCoordinateFieldName() const { return "model_coordinates"; }
@@ -237,6 +239,8 @@ public:
         delete_child_elements_from_decomposition(decomp);
         move_related_entities_with_parent_element(decomp);
     };
+
+    virtual bool shouldFixMechanisms() const { return false; }
 
 private:
 

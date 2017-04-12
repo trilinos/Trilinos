@@ -183,7 +183,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter  = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
-      pdeWithFilter = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
+      bool useStorage = parlist->sublist("Problem").get("Use State Storage",true);
+      pdeWithFilter = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp, useStorage));
     }
     else {
       pdeWithFilter = con;

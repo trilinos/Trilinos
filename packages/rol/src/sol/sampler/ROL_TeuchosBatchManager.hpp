@@ -95,6 +95,10 @@ public:
       dim, input, output);
   }
 
+  void broadcast(Real* input, int cnt, int root) {
+    Teuchos::broadcast<Ordinal,Real>(*comm_,root,cnt,input);
+  }
+
   virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosBatchManager): sumAll(Vector<Real> &input, Vector<Real> &output) is not implemented");

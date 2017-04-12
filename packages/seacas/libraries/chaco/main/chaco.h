@@ -119,12 +119,15 @@
  *         performed.
  *
  * C. Assignment.
- *     11. assignment. Type short *. This is the only output argument to interface().
+ *     11. assignment. Type int *. This is the only output argument to interface().
  *         It is an array of length nvtxs and returns the set number to which each vertex
  *         is assigned. The set number for vertex i is returned in assignment i ; 1] (or for
  *         Fortran, in assignment(i)). This can also be an input argument if global method,
  *         argument 16 below, is set to 7. A description of what functionality can be used
  *         with an input assignment can be found in x4.4
+ *   NOTE: This argument was a short in the original implementation and documentation.
+ *         Since this limits the processor decompositon to < 32,768 processors, it needed
+ *         to be changed to an integer as were all other shorts in the library.
  *
  * D. Description of the target machine.
  *      12. architecture. Type int. This parameter designates the topology of the par-
@@ -210,6 +213,10 @@ extern int interface(int    nvtxs,                 /**< number of vertices in fu
 
 /* Chaco interface to read assignment vector from file */
 extern int input_assign(FILE *, char *, int, int *);
+
+#define CHACO_VERSION_MAJOR 3
+#define CHACO_VERSION_MINOR 0
+#define CHACO_VERSION_PATCH 0
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */

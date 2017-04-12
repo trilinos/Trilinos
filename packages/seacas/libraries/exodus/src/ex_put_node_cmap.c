@@ -74,6 +74,8 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   /* get the index for the comm map information variables */

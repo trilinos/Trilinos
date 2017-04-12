@@ -45,7 +45,7 @@ public:
 
     void run_game_of_life(int numSteps);
 
-    void write_mesh();
+    virtual void write_mesh();
 
     //test functions
     inline unsigned get_num_elems_on_proc() const;
@@ -88,7 +88,7 @@ private:
     m_neighborSets;
 
     //constructor
-   void get_elements();
+    void get_elements();
 
     void write_output_mesh();
 
@@ -154,6 +154,7 @@ class FieldGameofLife : public GameofLife
 public:
     FieldGameofLife(GameofLifeMesh& Mesh, std::string meshName);
     virtual ~FieldGameofLife(){}
+
 private:
     //activate element ids
     void activate_each_element_id_in_vector(stk::mesh::EntityIdVector& elemIdsToActivate);
@@ -166,6 +167,15 @@ private:
     virtual void update_each_element();
     virtual void activate_element(stk::mesh::Entity elem);
     virtual void deactivate_element(stk::mesh::Entity elem);
+};
+
+class TodstwdGameOfLife : public FieldGameofLife
+{
+public:
+    TodstwdGameOfLife(GameofLifeMesh& mesh, std::string meshName)
+    : FieldGameofLife(mesh, meshName) { }
+    virtual ~TodstwdGameOfLife() { }
+    virtual void write_mesh() override;
 };
 
 #endif /*GameofLife.hpp*/

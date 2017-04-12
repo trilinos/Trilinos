@@ -176,16 +176,6 @@ stk_bootstrap()
 
 namespace use_case {
 
-// Diagnostic writer
-stk::diag::Writer &
-dw()
-{
-  static stk::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), 0);
-
-  return s_diagWriter;
-}
-
-
 // Message reporting
 std::ostream &
 operator<<(
@@ -202,29 +192,21 @@ operator<<(
   case MSG_INFORMATION:
     os << "Information";
     break;
-  case MSG_EXCEPTION:
-    os << "Exception";
-    break;
-  case MSG_PARALLEL_EXCEPTION:
-    os << "Parallel exception";
-    break;
   }
   return os;
 }
-
 
 void
 report_handler(
   const char *		message,
   int                   type)
 {
-  if (type & stk::MSG_DEFERRED)
+  if (type & stk::MSG_DEFERRED) {
     sierra::pout() << "Deferred " << static_cast<message_type>(type) << ": " << message << std::endl;
-
-  else
+  } else {
     sierra::out() << static_cast<message_type>(type) << ": " << message << std::endl;
+  }
 }
-
 
 // Timers
 stk::diag::TimerSet &
@@ -235,29 +217,16 @@ timerSet()
   return s_timerSet;
 }
 
-
 stk::diag::Timer &timer() {
   static stk::diag::Timer s_timer = stk::diag::createRootTimer("Use Cases", timerSet());
-
   return s_timer;
 }
-
 
 UseCaseEnvironment::UseCaseEnvironment(
   int *         argc,
   char ***      argv)
   : m_comm(stk::parallel_machine_init(argc, argv)),
     m_need_to_finalize(true)
-{
-  initialize(argc, argv);
-}
-
-UseCaseEnvironment::UseCaseEnvironment(
-  int *         argc,
-  char ***      argv,
-  stk::ParallelMachine comm)
-  : m_comm(comm),
-    m_need_to_finalize(false)
 {
   initialize(argc, argv);
 }

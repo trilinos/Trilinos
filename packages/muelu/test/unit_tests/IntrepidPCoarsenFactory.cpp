@@ -44,6 +44,8 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
+#include <MueLu_UnitTestHelpers.hpp> // provides TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT, etc.
+#include <TpetraCore_config.h>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -88,12 +90,14 @@ namespace MueLuTests {
   static const int MAX_LINE_DEGREE = 10;
   static const int MAX_QUAD_DEGREE = 10;
   static const int MAX_HEX_DEGREE = 4;
+  static const int MAX_RANK_COUNT = 4;
 #else
   static const int MAX_LINE_DEGREE = 10;
   static const int MAX_QUAD_DEGREE = 10;
   static const int MAX_HEX_DEGREE = 8;
+  static const int MAX_RANK_COUNT = 16;
 #endif
-  
+
   using namespace std;
   // pair is subcell dim, subcell ordinal in cellTopo.  Includes (spaceDim-1, sideOrdinal), where spaceDim is the dimension of the cellTopo
   std::vector<std::pair<int,int>> subcellEntitiesForSide(const shards::CellTopology &cellTopo, int sideOrdinal)
@@ -145,7 +149,7 @@ namespace MueLuTests {
     }
     return subcellEntities;
   }
-  
+
   //! Returns ordinals in the basis that have nodes on the specified side, as a sorted vector<int>
   template<class Basis>
   std::vector<int> localDofOrdinalsForSide(RCP<Basis> basis, int sideOrdinal)
@@ -154,14 +158,14 @@ namespace MueLuTests {
     // to use dof tags for this, we first need to determine the subcells of the domain that
     // are part of the specified side
     auto subcellEntities = subcellEntitiesForSide(basis->getBaseCellTopology(), sideOrdinal);
-    
+
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     auto dofOrdinalData = basis->getAllDofOrdinal();
 #else
     // dofOrdinalData has entries like: dofOrdinalData[subcellDim][subcellOrdinal][subcellDofOrdinal]
     auto dofOrdinalData = basis->getDofOrdinalData();
 #endif
-    
+
     // determine size of first two parts of dofOrdinalData container
     // for dimensions > 0, there may no entries at all (for lower-order bases)
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -170,16 +174,16 @@ namespace MueLuTests {
 #else
     int maxDim = dofOrdinalData.size();
 #endif
-    
+
     vector<int> localDofOrdinals;
-    
+
     for (auto subcellEntity : subcellEntities)
     {
       int subcellDim = subcellEntity.first;
       int subcellOrdinal = subcellEntity.second;
-      
+
       if (subcellDim >= maxDim) continue; // no entries
-      
+
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
       int dofContainerSize = dofOrdinalData.dimension(2); // 3rd dimension: max dof count
 #else
@@ -187,7 +191,7 @@ namespace MueLuTests {
       int maxSubcellOrdinal = dofOrdinalData[subcellDim].size();
 #endif
       if (subcellOrdinal >= maxSubcellOrdinal) continue; // no entries
-      
+
       for (int entryOrdinal = 0; entryOrdinal < dofContainerSize; entryOrdinal++)
       {
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -201,12 +205,12 @@ namespace MueLuTests {
           break;
       }
     }
-    
+
     std::sort(localDofOrdinals.begin(), localDofOrdinals.end());
-    
+
     return localDofOrdinals;
   }
-  
+
   class Symmetries
   {
     // the symmetries on a given topology (e.g. cube) are a subset of the
@@ -223,7 +227,7 @@ namespace MueLuTests {
       // sanity checks on the input:
       // - require that all entries are of equal length N
       // - require that all entries contain each of 0, ..., N-1
-      
+
       if (symmetriesList.size() == 0)
       {
         _N = 0;
@@ -250,19 +254,19 @@ namespace MueLuTests {
         }
       }
     }
-    
+
     const vector<int>& getPermutation(int permutationOrdinal)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal < 0, std::invalid_argument, "permutationOrdinal must be positive");
       TEUCHOS_TEST_FOR_EXCEPTION(permutationOrdinal >= int(_symmetries.size()), std::invalid_argument, "permutationOrdinal out of range");
       return _symmetries[permutationOrdinal];
     }
-    
+
     int getPermutationCount()
     {
       return _symmetries.size();
     }
-    
+
     void printAll()
     {
       for (auto permutation : _symmetries)
@@ -270,7 +274,7 @@ namespace MueLuTests {
         cout << permutationString(permutation) << endl;
       }
     }
-    
+
     static string permutationString(vector<int> &permutation)
     {
       ostringstream permString;
@@ -282,15 +286,15 @@ namespace MueLuTests {
       permString << "}";
       return permString.str();
     }
-    
+
     typedef vector<vector<int>> EdgeContainer;
-    
+
     // assumes that the inner vectors are sorted:
     static bool hasEdge(const EdgeContainer &edges, int node1, int node2)
     {
       return std::find(edges[node1].begin(), edges[node1].end(), node2) != edges[node1].end();
     }
-    
+
     /*
      For any topology, we can determine the symmetries from
      the graph of the edges.  This method takes as argument
@@ -307,9 +311,9 @@ namespace MueLuTests {
       {
         std::sort(edges[node].begin(), edges[node].end());
       }
-      
+
       vector<vector<int>> permutations;
-      
+
       // recursive lambda function to determine valid permutations that start with a specified set of choices:
       function<void(const vector<int> &)> addPermutationsThatMatch;
       addPermutationsThatMatch = [nodeCount,edges,&addPermutationsThatMatch,&permutations]
@@ -356,13 +360,13 @@ namespace MueLuTests {
           }
         }
       };
-      
+
       vector<int> permutation;
       addPermutationsThatMatch(permutation);
-      
+
       return Symmetries(permutations);
     }
-    
+
     static Symmetries shardsSymmetries(shards::CellTopology &cellTopo)
     {
       int edgeDim = 1;
@@ -380,7 +384,7 @@ namespace MueLuTests {
       return symmetries(edges);
     }
   };
-  
+
   TEUCHOS_UNIT_TEST(Symmetries, HypercubeSymmetryCount)
   {
     // Just for fun, confirm that Symmetries works with hypercubes up to 5 dimensions
@@ -389,7 +393,7 @@ namespace MueLuTests {
     {
       int oldNodeCount = edges.size();
       vector<vector<int>> newEdges = vector<vector<int>>(oldNodeCount*2);
-      
+
       // essentially, we make two copies of the lower-dimensional hypercube, and connect the
       // nodes to their counterparts
       for (int node=0; node<oldNodeCount; node++)
@@ -405,7 +409,7 @@ namespace MueLuTests {
       }
       return newEdges;
     };
-    
+
     int d_max = 5;
     vector<vector<int>> edges = {{}}; // node: no edges
     for (int d=1; d<= d_max; d++)
@@ -414,15 +418,15 @@ namespace MueLuTests {
       // expected count: d! * 2^d
       int expectedCount = 1 << d;
       for (int n=2; n<=d; n++) expectedCount *= n;
-      
+
       Symmetries symmetries = Symmetries::symmetries(edges);
       cout << "For hypercube of " << d << " dimensions, there are " << symmetries.getPermutationCount();
       cout << " symmetries.\n";
-      
+
       TEST_EQUALITY(symmetries.getPermutationCount(), expectedCount);
     }
   }
-  
+
   class UniqueNumbering
   {
     vector<vector<double>> _knownCoords; // x,y,z, depending on spatial dimension; inner vector is sorted
@@ -464,12 +468,52 @@ namespace MueLuTests {
         }
       }
     }
-    
+
   public:
     UniqueNumbering(int spaceDim, double tol)
     {
       _tol = tol;
       _knownCoords = vector<vector<double>>(spaceDim);
+    }
+    template<class ArrayScalar, class ArrayOrdinal>
+    void getIDs(const ArrayScalar &points, ArrayOrdinal &globalIDs)
+    {
+      int spaceDim = _knownCoords.size();
+      TEUCHOS_TEST_FOR_EXCEPTION(spaceDim != (int) points.dimension(points.rank()-1), std::invalid_argument, "final dimension of points container must equal spaceDim");
+      if (points.rank() == 2)
+      {
+        int numPoints = points.dimension(0);
+        for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+        {
+          vector<double> coords(spaceDim);
+          for (int d=0; d<spaceDim; d++)
+          {
+            coords[d] = points(pointOrdinal,d);
+          }
+          globalIDs(pointOrdinal) = getGlobalID(coords);
+        }
+      }
+      else if (points.rank() == 3)
+      {
+        int numCells = points.dimension(0);
+        int numPoints = points.dimension(1);
+        for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+        {
+          for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+          {
+            vector<double> coords(spaceDim);
+            for (int d=0; d<spaceDim; d++)
+            {
+              coords[d] = points(cellOrdinal,pointOrdinal,d);
+            }
+            globalIDs(cellOrdinal,pointOrdinal) = getGlobalID(coords);
+          }
+        }
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "points must be a rank 2 or rank 3 container");
+      }
     }
     int getGlobalID(const vector<double> &coords)
     {
@@ -479,7 +523,7 @@ namespace MueLuTests {
       // (adding entries to _knownCoords as needed)
       vector<double> coordsKey;
       getSanitizedCoords(coords, coordsKey);
-      
+
       // we look up using the sanitized coordsKey
       if (_numbering.find(coordsKey) == _numbering.end())
       {
@@ -493,7 +537,7 @@ namespace MueLuTests {
       return _numbering.size();
     }
   };
-  
+
   TEUCHOS_UNIT_TEST(UniqueNumbering, IntegerCoords)
   {
     int spaceDim = 2;
@@ -516,27 +560,773 @@ namespace MueLuTests {
     TEST_EQUALITY(expectedCount, numbering.totalCount());
     // globalID should be < 121
     TEST_COMPARE(globalID, <, expectedCount);
-    
+
     // now ask for one below 0, but within tol:
     globalID = numbering.getGlobalID({-0.4,-0.3});
     TEST_EQUALITY(expectedCount, numbering.totalCount());
     TEST_COMPARE(globalID, <, expectedCount);
-    
+
     // and now for one above 10, but within tol of it:
     globalID = numbering.getGlobalID({10.4,10.3});
     TEST_EQUALITY(expectedCount, numbering.totalCount());
     TEST_COMPARE(globalID, <, expectedCount);
-    
+
     // finally, add one outside tol -- now we expect the count to go up
     globalID = numbering.getGlobalID({11,10});
     TEST_COMPARE(globalID, ==, expectedCount);
     expectedCount++;
     TEST_EQUALITY(expectedCount, numbering.totalCount());
   }
-  
+
+  using namespace std;
+  using namespace Teuchos;
+
+  template<class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal>
+  void buildSampleElementToNodeMapThreeElements(RCP<Basis> basis, ArrayOrdinal &elemToNodeMap,
+                                                vector<vector<int>> &ordinalsForSubcellDimension,
+                                                vector<int> &subcellCountForDimension)
+  {
+    using namespace Kokkos::Experimental;
+    typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
+    double pointTol = 1e-10;
+
+    ArrayScalar cellWorkset;
+    shards::CellTopology cellTopo = basis->getBaseCellTopology();
+    int numCells = 3;
+    int vertexCount = (int) cellTopo.getVertexCount();
+    int spaceDim = (int) cellTopo.getDimension();
+
+    ArrayScalar refDofCoords, cellDofCoords;
+    ArrayOrdinal cellDofIDs; // for each cell, stores the global ordinal assigned to local ordinal
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    resize(cellWorkset,numCells,vertexCount,spaceDim);
+    resize(refDofCoords,basis->getCardinality(),spaceDim);
+    resize(cellDofCoords,numCells,basis->getCardinality(),spaceDim);
+    resize(cellDofIDs,numCells,basis->getCardinality());
+    resize(elemToNodeMap,numCells,basis->getCardinality());
+#else
+    cellWorkset.resize(numCells,vertexCount,spaceDim);
+    refDofCoords.resize(basis->getCardinality(),spaceDim);
+    cellDofCoords.resize(numCells,basis->getCardinality(),spaceDim);
+    cellDofIDs.resize(numCells,basis->getCardinality());
+    elemToNodeMap.resize(numCells,basis->getCardinality());
+#endif
+    basis->getDofCoords(refDofCoords);
+
+    subcellCountForDimension.resize(spaceDim+1);
+    subcellCountForDimension[spaceDim] = numCells;
+    if (spaceDim == 1)
+    {
+      // line
+      cellWorkset(0,0,0) = 0.0;
+      cellWorkset(0,1,0) = 1.0;
+      cellWorkset(1,0,0) = 1.0;
+      cellWorkset(1,1,0) = 2.0;
+      cellWorkset(2,0,0) = 2.0;
+      cellWorkset(2,1,0) = 3.0;
+      subcellCountForDimension[0] = 4; // 3 cells x 2 vertices - (2 interior vertices)
+    }
+    else if ((spaceDim == 2) && (vertexCount == 4))
+    {
+      // quad
+      // first element: LL @ (0,1), UR @ (1,2)
+      cellWorkset(0,0,0) = 0.0;
+      cellWorkset(0,0,1) = 1.0;
+      cellWorkset(0,1,0) = 1.0;
+      cellWorkset(0,1,1) = 1.0;
+      cellWorkset(0,2,0) = 1.0;
+      cellWorkset(0,2,1) = 2.0;
+      cellWorkset(0,3,0) = 0.0;
+      cellWorkset(0,3,1) = 2.0;
+      // second element: LL @ (0,0), UR @ (1,1)
+      cellWorkset(1,0,0) = 0.0;
+      cellWorkset(1,0,1) = 0.0;
+      cellWorkset(1,1,0) = 1.0;
+      cellWorkset(1,1,1) = 0.0;
+      cellWorkset(1,2,0) = 1.0;
+      cellWorkset(1,2,1) = 1.0;
+      cellWorkset(1,3,0) = 0.0;
+      cellWorkset(1,3,1) = 1.0;
+      // third element: LL @ (1,0), UR @ (2,1)
+      cellWorkset(2,0,0) = 1.0;
+      cellWorkset(2,0,1) = 0.0;
+      cellWorkset(2,1,0) = 2.0;
+      cellWorkset(2,1,1) = 0.0;
+      cellWorkset(2,2,0) = 2.0;
+      cellWorkset(2,2,1) = 1.0;
+      cellWorkset(2,3,0) = 1.0;
+      cellWorkset(2,3,1) = 1.0;
+      subcellCountForDimension[0] = 12-2-1*2; // 3 cells x 4 vertices - (2 vertices seen by 2 cells, 1 vertex seen by 3 cells)
+      subcellCountForDimension[1] = 12-2;   // 3 cells x 4 edges - (2 shared edges)
+    }
+    else if ((spaceDim == 3) && (vertexCount == 8))
+    {
+      // hex: same geometry as quad, but extruded in z from 0 to 1
+      // first element: LL @ (0,1), UR @ (1,2)
+      cellWorkset(0,0,0) = 0.0;
+      cellWorkset(0,0,1) = 1.0;
+      cellWorkset(0,0,2) = 0.0;
+      cellWorkset(0,1,0) = 1.0;
+      cellWorkset(0,1,1) = 1.0;
+      cellWorkset(0,1,2) = 0.0;
+      cellWorkset(0,2,0) = 1.0;
+      cellWorkset(0,2,1) = 2.0;
+      cellWorkset(0,2,2) = 0.0;
+      cellWorkset(0,3,0) = 0.0;
+      cellWorkset(0,3,1) = 2.0;
+      cellWorkset(0,3,2) = 0.0;
+      cellWorkset(0,4,0) = 0.0;
+      cellWorkset(0,4,1) = 1.0;
+      cellWorkset(0,4,2) = 1.0;
+      cellWorkset(0,5,0) = 1.0;
+      cellWorkset(0,5,1) = 1.0;
+      cellWorkset(0,5,2) = 1.0;
+      cellWorkset(0,6,0) = 1.0;
+      cellWorkset(0,6,1) = 2.0;
+      cellWorkset(0,6,2) = 1.0;
+      cellWorkset(0,7,0) = 0.0;
+      cellWorkset(0,7,1) = 2.0;
+      cellWorkset(0,7,2) = 1.0;
+      // second element: LL @ (0,0), UR @ (1,1)
+      cellWorkset(1,0,0) = 0.0;
+      cellWorkset(1,0,1) = 0.0;
+      cellWorkset(1,0,2) = 0.0;
+      cellWorkset(1,1,0) = 1.0;
+      cellWorkset(1,1,1) = 0.0;
+      cellWorkset(1,1,2) = 0.0;
+      cellWorkset(1,2,0) = 1.0;
+      cellWorkset(1,2,1) = 1.0;
+      cellWorkset(1,2,2) = 0.0;
+      cellWorkset(1,3,0) = 0.0;
+      cellWorkset(1,3,1) = 1.0;
+      cellWorkset(1,3,2) = 0.0;
+      cellWorkset(1,4,0) = 0.0;
+      cellWorkset(1,4,1) = 0.0;
+      cellWorkset(1,4,2) = 1.0;
+      cellWorkset(1,5,0) = 1.0;
+      cellWorkset(1,5,1) = 0.0;
+      cellWorkset(1,5,2) = 1.0;
+      cellWorkset(1,6,0) = 1.0;
+      cellWorkset(1,6,1) = 1.0;
+      cellWorkset(1,6,2) = 1.0;
+      cellWorkset(1,7,0) = 0.0;
+      cellWorkset(1,7,1) = 1.0;
+      cellWorkset(1,7,2) = 1.0;
+      // third element: LL @ (1,0), UR @ (2,1)
+      cellWorkset(2,0,0) = 1.0;
+      cellWorkset(2,0,1) = 0.0;
+      cellWorkset(2,0,2) = 0.0;
+      cellWorkset(2,1,0) = 2.0;
+      cellWorkset(2,1,1) = 0.0;
+      cellWorkset(2,1,2) = 0.0;
+      cellWorkset(2,2,0) = 2.0;
+      cellWorkset(2,2,1) = 1.0;
+      cellWorkset(2,2,2) = 0.0;
+      cellWorkset(2,3,0) = 1.0;
+      cellWorkset(2,3,1) = 1.0;
+      cellWorkset(2,3,2) = 0.0;
+      cellWorkset(2,4,0) = 1.0;
+      cellWorkset(2,4,1) = 0.0;
+      cellWorkset(2,4,2) = 1.0;
+      cellWorkset(2,5,0) = 2.0;
+      cellWorkset(2,5,1) = 0.0;
+      cellWorkset(2,5,2) = 1.0;
+      cellWorkset(2,6,0) = 2.0;
+      cellWorkset(2,6,1) = 1.0;
+      cellWorkset(2,6,2) = 1.0;
+      cellWorkset(2,7,0) = 1.0;
+      cellWorkset(2,7,1) = 1.0;
+      cellWorkset(2,7,2) = 1.0;
+      subcellCountForDimension[0] = 24-4*1-2*2; // 3 cells x 8 vertices - (4 vertices seen by 2 cells, 2 vertices seen by 3 cells)
+      subcellCountForDimension[1] = 36-6*1-1*2; // 3 cells x 12 edges - (6 edges seen by 2 cells, 1 edge seen by 3 cells)
+      subcellCountForDimension[2] = 18-2*1;     // 3 cells x 6 faces - (2 faces seen by 2 cells)
+    }
+    else
+    {
+      // we haven't yet set up test geometry for this CellTopology
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unimplemented test case");
+    }
+
+    CellTools::mapToPhysicalFrame(cellDofCoords, refDofCoords, cellWorkset, cellTopo);
+    UniqueNumbering globalNumbering(spaceDim, pointTol);
+    globalNumbering.getIDs<ArrayScalar,ArrayOrdinal>(cellDofCoords,cellDofIDs);
+
+    int tagOrdSubcellDim = 0; // where to find the subcell dimension within the tag
+    int numDofsPerCell = basis->getCardinality();
+
+    // store ordinals in a set for easy uniquing
+    vector<set<int>> ordinalsForSubcellDimensionSet(spaceDim+1);
+
+    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    {
+      for (int dofOrdinal=0; dofOrdinal<numDofsPerCell; dofOrdinal++)
+      {
+        int subcellDofDim = basis->getDofTag(dofOrdinal)[tagOrdSubcellDim];
+        int globalID = cellDofIDs(cellOrdinal,dofOrdinal);
+        ordinalsForSubcellDimensionSet[subcellDofDim].insert(globalID);
+        elemToNodeMap(cellOrdinal,dofOrdinal) = globalID;
+      }
+    }
+    ordinalsForSubcellDimension.clear();
+    for (int d=0; d<spaceDim+1; d++)
+    {
+      vector<int> ordinals(ordinalsForSubcellDimensionSet[d].begin(),ordinalsForSubcellDimensionSet[d].end());
+      ordinalsForSubcellDimension.push_back(ordinals);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void testUniqueNumbering(Teuchos::FancyOStream &out, bool &success)
+  {
+    // simple test with dof coords corresponding to our sample three-element quad mesh with a quadratic basis
+    typedef typename Node::device_type::execution_space ES;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
+
+    using namespace Kokkos;
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    using namespace Kokkos::Experimental;
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
+    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::FieldContainer<OT> FCO; // FC of ordinals
+    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
+#endif
+
+    FC physDofCoords;
+    FCO cellGIDs;
+    vector<vector<LocalOrdinal>> expectedGIDs = {{ 0, 1, 2, 3, 4, 5, 6, 7, 8},
+      { 9,10,11,12,13,14, 0, 1, 2},
+      {11,15,16,14,17,18, 2,19,20}};
+    int numCells = 3, numPointsPerCell = 9, spaceDim = 2;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    resize(physDofCoords,numCells,numPointsPerCell,spaceDim);
+    resize(cellGIDs,numCells,numPointsPerCell);
+#else
+    physDofCoords.resize(numCells,numPointsPerCell,spaceDim);
+    cellGIDs.resize(numCells,numPointsPerCell);
+#endif
+    // x,y coords of lower-left vertices for each cell:
+    vector<double> x0s = {0.0,0.0,1.0};
+    vector<double> y0s = {1.0,0.0,0.0};
+    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    {
+      double x0 = x0s[cellOrdinal], y0 = y0s[cellOrdinal];
+      for (int pointOrdinal=0; pointOrdinal<numPointsPerCell; pointOrdinal++)
+      {
+        double xOffset = (pointOrdinal % 3) * 0.5; // 0, 0.5, 1.0
+        double yOffset = (pointOrdinal / 3) * 0.5; // 0, 0.5, 1.0
+        physDofCoords(cellOrdinal,pointOrdinal,0) = x0 + xOffset;
+        physDofCoords(cellOrdinal,pointOrdinal,1) = y0 + yOffset;
+      }
+    }
+    double pointTol = 1e-10;
+    UniqueNumbering numbering(spaceDim,pointTol);
+    numbering.getIDs(physDofCoords, cellGIDs);
+
+    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    {
+      out << "cell " << cellOrdinal << " GIDs: {";
+      for (int pointOrdinal=0; pointOrdinal<numPointsPerCell; pointOrdinal++)
+      {
+        out << " " << cellGIDs(cellOrdinal,pointOrdinal);
+        if (cellGIDs(cellOrdinal,pointOrdinal) != expectedGIDs[cellOrdinal][pointOrdinal])
+        {
+          success = false;
+        }
+      }
+      out << " }\n";
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, UniqueNumbering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    testUniqueNumbering<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void testBuildSampleElementToNodeMapThreeElementQuad(Teuchos::FancyOStream &out, bool &success)
+  {
+    // simple test with quadratic basis on quads: check that we have the right numbering (hard-coded)
+    vector<int> vertexGIDs = {0,2,6,8,9,11,16,20}; // should be 8 of these
+    vector<int> edgeGIDs = {1,3,5,7,10,12,14,15,18,19}; // 10 of these
+    vector<int> cellGIDs = {4,13,17};
+
+    vector<vector<int>> expectedGIDs = {vertexGIDs,edgeGIDs,cellGIDs};
+
+    typedef typename Node::device_type::execution_space ES;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef typename Teuchos::ScalarTraits<LocalOrdinal>::magnitudeType OT; // ordinal type
+
+    using namespace Kokkos;
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    using namespace Kokkos::Experimental;
+    typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
+    typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
+    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
+#else
+    typedef Intrepid2::FieldContainer<MT> FC;
+    typedef Intrepid2::FieldContainer<OT> FCO; // FC of ordinals
+    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
+#endif
+
+    int polyOrder = 2, spaceDim = 2;
+    RCP<Basis> basis = rcp( new Basis(polyOrder, Intrepid2::EPointType::POINTTYPE_EQUISPACED) );
+    vector<int> subcellCountForDimension;
+    vector<vector<int>> ordinalsForSubcellDimension;
+    FCO elementToNodeMap;
+    buildSampleElementToNodeMapThreeElements<Basis,ES,FC,FCO>(basis,elementToNodeMap,ordinalsForSubcellDimension,
+                                                              subcellCountForDimension);
+    // check subcell counts first
+    for (int d=0; d<=spaceDim; d++)
+    {
+      if (subcellCountForDimension[d] != int(expectedGIDs[d].size()))
+      {
+        success = false;
+        out << "subcellCountForDimension[" << d << "] != " << expectedGIDs[d].size() << endl;
+      }
+      else
+      {
+        int dofCount = ordinalsForSubcellDimension[d].size();
+        bool listsDiffer = ordinalsForSubcellDimension[d].size() != expectedGIDs[d].size();
+
+        if (!listsDiffer)
+        {
+          for (int dofOrdinal=0; dofOrdinal<dofCount; dofOrdinal++)
+          {
+            if (ordinalsForSubcellDimension[d][dofOrdinal] != expectedGIDs[d][dofOrdinal])
+            {
+              listsDiffer = true;
+              break;
+            }
+          }
+        }
+        if (listsDiffer)
+        {
+          success = false;
+          out << "lists for d=" << d << " differ; expected: {";
+          for (LocalOrdinal LID : expectedGIDs[d])
+          {
+            out << " " << LID;
+          }
+          out << " }; actual: {";
+          for (LocalOrdinal LID : ordinalsForSubcellDimension[d])
+          {
+            out << " " << LID;
+          }
+          out << " }\n";
+        }
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, BuildSampleElementToNodeMapThreeElementQuad, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    testBuildSampleElementToNodeMapThreeElementQuad<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,success);
+  }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
+  void testFindSeeds(int max_degree, Intrepid2::EPointType ptype, int numRanks, Teuchos::FancyOStream &out, bool &success)
+  {
+    // "numRanks" is for emulated parallel execution: we set up several maps, one corresponding to each emulated MPI rank.
+
+    typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
+    typedef ArrayScalar FC;
+    typedef ArrayOrdinal FCO;
+
+    FCO elementToNodeMap;
+    vector<vector<int>> ordinalsForSubcellDimension;
+    vector<int> subcellCountForDimension;
+
+    using namespace Teuchos;
+    RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
+    typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> serialMapRCP, rowMapRCP, colMapRCP;
+
+    for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
+    {
+      RCP<Basis> basis = rcp( new Basis(polyOrder,ptype) );
+      shards::CellTopology cellTopo = basis->getBaseCellTopology();
+      int spaceDim = cellTopo.getDimension();
+      buildSampleElementToNodeMapThreeElements<Basis,ExecutionSpace,FC,FCO>(basis,elementToNodeMap,ordinalsForSubcellDimension,
+                                                                            subcellCountForDimension);
+      vector<vector<LocalOrdinal>> seeds;
+
+      int numCells = elementToNodeMap.dimension(0);
+      int dofsPerCell = elementToNodeMap.dimension(1);
+      int maxGID = -1;
+      for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+      {
+        for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+        {
+          maxGID = max(maxGID,elementToNodeMap(cellOrdinal,dofOrdinal));
+        }
+      }
+      int numElements = maxGID + 1;
+      // construct a serial map (claiming all rows and cells)
+      RCP<Node> mynode = rcp(new Node());
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm, mynode);
+
+      int startingGID = 0;
+      for (int rank=0; rank<numRanks; rank++)
+      {
+        // simple distribution: take numElements / numRanks on each rank
+        int numRankLocalElements = numElements / numRanks;
+        int remainder = numElements - (numElements / numRanks) * numRanks;
+        if (remainder > rank) numRankLocalElements++;
+        FCO rankLocalElementToNodeMap;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+        resize(rankLocalElementToNodeMap,numCells,basis->getCardinality());
+#else
+        rankLocalElementToNodeMap.resize(numCells,basis->getCardinality());
+#endif
+        vector<set<LocalOrdinal>> expectedSeedsSets(spaceDim+1);
+
+        auto isRankLocal = [startingGID,numRankLocalElements](GlobalOrdinal GID) -> bool {
+          return (GID >= startingGID) && (GID < startingGID + numRankLocalElements);
+        };
+
+        Teuchos::Array<GlobalOrdinal> myRowGIDs(numRankLocalElements);
+        for (int i=0; i<numRankLocalElements; i++)
+        {
+          myRowGIDs[i] = startingGID + i;
+        }
+        // colMap sees all local rows, plus any non-local IDs they talk to:
+        Teuchos::Array<GlobalOrdinal> myColGIDs = myRowGIDs;
+        set<GlobalOrdinal> offRankGIDs;
+        for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+        {
+          // first pass: does this cell contain any GIDs we own?
+          bool hasOwnedGIDs = false;
+          for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+          {
+            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            if (isRankLocal(GID))
+            {
+              hasOwnedGIDs = true;
+            }
+          }
+          // second pass: if there are owned GIDs, add any off-rank guys this cell sees
+          if (hasOwnedGIDs)
+          {
+            for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+            {
+              GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+              if (! isRankLocal(GID))
+              {
+                if (GID == -1)
+                {
+                  cout << "hmmm....\n";
+                }
+                offRankGIDs.insert(GID);
+              }
+            }
+          }
+        }
+        // add off-rank GIDs to the end of the colMapGIDs:
+        myColGIDs.insert(myColGIDs.end(), offRankGIDs.begin(), offRankGIDs.end());
+
+        GlobalOrdinal indexBase = 0;
+        GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+        rowMapRCP = MapFactory::Build(lib,GO_INVALID,myRowGIDs().getConst(), indexBase,serialComm);
+        colMapRCP = MapFactory::Build(lib,GO_INVALID,myColGIDs().getConst(), indexBase,serialComm);
+
+
+        // rewrite elementToNodeMap to contain only LIDs, and determine expected seeds
+        for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+        {
+          vector<vector<LocalOrdinal>> seedForSubcell(spaceDim+1);
+          for (int d=0; d<=spaceDim; d++)
+          {
+            int subcellCount = cellTopo.getSubcellCount(d);
+            seedForSubcell[d] = vector<LocalOrdinal>(subcellCount,LocalOrdinal(-1));
+          }
+          for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+          {
+            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            LocalOrdinal LID = colMapRCP->getLocalElement(GID);
+            rankLocalElementToNodeMap(cellOrdinal,dofOrdinal) = LID; // may be -1
+            if (LID != -1)
+            {
+              int subcdim = basis->getDofTag(dofOrdinal)[0];
+              int subcord = basis->getDofTag(dofOrdinal)[1];
+              LocalOrdinal existingSeed = seedForSubcell[subcdim][subcord];
+              if ((existingSeed == (LocalOrdinal)-1) || (LID < existingSeed))
+              {
+                seedForSubcell[subcdim][subcord] = LID;
+              }
+            }
+          }
+          for (int d=0; d<=spaceDim; d++)
+          {
+            for (LocalOrdinal seed : seedForSubcell[d])
+            {
+              if (seed != -1)
+              {
+                GlobalOrdinal GID = colMapRCP->getGlobalElement(seed);
+                if (rowMapRCP->getLocalElement(GID) == seed)
+                {
+                  expectedSeedsSets[d].insert(seed);
+                }
+              }
+            }
+          }
+        }
+
+        MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, rankLocalElementToNodeMap,
+                                                                                                   seeds, *rowMapRCP, *colMapRCP);
+
+        if (int(seeds.size()) != spaceDim + 1)
+        {
+          success = false;
+          out << "seeds should have dimension = spaceDim + 1; ";
+          out << seeds.size() << " != " << spaceDim + 1 << endl;
+        }
+        else
+        {
+          for (int d=0; d<=spaceDim; d++)
+          {
+            // check that we have exactly one entry for each subcell entity
+            int expectedSeedCount = expectedSeedsSets[d].size();
+            int seedCount = seeds[d].size();
+            if (expectedSeedCount != seedCount)
+            {
+              success = false;
+              out << "expected " << expectedSeedCount << " seeds for dimension " << d;
+              out << "; had " << seedCount << endl;
+            }
+            // check that each entry belongs to an entity of the correct type
+            for (LocalOrdinal localDofOrdinal : seeds[d])
+            {
+              if (expectedSeedsSets[d].find(localDofOrdinal) == expectedSeedsSets[d].end())
+              {
+                success = false;
+                out << "Found local dof ordinal " << localDofOrdinal << " as a seed for dimension ";
+                out << d << ", but did not find it in expectedSeedsSets[" << d << "]\n";
+              }
+            }
+          }
+        }
+        startingGID += numRankLocalElements;
+      }
+    }
+  }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
+  void testFindSeedsSerial(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
+  {
+    typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
+    typedef ArrayScalar FC;
+    typedef ArrayOrdinal FCO;
+
+    FCO elementToNodeMap;
+    vector<vector<int>> ordinalsForSubcellDimension;
+    vector<int> subcellCountForDimension;
+
+    using namespace Teuchos;
+    RCP<Comm<int>> serialComm = rcp(new SerialComm<int>());
+    typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > serialMapRCP;
+
+    for (int polyOrder=1; polyOrder<max_degree; polyOrder++)
+    {
+      RCP<Basis> basis = rcp( new Basis(polyOrder,ptype) );
+      buildSampleElementToNodeMapThreeElements<Basis,ExecutionSpace,FC,FCO>(basis,elementToNodeMap,ordinalsForSubcellDimension,
+                                                                            subcellCountForDimension);
+      vector<vector<LocalOrdinal>> seeds;
+
+      // construct a serial map (claiming all rows and cells)
+      int numCells = elementToNodeMap.dimension(0);
+      int dofsPerCell = elementToNodeMap.dimension(1);
+      int maxLID = -1;
+      for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+      {
+        for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
+        {
+          maxLID = max(maxLID,elementToNodeMap(cellOrdinal,dofOrdinal));
+        }
+      }
+      int numElements = maxLID + 1;
+      RCP<Node> mynode = rcp(new Node());
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm, mynode);
+
+      MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, elementToNodeMap,
+                                                                                                 seeds, *serialMapRCP, *serialMapRCP);
+
+      int spaceDim = basis->getBaseCellTopology().getDimension();
+      if (int(seeds.size()) != spaceDim + 1)
+      {
+        success = false;
+        out << "seeds should have dimension = spaceDim + 1; ";
+        out << seeds.size() << " != " << spaceDim + 1 << endl;
+      }
+      else
+      {
+        for (int d=0; d<=spaceDim; d++)
+        {
+          // check that we have exactly one entry for each subcell entity
+          int expectedSeedCount = subcellCountForDimension[d];
+          if (basis->getDofCount(d,0) == 0)
+          {
+            // no dofs for first subcell of dimension d; we assume that all other subcells of dimension d also
+            // don't have dofs assigned
+            expectedSeedCount = 0;
+          }
+          int seedCount = seeds[d].size();
+          if (expectedSeedCount != seedCount)
+          {
+            success = false;
+            out << "expected " << expectedSeedCount << " seeds for dimension " << d;
+            out << "; had " << seedCount << endl;
+          }
+          // check that each entry belongs to an entity of the correct type
+          for (LocalOrdinal localDofOrdinal : seeds[d])
+          {
+            if (std::find(ordinalsForSubcellDimension[d].begin(),ordinalsForSubcellDimension[d].end(),localDofOrdinal)
+                == ordinalsForSubcellDimension[d].end())
+            {
+              success = false;
+              out << "Found local dof ordinal " << localDofOrdinal << " as a seed for dimension ";
+              out << d << ", but did not find it in ordinalsForSubcellDimension[" << d << "]\n";
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node, class Basis, class ExecutionSpace, class ArrayScalar, class ArrayOrdinal, Xpetra::UnderlyingLib lib>
+  void testFindSeedsParallel(int max_degree, Intrepid2::EPointType ptype, Teuchos::FancyOStream &out, bool &success)
+  {
+    typedef Intrepid2::CellTools<ExecutionSpace> CellTools;
+    typedef ArrayScalar FC;
+    typedef ArrayOrdinal FCO;
+
+    for (int rankCount=1; rankCount<=MAX_RANK_COUNT; rankCount++)
+    {
+      out << "running testFindSeedsParallel on " << rankCount << " emulated MPI ranks\n";
+      testFindSeeds<LocalOrdinal, GlobalOrdinal, Node, Basis, ExecutionSpace, ArrayScalar, ArrayOrdinal, lib>(max_degree, ptype, rankCount, out, success);
+    }
+  }
+
   /******* End helper methods and classes by Nate ********/
-  
-  
+
+
+  /******* Begin typedefs for FindSeeds tests by Nate ********/
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+  #define FC_FCO_DEFINE         typedef Kokkos::DynRankView<MT,typename Node::device_type> FC; \
+        typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO;
+  #define CELL_TOPO_DEFINE        typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis; \
+        typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis; \
+        typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> HexBasis;
+#else
+  #define FC_FCO_DEFINE       typedef Intrepid2::FieldContainer<MT> FC;\
+        typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
+  #define CELL_TOPO_DEFINE        typedef Intrepid2::Basis_HGRAD_Line_Cn_FEM<MT,FC> LineBasis;\
+        typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> QuadBasis;\
+        typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC> HexBasis;
+#endif
+#define TEST_FIND_SEEDS(whichTest,ptype,X) MUELU_TESTING_SET_OSTREAM;\
+  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);\
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;\
+  typedef typename Node::device_type::execution_space ES;\
+  FC_FCO_DEFINE\
+  CELL_TOPO_DEFINE\
+  out << "version: " << MueLu::Version() << std::endl;\
+  if (unsigned(CellTopo::key) == unsigned(shards::Line<2>::key))\
+  {\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,LineBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_LINE_DEGREE, ptype, out, success);\
+  }\
+  else if (unsigned(CellTopo::key) == unsigned(shards::Quadrilateral<4>::key))\
+  {\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,QuadBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_QUAD_DEGREE, ptype, out, success);\
+  }\
+  else if (unsigned(CellTopo::key) == unsigned(shards::Hexahedron<8>::key))\
+  {\
+    whichTest<LocalOrdinal,GlobalOrdinal,Node,HexBasis,ES,FC,FCO,Xpetra::Use##X##petra>(MAX_HEX_DEGREE, ptype, out, success);\
+  }\
+  else\
+  {\
+    success = false;\
+    out << "Unhandled cell topology!\n";\
+  }
+
+  /******* End typedefs for FindSeeds tests by Nate ********/
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+    TEST_FIND_SEEDS(testFindSeedsParallel,ptype,E)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+    TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL,E)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+    TEST_FIND_SEEDS(testFindSeedsSerial,ptype,E)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_Epetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+    TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL,E)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+    TEST_FIND_SEEDS(testFindSeedsParallel,ptype,T)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+
+    TEST_FIND_SEEDS(testFindSeedsParallel,POINTTYPE_SPECTRAL,T)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    Intrepid2::EPointType ptype = Intrepid2::POINTTYPE_EQUISPACED;
+
+    TEST_FIND_SEEDS(testFindSeedsSerial,ptype,T)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_Tpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node, CellTopo)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
+
+    TEST_FIND_SEEDS(testFindSeedsSerial,POINTTYPE_SPECTRAL,T)
+  }
+
   /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GetP1NodeInHi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -574,12 +1364,12 @@ namespace MueLuTests {
         std::vector<size_t> lo_node_in_hi;
         FC hi_dofCoords;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
-#endif  
-        TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());  
+#endif
+        TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());
         TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
         TEST_EQUALITY(lo_node_in_hi.size(),(size_t)lo->getCardinality());
       }
@@ -599,10 +1389,10 @@ namespace MueLuTests {
     typedef Intrepid2::FieldContainer<MT> FC;
 #endif
     out << "version: " << MueLu::Version() << std::endl;
-    
+
     // QUAD
     int degree;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c1",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c2",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c3",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
@@ -615,7 +1405,7 @@ namespace MueLuTests {
 
 
   /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNode, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNode, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -638,7 +1428,7 @@ namespace MueLuTests {
 
     {
       //QUAD
-      // A one element test with Kirby-numbered nodes where the top edge is not owned      
+      // A one element test with Kirby-numbered nodes where the top edge is not owned
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
 #else
@@ -659,21 +1449,21 @@ namespace MueLuTests {
         std::vector<LO> hi_to_lo_map;
         int lo_numOwnedNodes=0;
         FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif  
+#endif
 
         for(int i=0; i<Nn; i++) {
           hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
-	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,false);
+        Teuchos::ArrayRCP<const int> is_dirichlet(Nn,false);
 
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
-        
+
         // Checks
         TEST_EQUALITY(lo_numOwnedNodes,2);
 
@@ -689,7 +1479,7 @@ namespace MueLuTests {
   }
 
   /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -712,7 +1502,7 @@ namespace MueLuTests {
 
     {
       //QUAD
-      // A one element test with Kirby-numbered nodes where the top edge is not owned      
+      // A one element test with Kirby-numbered nodes where the top edge is not owned
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
 #else
@@ -733,11 +1523,11 @@ namespace MueLuTests {
         std::vector<LO> hi_to_lo_map;
         int lo_numOwnedNodes=0;
         FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif  
+#endif
 
         for(int i=0; i<Nn; i++) {
           hi_e2n(0,i)=i;
@@ -745,12 +1535,12 @@ namespace MueLuTests {
         }
 
 
-	// Mark of the very first node as Dirichlet
-	Teuchos::ArrayRCP<int> is_dirichlet(Nn,false);
-	is_dirichlet[0] = 1;
+        // Mark of the very first node as Dirichlet
+        Teuchos::ArrayRCP<int> is_dirichlet(Nn,false);
+        is_dirichlet[0] = 1;
 
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
-        
+
         // Checks
         TEST_EQUALITY(lo_numOwnedNodes,1);
 
@@ -766,7 +1556,7 @@ namespace MueLuTests {
   }
 
   /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,GenerateColMapFromImport, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,GenerateColMapFromImport, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -779,8 +1569,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
-    int NumProcs = comm->getSize(); 
-    // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map, 
+    int NumProcs = comm->getSize();
+    // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map,
     // generates "lo order" version.  The domain map is already given to us here, so we just need to make tha column one.
 
     // We'll test this by starting with some linearly distributed map for the "hi" domain map and a duplicated map as the "hi" column map.
@@ -803,27 +1593,27 @@ namespace MueLuTests {
     comm->gatherAll(1*sizeof(GO),(char*)send_colgids.data(),NumProcs*sizeof(GO),(char*)recv_colgids.data());
 
     // Build the h2l map
-    std::vector<LO> hi_to_lo_map(hi_colMap->getNodeNumElements(),lo_invalid); 
-    for(size_t i=0; i<(size_t)NumProcs; i++) 
+    std::vector<LO> hi_to_lo_map(hi_colMap->getNodeNumElements(),lo_invalid);
+    for(size_t i=0; i<(size_t)NumProcs; i++)
       hi_to_lo_map[recv_colgids[i]]=i;
 
     // Import
     size_t lo_columnMapLength = NumProcs; // One col per proc
     RCP<const Map> lo_colMap;
     MueLu::MueLuIntrepid::GenerateColMapFromImport(*hi_importer,hi_to_lo_map,*lo_domainMap,lo_columnMapLength,lo_colMap);
-   
+
     // Final test
     for(size_t i=0; i<lo_colMap->getNodeNumElements(); i++)
       TEST_EQUALITY(recv_colgids[i],lo_colMap->getGlobalElement(i));
- 
+
   }
 
   /*********************************************************************************************************************/
   /* How this guy works:
      num_p1_nodes - number of nodes in the p=1 mesh
-     p1_gold_in   - input vector for the lo_basis 
+     p1_gold_in   - input vector for the lo_basis
      p2_gold_in   - output vector of linear interpolation from lo_basis to hi_basis
-     
+
   */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree, std::vector<Scalar> &lo_gold_in, std::vector<Scalar> &hi_gold_out,const std::string & hi_basis, const std::string lo_basis = "hgrad_line_c1")
@@ -833,8 +1623,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO; 
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -861,9 +1651,9 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     FCi elem_to_node;
     RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_p1_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
-    fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
+    fineLevel.Set("pcoarsen: element to node map",rcp(&elem_to_node,false));
 
-    // only one NS vector 
+    // only one NS vector
     LocalOrdinal NSdim = 1;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     nullSpace->setSeed(846930886);
@@ -872,8 +1662,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 
     // ParameterList
     ParameterList Params;
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis",lo_basis);
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis",lo_basis);
 
     // Build P
     RCP<MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO> > IPCFact = rcp(new MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO>());
@@ -938,7 +1728,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     s_codeOutput->update(-1.0,*s_OutVec,1.0);
     Teuchos::Array<MT> norm2(1);
     s_codeOutput->norm2(norm2());
-    
+
 
     if(!MyPID) printf("Diff norm = %10.4e\n",norm2[0]);
 
@@ -946,8 +1736,11 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 
 
  /*********************************************************************************************************************/
- TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
     // GOLD vector collection
     std::vector<Scalar> p2_gold_in = {/*0,*/1,2,3,4,5,6,7,8,/*9*/};//Ignore Dirichlet unknowns
     std::vector<Scalar> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
@@ -957,8 +1750,11 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
 
 
 /*********************************************************************************************************************/
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
     // GOLD vector collection
     size_t total_num_points=10;
     int degree=3;
@@ -983,8 +1779,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
 
     // GOLD vector collection
     size_t total_num_points=10;
@@ -1012,11 +1811,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -1026,8 +1826,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1057,7 +1857,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -1066,26 +1866,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     //     if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -1095,8 +1896,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1125,7 +1926,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -1134,25 +1935,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -1162,8 +1964,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1192,7 +1994,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -1201,14 +2003,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
@@ -1217,13 +2019,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 
 /*********************************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class Basis>
-bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)			       
+bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)
   {
 #   include "MueLu_UseShortNames.hpp"
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef Intrepid2::CellTools<typename Node::device_type::execution_space> CellTools;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1232,10 +2034,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     typedef Intrepid2::FieldContainer<MT> FC;
 #endif
     out << "version: " << MueLu::Version() << std::endl;
-    
+
     bool success = true;
     int combinationTestedCount = 0;
-    
+
     // Contruct a container that has the reference coordinates for the domain cell topology
     RCP<Basis> linearBasis = rcp( new Basis(1,ptype) );
     shards::CellTopology cellTopo = linearBasis->getBaseCellTopology();
@@ -1249,7 +2051,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     int numCells = 2;
     double xTranslationForCell1 = 2.0; // shift to the right by 2
     double pointTol = 1e-12;
-    
+
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     resize(physCellVertices,numCells,vertexCount,spaceDim);
     resize(physCellVerticesPermuted,numCells,vertexCount,spaceDim);
@@ -1278,7 +2080,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     }
     Symmetries cellSymmetries = Symmetries::shardsSymmetries(cellTopo);
     int symmetryCount = cellSymmetries.getPermutationCount();
-    
+
     for(int highPolyDegree=1; highPolyDegree<max_degree; highPolyDegree++) {
       FC hi_DofCoords, lo_DofCoords;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1291,16 +2093,16 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       hi_DofCoords.resize(hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi_dci->getDofCoords(hi_DofCoords);
 #endif
-      
+
       // we'll want to create a global numbering for both high and low order bases
       // --> we make a lambda function that accepts FC with dof coords as argument
       auto getTwoCellNumbering = [pointTol,numCells,spaceDim,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
       {
         int dofsPerCell = dofCoords.dimension(0);
-        
+
         vector<double> coords(spaceDim);
         UniqueNumbering numbering(spaceDim, pointTol);
-        
+
         // number the guys on cell 0 first, then the ones on cell 1:
         for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
         {
@@ -1322,11 +2124,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         }
         return numbering;
       };
-      
+
       UniqueNumbering hiNumbering = getTwoCellNumbering(hi_DofCoords);
       out << "Total dof count two cells of degree " << highPolyDegree << ": ";
       out << hiNumbering.totalCount() << endl;
-      
+
       for(int lowPolyDegree=1; lowPolyDegree<highPolyDegree; lowPolyDegree++) {
         out << "Testing with high order " << highPolyDegree << ", low order " << lowPolyDegree << endl;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -1340,7 +2142,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         lo_dci->getDofCoords(lo_DofCoords);
 #endif
         UniqueNumbering loNumbering = getTwoCellNumbering(lo_DofCoords);
-        
+
         // print out the high/low global numbering along the x=1 interface:
         out << "Low-order global IDs along intercell interface:\n";
         for (int lowOrdinal=0; lowOrdinal<lo->getCardinality(); lowOrdinal++)
@@ -1381,12 +2183,12 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             out << coords[coords.size()-1] << ")\n";
           }
         }
-        
+
         // Get the candidates
         double threshold = 1e-10;
         std::vector<std::vector<size_t> > candidates;
         MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_DofCoords,threshold,candidates);
-        
+
         // Correctness Test 1: Make sure that there are no duplicates in the representative lists / no low DOF has no candidates
         std::vector<bool> is_candidate(hi_DofCoords.dimension(0),false);
         bool no_doubles = true;
@@ -1400,7 +2202,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           out<<"ERROR: "<<name<<" The 'no duplicates' test fails w/ lo/hi = "<< lowPolyDegree <<"/"<< highPolyDegree <<std::endl;
           return false;
         }
-        
+
         // Correctness Test 2: Try 2 elements, in all possible relative orientations, and confirm that the
         //                     "lowest global ordinal" tie-breaker always returns the same thing for both neighbors
         for (int permOrdinal0=0; permOrdinal0<symmetryCount; permOrdinal0++)
@@ -1414,13 +2216,14 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               physCellVerticesPermuted(0,vertexOrdinal,d) = physCellVertices(0,mappedVertexOrdinal,d);
             }
           }
-          
+
           // brute force search for the side of cell shared with neighbor
           // this is the one that has points with x coordinates equal to 1.0
           // we'll want to do this once for cell 0, and once for cell 1, so we make it a lambda
           // (NOTE: this will need to change for non-hypercube topology support)
           auto searchForX1Side = [cellTopo,physCellVerticesPermuted,spaceDim](int cellOrdinal) -> int
           {
+
             // Line<2> gives wrong answers for getSideCount() and getNodeCount(), so we handle 1D case separately:
             if (spaceDim == 1)
             {
@@ -1456,10 +2259,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             }
             return -1;
           };
-          
+
           int cell0Side = searchForX1Side(0);
           //        out << "cell 0 side is " << cell0Side << endl;
-          
+
           for (int permOrdinal1=0; permOrdinal1<symmetryCount; permOrdinal1++)
           {
             vector<int> perm1 = cellSymmetries.getPermutation(permOrdinal1);
@@ -1483,30 +2286,31 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
             int cell1Side = searchForX1Side(1);
-            
+
             /*
              We want to verify that the neighboring cells (as permuted) agree on their
              representation of the low-order basis in their selection of high-order basis
              members.  It suffices to check that the *set* of candidate high-order basis functions
              is the same; then for any global numbering the "lowest global number" tie-breaker
              will select the same function.
-             
+
              The logic is this.  We have:
              - a global numbering for the physical dof coords of the coarse discretization
              - a global numbering for the physical dof coords of the fine discretization
              - a local map from lo to hi on the reference cell
              - a map from local dofs on each cell to the physical dof coords for the {lo|hi} basis
-             
+
              On each cell, then, we can map from the local low dof ordinal to the local high dof ordinal.
              At the same time, we can map the local ordinals for high and low to global ordinals, giving
              us a mapping from global low ordinals to global high ordinals.  We then can compare the mapping
              to verify that the two cells agree.
              */
-            
+
             auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering, spaceDim]
             (int cellOrdinal, int sideOrdinal) -> map<int, set<int>>
             {
               map<int,set<int>> globalLowToHighMap;
+
               vector<int> cell_loDofOrdinals = localDofOrdinalsForSide(lo, sideOrdinal);
               for (int lowLocalOrdinal : cell_loDofOrdinals)
               {
@@ -1530,10 +2334,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               }
               return globalLowToHighMap;
             };
-            
+
             map<int,set<int>> cell0_mapping = constructMap(0,cell0Side);
             map<int,set<int>> cell1_mapping = constructMap(1,cell1Side);
-            
+
             // verify the two maps are identical:
             if (cell0_mapping.size() != cell1_mapping.size())
             {
@@ -1587,12 +2391,12 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
                     out << "}\n";
                   }
                 }
-                
+
                 cell0_it++;
                 cell1_it++;
               }
             }
-            
+
             combinationTestedCount++;
           }
         }
@@ -1601,15 +2405,15 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     cout << "Tested " << combinationTestedCount << " lo/hi, two-cell permutation combinations.\n";
     return success;
   }
- 
+
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_LINE_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -1625,13 +2429,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -1647,13 +2451,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_QUAD_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -1671,13 +2475,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Equispaced, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -1693,13 +2497,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateRepresentativeBasisNodes_HEX_Spectral, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
@@ -1715,7 +2519,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 
     // NOTE: We need more tests for this that do pn to pm
@@ -1724,7 +2528,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;    
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
@@ -1749,15 +2553,15 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     // Lo
     RCP<LoBasis> lo = rcp(new LoBasis());
     size_t numLo = lo->getCardinality();
-    
+
     for(int i=0;i<max_degree; i++) {
       RCP<HiBasis> hi = rcp(new HiBasis(i,Intrepid2::POINTTYPE_EQUISPACED));
       size_t numHi    = hi->getCardinality();
-      
-      // The quad-only stuff 
+
+      // The quad-only stuff
       std::vector<size_t> lo_node_in_hi;
       FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
       FCi hi_e2n("hi_e2n",1,numHi);
       FCi lo_e2n("lo_e2n",1,numLo);
@@ -1765,13 +2569,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
       FCi hi_e2n(1,numHi);
       FCi lo_e2n(1,numLo);
-#endif  
+#endif
 
       // Dummy elem2node map
       Teuchos::Array<GO> hi_colids(numHi);
       for(size_t j=0; j<numHi; j++) {
-	hi_e2n(0,j)    = j;
-	hi_colids[j] = j;
+        hi_e2n(0,j)    = j;
+        hi_colids[j] = j;
       }
 
       // Dummy column map
@@ -1785,11 +2589,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // Compare and make sure we're cool
       bool node_diff = false;
       for(size_t j=0; j<numLo; j++)
-	if(lo_node_in_hi[j]!=(size_t)lo_e2n(0,j)) node_diff=true;
+        if(lo_node_in_hi[j]!=(size_t)lo_e2n(0,j)) node_diff=true;
 #if 0
       printf("[%d] Comparison = ",i);
       for(size_t j=0; j<numLo; j++)
-	printf("%d|%d ",(int)lo_node_in_hi[j],(int)lo_e2n(0,j));
+        printf("%d|%d ",(int)lo_node_in_hi[j],(int)lo_e2n(0,j));
       printf("\n");
 #endif
       TEST_EQUALITY(node_diff,false);
@@ -1799,7 +2603,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 
   /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     // NOTE: We need more tests for this that do pn to pm
   #   include "MueLu_UseShortNames.hpp"
@@ -1826,7 +2630,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
     {
       //QUAD
-      // A one element test with Kirby-numbered nodes where the top edge is not owned      
+      // A one element test with Kirby-numbered nodes where the top edge is not owned
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
 #else
@@ -1848,55 +2652,55 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         int lo_numOwnedNodes=0, lo_numOwnedNodes_mk2=0;
         FC hi_dofCoords;
 
-	// El2node / ownership / colmap
-	Teuchos::Array<GO> hi_colids(Nn);
+        // El2node / ownership / colmap
+        Teuchos::Array<GO> hi_colids(Nn);
         for(int i=0; i<Nn; i++) {
-	  hi_colids[i] = i;
+          hi_colids[i] = i;
           hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
-	Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
-	
-	/*** Do stuff the injection way ***/
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+        Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
+
+        /*** Do stuff the injection way ***/
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 #else
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif  
+#endif
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
 
-	/*** Do stuff the representative way ***/
-	RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
-	FCi lo_elemToHiRepresentativeNode;
-	double threshold = 1e-10;
-	std::vector<std::vector<size_t> > candidates;
-	MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_dofCoords,threshold,candidates);
-	MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
-	MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
+        /*** Do stuff the representative way ***/
+        RCP<const Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_colids(),0,comm);
+        FCi lo_elemToHiRepresentativeNode;
+        double threshold = 1e-10;
+        std::vector<std::vector<size_t> > candidates;
+        MueLu::MueLuIntrepid::GenerateRepresentativeBasisNodes<Basis,FC>(*lo,hi_dofCoords,threshold,candidates);
+        MueLu::MueLuIntrepid::GenerateLoNodeInHiViaGIDs(candidates,hi_e2n,hi_colMap,lo_elemToHiRepresentativeNode);
+        MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives(hi_e2n,hi_owned,lo_elemToHiRepresentativeNode,lo_e2n_mk2,lo_owned_mk2,hi_to_lo_map_mk2,lo_numOwnedNodes_mk2);
 
-	// Compare stuff
+        // Compare stuff
         TEST_EQUALITY(lo_numOwnedNodes,2);
         TEST_EQUALITY(lo_numOwnedNodes_mk2,2);
 
-	size_t num_lo_nodes_located=0;
+        size_t num_lo_nodes_located=0;
         for(size_t i=0;i<hi_to_lo_map.size(); i++) {
           if(hi_to_lo_map[i] != Teuchos::OrdinalTraits<LO>::invalid())
             num_lo_nodes_located++;
         }
-	TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
-	TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
+        TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
+        TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
 
-	for(size_t i=0; i<lo_e2n.dimension(0); i++) 
-	  for(size_t j=0; j<lo_e2n.dimension(1); j++) 
-	    TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
+        for(size_t i=0; i<lo_e2n.dimension(0); i++)
+          for(size_t j=0; j<lo_e2n.dimension(1); j++)
+            TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
 
-	for(size_t i=0; i<(size_t) lo_owned.size(); i++) 
-	  TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);
+        for(size_t i=0; i<(size_t) lo_owned.size(); i++)
+          TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);
 
-	TEST_EQUALITY(hi_to_lo_map.size(),hi_to_lo_map_mk2.size());
-	for(size_t i=0; i<(size_t) hi_to_lo_map.size(); i++) 
-	  TEST_EQUALITY(hi_to_lo_map[i],hi_to_lo_map_mk2[i]);
+        TEST_EQUALITY(hi_to_lo_map.size(),hi_to_lo_map_mk2.size());
+        for(size_t i=0; i<(size_t) hi_to_lo_map.size(); i++)
+          TEST_EQUALITY(hi_to_lo_map[i],hi_to_lo_map_mk2[i]);
 
       }
     }//end QUAD
@@ -1905,8 +2709,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
 
 /*********************************************************************************************************************/
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
     int hi_degree=3;
     int lo_degree=2;
     // GOLD vector collection
@@ -1916,7 +2723,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
@@ -1942,8 +2749,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
   }
 
 /*********************************************************************************************************************/
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
     int hi_degree=4;
     int lo_degree=3;
     // GOLD vector collection
@@ -1953,7 +2763,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
@@ -1979,8 +2789,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
   }
 
 /*********************************************************************************************************************/
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_LINE_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
     int hi_degree=4;
     int lo_degree=2;
     // GOLD vector collection
@@ -1990,7 +2803,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     size_t num_lo_points = num_p1_points + (num_p1_points-1) *(lo_degree-1);
 
     std::vector<Scalar> lo_gold_in(num_lo_points);
-    std::vector<Scalar> hi_gold_out(num_hi_points);				    
+    std::vector<Scalar> hi_gold_out(num_hi_points);
     for(size_t i=0; i<num_p1_points; i++) {
       lo_gold_in[i] = i;
       hi_gold_out[i] = i;
@@ -2017,11 +2830,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -2031,8 +2845,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -2061,7 +2875,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -2070,25 +2884,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -2098,8 +2913,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -2128,7 +2943,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -2137,25 +2952,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c3");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c3");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -2165,8 +2981,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -2195,7 +3011,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -2204,14 +3020,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
     //    Params.set("rap: fix zero diagonals",true);
-    Params.set("ipc: hi basis",hi_basis);
-    Params.set("ipc: lo basis","hgrad_line_c2");
+    Params.set("pcoarsen: hi basis",hi_basis);
+    Params.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("verbosity","high");
     Params.set("max levels",2);
     Params.set("coarse: max size",100);
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
-      
+
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
@@ -2219,11 +3035,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -2233,8 +3050,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -2263,7 +3080,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -2275,23 +3092,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("max levels",3);
     Params.set("coarse: max size",5);
 
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
 
-    level1.set("ipc: hi basis",hi_basis);
-    level1.set("ipc: lo basis","hgrad_line_c3");
+    level1.set("pcoarsen: hi basis",hi_basis);
+    level1.set("pcoarsen: lo basis","hgrad_line_c3");
     Params.set("level 1",level1);
 
-    level2.set("ipc: hi basis","hgrad_line_c3");
-    level2.set("ipc: lo basis","hgrad_line_c2");
+    level2.set("pcoarsen: hi basis","hgrad_line_c3");
+    level2.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
-      
+
 #if 0
     // DEBUG
     ParameterList dump;
     dump.set("A","{0,1,2}");
     dump.set("P","{0,1}");
     dump.set("R","{0,1}");
+    dump.set("pcoarsen: element to node map","{0,1,2}");
     Params.set("export data",dump);
 #endif
 
@@ -2302,11 +3120,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
 
 /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -2316,8 +3135,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO; 
-    typedef Node  NO;  
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
@@ -2346,7 +3165,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Teuchos::Array<MT> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
-    
+
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
@@ -2359,23 +3178,172 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("max levels",3);
     Params.set("coarse: max size",100);
 
-    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
 
     level1.set("multigrid algorithm","pcoarsen");
-    level1.set("ipc: hi basis",hi_basis);
-    level1.set("ipc: lo basis","hgrad_line_c1");
+    level1.set("pcoarsen: hi basis",hi_basis);
+    level1.set("pcoarsen: lo basis","hgrad_line_c1");
     Params.set("level 1",level1);
 
     level2.set("multigrid algorithm","sa");
     Params.set("level 2",level2);
-      
+
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0, level1, level2, level3;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("rap: fix zero diagonals",true);
+    Params.set("verbosity","high");
+    Params.set("max levels",4);
+    Params.set("coarse: max size",100);
+
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+
+    level1.set("pcoarsen: hi basis","hgrad_line_c3");
+    level1.set("pcoarsen: lo basis","hgrad_line_c2");
+    Params.set("level 1",level1);
+
+    level2.set("pcoarsen: hi basis","hgrad_line_c2");
+    level2.set("pcoarsen: lo basis","hgrad_line_c1");
+    Params.set("level 2",level2);
+
+    level3.set("multigrid algorithm","sa");
+    Params.set("level 3",level3);
+
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+#else
+    typedef Intrepid2::FieldContainer<LO> FCi;
+#endif
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    FCi elem_to_node;
+    RCP<Matrix> A = TestHelpers::Build1DPseudoPoissonHigherOrder<SC,LO,GO,NO>(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("rap: fix zero diagonals",true);
+    Params.set("verbosity","high");
+    Params.set("max levels",5);
+    Params.set("coarse: max size",10);
+
+    level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+
+    Params.set("pcoarsen: element","hgrad_line_c");
+    Params.set("pcoarsen: schedule","{3,2,1}");
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
   /*********************************************************************************************************************/
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetP1NodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
@@ -2402,11 +3370,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p2, Scalar, LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4_to_p3_to_p2, Scalar, LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node)
-
-
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2_to_p1_sa, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_manual, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3_to_p2_to_p1_sa_schedule, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, BuildSampleElementToNodeMapThreeElementQuad, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, UniqueNumbering, Scalar, LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
 
+#define MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, X)\
+  typedef shards::Line<2> Line; \
+  typedef shards::Quadrilateral<4> Quad; \
+  typedef shards::Hexahedron<8> Hexahedron; \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Equispaced_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsSerial_Spectral_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Equispaced_##X##petra, Scalar, LO, GO, Node, Hexahedron) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Line) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Quad) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(IntrepidPCoarsenFactory, FindSeedsParallel_Spectral_##X##petra, Scalar, LO, GO, Node, Hexahedron)
+
+#  define MUELU_ETI_GROUP_EPETRA(Scalar, LO, GO, Node) \
+  MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, E)
+
+#  define MUELU_ETI_GROUP_TPETRA(Scalar, LO, GO, Node) \
+  MUELU_ETI_GROUP_XPETRA(Scalar, LO, GO, Node, T)
+
+#include <MueLu_ETI_4arg_Xpetra.hpp>
 
 } // namespace MueLuTests
 #endif

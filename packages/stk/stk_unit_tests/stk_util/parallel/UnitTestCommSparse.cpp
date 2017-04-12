@@ -32,7 +32,7 @@
 // 
 
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>  // for comm_recv_sizes
 #include <stk_util/parallel/MPI.hpp>
 #include <gtest/gtest.h>
@@ -100,11 +100,7 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
     }
     else {
       unsigned expected = p+1;
-      if (recv_bufs[p].size() != expected) {
-        std::ostringstream msg;
-        msg<<"proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl;
-        std::cout<<msg.str()<<std::endl;
-      }
+      ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
       EXPECT_EQ(expected, recv_bufs[p].size());
     }
   }

@@ -239,6 +239,13 @@ public:
     return result;
   }
 
+  void print( std::ostream &outStream ) const {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      outStream << "V[" << i << "]: ";
+      vecs_[i]->print(outStream);
+    }
+  }
+
   // Methods that do not exist in the base class
 
   Teuchos::RCP<const Vector<Real> > get(size_type i) const {

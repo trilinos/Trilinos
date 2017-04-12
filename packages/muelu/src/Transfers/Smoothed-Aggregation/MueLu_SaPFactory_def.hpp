@@ -76,6 +76,12 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
 
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
+
     return validParamList;
   }
 
@@ -110,6 +116,7 @@ namespace MueLu {
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+    const ParameterList& pL = GetParameterList();
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
@@ -124,7 +131,12 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    RCP<ParameterList> APparams = rcp(new ParameterList);
+    RCP<ParameterList> APparams;
+    if(pL.isSublist("matrixmatrix: kernel params")) 
+      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+    else 
+      APparams= rcp(new ParameterList);
+    
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
@@ -133,8 +145,10 @@ namespace MueLu {
       if (APparams->isParameter("graph"))
         finalP = APparams->get< RCP<Matrix> >("graph");
     }
+    // By default, we don't need global constants for SaP
+    APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
+    APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-    const ParameterList& pL = GetParameterList();
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
@@ -160,7 +174,7 @@ namespace MueLu {
         Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
-
+	
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);

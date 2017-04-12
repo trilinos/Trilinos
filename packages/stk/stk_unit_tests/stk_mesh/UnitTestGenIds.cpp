@@ -139,7 +139,7 @@ TEST(GeneratedIds, StkMeshApproach1)
 
     stk::mesh::Selector select_owned( stkMeshMetaData.locally_owned_part() );
 
-    std::vector<unsigned> count;
+    std::vector<size_t> count;
     stk::mesh::count_entities( select_owned , stkMeshBulkData , count );
     size_t numIdsThisProc = count[stk::topology::NODE_RANK];
 

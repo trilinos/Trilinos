@@ -924,21 +924,15 @@ int main(int argc, char *argv[]) {
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   if (inputSolverList.isParameter("linear P1")) {
-    printf("Activating Linear Pn-to-P1 coarsening...\n");
+    printf("Activating Linear scheduled p-coarsening...\n");
     char hi_basis[80];
-    sprintf(hi_basis,"hgrad_quad_c%d",degree);
     Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
     Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
-    level0.set("multigrid algorithm","pcoarsen");
-    //    level0.set("ipc: hi basis",hi_basis);
-    //    level0.set("ipc: lo basis","hgrad_quad_c1");
-
-    mymuelu.set("ipc: hi basis",hi_basis);
-    mymuelu.set("ipc: lo basis","hgrad_quad_c1");
-
-    level0.set("ipc: element to node map",rcp(&elemToNodeI2,false));
+    level0.set("pcoarsen: element to node map",rcp(&elemToNodeI2,false));
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
+
+
 
   // Global arrays in Tpetra format
   crs_matrix_type StiffMatrix(globalMapG, 20*numFieldsG);
@@ -1174,7 +1168,7 @@ int main(int argc, char *argv[]) {
     if ( (smooType == "SPARSE BLOCK RELAXATION" || smooType == "BLOCK RELAXATION") && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
       std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-      int numLocalParts;
+      int numLocalParts = -1;
       std::cout << "setting \"partitioner: map\"" << std::endl;
       if (seedType == "node") {
         ssl.set("partitioner: map", nodeSeeds);
@@ -1186,15 +1180,17 @@ int main(int argc, char *argv[]) {
         ssl.set("partitioner: map", cellSeeds);
         numLocalParts = numCellSeeds;
       }
-      std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-      ssl.set("partitioner: local parts", numLocalParts);
+      if(numLocalParts!=-1){
+	std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	ssl.set("partitioner: local parts", numLocalParts);
+      }
     }
     if(sl.isParameter("coarse: type")) {
 	std::string coarseType = sl.get<std::string>("coarse: type");
 	if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
 	  ParameterList &ssl = sl.sublist("coarse: params");
 	  std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-	  int numLocalParts;
+	  int numLocalParts=-1;
 	  std::cout << "setting \"partitioner: map\"" << std::endl;
 	  if (seedType == "node") {
 	    ssl.set("partitioner: map", nodeSeeds);
@@ -1206,8 +1202,10 @@ int main(int argc, char *argv[]) {
 	    ssl.set("partitioner: map", cellSeeds);
 	    numLocalParts = numCellSeeds;
 	  }
-	  std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-	  ssl.set("partitioner: local parts", numLocalParts);
+	  if(numLocalParts!=-1){
+	    std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	    ssl.set("partitioner: local parts", numLocalParts);
+	  }
 	}
     }
 

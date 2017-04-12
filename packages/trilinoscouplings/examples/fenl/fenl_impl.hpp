@@ -369,6 +369,8 @@ public:
       typedef ResponseComputation< FixtureType , LocalVectorType > ResponseComputationType ;
 
       Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Impl::Timer newton_clock ;
+      newton_clock.reset();
 
       LocalMatrixType jacobian = g_jacobian.getLocalMatrix();
 
@@ -403,6 +405,8 @@ public:
                                              dev_config_elem , qd );
 
       // Create boundary condition functor
+      // This also sets the boundary conditions in the solution vector
+      // and zeros out non BC values
       const DirichletComputationType dirichlet(
         fixture , nodal_solution , jacobian , nodal_residual ,
         2 /* apply at 'z' ends */ ,
@@ -422,7 +426,6 @@ public:
       // Teuchos::RCP<Teuchos::FancyOStream> out =
       //   Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false));
       // out->setShowProcRank(true);
-
 
       Teuchos::RCP< Tpetra::Operator<Scalar,int,int,NodeType> > precOp;
       for ( perf.newton_iter_count = 0 ;
@@ -495,6 +498,9 @@ public:
 
         //--------------------------------
         // Solve for nonlinear update
+
+        // Zero out newton update vector before solve
+        g_nodal_delta.putScalar(0.0);
 
         result_struct cgsolve;
         if (use_belos) {
@@ -660,12 +666,17 @@ public:
         g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
         g_nodal_solution_dp.doImport (g_nodal_solution_no_overlap_dp, import, Tpetra::REPLACE);
 
+        Device::fence();
+        wall_clock.reset();
+
         Kokkos::deep_copy( nodal_residual , 0.0 );
         Kokkos::deep_copy( nodal_residual_dp , 0.0 );
 
         elemcomp_dp.apply();
-
         dirichlet_dp.apply();
+
+        Device::fence();
+        perf.tangent_fill_time = wall_clock.seconds();
 
         result_struct cgsolve;
         if (use_belos) {
@@ -723,6 +734,9 @@ public:
         response = response_and_gradient[0];
 #endif
       }
+
+      Device::fence();
+      perf.newton_total_time = newton_clock.seconds();
     }
 };
 
@@ -771,10 +785,12 @@ Perf fenl(
   problem.perf.prec_setup_time = 0;
   problem.perf.prec_apply_time  = 0;
   problem.perf.cg_total_time = 0;
+  problem.perf.newton_total_time = 0;
   problem.perf.cg_iter_count = 0;
   problem.perf.ensemble_cg_iter_count.clear();
   problem.perf.import_time = 0;
   problem.perf.fill_time = 0;
+  problem.perf.tangent_fill_time = 0;
   problem.perf.bc_time = 0;
 
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {

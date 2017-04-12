@@ -159,6 +159,26 @@ public:
   }
 }; // class UniformlyRandom
 
+// Multiply element by a uniformly distributed random number
+// between lower and upper
+template<class Real> 
+class UniformlyRandomMultiply : public UnaryFunction<Real> {
+private:
+  const Real lower_;
+  const Real upper_;
+
+public:
+  UniformlyRandomMultiply( const Real &lower = 0.0, const Real &upper = 1.0) : 
+    lower_(lower), upper_(upper) {
+  }
+
+  Real apply( const Real &x ) const {
+    return x*((static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_);
+  }
+}; // class UniformlyRandom
+
+
+
 // Returns max(x,s) where s is the given scalar
 template<class Real>
 class ThresholdUpper : public UnaryFunction<Real> {

@@ -47,6 +47,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MultiLevelOperator.h"
 #include "ml_ValidateParameters.h"
+#include "ml_RefMaxwell.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -66,7 +67,8 @@ enum EMLProblemType {
   ML_PROBTYPE_NONSYMMETRIC_SMOOTHED_AGGREGATION,
   ML_PROBTYPE_DOMAIN_DECOMPOSITION,
   ML_PROBTYPE_DOMAIN_DECOMPOSITION_ML,
-  ML_PROBTYPE_MAXWELL
+  ML_PROBTYPE_MAXWELL,
+  ML_PROBTYPE_REFMAXWELL
 };
 const std::string BaseMethodDefaults_valueNames_none = "none";
 const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
@@ -76,7 +78,8 @@ const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
   "NSSA",
   "DD",
   "DD-ML",
-  "maxwell"
+  "maxwell",
+  "refmaxwell"
   );
 
 
@@ -191,6 +194,9 @@ void MLPreconditionerFactory::initializePrec(
   if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::MLPreconditionerFactory::initializePrec(...) ...\n";
 
+  // Get the problem type
+  const EMLProblemType problemType = BaseMethodDefaults_validator->getIntegralValue(*paramList_,BaseMethodDefaults_name,BaseMethodDefaults_default);
+
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 #ifdef _DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
@@ -215,6 +221,7 @@ void MLPreconditionerFactory::initializePrec(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
+  RCP<const Epetra_CrsMatrix> epetraFwdCrsMat = rcp_dynamic_cast<const Epetra_CrsMatrix>(epetraFwdRowMat);
 
   //
   // Get the concrete preconditioner object
@@ -227,11 +234,16 @@ void MLPreconditionerFactory::initializePrec(
   RCP<EpetraLinearOp>
     epetra_precOp = rcp_dynamic_cast<EpetraLinearOp>(defaultPrec->getNonconstUnspecifiedPrecOp(),true);
   //
-  // Get the embedded ML_Epetra::MultiLevelPreconditioner object if it exists
+  // Get the embedded ML_Epetra Preconditioner object if it exists
   //
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_precOp;
-  if(epetra_precOp.get())
-    ml_precOp = rcp_dynamic_cast<ML_Epetra::MultiLevelPreconditioner>(epetra_precOp->epetra_op(),true);
+  Teuchos::RCP<ML_Epetra::RefMaxwellPreconditioner> rm_precOp;
+  if(epetra_precOp.get()) {
+    if(problemType == ML_PROBTYPE_REFMAXWELL)
+      rm_precOp = rcp_dynamic_cast<ML_Epetra::RefMaxwellPreconditioner>(epetra_precOp->epetra_op(),true);
+    else
+      ml_precOp = rcp_dynamic_cast<ML_Epetra::MultiLevelPreconditioner>(epetra_precOp->epetra_op(),true);
+  }
   //
   // Get the attached forward operator if it exists and make sure that it matches
   //
@@ -245,21 +257,24 @@ void MLPreconditionerFactory::initializePrec(
        ,"ML requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
        );
   }
+  // NOTE: No such check exists for RefMaxwell
+
   //
   // Perform initialization if needed
   //
-  const bool startingOver = (ml_precOp.get() == NULL);
+  const bool startingOver = (ml_precOp.get() == NULL && rm_precOp.get() == NULL);
   if(startingOver) 
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial ML_Epetra::MultiLevelPreconditioner object...\n";
     timer.start(true);
     // Create the initial preconditioner: DO NOT compute it yet
-    ml_precOp = rcp(
-      new ML_Epetra::MultiLevelPreconditioner(
-        *epetraFwdRowMat, paramList_->sublist(MLSettings_name),false
-        )
-      );
+
+    if(problemType==ML_PROBTYPE_REFMAXWELL)
+      rm_precOp = rcp(new ML_Epetra::RefMaxwellPreconditioner(*epetraFwdCrsMat, paramList_->sublist(MLSettings_name),false));
+    else
+      ml_precOp = rcp(new ML_Epetra::MultiLevelPreconditioner(*epetraFwdRowMat, paramList_->sublist(MLSettings_name),false));
+
     
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
@@ -271,29 +286,45 @@ void MLPreconditionerFactory::initializePrec(
     // ML_Epetra::MultiLevelPreconditioner object.  This would result in better validation
     // and faster code.
     // Set parameters if the list exists
-    if(paramList_.get())
-      TEUCHOS_TEST_FOR_EXCEPT(
-        0!=ml_precOp->SetParameterList(paramList_->sublist(MLSettings_name))
-        );
-    // Initialize the structure for the preconditioner
-    //        TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->Initialize());
+    if(paramList_.get()) {
+      if (problemType==ML_PROBTYPE_REFMAXWELL) {
+	TEUCHOS_TEST_FOR_EXCEPT(0!=rm_precOp->SetParameterList(paramList_->sublist(MLSettings_name)));
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->SetParameterList(paramList_->sublist(MLSettings_name)));
+      }
+    }
   }
   //
   // Attach the epetraFwdOp to the ml_precOp to guarantee that it will not go away
   //
-  set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(ml_precOp),
-    Teuchos::POST_DESTROY, false);
+  if (problemType==ML_PROBTYPE_REFMAXWELL)
+    set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(rm_precOp),
+		   Teuchos::POST_DESTROY, false);
+  else
+    set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(ml_precOp),
+		   Teuchos::POST_DESTROY, false);
   //
   // Update the factorization
   //
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
-  if (startingOver) {
-    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+  if (problemType==ML_PROBTYPE_REFMAXWELL) {
+    if (startingOver) {
+      TEUCHOS_TEST_FOR_EXCEPT(0!=rm_precOp->ComputePreconditioner());
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPT(0!=rm_precOp->ReComputePreconditioner());
+    }
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ReComputePreconditioner(paramList_->get<bool>(ReuseFineLevelSmoother_name)));
+    if (startingOver) {
+      TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ReComputePreconditioner(paramList_->get<bool>(ReuseFineLevelSmoother_name)));
+    }
   }
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
@@ -307,20 +338,23 @@ void MLPreconditionerFactory::initializePrec(
   //
   // Attach fwdOp to the ml_precOp
   //
-  set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(ml_precOp),
-    Teuchos::POST_DESTROY, false);
+  if (problemType==ML_PROBTYPE_REFMAXWELL)
+    set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(rm_precOp),
+		   Teuchos::POST_DESTROY, false);
+  else
+    set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(ml_precOp),
+		   Teuchos::POST_DESTROY, false);
   //
   // Initialize the output EpetraLinearOp
   //
   if(startingOver) {
     epetra_precOp = rcp(new EpetraLinearOp);
   }
-  epetra_precOp->initialize(
-    ml_precOp
-    ,epetraFwdOpTransp
-    ,EPETRA_OP_APPLY_APPLY_INVERSE
-    ,EPETRA_OP_ADJOINT_UNSUPPORTED  // ToDo: Look into adjoints again.
-    );
+  // ToDo: Look into adjoints again.
+  if (problemType==ML_PROBTYPE_REFMAXWELL)
+    epetra_precOp->initialize(rm_precOp,epetraFwdOpTransp,EPETRA_OP_APPLY_APPLY_INVERSE,EPETRA_OP_ADJOINT_UNSUPPORTED);  
+  else
+    epetra_precOp->initialize(ml_precOp,epetraFwdOpTransp,EPETRA_OP_APPLY_APPLY_INVERSE,EPETRA_OP_ADJOINT_UNSUPPORTED);
   //
   // Initialize the preconditioner
   //
@@ -353,6 +387,8 @@ void MLPreconditionerFactory::setParameterList(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
+
+  // Do not recurse
   paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
 
@@ -365,14 +401,20 @@ void MLPreconditionerFactory::setParameterList(
       *paramList_,BaseMethodDefaults_name,BaseMethodDefaults_default
       );
   if( ML_PROBTYPE_NONE != defaultType ) {
-    const std::string
-      defaultTypeStr = BaseMethodDefaults_valueNames[defaultType];
+    const std::string defaultTypeStr = BaseMethodDefaults_valueNames[defaultType];
+    
+    // ML will do validation on its own.  We don't need to duplicate that here.
     Teuchos::ParameterList defaultParams;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
-      ,Teuchos::Exceptions::InvalidParameterValue
-      ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recognized by ML!"
-      );
+    if(defaultType == ML_PROBTYPE_REFMAXWELL) {	
+      ML_Epetra::SetDefaultsRefMaxwell(defaultParams);
+    }
+    else {	
+      TEUCHOS_TEST_FOR_EXCEPTION(0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)				
+				 ,Teuchos::Exceptions::InvalidParameterValue
+				 ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recognized by ML!"
+				 );
+    }
+    
     // Note, the only way the above exception message could be generated is if
     // a default problem type was removed from ML_Epetra::SetDefaults(...).
     // When a new problem type is added to this function, it must be added to
@@ -386,9 +428,7 @@ void MLPreconditionerFactory::setParameterList(
     paramList_->sublist(MLSettings_name).setParametersNotAlreadySet(
       defaultParams);
   }
-#ifdef TEUCHOS_DEBUG
-  paramList->validateParameters(*this->getValidParameters(),0);
-#endif
+
 }
 
 
@@ -418,6 +458,9 @@ MLPreconditionerFactory::getParameterList() const
 RCP<const ParameterList>
 MLPreconditionerFactory::getValidParameters() const
 {
+  // NOTE: We're only going to use this function to genrate valid *Stratimikos* parameters.
+  // Since ML's parameters can be validated internally, we'll handle those separarely. 
+
 
   using Teuchos::rcp;
   using Teuchos::tuple;
@@ -441,7 +484,8 @@ MLPreconditionerFactory::getValidParameters() const
 	  "Set default parameters for a nonsymmetric smoothed aggregation method",
           "Set default parameters for a domain decomposition method",
           "Set default parameters for a domain decomposition method special to ML",
-          "Set default parameters for a Maxwell-type of linear operator"
+          "Set default parameters for a Maxwell-type of preconditioner",
+          "Set default parameters for a RefMaxwell-type preconditioner"
           ),
         tuple<EMLProblemType>(
           ML_PROBTYPE_NONE,
@@ -449,7 +493,8 @@ MLPreconditionerFactory::getValidParameters() const
 	  ML_PROBTYPE_NONSYMMETRIC_SMOOTHED_AGGREGATION,
           ML_PROBTYPE_DOMAIN_DECOMPOSITION,
           ML_PROBTYPE_DOMAIN_DECOMPOSITION_ML,
-          ML_PROBTYPE_MAXWELL
+          ML_PROBTYPE_MAXWELL,
+	  ML_PROBTYPE_REFMAXWELL
           ),
         BaseMethodDefaults_name
         )
@@ -464,20 +509,8 @@ MLPreconditionerFactory::getValidParameters() const
     pl->set(ReuseFineLevelSmoother_name,ReuseFineLevelSmoother_default,
       "Enables/disables the reuse of the fine level smoother.");
 
-/* 2007/07/02: rabartl:  The statement below should be the correct way to
- * get the list of valid parameters but it seems to be causing problems so
- * I am commenting it out for now.
- */
-/*
-    pl->sublist(
-      MLSettings_name, false,
-      "Parameters directly accepted by ML_Epetra interface."
-      ).setParameters(*rcp(ML_Epetra::GetValidMLPParameters()));
-*/
-    
-    {
-      ParameterList &mlSettingsPL = pl->sublist(
-        MLSettings_name, false,
+    ParameterList mlpl;    
+    pl->set(MLSettings_name,mlpl,
         "Sampling of the parameters directly accepted by ML\n"
         "This list of parameters is generated by combining all of\n"
         "the parameters set for all of the default problem types supported\n"
@@ -488,34 +521,12 @@ MLPreconditionerFactory::getValidParameters() const
         "it is used and see what defaults where set for each default problem\n"
         "type.  Warning! the parameters in this sublist are currently *not*\n"
         "being validated by ML!"
-        );
-      //std::cout << "\nMLSettings doc before = " << pl->getEntryPtr(MLSettings_name)->docString() << "\n";
-      { // Set of valid parameters (but perhaps not acceptable values)
-        for (
-          int i = 0;
-          i < implicit_cast<int>(BaseMethodDefaults_valueNames.size());
-          ++i
-          )
-        {
-          ParameterList defaultParams;
-          const std::string defaultTypeStr = BaseMethodDefaults_valueNames[i];
-          if (defaultTypeStr != BaseMethodDefaults_valueNames_none) {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
-              ,Teuchos::Exceptions::InvalidParameterValue
-              ,"Error, the ML problem type \"" << defaultTypeStr
-              << "\' is not recognized by ML!"
-              );
-            mlSettingsPL.setParameters(defaultParams);
-          }
-        }
-      }
-    }
+        );     
 
     validPL = pl;
 
   }
-
+  
   return validPL;
 
 }

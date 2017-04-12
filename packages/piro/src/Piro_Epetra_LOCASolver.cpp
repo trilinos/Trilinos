@@ -56,7 +56,11 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   observer(observer_),
   saveEigData(saveEigData_),
   locaStatusTest(locaStatusTest_),
-  utils(piroParams->sublist("NOX").sublist("Printing"))
+  utils(piroParams->sublist("NOX").sublist("Printing")),
+  totalNewtonIters(0),
+  totalKrylovIters(0),
+  totalLinSolves(0),
+  stepNum(0)
 {
   Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
@@ -367,10 +371,10 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   // Print stats
   bool print_stats = piroParams->get("Print Convergence Stats", true);
   if (print_stats) {
-    static int totalNewtonIters=0;
-    static int totalKrylovIters=0;
-    static int totalLinSolves = 0;
-    static int stepNum=0;
+    // static int totalNewtonIters=0;
+    // static int totalKrylovIters=0;
+    // static int totalLinSolves = 0;
+    // static int stepNum=0;
     int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
 
@@ -565,4 +569,12 @@ Piro::Epetra::LOCASolver::
 getGlobalDataNonConst()
 {
   return globalData; 
+}
+
+void Piro::Epetra::LOCASolver::resetCounters()
+{
+  totalNewtonIters=0;
+  totalKrylovIters=0;
+  totalLinSolves = 0;
+  stepNum=0;
 }

@@ -330,7 +330,7 @@ namespace Ioex {
     }
 
     // Check whether last token is an integer...
-    std::string str_id = tokens[tokens.size() - 1];
+    std::string str_id = tokens.back();
     std::size_t found  = str_id.find_first_not_of("0123456789");
     if (found == std::string::npos) {
       // All digits...
@@ -542,7 +542,7 @@ namespace Ioex {
     suffix[1] = 0;
 
     std::vector<std::string> tokens =
-        Ioss::tokenize(names[which_names[which_names.size() - 1]], suffix);
+      Ioss::tokenize(names[which_names.back()], suffix);
 
     if (tokens.size() <= 2) {
       return nullptr;
@@ -551,7 +551,7 @@ namespace Ioex {
     assert(tokens.size() > 2);
 
     // Check that suffix is a number -- all digits
-    size_t N = get_number(tokens[tokens.size() - 1]);
+    size_t N = get_number(tokens.back());
 
     if (N == 0) {
       return nullptr;

@@ -48,6 +48,9 @@ SET(SOURCES "")
 FILE(GLOB SOURCES *.cpp)
 #disable because of dependency on data file not in Trilinos
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/readAttributes.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToWriteMeshWithInternalSidesets.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/QueryExoVars.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/RenamedInputFields.cpp")
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_io_doc_tests

@@ -53,6 +53,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
 #     [DIRECTORY <directory>]
 #     [ADD_DIR_TO_NAME]
+#     [RUN_SERIAL]
 #     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
 #       | POSTFIX_AND_ARGS_0 <postfix0> <arg0> <arg1> ...
 #         POSTFIX_AND_ARGS_1 ... ]
@@ -83,6 +84,7 @@ INCLUDE(TribitsAddTestHelpers)
 # * `Determining Pass/Fail (TRIBITS_ADD_TEST())`_
 # * `Setting additional test properties (TRIBITS_ADD_TEST())`_
 # * `Running multiple tests at the same time (TRIBITS_ADD_TEST())`_
+# * `Setting timeouts for tests (TRIBITS_ADD_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_TEST())`_
 #
@@ -107,8 +109,8 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #      If specified, then the postfix
 #      ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is assumed **not** to be
-#      post-pended to ``<exeRootName>`` (see `Determining the Executable or
-#      Command to Run (TRIBITS_ADD_TEST())`_).
+#      post-pended to ``<exeRootName>`` (except on Windows platforms, see
+#      `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_).
 #
 #   ``NAME <testRootName>``
 #
@@ -328,9 +330,10 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``TIMEOUT <maxSeconds>``
 #
 #     If passed in, gives maximum number of seconds the test will be allowed
-#     to run before being timed-out.  This sets the CTest property
+#     to run before being timed-out and killed.  This sets the CTest property
 #     ``TIMEOUT``.  The value ``<maxSeconds>`` will be scaled by the value of
-#     `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.
+#     `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.  See `Setting timeouts for tests
+#     (TRIBITS_ADD_TEST())`_ for more details.
 #
 #     **WARNING:** Rather than just increasing the timeout for an expensive
 #     test, please try to either make the test run faster or relegate the test
@@ -379,7 +382,8 @@ INCLUDE(TribitsAddTestHelpers)
 #    ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 #
 # which is (by no coincidence) identical to how it is selected in
-# `TRIBITS_ADD_EXECUTABLE()`_.  This name can be altered by passing in
+# `TRIBITS_ADD_EXECUTABLE()`_ (see `Executable and Target Name
+# (TRIBITS_ADD_EXECUTABLE())`_).  This name can be altered by passing in
 # ``NOEXEPREFIX``, ``NOEXESUFFIX``, and ``ADD_DIR_TO_NAME`` as described in
 # `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_.
 #
@@ -393,6 +397,9 @@ INCLUDE(TribitsAddTestHelpers)
 # run.  If ``<exeRootName>`` is not an absolute path, then
 # ``${CMAKE_CURRENT_BINARY_DIR}/<exeRootName>`` is set as the executable to
 # run in this case.
+#
+# NOTE: On native Windows platforms, the ``NOEXESUFFIX`` will still allow
+# CTest to run exectuables that have the ``*.exe`` suffix.
 #
 # Whatever executable path is specified using this logic, if the executable is
 # not found, then when ``ctest`` goes to run the test, it will mark it as
@@ -530,8 +537,34 @@ INCLUDE(TribitsAddTestHelpers)
 # or whether the test(s) are added or not (depending on other arguments like
 # ``COMM``, ``XHOST``, etc.).
 #
-# There are many other test properties that one may want to set also and this
-# is the way it needs to be done.
+# The following built-in CTest test properties are set through `Formal
+# Arguments (TRIBITS_ADD_TEST())`_ or are otherwise automatically set by this
+# function and should **NOT** be overridden by direct calls to
+# ``SET_TESTS_PROPERTIES()``: ``ENVIRONMENT``, ``FAIL_REGULAR_EXPRESSION``,
+# ``LABELS``, ``PASS_REGULAR_EXPRESSION``, ``RUN_SERIAL``, ``TIMEOUT``, and
+# ``WILL_FAIL``.
+#
+# However, generally, other built-in CTest test properties can be set after
+# the test is added like show above.  Examples of test properties that can be
+# set using direct calls to ``SET_TESTS_PROPERTIES()`` include
+# ``ATTACHED_FILES``, ``ATTACHED_FILES_ON_FAIL``, ``COST``, ``DEPENDS``,
+# ``MEASUREMENT``, ``RESOURCE_LOCK`` and ``WORKING_DIRECTORY``.
+#
+# For example, one can set a dependency between two tests using::
+#
+#   TRIBITS_ADD_TEST_TEST( test_a [...]
+#      ADDED_TEST_NAME_OUT  test_a_TEST_NAME )
+#   
+#   TRIBITS_ADD_TEST_TEST( test_b [...]
+#      ADDED_TEST_NAME_OUT  test_z_TEST_NAME )
+#   
+#   IF (test_a_TEST_NAME AND test_b_TEST_NAME)
+#     SET_TESTS_PROPERTIES(${test_b_TEST_NAME}
+#       PROPERTIES DEPENDS ${test_a_TEST_NAME})
+#   ENDIF()
+#
+# This ensures that test ``test_b`` will always be run after ``test_a`` if
+# both tests are run by CTest.
 #
 # .. _Running multiple tests at the same time (TRIBITS_ADD_TEST()):
 #
@@ -600,6 +633,55 @@ INCLUDE(TribitsAddTestHelpers)
 # exceed an imposed budget of the number processes to be used.  The latter is
 # important when running multiple ``ctest -J<N>`` invocations on the same test
 # machine.
+#
+# .. _Setting timeouts for tests (TRIBITS_ADD_TEST()):
+#
+# **Setting timeouts for tests (TRIBITS_ADD_TEST())**
+#
+# By default, all tests have a default timeout (1500 seconds for most
+# projects, see `DART_TESTING_TIMEOUT`_).  That means that if they hang
+# (e.g. as is common when deadlocking occurs with multi-process MPI-based
+# tests and multi-threaded tests) then each test may hang for a long time,
+# causing the overall test suite to take a long time to complete.  For many
+# CMake projects, this default timeout is way too long.
+#
+# Timeouts for tests can be adjusted in a couple of ways.  First, a default
+# timeout for all tests is enforced by CTest given the configured value of the
+# variable `DART_TESTING_TIMEOUT`_ (typically set by the user but set by
+# default to 1500 for most projects).  This is a global timeout that applies
+# to all tests that don't otherwise have individual timeouts set using the
+# ``TIMEOUT`` CTest property (see below).  The value of
+# ``DART_TESTING_TIMEOUT`` in the CMake cache on input to CMake will get
+# scaled by `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_ and the scaled value gets
+# written into the file ``DartConfiguration.tcl`` as the field ``TimeOut``.
+# The``ctest`` executable reads ``TimeOut`` from this file when it runs to
+# determine the default global timeout.  The value of this default global
+# ``TimeOut`` can be overridden using the ``ctest`` argument ``--timeout
+# <seconds>`` (see `Overriding test timeouts`_).
+#
+# Alternatively, timeouts for individual tests can be set using the input
+# argument ``TIMEOUT`` (see `Formal Arguments (TRIBITS_ADD_TEST())`_ above).
+# The timeout value passed in to this function is then scaled by
+# ``${PROJECT_NAME}_SCALE_TEST_TIMEOUT`` and the scaled timeout is then set as
+# the CTest test property ``TIMEOUT``.  One can observe the value of this
+# property in the CMake-generated file ``CTestTestfile.cmake`` in the current
+# build directory.  Individual test timeouts set this way are not impacted by
+# the global default timeout ``DART_TESTING_TIMEOUT`` or the ``ctest``
+# argument ``--timeout <seconds>``.
+#
+# In summary, CTest determines the timeout for any individual test as follows:
+#
+# * If the ``TIMEOUT`` CTest property in ``CTestTestfile.cmake`` for that test
+#   is set, then that value is used.
+#
+# * Else if the ``ctest`` commandline option ``--timeout <seconds>`` is
+#   provided, then that timeout is used.
+#
+# * Else if the property ``TimeOut`` in the base file
+#   ``DartConfiguration.tcl`` is set to non-empty, then that timeout is used.
+#
+# * Else, no timeout is set and the test can run (and hang) forever until
+#   manually killed by the user.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #

@@ -3984,28 +3984,34 @@ namespace Tpetra {
       ! A_tmp->isConstantStride (), std::logic_error, errPrefix
       << "Failed to make temporary constant-stride copies of MultiVectors.");
 
-    typedef Kokkos::DeviceGEMM<impl_scalar_type, device_type> gemm_type;
-
     {
-      const size_t A_lclNumRows = A_tmp->getLocalLength ();
-      const size_t A_numVecs = A_tmp->getNumVectors ();
+      typedef LocalOrdinal LO;
+
+      const LO A_lclNumRows = A_tmp->getLocalLength ();
+      const LO A_numVecs = A_tmp->getNumVectors ();
       auto A_lcl = A_tmp->template getLocalView<device_type> ();
       auto A_sub = Kokkos::subview (A_lcl,
-                                    std::make_pair (size_t (0), A_lclNumRows),
-                                    std::make_pair (size_t (0), A_numVecs));
-      const size_t B_lclNumRows = B_tmp->getLocalLength ();
-      const size_t B_numVecs = B_tmp->getNumVectors ();
+                                    std::make_pair (LO (0), A_lclNumRows),
+                                    std::make_pair (LO (0), A_numVecs));
+      const LO B_lclNumRows = B_tmp->getLocalLength ();
+      const LO B_numVecs = B_tmp->getNumVectors ();
       auto B_lcl = B_tmp->template getLocalView<device_type> ();
       auto B_sub = Kokkos::subview (B_lcl,
-                                    std::make_pair (size_t (0), B_lclNumRows),
-                                    std::make_pair (size_t (0), B_numVecs));
-      const size_t C_lclNumRows = C_tmp->getLocalLength ();
-      const size_t C_numVecs = C_tmp->getNumVectors ();
+                                    std::make_pair (LO (0), B_lclNumRows),
+                                    std::make_pair (LO (0), B_numVecs));
+      const LO C_lclNumRows = C_tmp->getLocalLength ();
+      const LO C_numVecs = C_tmp->getNumVectors ();
       auto C_lcl = C_tmp->template getLocalView<device_type> ();
       auto C_sub = Kokkos::subview (C_lcl,
-                                    std::make_pair (size_t (0), C_lclNumRows),
-                                    std::make_pair (size_t (0), C_numVecs));
-      gemm_type::GEMM (transA, transB, alpha, A_sub, B_sub, beta_local, C_sub);
+                                    std::make_pair (LO (0), C_lclNumRows),
+                                    std::make_pair (LO (0), C_numVecs));
+      const char ctransA = (transA == Teuchos::NO_TRANS ? 'N' :
+                            (transA == Teuchos::TRANS ? 'T' : 'C'));
+      const char ctransB = (transB == Teuchos::NO_TRANS ? 'N' :
+                            (transB == Teuchos::TRANS ? 'T' : 'C'));
+      const impl_scalar_type alpha_IST (alpha);
+      ::Tpetra::Details::Blas::gemm (ctransA, ctransB, alpha_IST, A_sub,
+                                     B_sub, beta_local, C_sub);
     }
 
     if (! isConstantStride ()) {

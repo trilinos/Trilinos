@@ -40,12 +40,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
-FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp)
-
-APPEND_SET( SOURCES
- UnitTestBoost.cpp
- UtilUnitTestMain.cpp
-)
+FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp *.cpp)
 
 if ( TPL_ENABLE_MPI )
   APPEND_SET( SOURCES

@@ -128,17 +128,17 @@ void globalWeightedCutsMessagesHopsByPart(
     ZOLTAN_ID_PTR ddnotneeded = NULL;  // Local IDs not needed
     Zoltan_DD_Update(
         dd,
-        (ZOLTAN_ID_PTR) Ids.getRawPtr(),
+        (localNumVertices ? (ZOLTAN_ID_PTR) Ids.getRawPtr() : NULL),
         ddnotneeded,
-        (char *) &(parts[0]),
+        (localNumVertices ? (char *) &(parts[0]) : NULL),
         NULL,
         int(localNumVertices));
 
     Zoltan_DD_Find(
         dd,
-        (ZOLTAN_ID_PTR) edgeIds.getRawPtr(),
+        (localNumEdges ? (ZOLTAN_ID_PTR) edgeIds.getRawPtr() : NULL),
         ddnotneeded,
-        (char *)&(e_parts[0]),
+        (localNumEdges ? (char *)&(e_parts[0]) : NULL),
         NULL,
         localNumEdges,
         NULL
@@ -443,17 +443,17 @@ void globalWeightedCutsMessagesByPart(
     ZOLTAN_ID_PTR ddnotneeded = NULL;  // Local IDs not needed
     Zoltan_DD_Update(
         dd,
-        (ZOLTAN_ID_PTR) Ids.getRawPtr(),
+        (localNumVertices ? (ZOLTAN_ID_PTR) Ids.getRawPtr() : NULL),
         ddnotneeded,
-        (char *) &(parts[0]),
+        (localNumVertices ? (char *) &(parts[0]) : NULL),
         NULL,
         int(localNumVertices));
 
     Zoltan_DD_Find(
         dd,
-        (ZOLTAN_ID_PTR) edgeIds.getRawPtr(),
+        (localNumEdges ? (ZOLTAN_ID_PTR) edgeIds.getRawPtr() : NULL),
         ddnotneeded,
-        (char *)&(e_parts[0]),
+        (localNumEdges ? (char *)&(e_parts[0]) : NULL),
         NULL,
         localNumEdges,
         NULL

@@ -2,6 +2,7 @@
 #include "stk_util/environment/ReportHandler.hpp"
 #include <balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
+#include <stk_balance/internal/StkBalanceUtils.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/human_bytes.hpp>
 
@@ -10,14 +11,14 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
                            const std::vector<stk::mesh::Selector>& selectors,
                            const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    if(balanceSettings.userSpecifiedVertexWeights())
+    if(balanceSettings.areVertexWeightsProvidedInAVector())
     {
         size_t previousSize = mVertexWeights.size();
-        mVertexWeights = balanceSettings.getVertexWeights();
+        mVertexWeights = balanceSettings.getVertexWeightsViaVector();
         size_t newSize = mVertexWeights.size();
         ThrowRequireWithSierraHelpMsg(newSize == previousSize);
     }
-    else if(balanceSettings.fieldSpecifiedVertexWeights())
+    else if(balanceSettings.areVertexWeightsProvidedViaFields())
     {
         stk::mesh::EntityVector entitiesToBalance;
         stk::mesh::get_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK), entitiesToBalance);
@@ -43,6 +44,12 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
     }
 }
 
+void Zoltan2ParallelGraph::adjust_weights_for_small_meshes()
+{
+    for(size_t i=0;i<mVertexWeights.size();++i)
+        mVertexWeights[i] += 0.05;
+}
+
 BalanceGlobalNumber getAdjacencyId(const stk::mesh::BulkData &stkMeshBulkData,
                                  stk::mesh::Entity adjacentVertex,
                                  bool useLocalIds,
@@ -65,36 +72,8 @@ bool areElementsConnected(const stk::mesh::BulkData& stkMeshBulkData,
                           const stk::mesh::Entity element1,
                           const stk::mesh::Entity element2)
 {
-    size_t nodesSharedBetweenElements = 0;
-    const stk::mesh::Entity* nodes1 = stkMeshBulkData.begin_nodes(element1);
-    const int numNodes1 = stkMeshBulkData.num_nodes(element1);
-    const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
-    const int numNodes2 = stkMeshBulkData.num_nodes(element2);
-
-    for(int i = 0; i < numNodes1; ++i)
-    {
-        stk::mesh::Entity node1 = nodes1[i];
-        bool nodeSharedByElements = false;
-        for(int j = 0; j < numNodes2; ++j)
-        {
-            if(node1.local_offset() == nodes2[j].local_offset())
-            {
-                nodeSharedByElements = true;
-                break;
-            }
-        }
-        if(nodeSharedByElements)
-        {
-            ++nodesSharedBetweenElements;
-        }
-    }
-
-    bool elementsAreConnected = false;
-    if(nodesSharedBetweenElements >= numNodesRequiredForConnection)
-    {
-        elementsAreConnected = true;
-    }
-
+    size_t nodesSharedBetweenElements = stk::balance::internal::getNumSharedNodesBetweenElements(stkMeshBulkData, element1, element2);
+    bool elementsAreConnected = (nodesSharedBetweenElements >= numNodesRequiredForConnection);
     return elementsAreConnected;
 }
 
@@ -249,14 +228,13 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
 
     std::vector<stk::balance::GraphEdge> graphEdges;
 
-    ///// Need log messages here!
     stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using node connectivity.");
 
     // Set vertexWeights based on topology of entity
     createGraphEdgesUsingNodeConnectivity(stkMeshBulkData, balanceSettings, numElements,
                                           graphEdges, localIds);
 
-    if ( balanceSettings.includeSearchResultsInGraph() )
+    if ( !this->amCheckingForMechanisms() && balanceSettings.includeSearchResultsInGraph() )
     {
         stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Create graph edges using search results.");
 

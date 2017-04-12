@@ -30,9 +30,7 @@
 #include <TasmanianSparseGrid.hpp>
 #endif
 
-#include <fstream>
-
-//#include <fenv.h>
+#include "VPS_ensemble.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -128,14 +126,6 @@ void run_samples(
   typedef typename CoeffFunctionType::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
   static const int VectorSize = Storage::static_size;
-
-  // feenableexcept(FE_INVALID   |
-  //                FE_DIVBYZERO |
-  //                FE_OVERFLOW  |
-  //                FE_UNDERFLOW);
-
-  // feenableexcept(FE_INVALID   |
-  //                FE_DIVBYZERO );
 
   // Group points into ensembles
   Array< Array<Ordinal> > groups;
@@ -319,6 +309,16 @@ void run_stokhos(
     std::cout << "Total samples = " << perf_total.uq_count << std::endl;
     std::cout << "Total solve time (s) = " << perf_total.cg_total_time
               << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
   }
 }
 
@@ -481,6 +481,19 @@ void run_dakota(
 
   dakota_env.execute();
 
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total tangent time (s) = " << perf_total.tangent_fill_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+  }
+
 #else
 
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DAKOTA not available.  Please re-configure with TriKota enabled.");
@@ -627,31 +640,22 @@ void run_tasmanian(
     // Get the number of new points
     num_new_points = sparseGrid.getNumNeeded();
 
+    ++level;
+
     if (static_cast<int>(perf_total.uq_count) + num_new_points > cmd.USE_UQ_MAX_SAMPLES) {
       reached_max_samples = true;
       break;
     }
 
     // Don't add new points to the count if this is the last iteration
-    if (level < max_level)
+    if (level <= max_level)
       perf_total.uq_count += num_new_points;
-    ++level;
   }
   R_total = R_total_num / R_total_denom;
 
   if (((level > max_level) || reached_max_samples) && comm.getRank() == 0)
     std::cout << "Warning:  Tasmanian did not achieve refinement tolerance "
               << tol << std::endl;
-
-  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
-    std::cout << "R_level = ";
-    for (int l=0; l<level-1; ++l)
-      std::cout << R_level[l] << " ";
-    std::cout << std::endl << "R_total = " << R_total << std::endl;
-    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
-    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
-              << std::endl;
-  }
 
   // Compute mean and standard deviation of response
   double s[qoi];
@@ -661,13 +665,32 @@ void run_tasmanian(
   perf_total.response_mean = s[0];
   perf_total.response_std_dev = std::sqrt(s[1]-s[0]*s[0]);
 
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "R_level = ";
+    for (int l=0; l<level-1; ++l)
+      std::cout << R_level[l] << " ";
+    std::cout << std::endl << "R_total = " << R_total << std::endl;
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
+              << std::endl;
+    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
+              << std::endl;
+    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
+              << std::endl;
+    std::cout << std::scientific;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
+  }
+
 #else
 
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TASMANIAN not available.  Please re-configure with TASMANIAN TPL enabled.");
 
 #endif
 }
-
 
 template< class ProblemType, class CoeffFunctionType >
 void run_file(
@@ -721,6 +744,49 @@ void run_file(
 
   perf_total.response_mean = 0.0;
   perf_total.response_std_dev = 0.0;
+}
+
+template< class ProblemType, class CoeffFunctionType >
+void run_vps(
+  const Teuchos::Comm<int>& comm ,
+  ProblemType& problem ,
+  CoeffFunctionType & coeff_function,
+  const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
+  const CMD & cmd ,
+  const double bc_lower_value,
+  const double bc_upper_value,
+  Kokkos::Example::FENL::Perf& perf_total)
+{
+  const unsigned ensemble_size =
+    cmd.USE_UQ_ENSEMBLE > 0 ? cmd.USE_UQ_ENSEMBLE : 1;
+  EnsembleVPS vps(cmd.USE_UQ_DIM, cmd.USE_UQ_MAX_SAMPLES, ensemble_size,
+                  comm.getRank());
+  vps.run(
+    [&](const size_t num_samples, const size_t dim, const double*const* x,
+        double* f, size_t* its)
+    {
+      using Teuchos::Array;
+      Array<double> responses(num_samples);
+      Array< Array<double> > response_gradients; // Can't use gradients
+      Array<int> iterations(num_samples), ensemble_iterations(num_samples);
+      Array< Array<double> > points(num_samples);
+      for (size_t iSample = 0; iSample < num_samples; iSample++) {
+        points[iSample].resize(dim);
+        for (size_t idim = 0; idim < dim; idim++)
+          points[iSample][idim] = x[iSample][idim];
+      }
+      run_samples(comm, problem, coeff_function, grouper,
+                  fenlParams, cmd,
+                  bc_lower_value, bc_upper_value,
+                  points, responses, response_gradients,
+                  iterations, ensemble_iterations,
+                  perf_total);
+      for (size_t iSample = 0; iSample < num_samples; iSample++) {
+        f[iSample] = responses[iSample];
+        its[iSample] = iterations[iSample];
+      }
+    });
 }
 
 template< class Device , int VectorSize >
@@ -832,6 +898,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, grouper,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+    else if (cmd.USE_UQ_SAMPLING == SAMPLING_VPS)
+      run_vps(*comm, problem, diffusion_coefficient, grouper,
+              fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
 
   }
 
@@ -860,6 +929,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, Teuchos::null,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
+    else if (cmd.USE_UQ_SAMPLING == SAMPLING_VPS)
+      run_vps(*comm, problem, diffusion_coefficient, Teuchos::null,
+              fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
 
   }
 

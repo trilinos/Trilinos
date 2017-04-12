@@ -535,7 +535,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DfDp_op_impl(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -543,7 +543,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -551,7 +551,7 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_op_impl(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
@@ -559,15 +559,16 @@ RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDp_op_impl( int j, int l ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 
 ModelEvaluatorBase::OutArgs<double>
 EpetraModelEvaluator::createOutArgsImpl() const
 {
-  if (!currentInArgsOutArgs_)
+  if (!currentInArgsOutArgs_) {
     updateInArgsOutArgs();
+  }
   return prototypeOutArgs_;
 }
 
@@ -1540,7 +1541,7 @@ Thyra::convert(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return ModelEvaluatorBase::DERIV_MV_BY_COL; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::DERIV_MV_BY_COL);
 }
 
 
@@ -1557,7 +1558,7 @@ Thyra::convert(
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  return EpetraExt::ModelEvaluator::DERIV_MV_BY_COL; // Should never be called!
+  TEUCHOS_UNREACHABLE_RETURN(EpetraExt::ModelEvaluator::DERIV_MV_BY_COL);
 }
 
 

@@ -74,7 +74,7 @@ void create_entities( BulkData & bulk,
   std::unordered_map<unsigned, Entity> node_map;
 
   for(unsigned nid=nid_start; nid<nid_end; ++nid) {
-    Entity e = bulk.declare_entity(stk::topology::NODE_RANK, nid, node_parts);
+    Entity e = bulk.declare_node(nid, node_parts);
     node_map[nid] = e;
   }
 

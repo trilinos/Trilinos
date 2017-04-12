@@ -48,6 +48,17 @@
 namespace stk {
 namespace expreval {
 
+  //
+  //  Helper math functions
+  //
+  //  Cyclodial ramp ramps from 0.0 at t1 to 1.0 at t2.  The ramp function is C3 continous 
+  //  and thus a good choice for smoothly ramping values from one state to another while
+  //  exciting minimal high frequency response.
+  //
+  extern "C" {
+    double cycloidal_ramp(double t, double t1, double t2);
+  }
+
 /**
  * @brief Class <b>CFunctionBase</b> is a base class for calling a function from the
  * expression evaluator.  Classes which inherit from this function must implement a

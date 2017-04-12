@@ -52,6 +52,8 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
 
   const char *varidobj;
 
+  ex_check_valid_file_id(exoid);
+
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {

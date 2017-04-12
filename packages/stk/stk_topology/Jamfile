@@ -127,6 +127,7 @@ exe stk_topology_utest
     [
       glob $(stk_topology-root)/unit_tests/*.cpp 
     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_topology
     /sierra/seacas//ioinit
     /sierra/stk_io//stk_io
@@ -140,6 +141,7 @@ exe stk_topology_doc_test
     [
       glob $(stk_topology-root)/tests_for_documentation/*.cpp 
     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_topology
     /sierra/seacas//ioinit
     /sierra/stk_io//stk_io
