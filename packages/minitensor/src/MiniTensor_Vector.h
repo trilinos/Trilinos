@@ -122,119 +122,118 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1);
+      Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1);
+      Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
-
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION  
   Vector(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
   KOKKOS_INLINE_FUNCTION
   Vector(T const * data_ptr);

@@ -88,50 +88,50 @@ Tensor<T, N, ES>::Tensor(Index const dimension, ComponentValue const value) :
 //
 //
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>::Tensor(ArrayT & data, iType index1) :
+Tensor<T, N, ES>::Tensor(ArrayT & data, Index index1) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
 {
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-    iType index1,
-    iType index2) :
+    Index index1,
+    Index index2) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
 {
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-    iType index1,
-    iType index2,
-    iType index3) :
+    Index index1,
+    Index index2,
+    Index index3) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2, index3)
 {
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4) :
     TensorBase<T, Store>::TensorBase(
         N,
         ORDER,
@@ -145,15 +145,15 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5) :
     TensorBase<T, Store>::TensorBase(
         N,
         ORDER,
@@ -168,16 +168,16 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5,
-    iType index6) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5,
+    Index index6) :
     TensorBase<T, Store>::TensorBase(
         N,
         ORDER,
@@ -193,37 +193,37 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>::Tensor(Index const dimension, ArrayT & data, iType index1) :
+Tensor<T, N, ES>::Tensor(Index const dimension, ArrayT & data, Index index1) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
 {
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-    iType index1,
-    iType index2) :
+    Index index1,
+    Index index2) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
 {
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3) :
+    Index index1,
+    Index index2,
+    Index index3) :
     TensorBase<T, Store>::TensorBase(
         dimension,
         ORDER,
@@ -236,15 +236,15 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4) :
     TensorBase<T, Store>::TensorBase(
         dimension,
         ORDER,
@@ -258,16 +258,16 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5) :
     TensorBase<T, Store>::TensorBase(
         dimension,
         ORDER,
@@ -282,17 +282,17 @@ Tensor<T, N, ES>::Tensor(
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5,
-    iType index6) :
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5,
+    Index index6) :
     TensorBase<T, Store>::TensorBase(
         dimension,
         ORDER,
@@ -567,80 +567,80 @@ Tensor<T, N, ES>::fill(T const & s)
 // Fill components from array defined by pointer.
 //
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 typename Kokkos::Impl::enable_if<
 !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
 Tensor<T, N, ES>::fill(ArrayT & data, 
-            iType index1)
+            Index index1)
 {
   TensorBase<T, Store>::fill(data, index1);
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N, ES>::fill(ArrayT & data, iType index1, iType index2)
+Tensor<T, N, ES>::fill(ArrayT & data, Index index1, Index index2)
 {
   TensorBase<T, Store>::fill(data, index1, index2);
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType1, typename iType2, typename iType3>
+template<class ArrayT, typename Index1, typename Index2, typename Index3>
 KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N, ES>::fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3)
+Tensor<T, N, ES>::fill(ArrayT & data, Index1 index1, Index2 index2, Index3 index3)
 {
   TensorBase<T, Store>::fill(data, index1, index2, index3);
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 Tensor<T, N, ES>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4)
 {
   TensorBase<T, Store>::fill(data, index1, index2, index3, index4);
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 Tensor<T, N, ES>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5)
 {
   TensorBase<T, Store>::fill(data, index1, index2, index3, index4, index5);
   return;
 }
 
 template<typename T, Index N, typename ES>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 Tensor<T, N, ES>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5,
-    iType index6)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5,
+    Index index6)
 {
   TensorBase<T, Store>::fill(
       data,

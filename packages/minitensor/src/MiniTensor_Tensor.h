@@ -131,106 +131,106 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  Tensor(ArrayT & data, iType index1);
+  Tensor(ArrayT & data, Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  Tensor(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+  Tensor(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
 
-  template<class ArrayT, typename iType>
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
-
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  Tensor(Index const dimension, ArrayT & data, iType index1);
+  Tensor(
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
+  KOKKOS_INLINE_FUNCTION
+  Tensor(Index const dimension, ArrayT & data, Index index1);
+
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
   explicit
   KOKKOS_INLINE_FUNCTION
@@ -357,49 +357,49 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   typename Kokkos::Impl::enable_if<
   !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
-  fill(ArrayT & data, iType index1);
+  fill(ArrayT & data, Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ArrayT & data, iType index1, iType index2);
+  fill(ArrayT & data, Index index1, Index index2);
 
-  template<class ArrayT, typename iType1, typename iType2, typename iType3>
+  template<class ArrayT, typename Index1, typename Index2, typename Index3>
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3);
+  fill(ArrayT & data, Index1 index1, Index2 index2, Index3 index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+  fill(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
 
-  template<class ArrayT, typename iType>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(
-      ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
-
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
   fill(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
+
+  template<class ArrayT>
+  KOKKOS_INLINE_FUNCTION
+  void
+  fill(
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
   KOKKOS_INLINE_FUNCTION
   void
