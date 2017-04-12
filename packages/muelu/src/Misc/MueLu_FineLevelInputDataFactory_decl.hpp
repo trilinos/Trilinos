@@ -63,6 +63,11 @@
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_LWGraph_fwd.hpp"
 
+namespace MueLuTests {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FineLevelInputDataFactoryTester;
+}
+
 namespace MueLu {
 
   /*!
@@ -72,6 +77,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class FineLevelInputDataFactory : public SingleLevelFactoryBase {
+    friend class MueLuTests::FineLevelInputDataFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #undef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -106,6 +112,8 @@ namespace MueLu {
 
     //@}
   private:
+
+    void test() const { std::cout << "TEST" << std::endl; }
 
   }; //class FineLevelInputDataFactory
 
