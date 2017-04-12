@@ -30,10 +30,15 @@ source ~/.cshrc
 
 module load gcc/4.7.2
 
+# Get a new git further up in the path
+setenv PATH "$PATH:/usr/local/bin"
+
 # Matlab goodies
 setenv LD_PRELOAD "/usr/local/gcc/gcc-4.7.2/lib64/libstdc++.so.6 /usr/local/gcc/gcc-4.7.2/lib64/libgcc_s.so.1 /usr/local/gcc/gcc-4.7.2/lib64/libgfortran.so.3"
 
 env
+
+which git
 
 # Machine independent cron_driver:
 #
