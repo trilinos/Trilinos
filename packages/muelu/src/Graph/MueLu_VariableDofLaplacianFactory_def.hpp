@@ -105,7 +105,8 @@ namespace MueLu {
     RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
 
     int maxDofPerNode = 3;    // TODO add parameter from parameter list for this...
-    Scalar dirDropTol = 1e-5; // TODO parameter from parameter list ("ML advnaced Dirichlet: threshold")
+    Scalar dirDropTol = 1e-5; // TODO parameter from parameter list ("ML advnaced Dirichlet: threshold"), should be magnitude type?
+    Scalar amalgDropTol = 1.8e-9; // TODO parameter from parameter list ("variable DOF amalgamation: threshold")
 
     bool bHasZeroDiagonal = false;
     Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*A,bHasZeroDiagonal,dirDropTol);
@@ -139,7 +140,7 @@ namespace MueLu {
     // vector containing row/col gids of amalgamated matrix (with holes)
 
     size_t nLocalDofs = A->getRowMap()->getNodeNumElements();
-    size_t nLocalPlusGhostDofs = A->getColMap()->getNodeNumElements(); // TODO remove parameters
+    size_t nLocalPlusGhostDofs = A->getColMap()->getNodeNumElements();
 
     std::vector<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
     std::vector<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
@@ -169,31 +170,95 @@ namespace MueLu {
                A->getRowMap()->getIndexBase(),
                A->getRowMap()->getComm());
 
-    // TODO nodalComm(amalgColMapGIDs, myLocalNodeIds...)
-    // TODO create temp copy of myLocalNodeIds
-    //MLVec<T> temp(myLocalNodeIds.size());
+    // TODO check me!
+    // copy GIDs from nodal vector to dof vector
+    Teuchos::RCP<Vector> localGIDsSrc = VectorFactory::Build(A->getRowMap(0),true);
+    Teuchos::ArrayRCP< Scalar > localGIDsSrcData = localGIDsSrc->getDataNonConst(0);
 
-    // copy from nodal vector to dof vector
-    //for (int i = 0; i < myLocalNodeIds.size(); i++)
-    //   temp[i] = vector[ myLocalNodeIds[i]];
-
-    // TODO dof comm
-    //dofComm(temp = vector, framework);
-
-    //Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
-    //     vec); //ghosted
-    //Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
-    //     vec); //loc only
-    //X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
-
-
-    // copy from dof vector to nodal vector
-    //for (int i = 0; i < myLocalNodeIds.size(); i++)
-    //   vector[ myLocalNodeIds[i]] = temp[i];
-
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+      localGIDsSrcData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
 
     Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
+    Teuchos::RCP<Vector> localGIDsTarget = VectorFactory::Build(A->getColMap(0),true);
 
+    localGIDsTarget->doImport(*localGIDsSrc, *importer, Xpetra::INSERT);
+    Teuchos::ArrayRCP< const Scalar > localGIDsTargetData = localGIDsTarget->getData(0);
+
+    // copy from dof vector to nodal vector
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+      amalgColMapGIDs[ myLocalNodeIds[i]] = localGIDsTargetData[i];
+
+    ArrayView<GlobalOrdinal> amalgColMapGIDsView(amalgColMapGIDs.size() ? &amalgRowMapGIDs[0] : 0, amalgColMapGIDs.size());
+    Teuchos::RCP<Map> amalgColMap = MapFactory::Build(A->getColMap()->lib(),
+               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+               amalgColMapGIDsView,
+               A->getColMap()->getIndexBase(),
+               A->getColMap()->getComm());
+
+    // end fill nodal maps
+
+    // start variable dof amalgamation
+
+    Teuchos::RCP<CrsMatrixWrap> Awrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A);
+    Teuchos::RCP<CrsMatrix> Acrs = Awrap->getCrsMatrix();
+
+    Teuchos::ArrayRCP<const size_t> rowptr(Acrs->getNodeNumRows());
+    Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
+    Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
+    Acrs->getAllValues(rowptr, colind, values);
+
+    // create arrays for amalgamated matrix
+    Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
+    Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
+    //Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
+
+    size_t nNonZeros = 0;
+    std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
+    std::vector<size_t> nonZeroList(nLocalPlusGhostDofs);  // ???
+
+    // also used in DetectDirichletExt
+    Teuchos::RCP<Vector> diagVec = VectorFactory::Build(A->getRowMap());
+    A->getLocalDiagCopy(*diagVec);
+    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+
+
+    LocalOrdinal oldBlockRow = 0;
+    LocalOrdinal blockRow, blockColumn;
+    size_t newNzs = 0;
+    amalgRowPtr[0] = newNzs;
+
+    bool doNotDrop = false;
+    if (amalgDropTol == Teuchos::ScalarTraits<Scalar>::zero()) doNotDrop = true;
+    if (values.size() == 0) doNotDrop = true;
+
+    for(size_t i = 0; i < rowptr.size()-1; i++) {
+      blockRow = std::floor<LocalOrdinal>( map[i] / maxDofPerNode);
+      if (blockRow != oldBlockRow) {
+        // zero out info recording nonzeros in oldBlockRow
+        for(size_t j = 0; j < nNonZeros; j++) isNonZero[nonZeroList[j]] = false;
+        nNonZeros = 0;
+        amalgRowPtr[blockRow] = newNzs; // record start of next row
+      }
+      for (size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
+        if(doNotDrop == true ||
+            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= amalgDropTol )) {
+          blockColumn = myLocalNodeIds[colind[j]];
+          if(isNonZero[blockColumn] == false) {
+            isNonZero[blockColumn] = true;
+            nonZeroList[nNonZeros++] = blockColumn;
+            amalgCols[newNzs++] = blockColumn;
+          }
+        }
+      }
+      oldBlockRow = blockRow;
+    }
+    amalgRowPtr[blockRow+1] = newNzs;
+
+    TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != nLocalNodes) && (nLocalNodes !=0), MueLu::Exceptions::RuntimeError, "VariableDofsPerNodeAmalgamation: error, computed # block rows (" << blockRow+1 <<") != nLocalNodes (" << nLocalNodes <<")");
+
+    amalgCols.resize(amalgRowPtr[nLocalNodes]);
+
+    // end variableDofAmalg
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
