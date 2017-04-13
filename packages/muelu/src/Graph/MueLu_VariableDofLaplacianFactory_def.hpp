@@ -318,8 +318,79 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> amalgVals(rowptr[rowptr.size()-1]);
     this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
 
+    Teuchos::ArrayRCP< double > ghostedXXX(amalgColMap->getNodeNumElements());
+    Teuchos::ArrayRCP< double > ghostedYYY(amalgColMap->getNodeNumElements());
+    Teuchos::ArrayRCP< double > ghostedZZZ(amalgColMap->getNodeNumElements());
+
     // prepare coordinates for building the laplacian
-    // TODO
+    size_t numCoordVectors = Coords->getNumVectors();
+    Teuchos::ArrayRCP< const double > XXX = Coords->getData(0);
+    for(size_t i = 0; i < nLocalNodes; i++) ghostedXXX[i] = XXX[i];
+    this->nodalComm<double>(ghostedXXX, myLocalNodeIds, A);
+
+    if(numCoordVectors > 1) {
+      Teuchos::ArrayRCP< const double > YYY = Coords->getData(1);
+      for(size_t i = 0; i < nLocalNodes; i++) ghostedYYY[i] = YYY[i];
+      this->nodalComm<double>(ghostedYYY, myLocalNodeIds, A);
+    }
+    if(numCoordVectors > 2) {
+      Teuchos::ArrayRCP< const double > ZZZ = Coords->getData(2);
+      for(size_t i = 0; i < nLocalNodes; i++) ghostedZZZ[i] = ZZZ[i];
+      this->nodalComm<double>(ghostedZZZ, myLocalNodeIds, A);
+    }
+
+    Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
+    this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, numCoordVectors, ghostedXXX, ghostedYYY, ghostedZZZ);
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const Teuchos::ArrayRCP< double >& x, const Teuchos::ArrayRCP< double >& y, const Teuchos::ArrayRCP< double >& z) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(numdim != 2 && numdim !=3, MueLu::Exceptions::RuntimeError,"buildLaplacian only works for 2d or 3d examples. numdim = " << numdim);
+
+    if(numdim == 2) { // 2d
+      for(size_t i = 0; i < rowPtr.size() - 1; i++) {
+        Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
+        LocalOrdinal diag = -1;
+        for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+          if(cols[j] != i){
+            vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
+                                 (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
+
+            TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
+
+            vals[j] = -1./vals[j];
+            sum = sum - vals[j];
+          }
+          else diag = j;
+        }
+        if(sum == Teuchos::ScalarTraits<Scalar>::zero()) sum = Teuchos::ScalarTraits<Scalar>::one();
+        TEUCHOS_TEST_FOR_EXCEPTION(diag == -1, MueLu::Exceptions::RuntimeError, "buildLaplacian: error, row " << i << " has zero diagonal!");
+
+        vals[diag] = sum;
+      }
+    } else { // 3d
+      for(size_t i = 0; i < rowPtr.size() - 1; i++) {
+        Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
+        LocalOrdinal diag = -1;
+        for(size_t j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+          if(cols[j] != i){
+            vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
+                                 (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) +
+                                 (z[i]-z[cols[j]]) * (z[i]-z[cols[j]]) );
+
+            TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i] << " and " << z[i]);
+
+            vals[j] = -1./vals[j];
+            sum = sum - vals[j];
+          }
+          else diag = j;
+        }
+        if(sum == Teuchos::ScalarTraits<Scalar>::zero()) sum = Teuchos::ScalarTraits<Scalar>::one();
+        TEUCHOS_TEST_FOR_EXCEPTION(diag == -1, MueLu::Exceptions::RuntimeError, "buildLaplacian: error, row " << i << " has zero diagonal!");
+
+        vals[diag] = sum;
+      }
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
