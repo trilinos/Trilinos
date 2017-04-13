@@ -2,9 +2,9 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <!-- OUTPUT -->
-    <Parameter name="Check derivatives"              type="bool"    value="false"     />
-    <Parameter name="Zero initial guess"             type="bool"    value="true"      />
-    <Parameter name="Number of output samples"       type="int"     value="640"       />
+    <Parameter name="Check derivatives"              type="bool"    value="true"      />
+    <Parameter name="Zero initial guess"             type="bool"    value="false"     />
+    <Parameter name="Number of output samples"       type="int"     value="64"        />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"              type="int"     value="8"         />
     <!-- PROBLEM INFORMATION -->
@@ -32,8 +32,8 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="30"   />
-    <Parameter name="NY"                type="int"     value="30"   />
+    <Parameter name="NX"                type="int"     value="9"   />
+    <Parameter name="NY"                type="int"     value="9"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
@@ -205,6 +205,7 @@
     <!-- ===========  COMPOSITE STEP  =========== -->
     <ParameterList name="Composite Step">
       <Parameter name="Output Level" type="int" value="0" />
+      <Parameter name="Initial Radius" type="double" value="1e0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
         <Parameter name="Nominal Relative Tolerance" type="double" value="1e-6"  />

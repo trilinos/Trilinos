@@ -191,9 +191,9 @@ int main(int argc, char *argv[]) {
     p_rcp  = assembler->createStateVector();     p_rcp->randomize();
     y_rcp  = assembler->createStateVector();     y_rcp->randomize();
     r_rcp  = assembler->createResidualVector();  r_rcp->randomize();
-    z_rcp  = assembler->createControlVector();   z_rcp->randomize();
-    s_rcp  = assembler->createControlVector();   s_rcp->randomize();
-    t_rcp  = assembler->createControlVector();   t_rcp->randomize();
+    z_rcp  = assembler->createControlVector();   z_rcp->putScalar(1.234); //z_rcp->randomize();
+    s_rcp  = assembler->createControlVector();   s_rcp->putScalar(2.345); //s_rcp->randomize();
+    t_rcp  = assembler->createControlVector();   t_rcp->putScalar(3.456); //t_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up, pp, yp, rp, zp, sp, tp;
     up  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
     pp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
@@ -270,9 +270,9 @@ int main(int argc, char *argv[]) {
     std::vector<Teuchos::RCP<ROL::Vector<RealT> > > vuvec, vpvec, vyvec;
     for (int i = 0; i < sampler->numMySamples(); ++i) {
       Teuchos::RCP<Tpetra::MultiVector<> > vu_rcp, vp_rcp, vy_rcp;
-      vu_rcp  = assembler->createStateVector(); vu_rcp->randomize();
-      vp_rcp  = assembler->createStateVector(); vp_rcp->randomize();
-      vy_rcp  = assembler->createStateVector(); vy_rcp->randomize();
+      vu_rcp  = assembler->createStateVector(); vu_rcp->putScalar(4.567); //vu_rcp->randomize();
+      vp_rcp  = assembler->createStateVector(); vp_rcp->putScalar(5.678); //vp_rcp->randomize();
+      vy_rcp  = assembler->createStateVector(); vy_rcp->putScalar(6.789); //vy_rcp->randomize();
       Teuchos::RCP<ROL::Vector<RealT> > vup, vpp, vyp;
       vup  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(vu_rcp,pde,assembler));
       vpp  = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(vp_rcp,pde,assembler));
