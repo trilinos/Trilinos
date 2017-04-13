@@ -78,6 +78,7 @@ SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 #                       Triutils )
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  ${EXTRA_CONFIGURE_OPTIONS}
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
 
   "-DTPL_ENABLE_Pthread:BOOL=ON"
@@ -97,6 +98,13 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   )
+
+# Experimental - I'd like to re-add packages in the experimental build that got pulled in on the nightly build too, but I'm not sure if this will work.
+IF (CTEST_TEST_TYPE STREQUAL Experimental)
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+  Mesquite_repo packages/mesquite GIT ${Trilinos_REPOS_URL_BASE}mesquite NOPACKAGES Experimental
+  )
+ENDIF()
 
 # Not enabled in 4.7.2 version from muir
 #  "-DTPL_ENABLE_BoostLib:BOOL=ON"
