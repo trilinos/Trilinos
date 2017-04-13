@@ -55,7 +55,7 @@ namespace minitensor {
 ///
 /// Type for setting components all at once
 ///
-enum ComponentValue {
+enum class Filler {
   ZEROS,
   ONES,
   SEQUENCE,
@@ -105,8 +105,7 @@ public:
   /// \param value all components are set equal to this
   ///
   KOKKOS_INLINE_FUNCTION
-  TensorBase(Index const dimension, Index const order,
-      ComponentValue const value);
+  TensorBase(Index const dimension, Index const order, Filler const value);
 
   ///
   /// Create from a scalar
@@ -239,7 +238,7 @@ public:
   ///
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ComponentValue const value);
+  fill(Filler const value);
 
   ///
   /// Fill components with value

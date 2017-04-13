@@ -69,7 +69,7 @@ Tensor<T, N, ES>::Tensor(Index const dimension) :
 //
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>::Tensor(ComponentValue const value) :
+Tensor<T, N, ES>::Tensor(Filler const value) :
     TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
@@ -77,7 +77,7 @@ Tensor<T, N, ES>::Tensor(ComponentValue const value) :
 
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>::Tensor(Index const dimension, ComponentValue const value) :
+Tensor<T, N, ES>::Tensor(Index const dimension, Filler const value) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -545,7 +545,7 @@ Tensor<T, N, ES>::operator()(Index const i, Index const j)
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N, ES>::fill(ComponentValue const value)
+Tensor<T, N, ES>::fill(Filler const value)
 {
   TensorBase<T, Store>::fill(value);
   return;
@@ -1610,7 +1610,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 zero()
 {
-  return Tensor<T, N, ES>(N, ZEROS);
+  return Tensor<T, N, ES>(N, Filler::ZEROS);
 }
 
 template<typename T, typename ES>
@@ -1618,7 +1618,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 zero(Index const dimension)
 {
-  return Tensor<T, DYNAMIC, ES>(dimension, ZEROS);
+  return Tensor<T, DYNAMIC, ES>(dimension, Filler::ZEROS);
 }
 
 template<typename T, Index N, typename ES>
@@ -1626,7 +1626,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 zero(Index const dimension)
 {
-  return Tensor<T, N, ES>(dimension, ZEROS);
+  return Tensor<T, N, ES>(dimension, Filler::ZEROS);
 }
 
 // Local utility functions
@@ -1690,7 +1690,7 @@ Tensor<T, N, ES> const
 identity()
 {
   Tensor<T, N, ES>
-  A(N, ZEROS);
+  A(N, Filler::ZEROS);
 
   ones_in_diagonal(A);
 
@@ -1703,7 +1703,7 @@ Tensor<T, DYNAMIC, ES> const
 identity(Index const dimension)
 {
   Tensor<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   ones_in_diagonal(A);
 
@@ -1717,7 +1717,7 @@ identity(Index const dimension)
 {
 
   Tensor<T, N, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   ones_in_diagonal(A);
 
@@ -1760,7 +1760,7 @@ Tensor<T, N, ES> const
 levi_civita_2()
 {
   Tensor<T, N, ES>
-  A(N, ZEROS);
+  A(N, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -1773,7 +1773,7 @@ Tensor<T, DYNAMIC, ES> const
 levi_civita_2(Index const dimension)
 {
   Tensor<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -1787,7 +1787,7 @@ levi_civita_2(Index const dimension)
 {
 
   Tensor<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 

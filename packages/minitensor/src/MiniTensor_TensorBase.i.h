@@ -56,7 +56,7 @@ TensorBase<T, ST>::TensorBase()
   static_size = ST::static_size();
 
   set_number_components(static_size);
-  fill(NANS);
+  fill(Filler::NANS);
 
   return;
 }
@@ -69,7 +69,7 @@ KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(Index const dimension, Index const order)
 {
   set_dimension(dimension, order);
-  fill(NANS);
+  fill(Filler::NANS);
   return;
 }
 
@@ -81,7 +81,7 @@ KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    ComponentValue const value)
+    Filler const value)
 {
   set_dimension(dimension, order);
   fill(value);
@@ -376,7 +376,7 @@ TensorBase<T, ST>::set_number_components(Index const number_components)
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ComponentValue const value)
+TensorBase<T, ST>::fill(Filler const value)
 {
   using S = typename Sacado::ScalarType<T>::type;
 
@@ -385,7 +385,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   switch (value) {
 
-  case ZEROS:
+  case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -393,7 +393,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case ONES:
+  case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -401,7 +401,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case SEQUENCE:
+  case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -409,7 +409,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM:
+  case Filler::RANDOM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -417,7 +417,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM_UNIFORM:
+  case Filler::RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -425,7 +425,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM_NORMAL:
+  case Filler::RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -433,7 +433,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case NANS:
+  case Filler::NANS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, not_a_number<S>());
@@ -1016,7 +1016,7 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::clear()
 {
-  fill(ZEROS);
+  fill(Filler::ZEROS);
   return;
 }
 

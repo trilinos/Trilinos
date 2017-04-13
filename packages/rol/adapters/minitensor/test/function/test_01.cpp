@@ -132,17 +132,17 @@ TEST(MiniTensor_ROL, Objective)
   obj(msfn);
 
   minitensor::Vector<Real, DIM>
-  xval(minitensor::RANDOM);
+  xval(minitensor::Filler::RANDOM);
 
   os << "xval:" << xval << '\n';
 
   minitensor::Vector<Real, DIM>
-  dval(minitensor::RANDOM);
+  dval(minitensor::Filler::RANDOM);
 
   os << "dval:" << dval << '\n';
 
   minitensor::Vector<Real, DIM>
-  vval(minitensor::RANDOM);
+  vval(minitensor::Filler::RANDOM);
 
   os << "vval:" << vval << '\n';
 
@@ -216,22 +216,22 @@ TEST(MiniTensor_ROL, EqualityConstraintId)
   constr(msec);
 
   minitensor::Vector<Real, NUM_VAR>
-  xval(minitensor::RANDOM);
+  xval(minitensor::Filler::RANDOM);
 
   os << "xval:" << xval << '\n';
 
   minitensor::Vector<Real, NUM_VAR>
-  vval(minitensor::RANDOM);
+  vval(minitensor::Filler::RANDOM);
 
   os << "vval:" << vval << '\n';
 
   minitensor::Vector<Real, NUM_CONSTR>
-  jvval(minitensor::RANDOM);
+  jvval(minitensor::Filler::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
   minitensor::Vector<Real, NUM_VAR>
-  ajvval(minitensor::RANDOM);
+  ajvval(minitensor::Filler::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
@@ -298,22 +298,22 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
   constr(msec);
 
   minitensor::Vector<Real, NUM_VAR>
-  xval(minitensor::RANDOM);
+  xval(minitensor::Filler::RANDOM);
 
   os << "xval:" << xval << '\n';
 
   minitensor::Vector<Real, NUM_VAR>
-  vval(minitensor::RANDOM);
+  vval(minitensor::Filler::RANDOM);
 
   os << "vval:" << vval << '\n';
 
   minitensor::Vector<Real, NUM_CONSTR>
-  jvval(minitensor::RANDOM);
+  jvval(minitensor::Filler::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
   minitensor::Vector<Real, NUM_VAR>
-  ajvval(minitensor::RANDOM);
+  ajvval(minitensor::Filler::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
@@ -369,21 +369,21 @@ TEST(MiniTensor_ROL, BoundConstraint)
   DIM{16};
 
   minitensor::Vector<Real, DIM>
-  lo_mt(minitensor::ONES);
+  lo_mt(minitensor::Filler::ONES);
 
   lo_mt *= -0.5;
 
   os << "Lower bound:" << lo_mt << '\n';
 
   minitensor::Vector<Real, DIM>
-  hi_mt(minitensor::ONES);
+  hi_mt(minitensor::Filler::ONES);
 
   hi_mt *= 0.5;
 
   os << "Upper bound:" << hi_mt << '\n';
 
   minitensor::Vector<Real, DIM>
-  x_mt(minitensor::RANDOM);
+  x_mt(minitensor::Filler::RANDOM);
 
   os << "Initial x  :" << x_mt << '\n';
 

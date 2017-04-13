@@ -111,11 +111,11 @@ public:
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
-  Vector(ComponentValue const value);
+  Vector(Filler const value);
 
   explicit
   KOKKOS_INLINE_FUNCTION
-  Vector(Index const dimension, ComponentValue const value);
+  Vector(Index const dimension, Filler const value);
 
   ///
   /// Create vector from array.
@@ -125,23 +125,20 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
       Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
       Index index1,
       Index index2,
       Index index3);
@@ -180,16 +177,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
       Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
       Index index1,
       Index index2);
 

@@ -120,7 +120,7 @@ inverse_fast23(Tensor<T, N, ES> const & A)
     break;
 
   case 1:
-    return Tensor<T, N, ES>(1, ONES) / A(0,0);
+    return Tensor<T, N, ES>(1, Filler::ONES) / A(0,0);
     break;
 
   default:
@@ -951,7 +951,7 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
 
       normal = unit(normal);
 
-      r.fill(ZEROS);
+      r.fill(Filler::ZEROS);
       r(0,1) = -normal(2);
       r(0,2) =  normal(1);
       r(1,0) =  normal(2);
@@ -1794,7 +1794,7 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F)
   boost::tie(V, D) = eig_sym(b);
 
   Tensor<T, N, ES>
-  DQ(dimension, ZEROS), DI(dimension, ZEROS), DL(dimension, ZEROS);
+  DQ(dimension, Filler::ZEROS), DI(dimension, Filler::ZEROS), DL(dimension, Filler::ZEROS);
 
   for (Index i = 0; i < dimension; ++i) {
     DQ(i,i) = std::sqrt(D(i,i));
@@ -2508,7 +2508,7 @@ maxabsrow_precon(Tensor<T, N, ES> const & A, RHS & B)
   dimension = A.get_dimension();
 
   Tensor<T, N, ES>
-  P(dimension, ZEROS);
+  P(dimension, Filler::ZEROS);
 
   for (Index i{0}; i < dimension; ++i) {
     P(i, i) = 1.0 / norm_infinity(row(A, i));

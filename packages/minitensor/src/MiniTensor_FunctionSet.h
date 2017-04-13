@@ -991,7 +991,7 @@ public:
     assert(x.get_dimension() == NV);
 
     Vector<T, NC>
-    c(ZEROS);
+    c(Filler::ZEROS);
 
     c(0) = dot(x, x) - 10.0;
 
@@ -1039,7 +1039,7 @@ public:
     assert(x.get_dimension() == NV);
 
     Vector<T, NC>
-    f(ZEROS);
+    f(Filler::ZEROS);
 
     f(0) = r_ * r_ - norm_square(x - c_);
 
@@ -1090,7 +1090,7 @@ public:
     assert(x.get_dimension() == NV);
 
     Vector<T, NC>
-    f(ZEROS);
+    f(Filler::ZEROS);
 
     f(0) = r_ * r_ - norm_square(x - c_);
 

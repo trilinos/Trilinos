@@ -69,7 +69,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(ComponentValue const value) :
+Tensor3<T, N, ES>::Tensor3(Filler const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
@@ -77,7 +77,7 @@ TensorBase<T, Store>::TensorBase(N, ORDER, value)
 
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(Index const dimension, ComponentValue const value) :
+Tensor3<T, N, ES>::Tensor3(Index const dimension, Filler const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -377,7 +377,7 @@ Tensor3<T, N, ES> const
 levi_civita_3()
 {
   Tensor3<T, N, ES>
-  A(N, ZEROS);
+  A(N, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -390,7 +390,7 @@ Tensor3<T, DYNAMIC, ES> const
 levi_civita_3(Index const dimension)
 {
   Tensor3<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -405,7 +405,7 @@ levi_civita_3(Index const dimension)
   if (N != DYNAMIC) assert(dimension == N);
 
   Tensor3<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 

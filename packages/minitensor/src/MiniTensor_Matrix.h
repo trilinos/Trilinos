@@ -115,11 +115,11 @@ public:
   ///
   KOKKOS_INLINE_FUNCTION
   explicit
-  Matrix(ComponentValue const value);
+  Matrix(Filler const value);
 
   KOKKOS_INLINE_FUNCTION
   explicit
-  Matrix(Index const rows, Index cols, ComponentValue const value);
+  Matrix(Index const rows, Index cols, Filler const value);
 
   ///
   /// Create tensor from array
@@ -302,7 +302,7 @@ public:
   ///
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ComponentValue const value);
+  fill(Filler const value);
 
   ///
   /// Fill components with value as parameter
