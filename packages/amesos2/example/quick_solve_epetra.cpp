@@ -159,6 +159,14 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  #ifdef SHYLUBASKER
+  if( Amesos2::query("Basker") ) {
+    Teuchos::ParameterList amesos2_params("Amesos2");
+      amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+  }
+  #endif
+
   solver->solve();
 
   if( printSolution ){

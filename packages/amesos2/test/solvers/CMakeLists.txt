@@ -15,6 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
       KLU2_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
@@ -47,6 +48,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
       Superlu_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
@@ -140,6 +142,7 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Basker_UnitTests
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
+    NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     )
     

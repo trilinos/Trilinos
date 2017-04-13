@@ -179,7 +179,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > distribution_map ) const;
+		    node_t> > distribution_map,
+        EDistribution distribution) const;
 
 
     /**
@@ -217,7 +218,8 @@ namespace Amesos2 {
 		    Teuchos::Ptr<
 		    const Tpetra::Map<local_ordinal_t,
 		    global_ordinal_t,
-		    node_t> > source_map );
+		    node_t> > source_map,
+        EDistribution distribution );
 
 
 

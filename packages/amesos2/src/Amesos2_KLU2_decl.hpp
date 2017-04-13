@@ -241,6 +241,8 @@ private:
   /// Transpose flag
   /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose
   int transFlag_;
+
+  bool is_contiguous_;
 };                              // End class KLU2
 
 

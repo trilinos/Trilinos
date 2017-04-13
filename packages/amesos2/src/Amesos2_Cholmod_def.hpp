@@ -75,6 +75,7 @@ Cholmod<Matrix,Vector>::Cholmod(
   , colptr_()
   , firstsolve(true)
   , map()
+  , is_contiguous_(true)
 {
   CHOL::cholmod_start(&data_.c);
   (&data_.c)->nmethods=9;
@@ -207,10 +208,18 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             chol_type>::do_get(B, bValues(),
-						as<size_t>(ld_rhs),
-						ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        chol_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        chol_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
       
   }
 
@@ -257,10 +266,18 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,chol_type>::do_put(X, xValues(),
-						 as<size_t>(ld_rhs),
-						 ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,chol_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,chol_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
     
   }
 
@@ -305,6 +322,9 @@ Cholmod<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
     RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
     parameterList->getEntry("ColPerm").setValidator(colperm_validator);
 
+  if( parameterList->isParameter("IsContiguous") ){
+    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  }
 
   }
 
@@ -358,6 +378,8 @@ Cholmod<Matrix,Vector>::getValidParameters_impl() const
             "Specifies whether the matrix will be " 
             "stored in upper triangular form.");
 
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
     valid_params = pl;
   }
 
@@ -391,12 +413,22 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION(this->rowIndexBase_ != this->columnIndexBase_,
 			       std::runtime_error,
 			       "Row and column maps have different indexbase ");
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,chol_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                    nzvals_(), rowind_(),
-                                                    colptr_(), nnz_ret, ROOTED,
-                                                    ARBITRARY,
-                                                    this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,chol_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
+    else {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,chol_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
   }
   
   

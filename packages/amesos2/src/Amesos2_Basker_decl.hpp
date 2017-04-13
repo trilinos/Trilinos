@@ -185,6 +185,9 @@ private:
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<local_ordinal_type> colptr_;
 
+  bool is_contiguous_;
+
+
   /// Persisting 1D store for X
   mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
   /// Persisting 1D store for B
