@@ -78,6 +78,7 @@ namespace Amesos2
     , nzvals_()                   // initialize to empty arrays
     , rowind_()
     , colptr_()
+    , is_contiguous_(true)
   {
 
     typedef FunctionMap<MUMPS,scalar_type>  function_map;
@@ -244,9 +245,15 @@ namespace Amesos2
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
     #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-      slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs),
-                        ROOTED);
+
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
  
     
     int ierr = 0; // returned error code
@@ -270,11 +277,19 @@ namespace Amesos2
     #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
     #endif
-      
-    Util::put_1d_data_helper<
-    MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
-                                              as<size_t>(ld_rhs),
-                                              ROOTED);
+
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+            as<size_t>(ld_rhs),
+            ROOTED);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bvals_(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED);
+    }
     
     return(ierr);
   }//end solve()
@@ -335,6 +350,11 @@ namespace Amesos2
         mumps_par.icntl[0] = getIntegralValue<local_ordinal_type>(*parameterList, 
                                                                   "ICNTL(11)");
       }
+
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+
+    }
   }//end set parameters()
   
   
@@ -356,6 +376,8 @@ namespace Amesos2
       pl->set("ICNTL(6)", "no", "See Manual" );
       pl->set("ICNTL(9)", "no", "See Manual" );
       pl->set("ICNTL(11)", "no", "See Manual" );
+
+      pl->set("IsContiguous", true, "Whether GIDs contiguous");
       
       valid_params = pl;
     }
@@ -389,10 +411,18 @@ namespace Amesos2
         Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
         #endif
     
-        Util::get_ccs_helper<
-        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-                   nnz_ret, ROOTED, ARBITRARY);
+        if ( is_contiguous_ == true ) {
+          Util::get_ccs_helper<
+            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+                nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+        }
+        else {
+          Util::get_ccs_helper<
+            MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+            ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+                nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+        }
   
         if( this->root_ ){
                   TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),

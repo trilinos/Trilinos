@@ -461,7 +461,7 @@ namespace {
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
 
     /*
      * Check that you got the entries you'd expect

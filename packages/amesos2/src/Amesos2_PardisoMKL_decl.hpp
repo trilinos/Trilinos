@@ -308,6 +308,8 @@ namespace Amesos2 {
     = Meta::or_<Meta::is_same<solver_scalar_type, PMKL::_MKL_Complex8>::value,
                 Meta::is_same<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>::value>::value;
 
+    bool is_contiguous_;
+
 };                              // End class PardisoMKL
 
 

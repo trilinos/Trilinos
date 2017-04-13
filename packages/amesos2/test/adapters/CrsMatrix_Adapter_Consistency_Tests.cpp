@@ -362,8 +362,8 @@ namespace {
     }
     const Tpetra::Map<int,int> half_map(g_num_rows, my_num_rows, 0, tcomm);
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES);
+    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
+    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED);
 
     /*
      * Check that you got the entries you'd expect

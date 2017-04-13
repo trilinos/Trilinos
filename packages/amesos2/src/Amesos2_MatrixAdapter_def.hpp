@@ -69,10 +69,11 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
-				EStorage_Ordering ordering) const
+				EStorage_Ordering ordering,
+		    EDistribution distribution) const
   {
     help_getCrs(nzval, colind, rowptr,
-		nnz, rowmap, ordering,
+		nnz, rowmap, distribution, ordering,
 		typename adapter_t::get_crs_spec());
   }
 
@@ -89,7 +90,7 @@ namespace Amesos2 {
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
 											this->getGlobalNumRows(),
 											this->getComm());
-    this->getCrs(nzval, colind, rowptr, nnz, Teuchos::ptrInArg(*rowmap), ordering);
+    this->getCrs(nzval, colind, rowptr, nnz, Teuchos::ptrInArg(*rowmap), ordering, distribution);
   }
 
   template < class Matrix >
@@ -99,10 +100,11 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > colmap,
-				EStorage_Ordering ordering) const
+				EStorage_Ordering ordering,
+		    EDistribution distribution) const
   {
     help_getCcs(nzval, rowind, colptr,
-		nnz, colmap, ordering,
+		nnz, colmap, distribution, ordering,
 		typename adapter_t::get_ccs_spec());
   }
 
@@ -119,7 +121,7 @@ namespace Amesos2 {
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
 											this->getGlobalNumCols(),
 											this->getComm());
-    this->getCcs(nzval, rowind, colptr, nnz, Teuchos::ptrInArg(*colmap), ordering);
+    this->getCcs(nzval, rowind, colptr, nnz, Teuchos::ptrInArg(*colmap), ordering, distribution);
   }
 
   template < class Matrix >
@@ -228,6 +230,7 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+		         EDistribution distribution,
 				     EStorage_Ordering ordering,
 				     has_special_impl hsi) const
   {
@@ -243,6 +246,7 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+		         EDistribution distribution,
 				     EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
@@ -250,7 +254,7 @@ namespace Amesos2 {
     //Added void to remove parameter not used warning
     ((void)nsi);
     do_getCrs(nzval, colind, rowptr,
-	      nnz, rowmap, ordering,
+	      nnz, rowmap, distribution, ordering,
 	      typename adapter_t::major_access());
   }
 
@@ -261,6 +265,7 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+		       EDistribution distribution,
 				   EStorage_Ordering ordering,
 				   row_access ra) const
   {
@@ -277,7 +282,7 @@ namespace Amesos2 {
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {
-      get_mat = get(rowmap);
+      get_mat = get(rowmap, distribution);
     }
     // RCP<const type> get_mat = get(rowmap);
 
@@ -287,11 +292,11 @@ namespace Amesos2 {
     //
     // TODO: There may be some more checking between the row map
     // compatibility, but things are working fine now.
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
 
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
     ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
     if( node_elements.size() == 0 ) return; // no more contribution
-    
+
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
     row_end = node_elements.end();
 
@@ -303,7 +308,7 @@ namespace Amesos2 {
       size_t nnzRet = OrdinalTraits<size_t>::zero();
       ArrayView<global_ordinal_t> colind_view = colind.view(rowInd,rowNNZ); 
       ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
-      
+
       get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
       for (size_t rr = 0; rr < nnzRet ; rr++)
       {
@@ -334,6 +339,7 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+		       EDistribution distribution,
 				   EStorage_Ordering ordering,
 				   col_access ca) const
   {
@@ -343,7 +349,7 @@ namespace Amesos2 {
     Array<scalar_t> nzval_tmp(nzval.size(), 0);
     Array<global_ordinal_t> rowind(colind.size(), 0);
     Array<global_size_t> colptr(this->getGlobalNumCols() + 1);
-    this->getCcs(nzval_tmp(), rowind(), colptr(), nnz, rowmap, ordering);
+    this->getCcs(nzval_tmp(), rowind(), colptr(), nnz, rowmap, ordering, distribution);
     
     if( !nzval.is_null() && !colind.is_null() && !rowptr.is_null() )
       Util::transpose(nzval_tmp(), rowind(), colptr(), nzval, colind, rowptr);
@@ -356,6 +362,7 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+		         EDistribution distribution,
 				     EStorage_Ordering ordering,
 				     has_special_impl hsi) const
   {
@@ -370,13 +377,14 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+		         EDistribution distribution,
 				     EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
     ((void)nsi);
    
     do_getCcs(nzval, rowind, colptr,
-	      nnz, colmap, ordering,
+	      nnz, colmap, distribution, ordering,
 	      typename adapter_t::major_access());
   }
 
@@ -387,6 +395,7 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+		       EDistribution distribution,
 				   EStorage_Ordering ordering,
 				   row_access ra) const
   {
@@ -398,7 +407,7 @@ namespace Amesos2 {
     Array<scalar_t> nzval_tmp(nzval.size(), 0);
     Array<global_ordinal_t> colind(rowind.size(), 0);
     Array<global_size_t> rowptr(this->getGlobalNumRows() + 1);
-    this->getCrs(nzval_tmp(), colind(), rowptr(), nnz, colmap, ordering);
+    this->getCrs(nzval_tmp(), colind(), rowptr(), nnz, colmap, ordering, distribution);
 
     if( !nzval.is_null() && !rowind.is_null() && !colptr.is_null() )
       Util::transpose(nzval_tmp(), colind(), rowptr(), nzval, rowind, colptr);
@@ -411,6 +420,7 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+		       EDistribution distribution,
 				   EStorage_Ordering ordering,
 				   col_access ca) const
   {
@@ -423,7 +433,7 @@ namespace Amesos2 {
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {
-      get_mat = get(colmap);
+      get_mat = get(colmap, distribution);
     }
 
     // If all is well and good, then colmap == cmap
@@ -539,12 +549,13 @@ namespace Amesos2 {
   {
     return static_cast<const adapter_t*>(this)->isGloballyIndexed_impl();
   }
-  
+
+
   template < class Matrix >
   Teuchos::RCP<const MatrixAdapter<Matrix> >
-  MatrixAdapter<Matrix>::get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
+  MatrixAdapter<Matrix>::get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
   {
-    return static_cast<const adapter_t*>(this)->get_impl(map);
+    return static_cast<const adapter_t*>(this)->get_impl(map, distribution);
   }
 
 
