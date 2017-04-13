@@ -129,34 +129,41 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      ArrayT & data,
       Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      ArrayT & data,
       Index index1,
       Index index2,
       Index index3);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  Matrix(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
+  Matrix(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -167,6 +174,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -177,21 +185,29 @@ public:
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  Matrix(Index const rows, Index const cols, ArrayT & data, Index index1);
+  Matrix(
+      Source const source,
+      Index const rows,
+      Index const cols,
+      ArrayT & data,
+      Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      Index const rows, Index const cols,
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      Index const rows,
+      Index const cols,
+      ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      Index const rows, Index const cols,
+      Source const source,
+      Index const rows,
+      Index const cols,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -200,7 +216,9 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      Index const rows, Index const cols,
+      Source const source,
+      Index const rows,
+      Index const cols,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -210,7 +228,9 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      Index const rows, Index const cols,
+      Source const source,
+      Index const rows,
+      Index const cols,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -221,7 +241,9 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
-      Index const rows, Index const cols,
+      Source const source,
+      Index const rows,
+      Index const cols,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -295,74 +317,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void
   set_dimensions(Index const rows, Index const cols);
-
-  ///
-  /// Fill components with value specification
-  /// \param value all components are set equal to this specification
-  ///
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(Filler const value);
-
-  ///
-  /// Fill components with value as parameter
-  /// \param value all components are set equal to this parameter
-  ///
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(T const & s);
-
-  ///
-  /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
-  ///
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  typename Kokkos::Impl::enable_if<
-  !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
-  fill(ArrayT & data, Index index1);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index index1, Index index2);
-
-  template<class ArrayT, typename Index1, typename Index2, typename Index3>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index1 index1, Index2 index2, Index3 index3);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5,
-      Index index6);
-
-KOKKOS_INLINE_FUNCTION
-  void
-  fill(T const * data_ptr);
 
 private:
 

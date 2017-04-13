@@ -96,8 +96,8 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
-    typename Kokkos::Impl::enable_if<
-    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    Source const,
+    ArrayT & data,
     Index index1) :
     TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1)
 {
@@ -108,8 +108,8 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
-    typename Kokkos::Impl::enable_if<
-    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    Source const,
+    ArrayT & data,
     Index index1,
     Index index2) :
     TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1, index2)
@@ -121,8 +121,8 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
-    typename Kokkos::Impl::enable_if<
-    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    Source const,
+    ArrayT & data,
     Index index1,
     Index index2,
     Index index3) :
@@ -135,6 +135,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -156,6 +157,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -179,6 +181,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -204,6 +207,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
     ArrayT & data,
@@ -218,10 +222,10 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
-    typename Kokkos::Impl::enable_if<
-    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    ArrayT & data,
     Index index1,
     Index index2) :
     TensorBase<T, Store>::TensorBase(rows * cols, ORDER, data, index1, index2),
@@ -234,6 +238,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
     ArrayT & data,
@@ -256,6 +261,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
     ArrayT & data,
@@ -280,6 +286,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
     ArrayT & data,
@@ -306,6 +313,7 @@ template<typename T, Index M, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>::Matrix(
+    Source const,
     Index const rows,
     Index const cols,
     ArrayT & data,
@@ -452,137 +460,6 @@ Matrix<T, M, N, ES>::operator()(Index const i, Index const j)
   num_cols = self.get_num_cols();
 
   return self[i * num_cols + j];
-}
-
-//
-// Fill components with value specification
-//
-template<typename T, Index M, Index N, typename ES>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(Filler const value)
-{
-  TensorBase<T, Store>::fill(value);
-  return;
-}
-
-//
-// Fill components with value as parameter
-//
-template<typename T, Index M, Index N, typename ES>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(T const & s)
-{
-  TensorBase<T, Store>::fill(s);
-  return;
-}
-
-//
-// Fill components from array defined by pointer.
-//
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT>
-KOKKOS_INLINE_FUNCTION
-typename Kokkos::Impl::enable_if<
-!Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index index1)
-{
-  TensorBase<T, Store>::fill(data, index1);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index index1,
-    Index index2)
-{
-  TensorBase<T, Store>::fill(data, index1, index2);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT, typename Index1, typename Index2, typename Index3>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index1 index1,
-    Index2 index2,
-    Index3 index3)
-{
-  TensorBase<T, Store>::fill(data, index1, index2, index3);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index index1,
-    Index index2,
-    Index index3,
-    Index index4)
-{
-  TensorBase<T, Store>::fill(data, index1, index2, index3, index4);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index index1,
-    Index index2,
-    Index index3,
-    Index index4,
-    Index index5)
-{
-  TensorBase<T, Store>::fill(data, index1, index2, index3, index4, index5);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-template<class ArrayT>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(
-    ArrayT & data,
-    Index index1,
-    Index index2,
-    Index index3,
-    Index index4,
-    Index index5,
-    Index index6)
-{
-  TensorBase<T, Store>::fill(
-      data,
-      index1,
-      index2,
-      index3,
-      index4,
-      index5,
-      index6);
-  return;
-}
-
-template<typename T, Index M, Index N, typename ES>
-KOKKOS_INLINE_FUNCTION
-void
-Matrix<T, M, N, ES>::fill(T const * data_ptr)
-{
-  TensorBase<T, Store>::fill(data_ptr);
-  return;
 }
 
 //

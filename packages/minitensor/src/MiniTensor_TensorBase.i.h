@@ -478,7 +478,9 @@ template<typename T, typename ST>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, Index index1)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1)
 {
   assert(index1 == 0);
 
@@ -508,7 +510,10 @@ template<typename T, typename ST>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, Index index1, Index index2)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1,
+    Index index2)
 {
   assert(index2 == 0);
 
@@ -561,7 +566,11 @@ template<typename T, typename ST>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, Index index1, Index index2, Index index3)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1,
+    Index index2,
+    Index index3)
 {
   assert(index3 == 0);
 
@@ -925,6 +934,81 @@ TensorBase<T, ST>::fill(T const * data_ptr)
 
   for (Index i = 0; i < number_components; ++i) {
     (*this)[i] = data_ptr[i];
+  }
+
+  return;
+}
+
+//
+// Fill components from array defined by pointer.
+//
+template<typename T, typename ST>
+KOKKOS_INLINE_FUNCTION
+void
+TensorBase<T, ST>::fill(
+    T const * data_ptr,
+    ComponentOrder const component_order)
+{
+  assert(data_ptr != NULL);
+
+  TensorBase<T, ST> &
+  self = (*this);
+
+  Index const
+  number_components = self.get_number_components();
+
+  switch (number_components) {
+
+  default:
+    self.fill(data_ptr);
+    break;
+
+  case 9:
+
+    switch (component_order) {
+
+    case ComponentOrder::CANONICAL:
+      self.fill(data_ptr);
+      break;
+
+    case ComponentOrder::SIERRA_FULL:
+      //  0  1  2  3  4  5  6  7  8
+      // XX YY ZZ XY YZ ZX YX ZY XZ
+      //  0  4  8  1  5  6  3  7  2
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
+
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
+
+      self[3] = data_ptr[6];
+      self[7] = data_ptr[7];
+      self[2] = data_ptr[8];
+      break;
+
+    case ComponentOrder::SIERRA_SYMMETRIC:
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
+
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
+
+      self[3] = data_ptr[3];
+      self[7] = data_ptr[4];
+      self[2] = data_ptr[5];
+      break;
+
+    default:
+      MT_ERROR_EXIT("Unknown component order.");
+      break;
+
+    }
+
+    break;
   }
 
   return;

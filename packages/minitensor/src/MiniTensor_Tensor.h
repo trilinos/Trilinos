@@ -53,13 +53,6 @@
 
 namespace minitensor {
 
-///
-/// Component ordering convention
-///
-enum ComponentOrder {
-  CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC
-};
-
 template<typename T, Index N, typename ES>
 using tensor_store = Storage<T, dimension_power<N, 2>::value, ES>;
 
@@ -132,33 +125,48 @@ public:
   /// \param data_ptr pointer into the array
   ///
   template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  Tensor(ArrayT & data, Index index1);
-
-  template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      ArrayT & data,
+      Index index1);
+
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      Source const source,
+      ArrayT & data,
       Index index1,
       Index index2,
       Index index3);
 
   template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  Tensor(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
-
-  template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
+
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -167,8 +175,10 @@ public:
       Index index5);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -178,21 +188,29 @@ public:
       Index index6);
 
   template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  Tensor(Index const dimension, ArrayT & data, Index index1);
-
-  template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       Index const dimension,
-      typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      ArrayT & data,
+      Index index1);
+
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -200,8 +218,10 @@ public:
       Index index3);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -210,8 +230,10 @@ public:
       Index index4);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -221,8 +243,10 @@ public:
       Index index5);
 
   template<class ArrayT>
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -257,6 +281,7 @@ public:
   /// \param  s00 s01 ... components in the R^2 canonical basis
   ///
   //
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(T const & s00, T const & s01, T const & s10, T const & s11);
 
@@ -264,6 +289,7 @@ public:
   /// Create tensor specifying components
   /// \param  s00 s01 ... components in the R^3 canonical basis
   ///
+  explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
       T const & s00, T const & s01, T const & s02,
@@ -281,7 +307,9 @@ public:
 
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor(Index const dimension, T const * data_ptr,
+  Tensor(
+      Index const dimension,
+      T const * data_ptr,
       ComponentOrder const component_order);
 
   ///
@@ -336,84 +364,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void
   set_dimension(Index const dimension);
-
-  ///
-  /// Fill components with value specification
-  /// \param value all components are set equal to this specification
-  ///
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(Filler const value);
-
-  ///
-  /// Fill components with value as parameter
-  /// \param value all components are set equal to this parameter
-  ///
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(T const & s);
-
-  ///
-  /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
-  ///
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  typename Kokkos::Impl::enable_if<
-  !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
-  fill(ArrayT & data, Index index1);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index index1, Index index2);
-
-  template<class ArrayT, typename Index1, typename Index2, typename Index3>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index1 index1, Index2 index2, Index3 index3);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(ArrayT & data, Index index1, Index index2, Index index3, Index index4);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5);
-
-  template<class ArrayT>
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5,
-      Index index6);
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(T const * data_ptr);
-
-  ///
-  /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
-  /// \param component_order component convention (3D only)
-  ///
-  KOKKOS_INLINE_FUNCTION
-  void
-  fill(T const * data_ptr, ComponentOrder const component_order);
-
 };
 
 ///

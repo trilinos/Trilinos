@@ -125,12 +125,14 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2);
@@ -138,6 +140,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -146,6 +149,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -155,6 +159,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -165,6 +170,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       ArrayT & data,
       Index index1,
       Index index2,
@@ -176,6 +182,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1);
@@ -183,6 +190,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -191,6 +199,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -200,6 +209,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -210,6 +220,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,
@@ -221,6 +232,7 @@ public:
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION  
   Vector(
+      Source const source,
       Index const dimension,
       ArrayT & data,
       Index index1,

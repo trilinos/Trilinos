@@ -66,6 +66,22 @@ enum class Filler {
 };
 
 ///
+/// Component ordering convention
+///
+enum class ComponentOrder {
+  CANONICAL,
+  SIERRA_FULL,
+  SIERRA_SYMMETRIC
+};
+
+///
+/// Initialization sources
+///
+enum class Source {
+  ARRAY
+};
+
+///
 /// Base class for all vector and tensor types.
 /// R, S, T: Component types
 /// SR, SS, ST: Corresponding storage types.
@@ -254,20 +270,23 @@ public:
   ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1,
       Index index2);
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1,
       Index index2,
@@ -275,7 +294,8 @@ public:
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1,
       Index index2,
@@ -284,7 +304,8 @@ public:
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1,
       Index index2,
@@ -294,7 +315,8 @@ public:
 
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
       Index index1,
       Index index2,
@@ -305,6 +327,16 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void fill(T const * data_ptr);
+
+
+  ///
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  /// \param component_order component convention (3D only)
+  ///
+  KOKKOS_INLINE_FUNCTION
+  void
+  fill(T const * data_ptr, ComponentOrder const component_order);
 
   ///
   /// Component increment

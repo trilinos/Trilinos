@@ -94,6 +94,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
@@ -105,6 +106,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2) :
@@ -117,6 +119,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -130,6 +133,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -151,6 +155,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -174,6 +179,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     ArrayT & data,
     Index index1,
     Index index2,
@@ -199,6 +205,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1) :
@@ -211,6 +218,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1,
@@ -224,6 +232,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1,
@@ -244,6 +253,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1,
@@ -266,6 +276,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1,
@@ -290,6 +301,7 @@ template<typename T, Index N, typename ES>
 template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(
+    Source const,
     Index const dimension,
     ArrayT & data,
     Index index1,
