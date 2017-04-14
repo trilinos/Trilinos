@@ -95,7 +95,225 @@ namespace MueLu {
     void assignGhostLocalNodeIds(const Teuchos::RCP<const Map> & rowDofMap, const Teuchos::RCP<const Map> & colDofMap, std::vector<LocalOrdinal> & myLocalNodeIds, const std::vector<LocalOrdinal> & dofMap, size_t maxDofPerNode, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes, Teuchos::RCP< const Teuchos::Comm< int > > comm) const;
     void squeezeOutNnzs(Teuchos::ArrayRCP<size_t> & rowPtr, Teuchos::ArrayRCP<LocalOrdinal> & cols, Teuchos::ArrayRCP<Scalar> & vals, const std::vector<bool>& keep) const;
     void buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals, const size_t& numdim, const Teuchos::ArrayRCP< double >& x, const Teuchos::ArrayRCP< double >& y, const Teuchos::ArrayRCP< double >& z) const;
-    void MueLu_az_sort(size_t list[], size_t N, size_t list2[], Scalar list3[]) const;
+
+    template <class listType>
+    void MueLu_az_sort(listType list[], size_t N, size_t list2[], Scalar list3[]) const {
+      /* local variables */
+
+      listType RR, K;
+      size_t l, r, j, i;
+      int flag;
+      size_t RR2;
+      Scalar RR3;
+
+      /*********************** execution begins ******************************/
+
+      if (N <= 1) return;
+
+      l   = N / 2 + 1;
+      r   = N - 1;
+      l   = l - 1;
+      RR  = list[l - 1];
+      K   = list[l - 1];
+
+      if ((list2 != NULL) && (list3 != NULL)) {
+        RR2 = list2[l - 1];
+        RR3 = list3[l - 1];
+        while (r != 0) {
+          j = l;
+          flag = 1;
+
+          while (flag == 1) {
+            i = j;
+            j = j + j;
+
+            if (j > r + 1)
+              flag = 0;
+            else {
+              if (j < r + 1)
+                if (list[j] > list[j - 1]) j = j + 1;
+
+              if (list[j - 1] > K) {
+                list[ i - 1] = list[ j - 1];
+                list2[i - 1] = list2[j - 1];
+                list3[i - 1] = list3[j - 1];
+              }
+              else {
+                flag = 0;
+              }
+            }
+          }
+
+          list[ i - 1] = RR;
+          list2[i - 1] = RR2;
+          list3[i - 1] = RR3;
+
+          if (l == 1) {
+            RR  = list [r];
+            RR2 = list2[r];
+            RR3 = list3[r];
+
+            K = list[r];
+            list[r ] = list[0];
+            list2[r] = list2[0];
+            list3[r] = list3[0];
+            r = r - 1;
+          }
+          else {
+            l   = l - 1;
+            RR  = list[ l - 1];
+            RR2 = list2[l - 1];
+            RR3 = list3[l - 1];
+            K   = list[l - 1];
+          }
+        }
+
+        list[ 0] = RR;
+        list2[0] = RR2;
+        list3[0] = RR3;
+      }
+      else if (list2 != NULL) {
+        RR2 = list2[l - 1];
+        while (r != 0) {
+          j = l;
+          flag = 1;
+
+          while (flag == 1) {
+            i = j;
+            j = j + j;
+
+            if (j > r + 1)
+              flag = 0;
+            else {
+              if (j < r + 1)
+                if (list[j] > list[j - 1]) j = j + 1;
+
+              if (list[j - 1] > K) {
+                list[ i - 1] = list[ j - 1];
+                list2[i - 1] = list2[j - 1];
+              }
+              else {
+                flag = 0;
+              }
+            }
+          }
+
+          list[ i - 1] = RR;
+          list2[i - 1] = RR2;
+
+          if (l == 1) {
+            RR  = list [r];
+            RR2 = list2[r];
+
+            K = list[r];
+            list[r ] = list[0];
+            list2[r] = list2[0];
+            r = r - 1;
+          }
+          else {
+            l   = l - 1;
+            RR  = list[ l - 1];
+            RR2 = list2[l - 1];
+            K   = list[l - 1];
+          }
+        }
+
+        list[ 0] = RR;
+        list2[0] = RR2;
+      }
+      else if (list3 != NULL) {
+        RR3 = list3[l - 1];
+        while (r != 0) {
+          j = l;
+          flag = 1;
+
+          while (flag == 1) {
+            i = j;
+            j = j + j;
+
+            if (j > r + 1)
+              flag = 0;
+            else {
+              if (j < r + 1)
+                if (list[j] > list[j - 1]) j = j + 1;
+
+              if (list[j - 1] > K) {
+                list[ i - 1] = list[ j - 1];
+                list3[i - 1] = list3[j - 1];
+              }
+              else {
+                flag = 0;
+              }
+            }
+          }
+
+          list[ i - 1] = RR;
+          list3[i - 1] = RR3;
+
+          if (l == 1) {
+            RR  = list [r];
+            RR3 = list3[r];
+
+            K = list[r];
+            list[r ] = list[0];
+            list3[r] = list3[0];
+            r = r - 1;
+          }
+          else {
+            l   = l - 1;
+            RR  = list[ l - 1];
+            RR3 = list3[l - 1];
+            K   = list[l - 1];
+          }
+        }
+
+        list[ 0] = RR;
+        list3[0] = RR3;
+
+      }
+      else {
+        while (r != 0) {
+          j = l;
+          flag = 1;
+
+          while (flag == 1) {
+            i = j;
+            j = j + j;
+
+            if (j > r + 1)
+              flag = 0;
+            else {
+              if (j < r + 1)
+                if (list[j] > list[j - 1]) j = j + 1;
+
+              if (list[j - 1] > K) {
+                list[ i - 1] = list[ j - 1];
+              }
+              else {
+                flag = 0;
+              }
+            }
+          }
+
+          list[ i - 1] = RR;
+
+          if (l == 1) {
+            RR  = list [r];
+
+            K = list[r];
+            list[r ] = list[0];
+            r = r - 1;
+          }
+          else {
+            l   = l - 1;
+            RR  = list[ l - 1];
+            K   = list[l - 1];
+          }
+        }
+
+        list[ 0] = RR;
+      }
+    }
 
     template <class T>
     void nodalComm(Teuchos::ArrayRCP<T>& vector, std::vector<LocalOrdinal>& myLocalNodeIds, const Teuchos::RCP<Matrix>& A) const {
@@ -112,13 +330,13 @@ namespace MueLu {
       ***************************************************************************/
       Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
 
-      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(0),true);
+      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(),true);
       Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
 
       for (int i = 0; i < myLocalNodeIds.size(); i++)
        dofSrcData[i] = vector[ myLocalNodeIds[i]];
 
-      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(0),true);
+      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(),true);
       dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
       Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
 

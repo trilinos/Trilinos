@@ -142,8 +142,8 @@ namespace MueLu {
     size_t nLocalDofs = A->getRowMap()->getNodeNumElements();
     size_t nLocalPlusGhostDofs = A->getColMap()->getNodeNumElements();
 
-    std::vector<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
-    std::vector<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
+    Teuchos::ArrayRCP<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
+    Teuchos::ArrayRCP<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
 
     // initialize
     size_t count = 0;
@@ -171,8 +171,12 @@ namespace MueLu {
                A->getRowMap()->getComm());
 
     // TODO check me!
+#if 1
+    this->nodalComm<GlobalOrdinal>(amalgColMapGIDs, myLocalNodeIds, A);
+    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap()); // TODO delete me
+#else
     // copy GIDs from nodal vector to dof vector
-    Teuchos::RCP<Vector> localGIDsSrc = VectorFactory::Build(A->getRowMap(0),true);
+    Teuchos::RCP<Vector> localGIDsSrc = VectorFactory::Build(A->getRowMap(),true);
     Teuchos::ArrayRCP< Scalar > localGIDsSrcData = localGIDsSrc->getDataNonConst(0);
 
     for (int i = 0; i < myLocalNodeIds.size(); i++)
@@ -187,6 +191,7 @@ namespace MueLu {
     // copy from dof vector to nodal vector
     for (int i = 0; i < myLocalNodeIds.size(); i++)
       amalgColMapGIDs[ myLocalNodeIds[i]] = localGIDsTargetData[i];
+#endif
 
     ArrayView<GlobalOrdinal> amalgColMapGIDsView(amalgColMapGIDs.size() ? &amalgRowMapGIDs[0] : 0, amalgColMapGIDs.size());
     Teuchos::RCP<Map> amalgColMap = MapFactory::Build(A->getColMap()->lib(),
@@ -194,7 +199,7 @@ namespace MueLu {
                amalgColMapGIDsView,
                A->getColMap()->getIndexBase(),
                A->getColMap()->getComm());
-
+    std::cout << "CCC" << std::endl;
     // end fill nodal maps
 
     // start variable dof amalgamation
@@ -206,6 +211,8 @@ namespace MueLu {
     Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
     Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
     Acrs->getAllValues(rowptr, colind, values);
+
+    std::cout << "DDD" << std::endl;
 
     // create arrays for amalgamated matrix
     Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
@@ -221,6 +228,7 @@ namespace MueLu {
     A->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
+    std::cout << "EEE" << std::endl;
 
     LocalOrdinal oldBlockRow = 0;
     LocalOrdinal blockRow, blockColumn;
@@ -292,13 +300,13 @@ namespace MueLu {
 
     // TODO check me!
     // copy GIDs from nodal vector to dof vector
-    Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(0),true);
+    Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(),true);
     Teuchos::ArrayRCP< Scalar > uniqueIdVecSrcData = uniqueIdVecSrc->getDataNonConst(0);
 
     for (int i = 0; i < myLocalNodeIds.size(); i++)
       uniqueIdVecSrcData[i] = uniqueId[ myLocalNodeIds[i]];
 
-    Teuchos::RCP<Vector> uniqueIdVecTarget = VectorFactory::Build(A->getColMap(0),true);
+    Teuchos::RCP<Vector> uniqueIdVecTarget = VectorFactory::Build(A->getColMap(),true);
     uniqueIdVecTarget->doImport(*uniqueIdVecSrc, *importer, Xpetra::INSERT);
     Teuchos::ArrayRCP< const Scalar > uniqueIdVecTargetData = uniqueIdVecTarget->getData(0);
 
@@ -341,6 +349,25 @@ namespace MueLu {
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
     this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, numCoordVectors, ghostedXXX, ghostedYYY, ghostedZZZ);
+
+    // sort column GIDs
+    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+      size_t j = amalgRowPtr[i];
+      this->MueLu_az_sort<LocalOrdinal>(&(amalgCols[j]), amalgRowPtr[i+1] - j, NULL, &(lapVals[j]));
+    }
+
+    // TODO status array?
+
+    Teuchos::RCP<CrsMatrix> lapCrsMat = CrsMatrixFactory::Build(amalgRowMap, amalgColMap, 10); // TODO better approx for max nnz per row
+
+    for (size_t i = 0; i < nLocalNodes; i++) {
+      lapCrsMat->insertLocalValues(i, amalgCols.view(amalgRowPtr[i],amalgRowPtr[i+1]-amalgRowPtr[i]),
+          lapVals.view(amalgRowPtr[i],amalgRowPtr[i+1]-amalgRowPtr[i]));
+    }
+    lapCrsMat->fillComplete(amalgRowMap,amalgRowMap);
+
+    Teuchos::RCP<Matrix> lapMat = Teuchos::rcp(new CrsMatrixWrap(lapCrsMat));
+    Set(currentLevel,"A",lapMat);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -506,7 +533,7 @@ namespace MueLu {
           myProcData[i] = -1; // mark as visited
         }
       }
-      this->MueLu_az_sort(&(tempId[first]), tempIndex - first, &(location[first]), NULL);
+      this->MueLu_az_sort<size_t>(&(tempId[first]), tempIndex - first, &(location[first]), NULL);
       for(size_t i = first; i < tempIndex; i++) tempProc[i] = neighbor;
 
       // increment index. Find next notProcessed dof index corresponding to first non-visited element
@@ -554,224 +581,6 @@ namespace MueLu {
 
   }
 
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MueLu_az_sort(size_t list[], size_t N, size_t list2[], Scalar list3[]) const {
-    /* local variables */
-
-    size_t RR, K, l, r, j, flag, i;
-    size_t RR2;
-    Scalar RR3;
-
-    /*********************** execution begins ******************************/
-
-    if (N <= 1) return;
-
-    l   = N / 2 + 1;
-    r   = N - 1;
-    l   = l - 1;
-    RR  = list[l - 1];
-    K   = list[l - 1];
-
-    if ((list2 != NULL) && (list3 != NULL)) {
-      RR2 = list2[l - 1];
-      RR3 = list3[l - 1];
-      while (r != 0) {
-        j = l;
-        flag = 1;
-
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (list[j] > list[j - 1]) j = j + 1;
-
-            if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
-              list2[i - 1] = list2[j - 1];
-              list3[i - 1] = list3[j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-
-        list[ i - 1] = RR;
-        list2[i - 1] = RR2;
-        list3[i - 1] = RR3;
-
-        if (l == 1) {
-          RR  = list [r];
-          RR2 = list2[r];
-          RR3 = list3[r];
-
-          K = list[r];
-          list[r ] = list[0];
-          list2[r] = list2[0];
-          list3[r] = list3[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          RR  = list[ l - 1];
-          RR2 = list2[l - 1];
-          RR3 = list3[l - 1];
-          K   = list[l - 1];
-        }
-      }
-
-      list[ 0] = RR;
-      list2[0] = RR2;
-      list3[0] = RR3;
-    }
-    else if (list2 != NULL) {
-      RR2 = list2[l - 1];
-      while (r != 0) {
-        j = l;
-        flag = 1;
-
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (list[j] > list[j - 1]) j = j + 1;
-
-            if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
-              list2[i - 1] = list2[j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-
-        list[ i - 1] = RR;
-        list2[i - 1] = RR2;
-
-        if (l == 1) {
-          RR  = list [r];
-          RR2 = list2[r];
-
-          K = list[r];
-          list[r ] = list[0];
-          list2[r] = list2[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          RR  = list[ l - 1];
-          RR2 = list2[l - 1];
-          K   = list[l - 1];
-        }
-      }
-
-      list[ 0] = RR;
-      list2[0] = RR2;
-    }
-    else if (list3 != NULL) {
-      RR3 = list3[l - 1];
-      while (r != 0) {
-        j = l;
-        flag = 1;
-
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (list[j] > list[j - 1]) j = j + 1;
-
-            if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
-              list3[i - 1] = list3[j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-
-        list[ i - 1] = RR;
-        list3[i - 1] = RR3;
-
-        if (l == 1) {
-          RR  = list [r];
-          RR3 = list3[r];
-
-          K = list[r];
-          list[r ] = list[0];
-          list3[r] = list3[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          RR  = list[ l - 1];
-          RR3 = list3[l - 1];
-          K   = list[l - 1];
-        }
-      }
-
-      list[ 0] = RR;
-      list3[0] = RR3;
-
-    }
-    else {
-      while (r != 0) {
-        j = l;
-        flag = 1;
-
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (list[j] > list[j - 1]) j = j + 1;
-
-            if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-
-        list[ i - 1] = RR;
-
-        if (l == 1) {
-          RR  = list [r];
-
-          K = list[r];
-          list[r ] = list[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          RR  = list[ l - 1];
-          K   = list[l - 1];
-        }
-      }
-
-      list[ 0] = RR;
-    }
-
-  }
 } /* MueLu */
 
 
