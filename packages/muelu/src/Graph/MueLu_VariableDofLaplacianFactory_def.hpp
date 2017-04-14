@@ -71,6 +71,8 @@ namespace MueLu {
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
 */
 
+    validParamList->set< int >                   ("maxDofPerNode", 1, "Maximum number of DOFs per node");
+
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
 
@@ -104,7 +106,7 @@ namespace MueLu {
     typedef Xpetra::MultiVector<double,LO,GO,NO> dxMV;
     RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
 
-    int maxDofPerNode = 3;    // TODO add parameter from parameter list for this...
+    int maxDofPerNode = pL.get<int>("maxDofPerNode");
     Scalar dirDropTol = 1e-5; // TODO parameter from parameter list ("ML advnaced Dirichlet: threshold"), should be magnitude type?
     Scalar amalgDropTol = 1.8e-9; // TODO parameter from parameter list ("variable DOF amalgamation: threshold")
 
@@ -199,7 +201,6 @@ namespace MueLu {
                amalgColMapGIDsView,
                A->getColMap()->getIndexBase(),
                A->getColMap()->getComm());
-    std::cout << "CCC" << std::endl;
     // end fill nodal maps
 
     // start variable dof amalgamation
@@ -211,8 +212,6 @@ namespace MueLu {
     Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
     Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
     Acrs->getAllValues(rowptr, colind, values);
-
-    std::cout << "DDD" << std::endl;
 
     // create arrays for amalgamated matrix
     Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
@@ -227,8 +226,6 @@ namespace MueLu {
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
-
-    std::cout << "EEE" << std::endl;
 
     LocalOrdinal oldBlockRow = 0;
     LocalOrdinal blockRow, blockColumn;
@@ -283,7 +280,7 @@ namespace MueLu {
     //    sum_{k=0 to maxDofPerNode-1} dofPresent[i*maxDofPerNode+k]*2^k
     // and use this unique idea to remove entries (i,j) when uniqueId[i]!=uniqueId[j]
 
-    std::vector<LocalOrdinal> uniqueId(nLocalPlusGhostNodes);       // unique id associated with DOF
+    Teuchos::ArrayRCP<LocalOrdinal> uniqueId(nLocalPlusGhostNodes);       // unique id associated with DOF
     std::vector<bool> keep(amalgRowPtr[amalgRowPtr.size()-1],true); // keep connection associated with node
 
     size_t ii = 0; // iteration index for present dofs
@@ -299,6 +296,9 @@ namespace MueLu {
     // nodal comm uniqueId, myLocalNodeIds
 
     // TODO check me!
+#if 1
+    this->nodalComm<LocalOrdinal>(uniqueId, myLocalNodeIds, A);
+#else
     // copy GIDs from nodal vector to dof vector
     Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(),true);
     Teuchos::ArrayRCP< Scalar > uniqueIdVecSrcData = uniqueIdVecSrc->getDataNonConst(0);
@@ -313,6 +313,7 @@ namespace MueLu {
     // copy from dof vector to nodal vector
     for (int i = 0; i < myLocalNodeIds.size(); i++)
       uniqueId[ myLocalNodeIds[i]] = uniqueIdVecTargetData[i];
+#endif
 
     // uniqueId now should contain ghosted data
 
@@ -323,7 +324,7 @@ namespace MueLu {
     }
 
     // squeeze out hard-coded zeros from CSR arrays
-    Teuchos::ArrayRCP<Scalar> amalgVals(rowptr[rowptr.size()-1]);
+    Teuchos::ArrayRCP<Scalar> amalgVals; //(/*rowptr[rowptr.size()-1]*/); // empty array!
     this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
 
     Teuchos::ArrayRCP< double > ghostedXXX(amalgColMap->getNodeNumElements());
