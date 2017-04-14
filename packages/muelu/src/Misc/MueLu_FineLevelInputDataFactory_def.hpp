@@ -136,43 +136,43 @@ namespace MueLu {
     } else {
       size_t npos = std::string::npos;
 
-      if      (strType.find("MueLu::Aggregates")          != npos) {
+      if      (strType.find("MueLu") != npos && strType.find("Aggregates") != npos) {
         RCP<Aggregates> data = currentLevel.Get<RCP<Aggregates> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu::Graph")               != npos) {
+      else if (strType.find("MueLu") != npos && strType.find("Graph") != npos) {
         RCP<Graph> data = currentLevel.Get<RCP<Graph> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu::SmootherBase")        != npos) {
+      else if (strType.find("MueLu") != npos && strType.find("SmootherBase") != npos) {
         RCP<SmootherBase> data = currentLevel.Get<RCP<SmootherBase> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("MueLu::SmootherPrototype")   != npos) {
+      else if (strType.find("MueLu") != npos && strType.find("SmootherPrototype") != npos) {
         RCP<SmootherPrototype> data = currentLevel.Get<RCP<SmootherPrototype> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::Export")             != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("Export") != npos) {
         RCP<Export> data = currentLevel.Get<RCP<Export> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::Import")             != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("Import") != npos) {
         RCP<Import> data = currentLevel.Get<RCP<Import> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::Map")                != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("Map") != npos) {
         RCP<Map> data = currentLevel.Get<RCP<Map> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::Matrix")             != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("Matrix") != npos) {
         RCP<Matrix> data = currentLevel.Get<RCP<Matrix> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::MultiVector")        != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("MultiVector") != npos) {
         RCP<MultiVector> data = currentLevel.Get<RCP<MultiVector> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
-      else if (strType.find("Xpetra::Operator")           != npos) {
+      else if (strType.find("Xpetra") != npos && strType.find("Operator") != npos) {
         RCP<Operator> data = currentLevel.Get<RCP<Operator> >(variableName, fact.get());
         Set(currentLevel, variableName, data);
       }
