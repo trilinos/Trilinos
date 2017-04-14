@@ -95,7 +95,10 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
 
-  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
+  # wcm: Added -Wno-unused-local-typedefs (EXPERIMENTAL).  GCC 4.9.3 includes -Wunused-local-typedefs in -Wall
+  #      but GCC 4.7.2 did not include that by default.  I added it here to see how much this cleans the build
+  #      on my experimental jenkins build towards moving things into sync with the 4.7.2 Werrr build.
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor -Wno-unused-local-typedefs"
   )
 
 #
