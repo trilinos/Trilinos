@@ -85,7 +85,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DTPL_ENABLE_HDF5:BOOL=ON"
   "-DTPL_ENABLE_Netcdf:BOOL=ON"
-
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
 
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
@@ -99,15 +98,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   )
 
-# Experimental - I'd like to re-add packages in the experimental build that got pulled in on the nightly build too, but I'm not sure if this will work.
-IF (CTEST_TEST_TYPE STREQUAL Experimental)
-  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
-  Mesquite_repo packages/mesquite GIT ${Trilinos_REPOS_URL_BASE}mesquite NOPACKAGES Experimental
-  )
-ENDIF()
-
-# Not enabled in 4.7.2 version from muir
-#  "-DTPL_ENABLE_BoostLib:BOOL=ON"
-#  "-DTPL_ENABLE_Zlib:BOOL=ON"
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
