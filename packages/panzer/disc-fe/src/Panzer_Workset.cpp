@@ -65,6 +65,10 @@ WorksetDetails::setup(const panzer::LocalMeshPartition<int,int> & partition,
 
   const size_t num_cells = partition.local_cells.dimension_0();
 
+  _num_owned_cells = partition.num_owned_cells;
+  _num_ghost_cells = partition.num_ghstd_cells;
+  _num_virtual_cells = partition.num_virtual_cells;
+
   subcell_index = -1;
   block_id = partition.element_block_name;
 

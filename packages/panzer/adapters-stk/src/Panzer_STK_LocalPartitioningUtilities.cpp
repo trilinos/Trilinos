@@ -95,6 +95,7 @@ splitMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & mesh_info,
     panzer::LocalMeshPartition<LO,GO> & partition_info = partitions.back();
 
     tools::setupSubLocalMeshInfo(mesh_info,partition_cells,partition_info);
+
   } else {
 
     partition_cells.reserve(splitting_size);
@@ -185,7 +186,6 @@ generateLocalMeshPartitions(const panzer_stk::STK_Interface & mesh,
 
     // Grab the element block we're interested in
     const panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks[element_block_name];
-
 
     if(description.getWorksetSize() == panzer::WorksetDescriptor::FULL){
       // We only have one partition describing the entire local mesh

@@ -73,7 +73,7 @@ convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partitio
 {
   workset.setup(partition, needs);
 
-  workset.num_cells = partition.local_cells.dimension_0();
+  workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
   workset.subcell_dim = -1;
 
 }

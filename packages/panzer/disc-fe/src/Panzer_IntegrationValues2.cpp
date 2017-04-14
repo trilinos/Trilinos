@@ -443,43 +443,52 @@ void
 convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
 {
 
-  // Make sure transverse is not parallel to normal within some margin of error
-  transverse[0]=0.;transverse[1]=1.;transverse[2]=0.;
-  if(std::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
-    transverse[0]=1.;transverse[1]=0.;
-  }
-
-  // othorgonalize'm
   const T n  = sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
-  const T nt = sqrt(normal[0]*transverse[0]+normal[1]*transverse[1]+normal[2]*transverse[2]);
 
-  // If this fails we got problems
-  TEUCHOS_ASSERT(n != 0.);
-  TEUCHOS_ASSERT(std::fabs(n - 1.) < 1.e-14);
+  // If this fails then the geometry for this cell is probably undefined
+  if(n > 0.){
 
-  // Note normal has unit length
-  const T mult = nt/n; // = nt
 
-  // Remove normal projection from transverse
-  for(int dim=0;dim<3;++dim){
-    transverse[dim] = transverse[dim] - mult * normal[dim];
-  }
+    // Make sure transverse is not parallel to normal within some margin of error
+    transverse[0]=0.;transverse[1]=1.;transverse[2]=0.;
+    if(std::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
+      transverse[0]=1.;transverse[1]=0.;
+    }
 
-  const T t = sqrt(transverse[0]*transverse[0]+transverse[1]*transverse[1]+transverse[2]*transverse[2]);
-  TEUCHOS_ASSERT(t != 0.);
-  for(int dim=0;dim<3;++dim){
-    transverse[dim] /= t;
-  }
+    const T nt = sqrt(normal[0]*transverse[0]+normal[1]*transverse[1]+normal[2]*transverse[2]);
 
-  // We assume a right handed system such that b = n \times t
-  binormal[0] = (normal[1] * transverse[2] - normal[2] * transverse[1]);
-  binormal[1] = (normal[2] * transverse[0] - normal[0] * transverse[2]);
-  binormal[2] = (normal[0] * transverse[1] - normal[1] * transverse[0]);
+    // Note normal has unit length
+    const T mult = nt/n; // = nt
 
-  // Normalize binormal
-  const T b = sqrt(binormal[0]*binormal[0]+binormal[1]*binormal[1]+binormal[2]*binormal[2]);
-  for(int dim=0;dim<3;++dim){
-    binormal[dim] /= b;
+    // Remove normal projection from transverse
+    for(int dim=0;dim<3;++dim){
+      transverse[dim] = transverse[dim] - mult * normal[dim];
+    }
+
+    const T t = sqrt(transverse[0]*transverse[0]+transverse[1]*transverse[1]+transverse[2]*transverse[2]);
+    TEUCHOS_ASSERT(t != 0.);
+    for(int dim=0;dim<3;++dim){
+      transverse[dim] /= t;
+    }
+
+    // We assume a right handed system such that b = n \times t
+    binormal[0] = (normal[1] * transverse[2] - normal[2] * transverse[1]);
+    binormal[1] = (normal[2] * transverse[0] - normal[0] * transverse[2]);
+    binormal[2] = (normal[0] * transverse[1] - normal[1] * transverse[0]);
+
+    // Normalize binormal
+    const T b = sqrt(binormal[0]*binormal[0]+binormal[1]*binormal[1]+binormal[2]*binormal[2]);
+    for(int dim=0;dim<3;++dim){
+      binormal[dim] /= b;
+    }
+  } else {
+    transverse[0] = 0.;
+    transverse[1] = 0.;
+    transverse[2] = 0.;
+    binormal[0] = 0.;
+    binormal[1] = 0.;
+    binormal[2] = 0.;
+
   }
 
 }
@@ -493,6 +502,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 {
 
   TEUCHOS_ASSERT(int_rule->getType() == IntegrationDescriptor::SURFACE);
+  TEUCHOS_ASSERT(num_cells <= in_node_coordinates.dimension_0());
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
@@ -630,10 +640,12 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           for(int dim=0;dim<cell_dim;++dim){
             n += side_normals(cell,point,dim)*side_normals(cell,point,dim);
           }
-          n = std::sqrt(n);
-          TEUCHOS_ASSERT(n != 0.);
-          for(int dim=0;dim<cell_dim;++dim){
-            side_normals(cell,point,dim) /= n;
+          // If n is zero then this is - hopefully - a virtual cell
+          if(n > 0.){
+            n = std::sqrt(n);
+            for(int dim=0;dim<cell_dim;++dim){
+              side_normals(cell,point,dim) /= n;
+            }
           }
         }
       }

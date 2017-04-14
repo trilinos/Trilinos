@@ -123,7 +123,20 @@ namespace panzer {
     /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
     const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
 
+    /// Number of cells owned by this workset
+    int num_owned_cells() const {return _num_owned_cells;}
+
+    /// Number of cells owned by a different workset
+    int num_ghost_cells() const {return _num_ghost_cells;}
+
+    /// Number of cells not owned by any workset - these are used for boundary conditions
+    int num_virtual_cells() const {return _num_virtual_cells;}
+
   protected:
+
+    int _num_owned_cells;
+    int _num_ghost_cells;
+    int _num_virtual_cells;
 
     std::map<size_t,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
     std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
