@@ -49,6 +49,8 @@
 
 #include <iostream>
 #include <iomanip>
+#include <ios>
+#include <sstream>
 
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
@@ -704,9 +706,24 @@ void generalWriteDouble(double d, std::ostream& yaml)
   yaml << d;
 }
 
-bool stringNeedsQuotes(const std::string& str)
+template <typename T>
+static bool canBeParsedAs(std::string const& s) {
+  std::istringstream iss(s);
+  T val;
+  iss >> std::noskipws >> val;
+  return iss.eof() && !iss.fail();
+}
+
+static bool containsSpecialCharacters(std::string const& s) {
+  char const* const control_chars = ":{}[],&*#?|-<>=!%@\\";
+  return s.find_first_of(control_chars) != std::string::npos;
+}
+
+bool stringNeedsQuotes(const std::string& s)
 {
-  return strpbrk(str.c_str(), ":{}[],&*#?|-<>=!%@\\");
+  return containsSpecialCharacters(s) ||
+         canBeParsedAs<int>(s) ||
+         canBeParsedAs<double>(s);
 }
 
 } //namespace YAMLParameterList

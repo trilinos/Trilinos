@@ -158,7 +158,7 @@ namespace TeuchosTests
       "      Time Dependent NBC on SS cyl_outside for DOF all set P: \n"
       "        BC Values: [[0], [10], [20]]\n"
       "  Discretization: \n"
-      "    Node Set Associations: [[1, 2], [top, bottom]]\n"
+      "    Node Set Associations: [['1', '2'], [top, bottom]]\n"
       "...\n";
     TEST_EQUALITY(yamlString, expectedYamlString);
     std::stringstream yamlInStream(yamlString);
