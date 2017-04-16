@@ -58,12 +58,43 @@
 namespace Teuchos
 {
 
+/* see https://github.com/jbeder/yaml-cpp/issues/261
+   there are times when we want to insist that a parameter
+   value be interpreted as a string despite it being parseable
+   as a number.
+   the standard way to do this in YAML is to put the number in quotes,
+   i.e. '1e-3' instead of 1e-3.
+   however, the usual YAML::Node::as<T> system doesn't respect quoting
+   when trying to cast to numbers.
+   so, this is our own version of as<T>, called quoted_as<T>, using
+   the Tag workaround suggested in the issue linked above. */
+
+template <typename T>
+struct SafeAs {
+  static T eval(YAML::Node const& node) {
+    // this "!" tag apparently denotes that the value was quoted
+    if (node.Tag() == "!") {
+      throw YAML::TypedBadConversion<T>(node.Mark());
+    }
+    return node.as<T>();
+  }
+};
+
+template <>
+struct SafeAs<std::string> {
+  // only a cast to string will succeed if quoted
+  static std::string eval(YAML::Node const& node) { return node.as<std::string>(); }
+};
+
+template <typename T>
+static T quoted_as(YAML::Node const& node) { return SafeAs<T>::eval(node); }
+
 template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
 {
   Teuchos::Array<T> arr;
   for(YAML::const_iterator it = node.begin(); it != node.end(); it++)
   {
-    arr.push_back(it->as<T>());
+    arr.push_back(quoted_as<T>(*it));
   }
   return arr;
 }
@@ -91,7 +122,7 @@ template<typename T> Teuchos::TwoDArray<T> getYamlTwoDArray(const YAML::Node& no
     j = 0;
     for (YAML::const_iterator cit = rit->begin(); cit != rit->end(); ++cit)
     {
-      arr(i, j) = cit->as<T>();
+      arr(i, j) = quoted_as<T>(*cit);
       ++j;
     }
     ++i;
@@ -328,7 +359,7 @@ void processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool
         throw YamlKeyError("Keys must be plain strings");
       }
       //if this conversion fails and throws for any reason (shouldn't), let the caller handle it
-      const std::string key = i->first.as<std::string>();
+      const std::string key = quoted_as<std::string>(i->first);
       processKeyValueNode(key, i->second, parent, topLevel);
     }
   }
@@ -342,19 +373,19 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   {
     try
     {
-      parent.set(key, node.as<int>());
+      parent.set(key, quoted_as<int>(node));
     }
     catch(...)
     {
       try
       {
-        parent.set(key, node.as<double>());
+        parent.set(key, quoted_as<double>(node));
       }
       catch(...)
       {
         try
         {
-          std::string rawString = node.as<std::string>();
+          std::string rawString = quoted_as<std::string>(node);
           if(rawString == "true")
           {
             parent.set<bool>(key, true);
@@ -391,23 +422,24 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   {
     if (node.begin()->Type() == YAML::NodeType::Sequence) {
       checkYamlTwoDArray(node, key);
+      YAML::Node const& first_value = *(node.begin()->begin());
       try
       {
-        node.begin()->begin()->as<int>();
+        quoted_as<int>(first_value);
         parent.set(key, getYamlTwoDArray<int>(node));
       }
       catch(...)
       {
         try
         {
-          node.begin()->begin()->as<double>();
+          quoted_as<double>(first_value);
           parent.set(key, getYamlTwoDArray<double>(node));
         }
         catch(...)
         {
           try
           {
-            node.begin()->begin()->as<std::string>();
+            quoted_as<std::string>(first_value);
             parent.set(key, getYamlTwoDArray<std::string>(node));
           }
           catch(...)
@@ -417,24 +449,24 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
         }
       }
     } else {
-      //typeString is used to provide a useful error message if types inconsistent
+      YAML::Node const& first_value = *(node.begin());
       try
       {
-        node.begin()->as<int>();
+        quoted_as<int>(first_value);
         parent.set(key, getYamlArray<int>(node));
       }
       catch(...)
       {
         try
         {
-          node.begin()->as<double>();
+          quoted_as<double>(first_value);
           parent.set(key, getYamlArray<double>(node));
         }
         catch(...)
         {
           try
           {
-            node.begin()->as<std::string>();
+            quoted_as<std::string>(first_value);
             parent.set(key, getYamlArray<std::string>(node));
           }
           catch(...)
@@ -475,6 +507,13 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
 void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl)
 {
   std::ofstream yaml(yamlFile);
+  /* set default floating-point style:
+     1. 17 decimal places to ensure the value remains the same
+     2. scientific: this prevents floating-point values that happen
+        to be integers from being printed as integers, because YAML
+        will then read that value back typed as an integer.
+   */
+  yaml << std::scientific << std::setprecision(17);
   writeYamlStream(yaml, pl);
 }
 
