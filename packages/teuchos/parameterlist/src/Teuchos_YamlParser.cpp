@@ -72,7 +72,7 @@ namespace Teuchos
    the Tag workaround suggested in the issue linked above. */
 
 template <typename T>
-struct SafeAs {
+struct QuotedAs {
   static T eval(YAML::Node const& node) {
     // this "!" tag apparently denotes that the value was quoted
     if (node.Tag() == "!") {
@@ -83,13 +83,13 @@ struct SafeAs {
 };
 
 template <>
-struct SafeAs<std::string> {
+struct QuotedAs<std::string> {
   // only a cast to string will succeed if quoted
   static std::string eval(YAML::Node const& node) { return node.as<std::string>(); }
 };
 
 template <typename T>
-static T quoted_as(YAML::Node const& node) { return SafeAs<T>::eval(node); }
+static T quoted_as(YAML::Node const& node) { return QuotedAs<T>::eval(node); }
 
 template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
 {
