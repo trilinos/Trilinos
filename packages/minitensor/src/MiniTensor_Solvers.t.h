@@ -197,7 +197,7 @@ set_failure_message(char const * const msg)
 //
 //
 template<typename FunctionDerived, typename S, Index M>
-char const * const
+char const *
 Function_Base<FunctionDerived, S, M>::
 get_failure_message()
 {
