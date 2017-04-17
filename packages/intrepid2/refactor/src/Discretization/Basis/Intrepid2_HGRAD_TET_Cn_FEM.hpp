@@ -40,47 +40,52 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TRI_Cn_FEM class.
+/** \file   Intrepid_HGRAD_TET_Cn_FEM.hpp
+    \brief  Header file for the Intrepid2::HGRAD_TET_Cn_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
-            Kokkorized by Kyungjoo Kim
+    Kokkorized by Kyungjoo Kim
 */
 
-#ifndef __INTREPID2_HGRAD_TRI_CN_FEM_HPP__
-#define __INTREPID2_HGRAD_TRI_CN_FEM_HPP__
+#ifndef __INTREPID2_HGRAD_TET_CN_FEM_HPP__
+#define __INTREPID2_HGRAD_TET_CN_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEM_ORTH.hpp"
 
 #include "Intrepid2_PointTools.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+
 namespace Intrepid2 {
+  
+/** \class  Intrepid2::Basis_HGRAD_TET_Cn_FEM
+    \brief  Implementation of the default H(grad)-compatible Lagrange basis of arbitrary degree  on Tetrahedron cell 
+  
+            Implements Lagrangian basis of degree n on the reference Tetrahedron cell. The basis has
+            cardinality (n+1)(n+2)(n+3)/6 and spans a COMPLETE polynomial space of degree n. 
+            Nodal basis functions are dual to a unisolvent set of
+            degrees-of-freedom (DoF) defined at a lattice of order n
+            (see \ref PointTools).  In particular, the degrees of freedom
+            are point evaluation at
+            \li The vertices
+            \li (n-1) points on each edge of the tetrahedron
+            \li max((n-1)(n-2)/2,0) points on each face of the
+            tetrahedron
+            \li max((n-1)(n-2)(n-3)/6,0) points in the interior
+            of the tetrahedron.
 
-  /** \class  Intrepid2::Basis_HGRAD_TRI_Cn_FEM
-      \brief  Implementation of the default H(grad)-compatible Lagrange basis of arbitrary degree  on Triangle cell
+            The distribution of these points is specified by the pointType argument to the class constructor.
+            Currently, either equispaced lattice points or Warburton's warp-blend points are available.
 
-      Implements Lagrangian basis of degree n on the reference Triangle cell. The basis has
-      cardinality (n+1)(n+2)/2 and spans a COMPLETE polynomial space of degree n.
-      Basis functions are dual
-      to a unisolvent set of degrees-of-freedom (DoF) defined on a lattice of order n (see PointTools).
-      In particular, the degrees of freedom are point evaluation at
-      \li the vertices
-      \li (n-1) points on each edge of the triangle
-      \li max((n-1)(n-2)/2,0) points on the inside of the triangle.
-
-      The distribution of these points is specified by the pointType argument to the class constructor.
-      Currently, either equispaced lattice points or Warburton's warp-blend points are available.
-
-      The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
-      dof number 0 is at the bottom left vertex (0,0).  The dof increase
-      along the lattice with points along the lines of constant
-      x adjacent in the enumeration.
-  */
+            The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
+            dof number 0 is at the vertex (0,0,0).  The dof increase
+            along the lattice with points along the lines of constant
+            x adjacent in the enumeration. 
+*/
 
   namespace Impl {
 
-    class Basis_HGRAD_TRI_Cn_FEM {
+    class Basis_HGRAD_TET_Cn_FEM {
     public:
 
       template<EOperator opType>
@@ -120,7 +125,7 @@ namespace Intrepid2 {
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_,
-                       vinvViewType        vinv_ )
+                       vinvViewType        vinv_)
           : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_) {}
 
         KOKKOS_INLINE_FUNCTION
@@ -132,7 +137,7 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
-          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2*numPtsEval;
+          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6*numPtsEval;
           outputValueType buf[bufSize];
 
           Kokkos::DynRankView<outputValueType,
@@ -144,11 +149,7 @@ namespace Intrepid2 {
             Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
-          case OPERATOR_CURL: {
-            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, work, _vinv );
-            break;
-          }          
+          case OPERATOR_GRAD :
           case OPERATOR_D1 :
           case OPERATOR_D2 :
           case OPERATOR_D3 :{
@@ -158,7 +159,7 @@ namespace Intrepid2 {
           }
           default: {
             INTREPID2_TEST_FOR_ABORT( true,
-                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM::Functor) operator is not supported");
+                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::Functor) operator is not supported");
 
           }
           }
@@ -166,11 +167,11 @@ namespace Intrepid2 {
       };
     };
   }
-
-  template<typename ExecSpaceType = void,
+  
+    template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_HGRAD_TRI_Cn_FEM
+  class Basis_HGRAD_TET_Cn_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
@@ -179,7 +180,7 @@ namespace Intrepid2 {
 
     /** \brief  Constructor.
      */
-    Basis_HGRAD_TRI_Cn_FEM(const ordinal_type order,
+    Basis_HGRAD_TET_Cn_FEM(const ordinal_type order,
                            const EPointType   pointType = POINTTYPE_EQUISPACED);
 
 
@@ -202,7 +203,7 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
-      Impl::Basis_HGRAD_TRI_Cn_FEM::
+      Impl::Basis_HGRAD_TET_Cn_FEM::
         getValues<ExecSpaceType,numPtsPerEval>( outputValues,
                                                 inputPoints,
                                                 this->vinv_,
@@ -215,13 +216,13 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
@@ -235,7 +236,7 @@ namespace Intrepid2 {
     virtual
     const char*
     getName() const {
-      return "Intrepid2_HGRAD_TRI_Cn_FEM";
+      return "Intrepid2_HGRAD_TET_Cn_FEM";
     }
 
     virtual
@@ -254,6 +255,6 @@ namespace Intrepid2 {
 
 }// namespace Intrepid2
 
-#include "Intrepid2_HGRAD_TRI_Cn_FEMDef.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEMDef.hpp"
 
 #endif

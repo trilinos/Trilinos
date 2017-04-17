@@ -40,16 +40,16 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI.
+/** \file   Intrepid_HGRAD_TET_Cn_FEM_Def.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TET.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
 
-#ifndef __INTREPID2_HGRAD_TRI_CN_FEM_DEF_HPP__
-#define __INTREPID2_HGRAD_TRI_CN_FEM_DEF_HPP__
+#ifndef __INTREPID2_HGRAD_TET_CN_FEM_DEF_HPP__
+#define __INTREPID2_HGRAD_TET_CN_FEM_DEF_HPP__
 
-#include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEM_ORTH.hpp"
 
 namespace Intrepid2 {
 
@@ -64,7 +64,7 @@ namespace Intrepid2 {
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_TRI_Cn_FEM::Serial<opType>::
+    Basis_HGRAD_TET_Cn_FEM::Serial<opType>::
     getValues(       outputViewType output,
                const inputViewType  input,
                      workViewType   work,
@@ -77,8 +77,8 @@ namespace Intrepid2 {
       // compute order
       ordinal_type order = 0;
       for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
-        if (card == (p+1)*(p+2)/2) { 
-          order = p; 
+        if (card == ((p+1)*(p+2)*(p+3))/6) {
+          order = p;
           break;
         }
       }
@@ -88,7 +88,7 @@ namespace Intrepid2 {
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts);
         
-        Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
+        Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
           Serial<opType>::getValues(phis, input, order);
         
         for (ordinal_type i=0;i<card;++i)
@@ -110,11 +110,12 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10: {
-        const ordinal_type dkcard = getDkCardinality(opType,2); //(orDn + 1);
+        const ordinal_type dkcard = getDkCardinality(opType,3);//(orDn + 1)*(orDn + 2)/2;
+
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
 
-        Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
+        Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
           Serial<opType>::getValues(phis, input, order);
 
         for (ordinal_type i=0;i<card;++i)
@@ -126,28 +127,9 @@ namespace Intrepid2 {
             }
         break;
       }
-      case OPERATOR_CURL: { // only works in 2d. first component is -d/dy, second is d/dx
-        const ordinal_type d2card = 2;
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> phis(work.data(), card, npts, d2card);
-
-        Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
-          Serial<OPERATOR_D1>::getValues(phis, input, 1);
-
-        for (ordinal_type i=0;i<card;++i)
-          for (ordinal_type j=0;j<npts;++j) {
-            output(i,j,0) = 0.0;
-            for (ordinal_type l=0;l<card;++l)
-              output(i,j,0) += vinv(l,i)*phis(l,j,1);
-            output(i,j,1) = 0.0;
-            for (ordinal_type l=0;l<card;++l)
-              output(i,j,1) -= vinv(l,i)*phis(l,j,0);
-          }
-        break;
-      }
       default: {
         INTREPID2_TEST_FOR_ABORT( true,
-                                  ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): Operator type not implemented");
+                                  ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented");
       }
       }
     }
@@ -157,7 +139,7 @@ namespace Intrepid2 {
              typename inputPointValueType,  class ...inputPointProperties,
              typename vinvValueType,        class ...vinvProperties>
     void
-    Basis_HGRAD_TRI_Cn_FEM::
+    Basis_HGRAD_TET_Cn_FEM::
     getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
@@ -187,12 +169,6 @@ namespace Intrepid2 {
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
         break;
       }
-      case OPERATOR_CURL: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
-            OPERATOR_CURL,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
-        break;
-      }
       case OPERATOR_D2: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_D2,numPtsPerEval> FunctorType;
@@ -207,7 +183,7 @@ namespace Intrepid2 {
       }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): Operator type not implemented" );
+                                      ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented" );
         break;
       }
       }
@@ -216,13 +192,13 @@ namespace Intrepid2 {
   
   // -------------------------------------------------------------------------------------
   template<typename SpT, typename OT, typename PT>
-  Basis_HGRAD_TRI_Cn_FEM<SpT,OT,PT>::
-  Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
+  Basis_HGRAD_TET_Cn_FEM<SpT,OT,PT>::
+  Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
                           const EPointType   pointType ) {
 
-    this->basisCardinality_  = (order+1)*(order+2)/2; // bigN
+    this->basisCardinality_  = (order+1)*(order+2)*(order+3)/6; // bigN
     this->basisDegree_       = order; // small n
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
 
@@ -230,7 +206,7 @@ namespace Intrepid2 {
 
     // points are computed in the host and will be copied
     Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("Hgrad::Tri::Cn::dofCoords", card, 2);
+      dofCoords("Hgrad::Tet::Cn::dofCoords", card, 3);
     
     // construct lattice
     const ordinal_type offset = 0;
@@ -250,7 +226,7 @@ namespace Intrepid2 {
       work("Hgrad::Tet::Cn::work", lwork),
       ipiv("Hgrad::Tet::Cn::ipiv", card);
   
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
 
     ordinal_type info = 0;
     Teuchos::LAPACK<ordinal_type,PT> lapack;
@@ -293,24 +269,26 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
-      constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2; 
+      constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6;
       ordinal_type tags[maxCard][tagSize];
 
       const ordinal_type 
         numEdgeDof = (order - 1),
-        numElemDof = (order > 2 ? (order-2)*(order-1)/2 : 0);
+        numFaceDof = (order > 2 ? (order-2)*(order-1)/2 : 0),
+        numElemDof = (order > 3 ? (order-3)*(order-2)*(order-1)/6 : 0);
 
-      typename scalarViewType::value_type xi0, xi1, xi2;
+      typename scalarViewType::value_type xi0, xi1, xi2, xi3;
       const typename scalarViewType::value_type eps = threshold();
 
-      ordinal_type edgeId[3] = {}, elemId = 0;
+      ordinal_type edgeId[6] = {}, faceId[4] = {}, elemId = 0;
       for (ordinal_type i=0;i<card;++i) {
 
-        // compute barycentric coordinates
-        const auto x = dofCoords(i,0), y = dofCoords(i,1);
-        xi0 = 1.0 - x - y;
-        xi1= x;
-        xi2= y;
+        //compute barycentric coordinates
+        const auto x = dofCoords(i,0), y = dofCoords(i,1), z = dofCoords(i,2);
+        xi0 = 1.0 - x - y - z;
+        xi1 = x;
+        xi2 = y;
+        xi3 = z;
         
         // vertex
         if ((1.0 - xi0) < eps) { // vert 0
@@ -331,26 +309,81 @@ namespace Intrepid2 {
           tags[i][2] = 0; // local dof id
           tags[i][3] = 1; // total vert dof
         } 
-        else if (xi2 < eps) { // edge 0
-          tags[i][0] = 1; // edge dof
-          tags[i][1] = 0; // edge id 
-          tags[i][2] = edgeId[0]++; // local dof id
-          tags[i][3] = numEdgeDof; // total vert dof
+        else if ((1.0 - xi3) < eps) { // vert 3
+          tags[i][0] = 0; // vertex dof
+          tags[i][1] = 3; // vertex id
+          tags[i][2] = 0; // local dof id
+          tags[i][3] = 1; // total vert dof
+        }
+        else if (xi2 < eps) { // face 0
+          tags[i][0] = 2; // face dof
+          tags[i][1] = 0; // face id
+          tags[i][2] = faceId[0]++; // local dof id
+          tags[i][3] = numFaceDof; // total vert dof
+
+          if (xi3 < eps) { // edge 0
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 0; // edge id
+            tags[i][2] = edgeId[0]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
+
+          if (xi1 < eps) { // edge 3
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 3; // edge id
+            tags[i][2] = edgeId[3]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
+
+          if (xi0 < eps) { // edge 4
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 4; // edge id
+            tags[i][2] = edgeId[4]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
+
         } 
-        else if (xi0 < eps) { // edge 1
-          tags[i][0] = 1; // edge dof
-          tags[i][1] = 1; // edge id 
-          tags[i][2] = edgeId[1]++; // local dof id
-          tags[i][3] = numEdgeDof; // total vert dof
+        else if (xi0 < eps) { // face 1
+          tags[i][0] = 2; // face dof
+          tags[i][1] = 1; // face id
+          tags[i][2] = faceId[1]++; // local dof id
+          tags[i][3] = numFaceDof; // total vert dof
+
+          if (xi3 < eps) { // edge 1
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 1; // edge id
+            tags[i][2] = edgeId[1]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
+
+          if (xi1 < eps) { // edge 5
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 5; // edge id
+            tags[i][2] = edgeId[5]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
         } 
-        else if (xi1 < eps) { // edge 2
-          tags[i][0] = 1; // edge dof
-          tags[i][1] = 2; // edge id 
-          tags[i][2] = edgeId[2]++; // local dof id
-          tags[i][3] = numEdgeDof; // total vert dof
+        else if (xi1 < eps) { // face 2
+          tags[i][0] = 2; // face dof
+          tags[i][1] = 2; // face id
+          tags[i][2] = faceId[2]++; // local dof id
+          tags[i][3] = numFaceDof; // total vert dof
+
+          if (xi3 < eps) { // edge 2
+            tags[i][0] = 1; // edge dof
+            tags[i][1] = 2; // edge id
+            tags[i][2] = edgeId[2]++; // local dof id
+            tags[i][3] = numEdgeDof; // total vert dof
+          }
+        }
+        else if (xi3 < eps) { // face 3
+          tags[i][0] = 2; // face dof
+          tags[i][1] = 3; // face id
+          tags[i][2] = faceId[3]++; // local dof id
+          tags[i][3] = numFaceDof; // total vert dof
         }
         else { // elem
-          tags[i][0] = 2; // intr dof
+          tags[i][0] = 3; // intr dof
           tags[i][1] = 0; // intr id 
           tags[i][2] = elemId++; // local dof id
           tags[i][3] = numElemDof; // total vert dof

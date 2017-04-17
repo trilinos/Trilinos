@@ -11,4 +11,3 @@ ENDIF()
 #IF(Kokkos_ENABLE_Cuda)
 #  ADD_SUBDIRECTORY(Cuda)
 #ENDIF()
-

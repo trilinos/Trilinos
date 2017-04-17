@@ -40,33 +40,33 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TRI_Cn_FEM_ORTH class.
-    \author Created by Robert Kirby
-            Kokkorized by Kyungjoo Kim and Mauro Perego
- */
+/** \file   Intrepid_HGRAD_TET_Cn_FEM.hpp
+    \brief  Header file for the Intrepid2::HGRAD_TET_Cn_FEM_ORTH class.
+    \author Created by Robert C. Kirby
+    
+    Kokkorized by Kyungjoo Kim and Mauro Perego
+*/
 
-#ifndef __INTREPID2_HGRAD_TRI_CN_FEM_ORTH_HPP__
-#define __INTREPID2_HGRAD_TRI_CN_FEM_ORTH_HPP__
+#ifndef __INTREPID2_HGRAD_TET_Cn_FEM_ORTH_HPP__
+#define __INTREPID2_HGRAD_TET_Cn_FEM_ORTH_HPP__
 
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
-
-/** \class  Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
-      \brief  Implementation of the default H(grad)-compatible orthogonal basis (Dubiner) of
-      arbitrary degree on triangle.
-
-      \remarks
-
-      \li   All degrees of freedom are considered to be internal (ie not assembled)
- */
-
+  
+/** \class  Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH
+    \brief  Implementation of the default H(grad)-compatible orthogonal basis of
+            arbitrary degree on tetrahedron.
+  
+    \remarks
+    \li   All degrees of freedom are considered to be internal (ie not assembled)
+  */
+  
 namespace Impl {
 
 template<typename outputViewType,
 typename inputViewType, bool hasDeriv, ordinal_type n>
-struct OrthPolynomialTri {
+struct OrthPolynomialTet {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(       outputViewType output,
@@ -77,7 +77,7 @@ struct OrthPolynomialTri {
 template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
-struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0> {
+struct OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(       outputViewType output,
@@ -88,7 +88,7 @@ struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0> {
 template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
-struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,1> {
+struct OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,1> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(   outputViewType output,
@@ -96,7 +96,7 @@ struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,1> {
       const ordinal_type p );
 };
 
-class Basis_HGRAD_TRI_Cn_FEM_ORTH {
+class Basis_HGRAD_TET_Cn_FEM_ORTH {
 public:
 
   template<EOperator opType>
@@ -166,7 +166,7 @@ public:
       }
       default: {
         INTREPID2_TEST_FOR_ABORT( true,
-            ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::Functor) operator is not supported");
+            ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::Functor) operator is not supported");
 
       }
       }
@@ -180,7 +180,7 @@ public:
 template<typename ExecSpaceType = void,
     typename outputValueType = double,
     typename pointValueType = double>
-class Basis_HGRAD_TRI_Cn_FEM_ORTH
+class Basis_HGRAD_TET_Cn_FEM_ORTH
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
     public:
   typedef double value_type;
@@ -190,7 +190,7 @@ class Basis_HGRAD_TRI_Cn_FEM_ORTH
 
   /** \brief  Constructor.
    */
-  Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order );
+  Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order );
 
   typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
   typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
@@ -208,7 +208,7 @@ class Basis_HGRAD_TRI_Cn_FEM_ORTH
                                           this->getCardinality() );
     #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
     getValues<ExecSpaceType,numPtsPerEval>( outputValues,
         inputPoints,
         this->getDegree(),
@@ -218,7 +218,7 @@ class Basis_HGRAD_TRI_Cn_FEM_ORTH
 
 }// namespace Intrepid2
 
-#include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTHDef.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEM_ORTHDef.hpp"
 
 #endif
 

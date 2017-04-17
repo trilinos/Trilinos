@@ -40,117 +40,158 @@
 // ************************************************************************
 // @HEADER
 
+/** \file test_01.hpp
+ \brief  Unit tests for the Intrepid2::HGRAD_TET_CN_FEM_ORTH class.
+ \author Created by R. Kirby, M. Perego and K. Kim.
+ */
 
-/** \file
-    \brief  Unit test of orthogonal tetrahedral polynomial basis class
-    \author Created by R. Kirby
-*/
+#include "Intrepid2_config.h"
 
-#include "Intrepid2_FieldContainer.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#ifdef HAVE_INTREPID2_DEBUG
+#define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+#endif
+
 #include "Intrepid2_HGRAD_TET_Cn_FEM_ORTH.hpp"
-#include "Intrepid2_CubatureDirectTetDefault.hpp"
-#include "Shards_CellTopology.hpp"
 #include "Intrepid2_PointTools.hpp"
 
-#include <iostream>
 
-using namespace Intrepid2;
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Intrepid2_CubatureDirectTetDefault.hpp"
 
-/** \brief Tests for orthogonal basis on tets.  Tests diagonality of mass matrices
-    and does a code comparison to FIAT for values of derivatives
-    \param argc [in] - number of command-line arguments
-    \param argv [in] - command-line arguments
-*/
-int main(int argc, char *argv[]) {
+namespace Intrepid2 {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize();
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  
+namespace Test {
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    }                                                                   \
+    catch (std::exception err) {                                        \
+      ++ncatch;                                                         \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    }
+
+template<typename ValueType, typename DeviceSpaceType>
+int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
+
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  
-  if (iprint > 0)
+
+  if (verbose)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
-  
-  // Save the format state of the original std::cout.
+
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
-  *outStream \
-    << "===============================================================================\n" \
-    << "|                                                                             |\n" \
-    << "|                           Unit Test OrthogonalBases                         |\n" \
-    << "|                                                                             |\n" \
-    << "|     1) Tests orthogonality of tetrahedral orthogonal basis                  |\n" \
-    << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-    << "|                      Denis Ridzal (dridzal@sandia.gov) or                   |\n" \
-    << "|                      Robert Kirby (robert.c.kirby@ttu.edu)                  |\n" \
-    << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-    << "|                                                                             |\n" \
-    << "===============================================================================\n";
-  
-  int errorFlag  = 0;
 
-  const int deg = 3;
+  typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType;
 
-  Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> > myBasis( deg );
-  const int polydim = myBasis.getCardinality();
-  
-  // First, get a reference quadrature rule
+  *outStream << "DeviceSpace::  ";
+  DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";
+  HostSpaceType::print_configuration(*outStream, false);
 
-  CubatureDirectTetDefault<double,FieldContainer<double> > myCub(2*deg);
-  FieldContainer<double> cubPts( myCub.getNumPoints() , 3 );
-  FieldContainer<double> cubWts( myCub.getNumPoints() );
+  *outStream
+  << "===============================================================================\n"
+  << "|                                                                             |\n"
+  << "|                           Unit Test OrthogonalBases                         |\n"
+  << "|                                                                             |\n"
+  << "|     1) Tests orthogonality of tetrahedral orthogonal basis                   |\n"
+  << "|                                                                             |\n"
+  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov),                     |\n"
+  << "|                      Denis Ridzal (dridzal@sandia.gov),                     |\n"
+  << "|                      Robert Kirby (robert.c.kirby@ttu.edu),                 |\n"
+  << "|                      Mauro Perego (mperego@sandia.gov),                     |\n"
+  << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
+  << "|                                                                             |\n"
+  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
+  << "|                                                                             |\n"
+  << "===============================================================================\n";
 
-  myCub.getCubature( cubPts , cubWts );
+  typedef Kokkos::DynRankView<ValueType, DeviceSpaceType> DynRankView;
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const ValueType tol = tolerence();
+  int errorFlag = 0;
+
+  // for virtual function, value and point types are declared in the class
+  typedef ValueType outputValueType;
+  typedef ValueType pointValueType;
+  typedef ValueType weightValueType;
+  typedef Basis_HGRAD_TET_Cn_FEM_ORTH<DeviceSpaceType, outputValueType,
+      pointValueType> tetBasisType;
+  typedef CubatureDirectTetDefault<DeviceSpaceType, pointValueType,
+      weightValueType> cubatureTetType;
+  *outStream << "\n"
+      << "===============================================================================\n"
+      << "| TEST 1: constructors and exceptions                                         |\n"
+      << "===============================================================================\n";
 
 
-  // Tabulate the basis functions at the cubature points
-  FieldContainer<double> basisAtCubPts( polydim , myCub.getNumPoints() );
+  const ordinal_type dim = 3;
+  try {
+    const ordinal_type order = 3;
+    tetBasisType tetBasis(order);
 
-  myBasis.getValues( basisAtCubPts , cubPts , OPERATOR_VALUE );
+    const ordinal_type polydim = tetBasis.getCardinality();
 
+    // First, get a reference quadrature rule
+    cubatureTetType cub(2 * order);
+    const ordinal_type npts = cub.getNumPoints();
+    DynRankView ConstructWithLabel(cubPoints, npts, dim);
+    DynRankView ConstructWithLabel(cubWeights, npts);
 
-  // Now let's compute the mass matrix
-  for (int i=0;i<polydim;i++) {
-    for (int j=i;j<polydim;j++) {
-      double cur = 0.0;
-      for (int k=0;k<myCub.getNumPoints();k++) {
-        cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
-      }
-      if (i != j && fabs( cur ) > 100. * INTREPID_TOL) {
-        std::cout << "not diagonal" << i << " " << j << " " << fabs( cur ) << std::endl;
-        errorFlag++;
-      }
-      if (i == j && fabs( cur ) <= 100. * INTREPID_TOL) {
-        std::cout << "zero on diagonal" << i << " " << j << std::endl;
+    cub.getCubature(cubPoints, cubWeights);
+
+    // Tabulate the basis functions at the cubature points
+    DynRankView ConstructWithLabel(basisAtCubPts, polydim, npts);
+
+    tetBasis.getValues(basisAtCubPts, cubPoints, OPERATOR_VALUE);
+
+    // Now let's compute the mass matrix
+    for (ordinal_type i = 0; i < polydim; i++) {
+      for (ordinal_type j = i; j < polydim; j++) {
+        ValueType cur = 0.0;
+        for (ordinal_type k = 0; k < cub.getNumPoints(); k++) {
+          cur += cubWeights(k) * basisAtCubPts(i, k)
+							                * basisAtCubPts(j, k);
+        }
+        if (i != j && fabs(cur) > tol) {
+          errorFlag++;
+        }
+        if (i == j && fabs(cur) < tol) {
+          errorFlag++;
+        }
       }
     }
   }
-  
-  shards::CellTopology myTet_4( shards::getCellTopologyData< shards::Tetrahedron<4> >() );  
-  const int np_lattice = PointTools::getLatticeSize( myTet_4 , deg , 0 );
-  FieldContainer<double> lattice( np_lattice , 3 );
-  PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-                                                          myTet_4 , 
-                                                          deg , 
-                                                          0 , 
-                                                          POINTTYPE_EQUISPACED );        
-                                
-  FieldContainer<double> dBasisAtLattice( polydim , np_lattice , 3 );
-  myBasis.getValues( dBasisAtLattice , lattice , OPERATOR_D1 );
+  catch ( std::exception err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  }
 
-  const double fiat_vals[] = {
+
+  try {
+    const ordinal_type order = 3;
+    tetBasisType tetBasis(order);
+    shards::CellTopology tet_4(
+        shards::getCellTopologyData<shards::Tetrahedron<4> >());
+    const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,
+        0);
+    const ordinal_type polydim = tetBasis.getCardinality();
+    DynRankView ConstructWithLabel(lattice, np_lattice , dim);
+    PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+
+    DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , dim);
+    tetBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D1);
+
+
+    const double fiat_vals[] = {
     0.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00,
     0.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00,
     0.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00,
@@ -551,36 +592,49 @@ int main(int argc, char *argv[]) {
     0.000000000000000e+00, 0.000000000000000e+00, 1.299999999999999e+01,
     0.000000000000000e+00, 0.000000000000000e+00, 1.299999999999999e+01,
     0.000000000000000e+00, 0.000000000000000e+00, 9.000000000000000e+01
-  };
+    };
 
-  int fiat_index_cur = 0;
-  for (int i=0;i<polydim;i++) {
-    for (int j=0;j<np_lattice;j++) {
-      for (int k=0;k<3;k++) {
-        if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*INTREPID_TOL ) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          
-          // Output the multi-index of the value where the error is:
-          *outStream << " At multi-index { ";
-          *outStream << i << " " << j << " " << k;
-          *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
-                     << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
-          *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+    int fiat_index_cur = 0;
+    for (ordinal_type i=0;i<polydim;i++) {
+      for (ordinal_type j=0;j<np_lattice;j++) {
+        for (ordinal_type k=0;k<dim;k++) {
+          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*tol ) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+            // Output the multi-index of the value where the error is:
+            *outStream << " At multi-index { ";
+            *outStream << i << " " << j << " " << k;
+            *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
+                                     << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
+            *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+          }
+          fiat_index_cur++;
         }
-        fiat_index_cur++;
       }
     }
+  }  catch ( std::exception err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
   }
 
+  // second order derivatives test missing!!
+ 
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-  Kokkos::finalize();
   return errorFlag;
+
 }
+
+}
+}
+
+
+
+
