@@ -50,6 +50,28 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+// declare content from Galeri_XpetraMaps.hpp
+// we cannot include the header file, since it
+// is already included for the Repartition.cpp
+// unit tests
+//#include <Galeri_XpetraMaps.hpp>
+namespace Galeri {
+  namespace Xpetra {
+
+    using Teuchos::RCP;
+
+    //! Map creation function (for Tpetra, Epetra, Xpetra::TpetraMap and Xpetra::EpetraMap)
+    template <class LocalOrdinal, class GlobalOrdinal, class Map>
+    RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+
+#ifdef HAVE_GALERI_XPETRA
+    //! Map creation function (for Xpetra::Map with an UnderlyingLib parameter)
+    template <class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+#endif
+  }
+}
+
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 
 namespace MueLuTests {
@@ -60,21 +82,18 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    /**********************************************************************************/
-    /* CREATE INITIAL MATRIX                                                          */
-    /**********************************************************************************/
-
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    GlobalOrdinal nEle = 63;
+    GlobalOrdinal nEle = 64;
     const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
     Teuchos::ParameterList matrixParameters;
-    matrixParameters.set("nx",nEle);
-    matrixParameters.set("ny",nEle);
+    matrixParameters.set("nx",8);
+    matrixParameters.set("ny",8);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap,MultiVector>("Laplace2D", map, matrixParameters);
@@ -95,12 +114,90 @@ namespace MueLuTests {
 
     l->Request("A",&lapFact);
 
-    l->Get<RCP<Matrix> >("A",&lapFact);
+    RCP<Matrix> lapA = l->Get<RCP<Matrix> >("A",&lapFact);
 
+    //lapA->describe(out, Teuchos::VERB_EXTREME);
 
-    //TEST_EQUALITY(AA.get(), A.get());
-  } // InputData
+    TEST_EQUALITY(lapA->getRowMap()->isSameAs(*A->getRowMap()),true);
 
+    Teuchos::RCP<Vector> oneVec = VectorFactory::Build(A->getRowMap());
+    Teuchos::RCP<Vector> res = VectorFactory::Build(A->getRowMap());
+    oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+    res->putScalar(27*Teuchos::ScalarTraits<Scalar>::one());
+    Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
+    TEST_COMPARE(res->normInf(),<, 1e-13);
+  } // VarLaplConstructor
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(VariableDofLaplacianFactory, VarLaplConstructor2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    GlobalOrdinal nx = 4, ny = 4;
+
+    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
+
+    //build coordinates before expanding map (nodal coordinates, not dof-based)
+    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
+
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("keepBCs",             false);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", dofMap, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    //->describe(out, Teuchos::VERB_EXTREME);
+
+    TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
+
+    // build hierarchy
+    RCP<Level> l = rcp(new Level());
+    l->SetLevelID(0);
+    l->SetComm(comm);
+    l->Set("A", A);
+    l->Set("Coordinates",coordinates);
+
+    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+    l->Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+
+    A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
+
+    VariableDofLaplacianFactory lapFact;
+    lapFact.SetParameter("maxDofPerNode", Teuchos::ParameterEntry(2));
+    l->Request("A",&lapFact);
+
+    RCP<Matrix> lapA = l->Get<RCP<Matrix> >("A",&lapFact);
+
+    lapA->describe(out, Teuchos::VERB_EXTREME);
+
+    /*Teuchos::RCP<Vector> oneVec = VectorFactory::Build(lapA->getRowMap());
+    Teuchos::RCP<Vector> res = VectorFactory::Build(lapA->getRowMap());
+    oneVec->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+    res->putScalar(27*Teuchos::ScalarTraits<Scalar>::one());
+    Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
+    TEST_COMPARE(res->normInf(),<, 1e-13);*/
+  } // VarLaplConstructor2
 
   // helper class for testing functionality of FineLevelInputDataFactory
   /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -132,6 +229,7 @@ namespace MueLuTests {
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(VariableDofLaplacianFactory, VarLaplConstructor, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(VariableDofLaplacianFactory, VarLaplConstructor2, SC, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 }

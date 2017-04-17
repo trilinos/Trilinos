@@ -103,6 +103,9 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
+    Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
+    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
+
     typedef Xpetra::MultiVector<double,LO,GO,NO> dxMV;
     RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
 
@@ -127,13 +130,16 @@ namespace MueLu {
 
     //GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
+    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
 
     // filled with local node ids (associated with each dof)
     std::vector<LocalOrdinal> myLocalNodeIds(A->getColMap()->getNodeNumElements()); // possible maximum (we need the ghost nodes, too)
 
+
+
     // assign the local node ids for the ghosted nodes
     size_t nLocalNodes, nLocalPlusGhostNodes;
-    this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, A->getRowMap()->getComm());
+    this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, comm);
 
     // fill nodal maps
 
@@ -161,6 +167,7 @@ namespace MueLu {
       if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
         amalgRowMapGIDs[count] = myGids[i];
         amalgColMapGIDs[count] = myGids[i];
+        //std::cout << " i = " << count << " colGID: " << myGids[i] << std::endl;
         count++;
       }
     }
@@ -170,67 +177,83 @@ namespace MueLu {
                Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                amalgRowMapGIDsView,
                A->getRowMap()->getIndexBase(),
-               A->getRowMap()->getComm());
+               comm);
 
-    // TODO check me!
-#if 1
-    this->nodalComm<GlobalOrdinal>(amalgColMapGIDs, myLocalNodeIds, A);
-    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap()); // TODO delete me
-#else
-    // copy GIDs from nodal vector to dof vector
-    Teuchos::RCP<Vector> localGIDsSrc = VectorFactory::Build(A->getRowMap(),true);
-    Teuchos::ArrayRCP< Scalar > localGIDsSrcData = localGIDsSrc->getDataNonConst(0);
+
+    //this->nodalComm<GlobalOrdinal>(amalgColMapGIDs, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
+
+    Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(),true);
+    Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(),true);
+
+    Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
+    Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
 
     for (int i = 0; i < myLocalNodeIds.size(); i++)
-      localGIDsSrcData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
+     dofSrcData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
 
-    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
-    Teuchos::RCP<Vector> localGIDsTarget = VectorFactory::Build(A->getColMap(0),true);
-
-    localGIDsTarget->doImport(*localGIDsSrc, *importer, Xpetra::INSERT);
-    Teuchos::ArrayRCP< const Scalar > localGIDsTargetData = localGIDsTarget->getData(0);
+    dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
 
     // copy from dof vector to nodal vector
     for (int i = 0; i < myLocalNodeIds.size(); i++)
-      amalgColMapGIDs[ myLocalNodeIds[i]] = localGIDsTargetData[i];
-#endif
+      amalgColMapGIDs[ myLocalNodeIds[i]] = Teuchos::as<GlobalOrdinal>(dofTargetData[i]);
 
-    ArrayView<GlobalOrdinal> amalgColMapGIDsView(amalgColMapGIDs.size() ? &amalgRowMapGIDs[0] : 0, amalgColMapGIDs.size());
-    Teuchos::RCP<Map> amalgColMap = MapFactory::Build(A->getColMap()->lib(),
+    //std::sort(amalgColMapGIDs.begin(),amalgColMapGIDs.end());
+
+    std::cout << " XXX " << std::endl;
+
+    ArrayView<GlobalOrdinal> amalgColMapGIDsView(amalgColMapGIDs.size() ? &amalgColMapGIDs[0] : 0, amalgColMapGIDs.size());
+    Teuchos::RCP<Map> amalgColMap = MapFactory::Build(lib,
                Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                amalgColMapGIDsView,
-               A->getColMap()->getIndexBase(),
-               A->getColMap()->getComm());
+               0 /*A->getRangeMap()->getIndexBase()*/,
+               comm);
     // end fill nodal maps
+
+    std::cout << " YYY " << std::endl;
 
     // start variable dof amalgamation
 
     Teuchos::RCP<CrsMatrixWrap> Awrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A);
+    std::cout << " YYY1 " << std::endl;
+
     Teuchos::RCP<CrsMatrix> Acrs = Awrap->getCrsMatrix();
+    std::cout << Acrs << std::endl;
+    std::cout << " YYY2 " << std::endl;
 
     Teuchos::ArrayRCP<const size_t> rowptr(Acrs->getNodeNumRows());
     Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
     Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
+    std::cout << " YYY3 " << std::endl;
     Acrs->getAllValues(rowptr, colind, values);
+
+    std::cout << " ZZZ " << std::endl;
 
     // create arrays for amalgamated matrix
     Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
     Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
     //Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
 
+    std::cout << " AAA " << std::endl;
+
     size_t nNonZeros = 0;
     std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
     std::vector<size_t> nonZeroList(nLocalPlusGhostDofs);  // ???
+
+    std::cout << " BBB " << std::endl;
 
     // also used in DetectDirichletExt
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
+    std::cout << " CCC " << std::endl;
+
     LocalOrdinal oldBlockRow = 0;
     LocalOrdinal blockRow, blockColumn;
     size_t newNzs = 0;
     amalgRowPtr[0] = newNzs;
+
+    std::cout << " DDD " << std::endl;
 
     bool doNotDrop = false;
     if (amalgDropTol == Teuchos::ScalarTraits<Scalar>::zero()) doNotDrop = true;
@@ -258,6 +281,8 @@ namespace MueLu {
       oldBlockRow = blockRow;
     }
     amalgRowPtr[blockRow+1] = newNzs;
+
+    std::cout << " EEE " << std::endl;
 
     TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != nLocalNodes) && (nLocalNodes !=0), MueLu::Exceptions::RuntimeError, "VariableDofsPerNodeAmalgamation: error, computed # block rows (" << blockRow+1 <<") != nLocalNodes (" << nLocalNodes <<")");
 
@@ -293,11 +318,34 @@ namespace MueLu {
       }
     }
 
+    std::cout << " FFF " << std::endl;
+
     // nodal comm uniqueId, myLocalNodeIds
 
     // TODO check me!
 #if 1
-    this->nodalComm<LocalOrdinal>(uniqueId, myLocalNodeIds, A);
+    //this->nodalComm<LocalOrdinal>(uniqueId, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
+
+    std::cout << "XXX222" << std::endl;
+
+    dofSrc = VectorFactory::Build(A->getRowMap(),true);
+    dofTarget = VectorFactory::Build(A->getColMap(),true);
+    std::cout << "XXXa" << std::endl;
+    dofSrcData = dofSrc->getDataNonConst(0);
+    std::cout << "XXXb" << std::endl;
+    dofTargetData = dofTarget->getData(0);
+    std::cout << "XXXc" << std::endl;
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+     dofSrcData[i] = uniqueId[ myLocalNodeIds[i]];
+    std::cout << "XXXd" << std::endl;
+    dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
+
+    std::cout << "XXXe" << std::endl;
+    // copy from dof vector to nodal vector
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+      uniqueId[ myLocalNodeIds[i]] = Teuchos::as<LocalOrdinal>(dofTargetData[i]);
+
+    std::cout << "ZZZ" << std::endl;
 #else
     // copy GIDs from nodal vector to dof vector
     Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(),true);
@@ -335,17 +383,17 @@ namespace MueLu {
     size_t numCoordVectors = Coords->getNumVectors();
     Teuchos::ArrayRCP< const double > XXX = Coords->getData(0);
     for(size_t i = 0; i < nLocalNodes; i++) ghostedXXX[i] = XXX[i];
-    this->nodalComm<double>(ghostedXXX, myLocalNodeIds, A);
+    this->nodalComm<double>(ghostedXXX, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
 
     if(numCoordVectors > 1) {
       Teuchos::ArrayRCP< const double > YYY = Coords->getData(1);
       for(size_t i = 0; i < nLocalNodes; i++) ghostedYYY[i] = YYY[i];
-      this->nodalComm<double>(ghostedYYY, myLocalNodeIds, A);
+      this->nodalComm<double>(ghostedYYY, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
     }
     if(numCoordVectors > 2) {
       Teuchos::ArrayRCP< const double > ZZZ = Coords->getData(2);
       for(size_t i = 0; i < nLocalNodes; i++) ghostedZZZ[i] = ZZZ[i];
-      this->nodalComm<double>(ghostedZZZ, myLocalNodeIds, A);
+      this->nodalComm<double>(ghostedZZZ, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
     }
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
@@ -384,6 +432,9 @@ namespace MueLu {
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
 
+            if(vals[j] == Teuchos::ScalarTraits<Scalar>::zero()) {
+              std::cout << "i=" << i << " j=" << j << " cols[j]=" << cols[j] << " x[i]=" << x[i] << " x[cols[j]]=" << x[cols[j]] << " y[i]=" << y[i] << " y[cols[j]]=" << y[cols[j]] << std::endl;
+            }
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
 
             vals[j] = -1./vals[j];

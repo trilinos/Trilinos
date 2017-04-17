@@ -316,7 +316,7 @@ namespace MueLu {
     }
 
     template <class T>
-    void nodalComm(Teuchos::ArrayRCP<T>& vector, std::vector<LocalOrdinal>& myLocalNodeIds, const Teuchos::RCP<Matrix>& A) const {
+    void nodalComm(Teuchos::ArrayRCP<T>& vector, std::vector<LocalOrdinal>& myLocalNodeIds, const Teuchos::RCP<const Map>& rowMap, const Teuchos::RCP<const Map> colMap,const Teuchos::RCP<const Import>& importer) const {
       /***************************************************************************
        Performs communication to update an amalgamated/nodal vector using either
        an ML style or an epetra style unamalgamated/dof matrix to define the
@@ -328,17 +328,18 @@ namespace MueLu {
        Note: As several dofs lie within each node, several of myLocalNodeIds[]'s
        entries will be duplicates.
       ***************************************************************************/
-      Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
 
-      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(),true);
+
+      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(rowMap,true);
+      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(colMap,true);
+
       Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
+      Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
 
       for (int i = 0; i < myLocalNodeIds.size(); i++)
        dofSrcData[i] = vector[ myLocalNodeIds[i]];
 
-      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(),true);
       dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
-      Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
 
       // copy from dof vector to nodal vector
       for (int i = 0; i < myLocalNodeIds.size(); i++)
