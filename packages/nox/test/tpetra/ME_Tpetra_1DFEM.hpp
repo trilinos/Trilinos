@@ -8,6 +8,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 template<class Scalar, class LO, class GO, class Node>
 class EvaluatorTpetra1DFEM;
@@ -153,82 +154,9 @@ private: // data members
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
+  mutable Teuchos::RCP<Teuchos::Time> residTimer_;
+  mutable Teuchos::RCP<Teuchos::Time> jacTimer_;
 };
-
-//==================================================================
-// Finite Element Basis Object
-/*template <class Scalar>
-class Basis {
-
- public:
-  // Constructor
-  KOKKOS_INLINE_FUNCTION
-  Basis():
-    uu(0.0),
-    zz(0.0),
-    duu(0.0),
-    eta(0.0),
-    wt(0.0),
-    dz(0.0),
-    uuold(0.0),
-    duuold(0.0)
-  {
-    phi = new Scalar[2];
-    dphide = new Scalar[2];
-  }
-
-  // Destructor
-  KOKKOS_INLINE_FUNCTION
-  ~Basis() {
-    delete [] phi;
-    delete [] dphide;
-  }
-
-  // Calculates the values of u and x at the specified gauss point
-  KOKKOS_INLINE_FUNCTION
-  void computeBasis(int gp, double* z, double* u, double* uold = 0) {
-    int N = 2;
-    if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
-    if (gp==1) {eta=1.0/sqrt(3.0); wt=1.0;}
-
-    // Calculate basis function and derivatives at nodal pts
-    phi[0]=(1.0-eta)/2.0;
-    phi[1]=(1.0+eta)/2.0;
-    dphide[0]=-0.5;
-    dphide[1]=0.5;
-
-    // Caculate basis function and derivative at GP.
-    dz=0.5*(z[1]-z[0]);
-    zz=0.0;
-    uu=0.0;
-    duu=0.0;
-    uuold=0.0;
-    duuold=0.0;
-    for (int i=0; i < N; i++) {
-      zz += z[i] * phi[i];
-      uu += u[i] * phi[i];
-      duu += u[i] * dphide[i];
-      if (uold) {
-        uuold += uold[i] * phi[i];
-        duuold += uold[i] * dphide[i];
-      }
-    }
-  }
-
- public:
-  // Variables that are calculated at the gauss point
-  Scalar* phi;
-  Scalar* dphide;
-  Scalar uu;
-  Scalar zz;
-  Scalar duu;
-  Scalar eta;
-  Scalar wt;
-  Scalar dz;
-  // These are only needed for transient
-  Scalar uuold;
-  Scalar duuold;
-};*/
 
 //==================================================================
 #include "ME_Tpetra_1DFEM_def.hpp"

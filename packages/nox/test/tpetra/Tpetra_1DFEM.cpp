@@ -90,30 +90,28 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
+  Stratimikos::DefaultLinearSolverBuilder builder;
 
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 200);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
 
   // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     initial_guess = model->getNominalValues().get_x()->clone_v();
-
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
@@ -186,18 +184,17 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
-  typedef ::Thyra::PreconditionerFactoryBase<Scalar> Base;
-  typedef ::Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > Impl;
+  Stratimikos::DefaultLinearSolverBuilder builder;
+  typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > Impl;
   builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 200);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
@@ -207,15 +204,14 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
 
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
 
   // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     initial_guess = model->getNominalValues().get_x()->clone_v();
-
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   Teuchos::RCP<NOX::Thyra::Group> nox_group =
@@ -288,30 +284,28 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
+  Stratimikos::DefaultLinearSolverBuilder builder;
 
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 200);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
 
   // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     initial_guess = model->getNominalValues().get_x()->clone_v();
-
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   // Create the JFNK operator
@@ -326,7 +320,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
   jfnkParams->print(out);
 
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > thyraModel =
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<Scalar>(model));
 
   // Create the NOX::Thyra::Group
@@ -407,30 +401,28 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
+  Stratimikos::DefaultLinearSolverBuilder builder;
 
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  //belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1.0e-4);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 200);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
 
   // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     initial_guess = model->getNominalValues().get_x()->clone_v();
-
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<Scalar>::one());
 
   // Create the JFNK operator
@@ -445,11 +437,11 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
   jfnkParams->print(out);
 
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > thyraModel =
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<Scalar>(model));
 
   // Create the Preconditioner operator
-  Teuchos::RCP< ::Thyra::PreconditionerBase<Scalar> > precOp =
+  Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > precOp =
     thyraModel->create_W_prec();
 
   // Create the NOX::Thyra::Group

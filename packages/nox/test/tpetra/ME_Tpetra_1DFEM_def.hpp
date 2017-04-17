@@ -119,6 +119,9 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   nominalValues_ = inArgs;
   nominalValues_.set_x(x0_);
+
+  residTimer_ = Teuchos::TimeMonitor::getNewCounter("Model Evaluator: Residual Evaluation");
+  jacTimer_ = Teuchos::TimeMonitor::getNewCounter("Model Evaluator: Jacobian Evaluation");
 }
 
 // Initializers/Accessors
@@ -352,17 +355,21 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // Residual fill
     if (fill_f) {
+      Teuchos::TimeMonitor timer(*residTimer_);
       f->template sync<execution_space>();
       f->template modify<execution_space>();
 
       ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *xPtr_, *uPtr_, myRank);
       Kokkos::parallel_for("residual evaluation", numMyElements, functor);
+      Kokkos::fence();
     }
 
     // Jacobian fill
     if (fill_W) {
+      Teuchos::TimeMonitor timer(*jacTimer_);
       JacobianEvaluatorFunctor<tpetra_vec, tpetra_matrix> functor(*J, *xPtr_, *uPtr_, myRank);
       Kokkos::parallel_for("jacobian evaluation", numMyElements, functor);
+      Kokkos::fence();
     }
 
     // Preconditioner fill
@@ -373,7 +380,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     if (fill_W) {
       J->fillComplete();
-      //J->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
     }
 
     if (fill_W_prec) {
@@ -385,7 +391,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       diag.reciprocal(diag);
       M_inv->rightScale(diag);
       M_inv->rightScale(diag);
-      //M_inv->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
     }
 
   }

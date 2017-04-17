@@ -197,19 +197,14 @@ class Basis {
     dz(0.0),
     uuold(0.0),
     duuold(0.0)
-  {
-    phi = new Scalar[2];
-    dphide = new Scalar[2];
-  }
+  {}
 
   // Destructor
   KOKKOS_INLINE_FUNCTION
-  ~Basis() {
-    delete [] phi;
-    delete [] dphide;
-  }
+  ~Basis()
+  {}
 
-  // Calculates the values of u and x at the specified Gauss point
+  // Calculates the values of z and u at the specified Gauss point
   KOKKOS_INLINE_FUNCTION
   void computeBasis(LO gp, Scalar* z, Scalar* u, Scalar* uold = 0) {
     if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
@@ -225,7 +220,7 @@ class Basis {
     dz=0.5*(z[1]-z[0]);
     zz=0.0;
     uu=0.0;
-    uu=0.0;
+    duu=0.0;
     uuold=0.0;
     duuold=0.0;
     for (LO i=0; i < 2; i++) {
@@ -241,8 +236,8 @@ class Basis {
 
  public:
   // Variables that are calculated at the Gauss point
-  Scalar* phi;
-  Scalar* dphide;
+  Scalar phi[2];
+  Scalar dphide[2];
   Scalar uu;
   Scalar zz;
   Scalar duu;
@@ -291,17 +286,18 @@ struct ResidualEvaluatorFunctor
   {
     // Get the solution and coordinates at the nodes
     scalar_type xx[2];
-    xx[0]=x_view_(elt,0);
-    xx[1]=x_view_(elt+1,0);
+    xx[0] = x_view_(elt,0);
+    xx[1] = x_view_(elt+1,0);
 
     scalar_type uu[2];
-    uu[0]=u_view_(elt,0);
-    uu[1]=u_view_(elt+1,0);
+    uu[0] = u_view_(elt,0);
+    uu[1] = u_view_(elt+1,0);
+
+    Basis<scalar_type, local_ordinal_type> basis;
 
     // Loop Over Gauss Points
     for(local_ordinal_type gp = 0; gp < 2; ++gp) {
       // Calculate the basis function at the gauss point
-      Basis<scalar_type, local_ordinal_type> basis;
       basis.computeBasis(gp, xx, uu);
 
       // Loop over nodes in element
@@ -372,10 +368,11 @@ struct JacobianEvaluatorFunctor
     uu[0]=u_view_(elt,0);
     uu[1]=u_view_(elt+1,0);
 
+    Basis<scalar_type, local_ordinal_type> basis;
+
     // Loop Over Gauss Points
     for(local_ordinal_type gp = 0; gp < 2; ++gp) {
       // Calculate the basis function at the gauss point
-      Basis<scalar_type, local_ordinal_type> basis;
       basis.computeBasis(gp, xx, uu);
 
       // Loop over nodes in element

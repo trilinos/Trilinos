@@ -36,7 +36,7 @@ typedef Thyra::LinearOpBase<Scalar> TLOB;
 typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO,Node> TOVE;
 typedef typename TMV::mag_type mag_type;
 
-const std::size_t numLocalElements = 100;
+const Tpetra::global_size_t numGlobalElements = 100;
 
 // Tpetra matrix creation
 
@@ -46,7 +46,7 @@ Teuchos::RCP<CRSM> createTpetraOp(const Teuchos::RCP<const Map>& map)
 
   for (std::size_t i = 0; i < map->getNodeNumElements(); ++i) {
     GO row = map->getGlobalElement(static_cast<LO>(i));
-    Scalar val = static_cast<Scalar>(row+1);
+    Scalar val = static_cast<Scalar>(row+1)/static_cast<Scalar>(map->getGlobalNumElements());
     if (row == map->getGlobalNumElements()-1) {
       mat->insertGlobalValues(row,
                               Teuchos::tuple(row),
@@ -141,10 +141,9 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, Factory)
 TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_Vec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
 
   // Create Belos solve strategy with no prec
   Stratimikos::DefaultLinearSolverBuilder builder;
@@ -186,11 +185,10 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_Vec)
   // Check for correct result
   if (comm->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
-    Scalar val = static_cast<Scalar>(numGlobalElements);
+    Scalar val = ST::one();
     x_tpetra->sumIntoLocalValue(row, val);
   }
-  mag_type val = static_cast<mag_type>(static_cast<Scalar>(numGlobalElements)
-    *ST::squareroot(static_cast<Scalar>(1.0) + 3.0/numGlobalElements));
+  mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements+3)));
   auto ans = Teuchos::tuple(val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
 }
@@ -198,11 +196,10 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_Vec)
 TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-  const std::size_t numCols = 3;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
+  const std::size_t numCols = 3;
 
   // Create Belos solve strategy with no prec
   Stratimikos::DefaultLinearSolverBuilder builder;
@@ -249,12 +246,11 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
   if (comm->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
     for (std::size_t col = 0; col < numCols; ++col) {
-      Scalar val = static_cast<Scalar>((col+1)*numGlobalElements);
+      Scalar val = static_cast<Scalar>(col+1);
       x_tpetra->sumIntoLocalValue(row, col, val);
     }
   }
-  mag_type val = static_cast<mag_type>(static_cast<Scalar>(numGlobalElements)
-    *ST::squareroot(static_cast<Scalar>(1.0) + 3.0/numGlobalElements));
+  mag_type val = static_cast<mag_type>(ST::squareroot(static_cast<Scalar>(numGlobalElements+3)));
   auto ans = Teuchos::tuple(val, 2.0*val, 3.0*val);
   checkMultiVectors(x_tpetra, y_tpetra, ans, out, success);
 }
@@ -262,10 +258,9 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, FwdOp_MultiVec)
 TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_NoPrec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
 
   // Create Belos solve strategy with no prec
   Stratimikos::DefaultLinearSolverBuilder builder;
@@ -273,8 +268,8 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_NoPrec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 2*numGlobalElements);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 2*numGlobalElements);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
@@ -307,7 +302,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_NoPrec)
   y_tpetra->putScalar(ST::zero());
   if (comm()->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
-    Scalar val = static_cast<Scalar>(numGlobalElements);
+    Scalar val = ST::one();
     y_tpetra->sumIntoLocalValue(row, val);
   }
 
@@ -332,11 +327,10 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_NoPrec)
 TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-  const std::size_t numCols = 3;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
+  const std::size_t numCols = 3;
 
   // Create Belos solve strategy with no prec
   Stratimikos::DefaultLinearSolverBuilder builder;
@@ -344,8 +338,8 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
   p->set("Linear Solver Type", "Belos");
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", 2*numGlobalElements);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 2*numGlobalElements);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
@@ -379,7 +373,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
   if (comm()->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
     for (std::size_t col = 0; col < numCols; ++col) {
-      Scalar val = static_cast<Scalar>((col+1)*numGlobalElements);
+      Scalar val = static_cast<Scalar>(col+1);
       y_tpetra->sumIntoLocalValue(row, col, val);
     }
   }
@@ -406,10 +400,9 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_NoPrec)
 TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_Ifpack2Prec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
 
   // Create Belos solve strategy with Ifpack2 prec
   typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
@@ -420,7 +413,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_Ifpack2Prec)
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
@@ -456,7 +449,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_Ifpack2Prec)
   y_tpetra->putScalar(ST::zero());
   if (comm()->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
-    Scalar val = static_cast<Scalar>(numGlobalElements);
+    Scalar val = ST::one();
     y_tpetra->sumIntoLocalValue(row, val);
   }
 
@@ -481,11 +474,10 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_Vec_Ifpack2Prec)
 TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_Ifpack2Prec)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  const Tpetra::global_size_t numGlobalElements = comm->getSize()*numLocalElements;
-  const std::size_t numCols = 3;
-
-  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, numLocalElements, 0, comm));
+  Teuchos::RCP<const Map> map = Teuchos::rcp(new const Map(numGlobalElements, 0, comm));
   Teuchos::RCP<const TVSB> space = Thyra::createVectorSpace<Scalar,LO,GO,Node>(map);
+  const std::size_t numLocalElements = map->getNodeNumElements();
+  const std::size_t numCols = 3;
 
   // Create Belos solve strategy with Ifpack2 prec
   typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
@@ -496,7 +488,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_Ifpack2Prec)
   Teuchos::ParameterList& belosList = p->sublist("Linear Solver Types").sublist("Belos");
   belosList.set("Solver Type", "Pseudo Block GMRES");
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Maximum Iterations", numGlobalElements+1);
-  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", numGlobalElements+1);
+  belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set<int>("Num Blocks", 200);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Verbosity", 0x7f);
   belosList.sublist("Solver Types").sublist("Pseudo Block GMRES").set("Output Frequency", 100);
   belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
@@ -535,7 +527,7 @@ TEUCHOS_UNIT_TEST(Belos_LOWS, InvOp_MultiVec_Ifpack2Prec)
   if (comm()->getRank() == comm->getSize()-1) {
     LO row = static_cast<LO>(numLocalElements-1);
     for (std::size_t col = 0; col < numCols; ++col) {
-      Scalar val = static_cast<Scalar>((col+1)*numGlobalElements);
+      Scalar val = static_cast<Scalar>(col+1);
       y_tpetra->sumIntoLocalValue(row, col, val);
     }
   }
