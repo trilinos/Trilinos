@@ -1,7 +1,7 @@
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_RELEASE_MueLu
+  SERIAL_RELEASE_MueLu_Matlab
   ctest_linux_nightly_serial_release_muelu_matlab_dorksaber.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -9,7 +9,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_Teuchos
+  MPI_RELEASE_Teuchos_YAML
   ctest_linux_nightly_mpi_release_teuchos_yaml_dorksaber.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
