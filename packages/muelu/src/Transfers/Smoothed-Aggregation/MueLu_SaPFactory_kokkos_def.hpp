@@ -151,7 +151,6 @@ namespace MueLu {
     APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-    const ParameterList& pL = GetParameterList();
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen = pL.get<bool>("sa: calculate eigenvalue estimate");
