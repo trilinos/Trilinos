@@ -45,7 +45,6 @@
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
 #include <MueLu_UnitTestHelpers.hpp> // provides TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT, etc.
-#include <TpetraCore_config.h>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
