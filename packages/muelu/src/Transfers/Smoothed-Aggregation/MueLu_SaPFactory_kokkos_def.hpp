@@ -118,6 +118,7 @@ namespace MueLu {
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+    const ParameterList& pL = GetParameterList();
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
