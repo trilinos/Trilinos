@@ -1161,7 +1161,7 @@ void mult_A_B(
 
     for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
-      Scalar Aval = Avals[k];
+      const Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
@@ -1202,7 +1202,7 @@ void mult_A_B(
 
     for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
-      Scalar Aval = Avals[k];
+      const Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
@@ -1553,7 +1553,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
     // mfh 27 Sep 2016: For each entry of A in the current row of A
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k]; // local column index of current entry of A
-      SC Aval = Avals[k];   // value of current entry of A
+      const SC Aval = Avals[k];   // value of current entry of A
       if (Aval == SC_ZERO)
         continue; // skip explicitly stored zero values in A
 
@@ -2016,7 +2016,7 @@ void mult_A_B_reuse(
 
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 
@@ -2294,7 +2294,7 @@ void jacobi_A_B_newmatrix(
     // Entries of -omega * Dinv * A * B
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 
@@ -2547,7 +2547,7 @@ void jacobi_A_B_reuse(
     // Entries of -omega * Dinv * A * B
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 
