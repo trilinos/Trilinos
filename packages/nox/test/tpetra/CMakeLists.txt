@@ -50,4 +50,9 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.cpp
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_Heq
+    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_Heq.hpp ME_Tpetra_Heq_def.hpp Tpetra_Heq.cpp
+    )
+
 ENDIF()

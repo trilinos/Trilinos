@@ -492,7 +492,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl
     // Check if any entry of tmvs aliases this object's wrapped vector.
     // If so, replace that entry in the array with a copy.
     tmv = Teuchos::null;
-    for (; tmvIter != tmvIter.end(); ++tmvIter) {
+    for (; tmvIter != tmvs.end(); ++tmvIter) {
       if (tmvIter->getRawPtr() == tpetraVector_.getConstObj().getRawPtr()) {
         if (tmv.is_null()) {
           tmv = Teuchos::rcp(new TpetraMultiVector_t(
