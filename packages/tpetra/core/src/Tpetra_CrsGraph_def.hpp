@@ -3699,6 +3699,8 @@ namespace Tpetra {
 #endif
     if(params.is_null() || params->get("compute global constants",true))
       computeGlobalConstants ();
+    else
+      computeLocalConstants ();
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -4438,6 +4440,64 @@ namespace Tpetra {
       "developers.");
 #endif // HAVE_TPETRA_DEBUG
 
+    if (! haveLocalConstants_) {
+      computeLocalConstants();
+      haveLocalConstants_ = true;
+    } // if my process doesn't have local constants
+
+    // Compute global constants from local constants.  Processes that
+    // already have local constants still participate in the
+    // all-reduces, using their previously computed values.
+    if (haveGlobalConstants_ == false) {
+      // Promote all the nodeNum* and nodeMaxNum* quantities from
+      // size_t to global_size_t, when doing the all-reduces for
+      // globalNum* / globalMaxNum* results.
+      //
+      // FIXME (mfh 07 May 2013) Unfortunately, we either have to do
+      // this in two all-reduces (one for the sum and the other for
+      // the max), or use a custom MPI_Op that combines the sum and
+      // the max.  The latter might even be slower than two
+      // all-reduces on modern network hardware.  It would also be a
+      // good idea to use nonblocking all-reduces (MPI 3), so that we
+      // don't have to wait around for the first one to finish before
+      // starting the second one.
+      GST lcl[2], gbl[2];
+      lcl[0] = static_cast<GST> (nodeNumEntries_);
+      lcl[1] = static_cast<GST> (nodeNumDiags_);
+      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_SUM,
+                          2, lcl, gbl);
+      globalNumEntries_ = gbl[0];
+      globalNumDiags_   = gbl[1];
+      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_MAX,
+                          static_cast<GST> (nodeMaxNumRowEntries_),
+                          outArg (globalMaxNumRowEntries_));
+      haveGlobalConstants_ = true;
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  computeLocalConstants ()
+  {
+    using Teuchos::ArrayView;
+    using Teuchos::outArg;
+    using Teuchos::reduceAll;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef global_size_t GST;
+
+    // Short circuit
+    if(haveGlobalConstants_) return;
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap(), std::logic_error, "Tpetra::"
+      "CrsGraph::computeLocalConstants: At this point, the graph should have "
+      "a column Map, but it does not.  Please report this bug to the Tpetra "
+      "developers.");
+#endif // HAVE_TPETRA_DEBUG
+
     // If necessary, (re)compute the local constants: nodeNumDiags_,
     // lowerTriangular_, upperTriangular_, and nodeMaxNumRowEntries_.
     if (! haveLocalConstants_) {
@@ -4514,35 +4574,6 @@ namespace Tpetra {
       }
       haveLocalConstants_ = true;
     } // if my process doesn't have local constants
-
-    // Compute global constants from local constants.  Processes that
-    // already have local constants still participate in the
-    // all-reduces, using their previously computed values.
-    if (haveGlobalConstants_ == false) {
-      // Promote all the nodeNum* and nodeMaxNum* quantities from
-      // size_t to global_size_t, when doing the all-reduces for
-      // globalNum* / globalMaxNum* results.
-      //
-      // FIXME (mfh 07 May 2013) Unfortunately, we either have to do
-      // this in two all-reduces (one for the sum and the other for
-      // the max), or use a custom MPI_Op that combines the sum and
-      // the max.  The latter might even be slower than two
-      // all-reduces on modern network hardware.  It would also be a
-      // good idea to use nonblocking all-reduces (MPI 3), so that we
-      // don't have to wait around for the first one to finish before
-      // starting the second one.
-      GST lcl[2], gbl[2];
-      lcl[0] = static_cast<GST> (nodeNumEntries_);
-      lcl[1] = static_cast<GST> (nodeNumDiags_);
-      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_SUM,
-                          2, lcl, gbl);
-      globalNumEntries_ = gbl[0];
-      globalNumDiags_   = gbl[1];
-      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_MAX,
-                          static_cast<GST> (nodeMaxNumRowEntries_),
-                          outArg (globalMaxNumRowEntries_));
-      haveGlobalConstants_ = true;
-    }
   }
 
 
