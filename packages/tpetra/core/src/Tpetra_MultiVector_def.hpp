@@ -53,11 +53,13 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_MV_GEMM.hpp"
 #include "Kokkos_Blas1_MV.hpp"
+#include "Kokkos_Blas1.hpp"
 #include "Kokkos_Random.hpp"
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
@@ -312,6 +314,8 @@ namespace Tpetra {
                const bool zeroOut) : /* default is true */
     base_type (map)
   {
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,numVecs,zeroOut)");
+
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
@@ -338,6 +342,8 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "MultiVector(const MultiVector&, "
       "const Teuchos::DataAccess): ";
+
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV 2-arg \"copy\" ctor");
 
     if (copyOrView == Teuchos::Copy) {
       // Reuse the conveniently already existing function that creates
@@ -393,6 +399,8 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,d_view): ";
+
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,d_view)");
 
     // Get stride of view: if second dimension is 0, the stride might
     // be 0, so take view_dimension instead.
@@ -604,6 +612,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs): ";
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,Teuchos::ArrayView,LDA,numVecs)");
 
     // Deep copy constructor, constant stride (NO whichVectors_).
     // There is no need for a deep copy constructor with nonconstant stride.
@@ -676,6 +685,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "MultiVector(map,ArrayOfPtrs,numVecs): ";
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,Teuchos::ArrayView of ArrayView,numVecs)");
 
     const size_t lclNumRows =
       map.is_null () ? size_t (0) : map->getNodeNumElements ();
@@ -1693,6 +1703,8 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Kokkos::View)");
+
     const size_t numVecs = this->getNumVectors ();
     if (numVecs == 0) {
       return; // nothing to do
@@ -1789,15 +1801,89 @@ namespace Tpetra {
   dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
        const Teuchos::ArrayView<dot_type>& dots) const
   {
-    typedef Kokkos::View<dot_type*, device_type> dev_dots_view_type;
-    typedef MakeUnmanagedView<dot_type, device_type> view_getter_type;
-    typedef typename view_getter_type::view_type host_dots_view_type;
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Teuchos::ArrayView)");
 
-    const size_t numDots = static_cast<size_t> (dots.size ());
-    host_dots_view_type dotsHostView (dots.getRawPtr (), numDots);
-    dev_dots_view_type dotsDevView ("MV::dot tmp", numDots);
-    this->dot (A, dotsDevView); // Do the computation on the device.
-    Kokkos::deep_copy (dotsHostView, dotsDevView); // Bring back result to host
+    if (this->getNumVectors () == 1 && A.getNumVectors () == 1) {
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+      const auto& comm = * (this->getMap ()->getComm ());
+
+      // Special case for a single dot product.  Don't allocate device
+      // buffer, and don't copy to and from device.
+      
+      // If we need sync to device, then host has the most recent
+      // version.  A is a guest of this method, so we should sync it.
+      // Thus, let A control where execution happens.
+      const bool useHostVersion = A.template need_sync<device_type> ();
+      if (useHostVersion) {
+	// A was last modified on host, so run the local kernel there.
+	// This means we need a host mirror of the array of norms too.
+	typedef typename dual_view_type::t_host XMV;
+	typedef typename XMV::memory_space cur_memory_space;
+
+	// I consider it more polite to sync *this, then to sync A.
+	// A is a "guest" of this method, and is passed in const.
+	const_cast<MV*> (this)->template sync<cur_memory_space> ();
+	auto thisView = this->template getLocalView<cur_memory_space> ();
+	auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
+	auto A_view = A.template getLocalView<cur_memory_space> ();
+	auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
+	
+	const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
+	dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+
+	if (comm.getSize () > 1) {
+	  using Teuchos::outArg;
+	  using Teuchos::REDUCE_SUM;
+	  using Teuchos::reduceAll;
+	  reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
+	}
+	else {
+	  gblDot = lclDot;
+	}
+	dots[0] = gblDot;
+      }
+      else {
+	// A was last modified on device, so run the local kernel there.
+	typedef typename dual_view_type::t_dev XMV;
+	typedef typename XMV::memory_space cur_memory_space;
+
+	// I consider it more polite to sync *this, then to sync A.
+	// A is a "guest" of this method, and is passed in const.
+	const_cast<MV*> (this)->template sync<cur_memory_space> ();
+	auto thisView = this->template getLocalView<cur_memory_space> ();
+	auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
+	auto A_view = A.template getLocalView<cur_memory_space> ();
+	auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
+	
+	const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
+	dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+
+	if (comm.getSize () > 1) {
+	  using Teuchos::outArg;
+	  using Teuchos::REDUCE_SUM;
+	  using Teuchos::reduceAll;
+	  reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
+	}
+	else {
+	  gblDot = lclDot;
+	}
+	dots[0] = gblDot;
+      }
+    }
+    else {
+      // FIXME (mfh 19 Apr 2017) don't allocate on device here,
+      // esp. not if one entry.
+
+      typedef Kokkos::View<dot_type*, device_type> dev_dots_view_type;
+      typedef MakeUnmanagedView<dot_type, device_type> view_getter_type;
+      typedef typename view_getter_type::view_type host_dots_view_type;
+
+      const size_t numDots = static_cast<size_t> (dots.size ());
+      host_dots_view_type dotsHostView (dots.getRawPtr (), numDots);
+      dev_dots_view_type dotsDevView ("MV::dot tmp", numDots);
+      this->dot (A, dotsDevView); // Do the computation on the device.
+      Kokkos::deep_copy (dotsHostView, dotsDevView); // Bring back result to host
+    }
   }
 
 
@@ -1809,6 +1895,8 @@ namespace Tpetra {
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
     typedef MakeUnmanagedView<mag_type, device_type> view_getter_type;
     typedef typename view_getter_type::view_type host_norms_view_type;
+
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::norm2 (Teuchos::ArrayView)");
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1823,6 +1911,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   norm2 (const Kokkos::View<mag_type*, device_type>& norms) const
   {
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::norm2 (Kokkos::View)");
     this->normImpl (norms, NORM_TWO);
   }
 
@@ -2916,6 +3005,8 @@ namespace Tpetra {
     using Kokkos::subview;
     const char tfecfFuncName[] = "update: ";
 
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
+
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
 
@@ -3007,6 +3098,8 @@ namespace Tpetra {
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
+
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta,B,gamma)");
 
     const size_t lclNumRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3862,6 +3955,8 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char errPrefix[] = "Tpetra::MultiVector::multiply: ";
 
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::multiply");
+
     // This routine performs a variety of matrix-matrix multiply
     // operations, interpreting the MultiVector (this-aka C , A and B)
     // as 2D matrices.  Variations are due to the fact that A, B and C
@@ -4010,6 +4105,8 @@ namespace Tpetra {
       const char ctransB = (transB == Teuchos::NO_TRANS ? 'N' :
                             (transB == Teuchos::TRANS ? 'T' : 'C'));
       const impl_scalar_type alpha_IST (alpha);
+
+      ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
       ::Tpetra::Details::Blas::gemm (ctransA, ctransB, alpha_IST, A_sub,
                                      B_sub, beta_local, C_sub);
     }
@@ -4103,6 +4200,8 @@ namespace Tpetra {
       dev_view_type;
     typedef decltype (this->template getLocalView<Kokkos::HostSpace> ())
       host_view_type;
+
+    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::reduce");
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (this->isDistributed (), std::runtime_error,
