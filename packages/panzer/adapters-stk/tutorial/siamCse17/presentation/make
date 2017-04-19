@@ -1,3 +1,0 @@
-#!/bin/bash
-file=siamCseTalk
-lualatex ${file}.tex && biber ${file}.bcf && lualatex ${file}.tex
