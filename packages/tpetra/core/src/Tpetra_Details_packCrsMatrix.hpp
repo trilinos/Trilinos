@@ -71,20 +71,22 @@ class Distributor;
 namespace Details {
 
 template<class LocalSparseMatrixType>
-void
-allocatePackSpace (Teuchos::Array<char>& exports,
-                   size_t& totalNumEntries,
-                   const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
-                   const LocalSparseMatrixType& lclMatrix,
-                   const size_t sizeOfGlobalOrdinal)
+bool
+crsMatrixAllocatePackSpace (std::unique_ptr<std::string>& errStr,
+                            Teuchos::Array<char>& exports,
+                            size_t& totalNumEntries,
+                            const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
+                            const LocalSparseMatrixType& lclMatrix,
+                            const size_t sizeOfGlobalOrdinal)
 {
-  //const char tfecfFuncName[] = "allocatePackSpace: ";
   typedef typename LocalSparseMatrixType::ordinal_type LO;
   typedef typename LocalSparseMatrixType::value_type IST;
 
   // The number of export LIDs must fit in LocalOrdinal, assuming
   // that the LIDs are distinct and valid on the calling process.
   const LO numExportLIDs = static_cast<LO> (exportLIDs.size ());
+
+  bool ok = true; // true if and only if no errors occurred
 
   // Count the total number of matrix entries to send.
   totalNumEntries = 0;
@@ -98,8 +100,21 @@ allocatePackSpace (Teuchos::Array<char>& exports,
     // indices as an error.  Just consider them nonowned for now.
     if (curNumEntries == Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
       curNumEntries = 0;
+      ok = false;
     }
     totalNumEntries += curNumEntries;
+  }
+
+  if (! ok) {
+    const std::string err ("Encountered invalid (flag) number of "
+                           "row entries in one or more rows.");
+    if (errStr.get () == NULL) {
+      errStr = std::unique_ptr<std::string> (new std::string (err));
+    }
+    else {
+      *errStr = err;
+    }
+    return false;
   }
 
   // FIXME (mfh 24 Feb 2013, 24 Mar 2017) This code is only correct
@@ -116,6 +131,7 @@ allocatePackSpace (Teuchos::Array<char>& exports,
   if (static_cast<size_t> (exports.size ()) < allocSize) {
     exports.resize (allocSize);
   }
+  return true;
 }
 
 template<class LocalSparseMatrixType, class LocalMapType>
@@ -257,8 +273,20 @@ packCrsMatrix (std::unique_ptr<std::string>& errStr,
   // unallocated.  Do the first two parts of "Count, allocate, fill,
   // compute."
   size_t totalNumEntries = 0;
-  allocatePackSpace<local_matrix_type> (exports, totalNumEntries,
-                                        exportLIDs, lclMatrix, sizeof (GO));
+  const bool allocOK =
+    crsMatrixAllocatePackSpace (errStr, exports, totalNumEntries,
+                                exportLIDs, lclMatrix, sizeof (GO));
+  if (! allocOK) {
+    const std::string err =
+      std::string ("packCrsMatrix: Allocating pack space failed: ") + *errStr;
+    if (errStr.get () == NULL) {
+      errStr = std::unique_ptr<std::string> (new std::string (err));
+    }
+    else {
+      *errStr = err;
+    }
+    return false;
+  }
   const size_t bufSize = static_cast<size_t> (exports.size ());
 
   // Compute the number of "packets" (in this case, bytes) per
