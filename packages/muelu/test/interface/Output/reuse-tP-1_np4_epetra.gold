@@ -64,6 +64,7 @@ Level 1
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
    
@@ -81,7 +82,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x210ba50,node=0x20d4e60,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x20b75a0,node=0x20b79b0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -170,6 +171,7 @@ Level 2
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
    
@@ -187,7 +189,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x21242c0,node=0x2124980,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2284080,node=0x2206760,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -229,7 +231,7 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -290,6 +292,7 @@ Level 1
    Reusing previous AP data
    Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
+  Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
   
@@ -359,6 +362,7 @@ Level 2
    Reusing previous AP data
    Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
+  Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
   
@@ -389,6 +393,6 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 2) post : no smoother
 
