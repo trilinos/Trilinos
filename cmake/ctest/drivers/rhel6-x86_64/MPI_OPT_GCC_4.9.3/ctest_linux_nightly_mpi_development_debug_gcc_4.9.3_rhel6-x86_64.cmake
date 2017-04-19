@@ -95,10 +95,13 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
 
-  # wcm: Added -Wno-unused-local-typedefs (EXPERIMENTAL).  GCC 4.9.3 includes -Wunused-local-typedefs in -Wall
+  # wcm: 2017-04-14: Added -Wno-unused-local-typedefs (EXPERIMENTAL).  GCC 4.9.3 includes -Wunused-local-typedefs in -Wall
   #      but GCC 4.7.2 did not include that by default.  I added it here to see how much this cleans the build
   #      on my experimental jenkins build towards moving things into sync with the 4.7.2 Werrr build.
-  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor -Wno-unused-local-typedefs"
+  # wcm: 2017-04-16: Adding -Wno-unused-function (EXPERIMENTAL).  Trying this out because the GCC 4.9.3 -Werror
+  #      build seems to fail on some unit tests in Thyra on unused functions.  Curious that GCC 4.7.2 is supposed
+  #      to enable -Werror=unused-functions when -Wall is enabled but it doesn't fail on Thyra.
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor -Wno-unused-local-typedefs -Wno-unused-function"
   )
 
 #
