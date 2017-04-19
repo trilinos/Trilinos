@@ -4426,8 +4426,6 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     typedef global_size_t GST;
 
     // Short circuit
@@ -4486,7 +4484,6 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
 
     // Short circuit
     if(haveGlobalConstants_) return;
