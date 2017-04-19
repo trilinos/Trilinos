@@ -147,8 +147,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Pack1, SC, LO, GO, NT)
 
   std::unique_ptr<std::string> errStr;
   const bool lclOK =
-    packCrsMatrix<SC,LO,GO,NT> (errStr, exportLIDs, exports, numPacketsPerLID,
-                                constantNumPackets, A_lcl, *col_map, distor);
+    packCrsMatrix (errStr, exports, numPacketsPerLID,
+                   constantNumPackets, exportLIDs, A_lcl,
+                   col_map->getLocalMap (), world_rank, distor);
   TEST_ASSERT( lclOK );
   int lclSuccess = success ? 1 : 0;
   int gblSuccess = 0; // output argument

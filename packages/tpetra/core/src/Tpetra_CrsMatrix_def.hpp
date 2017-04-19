@@ -5973,22 +5973,21 @@ namespace Tpetra {
         Distributor& dist) const
   {
     using Details::packCrsMatrix;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
 
     if (this->isStaticGraph ()) {
       const map_type& colMap = * (this->staticGraph_->colMap_);
+      const auto lclColMap = colMap.getLocalMap ();
+      const int myRank =
+        colMap.getComm ().is_null () ? 0 : colMap.getComm ()->getRank ();
       std::unique_ptr<std::string> errStr;
 #ifdef HAVE_TPETRA_DEBUG
-      const bool locallyCorrect =
-        Details::packCrsMatrix<Scalar, LO, GO, Node> (errStr, exportLIDs,
-                                                      exports, numPacketsPerLID,
-                                                      constantNumPackets,
-                                                      this->lclMatrix_,
-                                                      colMap, dist);
       using Teuchos::outArg;
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
+      const bool locallyCorrect =
+        packCrsMatrix (errStr, exports, numPacketsPerLID,
+                       constantNumPackets, exportLIDs, this->lclMatrix_,
+                       lclColMap, myRank, dist);
       const int lclOK = locallyCorrect ? 1 : 0;
       int gblOK = 1; // output argument
       if (! colMap.getComm ().is_null ()) {
@@ -6007,11 +6006,10 @@ namespace Tpetra {
         }
       }
 #else // NOT HAVE_TPETRA_DEBUG
-      (void) Details::packCrsMatrix<Scalar, LO, GO, Node> (errStr, exportLIDs,
-                                                           exports, numPacketsPerLID,
-                                                           constantNumPackets,
-                                                           this->lclMatrix_,
-                                                           colMap, dist);
+      (void) packCrsMatrix (errStr, exports, numPacketsPerLID,
+                            constantNumPackets, exportLIDs,
+                            this->lclMatrix_, lclColMap, myRank,
+                            dist);
 #endif // HAVE_TPETRA_DEBUG
     }
     else {
