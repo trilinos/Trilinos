@@ -172,5 +172,8 @@ main (int argc, char* argv[])
     }
   }
 
+  // Report timings.
+  Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+
   return EXIT_SUCCESS;
 }
