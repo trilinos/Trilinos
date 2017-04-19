@@ -44,9 +44,17 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include <memory>
+#include <string>
 
 /// \file Tpetra_Details_packCrsMatrix.hpp
-/// \brief Functions for packing the KokkosSparse::CrsMatrix
+/// \brief Functions for packing the entries of a Tpetra::CrsMatrix
+///   for communication, in the case where it is valid to go to the
+///   KokkosSparse::CrsMatrix (local sparse matrix data structure)
+///   directly.
+/// \warning This file, and its contents, are implementation details
+///   of Tpetra.  The file itself or its contents may disappear or
+///   change at any time.
 
 namespace Tpetra {
 //
@@ -54,17 +62,16 @@ namespace Tpetra {
 //
 namespace Details {
 
-
-template<class SC, class LO, class GO, class NT, const bool classic>
+template<class SC, class LO, class GO, class NT>
 void
 allocatePackSpace(Teuchos::Array<char>& exports,
                   size_t& totalNumEntries,
                   const Teuchos::ArrayView<const LO>& exportLIDs,
-                  const typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::local_matrix_type& lclMatrix)
+                  const typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_type& lclMatrix)
 {
   //const char tfecfFuncName[] = "allocatePackSpace: ";
 
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::impl_scalar_type IST;
+  typedef typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type IST;
 
   // The number of export LIDs must fit in LocalOrdinal, assuming
   // that the LIDs are distinct and valid on the calling process.
@@ -101,7 +108,7 @@ allocatePackSpace(Teuchos::Array<char>& exports,
   }
 }
 
-template<class SC, class LO, class GO, class NT, const bool classic>
+template<class SC, class LO, class GO, class NT>
 bool
 packCrsMatrixRow(char* const numEntOut,
         char* const valOut,
@@ -109,10 +116,10 @@ packCrsMatrixRow(char* const numEntOut,
         const size_t numEnt,
         const LO lclRow,
         const typename Tpetra::Map<LO,GO,NT>& colMap,
-        const typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::local_matrix_type& lclMatrix)
+        const typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_type& lclMatrix)
 {
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::impl_scalar_type IST;
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::local_matrix_type::size_type offset_type;
+  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT>::impl_scalar_type IST;
+  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT>::local_matrix_type::size_type offset_type;
   typedef Kokkos::pair<offset_type, offset_type> pair_type;
 
   const LO numEntLO = static_cast<LO>(numEnt);
@@ -171,17 +178,33 @@ packCrsMatrixRow(char* const numEntOut,
   return true;
 }
 
-template<class SC, class LO, class GO, class NT, const bool classic>
-void
-packCrsMatrix(const Teuchos::ArrayView<const LO>& exportLIDs,
-     Teuchos::Array<char>& exports,
-     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor,
-     const typename Tpetra::Map<LO,GO,NT>& colMap,
-     const typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::local_matrix_type& lclMatrix)
+/// \brief Pack specified entries of the given local sparse matrix for
+///   communication.
+///
+/// \warning This is an implementation detail of Tpetra::CrsMatrix.
+///
+/// \param errStr [in/out] If an error occurs on any participating
+///   process, allocate this if it is null, then fill the string with
+///   local error reporting.  This is purely local to the process that
+///   reports the error.  The caller is responsible for synchronizing
+///   across processes.
+///
+/// \return true if no errors occurred on the calling process, else
+///   false.  This is purely local to the process that discovered the
+///   error.  The caller is responsible for synchronizing across
+///   processes.
+template<class SC, class LO, class GO, class NT>
+bool
+packCrsMatrix (std::unique_ptr<std::string>& errStr,
+               const Teuchos::ArrayView<const LO>& exportLIDs,
+               Teuchos::Array<char>& exports,
+               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+               size_t& constantNumPackets,
+               const typename Tpetra::CrsMatrix<SC,LO,GO,NT>::local_matrix_type& lclMatrix,
+               const typename Tpetra::Map<LO,GO,NT>& colMap,
+               Distributor& /* dist */)
 {
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT,classic>::impl_scalar_type IST;
+  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NT>::impl_scalar_type IST;
 
   const size_t numExportLIDs = static_cast<size_t>(exportLIDs.size());
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -198,7 +221,7 @@ packCrsMatrix(const Teuchos::ArrayView<const LO>& exportLIDs,
   // unallocated.  Do the first two parts of "Count, allocate, fill,
   // compute."
   size_t totalNumEntries = 0;
-  allocatePackSpace<SC,LO,GO,NT,classic>(exports, totalNumEntries, exportLIDs, lclMatrix);
+  allocatePackSpace<SC,LO,GO,NT>(exports, totalNumEntries, exportLIDs, lclMatrix);
   const size_t bufSize = static_cast<size_t>(exports.size());
 
   // Compute the number of "packets" (in this case, bytes) per
@@ -255,8 +278,8 @@ packCrsMatrix(const Teuchos::ArrayView<const LO>& exportLIDs,
         break;
       }
 
-      packErr = ! packCrsMatrixRow<SC,LO,GO,NT,classic>(numEntBeg, valBeg, indBeg,
-                                                        numEnt, lclRow, colMap, lclMatrix);
+      packErr = ! packCrsMatrixRow<SC,LO,GO,NT>(numEntBeg, valBeg, indBeg,
+                                                numEnt, lclRow, colMap, lclMatrix);
       if (packErr) {
         firstBadIndex = i;
         firstBadOffset = offset;
@@ -271,6 +294,22 @@ packCrsMatrix(const Teuchos::ArrayView<const LO>& exportLIDs,
     }
   }
 
+  if (packErr) {
+    std::ostringstream os;
+    const int myRank = colMap.getComm ().is_null () ? 0 :
+      colMap.getComm ()->getRank ();
+    os << "Proc " << myRank << ": packCrsMatrix failed.  "
+       << "firstBadIndex: " << firstBadIndex
+       << ", firstBadOffset: " << firstBadOffset
+       << ", firstBadNumBytes: " << firstBadNumBytes
+       << ", outOfBounds: " << (outOfBounds ? "true" : "false")
+       << std::endl;
+    if (errStr.get () != NULL) {
+      errStr = std::unique_ptr<std::string> (new std::string ());
+      *errStr = os.str ();
+    }
+  }
+  return ! packErr;
 }
 
 } // namespace Details
