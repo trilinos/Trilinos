@@ -43,12 +43,8 @@
 #define TPETRA_DETAILS_PROFILING_HPP
 
 /// \file Tpetra_Details_Profiling.hpp
-/// \brief Definition of the Tpetra::MultiVector class
-///
-/// If you want to use Tpetra::MultiVector, include
-/// "Tpetra_MultiVector.hpp" (a file which CMake generates and
-/// installs for you).  If you only want the declaration of
-/// Tpetra::MultiVector, include "Tpetra_MultiVector_decl.hpp".
+/// \brief Declaration of Tpetra::Details::Profiling, a scope guard
+///   for Kokkos Profiling.
 
 #include "TpetraCore_config.h"
 
@@ -58,7 +54,13 @@ namespace Details {
 /// \brief Profile the given scope.
 ///
 /// This class implements a "scope guard" for profiling a region of
-/// code.  Tpetra currently uses Kokkos::Profiling::pushRegion(name)
+/// code, using Kokkos Profiling.
+///
+/// If you disable Kokkos Profiling by setting some configuration
+/// option such that KOKKOS_ENABLE_PROFILING is not defined, then this
+/// class is harmless, but will do NOTHING.
+///
+/// Tpetra currently uses Kokkos::Profiling::pushRegion(name)
 /// to start the region to profile, and Kokkos::Profiling::popRegion()
 /// to close the region to profile.  The "scope guard" idiom means
 /// that the destructor automatically closes the region, no matter how
@@ -97,9 +99,9 @@ namespace Details {
 /// https://github.com/kokkos/kokkos-tools/wiki
 class ProfilingRegion {
 public:
-  //! Open region with name \c name
+  //! Open region to profile; name the region \c name.
   ProfilingRegion (const char name[]);
-  //! Close region
+  //! Close region to profile.
   ~ProfilingRegion ();
 };
 
