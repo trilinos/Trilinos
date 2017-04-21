@@ -75,10 +75,12 @@ public:
    */
   WorksetDescriptor(const std::string & element_block,
                     const int workset_size=EMPTY,
-                    const bool requires_partitioning=false)
+                    const bool requires_partitioning=false,
+                    const bool apply_orientations=true)
   : elementBlock_(element_block),
     worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning)
+    requiresPartitioning_(requires_partitioning),
+    applyOrientations_(apply_orientations)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                    "WorksetDescriptor constr: Element block name must be non-empty!");
@@ -102,11 +104,13 @@ public:
   WorksetDescriptor(const std::string & element_block,
                     const std::string & sideset,
                     const int workset_size=EMPTY,
-                    const bool requires_partitioning=false)
+                    const bool requires_partitioning=false,
+                    const bool apply_orientations=true)
   : elementBlock_(element_block),
     sideset_(sideset),
     worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning)
+    requiresPartitioning_(requires_partitioning),
+    applyOrientations_(apply_orientations)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                "WorksetDescriptor constr: Element block name must be non-empty!");
@@ -136,13 +140,15 @@ public:
                     const std::string & sideset_0,
                     const std::string & sideset_1,
                     const int workset_size=EMPTY,
-                    const bool requires_partitioning=false)
+                    const bool requires_partitioning=false,
+                    const bool apply_orientations=true)
   : elementBlock_(element_block_0),
     elementBlock_2_(element_block_1),
     sideset_(sideset_0),
     sideset_2_(sideset_1),
     worksetSize_(workset_size),
-    requiresPartitioning_(requires_partitioning)
+    requiresPartitioning_(requires_partitioning),
+    applyOrientations_(apply_orientations)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
                                "WorksetDescriptor constr: Element block 0 name must be non-empty!");
@@ -212,6 +218,8 @@ public:
   int getWorksetSize() const
   { return worksetSize_; }
 
+  bool applyOrientations() const {return applyOrientations_;}
+
 private:
 
   //! Element block, required to be non-empty
@@ -232,6 +240,9 @@ private:
   //! Marks if the mesh require partitioning before generating worksets
   bool requiresPartitioning_;
 
+  //! Apply orientations - used for continuous discretizations with edge/face elements
+  bool applyOrientations_;
+
 //
 //  //! Use the side set information or not
 //  bool useSideset_;
@@ -244,26 +255,6 @@ private:
    */
 //  bool sideAssembly_;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //! Equality operation for use with hash tables and maps
 inline bool operator==(const WorksetDescriptor & a,const WorksetDescriptor & b)

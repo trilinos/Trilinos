@@ -45,14 +45,22 @@
 
 #include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
+
 #include "Phalanx_KokkosDeviceTypes.hpp"
+
 #include "Shards_CellTopology.hpp"
+
 #include "Teuchos_RCP.hpp"
+
 #include <string>
 
 namespace panzer
 {
 
+/** Base class for LocalMeshInfo structures
+ *
+ * TODO: Replace with Connectivity manager
+ */
 template <typename LO, typename GO>
 struct LocalMeshInfoBase
 {
@@ -77,6 +85,11 @@ struct LocalMeshInfoBase
 
 };
 
+/** Partition of LocalMeshInfo
+ *
+ * Used for generating worksets
+ *
+ */
 template <typename LO, typename GO>
 struct LocalMeshPartition:
     public LocalMeshInfoBase<LO,GO>
@@ -90,7 +103,11 @@ struct LocalMeshPartition:
 
 };
 
-
+/** Portion of LocalMeshInfo associated with sidesets
+ *
+ * Used to represent a sideset found on the local process
+ *
+ */
 template <typename LO, typename GO>
 struct LocalMeshSidesetInfo:
     public LocalMeshInfoBase<LO,GO>
@@ -104,6 +121,11 @@ struct LocalMeshSidesetInfo:
 
 };
 
+/** Portion of LocalMeshInfo associated with element block
+ *
+ * Used to represent an element block found on the local process
+ *
+ */
 template <typename LO, typename GO>
 struct LocalMeshBlockInfo:
     public LocalMeshInfoBase<LO,GO>
@@ -114,6 +136,9 @@ struct LocalMeshBlockInfo:
 
 };
 
+/** Entire mesh found on a local process
+ *
+ */
 template <typename LO, typename GO>
 struct LocalMeshInfo:
     public LocalMeshInfoBase<LO,GO>

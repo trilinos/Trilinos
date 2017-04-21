@@ -40,66 +40,55 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_STK_SetupPartitionedWorksetUtilities.hpp"
+#ifndef PANZER_LOCAL_PARTITIONING_UTILITIES_HPP
+#define PANZER_LOCAL_PARTITIONING_UTILITIES_HPP
 
-#include "Panzer_STK_LocalPartitioningUtilities.hpp"
-
-#include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_STK_Interface.hpp"
-#include "Panzer_Workset_Builder.hpp"
-
-#include "Panzer_Workset.hpp"
-#include "Panzer_WorksetNeeds.hpp"
-#include "Panzer_WorksetDescriptor.hpp"
-
-#include "Teuchos_Assert.hpp"
-
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include <vector>
 
-namespace panzer_stk
+namespace panzer
 {
 
-namespace workset_utils
-{
+class WorksetDescriptor;
 
+/** Create a set of partitions given a descriptor containing:
+ * 1) Volume worksets
+ *  - Element Block Name
+ *  - Workset Size
+ * 2) Sideset worksets
+ *  - Element Block Name
+ *  - Sideset Name
+ *  - Workset Size
+ *
+ * \param[in] mesh_info Reference to fully constructed mesh_info
+ * \param[in] description Workset descriptor defining area to partition
+ * \param[out] partitions Set of local mesh partitions for given region of mesh_info
+ *
+ */
 template<typename LO, typename GO>
 void
-convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partition,
-                              const panzer::WorksetNeeds & needs,
-                              panzer::Workset & workset)
-{
-  workset.setup(partition, needs);
+generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
+                            const panzer::WorksetDescriptor & description,
+                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions);
 
-  workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
-  workset.subcell_dim = -1;
-
-}
-
-}
-
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer_stk::STK_Interface & mesh,
-                         const panzer::WorksetDescriptor & description,
-                         const panzer::WorksetNeeds & needs)
+namespace partitioning_utilities
 {
 
-  // Each workset will be represented by a chunk of the mesh
-  // These chunks can either be partitioned, or just be a set of cells
-  std::vector<panzer::LocalMeshPartition<int,int> > partitions;
-  panzer_stk::generateLocalMeshPartitions<int,int>(mesh, description, partitions);
-
-  Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
-
-  for(const auto & partition : partitions){
-    worksets->push_back(panzer::Workset());
-    workset_utils::convertMeshPartitionToWorkset<int,int>(partition, needs, worksets->back());
-  }
-
-  return worksets;
-
+/** Create a LocalMeshInfoBase from a parent LocalMeshInfoBase given a set of cell indexes
+ *
+ * \param[in] parent_info Reference to fully constructed LocalMeshInfoBase
+ * \param[in] owned_parent_cells Vector of indexes (in parent's indexing scheme) for child to own
+ * \param[out] child_info Child which will be generated
+ *
+ */
+template<typename LO, typename GO>
+void
+setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
+                      const std::vector<LO> & owned_parent_cells,
+                      panzer::LocalMeshInfoBase<LO,GO> & child_info);
 }
 
 }
+
+#endif

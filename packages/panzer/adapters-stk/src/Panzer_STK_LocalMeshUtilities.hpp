@@ -43,18 +43,10 @@
 #ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 #define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 
-#include <string>
-#include <vector>
-
 namespace panzer
 {
-
 template <typename LO, typename GO>
 class LocalMeshInfo;
-
-template <typename LO, typename GO>
-class LocalMeshInfoBase;
-
 }
 
 namespace panzer_stk
@@ -71,16 +63,6 @@ template <typename LO, typename GO>
 void
 generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
                       panzer::LocalMeshInfo<LO,GO> & mesh_info);
-
-
-namespace tools
-{
-template<typename LO, typename GO>
-void
-setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
-                      const std::vector<LO> & owned_parent_cells,
-                      panzer::LocalMeshInfoBase<LO,GO> & sub_info);
-}
 
 }
 

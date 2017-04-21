@@ -49,6 +49,12 @@
 
 #include "Panzer_STK_Interface.hpp"
 
+namespace panzer
+{
+template<typename LO, typename GO>
+class LocalMeshInfo;
+}
+
 namespace panzer_stk {
 
 /** Pure virtual base class used to construct 
@@ -105,7 +111,14 @@ public:
 
 private:
 
+   /// Mesh
    Teuchos::RCP<const STK_Interface> mesh_;
+
+   // This needs to be set at the start, but is currently setup only if the
+   // workset descriptor requiers it
+   /// Alternative form of mesh
+   mutable Teuchos::RCP<const panzer::LocalMeshInfo<int,int> > mesh_info_;
+
 
 };
 

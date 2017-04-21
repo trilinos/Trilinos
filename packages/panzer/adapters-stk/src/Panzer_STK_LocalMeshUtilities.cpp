@@ -41,26 +41,26 @@
 // @HEADER
 
 #include "Panzer_STK_LocalMeshUtilities.hpp"
-
-#include "Panzer_STK_SetupUtilities.hpp"
-
-#include "Panzer_HashUtils.hpp"
-
-#include "Panzer_LocalMeshInfo.hpp"
-
-#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_FaceToElement.hpp"
-#include "Panzer_ConnManager.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Panzer_HashUtils.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
+#include "Panzer_LocalPartitioningUtilities.hpp"
+#include "Panzer_FaceToElement.hpp"
+
+#include "Panzer_ConnManager.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 #include "Panzer_EdgeFieldPattern.hpp"
 #include "Panzer_FaceFieldPattern.hpp"
 #include "Panzer_ElemFieldPattern.hpp"
 
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 #include "Teuchos_Assert.hpp"
+
 #include "Tpetra_Import.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
@@ -73,7 +73,8 @@
 namespace panzer_stk
 {
 
-namespace tools
+// No external access
+namespace
 {
 
 /** Build a Kokkos array of all the global cell IDs from a connection manager.
@@ -450,218 +451,6 @@ buildGhostedVertices(const Tpetra::Import<int,GO> & importer,
   return ghstd_vertices;
 } // end build ghstd vertices
 
-
-template<typename LO, typename GO>
-void
-setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
-                      const std::vector<LO> & owned_parent_cells,
-                      panzer::LocalMeshInfoBase<LO,GO> & sub_info)
-{
-
-  // The goal of this function is to fill a LocalMeshInfoBase (sub_info) with
-  // a subset of cells from a given parent LocalMeshInfoBase (parent_info)
-
-  // Note: owned_parent_cells are the owned cells for sub_info in the parent_info's indexing scheme
-  // We need to generate sub_info's ghosts and figure out the virtual cells
-
-  // Note: We will only handle a single ghost layer
-
-  // Note: We assume owned_parent_cells are owned cells of the parent
-  // i.e. owned_parent_indexes cannot refer to ghost or virtual cells in parent_info
-
-  // Note: This function works with inter-face connectivity. NOT node connectivity.
-
-  const int num_owned_cells = owned_parent_cells.size();
-  const int num_parent_owned_cells = parent_info.num_owned_cells;
-  const int num_parent_ghstd_cells = parent_info.num_ghstd_cells;
-  const int num_faces_per_cell = parent_info.cell_to_faces.dimension_1();
-
-  // The first thing to do is construct a vector containing the parent cell indexes of all
-  // owned, ghstd, and virtual cells
-  std::vector<LO> ghstd_parent_cells;
-  std::vector<LO> virtual_parent_cells;
-  {
-
-    // We grab all of the owned cells and put their global indexes into sub_info
-    // We also put all of the owned cell indexes in the parent's indexing scheme into a set to use for lookups
-    std::unordered_set<LO> owned_parent_cells_set(owned_parent_cells.begin(), owned_parent_cells.end());
-
-    // We need to create a list of ghstd and virtual cells
-    // We do this by running through sub_cell_indexes
-    // and looking at the neighbors to find neighbors that are not owned
-
-    // Virtual cells are defined as cells with indexes outside of the range of owned_cells and ghstd_cells
-    const int virtual_parent_cell_offset = num_parent_owned_cells + num_parent_ghstd_cells;
-
-    std::unordered_set<LO> ghstd_parent_cells_set;
-    std::unordered_set<LO> virtual_parent_cells_set;
-    for(int i=0;i<num_owned_cells;++i){
-      const LO parent_cell_index = owned_parent_cells[i];
-      for(int local_face_index=0;local_face_index<num_faces_per_cell;++local_face_index){
-        const LO parent_face = parent_info.cell_to_faces(parent_cell_index, local_face_index);
-
-        const LO neighbor_parent_side = (parent_info.face_to_cells(parent_face,0) == parent_cell_index) ? 1 : 0;
-
-        const LO neighbor_parent_cell = parent_info.face_to_cells(parent_face, neighbor_parent_side);
-
-        // We can easily check if this is a virtual cell
-        if(neighbor_parent_cell >= virtual_parent_cell_offset){
-          virtual_parent_cells_set.insert(neighbor_parent_cell);
-        } else {
-          // There is still potential for this to be a ghost cell
-          // The only way to check this is with a super slow lookup call
-          if(owned_parent_cells_set.find(neighbor_parent_cell) == owned_parent_cells_set.end()){
-            // The neighbor cell is not owned, therefore it is a ghost
-            ghstd_parent_cells_set.insert(neighbor_parent_cell);
-          }
-        }
-      }
-    }
-
-    // We now have a list of the owned, ghstd, and virtual cells in the parent's indexing scheme.
-    // We will take the 'unordered_set's ordering for the the sub-indexing scheme
-
-    ghstd_parent_cells.assign(ghstd_parent_cells_set.begin(), ghstd_parent_cells_set.end());
-    virtual_parent_cells.assign(virtual_parent_cells_set.begin(), virtual_parent_cells_set.end());
-
-  }
-
-  const int num_ghstd_cells = ghstd_parent_cells.size();
-  const int num_virtual_cells = virtual_parent_cells.size();
-  const int num_real_cells = num_owned_cells + num_ghstd_cells;
-  const int num_total_cells = num_real_cells + num_virtual_cells;
-
-  std::vector<LO> all_parent_cells;
-  all_parent_cells.insert(all_parent_cells.end(), owned_parent_cells.begin(), owned_parent_cells.end());
-  all_parent_cells.insert(all_parent_cells.end(), ghstd_parent_cells.begin(), ghstd_parent_cells.end());
-  all_parent_cells.insert(all_parent_cells.end(), virtual_parent_cells.begin(), virtual_parent_cells.end());
-
-  sub_info.num_owned_cells = owned_parent_cells.size();
-  sub_info.num_ghstd_cells = ghstd_parent_cells.size();
-  sub_info.num_virtual_cells = virtual_parent_cells.size();
-
-  // We now have the indexing order for our sub_info
-
-  const int num_vertices_per_cell = parent_info.cell_vertices.dimension_1();
-  const int num_dims = parent_info.cell_vertices.dimension_2();
-
-  // Fill owned, ghstd, and virtual cells: global indexes, local indexes and vertices
-  sub_info.global_cells = Kokkos::View<GO*>("global_cells", num_total_cells);
-  sub_info.local_cells = Kokkos::View<LO*>("local_cells", num_total_cells);
-  sub_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
-  for(int cell=0;cell<num_total_cells;++cell){
-    const LO parent_cell = all_parent_cells[cell];
-    sub_info.global_cells(cell) = parent_info.global_cells(parent_cell);
-    sub_info.local_cells(cell) = parent_info.local_cells(parent_cell);
-    for(int vertex=0;vertex<num_vertices_per_cell;++vertex){
-      for(int dim=0;dim<num_dims;++dim){
-        sub_info.cell_vertices(cell,vertex,dim) = parent_info.cell_vertices(parent_cell,vertex,dim);
-      }
-    }
-  }
-
-  // Now for the difficult part
-
-  // We need to create a new face indexing scheme from the old face indexing scheme
-
-  // Create an auxiliary list with all cells - note this preserves indexing
-
-  struct face_t{
-    face_t(LO c0, LO c1, LO sc0, LO sc1)
-    {
-      cell_0=c0;
-      cell_1=c1;
-      subcell_index_0=sc0;
-      subcell_index_1=sc1;
-    }
-    LO cell_0;
-    LO cell_1;
-    LO subcell_index_0;
-    LO subcell_index_1;
-  };
-
-
-  // First create the faces
-  std::vector<face_t> faces;
-  {
-
-    // faces_set: cell_0, subcell_index_0, cell_1, subcell_index_1
-    std::unordered_map<LO,std::unordered_map<LO, std::pair<LO,LO> > > faces_set;
-    for(int owned_cell=0;owned_cell<num_owned_cells;++owned_cell){
-      const LO owned_parent_cell = owned_parent_cells[owned_cell];
-      for(int local_face=0;local_face<num_faces_per_cell;++local_face){
-        const LO parent_face = parent_info.cell_to_faces(owned_parent_cell,local_face);
-
-        // Get the cell on the other side of the face
-        const LO neighbor_side = (parent_info.face_to_cells(parent_face,0) == owned_parent_cell) ? 1 : 0;
-
-        const LO neighbor_parent_cell = parent_info.face_to_cells(parent_face, neighbor_side);
-        const LO neighbor_subcell_index = parent_info.face_to_lidx(parent_face, neighbor_side);
-
-        // Convert parent cell index into sub cell index
-        auto itr = std::find(all_parent_cells.begin(), all_parent_cells.end(), neighbor_parent_cell);
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == all_parent_cells.end(), "panzer_stk::setupSubLocalMeshInfo : Neighbor cell was not found in owned, ghosted, or virtual cells");
-
-        const LO neighbor_cell = std::distance(all_parent_cells.begin(), itr);
-
-        LO cell_0, cell_1, subcell_index_0, subcell_index_1;
-        if(owned_cell < neighbor_cell){
-          cell_0 = owned_cell;
-          subcell_index_0 = local_face;
-          cell_1 = neighbor_cell;
-          subcell_index_1 = neighbor_subcell_index;
-        } else {
-          cell_1 = owned_cell;
-          subcell_index_1 = local_face;
-          cell_0 = neighbor_cell;
-          subcell_index_0 = neighbor_subcell_index;
-        }
-
-        // Add this interface to the set of faces - smaller cell index is 'left' (or '0') side of face
-        faces_set[cell_0][subcell_index_0] = std::pair<LO,LO>(cell_1, subcell_index_1);
-      }
-    }
-
-    for(const auto & cell_pair : faces_set){
-      const LO cell_0 = cell_pair.first;
-      for(const auto & subcell_pair : cell_pair.second){
-        const LO subcell_index_0 = subcell_pair.first;
-        const LO cell_1 = subcell_pair.second.first;
-        const LO subcell_index_1 = subcell_pair.second.second;
-        faces.push_back(face_t(cell_0,cell_1,subcell_index_0,subcell_index_1));
-      }
-    }
-  }
-
-  const int num_faces = faces.size();
-
-  sub_info.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells", num_faces);
-  sub_info.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx", num_faces);
-  sub_info.cell_to_faces = Kokkos::View<LO**>("cell_to_faces", num_total_cells, num_faces_per_cell);
-
-  // Default the system with invalid cell index
-  Kokkos::deep_copy(sub_info.cell_to_faces, -1);
-
-  for(int face_index=0;face_index<num_faces;++face_index){
-    const face_t & face = faces[face_index];
-
-    sub_info.face_to_cells(face_index,0) = face.cell_0;
-    sub_info.face_to_cells(face_index,1) = face.cell_1;
-
-    sub_info.cell_to_faces(face.cell_0,face.subcell_index_0) = face_index;
-    sub_info.cell_to_faces(face.cell_1,face.subcell_index_1) = face_index;
-
-    sub_info.face_to_lidx(face_index,0) = face.subcell_index_0;
-    sub_info.face_to_lidx(face_index,1) = face.subcell_index_1;
-
-  }
-
-  // Complete.
-
-}
-
-
-
 template<typename LO, typename GO>
 void
 setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
@@ -674,12 +463,11 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   // This function identifies all cells in mesh_info that belong to element_block_name
   // and creates a block_info from it.
 
-  const int num_owned_cells = mesh_info.num_owned_cells;
-
-  const shards::CellTopology & topology = *(mesh.getCellTopology(element_block_name));
+  const int num_parent_owned_cells = mesh_info.num_owned_cells;
 
   // Make sure connectivity is setup for interfaces between cells
   {
+    const shards::CellTopology & topology = *(mesh.getCellTopology(element_block_name));
     Teuchos::RCP<panzer::FieldPattern> cell_pattern;
     if(topology.getDimension() == 1){
       cell_pattern = Teuchos::rcp(new panzer::EdgeFieldPattern(topology));
@@ -693,20 +481,21 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   }
 
   std::vector<LO> owned_block_cells;
-  for(int owned_cell=0;owned_cell<num_owned_cells;++owned_cell){
-    const LO local_cell = mesh_info.local_cells(owned_cell);
+  for(int parent_owned_cell=0;parent_owned_cell<num_parent_owned_cells;++parent_owned_cell){
+    const LO local_cell = mesh_info.local_cells(parent_owned_cell);
     const bool is_in_block = conn.getBlockId(local_cell) == element_block_name;
 
     if(is_in_block){
-      owned_block_cells.push_back(owned_cell);
+      owned_block_cells.push_back(parent_owned_cell);
     }
 
   }
 
+  block_info.num_owned_cells = owned_block_cells.size();
   block_info.element_block_name = element_block_name;
   block_info.cell_topology = mesh.getCellTopology(element_block_name);
 
-  setupSubLocalMeshInfo<LO,GO>(mesh_info, owned_block_cells, block_info);
+  panzer::partitioning_utilities::setupSubLocalMeshInfo<LO,GO>(mesh_info, owned_block_cells, block_info);
 
 }
 
@@ -804,8 +593,8 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   // For our purposes we only really want the cells and faces associated with the side
 
   // Each cell can have multiple faces on the sideset
-  std::unordered_set<LO> local_cells_set;
-  std::map<LO,std::vector<LO> > local_cell_index_map;
+  std::unordered_set<LO> owned_parent_cells_set;
+  std::map<LO,std::vector<LO> > owned_parent_cell_index_map;
   {
     // We use a set to avoid duplicates
     for(const auto & cell_subcell_pair : local_cell_indexes_by_subcell){
@@ -814,18 +603,24 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
       if(subcell_definition.first == face_subcell_dimension){
         const std::vector<size_t> & local_cell_indexes_for_subcell = cell_subcell_pair.second;
         for(const size_t & local_cell_index : local_cell_indexes_for_subcell){
-          local_cell_index_map[LO(local_cell_index)].push_back(subcell_index);
+
+          // TODO: Super slow - fix this!!
+          for(LO i=0;i<LO(mesh_info.local_cells.dimension_0()); ++i){
+            if(mesh_info.local_cells(i) == LO(local_cell_index)){
+              owned_parent_cell_index_map[i].push_back(subcell_index);
+            }
+          }
         }
       }
     }
 
-    for(const auto & pair : local_cell_index_map){
-      local_cells_set.insert(pair.first);
+    for(const auto & pair : owned_parent_cell_index_map){
+      owned_parent_cells_set.insert(pair.first);
     }
 
   }
 
-  const LO num_owned_cells = local_cell_index_map.size();
+  const LO num_owned_cells = owned_parent_cell_index_map.size();
 
   sideset_info.element_block_name = element_block_name;
   sideset_info.sideset_name = sideset_name;
@@ -849,11 +644,11 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
 
   // Figure out how many cells on the other side of the sideset are ghost or virtual
-  std::unordered_set<LO> ghstd_cells_set, virtual_cells_set;
+  std::unordered_set<LO> ghstd_parent_cells_set, virtual_parent_cells_set;
   std::vector<face_t> faces;
   {
     LO parent_virtual_cell_offset = mesh_info.num_owned_cells + mesh_info.num_ghstd_cells;
-    for(const auto & local_cell_index_pair : local_cell_index_map){
+    for(const auto & local_cell_index_pair : owned_parent_cell_index_map){
       const LO local_cell = local_cell_index_pair.first;
       const std::vector<LO> & subcell_indexes = local_cell_index_pair.second;
 
@@ -869,22 +664,22 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
         faces.push_back(face_t(local_cell, other_side_cell, subcell_index, other_side_subcell_index));
 
-        if(other_side_cell > parent_virtual_cell_offset){
-          virtual_cells_set.insert(other_side_cell);
+        if(other_side_cell >= parent_virtual_cell_offset){
+          virtual_parent_cells_set.insert(other_side_cell);
         } else {
-          ghstd_cells_set.insert(other_side_cell);
+          ghstd_parent_cells_set.insert(other_side_cell);
         }
       }
     }
   }
 
   std::vector<LO> all_cells;
-  all_cells.insert(all_cells.end(),local_cells_set.begin(),local_cells_set.end());
-  all_cells.insert(all_cells.end(),ghstd_cells_set.begin(),ghstd_cells_set.end());
-  all_cells.insert(all_cells.end(),virtual_cells_set.begin(),virtual_cells_set.end());
+  all_cells.insert(all_cells.end(),owned_parent_cells_set.begin(),owned_parent_cells_set.end());
+  all_cells.insert(all_cells.end(),ghstd_parent_cells_set.begin(),ghstd_parent_cells_set.end());
+  all_cells.insert(all_cells.end(),virtual_parent_cells_set.begin(),virtual_parent_cells_set.end());
 
-  sideset_info.num_ghstd_cells = ghstd_cells_set.size();
-  sideset_info.num_virtual_cells = virtual_cells_set.size();
+  sideset_info.num_ghstd_cells = ghstd_parent_cells_set.size();
+  sideset_info.num_virtual_cells = virtual_parent_cells_set.size();
 
   const LO num_real_cells = sideset_info.num_owned_cells + sideset_info.num_ghstd_cells;
   const LO num_total_cells = num_real_cells + sideset_info.num_virtual_cells;
@@ -897,12 +692,12 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   Kokkos::deep_copy(sideset_info.cell_vertices,0.);
 
   for(LO i=0; i<num_total_cells; ++i){
-    const LO local_cell = all_cells[i];
-    sideset_info.local_cells(i) = local_cell;
-    sideset_info.global_cells(i) = mesh_info.global_cells(local_cell);
+    const LO parent_cell = all_cells[i];
+    sideset_info.local_cells(i) = mesh_info.local_cells(parent_cell);
+    sideset_info.global_cells(i) = mesh_info.global_cells(parent_cell);
     for(LO j=0; j<num_vertices_per_cell; ++j){
       for(LO k=0; k<num_dims; ++k){
-        sideset_info.cell_vertices(i,j,k) = mesh_info.cell_vertices(local_cell,j,k);
+        sideset_info.cell_vertices(i,j,k) = mesh_info.cell_vertices(parent_cell,j,k);
       }
     }
   }
@@ -941,9 +736,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
 }
 
-
 }
-
 
 template <typename LO, typename GO>
 void
@@ -976,16 +769,16 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // build cell to node map
   Kokkos::View<GO**> owned_cell_to_nodes;
-  tools::buildCellToNodes(conn, owned_cell_to_nodes);
+  buildCellToNodes(conn, owned_cell_to_nodes);
 
   // build the local to global cell ID map
   ///////////////////////////////////////////////////////////
   Kokkos::View<GO*> owned_cells;
-  tools::buildCellGlobalIDs(conn, owned_cells);
+  buildCellGlobalIDs(conn, owned_cells);
 
   // get neighboring cells
   ///////////////////////////////////////////////////////////
-  Kokkos::View<const GO*> ghstd_cells = tools::buildGhostedCellOneRing<GO>(comm,owned_cells,owned_cell_to_nodes);
+  Kokkos::View<const GO*> ghstd_cells = buildGhostedCellOneRing<GO>(comm,owned_cells,owned_cell_to_nodes);
 
   // build cell maps
   /////////////////////////////////////////////////////////////////////
@@ -1018,7 +811,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   mesh.getElementVerticesNoResize(localCells,owned_vertices);
 
   // this builds a ghstd vertex array
-  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices = tools::buildGhostedVertices(*cellimport_own2ghst,owned_vertices);
+  Kokkos::DynRankView<double,PHX::Device> ghstd_vertices = buildGhostedVertices(*cellimport_own2ghst,owned_vertices);
 
   // build edge to cell neighbor mapping
   //////////////////////////////////////////////////////////////////
@@ -1120,8 +913,6 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     int virtual_cell_index = num_real_cells;
     for(size_t f=0;f<elems_by_face.dimension_0();f++) {
 
-//      printf("face %i has cells %i and %i\n",f,elems_by_face(f,0),elems_by_face(f,1));
-
       const GO global_c0 = elems_by_face(f,0);
       const GO global_c1 = elems_by_face(f,1);
 
@@ -1129,28 +920,35 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
       TEUCHOS_ASSERT(global_to_local.find(global_c0)!=global_to_local.end());
       TEUCHOS_ASSERT(global_to_local.find(global_c1)!=global_to_local.end());
 
-      // Left cell
       auto c0 = global_to_local[global_c0];
       auto lidx0 = face_to_lidx(f,0);
+      auto c1 = global_to_local[global_c1];
+      auto lidx1 = face_to_lidx(f,1);
+
+      // Test for virtual cells
+
+      // Left cell
       if(c0 < 0){
         // Virtual cell - create it!
         c0 = virtual_cell_index++;
 
-        // Virtual cells always connect to the real domain through face 0
-        lidx0 = 0;
+        // We need the subcell_index to line up between real and virtual cell
+        // This way the face has the same geometry... though the face normal
+        // will point in the wrong direction
+        lidx0 = lidx1;
       }
       cell_to_face(c0,lidx0) = f;
 
 
       // Right cell
-      auto c1 = global_to_local[global_c1];
-      auto lidx1 = face_to_lidx(f,1);
       if(c1 < 0){
         // Virtual cell - create it!
         c1 = virtual_cell_index++;
 
-        // Virtual cells always connect to the real domain through face 0
-        lidx1 = 0;
+        // We need the subcell_index to line up between real and virtual cell
+        // This way the face has the same geometry... though the face normal
+        // will point in the wrong direction
+        lidx1 = lidx0;
       }
       cell_to_face(c1,lidx1) = f;
 
@@ -1225,18 +1023,43 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     }
   }
 
+  // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
+  // This way we can define a virtual cell geometry without extruding the face outside of the domain
+  for(int i=0;i<num_virtual_cells;++i){
+
+    const LO virtual_cell = i+num_real_cells;
+    bool exists = false;
+    for(int local_face=0; local_face<faces_per_cell; ++local_face){
+      const LO face = cell_to_face(virtual_cell, local_face);
+      if(face >= 0){
+        exists = true;
+        const LO other_side = (face_to_cells(face, 0) == virtual_cell) ? 1 : 0;
+        const LO real_cell = face_to_cells(face,other_side);
+        TEUCHOS_ASSERT(real_cell < num_real_cells);
+        for(int j=0;j<vertices_per_cell;++j){
+          for(int k=0;k<space_dim;++k){
+            mesh_info.cell_vertices(virtual_cell,j,k) = mesh_info.cell_vertices(real_cell,j,k);
+          }
+        }
+        break;
+      }
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!exists, "panzer_stk::generateLocalMeshInfo : Virtual cell is not linked to real cell");
+  }
+
   // Setup element blocks and sidesets
   std::vector<std::string> sideset_names;
   mesh.getSidesetNames(sideset_names);
 
   for(const std::string & element_block_name : element_block_names){
     panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks[element_block_name];
-    tools::setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
+    setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
 
     // Setup sidesets
     for(const std::string & sideset_name : sideset_names){
       panzer::LocalMeshSidesetInfo<LO,GO> & sideset_info = mesh_info.sidesets[element_block_name][sideset_name];
-      tools::setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
+      setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
     }
 
   }
@@ -1257,18 +1080,3 @@ void
 panzer_stk::generateLocalMeshInfo<int,panzer::Ordinal64>(const panzer_stk::STK_Interface & mesh,
                                            panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info);
 #endif
-
-template
-void
-panzer_stk::tools::setupSubLocalMeshInfo<int,int>(const panzer::LocalMeshInfoBase<int,int> & parent_info,
-                                                       const std::vector<int> & owned_parent_cells,
-                                                       panzer::LocalMeshInfoBase<int,int> & sub_info);
-
-#ifndef PANZER_ORDINAL64_IS_INT
-template
-void
-panzer_stk::tools::setupSubLocalMeshInfo<int,panzer::Ordinal64>(const panzer::LocalMeshInfoBase<int,panzer::Ordinal64> & parent_info,
-                                                                const std::vector<int> & owned_parent_cells,
-                                                                panzer::LocalMeshInfoBase<int,panzer::Ordinal64> & sub_info);
-#endif
-

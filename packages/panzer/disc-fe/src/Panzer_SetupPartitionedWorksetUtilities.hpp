@@ -40,27 +40,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
-#define PANZER_STK_LOCAL_PARTITIONING_UTILITIES_HPP
+#ifndef PANZER_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
+#define PANZER_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
 
-#include "Panzer_LocalMeshInfo.hpp"
+#include "Panzer_Workset.hpp"
+
+#include "Teuchos_RCP.hpp"
+
 #include <vector>
 
 namespace panzer
 {
 class WorksetDescriptor;
+class WorksetNeeds;
+template<typename LO, typename GO>
+class LocalMeshInfo;
 }
 
-namespace panzer_stk
+namespace panzer
 {
 
-class STK_Interface;
-
-template<typename LO, typename GO>
-void
-generateLocalMeshPartitions(const panzer_stk::STK_Interface & mesh,
-                            const panzer::WorksetDescriptor & description,
-                            std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions);
+/** Build worksets for a partitioned mesh
+  *
+  * \param[in] mesh_info Mesh info object
+  * \param[in] description Description of workset
+  * \param[in] needs Requirements for workset
+  *
+  * \returns vector of worksets for the corresponding element block.
+  */
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
+                         const panzer::WorksetDescriptor & description,
+                         const panzer::WorksetNeeds & needs);
 
 }
 

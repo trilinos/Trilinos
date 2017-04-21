@@ -40,37 +40,55 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
-#define PANZER_STK_SETUP_PARTITIONED_WORKSET_UTILITIES_HPP
+#include "Panzer_SetupPartitionedWorksetUtilities.hpp"
 
+#include "Panzer_LocalPartitioningUtilities.hpp"
 #include "Panzer_Workset.hpp"
-
-#include "Teuchos_RCP.hpp"
-#include <vector>
+#include "Panzer_WorksetNeeds.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 namespace panzer
 {
-class WorksetDescriptor;
-class WorksetNeeds;
+
+namespace
+{
+
+template<typename LO, typename GO>
+void
+convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partition,
+                              const panzer::WorksetNeeds & needs,
+                              panzer::Workset & workset)
+{
+  workset.setup(partition, needs);
+
+  workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
+  workset.subcell_dim = -1;
+
 }
 
-namespace panzer_stk {
+}
 
-class STK_Interface;
-
-/** Build worksets for a STK mesh
-  *
-  * \param[in] mesh Reference to STK mesh interface
-  * \param[in] description Description of workset
-  * \param[in] needs Requirements for workset
-  *
-  * \returns vector of worksets for the corresponding element block.
-  */
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer_stk::STK_Interface & mesh,
+buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
                          const panzer::WorksetDescriptor & description,
-                         const panzer::WorksetNeeds & needs);
+                         const panzer::WorksetNeeds & needs)
+{
+
+
+  // Each workset will be represented by a chunk of the mesh
+  // These chunks can either be partitioned, or just be a set of cells
+  std::vector<panzer::LocalMeshPartition<int,int> > partitions;
+  panzer::generateLocalMeshPartitions<int,int>(mesh_info, description, partitions);
+
+  Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
+
+  for(const auto & partition : partitions){
+    worksets->push_back(panzer::Workset());
+    convertMeshPartitionToWorkset<int,int>(partition, needs, worksets->back());
+  }
+
+  return worksets;
 
 }
 
-#endif
+}

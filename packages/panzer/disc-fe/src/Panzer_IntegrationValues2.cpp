@@ -502,7 +502,6 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 {
 
   TEUCHOS_ASSERT(int_rule->getType() == IntegrationDescriptor::SURFACE);
-  TEUCHOS_ASSERT(num_cells <= in_node_coordinates.dimension_0());
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
