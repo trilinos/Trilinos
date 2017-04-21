@@ -130,16 +130,16 @@ namespace MueLu {
 
     //GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
-    Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
-
-    // filled with local node ids (associated with each dof)
+    // map of size of number of DOFs containing local node id (dof id -> node id, inclusive ghosted dofs/nodes)
     std::vector<LocalOrdinal> myLocalNodeIds(A->getColMap()->getNodeNumElements()); // possible maximum (we need the ghost nodes, too)
-
-
 
     // assign the local node ids for the ghosted nodes
     size_t nLocalNodes, nLocalPlusGhostNodes;
     this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, comm);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(dofPresent.size() != nLocalNodes * maxDofPerNode,MueLu::Exceptions::RuntimeError,"VariableDofLaplacianFactory: size of provided DofPresent array is " << dofPresent.size() << " but should be " << nLocalNodes * maxDofPerNode << " on the current processor.");
+
+    // put content of assignGhostLocalNodeIds here...
 
     // fill nodal maps
 
@@ -150,8 +150,10 @@ namespace MueLu {
     size_t nLocalDofs = A->getRowMap()->getNodeNumElements();
     size_t nLocalPlusGhostDofs = A->getColMap()->getNodeNumElements();
 
-    Teuchos::ArrayRCP<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
-    Teuchos::ArrayRCP<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
+    // myLocalNodeIds (dof -> node)
+
+    Teuchos::Array<GlobalOrdinal> amalgRowMapGIDs(nLocalNodes);
+    Teuchos::Array<GlobalOrdinal> amalgColMapGIDs(nLocalPlusGhostNodes);
 
     // initialize
     size_t count = 0;
@@ -166,94 +168,65 @@ namespace MueLu {
     for(size_t i = 1; i < nLocalDofs; i++) {
       if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
         amalgRowMapGIDs[count] = myGids[i];
-        amalgColMapGIDs[count] = myGids[i];
-        //std::cout << " i = " << count << " colGID: " << myGids[i] << std::endl;
         count++;
       }
     }
 
-    ArrayView<GlobalOrdinal> amalgRowMapGIDsView(amalgRowMapGIDs.size() ? &amalgRowMapGIDs[0] : 0, amalgRowMapGIDs.size());
-    Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(A->getRowMap()->lib(),
-               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-               amalgRowMapGIDsView,
+    size_t count2 = 1;
+    for(size_t i = 1; i < myLocalNodeIds.size(); i++) {
+      if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
+        amalgColMapGIDs[count2] = myGids[i];
+        count2++;
+      }
+    }
+
+    Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(lib,
+               Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+               amalgRowMapGIDs(), //View,
                A->getRowMap()->getIndexBase(),
                comm);
 
-
-    //this->nodalComm<GlobalOrdinal>(amalgColMapGIDs, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
-
-    Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(),true);
-    Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(),true);
-
-    Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
-    Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
-
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-     dofSrcData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
-
-    dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
-
-    // copy from dof vector to nodal vector
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-      amalgColMapGIDs[ myLocalNodeIds[i]] = Teuchos::as<GlobalOrdinal>(dofTargetData[i]);
-
-    //std::sort(amalgColMapGIDs.begin(),amalgColMapGIDs.end());
-
-    std::cout << " XXX " << std::endl;
-
-    ArrayView<GlobalOrdinal> amalgColMapGIDsView(amalgColMapGIDs.size() ? &amalgColMapGIDs[0] : 0, amalgColMapGIDs.size());
     Teuchos::RCP<Map> amalgColMap = MapFactory::Build(lib,
-               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-               amalgColMapGIDsView,
-               0 /*A->getRangeMap()->getIndexBase()*/,
+               Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+               amalgColMapGIDs(), //View,
+               A->getRangeMap()->getIndexBase(),
                comm);
+
+    //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     // end fill nodal maps
 
-    std::cout << " YYY " << std::endl;
 
     // start variable dof amalgamation
 
     Teuchos::RCP<CrsMatrixWrap> Awrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A);
-    std::cout << " YYY1 " << std::endl;
-
     Teuchos::RCP<CrsMatrix> Acrs = Awrap->getCrsMatrix();
-    std::cout << Acrs << std::endl;
-    std::cout << " YYY2 " << std::endl;
+    //Acrs->describe(*fancy, Teuchos::VERB_EXTREME);
 
     Teuchos::ArrayRCP<const size_t> rowptr(Acrs->getNodeNumRows());
     Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
     Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
-    std::cout << " YYY3 " << std::endl;
     Acrs->getAllValues(rowptr, colind, values);
 
-    std::cout << " ZZZ " << std::endl;
 
     // create arrays for amalgamated matrix
     Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
     Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
     //Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
 
-    std::cout << " AAA " << std::endl;
-
     size_t nNonZeros = 0;
     std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
     std::vector<size_t> nonZeroList(nLocalPlusGhostDofs);  // ???
 
-    std::cout << " BBB " << std::endl;
 
     // also used in DetectDirichletExt
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
-    std::cout << " CCC " << std::endl;
-
     LocalOrdinal oldBlockRow = 0;
     LocalOrdinal blockRow, blockColumn;
     size_t newNzs = 0;
     amalgRowPtr[0] = newNzs;
-
-    std::cout << " DDD " << std::endl;
 
     bool doNotDrop = false;
     if (amalgDropTol == Teuchos::ScalarTraits<Scalar>::zero()) doNotDrop = true;
@@ -282,13 +255,12 @@ namespace MueLu {
     }
     amalgRowPtr[blockRow+1] = newNzs;
 
-    std::cout << " EEE " << std::endl;
-
     TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != nLocalNodes) && (nLocalNodes !=0), MueLu::Exceptions::RuntimeError, "VariableDofsPerNodeAmalgamation: error, computed # block rows (" << blockRow+1 <<") != nLocalNodes (" << nLocalNodes <<")");
 
     amalgCols.resize(amalgRowPtr[nLocalNodes]);
 
     // end variableDofAmalg
+
 
     // begin rm differentDofsCrossings
 
@@ -318,50 +290,24 @@ namespace MueLu {
       }
     }
 
-    std::cout << " FFF " << std::endl;
+    Teuchos::RCP<Import> nodeImporter = ImportFactory::Build(amalgRowMap, amalgColMap);
+
+    RCP<Vector> nodeIdSrc    = VectorFactory::Build(amalgRowMap,true);
+    RCP<Vector> nodeIdTarget = VectorFactory::Build(amalgColMap,true);
+
+    Teuchos::ArrayRCP< Scalar > nodeIdSrcData = nodeIdSrc->getDataNonConst(0);
+    for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
+      nodeIdSrcData[i] = uniqueId[i];
+    }
+
+    nodeIdTarget->doImport(*nodeIdSrc, *nodeImporter, Xpetra::INSERT);
+
+    Teuchos::ArrayRCP< const Scalar > nodeIdTargetData = nodeIdTarget->getData(0);
+    for(size_t i = 0; i < uniqueId.size(); i++) {
+      uniqueId[i] = nodeIdTargetData[i];
+    }
 
     // nodal comm uniqueId, myLocalNodeIds
-
-    // TODO check me!
-#if 1
-    //this->nodalComm<LocalOrdinal>(uniqueId, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
-
-    std::cout << "XXX222" << std::endl;
-
-    dofSrc = VectorFactory::Build(A->getRowMap(),true);
-    dofTarget = VectorFactory::Build(A->getColMap(),true);
-    std::cout << "XXXa" << std::endl;
-    dofSrcData = dofSrc->getDataNonConst(0);
-    std::cout << "XXXb" << std::endl;
-    dofTargetData = dofTarget->getData(0);
-    std::cout << "XXXc" << std::endl;
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-     dofSrcData[i] = uniqueId[ myLocalNodeIds[i]];
-    std::cout << "XXXd" << std::endl;
-    dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
-
-    std::cout << "XXXe" << std::endl;
-    // copy from dof vector to nodal vector
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-      uniqueId[ myLocalNodeIds[i]] = Teuchos::as<LocalOrdinal>(dofTargetData[i]);
-
-    std::cout << "ZZZ" << std::endl;
-#else
-    // copy GIDs from nodal vector to dof vector
-    Teuchos::RCP<Vector> uniqueIdVecSrc = VectorFactory::Build(A->getRowMap(),true);
-    Teuchos::ArrayRCP< Scalar > uniqueIdVecSrcData = uniqueIdVecSrc->getDataNonConst(0);
-
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-      uniqueIdVecSrcData[i] = uniqueId[ myLocalNodeIds[i]];
-
-    Teuchos::RCP<Vector> uniqueIdVecTarget = VectorFactory::Build(A->getColMap(),true);
-    uniqueIdVecTarget->doImport(*uniqueIdVecSrc, *importer, Xpetra::INSERT);
-    Teuchos::ArrayRCP< const Scalar > uniqueIdVecTargetData = uniqueIdVecTarget->getData(0);
-
-    // copy from dof vector to nodal vector
-    for (int i = 0; i < myLocalNodeIds.size(); i++)
-      uniqueId[ myLocalNodeIds[i]] = uniqueIdVecTargetData[i];
-#endif
 
     // uniqueId now should contain ghosted data
 
@@ -375,29 +321,16 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> amalgVals; //(/*rowptr[rowptr.size()-1]*/); // empty array!
     this->squeezeOutNnzs(amalgRowPtr,amalgCols,amalgVals,keep);
 
-    Teuchos::ArrayRCP< double > ghostedXXX(amalgColMap->getNodeNumElements());
-    Teuchos::ArrayRCP< double > ghostedYYY(amalgColMap->getNodeNumElements());
-    Teuchos::ArrayRCP< double > ghostedZZZ(amalgColMap->getNodeNumElements());
 
-    // prepare coordinates for building the laplacian
-    size_t numCoordVectors = Coords->getNumVectors();
-    Teuchos::ArrayRCP< const double > XXX = Coords->getData(0);
-    for(size_t i = 0; i < nLocalNodes; i++) ghostedXXX[i] = XXX[i];
-    this->nodalComm<double>(ghostedXXX, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
-
-    if(numCoordVectors > 1) {
-      Teuchos::ArrayRCP< const double > YYY = Coords->getData(1);
-      for(size_t i = 0; i < nLocalNodes; i++) ghostedYYY[i] = YYY[i];
-      this->nodalComm<double>(ghostedYYY, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
-    }
-    if(numCoordVectors > 2) {
-      Teuchos::ArrayRCP< const double > ZZZ = Coords->getData(2);
-      for(size_t i = 0; i < nLocalNodes; i++) ghostedZZZ[i] = ZZZ[i];
-      this->nodalComm<double>(ghostedZZZ, myLocalNodeIds, A->getRowMap(), A->getColMap(), importer);
-    }
+    typedef Xpetra::MultiVectorFactory<double,LO,GO,NO> dxMVf;
+    RCP<dxMV> ghostedCoords = dxMVf::Build(amalgColMap,Coords->getNumVectors());
+    ghostedCoords->doImport(*Coords, *nodeImporter, Xpetra::INSERT);
+    Teuchos::ArrayRCP< const double > ghostedXXX = ghostedCoords->getData(0);
+    Teuchos::ArrayRCP< const double > ghostedYYY = ghostedCoords->getData(1);
+    Teuchos::ArrayRCP< const double > ghostedZZZ = ghostedCoords->getData(2);
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
-    this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, numCoordVectors, ghostedXXX, ghostedYYY, ghostedZZZ);
+    this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedXXX, ghostedYYY, ghostedZZZ);
 
     // sort column GIDs
     for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
@@ -420,7 +353,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const Teuchos::ArrayRCP< double >& x, const Teuchos::ArrayRCP< double >& y, const Teuchos::ArrayRCP< double >& z) const {
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const Teuchos::ArrayRCP< const double >& x, const Teuchos::ArrayRCP< const double >& y, const Teuchos::ArrayRCP< const double >& z) const {
     TEUCHOS_TEST_FOR_EXCEPTION(numdim != 2 && numdim !=3, MueLu::Exceptions::RuntimeError,"buildLaplacian only works for 2d or 3d examples. numdim = " << numdim);
 
     if(numdim == 2) { // 2d
@@ -431,12 +364,7 @@ namespace MueLu {
           if(cols[j] != i){
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
-
-            if(vals[j] == Teuchos::ScalarTraits<Scalar>::zero()) {
-              std::cout << "i=" << i << " j=" << j << " cols[j]=" << cols[j] << " x[i]=" << x[i] << " x[cols[j]]=" << x[cols[j]] << " y[i]=" << y[i] << " y[cols[j]]=" << y[cols[j]] << std::endl;
-            }
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
-
             vals[j] = -1./vals[j];
             sum = sum - vals[j];
           }

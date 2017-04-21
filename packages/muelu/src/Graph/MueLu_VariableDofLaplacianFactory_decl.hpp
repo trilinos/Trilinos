@@ -94,7 +94,7 @@ namespace MueLu {
     void buildPaddedMap(const Teuchos::ArrayRCP<const bool> & dofPresent, std::vector<LocalOrdinal> & map, size_t nDofs) const;
     void assignGhostLocalNodeIds(const Teuchos::RCP<const Map> & rowDofMap, const Teuchos::RCP<const Map> & colDofMap, std::vector<LocalOrdinal> & myLocalNodeIds, const std::vector<LocalOrdinal> & dofMap, size_t maxDofPerNode, size_t& nLocalNodes, size_t& nLocalPlusGhostNodes, Teuchos::RCP< const Teuchos::Comm< int > > comm) const;
     void squeezeOutNnzs(Teuchos::ArrayRCP<size_t> & rowPtr, Teuchos::ArrayRCP<LocalOrdinal> & cols, Teuchos::ArrayRCP<Scalar> & vals, const std::vector<bool>& keep) const;
-    void buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals, const size_t& numdim, const Teuchos::ArrayRCP< double >& x, const Teuchos::ArrayRCP< double >& y, const Teuchos::ArrayRCP< double >& z) const;
+    void buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals, const size_t& numdim, const Teuchos::ArrayRCP< const double >& x, const Teuchos::ArrayRCP< const double >& y, const Teuchos::ArrayRCP< const double >& z) const;
 
     template <class listType>
     void MueLu_az_sort(listType list[], size_t N, size_t list2[], Scalar list3[]) const {
@@ -315,68 +315,6 @@ namespace MueLu {
       }
     }
 
-    template <class T>
-    void nodalComm(Teuchos::ArrayRCP<T>& vector, std::vector<LocalOrdinal>& myLocalNodeIds, const Teuchos::RCP<const Map>& rowMap, const Teuchos::RCP<const Map> colMap,const Teuchos::RCP<const Import>& importer) const {
-      /***************************************************************************
-       Performs communication to update an amalgamated/nodal vector using either
-       an ML style or an epetra style unamalgamated/dof matrix to define the
-       communication/import pattern. To do this, it utilzes myLocalNodeIds[i]
-       which indicates that the ith dof lies within the myLocalNodeIds[i]th
-       node. The ghost portion of myLocalNodeIds[] was computed by
-       assignGhostLocalNodeIds().
-
-       Note: As several dofs lie within each node, several of myLocalNodeIds[]'s
-       entries will be duplicates.
-      ***************************************************************************/
-
-
-      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(rowMap,true);
-      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(colMap,true);
-
-      Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
-      Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
-
-      for (int i = 0; i < myLocalNodeIds.size(); i++)
-       dofSrcData[i] = vector[ myLocalNodeIds[i]];
-
-      dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
-
-      // copy from dof vector to nodal vector
-      for (int i = 0; i < myLocalNodeIds.size(); i++)
-       vector[ myLocalNodeIds[i]] = dofTargetData[i];
-    }
-
-#if 0
-    template <class T>
-    void nodalComm(std::vector<T>& vector, std::vector<LocalOrdinal>& myLocalNodeIds, const Teuchos::RCP<Matrix>& A) const {
-      /***************************************************************************
-       Performs communication to update an amalgamated/nodal vector using either
-       an ML style or an epetra style unamalgamated/dof matrix to define the
-       communication/import pattern. To do this, it utilzes myLocalNodeIds[i]
-       which indicates that the ith dof lies within the myLocalNodeIds[i]th
-       node. The ghost portion of myLocalNodeIds[] was computed by
-       assignGhostLocalNodeIds().
-
-       Note: As several dofs lie within each node, several of myLocalNodeIds[]'s
-       entries will be duplicates.
-      ***************************************************************************/
-      Teuchos::RCP<Import> importer = ImportFactory::Build(A->getRowMap(), A->getColMap());
-
-      Teuchos::RCP<Vector> dofSrc = VectorFactory::Build(A->getRowMap(0),true);
-      Teuchos::ArrayRCP< Scalar > dofSrcData = dofSrc->getDataNonConst(0);
-
-      for (int i = 0; i < myLocalNodeIds.size(); i++)
-       dofSrcData[i] = vector[ myLocalNodeIds[i]];
-
-      Teuchos::RCP<Vector> dofTarget = VectorFactory::Build(A->getColMap(0),true);
-      dofTarget->doImport(*dofSrc, *importer, Xpetra::INSERT);
-      Teuchos::ArrayRCP< const Scalar > dofTargetData = dofTarget->getData(0);
-
-      // copy from dof vector to nodal vector
-      for (int i = 0; i < myLocalNodeIds.size(); i++)
-       vector[ myLocalNodeIds[i]] = dofTargetData[i];
-    }
-#endif
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
