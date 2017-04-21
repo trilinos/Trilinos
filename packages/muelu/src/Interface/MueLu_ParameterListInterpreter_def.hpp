@@ -1,4 +1,4 @@
-// @HEADER
+
 //
 // ***********************************************************************
 //
@@ -418,6 +418,10 @@ namespace MueLu {
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 
+
+  // =====================================================================================================
+  // ==================================== UpdateFactoryManager ===========================================
+  // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager(ParameterList& paramList,
             const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
@@ -466,361 +470,31 @@ namespace MueLu {
 
     // == Non-serializable data ===
     // Check both the parameter and the type
-    bool have_userA = false, have_userP = false, have_userR = false, have_userNS = false, have_userCO = false;
+    bool have_userA = false, have_userP = false, have_userR = false, have_userCO = false; //have_userNS = false, 
     if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
     if (paramList.isParameter("P")           && !paramList.get<RCP<Matrix> >     ("P")          .is_null()) have_userP  = true;
     if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
-    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
+    //    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
-    // === Smoothing ===
-    // FIXME: should custom smoother check default list too?
-    bool isCustomSmoother =
-        paramList.isParameter("smoother: pre or post") ||
-        paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
-        paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
-        paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
-        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
-    if (PreOrPost == "none") {
-      manager.SetFactory("Smoother", Teuchos::null);
-
-    } else if (isCustomSmoother) {
-      // FIXME: get default values from the factory
-      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
-      // cannot get the default values from it.
-#define TEST_MUTUALLY_EXCLUSIVE(arg1,arg2) \
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter(#arg1) && paramList.isParameter(#arg2), \
-                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
-#define TEST_MUTUALLY_EXCLUSIVE_S(arg1,arg2) \
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist(#arg1) && paramList.isSublist(#arg2), \
-                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
-
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: pre type");
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: post type");
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: pre sweeps");
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: post sweeps");
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: pre overlap");
-      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: post overlap");
-      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: pre params");
-      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: post params");
-      TEUCHOS_TEST_FOR_EXCEPTION(PreOrPost == "both" && (paramList.isParameter("smoother: pre type") != paramList.isParameter("smoother: post type")),
-                                 Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
-
-      // Default values
-      int overlap = 0;
-      ParameterList defaultSmootherParams;
-      defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
-      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
-      defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
-
-      RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
-      std::string          preSmootherType,             postSmootherType;
-      ParameterList        preSmootherParams,           postSmootherParams;
-
-      if (paramList.isParameter("smoother: overlap"))
-        overlap = paramList.get<int>("smoother: overlap");
-
-      if (PreOrPost == "pre" || PreOrPost == "both") {
-        if (paramList.isParameter("smoother: pre type")) {
-          preSmootherType = paramList.get<std::string>("smoother: pre type");
-        } else {
-          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, preSmootherTypeTmp);
-          preSmootherType = preSmootherTypeTmp;
-        }
-        if (paramList.isParameter("smoother: pre overlap"))
-          overlap = paramList.get<int>("smoother: pre overlap");
-
-        if (paramList.isSublist("smoother: pre params"))
-          preSmootherParams = paramList.sublist("smoother: pre params");
-        else if (paramList.isSublist("smoother: params"))
-          preSmootherParams = paramList.sublist("smoother: params");
-        else if (defaultList.isSublist("smoother: params"))
-          preSmootherParams = defaultList.sublist("smoother: params");
-        else if (preSmootherType == "RELAXATION")
-          preSmootherParams = defaultSmootherParams;
-
-#ifdef HAVE_MUELU_INTREPID2
-      // Propagate P-coarsening for Topo smoothing
-      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-	// P-Coarsening by schedule (new interface)
-	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
-
-	if(levelID <  (int)pcoarsen_schedule.size()) {
-	  // Topo info for P-Coarsening
-	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  preSmootherParams.set("pcoarsen: hi basis",lo);
-	}
-      }
-#endif
-
-#ifdef HAVE_MUELU_MATLAB
-        if(preSmootherType == "matlab")
-          preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
-        else
-#endif
-        preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
-      }
-
-      if (PreOrPost == "post" || PreOrPost == "both") {
-        if (paramList.isParameter("smoother: post type"))
-          postSmootherType = paramList.get<std::string>("smoother: post type");
-        else {
-          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, postSmootherTypeTmp);
-          postSmootherType = postSmootherTypeTmp;
-        }
-
-        if (paramList.isSublist("smoother: post params"))
-          postSmootherParams = paramList.sublist("smoother: post params");
-        else if (paramList.isSublist("smoother: params"))
-          postSmootherParams = paramList.sublist("smoother: params");
-        else if (defaultList.isSublist("smoother: params"))
-          postSmootherParams = defaultList.sublist("smoother: params");
-        else if (postSmootherType == "RELAXATION")
-          postSmootherParams = defaultSmootherParams;
-        if (paramList.isParameter("smoother: post overlap"))
-          overlap = paramList.get<int>("smoother: post overlap");
-
-        if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
-          postSmoother = preSmoother;
-        else {
-
-#ifdef HAVE_MUELU_INTREPID2
-      // Propagate P-coarsening for Topo smoothing
-      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-	// P-Coarsening by schedule (new interface)
-	// NOTE: levelID represents the *coarse* level in this case
-	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
-
-	if(levelID <  (int)pcoarsen_schedule.size()) {
-	  // Topo info for P-Coarsening
-	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	  postSmootherParams.set("pcoarsen: hi basis",lo);
-	}
-      }
-#endif
-
-#ifdef HAVE_MUELU_MATLAB
-          if(postSmootherType == "matlab")
-            postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
-          else
-#endif
-          postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
-
-        }
-      }
-
-      if (preSmoother == postSmoother)
-        manager.SetFactory("Smoother",     preSmoother);
-      else {
-        manager.SetFactory("PreSmoother",  preSmoother);
-        manager.SetFactory("PostSmoother", postSmoother);
-      }
-    }
-
+    // == Smoothers ==
+    UpdateFactoryManager_Smoothers(paramList,defaultList,manager,levelID,keeps);
+  
     // === Coarse solver ===
-    // FIXME: should custom coarse solver check default list too?
-    bool isCustomCoarseSolver =
-        paramList.isParameter("coarse: type")   ||
-        paramList.isParameter("coarse: params");
-    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
-      this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
-      manager.SetFactory("CoarseSolver", Teuchos::null);
-
-    } else if (isCustomCoarseSolver) {
-      // FIXME: get default values from the factory
-      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
-      // cannot get the default values from it.
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "coarse: type", std::string, coarseType);
-
-      int overlap = 0;
-      if (paramList.isParameter("coarse: overlap"))
-        overlap = paramList.get<int>("coarse: overlap");
-
-      ParameterList coarseParams;
-      if (paramList.isSublist("coarse: params"))
-        coarseParams = paramList.sublist("coarse: params");
-      else if (defaultList.isSublist("coarse: params"))
-        coarseParams = defaultList.sublist("coarse: params");
-
-      RCP<SmootherPrototype> coarseSmoother;
-      // TODO: this is not a proper place to check. If we consider direct solver to be a special
-      // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
-      // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
-          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
-          coarseType == "Amesos" ||
-          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
-          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION" ||
-          coarseType == "TOPOLOGICAL")
-        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
-      else {
-#ifdef HAVE_MUELU_MATLAB
-        if (coarseType == "matlab")
-          coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
-        else
-#endif
-        coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
-      }
-
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
-    }
-
-    // The first clause is not necessary, but it is here for clarity
-    // Smoothers are reused if smoother explicitly said to reuse them, or if
-    // any other reuse option is enabled
-    bool reuseSmoothers = (reuseType == "S" || reuseType != "none");
-    if (reuseSmoothers) {
-      RCP<Factory> preSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PreSmoother")));
-      if (preSmootherFactory != Teuchos::null) {
-        ParameterList postSmootherFactoryParams;
-        postSmootherFactoryParams.set("keep smoother data", true);
-        preSmootherFactory->SetParameterList(postSmootherFactoryParams);
-
-        keeps.push_back(keep_pair("PreSmoother data",  preSmootherFactory.get()));
-      }
-
-      RCP<Factory> postSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PostSmoother")));
-      if (postSmootherFactory != Teuchos::null) {
-        ParameterList postSmootherFactoryParams;
-        postSmootherFactoryParams.set("keep smoother data", true);
-        postSmootherFactory->SetParameterList(postSmootherFactoryParams);
-
-        keeps.push_back(keep_pair("PostSmoother data", postSmootherFactory.get()));
-      }
-
-      RCP<Factory> coarseFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("CoarseSolver")));
-      if (coarseFactory != Teuchos::null) {
-        ParameterList coarseFactoryParams;
-        coarseFactoryParams.set("keep smoother data", true);
-        coarseFactory->SetParameterList(coarseFactoryParams);
-
-        keeps.push_back(keep_pair("PreSmoother data", coarseFactory.get()));
-      }
-    }
-
-    if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
-      // The difference between "RAP" and "full" is keeping smoothers. However,
-      // as in both cases we keep coarse matrices, we do not need to update
-      // coarse smoothers. On the other hand, if a user changes fine level
-      // matrix, "RAP" would update the fine level smoother, while "full" would
-      // not
-      keeps.push_back(keep_pair("PreSmoother",  manager.GetFactory("PreSmoother") .get()));
-      keeps.push_back(keep_pair("PostSmoother", manager.GetFactory("PostSmoother").get()));
-
-      // We do keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get())
-      // as the coarse solver factory is in fact a smoothing factory, so the
-      // only pieces of data it generates are PreSmoother and PostSmoother
-      keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
-    }
+    UpdateFactoryManager_CoarseSolvers(paramList,defaultList,manager,levelID,keeps);
 
     // === Aggregation ===
-    // Aggregation graph
-    RCP<Factory> dropFactory;
-
-    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
-#ifdef HAVE_MUELU_MATLAB
-      dropFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
-      ParameterList socParams  = paramList.sublist("strength-of-connection: params");
-      dropFactory->SetParameterList(socParams);
-#else
-      throw std::runtime_error("Cannot use MATLAB evolutionary strength-of-connection - MueLu was not configured with MATLAB support.");
-#endif
-    } else {
-      MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
-      ParameterList dropParams;
-      dropParams.set("lightweight wrap", true);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
-      dropFactory->SetParameterList(dropParams);
-    }
-    manager.SetFactory("Graph", dropFactory);
-
-    // Aggregation scheme
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab",
-    Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
-    #ifndef HAVE_MUELU_MATLAB
-      if(aggType == "matlab")
-        throw std::runtime_error("Cannot use MATLAB aggregation - MueLu was not configured with MATLAB support.");
-    #endif
-    RCP<Factory> aggFactory;
-    if (aggType == "uncoupled") {
-      MUELU_KOKKOS_FACTORY_NO_DECL(aggFactory, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
-      ParameterList aggParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode",               std::string, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",           std::string, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: min agg size",               int, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max agg size",               int, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max selected neighbors",     int, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
-      aggFactory->SetParameterList(aggParams);
-      // make sure that the aggregation factory has all necessary data
-      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
-      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-    } else if (aggType == "coupled") {
-      aggFactory = rcp(new CoupledAggregationFactory());
-      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-    } else if (aggType == "brick") {
-      aggFactory = rcp(new BrickAggregationFactory());
-      ParameterList aggParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
-      aggFactory->SetParameterList(aggParams);
-      if (levelID > 1) {
-        // We check for levelID > 0, as in the interpreter aggFactory for
-        // levelID really corresponds to level 0. Managers are clunky, as they
-        // contain factories for two different levels
-        aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
-      }
-    }
-#ifdef HAVE_MUELU_MATLAB
-    else if(aggType == "matlab") {
-      ParameterList aggParams = paramList.sublist("aggregation: params");
-      aggFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
-      aggFactory->SetParameterList(aggParams);
-    }
-#endif
-    manager.SetFactory("Aggregates", aggFactory);
-
-    // Coarse map
-    MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
-    coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-    manager.SetFactory("CoarseMap", coarseMap);
-
-    // Tentative P
-    MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
-    ParameterList ptentParams;
-    if(paramList.isSublist("matrixmatrix: kernel params"))   ptentParams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
-    if(defaultList.isSublist("matrixmatrix: kernel params")) ptentParams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
-    Ptent->SetParameterList(ptentParams);
-    Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));    
-    manager.SetFactory("Ptent",     Ptent);
-
-
-    if (reuseType == "tP" && levelID) {
-      keeps.push_back(keep_pair("Nullspace", Ptent.get()));
-      keeps.push_back(keep_pair("P",         Ptent.get()));
-    }
-
+    UpdateFactoryManager_Aggregation_TentativeP(paramList,defaultList,manager,levelID,keeps);
+    
     // Nullspace
     MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
+    bool have_userNS = false;
+    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (!have_userNS) {
       nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
       manager.SetFactory("Nullspace", nullSpace);
     }
-
+ 
     // === Prolongation ===
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
                                && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
@@ -837,7 +511,7 @@ namespace MueLu {
       manager.SetFactory("P", NoFactory::getRCP());
     } else if (multigridAlgo == "unsmoothed") {
       // Unsmoothed aggregation
-      manager.SetFactory("P", Ptent);
+      manager.SetFactory("P", manager.GetFactory("Ptent"));
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
       MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
@@ -1052,60 +726,9 @@ namespace MueLu {
       manager.SetFactory("R", Teuchos::null);
     }
 
+
     // === RAP ===
-    RCP<RAPFactory> RAP;
-    if (have_userA) {
-      manager.SetFactory("A", NoFactory::getRCP());
-
-    } else {
-      RAP = rcp(new RAPFactory());
-      ParameterList RAPparams;
-      if(paramList.isSublist("matrixmatrix: kernel params"))   RAPparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
-      if(defaultList.isSublist("matrixmatrix: kernel params")) RAPparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-
-      try {
-        if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
-          RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
-          RAPparams.set("RepairMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
-        }
-        else if (defaultList.isParameter("aggregation: allow empty prolongator columns")) {
-          RAPparams.set("CheckMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
-          RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
-        }
-      }
-      catch(Teuchos::Exceptions::InvalidParameterType) {
-        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
-                                            "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
-      }
-
-      RAP->SetParameterList(RAPparams);
-      RAP->SetFactory("P", manager.GetFactory("P"));
-      if (!this->implicitTranspose_)
-        RAP->SetFactory("R", manager.GetFactory("R"));
-
-      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
-        RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
-        ParameterList aggExportParams;
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename",             std::string, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style",      std::string, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter",                   int, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step",              int, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges",      bool, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges",    bool, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap",        bool, aggExportParams);
-        aggExport->SetParameterList(aggExportParams);
-        aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
-        RAP->AddTransferFactory(aggExport);
-      }
-      manager.SetFactory("A", RAP);
-
-      if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
-        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
-        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
-      }
-    }
+    UpdateFactoryManager_RAP(paramList,defaultList,manager,levelID,keeps);
 
     // === Coordinates ===
     if (useCoordinates_) {
@@ -1126,6 +749,7 @@ namespace MueLu {
           manager.SetFactory("Coordinates", tf);
 
         }
+	RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
     }
@@ -1141,6 +765,8 @@ namespace MueLu {
     if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
 
+
+ 
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
@@ -1300,6 +926,444 @@ namespace MueLu {
       keeps.push_back(keep_pair("A", manager.GetFactory("A").get()));
     }
   }
+
+
+  // =====================================================================================================
+  // ========================================= Smoothers =================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Smoothers(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {												 
+  
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+    // === Smoothing ===
+    // FIXME: should custom smoother check default list too?
+    bool isCustomSmoother =
+        paramList.isParameter("smoother: pre or post") ||
+        paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
+        paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
+        paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
+        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
+    if (PreOrPost == "none") {
+      manager.SetFactory("Smoother", Teuchos::null);
+
+    } else if (isCustomSmoother) {
+      // FIXME: get default values from the factory
+      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
+      // cannot get the default values from it.
+#define TEST_MUTUALLY_EXCLUSIVE(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter(#arg1) && paramList.isParameter(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+#define TEST_MUTUALLY_EXCLUSIVE_S(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist(#arg1) && paramList.isSublist(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: pre type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: post type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: pre sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: post sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: pre overlap");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: post overlap");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: pre params");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: post params");
+      TEUCHOS_TEST_FOR_EXCEPTION(PreOrPost == "both" && (paramList.isParameter("smoother: pre type") != paramList.isParameter("smoother: post type")),
+                                 Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
+
+      // Default values
+      int overlap = 0;
+      ParameterList defaultSmootherParams;
+      defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
+      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
+      defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
+
+      RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
+      std::string          preSmootherType,             postSmootherType;
+      ParameterList        preSmootherParams,           postSmootherParams;
+
+      if (paramList.isParameter("smoother: overlap"))
+        overlap = paramList.get<int>("smoother: overlap");
+
+      if (PreOrPost == "pre" || PreOrPost == "both") {
+        if (paramList.isParameter("smoother: pre type")) {
+          preSmootherType = paramList.get<std::string>("smoother: pre type");
+        } else {
+          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, preSmootherTypeTmp);
+          preSmootherType = preSmootherTypeTmp;
+        }
+        if (paramList.isParameter("smoother: pre overlap"))
+          overlap = paramList.get<int>("smoother: pre overlap");
+
+        if (paramList.isSublist("smoother: pre params"))
+          preSmootherParams = paramList.sublist("smoother: pre params");
+        else if (paramList.isSublist("smoother: params"))
+          preSmootherParams = paramList.sublist("smoother: params");
+        else if (defaultList.isSublist("smoother: params"))
+          preSmootherParams = defaultList.sublist("smoother: params");
+        else if (preSmootherType == "RELAXATION")
+          preSmootherParams = defaultSmootherParams;
+
+#ifdef HAVE_MUELU_INTREPID2
+      // Propagate P-coarsening for Topo smoothing
+      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+	// P-Coarsening by schedule (new interface)
+	// NOTE: levelID represents the *coarse* level in this case
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+
+	if(levelID <  (int)pcoarsen_schedule.size()) {
+	  // Topo info for P-Coarsening
+	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  preSmootherParams.set("pcoarsen: hi basis",lo);
+	}
+      }
+#endif
+
+#ifdef HAVE_MUELU_MATLAB
+        if(preSmootherType == "matlab")
+          preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
+        else
+#endif
+        preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
+      }
+
+      if (PreOrPost == "post" || PreOrPost == "both") {
+        if (paramList.isParameter("smoother: post type"))
+          postSmootherType = paramList.get<std::string>("smoother: post type");
+        else {
+          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, postSmootherTypeTmp);
+          postSmootherType = postSmootherTypeTmp;
+        }
+
+        if (paramList.isSublist("smoother: post params"))
+          postSmootherParams = paramList.sublist("smoother: post params");
+        else if (paramList.isSublist("smoother: params"))
+          postSmootherParams = paramList.sublist("smoother: params");
+        else if (defaultList.isSublist("smoother: params"))
+          postSmootherParams = defaultList.sublist("smoother: params");
+        else if (postSmootherType == "RELAXATION")
+          postSmootherParams = defaultSmootherParams;
+        if (paramList.isParameter("smoother: post overlap"))
+          overlap = paramList.get<int>("smoother: post overlap");
+
+        if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
+          postSmoother = preSmoother;
+        else {
+
+#ifdef HAVE_MUELU_INTREPID2
+      // Propagate P-coarsening for Topo smoothing
+      if(multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" && defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+	// P-Coarsening by schedule (new interface)
+	// NOTE: levelID represents the *coarse* level in this case
+	Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+	std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+
+	if(levelID <  (int)pcoarsen_schedule.size()) {
+	  // Topo info for P-Coarsening
+	  std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+	  postSmootherParams.set("pcoarsen: hi basis",lo);
+	}
+      }
+#endif
+
+#ifdef HAVE_MUELU_MATLAB
+          if(postSmootherType == "matlab")
+            postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+          else
+#endif
+          postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
+
+        }
+      }
+
+      if (preSmoother == postSmoother)
+        manager.SetFactory("Smoother",     preSmoother);
+      else {
+        manager.SetFactory("PreSmoother",  preSmoother);
+        manager.SetFactory("PostSmoother", postSmoother);
+      }
+    }
+
+   // The first clause is not necessary, but it is here for clarity
+    // Smoothers are reused if smoother explicitly said to reuse them, or if
+    // any other reuse option is enabled
+    bool reuseSmoothers = (reuseType == "S" || reuseType != "none");
+    if (reuseSmoothers) {
+      RCP<Factory> preSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PreSmoother")));
+      if (preSmootherFactory != Teuchos::null) {
+        ParameterList postSmootherFactoryParams;
+        postSmootherFactoryParams.set("keep smoother data", true);
+        preSmootherFactory->SetParameterList(postSmootherFactoryParams);
+
+        keeps.push_back(keep_pair("PreSmoother data",  preSmootherFactory.get()));
+      }
+
+      RCP<Factory> postSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PostSmoother")));
+      if (postSmootherFactory != Teuchos::null) {
+        ParameterList postSmootherFactoryParams;
+        postSmootherFactoryParams.set("keep smoother data", true);
+        postSmootherFactory->SetParameterList(postSmootherFactoryParams);
+
+        keeps.push_back(keep_pair("PostSmoother data", postSmootherFactory.get()));
+      }
+
+      RCP<Factory> coarseFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("CoarseSolver")));
+      if (coarseFactory != Teuchos::null) {
+        ParameterList coarseFactoryParams;
+        coarseFactoryParams.set("keep smoother data", true);
+        coarseFactory->SetParameterList(coarseFactoryParams);
+
+        keeps.push_back(keep_pair("PreSmoother data", coarseFactory.get()));
+      }
+    }
+
+    if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
+      // The difference between "RAP" and "full" is keeping smoothers. However,
+      // as in both cases we keep coarse matrices, we do not need to update
+      // coarse smoothers. On the other hand, if a user changes fine level
+      // matrix, "RAP" would update the fine level smoother, while "full" would
+      // not
+      keeps.push_back(keep_pair("PreSmoother",  manager.GetFactory("PreSmoother") .get()));
+      keeps.push_back(keep_pair("PostSmoother", manager.GetFactory("PostSmoother").get()));
+
+      // We do keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get())
+      // as the coarse solver factory is in fact a smoothing factory, so the
+      // only pieces of data it generates are PreSmoother and PostSmoother
+      keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
+    }
+
+}
+
+
+  // =====================================================================================================
+  // ====================================== Coarse Solvers ===============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_CoarseSolvers(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {												 
+    // FIXME: should custom coarse solver check default list too?
+    bool isCustomCoarseSolver =
+        paramList.isParameter("coarse: type")   ||
+        paramList.isParameter("coarse: params");
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
+      this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
+      manager.SetFactory("CoarseSolver", Teuchos::null);
+
+    } else if (isCustomCoarseSolver) {
+      // FIXME: get default values from the factory
+      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
+      // cannot get the default values from it.
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "coarse: type", std::string, coarseType);
+
+      int overlap = 0;
+      if (paramList.isParameter("coarse: overlap"))
+        overlap = paramList.get<int>("coarse: overlap");
+
+      ParameterList coarseParams;
+      if (paramList.isSublist("coarse: params"))
+        coarseParams = paramList.sublist("coarse: params");
+      else if (defaultList.isSublist("coarse: params"))
+        coarseParams = defaultList.sublist("coarse: params");
+
+      RCP<SmootherPrototype> coarseSmoother;
+      // TODO: this is not a proper place to check. If we consider direct solver to be a special
+      // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
+      // have a single factory responsible for those. Then, this check would belong there.
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
+          coarseType == "Amesos" ||
+          coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+          coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION" ||
+          coarseType == "TOPOLOGICAL")
+        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
+      else {
+#ifdef HAVE_MUELU_MATLAB
+        if (coarseType == "matlab")
+          coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+        else
+#endif
+        coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
+      }
+
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
+    }
+}
+
+  // =====================================================================================================
+  // ========================================= Smoothers =================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Aggregation_TentativeP(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {												 
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+    // Aggregation graph
+    RCP<Factory> dropFactory;
+
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
+#ifdef HAVE_MUELU_MATLAB
+      dropFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      ParameterList socParams  = paramList.sublist("strength-of-connection: params");
+      dropFactory->SetParameterList(socParams);
+#else
+      throw std::runtime_error("Cannot use MATLAB evolutionary strength-of-connection - MueLu was not configured with MATLAB support.");
+#endif
+    } else {
+      MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
+      ParameterList dropParams;
+      dropParams.set("lightweight wrap", true);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      dropFactory->SetParameterList(dropParams);
+    }
+    manager.SetFactory("Graph", dropFactory);
+
+    // Aggregation scheme
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab",
+    Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
+    #ifndef HAVE_MUELU_MATLAB
+      if(aggType == "matlab")
+        throw std::runtime_error("Cannot use MATLAB aggregation - MueLu was not configured with MATLAB support.");
+    #endif
+    RCP<Factory> aggFactory;
+    if (aggType == "uncoupled") {
+      MUELU_KOKKOS_FACTORY_NO_DECL(aggFactory, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode",               std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",           std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: min agg size",               int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max agg size",               int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max selected neighbors",     int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      // make sure that the aggregation factory has all necessary data
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+    } else if (aggType == "coupled") {
+      aggFactory = rcp(new CoupledAggregationFactory());
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+    } else if (aggType == "brick") {
+      aggFactory = rcp(new BrickAggregationFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      if (levelID > 1) {
+        // We check for levelID > 0, as in the interpreter aggFactory for
+        // levelID really corresponds to level 0. Managers are clunky, as they
+        // contain factories for two different levels
+        aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
+      }
+    }
+#ifdef HAVE_MUELU_MATLAB
+    else if(aggType == "matlab") {
+      ParameterList aggParams = paramList.sublist("aggregation: params");
+      aggFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      aggFactory->SetParameterList(aggParams);
+    }
+#endif
+    manager.SetFactory("Aggregates", aggFactory);
+
+    // Coarse map
+    MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
+    coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    manager.SetFactory("CoarseMap", coarseMap);
+
+    // Tentative P
+    MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
+    ParameterList ptentParams;
+    if(paramList.isSublist("matrixmatrix: kernel params"))   ptentParams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+    if(defaultList.isSublist("matrixmatrix: kernel params")) ptentParams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+    Ptent->SetParameterList(ptentParams);
+    Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));    
+    manager.SetFactory("Ptent",     Ptent);
+
+    if (reuseType == "tP" && levelID) {
+      keeps.push_back(keep_pair("Nullspace", Ptent.get()));
+      keeps.push_back(keep_pair("P",         Ptent.get()));
+    }
+}
+
+  // =====================================================================================================
+  // ============================================ RAP ====================================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_RAP(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {												 
+  bool have_userA = false, have_userCO = false;
+    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
+    if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
+    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+    // === RAP ===
+    RCP<RAPFactory> RAP;
+    if (have_userA) {
+      manager.SetFactory("A", NoFactory::getRCP());
+
+    } else {
+      RAP = rcp(new RAPFactory());
+      ParameterList RAPparams;
+      if(paramList.isSublist("matrixmatrix: kernel params"))   RAPparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+      if(defaultList.isSublist("matrixmatrix: kernel params")) RAPparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
+
+      try {
+        if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
+          RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
+          RAPparams.set("RepairMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
+        }
+        else if (defaultList.isParameter("aggregation: allow empty prolongator columns")) {
+          RAPparams.set("CheckMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+          RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+        }
+      }
+      catch(Teuchos::Exceptions::InvalidParameterType) {
+        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
+                                            "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
+      }
+
+      RAP->SetParameterList(RAPparams);
+      RAP->SetFactory("P", manager.GetFactory("P"));
+      if (!this->implicitTranspose_)
+        RAP->SetFactory("R", manager.GetFactory("R"));
+
+      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
+        RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+        ParameterList aggExportParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename",             std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style",      std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter",                   int, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step",              int, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges",      bool, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges",    bool, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap",        bool, aggExportParams);
+        aggExport->SetParameterList(aggExportParams);
+        aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
+        RAP->AddTransferFactory(aggExport);
+      }
+      manager.SetFactory("A", RAP);
+
+      if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
+        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
+        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
+      }
+    }
+
+  
+
+}
+
+
 #undef MUELU_SET_VAR_2LIST
 #undef MUELU_TEST_AND_SET_VAR
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
