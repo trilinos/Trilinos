@@ -45,14 +45,15 @@
 %{
 
 // Epetra includes
-#include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_SerialDenseSVD.h"
+// #include "Epetra_IntSerialDenseMatrix.h"
+// #include "Epetra_IntSerialDenseVector.h"
+// #include "Epetra_SerialDenseOperator.h"
+// #include "Epetra_SerialDenseMatrix.h"
+// #include "Epetra_SerialSymDenseMatrix.h"
+// #include "Epetra_SerialDenseVector.h"
+// #include "Epetra_SerialDenseSolver.h"
+// #include "Epetra_SerialDenseSVD.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 %}
 

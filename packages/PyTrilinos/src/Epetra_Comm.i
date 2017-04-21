@@ -44,11 +44,12 @@
 
 %{
 // Epetra includes
-#include "Epetra_Object.h"
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#include "Epetra_Distributor.h"
-#include "Epetra_SerialDistributor.h"
+// #include "Epetra_Object.h"
+// #include "Epetra_Comm.h"
+// #include "Epetra_SerialComm.h"
+// #include "Epetra_Distributor.h"
+// #include "Epetra_SerialDistributor.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
@@ -340,11 +341,11 @@ PyObject* methodName(PyObject* partialObj)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_MPI
-%{
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_MpiDistributor.h"
-%}
+// %{
+// #include "mpi.h"
+// #include "Epetra_MpiComm.h"
+// #include "Epetra_MpiDistributor.h"
+// %}
 
 %inline
 {

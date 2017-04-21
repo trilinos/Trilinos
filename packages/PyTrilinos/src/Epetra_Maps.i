@@ -44,13 +44,14 @@
 
 %{
 // Epetra includes
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Directory.h"
-#include "Epetra_BasicDirectory.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
+// #include "Epetra_BlockMap.h"
+// #include "Epetra_Map.h"
+// #include "Epetra_LocalMap.h"
+// #include "Epetra_Directory.h"
+// #include "Epetra_BasicDirectory.h"
+// #include "Epetra_Import.h"
+// #include "Epetra_Export.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 %}
 
 /////////////////////////////////////////////////////////

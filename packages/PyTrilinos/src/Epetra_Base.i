@@ -49,17 +49,18 @@
 #include "PyTrilinos_FILEstream.hpp"
 
 // Epetra includes
-#include "Epetra_Version.h"
-#include "Epetra_CombineMode.h"
-#include "Epetra_DataAccess.h"
-#include "Epetra_Object.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_BLAS.h"
-#include "Epetra_LAPACK.h"
-#include "Epetra_Flops.h"
-#include "Epetra_Time.h"
-#include "Epetra_Util.h"
-#include "Epetra_MapColoring.h"
+// #include "Epetra_Version.h"
+// #include "Epetra_CombineMode.h"
+// #include "Epetra_DataAccess.h"
+// #include "Epetra_Object.h"
+// #include "Epetra_CompObject.h"
+// #include "Epetra_BLAS.h"
+// #include "Epetra_LAPACK.h"
+// #include "Epetra_Flops.h"
+// #include "Epetra_Time.h"
+// #include "Epetra_Util.h"
+// #include "Epetra_MapColoring.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // Epetra python exception
 char epetraError[13] = "Epetra.Error";

@@ -40,7 +40,16 @@
 // ***********************************************************************
 // @HEADER
 
+// Configuration
+#include "PyTrilinos_config.h"
+#include "Epetra_ConfigDefs.h"
+
+// Epetra includes
+#include "Epetra_DLLExportMacro.h"
 #include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
@@ -58,4 +67,8 @@
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDistributor.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiDistributor.h"
+#endif
 #include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Util.hpp"
