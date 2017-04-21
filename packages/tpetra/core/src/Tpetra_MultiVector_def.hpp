@@ -1803,71 +1803,72 @@ namespace Tpetra {
   {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Teuchos::ArrayView)");
 
-    if (this->getNumVectors () == 1 && A.getNumVectors () == 1) {
+    //if (this->getNumVectors () == 1 && A.getNumVectors () == 1) {
+    if (false) { // temporary work-around for #1258
       typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
       const auto& comm = * (this->getMap ()->getComm ());
 
       // Special case for a single dot product.  Don't allocate device
       // buffer, and don't copy to and from device.
-      
+
       // If we need sync to device, then host has the most recent
       // version.  A is a guest of this method, so we should sync it.
       // Thus, let A control where execution happens.
       const bool useHostVersion = A.template need_sync<device_type> ();
       if (useHostVersion) {
-	// A was last modified on host, so run the local kernel there.
-	// This means we need a host mirror of the array of norms too.
-	typedef typename dual_view_type::t_host XMV;
-	typedef typename XMV::memory_space cur_memory_space;
+        // A was last modified on host, so run the local kernel there.
+        // This means we need a host mirror of the array of norms too.
+        typedef typename dual_view_type::t_host XMV;
+        typedef typename XMV::memory_space cur_memory_space;
 
-	// I consider it more polite to sync *this, then to sync A.
-	// A is a "guest" of this method, and is passed in const.
-	const_cast<MV*> (this)->template sync<cur_memory_space> ();
-	auto thisView = this->template getLocalView<cur_memory_space> ();
-	auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
-	auto A_view = A.template getLocalView<cur_memory_space> ();
-	auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
-	
-	const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
-	dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+        // I consider it more polite to sync *this, then to sync A.
+        // A is a "guest" of this method, and is passed in const.
+        const_cast<MV*> (this)->template sync<cur_memory_space> ();
+        auto thisView = this->template getLocalView<cur_memory_space> ();
+        auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
+        auto A_view = A.template getLocalView<cur_memory_space> ();
+        auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
 
-	if (comm.getSize () > 1) {
-	  using Teuchos::outArg;
-	  using Teuchos::REDUCE_SUM;
-	  using Teuchos::reduceAll;
-	  reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
-	}
-	else {
-	  gblDot = lclDot;
-	}
-	dots[0] = gblDot;
+        const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
+        dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+
+        if (comm.getSize () > 1) {
+          using Teuchos::outArg;
+          using Teuchos::REDUCE_SUM;
+          using Teuchos::reduceAll;
+          reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
+        }
+        else {
+          gblDot = lclDot;
+        }
+        dots[0] = gblDot;
       }
       else {
-	// A was last modified on device, so run the local kernel there.
-	typedef typename dual_view_type::t_dev XMV;
-	typedef typename XMV::memory_space cur_memory_space;
+        // A was last modified on device, so run the local kernel there.
+        typedef typename dual_view_type::t_dev XMV;
+        typedef typename XMV::memory_space cur_memory_space;
 
-	// I consider it more polite to sync *this, then to sync A.
-	// A is a "guest" of this method, and is passed in const.
-	const_cast<MV*> (this)->template sync<cur_memory_space> ();
-	auto thisView = this->template getLocalView<cur_memory_space> ();
-	auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
-	auto A_view = A.template getLocalView<cur_memory_space> ();
-	auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
-	
-	const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
-	dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+        // I consider it more polite to sync *this, then to sync A.
+        // A is a "guest" of this method, and is passed in const.
+        const_cast<MV*> (this)->template sync<cur_memory_space> ();
+        auto thisView = this->template getLocalView<cur_memory_space> ();
+        auto thisView_1d = Kokkos::subview (thisView, Kokkos::ALL (), 0);
+        auto A_view = A.template getLocalView<cur_memory_space> ();
+        auto A_view_1d = Kokkos::subview (A_view, Kokkos::ALL (), 0);
 
-	if (comm.getSize () > 1) {
-	  using Teuchos::outArg;
-	  using Teuchos::REDUCE_SUM;
-	  using Teuchos::reduceAll;
-	  reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
-	}
-	else {
-	  gblDot = lclDot;
-	}
-	dots[0] = gblDot;
+        const dot_type lclDot = KokkosBlas::dot (thisView_1d, A_view_1d);
+        dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
+
+        if (comm.getSize () > 1) {
+          using Teuchos::outArg;
+          using Teuchos::REDUCE_SUM;
+          using Teuchos::reduceAll;
+          reduceAll<int, dot_type> (comm, REDUCE_SUM, lclDot, outArg (gblDot));
+        }
+        else {
+          gblDot = lclDot;
+        }
+        dots[0] = gblDot;
       }
     }
     else {
