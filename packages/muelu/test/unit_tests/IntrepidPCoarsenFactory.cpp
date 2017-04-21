@@ -889,7 +889,8 @@ namespace MueLuTests {
       }
       int numElements = maxGID + 1;
       // construct a serial map (claiming all rows and cells)
-      serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
+      RCP<Node> dummy;
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm,dummy);
 
       int startingGID = 0;
       for (int rank=0; rank<numRanks; rank++)
@@ -1072,7 +1073,8 @@ namespace MueLuTests {
         }
       }
       int numElements = maxLID + 1;
-      serialMapRCP = MapFactory::createLocalMap(lib, numElements, serialComm);
+      RCP<Node> dummy;
+      serialMapRCP = MapFactory::createLocalMapWithNode(lib, numElements, serialComm,dummy);
 
       MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, elementToNodeMap,
                                                                                                  seeds, *serialMapRCP, *serialMapRCP);
