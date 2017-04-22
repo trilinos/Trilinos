@@ -76,7 +76,7 @@ struct QuotedAs {
   static T eval(YAML::Node const& node) {
     // this "!" tag apparently denotes that the value was quoted
     if (node.Tag() == "!") {
-      throw YAML::TypedBadConversion<T>(node.Mark());
+      throw std::runtime_error("quoted_as from quoted string to number");
     }
     return node.as<T>();
   }
