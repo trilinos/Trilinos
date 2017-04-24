@@ -255,7 +255,7 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
     if (info != 0){//try solving a least squares problem instead (in case the linear system has infinitely many solutions)
       lu=mat;
       lapack.GELSS(n,n,ncols,&lu(0,0), n, output, n, sv, rcond, &rank, work, lwork, &info);
-      return (info == 0);
+      return false;
     }
     isValidLU = true;
   }
