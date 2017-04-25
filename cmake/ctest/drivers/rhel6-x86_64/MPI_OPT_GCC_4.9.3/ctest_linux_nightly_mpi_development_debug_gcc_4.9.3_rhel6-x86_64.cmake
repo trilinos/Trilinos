@@ -70,7 +70,7 @@ SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
 #       Since "Nightly" "Continuous" and "Experimental" are special to
 #       Tribits, we'll set CTEST_TEST_TYPE to "Nightly" here.
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK  Specialized))
+SET(Trilinos_TRACK  Specialized)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
