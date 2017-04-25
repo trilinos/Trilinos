@@ -273,7 +273,6 @@ IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
     )
 
   APPEND_SET(SOURCES
-    Amesos2_Umfpack_TypeMap.cpp
     Amesos2_Umfpack.cpp
     )
 

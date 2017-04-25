@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Sivasankaran Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -56,24 +56,6 @@
 
 #include "Amesos2_TypeMap.hpp"
 
-/* Umfpack comples headers file only need to be included if
-   complex has been enabled in Teuchos.  In addition we only need to
-   define the conversion and printing functions if complex has been
-   enabled. */
-namespace UMFPACK {
-
-// Declare and specialize a std::binary_funtion class for
-// multiplication of Umfpack types
-template <typename umfpack_scalar_t, typename umfpack_mag_t>
-struct umfpack_mult {};
-
-// This specialization handles the generic case were the scalar and
-// magnitude types are double or float.
-template <typename T>
-struct umfpack_mult<T,T> : std::multiplies<T> {};
-
-} // end namespace UMFPACK
-
 /* ==================== Conversion ==================== */
 namespace Teuchos {
 
@@ -87,9 +69,6 @@ namespace Teuchos {
  *
  * @{
  */
-
-// Provide conversion from std::complex<float> to std::complex<double>
-
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Sivasankaran Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -56,49 +56,43 @@ namespace UMFPACK {
   extern "C" {
     #include "umfpack.h"
 
-    namespace D {               // double-precision real definitions
-      extern int
-      umfpack_di_solve(int, const int *, const int *, const double *, double *,
-        const double *, void *, const double *, double *);
-      extern int
-      umfpack_di_numeric(const int *, const int *, const double *, void *,
-        void **, const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]);
-      extern int
-      umfpack_di_symbolic(int, int, const int *, const int *, const double *,
-        void **, const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]);
-      extern void
-      umfpack_di_defaults(double Control [UMFPACK_CONTROL]);
-      extern void
-      umfpack_di_free_numeric(void **);
-      extern void
-      umfpack_di_free_symbolic(void **);
-    }
+    // general definitions
+
+    // double-precision real definitions
+    extern int
+    umfpack_di_solve(int, const int *, const int *, const double *, double *,
+      const double *, void *, const double *, double *);
+    extern int
+    umfpack_di_numeric(const int *, const int *, const double *, void *,
+      void **, const double Control [UMFPACK_CONTROL],
+      double Info [UMFPACK_INFO]);
+    extern int
+    umfpack_di_symbolic(int, int, const int *, const int *, const double *,
+      void **, const double Control [UMFPACK_CONTROL],
+      double Info [UMFPACK_INFO]);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-    namespace Z {              // double-precision complex definitions
-      extern int
-      umfpack_zi_solve(int, const int *, const int *, const double *,
-        const double *, double *,	double *, const double *, const double *,
-        void *, const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]);
-      extern int
-      umfpack_zi_numeric(const int *, const int *, const double *,
-        const double *, void *, void **, const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]);
-      extern int
-      umfpack_zi_symbolic(int, int, const int *, const int *,
-        const double *, const double *, void **,
-        const double Control [UMFPACK_CONTROL],
-        double Info [UMFPACK_INFO]);
-      extern void
-      umfpack_zi_defaults(double Control [UMFPACK_CONTROL]);
-      extern void
-      umfpack_zi_free_numeric(void **);
-      extern void
-      umfpack_zi_free_symbolic(void **);
-    }
+    // double-precision complex definitions
+    extern int
+    umfpack_zi_solve(int, const int *, const int *, const double *,
+      const double *, double *,	double *, const double *, const double *,
+      void *, const double Control [UMFPACK_CONTROL],
+      double Info [UMFPACK_INFO]);
+    extern int
+    umfpack_zi_numeric(const int *, const int *, const double *,
+      const double *, void *, void **, const double Control [UMFPACK_CONTROL],
+      double Info [UMFPACK_INFO]);
+    extern int
+    umfpack_zi_symbolic(int, int, const int *, const int *,
+      const double *, const double *, void **,
+      const double Control [UMFPACK_CONTROL],
+      double Info [UMFPACK_INFO]);
+    extern void
+    umfpack_zi_defaults(double Control [UMFPACK_CONTROL]);
+    extern void
+    umfpack_zi_free_numeric(void **);
+    extern void
+    umfpack_zi_free_symbolic(void **);
 #endif  // HAVE_TEUCHOS_COMPLEX
 
   } // end extern "C"
@@ -132,7 +126,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::D::umfpack_di_solve(sys, Ap, Ai, Ax, X, B, Numeric, Control, Info);
+      return UMFPACK::umfpack_di_solve(sys, Ap, Ai, Ax, X, B, Numeric, Control, Info);
     }
 
     static int umfpack_numeric(
@@ -144,7 +138,7 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::D::umfpack_di_numeric(Ap, Ai, Ax, Symbolic, Numeric, Control, Info);
+      return UMFPACK::umfpack_di_numeric(Ap, Ai, Ax, Symbolic, Numeric, Control, Info);
     }
 
     static int umfpack_symbolic(
@@ -157,23 +151,23 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::D::umfpack_di_symbolic(n_row, n_col, Ap, Ai, Ax, Symbolic, Control, Info);
+      return UMFPACK::umfpack_di_symbolic(n_row, n_col, Ap, Ai, Ax, Symbolic, Control, Info);
     }
 
     static void umfpack_defaults(
     double Control [UMFPACK_CONTROL])
     {
-      UMFPACK::D::umfpack_di_defaults(Control);
+      UMFPACK::umfpack_di_defaults(Control);
     }
 
     static void umfpack_free_numeric(void **Numeric)
     {
-      return UMFPACK::D::umfpack_di_free_numeric(Numeric);
+      return UMFPACK::umfpack_di_free_numeric(Numeric);
     }
 
     static void umfpack_free_symbolic(void **Symbolic)
     {
-      return UMFPACK::D::umfpack_di_free_symbolic(Symbolic);
+      return UMFPACK::umfpack_di_free_symbolic(Symbolic);
     }
   };
 
@@ -222,7 +216,7 @@ namespace Amesos2 {
     const double Control[UMFPACK_CONTROL],
     double Info[UMFPACK_INFO])
     {
-      return UMFPACK::Z::umfpack_zi_numeric(Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Numeric, Control, Info);
+      return UMFPACK::umfpack_zi_numeric(Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Numeric, Control, Info);
     }
 
     static int umfpack_symbolic(
@@ -235,22 +229,22 @@ namespace Amesos2 {
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
     {
-      return UMFPACK::Z::umfpack_zi_symbolic(n_row, n_col, Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Control, Info);
+      return UMFPACK::umfpack_zi_symbolic(n_row, n_col, Ap, Ai, stdComplexToUmfpackDoubleConversion(Ax), NULL, Symbolic, Control, Info);
     }
 
     static void umfpack_defaults(double Control [UMFPACK_CONTROL])
     {
-      UMFPACK::Z::umfpack_zi_defaults(Control);
+      UMFPACK::umfpack_zi_defaults(Control);
     }
 
     static void umfpack_free_numeric(void **Numeric)
     {
-      UMFPACK::Z::umfpack_zi_free_numeric(Numeric);
+      UMFPACK::umfpack_zi_free_numeric(Numeric);
     }
 
     static void umfpack_free_symbolic(void **Symbolic)
     {
-      UMFPACK::Z::umfpack_zi_free_symbolic(Symbolic);
+      UMFPACK::umfpack_zi_free_symbolic(Symbolic);
     }
   };
 
