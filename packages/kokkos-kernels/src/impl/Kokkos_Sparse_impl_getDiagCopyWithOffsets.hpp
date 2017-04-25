@@ -166,54 +166,20 @@ struct CrsMatrixGetDiagCopyWithOffsets {
 // users!!!
 //
 #define KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_DECL( SCALAR, ORDINAL, EXEC_SPACE, MEM_SPACE, OFFSET ) \
-template<> \
- struct CrsMatrixGetDiagCopyWithOffsets< SCALAR , \
+extern template struct CrsMatrixGetDiagCopyWithOffsets< SCALAR , \
                                          ORDINAL , \
                                          Kokkos::Device< EXEC_SPACE , MEM_SPACE >, \
-                                         OFFSET > { \
-  typedef SCALAR scalar_type; \
-  typedef ORDINAL ordinal_type; \
-  typedef Kokkos::Device< EXEC_SPACE , MEM_SPACE > device_type; \
-  typedef OFFSET offset_type; \
-  typedef ::KokkosSparse::CrsMatrix<scalar_type, \
-                                    ordinal_type, \
-                                    device_type, \
-                                    void, \
-                                    offset_type> crs_matrix_type; \
-  typedef Kokkos::View<scalar_type*, \
-                       Kokkos::LayoutLeft, \
-                       device_type, \
-                       Kokkos::MemoryUnmanaged> diag_type; \
-  typedef Kokkos::View<const size_t*, \
-                       device_type, \
-                       Kokkos::MemoryUnmanaged> offsets_type; \
-  static void \
-  getDiagCopy (const diag_type& D, \
-               const offsets_type& offsets, \
-               const crs_matrix_type& A); \
-};
+                                         OFFSET >;
 
 //
 // Macro for definitions of full specialization of
 // KokkosSparse::Impl::CrsMatrixGetDiagCopyWithOffsets.  This is NOT for users!!!
 //
 #define KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_DEF( SCALAR, ORDINAL, EXEC_SPACE, MEM_SPACE, OFFSET ) \
-void \
-CrsMatrixGetDiagCopyWithOffsets< SCALAR , \
+template struct CrsMatrixGetDiagCopyWithOffsets< SCALAR , \
                                  ORDINAL , \
                                  Kokkos::Device< EXEC_SPACE , MEM_SPACE >, \
-                                 OFFSET >:: \
-getDiagCopy (const diag_type& D, \
-             const offsets_type& offsets, \
-             const crs_matrix_type& A) \
-{ \
-  typedef typename device_type::execution_space execution_space; \
-  const ordinal_type numRows = static_cast<ordinal_type> (D.dimension_0 ()); \
-  CrsMatrixGetDiagCopyWithOffsetsFunctor<diag_type, offsets_type, \
-    crs_matrix_type> functor (D, offsets, A); \
-  typedef Kokkos::RangePolicy<execution_space, ordinal_type> policy_type; \
-  Kokkos::parallel_for (policy_type (0, numRows), functor); \
-}
+                                 OFFSET >;
 
 } // namespace Impl
 } // namespace KokkosSparse

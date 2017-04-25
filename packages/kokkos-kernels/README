@@ -1,8 +1,12 @@
-KokkosKernels provides dense and sparse linear algebra as well graph computing
-local computational kernels using the Kokkos programming model.  
-"Local" means no MPI or other distributed-memory communication.  
-"Computational kernels" are coarse-grained operations; they take a lot of work 
-and make sense to parallelize inside using Kokkos.  
+KokkosKernels implements local computational kernels for linear
+algebra and graph operations, using the Kokkos shared-memory parallel
+programming model.  "Local" means not using MPI, or running within a
+single MPI process without knowing about MPI.  "Computational kernels"
+are coarse-grained operations; they take a lot of work and make sense
+to parallelize inside using Kokkos.  KokkosKernels can be the building
+block of a parallel linear algebra library like Tpetra that uses MPI
+and threads for parallelism, or it can be used stand-alone in your
+application.
 
 Computational kernels in this subpackage include the following:
 
@@ -10,31 +14,37 @@ Computational kernels in this subpackage include the following:
     operations that add vectors together entry-wise)
   - Sparse matrix-vector multiply and other sparse matrix / dense
     vector kernels
-  - Other operations that the Core subpackage of Tpetra (TpetraCore)
-    needs
+  - Sparse matrix-matrix multiply
+  - Graph coloring
+  - Gauss-Seidel with coloring (generalization of red-black)
+  - Other linear algebra and graph operations
 
-Kokkos is licensed under standard 3-clause BSD terms of use. For specifics
-see the LICENSE file contained in the repository or distribution.
+Kokkos is licensed under standard 3-clause BSD terms of use.  For
+specifics, please refer to the LICENSE file contained in the
+repository or distribution.
 
 We organize this directory as follows:
 
   1. Public interfaces to computational kernels live in the src/
-     subdirectory (tpetra/kernels/src):
+     subdirectory (kokkos-kernels/src):
 
      - Kokkos_Blas1_MV.hpp: (Multi)vector operations that
        Tpetra::MultiVector uses
-     - Kokkos_CrsMatrix.hpp: Sparse matrix data structure used for the
-       computational kernels below
+     - Kokkos_Sparse_CrsMatrix.hpp: Declaration and definition of
+       KokkosSparse::CrsMatrix, the sparse matrix data structure used
+       for the computational kernels below
      - Kokkos_Sparse.hpp: Sparse matrix-vector multiply with a
        single vector, stored in a 1-D View
      - Kokkos_Sparse_MV.hpp: Sparse matrix-vector multiply with
        multiple vectors at a time (multivectors), stored in a 2-D View
 
   2. Implementations of computational kernels live in the src/impl/
-     subdirectory (tpetra/kernels/src/impl)
+     subdirectory (kokkos-kernels/src/impl)
 
   3. Correctness tests live in the unit_test/ subdirectory, and
-     performance tests live in the perf_test subdirectory
+     performance tests live in the perf_test/ subdirectory
+
+  4. Compact batched BLAS: Refer the README in src/stage/batched/.
 
 Do NOT use or rely on anything in the KokkosBlas::Impl namespace, or
 on anything in the impl/ subdirectory.
@@ -44,10 +54,11 @@ assign the users' Views to View types with the desired attributes
 (e.g., read-only, RandomRead).  This also makes it easier to provide
 full specializations of the implementation.  "Full specializations"
 mean that all the template parameters are fixed, so that the compiler
-can actually compile the code.  This technique keeps Tpetra build
-times down, since kernels are already precompiled for certain Scalar
-types.  It also improves performance, since compilers have an easier
-time optimizing code in shorter .cpp files.
+can actually compile the code.  This technique keeps your library's or
+application's build times down, since kernels are already precompiled
+for certain template parameter combinations.  It also improves
+performance, since compilers have an easier time optimizing code in
+shorter .cpp files.
 
 
 

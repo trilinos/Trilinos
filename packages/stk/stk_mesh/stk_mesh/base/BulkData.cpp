@@ -3929,7 +3929,12 @@ void BulkData::add_comm_map_for_sharing(const std::vector<SideSharingData>& side
     for(const SideSharingData &sideSharingData : sidesSharingData)
     {
         shared_entities.push_back(sideSharingData.side);
-        entity_comm_map_insert(sideSharingData.side, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sideSharingData.sharingProc));
+
+        for(int sharingProc : sideSharingData.allSharingProcs)
+        {
+            if(sharingProc != parallel_rank())
+                entity_comm_map_insert(sideSharingData.side, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharingProc));
+        }
     }
 }
 
@@ -6635,7 +6640,8 @@ bool BulkData::verify_parallel_attributes( std::ostream & error_log )
     }
   }
 
-  result = result && impl::is_comm_list_globally_consistent(this->parallel(), this->m_entity_comm_list, error_log);
+  bool isGloballyConsistentCommList = impl::is_comm_list_globally_consistent(this->parallel(), this->m_entity_comm_list, error_log);
+  result = result && isGloballyConsistentCommList;
 
   return result ;
 }
@@ -7258,6 +7264,15 @@ void BulkData::create_side_entities(const SideSet &sideSet, const stk::mesh::Par
 {
     if(has_face_adjacent_element_graph())
         FaceCreator(*this, *m_elemElemGraph).create_side_entities_given_sideset(sideSet, parts);
+}
+
+void BulkData::dump_mesh_per_proc(const std::string& fileNamePrefix) const
+{
+    std::ostringstream oss;
+    oss << fileNamePrefix << "." << parallel_rank();
+    std::ofstream out(oss.str());
+    dump_all_mesh_info(out);
+    out.close();
 }
 
 #ifdef SIERRA_MIGRATION

@@ -106,11 +106,11 @@ public:
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor3(ComponentValue const value);
+  Tensor3(Filler const value);
 
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor3(Index const dimension, ComponentValue const value);
+  Tensor3(Index const dimension, Filler const value);
 
   ///
   /// Create 3rd-order tensor from array

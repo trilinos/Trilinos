@@ -136,6 +136,16 @@ public:
         return m_coincidentGraph.get_edges_for_element(elem);
     }
 
+    std::vector<stk::mesh::impl::LocalId> get_coincident_elements(impl::LocalId elem) const
+    {
+        std::vector<stk::mesh::impl::LocalId> coincidents;
+        const std::vector<stk::mesh::GraphEdge>& coincidentEdges = get_coincident_edges_for_element(elem);
+        for(const stk::mesh::GraphEdge& coinEdge : coincidentEdges)
+            coincidents.push_back(coinEdge.elem2());
+        stk::util::sort_and_unique(coincidents);
+        return coincidents;
+    }
+
     stk::mesh::Entity get_entity_from_local_id(impl::LocalId localId) const
     {
         return m_idMapper.local_to_entity(localId);

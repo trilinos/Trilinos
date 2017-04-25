@@ -56,7 +56,7 @@
 namespace ROL {
 
 template <class Real>
-class StdEqualityConstraint : public EqualityConstraint<Real> {
+class StdEqualityConstraint : public virtual EqualityConstraint<Real> {
 public:
 
   virtual ~StdEqualityConstraint() {}

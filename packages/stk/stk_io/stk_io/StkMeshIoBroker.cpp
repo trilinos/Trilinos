@@ -746,7 +746,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     }
 
     std::vector<int> elem_side_ids;
-    stk::topology stk_elem_topology = map_ioss_topology_to_stk(block->parent_element_topology());
+    stk::topology stk_elem_topology = map_ioss_topology_to_stk(block->parent_element_topology(), bulk.mesh_meta_data().spatial_dimension());
 
     stk::io::fill_element_and_side_ids(*io_entity, &part, bulk,
                                    stk_elem_topology,

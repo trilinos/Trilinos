@@ -4,6 +4,12 @@ ext: guis.enscore activate_gui
 anim_flipbook: play_style once
 anim_keyframe: play_style once
 annotation: 3d_label_size 18
+prefs: allmodelusecompdisplace ON
+ext: guis.enscore activate_gui
+anim_flipbook: play_style once
+anim_keyframe: play_style once
+annotation: 3d_label_size 18
+annotation: 3d_label_size 18
 case: create_viewport ON
 data: binary_files_are big_endian
 data: format MultiExodusII
@@ -16,19 +22,38 @@ data_partbuild: select_all
 data_partbuild: description
 data_partbuild: create
 data_partbuild: end
+view_transf: function global
 viewport: select_begin
-0 1 2 3
+ 0
 viewport: select_end
-viewport: select_begin
- 0 1 2 3
-viewport: select_end
-view_transf: viewport_link ON
+viewport: background_type constant
+viewport: constant_rgb 1 1 1
+view: perspective OFF
 part: select_begin
- 6 7 8 9
+ 4
+part: select_end
+part: colorby_palette none
+part: colorby_rgb 0.0 0.0 1.0
+part: select_begin
+ 2
+part: select_end
+part: colorby_palette none
+part: colorby_rgb 1.0 0.0 0.0
+part: select_begin
+ 1
+part: select_end
+part: colorby_palette none
+part: colorby_rgb 0.0 0.0 0.0
+part: select_begin
+5 6 7 8 9
 part: select_end
 part: modify_begin
 part: visible OFF
 part: modify_end
+view_transf: fit 0
+annotation: axis_model OFF
+solution_time: current_step 0.000000
+solution_time: update_to_current
 variables: activate displ_vec
 part: select_all
 part: modify_begin
@@ -37,18 +62,4 @@ model: adjcoord_x_variable displ_vec
 model: adjcoord_y_variable displ_vec
 model: adjcoord_z_variable displ_vec
 part: modify_end
-part: modify_begin
-model: adjcoord_x_variable none
-model: adjcoord_y_variable none
-model: adjcoord_z_variable none
-part: modify_end
-solution_time: current_step 0.000000
-solution_time: update_to_current
-part: modify_begin
-model: adjcoord_x_variable displ_vec
-model: adjcoord_y_variable displ_vec
-model: adjcoord_z_variable displ_vec
-part: modify_end
-annotation: axis_model OFF
-view_transf: fit 0
 solution_time: play_style once

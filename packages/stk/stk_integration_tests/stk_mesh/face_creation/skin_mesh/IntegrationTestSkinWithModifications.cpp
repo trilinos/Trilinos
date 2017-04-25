@@ -28,7 +28,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
-#include "../FaceCreationTestUtils.hpp"
+#include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
 namespace
 {

@@ -737,6 +737,7 @@ public:
   // dump_all_mesh_info(out);
   // out.close();
   void dump_all_mesh_info(std::ostream& out) const;
+  void dump_mesh_per_proc(const std::string& fileNamePrefix) const;
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;

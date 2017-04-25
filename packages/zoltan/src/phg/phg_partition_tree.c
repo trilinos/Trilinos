@@ -130,8 +130,8 @@ int                      loArrayIndex;
     goto End;
   }
 
-  // hi will be lo index + 1
-  // treept is shifted -2 from true mem ptr
+  /* hi will be lo index + 1 */
+  /* treept is shifted -2 from true mem ptr */
   loArrayIndex = treeNodeIndex * 2;
   if (treept->size*2 + 2 <= loArrayIndex + 1) {     /* PHG tree not big enough. */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PHG tree data requested but"
@@ -140,8 +140,8 @@ int                      loArrayIndex;
     goto End;
   }
 
-  *lo_index = -treept->array[loArrayIndex]; // neg convention
-  *hi_index = treept->array[loArrayIndex+1]; // hi is low + 1
+  *lo_index = -treept->array[loArrayIndex]; /* neg convention */
+  *hi_index = treept->array[loArrayIndex+1]; /* hi is low + 1 */
 
 End:
   return ierr;

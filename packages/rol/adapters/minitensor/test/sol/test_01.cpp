@@ -106,7 +106,7 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
 
   // Set initial guess
   minitensor::Vector<Real, DIM>
-  x(minitensor::RANDOM);
+  x(minitensor::Filler::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, DIM>
   minimizer;
@@ -173,7 +173,7 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
 
   // Set initial guess
   minitensor::Vector<Real, NUM_VAR>
-  x(minitensor::RANDOM);
+  x(minitensor::Filler::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -259,11 +259,11 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
 
   // Set initial guess
   minitensor::Vector<Real, NUM_VAR>
-  x(minitensor::RANDOM);
+  x(minitensor::Filler::RANDOM);
 
   // Set constraint vector
   minitensor::Vector<Real, NUM_CONSTR>
-  c(minitensor::RANDOM);
+  c(minitensor::Filler::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -349,11 +349,11 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
 
   // Set initial guess
   minitensor::Vector<Real, NUM_VAR>
-  x(minitensor::RANDOM);
+  x(minitensor::Filler::RANDOM);
 
   // Set constraint vector
   minitensor::Vector<Real, NUM_CONSTR>
-  c(minitensor::RANDOM);
+  c(minitensor::Filler::RANDOM);
 
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
@@ -497,7 +497,7 @@ public:
     c = std::sqrt(3.0);
 
     minitensor::Vector<T, NC>
-    f(minitensor::ZEROS);
+    f(minitensor::Filler::ZEROS);
 
     f(0) = x(0) / c- x(1);
 

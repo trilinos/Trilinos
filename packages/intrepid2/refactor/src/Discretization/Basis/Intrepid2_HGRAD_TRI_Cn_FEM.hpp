@@ -94,8 +94,7 @@ namespace Intrepid2 {
         getValues(       outputValueViewType outputValues,
                    const inputPointViewType  inputPoints,
                          workViewType        work,
-                   const vinvViewType        vinv,
-                   const ordinal_type        operatorDn = 0 );
+                   const vinvViewType        vinv );
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -106,7 +105,7 @@ namespace Intrepid2 {
       getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                  const EOperator operatorType );
+                  const EOperator operatorType);
 
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -117,14 +116,12 @@ namespace Intrepid2 {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
-        const ordinal_type        _opDn;
 
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_,
-                       vinvViewType        vinv_,
-                 const ordinal_type        opDn_ = 0 )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_), _opDn(opDn_) {}
+                       vinvViewType        vinv_ )
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -147,9 +144,16 @@ namespace Intrepid2 {
             Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
-          case OPERATOR_Dn : {
+          case OPERATOR_CURL: {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, work, _vinv, _opDn );
+            Serial<opType>::getValues( output, input, work, _vinv );
+            break;
+          }          
+          case OPERATOR_D1 :
+          case OPERATOR_D2 :
+          case OPERATOR_D3 :{
+            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
           default: {
@@ -189,7 +193,7 @@ namespace Intrepid2 {
     void
     getValues(       outputViewType outputValues,
                const pointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const {
+               const EOperator operatorType = OPERATOR_VALUE) const {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -197,12 +201,12 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
-      constexpr ordinal_type numPtsPerEval = 1;
+      constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HGRAD_TRI_Cn_FEM::
         getValues<ExecSpaceType,numPtsPerEval>( outputValues,
                                                 inputPoints,
                                                 this->vinv_,
-                                                operatorType );
+                                                operatorType);
     }
 
     virtual

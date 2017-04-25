@@ -14,12 +14,13 @@ struct SideSharingData
     stk::mesh::impl::IdViaSidePair elementAndSide;
     stk::mesh::Entity side;
     int sharingProc;
+    std::vector<int> allSharingProcs;
     int owningProc;
     stk::mesh::EntityId chosenSideId;
     stk::mesh::OrdinalVector partOrdinals;
     SideSharingData() : elementAndSide({0,-1}), side(stk::mesh::Entity()), sharingProc(-1), owningProc(-1), chosenSideId(stk::mesh::InvalidEntityId) {}
-    SideSharingData(const stk::mesh::impl::IdViaSidePair& sidePair, stk::mesh::Entity sideIn, int sharing_proc, int owning_proc, stk::mesh::EntityId chosen_id)
-    : elementAndSide(sidePair), side(sideIn), sharingProc(sharing_proc), owningProc(owning_proc), chosenSideId(chosen_id) {}
+    SideSharingData(const stk::mesh::impl::IdViaSidePair& sidePair, stk::mesh::Entity sideIn, int sharing_proc, const std::vector<int> &all_sharing_procs, int owning_proc, stk::mesh::EntityId chosen_id)
+    : elementAndSide(sidePair), side(sideIn), sharingProc(sharing_proc), allSharingProcs(all_sharing_procs), owningProc(owning_proc), chosenSideId(chosen_id) {}
 };
 
 stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData);

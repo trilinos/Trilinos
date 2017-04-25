@@ -675,14 +675,14 @@ interpolate_tetrahedron(
   return p;
 }
 
-///
-/// Given element type and nodes and a position
-/// in parametric coordinates, interpolate.
-/// \param type element type
-/// \param xi position in parametric coordinates
-/// \param v ... corner nodes
-/// \return interpolated position
-///
+//
+// Given element type and nodes and a position
+// in parametric coordinates, interpolate.
+// \param type element type
+// \param xi position in parametric coordinates
+// \param v ... corner nodes
+// \return interpolated position
+//
 template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>

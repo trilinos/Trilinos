@@ -6,9 +6,9 @@
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 
-namespace stk { namespace io { class StkMeshIoBroker; } };
-namespace stk { namespace io { class MetaData; } };
-namespace stk { namespace io { class BulkData; } };
+namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace io { class MetaData; } }
+namespace stk { namespace io { class BulkData; } }
 
 namespace stk {
 namespace io {

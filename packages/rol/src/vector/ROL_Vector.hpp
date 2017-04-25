@@ -270,7 +270,7 @@ public:
     Real zero =  0.0;
     Real one  =  1.0;
     Real a    =  1.234;
-    Real b    = -432.1;
+    Real b    = -0.4321;
     int width =  94;
     std::vector<Real> vCheck;
 
@@ -343,7 +343,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - x.dot(*this) - y.dot(*this)));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max(std::abs(this->dot(*xtmp)), std::max(std::abs(this->dot(x)), std::abs(this->dot(y)))));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.

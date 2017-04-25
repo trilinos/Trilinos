@@ -48,93 +48,184 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Kokkos enables.  This can reduce build and test times.
 
 ASSERT_DEFINED (Kokkos_ENABLE_Cuda)
-SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA_DEFAULT ${Kokkos_ENABLE_Cuda})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT ${Kokkos_ENABLE_Cuda})
 ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
-SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
 ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
-SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT ${Kokkos_ENABLE_Pthread})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_PTHREAD_DEFAULT ${Kokkos_ENABLE_Pthread})
 ASSERT_DEFINED (Kokkos_ENABLE_Serial)
-SET(${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
 
 IF(${Kokkos_ENABLE_Cuda})
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
-  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-  "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Kokkos_ENABLE_Cuda=${Kokkos_ENABLE_Cuda} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
-  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA_DEFAULT}}
+  ${PACKAGE_NAME}_INST_EXECSPACE_CUDA
+  KOKKOSKERNELS_INST_EXECSPACE_CUDA
+  "Whether to pre instantiate kernels for the execution space Kokkos::Cuda.  This option is Kokkos_INST_EXECSPACE_CUDA=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
+  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_MEMSPACE_CUDAUVMSPACE
+  KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
+  "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  This option is Kokkos_INST_EXECSPACE_CUDAUVMSPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
+  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_MEMSPACE_CUDASPACE
+  KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
+  "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  This option is Kokkos_INST_EXECSPACE_CUDASPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
+  )
+
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_CUDA} AND ${${PACKAGE_NAME}_INST_MEMSPACE_CUDASPACE})
+    LIST(APPEND DEVICE_LIST "<Cuda,CudaSpace>")
+  ENDIF()
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_CUDA} AND ${${PACKAGE_NAME}_INST_MEMSPACE_CUDAUVMSPACE})
+    LIST(APPEND DEVICE_LIST "<Cuda,CudaUVMSpace>")
+  ENDIF()
+
+ENDIF()
+
+IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
+  KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
+  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is Kokkos_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_Serial}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
+  ON
   )
 ENDIF()
+
 IF(${Kokkos_ENABLE_OpenMP})
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
-  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-  "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Kokkos_ENABLE_OpenMP=${Kokkos_ENABLE_OpenMP} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
-  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP_DEFAULT}}
+  ${PACKAGE_NAME}_INST_EXECSPACE_OPENMP
+  KOKKOSKERNELS_INST_EXECSPACE_OPENMP
+  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  This option is Kokkos_INST_EXECSPACE_OPENMP=${Kokkos_ENABLE_OpenMP} by default.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
+  ${${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT}
   )
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_OPENMP} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
+    LIST(APPEND DEVICE_LIST "<OpenMP,HostSpace>")
+  ENDIF()
 ENDIF()
+
+
 IF(${Kokkos_ENABLE_Pthread})
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
-  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+  ${PACKAGE_NAME}_INST_EXECSPACE_PTHREAD
+  KOKKOSKERNELS_INST_EXECSPACE_PTHREAD
   "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_Pthread=${Kokkos_ENABLE_Pthread} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Pthread is enabled may increase build times."
-  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD_DEFAULT}}
+  ${${PACKAGE_NAME}_INST_EXECSPACE_PTHREAD_DEFAULT}
   )
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_PTHREAD} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
+    LIST(APPEND DEVICE_LIST "<Threads,HostSpace>")
+  ENDIF()
 ENDIF()
+
+
 IF(${Kokkos_ENABLE_Serial})
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
-  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+  ${PACKAGE_NAME}_INST_EXECSPACE_SERIAL
+  KOKKOSKERNELS_INST_EXECSPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
-  ${${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL_DEFAULT}}
+  ${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT}
   )
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
+    LIST(APPEND DEVICE_LIST "<Serial,HostSpace>")
+  ENDIF()
 ENDIF()
 
 # ==================================================================
-# Explicit template instantiation (ETI) and test instantiation logic
+# Enable Scalar Types for ETI
 # ==================================================================
-SET(${PACKAGE_NAME}_ETI_SCALARS "")
-SET(${PACKAGE_NAME}_ETI_LORDS "")
-SET(${PACKAGE_NAME}_ETI_DEVICES "")
 
-# ============================================================
-# Kokkos execution space types
-# ============================================================
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ETI_Only
+  KOKKOSKERNELS_ETI_ONLY
+  "Whether to restrict availability of kernels to ETI types only. This is off by default, i.e. any type combination can be instantiated. Turning this on guarantees that kernels are never build inside of object files which simply call KokkosKernels functions."
+  OFF
+  )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_DOUBLE
+  KOKKOSKERNELS_INST_DOUBLE
+  "Whether to pre instantiate kernels for the scalar type double.  This option is Kokkos_INST_DOUBLE=ON by default.  Disabling this may increase build times."
+  ON
+  )
 
-#
-# Construct the list of enabled Device types.
-#
-IF(KokkosKernels_ENABLE_EXECUTION_SPACE_SERIAL) 
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
-ENDIF()
-IF(KokkosKernels_ENABLE_EXECUTION_SPACE_PTHREAD) 
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
-ENDIF()
-IF(KokkosKernels_ENABLE_EXECUTION_SPACE_OPENMP) 
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
-ENDIF()
-IF(KokkosKernels_ENABLE_EXECUTION_SPACE_CUDA) 
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
+IF (Trilinos_ENABLE_FLOAT)
+  GLOBAL_SET(KokkosKernels_INST_FLOAT_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(KokkosKernels_INST_FLOAT_DEFAULT  OFF)
 ENDIF()
 
-# ============================================================
-# LocalOrdinal types
-# ============================================================
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_FLOAT
+  KOKKOSKERNELS_INST_FLOAT
+  "Whether to pre instantiate kernels for the scalar type double.  This option is Kokkos_INST_DOUBLE=ON by default.  Disabling this may increase build times."
+  ${KokkosKernels_INST_FLOAT_DEFAULT}
+  )
 
-# FIXME (mfh 16 Oct 2015) Tpetra currently only supports LocalOrdinal
-# = int.  At some point, the list of allowed LocalOrdinal types will
-# expand to include 64-bit signed integer types.
+IF (KokkosKernels_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE)
+  GLOBAL_SET(KokkosKernels_INST_COMPLEX_DOUBLE_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(KokkosKernels_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+ENDIF()
+IF (KokkosKernels_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
+  GLOBAL_SET(KokkosKernels_INST_COMPLEX_FLOAT_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(KokkosKernels_INST_COMPLEX_FLOAT_DEFAULT OFF)
+ENDIF()
 
-LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
-LIST (APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
+  KOKKOSKERNELS_INST_COMPLEX_DOUBLE
+  "Whether to pre instantiate kernels for the scalar type complex<double>.  This option is Kokkos_INST_COMPLEX_DOUBLE=${Trilinos_ENABLE_COMPLEX_DOUBLE} by default.  Disabling this may increase build times."
+  ${KokkosKernels_INST_COMPLEX_DOUBLE_DEFAULT}
+  )
 
-# "Export" the names for use in the ETI system.
-# If we don't do this, ETI won't see these variables.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
+  KOKKOSKERNELS_INST_COMPLEX_FLOAT
+  "Whether to pre instantiate kernels for the scalar type complex<float>.  This option is Kokkos_INST_COMPLEX_FLOAT=${Trilinos_ENABLE_COMPLEX_FLOAT} by default.  Disabling this may increase build times."
+  ${KokkosKernels_INST_COMPLEX_FLOAT_DEFAULT}
+  )
 
-GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
+IF (KokkosKernels_INST_DOUBLE)
+  LIST(APPEND SCALAR_LIST "double")
+ENDIF()
+
+IF (KokkosKernels_INST_FLOAT)
+  LIST(APPEND SCALAR_LIST "float")
+ENDIF()
+
+IF (KokkosKernels_INST_COMPLEX_DOUBLE)
+  LIST(APPEND SCALAR_LIST "complex<double>")
+ENDIF()
+
+IF (KokkosKernels_INST_FLOAT)
+  LIST(APPEND SCALAR_LIST "complex<float>")
+ENDIF()
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_LAYOUTLEFT
+  KOKKOSKERNELS_INST_LAYOUTLEFT
+  "Whether to pre instantiate kernels for the view layout LayoutLeft.  This option is Kokkos_INST_LAYOUTLEFT=ON by default.  Disabling this may increase build times."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_LAYOUTRIGHT
+  KOKKOSKERNELS_INST_LAYOUTRIGHT
+  "Whether to pre instantiate kernels for the view layout LayoutRight.  This option is Kokkos_INST_LAYOUTRIGHT=OFF by default.  Disabling this may increase build times."
+  OFF
+  )
+
+MESSAGE("")
+MESSAGE("=======================")
+MESSAGE("KokkosKernels ETI Types")
+MESSAGE("   Devices: ${DEVICE_LIST}")
+MESSAGE("   Scalars: ${SCALAR_LIST}")
+MESSAGE("=======================")
+MESSAGE("")
 
 # ==================================================================
 # Process subdirectories

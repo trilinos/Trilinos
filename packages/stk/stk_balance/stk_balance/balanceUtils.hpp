@@ -91,6 +91,8 @@ public:
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const;
 
     virtual bool allowModificationOfVertexWeightsForSmallMeshes() const;
+
+    virtual bool shouldFixMechanisms() const;
 };
 
 class GraphCreationSettings : public BalanceSettings
@@ -130,6 +132,7 @@ public:
     virtual void setDecompMethod(const std::string& input_method);
     virtual void setToleranceForFaceSearch(double tol);
     virtual void setToleranceForParticleSearch(double tol) ;
+    virtual bool shouldFixMechanisms() const;
 
 protected:
     int getConnectionTableIndex(stk::topology elementTopology) const;
@@ -189,6 +192,7 @@ public:
     virtual std::string getDecompMethod() const { return method; }
     void setCoordinateFieldName(const std::string& field_name) { m_field_name = field_name; }
     virtual std::string getCoordinateFieldName() const { return m_field_name; }
+    virtual bool shouldFixMechanisms() const { return false; }
 
 private:
     std::vector<double> vertex_weights;

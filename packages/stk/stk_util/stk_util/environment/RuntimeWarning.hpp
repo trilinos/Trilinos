@@ -403,6 +403,9 @@ private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
 
+using RuntimeWarningP0 = stk::RuntimeWarningSymmetric;
+using RuntimeWarning   = stk::RuntimeWarningAdHoc;
+
 ///
 /// @}
 ///

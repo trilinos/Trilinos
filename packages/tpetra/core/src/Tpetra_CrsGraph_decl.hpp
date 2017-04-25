@@ -2796,13 +2796,20 @@ namespace Tpetra {
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const { return haveGlobalConstants_;}
 
-    /// \brief Forces computation of global constant if they have not been computed yet
+    /// \brief Forces computation of global constants if they have not been computed yet
     ///
     /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
     ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
     ///
     void computeGlobalConstants();
   protected:
+
+    /// \brief Forces computation of local constants if they have not been computed yet.
+    // This is implied by the computation of global constants, and this is only used a
+    // as an alterantive if the global constants are not computed
+    ///
+    void computeLocalConstants();
+
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const LocalOrdinal myRow) const;

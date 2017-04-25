@@ -57,15 +57,16 @@ namespace Intrepid2 {
 
 namespace Impl {
 
-template<ordinal_type maxOrder,
-ordinal_type maxNumPts,
-typename outputViewType,
+template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0>::generate( /**/  outputViewType output,
+void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0>::generate(
+          outputViewType output,
     const inputViewType input,
     const ordinal_type order ) {
+
+  constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
 
   typedef typename outputViewType::value_type value_type;
 
@@ -80,11 +81,33 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0>:
   // z(i,0) --> (2.0 * z(i,0) - 1.0)
   // z(i,1) --> (2.0 * z(i,1) - 1.0)
 
+
+  /** \brief function for indexing from orthogonal expansion indices into linear space
+      p+q = the degree of the polynomial.
+      \param p [in] - the first index
+      \param q [in] - the second index*/
   auto idx = [](const ordinal_type p,
       const ordinal_type q) {
     return (p+q)*(p+q+1)/2+q;
   };
+  
+    /** \brief function for computing the Jacobi recurrence coefficients so that
+      \param alpha [in] - the first Jacobi weight
+      \param beta  [in] - the second Jacobi weight
+      \param n     [n]  - the polynomial degree
+      \param an    [out] - the a weight for recurrence
+      \param bn    [out] - the b weight for recurrence
+      \param cn    [out] - the c weight for recurrence
 
+      The recurrence is
+      \f[
+      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
+      \f],
+      where
+      \f[
+      P^{\alpha,\beta}_0 = 1
+      \f]
+  */
   auto jrc = [](const value_type alpha,
       const value_type beta ,
       const ordinal_type n ,
@@ -211,83 +234,97 @@ void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,0>:
       }
 }
 
-template<ordinal_type maxOrder,
-ordinal_type maxNumPts,
-typename outputViewType,
+template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,1>::generate( /**/  outputViewType output,
+void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,1>::generate(
+          outputViewType output,
     const inputViewType input,
     const ordinal_type order ) {
   typedef typename outputViewType::value_type value_type;
   typedef typename outputViewType::pointer_type pointer_type;
   typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
 
-  constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
+  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
+  constexpr ordinal_type elemDim = 2;
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  value_type outBuf[maxCard][maxNumPts][2+1]; //2 for derivatives, 1 for value
- // outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, 3); // createDynRankViewWithType not KOKKOS_INLINE_FUNCTION
+  value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][elemDim+1]; //elemDim for derivatives, 1 for value
+ // outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, elemDim+1); // createDynRankViewWithType not KOKKOS_INLINE_FUNCTION
 
   typedef typename Kokkos::View<value_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outHackViewType; // Issue trying to do this directly with DynRankView - no matching ctor
-  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, 3); // As a hack, wrapped with a View then wrapped the View with a DynRankView
+  outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, elemDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
   outViewType out(hack_view);
 
-  OrthPolynomial<maxOrder,maxNumPts,outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
+  OrthPolynomialTri<outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
   for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
-        for (ordinal_type k=0;k<2;++k)
+        for (ordinal_type k=0;k<elemDim;++k)
           output(i,j,k) = out(i,j,k+1);
 }
 
 // when n >= 2, use recursion
-template<ordinal_type maxOrder,
-ordinal_type maxNumPts,
-typename outputViewType,
+template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv,
 ordinal_type n>
 KOKKOS_INLINE_FUNCTION
-void OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,hasDeriv,n>::generate( /**/  outputViewType output,
+void OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,n>::generate(
+          outputViewType output,
     const inputViewType input,
     const ordinal_type order ) {
-  typedef typename outputViewType::value_type value_type;
-  typedef Sacado::Fad::SFad<value_type,2> fad_type;
 
-  constexpr ordinal_type maxCard = (maxOrder+1)*(maxOrder+2)/2;
+  constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
+  constexpr ordinal_type elemDim = 2;
+  
+  typedef typename outputViewType::value_type value_type;
+  typedef Sacado::Fad::SFad<value_type,elemDim> fad_type;
 
   const ordinal_type
   npts = input.dimension(0),
   card = output.dimension(0);
 
   // use stack buffer
-  fad_type inBuf[maxNumPts][2], outBuf[maxCard][maxNumPts][n];
+  fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][elemDim],
+           outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
 
   typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
   typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
 
-  inViewType in((value_type*)(&inBuf[0][0]), npts, 2);
+  inViewType in((value_type*)(&inBuf[0][0]), npts, elemDim);
   outViewType out((value_type*)(&outBuf[0][0][0]), card, npts, n);
 
   for (ordinal_type i=0;i<npts;++i)
-    for (ordinal_type j=0;j<2;++j) {
+    for (ordinal_type j=0;j<elemDim;++j) {
       in(i,j) = input(i,j);
-      in(i,j).diff(j,2);
+      in(i,j).diff(j,elemDim);
     }
 
-  OrthPolynomial<maxOrder,maxNumPts,outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
+  OrthPolynomialTri<outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<npts;++j) {
-      output(i,j,0) = out(i,j,0).dx(0);
-      for (ordinal_type k=0;k<n;++k)
-        output(i,j,k+1) = out(i,j,k).dx(1);
+      for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx) {
+        ordinal_type i_dy =  n-i_dx;
+        ordinal_type i_Dn = i_dy;
+        if(i_dx > 0) {
+          //n=2:  (f_x)_x, (f_y)_x
+          //n=3:  (f_xx)_x, (f_xy)_x, (f_yy)_x
+          ordinal_type i_Dnm1 = i_dy;
+          output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
+        }
+        else {
+          //n=2:  (f_y)_y, (f_z)_y
+          //n=3:  (f_yy)_y
+          ordinal_type i_Dnm1 = i_dy-1;
+          output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
+        }
+      }
     }
 }
-
 
 
 template<EOperator opType>
@@ -296,61 +333,58 @@ typename inputViewType>
 KOKKOS_INLINE_FUNCTION
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<opType>::
-getValues(       outputViewType output,
-    const inputViewType  input,
-    const ordinal_type   order) {
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
-  constexpr ordinal_type maxNumPts = Parameters::MaxNumPtsPerBasisEval;
+getValues( outputViewType output,
+           const inputViewType  input,
+           const ordinal_type   order) {
   switch (opType) {
   case OPERATOR_VALUE: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,false,0>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,false,0>::generate( output, input, order );
     break;
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1:
   {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,1>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,1>::generate( output, input, order );
     break;
   }
   case OPERATOR_D2: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,2>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,2>::generate( output, input, order );
     break;
   }
   case OPERATOR_D3: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,3>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
   /*
   case OPERATOR_D4: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,4>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,4>::generate( output, input, order );
     break;
   }
   case OPERATOR_D5: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,5>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,5>::generate( output, input, order );
     break;
   }
   case OPERATOR_D6: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,6>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,6>::generate( output, input, order );
     break;
   }
   case OPERATOR_D7: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,7>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,7>::generate( output, input, order );
     break;
   }
   case OPERATOR_D8: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,8>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,8>::generate( output, input, order );
     break;
   }
   case OPERATOR_D9: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,9>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,9>::generate( output, input, order );
     break;
   }
   case OPERATOR_D10: {
-    OrthPolynomial<maxOrder,maxNumPts,outputViewType,inputViewType,true,10>::generate( output, input, order );
+    OrthPolynomialTri<outputViewType,inputViewType,true,10>::generate( output, input, order );
     break;
   }
   */
-  case OPERATOR_Dn:
   default: {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial::getValues) operator is not supported");
@@ -365,10 +399,10 @@ typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties>
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::
-getValues(Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-    const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-    const ordinal_type order,
-    const EOperator operatorType ) {
+getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+           const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+           const ordinal_type order,
+           const EOperator operatorType ) {
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
   typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
@@ -388,6 +422,11 @@ getValues(Kokkos::DynRankView<outputValueValueType,outputValueProperties...> out
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
+    Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
+    break;
+  }
+  case OPERATOR_CURL: {
+    typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_CURL,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
@@ -438,11 +477,10 @@ getValues(Kokkos::DynRankView<outputValueValueType,outputValueProperties...> out
     break;
   }
   */
-  case OPERATOR_DIV:
-  case OPERATOR_CURL: {
+  case OPERATOR_DIV: {
     INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
         operatorType == OPERATOR_CURL, std::invalid_argument,
-        ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM_ORTH): invalid operator type (div and curl).");
+        ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM_ORTH): invalid operator type div.");
     break;
   }
   default: {
@@ -468,13 +506,13 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
   // initialize tags
   {
     // Basis-dependent initializations
-    const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+    constexpr ordinal_type tagSize  = 4;    // size of DoF tag, i.e., number of fields in the tag
     const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
     const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
     constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2;
-    ordinal_type tags[maxCard][4];
+    ordinal_type tags[maxCard][tagSize];
     const ordinal_type card = this->basisCardinality_;
     for (ordinal_type i=0;i<card;++i) {
       tags[i][0] = 2;     // these are all "internal" i.e. "volume" DoFs
@@ -483,7 +521,7 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
       tags[i][3] = card;  // total number of DoFs
     }
 
-    ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
+    ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
 
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     // tags are constructed on host

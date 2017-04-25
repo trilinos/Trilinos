@@ -1,0 +1,47 @@
+This directory contains scripts useful for KokkosKernels.
+
+generate_sepecialization.bash
+=============================
+
+This script generates .cpp source files for specializations of
+different kernels.  It is meant for developers, not for users.  Run it
+like this:
+
+$ ./generate_specialization.bash ${KOKKOSKERNELS_SOURCE_DIRECTORY}
+
+${KOKKOSKERNELS_SOURCE_DIRECTORY} must be an absolute path to the
+kokkos-kernels source directory in which you want to generate the
+files.  Once you generate the files and are ready to commit them,
+just commit them to the repository.
+
+We chose this approach for the following reasons:
+
+  1. It's harder to edit and maintain the equivalent code in CMake
+  2. If we make developers do this, rather than the configure process,
+     then we don't have to worry about shell script portability
+
+This approach has the following disadvantages:
+
+  1. Developers need to know that these are generated files, for
+     example, that editing them is a bad idea
+  2. Developers need to know when to regenerate the files
+
+If you maintain another software package (e.g., a Trilinos package or
+an application), and you want to add a Scalar type to the list of
+instantiations, advocate the approach of generating and storing those
+instantiations in your project's directories.  Use our script as a
+model for doing so (you may have to edit some paths in order to put
+the generated headers and source files in the right places).
+
+This script uses the following files in this directory:
+
+  - generate_specialization_function.bash
+  - generate_specialization_type.bash
+  - header
+
+snapshot.py
+===========
+
+This script handles snapshots of kokkos-kernels into another project,
+e.g., Trilinos.
+

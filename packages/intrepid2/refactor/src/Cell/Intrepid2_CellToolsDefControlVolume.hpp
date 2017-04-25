@@ -419,6 +419,9 @@ namespace Intrepid2 {
     auto edgeMap = Kokkos::create_mirror_view(typename SpT::memory_space(), edgeMapHost);
     auto faceMap = Kokkos::create_mirror_view(typename SpT::memory_space(), faceMapHost);
 
+    Kokkos::deep_copy(edgeMap, edgeMapHost);
+    Kokkos::deep_copy(faceMap, faceMapHost);
+
     // parallel run
     typedef Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoordViewType;
     typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;

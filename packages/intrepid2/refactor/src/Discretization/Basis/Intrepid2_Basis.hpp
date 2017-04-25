@@ -220,7 +220,7 @@ namespace Intrepid2 {
                             const ordinal_type       posScOrd,
                             const ordinal_type       posDfOrd ) {
       // Create ordinalToTag
-      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, 4);
+      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, tagSize);
 
       // Initialize with -1
       Kokkos::deep_copy( ordinalToTag, -1 );

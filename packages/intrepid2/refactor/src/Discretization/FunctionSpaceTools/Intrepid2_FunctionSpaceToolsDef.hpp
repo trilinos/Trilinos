@@ -87,18 +87,9 @@ namespace Intrepid2 {
       void operator()(const ordinal_type cl,
                       const ordinal_type bf,
                       const ordinal_type pt) const {
-        //       auto y = Kokkos::subview(_output,     cl, bf, pt, Kokkos::ALL());
-        // const auto A = Kokkos::subview(_jacInverse, cl,     pt, Kokkos::ALL(), Kokkos::ALL());
-        // const auto x = Kokkos::subview(_input,      bf,     pt, Kokkos::ALL());
-        
-        // restructuring 
-        const ordinal_type cfp[3] = { cl, bf, pt };
-        const ordinal_type c_p[2] = { cl,     pt };
-        const ordinal_type _bp[2] = {     bf, pt };
-
-        ViewAdapter<3,outputViewType>     y(cfp, _output); 
-        ViewAdapter<2,jacInverseViewType> A(c_p, _jacInverse);
-        ViewAdapter<2,inputViewType>      x(_bp, _input);
+        /* */ auto y = Kokkos::subview(_output,     cl, bf, pt, Kokkos::ALL());
+        const auto A = Kokkos::subview(_jacInverse, cl,     pt, Kokkos::ALL(), Kokkos::ALL());
+        const auto x = Kokkos::subview(_input,      bf,     pt, Kokkos::ALL());
         
         if (spaceDim == 2) {
           Kernels::matvec_trans_product_d2( y, A, x );

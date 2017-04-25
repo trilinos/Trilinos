@@ -382,16 +382,16 @@ struct AZ_SCALING {  /* Left and right matrices to scale    */
 /*****************************************************************************/
 /*****************************************************************************/
 
-// Kyungjoo - nobody use this and this class name is so common to be used in 
-//            any other packages expecting name collision.
-// struct grid {                      /* used to define a grid. Still under */
-//                                    /* construction                       */
-//   int    *element_vertex_lists;
-//   int    *Nvertices_per_element;
-//   int    Nelements;
-//   int    Nvertices;
-//   double *vertices;
-// };
+/* Kyungjoo - nobody use this and this class name is so common to be used in */
+/*            any other packages expecting name collision. */
+/* struct grid {                       used to define a grid. Still under */
+/*                                     construction                       */
+/*   int    *element_vertex_lists;  */
+/*   int    *Nvertices_per_element; */
+/*   int    Nelements; */
+/*   int    Nvertices; */
+/*   double *vertices; */
+/* }; */
 
 /*****************************************************************************/
 /*****************************************************************************/

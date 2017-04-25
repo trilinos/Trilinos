@@ -35,7 +35,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_balance/balance.hpp>
+#include <stk_balance/fixSplitCoincidentElements.hpp>
 
 namespace
 {

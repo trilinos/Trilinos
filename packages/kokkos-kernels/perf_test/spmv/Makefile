@@ -5,14 +5,14 @@ KOKKOS_ARCH = "SNB,Kepler35"
 # To enable Trilinos you need to copy KokkosKernels_config.h and KokkosKernels_ETIHelperMacros.h 
 # from an appropriately configure Trilinos build directory (you don't need to build).
 # The rest is accessed from Trilinos source.
-BUILD_TRILINOS = 1
+BUILD_KK_KERNELS = 1
 BUILD_CUSPARSE = 0
 BUILD_MKL = 0
 
 #Path settings
-TRILINOS_PATH = ${HOME}/Trilinos
-KOKKOS_PATH = ${HOME}/kokkos
-KOKKOS_KERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
+KOKKOS_PATH = ${HOME}/Kokkos/kokkos
+KOKKOS_KERNELS_SRC_PATH = ${HOME}/Kokkos/kokkos-kernels
+KOKKOS_KERNELS_INSTALL_PATH = ${HOME}/Kokkos/kokkos-kernels-install
 
 #MKL_PATH=/home/projects/install/rhel6-x86_64/sems/compiler/intel/16.0.1/base/mkl
 #On Sandia Testbeds this should work:
@@ -21,8 +21,8 @@ KOKKOS_KERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 MKL_PATH=${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS=-L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 
-SRC = ${KOKKOS_KERNELS_PATH}/perf_test/spmv/test_crsmatrix.cpp 
-HEADERS = $(wildcard ${KOKKOS_KERNELS_PATH}/perf_test/spmv/*.hpp) 
+SRC = ${KOKKOS_KERNELS_SRC_PATH}/perf_test/spmv/test_crsmatrix.cpp 
+HEADERS = $(wildcard ${KOKKOS_KERNELS_SRC_PATH}/perf_test/spmv/*.hpp) 
 
 default: build
 	echo "Start Build"
@@ -32,9 +32,9 @@ config_headers:
 	touch KokkosKernels_config.h
 
 
-CXXFLAGS = -DMAKE_BUILD -g -O3 -I./converter -I./ -I${KOKKOS_KERNELS_PATH}/perf_test/spmv -I${KOKKOS_KERNELS_PATH}/src -I${KOKKOS_KERNELS_PATH}/src/impl
+CXXFLAGS = -DMAKE_BUILD -g -O3 -I./converter -I./ -I${KOKKOS_KERNELS_SRC_PATH}/perf_test/spmv -I${KOKKOS_KERNELS_INSTALL_PATH}/include
 LINKFLAGS = -O3
-LIB = 
+LIB = ${KOKKOS_KERNELS_INSTALL_PATH}/lib/libkokkos_kernels.a 
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
 CXX = ${KOKKOS_PATH}/config/nvcc_wrapper
@@ -50,12 +50,6 @@ ifeq (${BUILD_MKL}, 1)
 CXXFLAGS += -I${MKL_PATH}/include -DHAVE_MKL -mkl
 LIB += ${MKL_LIBS} -mkl
 endif
-
-ifeq (${BUILD_TRILINOS}, 1)
-CXXFLAGS += -DHAVE_TRILINOS
-SRC += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*spmv*.cpp)
-endif
-
 
 ifeq (${BUILD_CUSPARSE}, 1)
 CXXFLAGS += -I${CUDA_ROOT}/include -DHAVE_CUSPARSE -DKOKKOS_USE_CUSPARSE

@@ -160,7 +160,7 @@ Perf fenl(
 {
   typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
 
-  typedef Kokkos::CrsMatrix< double , unsigned , Device , void , unsigned >
+  typedef KokkosSparse::CrsMatrix< double , unsigned , Device , void , unsigned >
     SparseMatrixType ;
 
   typedef typename SparseMatrixType::StaticCrsGraphType

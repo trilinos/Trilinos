@@ -690,11 +690,11 @@ lib iovs
     ioss
     exodus
   :
-    <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
+    <runtime-link>shared:<define>IOSS_DLOPEN_ENABLED
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/ioss/src/visualization/ParaViewCatalystSierraAdaptor/include
+        <include>$(seacas-root)/libraries/ioss/src/visualization/ParaViewCatalystIossAdapter/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1646,6 +1646,7 @@ exe exo2mat
 exe mat2exo
   :
   $(seacas-root)/applications/mat2exo/mat2exo.C
+    suplib_cpp
     suplib_c
     exodus
     /tpl/matio//matio

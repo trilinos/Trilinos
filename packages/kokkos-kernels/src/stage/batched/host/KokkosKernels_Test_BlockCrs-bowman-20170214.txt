@@ -1,0 +1,204 @@
+KokkosKernels_Test_BlockCrs
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 1 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 1 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.131178e+01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   1.655570e-01 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   3.971690e-01 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   1.192695e+01 [sec] 
+ matrix vector product = 2.262355e-01
+ extract/mvp = 7.317862e-01
+  factor/mvp = 1.755551e+00
+   solve/mvp = 1.054384e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.130652e+01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   1.822200e-01 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   5.573500e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   2.749719e+00 [sec] 
+ matrix vector product = 2.261304e-01
+ extract/mvp = 8.058137e-01
+  factor/mvp = 2.464684e-01
+   solve/mvp = 2.431975e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 2 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 2 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   5.691188e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   8.296000e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   1.987000e-01 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   6.010853e+00 [sec] 
+ matrix vector product = 1.138237e-01
+ extract/mvp = 7.288375e-01
+  factor/mvp = 1.745673e+00
+   solve/mvp = 1.056169e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   5.691501e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   9.435200e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   2.772800e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   1.450728e+00 [sec] 
+ matrix vector product = 1.138300e-01
+ extract/mvp = 8.288678e-01
+  factor/mvp = 2.435826e-01
+   solve/mvp = 2.548938e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 4 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 4 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   2.875339e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   4.169500e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   9.954700e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   3.025760e+00 [sec] 
+ matrix vector product = 5.750674e-02
+ extract/mvp = 7.250281e-01
+  factor/mvp = 1.731049e+00
+   solve/mvp = 1.052315e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   2.876607e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   4.773600e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   1.409000e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   7.511500e-01 [sec] 
+ matrix vector product = 5.753210e-02
+ extract/mvp = 8.297107e-01
+  factor/mvp = 2.448894e-01
+   solve/mvp = 2.611238e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 8 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 8 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.440054e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   2.115600e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   4.989800e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   1.538339e+00 [sec] 
+ matrix vector product = 2.880106e-02
+ extract/mvp = 7.345216e-01
+  factor/mvp = 1.732471e+00
+   solve/mvp = 1.068251e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.440891e+00 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   2.413900e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   7.138000e-03 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   3.988890e-01 [sec] 
+ matrix vector product = 2.881778e-02
+ extract/mvp = 8.376079e-01
+  factor/mvp = 2.476943e-01
+   solve/mvp = 2.768346e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 16 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 16 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   7.215180e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   1.077600e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   2.506500e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   7.911720e-01 [sec] 
+ matrix vector product = 1.443032e-02
+ extract/mvp = 7.466917e-01
+  factor/mvp = 1.736968e+00
+   solve/mvp = 1.096540e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   7.204410e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   1.251400e-02 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   3.630000e-03 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   2.187950e-01 [sec] 
+ matrix vector product = 1.440878e-02
+ extract/mvp = 8.684982e-01
+  factor/mvp = 2.518603e-01
+   solve/mvp = 3.036954e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 34 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 34 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   3.483240e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   5.333000e-03 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   1.223100e-02 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   4.050050e-01 [sec] 
+ matrix vector product = 6.966440e-03
+ extract/mvp = 7.653838e-01
+  factor/mvp = 1.755560e+00
+   solve/mvp = 1.162729e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   3.477480e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   6.416000e-03 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   1.880000e-03 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   1.319600e-01 [sec] 
+ matrix vector product = 6.954920e-03
+ extract/mvp = 9.223686e-01
+  factor/mvp = 2.703122e-01
+   solve/mvp = 3.794695e-01
+ Perf Test::Vector :: End
+DeviceSpace::  Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 68 x 1 ]
+HostSpace::    Kokkos::OpenMP KOKKOS_HAVE_OPENMP hwloc[1x68x4] hwloc_binding_enabled thread_pool_topology[ 1 x 68 x 1 ]
+
+ Unit Test::Flat :: Begin
+ Unit Test::Flat :: End
+ Unit Test::Vector :: Begin
+ Unit Test::Vector :: End
+ Perf Test::Flat :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.786310e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   2.798000e-03 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   6.422000e-03 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   2.345730e-01 [sec] 
+ matrix vector product = 3.572580e-03
+ extract/mvp = 7.831875e-01
+  factor/mvp = 1.797580e+00
+   solve/mvp = 1.313180e+00
+ Perf Test::Flat :: End
+ Perf Test::Vector :: Begin
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+KokkosKernels::Timer::   50 BlockCrsMatrixVectorP   1.787360e-01 [sec] 
+KokkosKernels::Timer::   ExtractBlockTridiagMatri   3.508000e-03 [sec] 
+KokkosKernels::Timer::   FactorizeBlockTridiagMat   9.990000e-04 [sec] 
+KokkosKernels::Timer::   50 SolveBlockTridiagMatr   9.228100e-02 [sec] 
+ matrix vector product = 3.574680e-03
+ extract/mvp = 9.810668e-01
+  factor/mvp = 2.794656e-01
+   solve/mvp = 5.162980e-01
+ Perf Test::Vector :: End

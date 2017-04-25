@@ -40,7 +40,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <string>                       // for string, operator==
 #include <vector>                       // for vector
-#include "Shards_CellTopologyData.h"    // for CellTopologyData
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
@@ -239,7 +238,7 @@ TEST( UnitTestMetaData, declare_part_with_rank )
 TEST( UnitTestMetaData, declare_attribute_no_delete )
 {
   //Coverage of declare_attribute_no_delete in MetaData.hpp
-  const CellTopologyData * singleton = NULL;
+  const int * singleton = NULL;
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
   Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );

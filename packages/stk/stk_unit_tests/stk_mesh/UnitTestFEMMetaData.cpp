@@ -60,8 +60,6 @@ TEST ( UnitTestMetaData, create )
   // Verify throws/etc for FEM calls prior to initialization:
   shards::CellTopology invalid_cell_topology( NULL );
   stk::mesh::Part & universal_part = fem_meta.universal_part();
-  ASSERT_THROW( fem_meta.register_cell_topology( invalid_cell_topology, stk::topology::INVALID_RANK ), std::logic_error );
-  ASSERT_THROW( fem_meta.get_cell_topology_root_part( invalid_cell_topology), std::logic_error );
   ASSERT_THROW( fem_meta.get_cell_topology( universal_part), std::logic_error );
   ASSERT_THROW( stk::mesh::set_topology( universal_part, stk::topology::INVALID_TOPOLOGY), std::logic_error );
 }
@@ -133,15 +131,6 @@ TEST( UnitTestMetaData, get_cell_topology_simple )
   fem_meta.declare_part_subset( hex_part, A );
   shards::CellTopology topology = fem_meta.get_cell_topology(A);
   ASSERT_EQ( (topology == hex_top), true );
-}
-
-TEST( UnitTestMetaData, get_cell_topology_invalid )
-{
-  stk::mesh::MetaData fem_meta;
-  const size_t spatial_dimension = 2;
-  fem_meta.initialize(spatial_dimension);
-  shards::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  ASSERT_THROW( fem_meta.get_cell_topology_root_part(hex_top), std::runtime_error );
 }
 
 TEST( UnitTestMetaData, cell_topology_subsetting )
@@ -475,37 +464,14 @@ TEST( UnitTestMetaData, cell_topology_test_5c )
   ASSERT_THROW( fem_meta.declare_part_subset(A, B), std::runtime_error );
 }
 
-TEST( MetaData, register_cell_topology_duplicate )
+TEST( MetaData, register_topology_duplicate )
 {
   stk::mesh::MetaData fem_meta;
-  const size_t spatial_dimension = 2;
+  const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank hex_rank = stk::topology::ELEMENT_RANK;
 
-  fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank );
-  ASSERT_NO_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank ) );
-}
-
-TEST( MetaData, register_cell_topology_duplicate_with_different_ranks )
-{
-  stk::mesh::MetaData fem_meta;
-  const size_t spatial_dimension = 2;
-  fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank hex_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank bad_rank = stk::topology::EDGE_RANK;
-
-  fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank );
-  ASSERT_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), bad_rank ), std::runtime_error );
-}
-
-TEST( MetaData, register_cell_topology_duplicate_with_invalid_rank )
-{
-  stk::mesh::MetaData fem_meta;
-  const size_t spatial_dimension = 2;
-  fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank invalid_rank = static_cast<stk::mesh::EntityRank>(4);
-
-  ASSERT_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), invalid_rank ), std::logic_error );
+  fem_meta.register_topology( stk::topology::HEX_8 );
+  ASSERT_NO_THROW( fem_meta.register_topology( stk::topology::HEX_8 ));
 }
 
 TEST( MetaData, get_cell_topology_root_part_invalid )
@@ -516,5 +482,14 @@ TEST( MetaData, get_cell_topology_root_part_invalid )
 
   shards::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
 
-  ASSERT_THROW( fem_meta.get_cell_topology_root_part( hex_top ), std::runtime_error );
+  ASSERT_THROW( fem_meta.get_cell_topology_root_part( hex_top ), std::logic_error );
+}
+
+TEST( MetaData, get_topology_root_part_invalid )
+{
+  stk::mesh::MetaData fem_meta;
+  const size_t spatial_dimension = 2;
+  fem_meta.initialize(spatial_dimension);
+
+  ASSERT_THROW( fem_meta.get_topology_root_part( stk::topology::HEX_8 ), std::logic_error );
 }

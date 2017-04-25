@@ -247,5 +247,4 @@ namespace panzer {
                            realspace_y_coord_1, 1.0e-8);
 
   }
-
 }

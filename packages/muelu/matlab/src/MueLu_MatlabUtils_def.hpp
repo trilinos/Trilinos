@@ -769,6 +769,8 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
   int nr = data->getGlobalNumRows();
   int nc = data->getGlobalNumCols();
   int nnz = data->getGlobalNumEntries();
+
+  if(nnz==-1) nnz=data->getNodeNumEntries(); // Workaround for global constants stuff.
 #ifdef VERBOSE_OUTPUT
   RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   mat->describe(*fancyStream, Teuchos::VERB_EXTREME);
@@ -780,7 +782,10 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
   {
     jc[i] = 0;
   }
+
   size_t maxEntriesPerRow = data->getGlobalMaxNumRowEntries();
+  if(maxEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid() || maxEntriesPerRow == 0) maxEntriesPerRow = data->getNodeMaxNumRowEntries();
+
   int* rowProgress = new int[nc];
   //The array that will be copied to Pr and (if complex) Pi later
   Scalar* sparseVals = new Scalar[nnz];
@@ -799,6 +804,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
         jc[rowIndices[entry] + 1]++; //for each entry, increase jc for the entry's column
       }
     }
+
     //now jc holds the number of elements in each column, but needs cumulative sum over all previous columns also
     int entriesAccum = 0;
     for(int n = 0; n <= nc; n++)

@@ -125,13 +125,13 @@ void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int tea
 
   typedef typename XType::non_const_value_type Scalar;
   typedef typename AType::execution_space execution_space;
-  typedef Kokkos::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
+  typedef KokkosSparse::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
   typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> y_type;
   typedef typename Kokkos::View<const Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > x_type;
 
   //int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   //static int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
-  static int worksets = std::is_same<Schedule,Kokkos::Static>::value ? 
+  static int worksets = std::is_same<Schedule,Kokkos::Static>::value ?
                         team_size>0?execution_space::concurrency()/team_size:execution_space::concurrency() : //static
                         team_size>0?execution_space::concurrency()*32/team_size:execution_space::concurrency()*32 ; //dynamic
   static Kokkos::View<int*> workset_offsets;

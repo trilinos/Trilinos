@@ -54,33 +54,42 @@ void GameofLife::run_game_of_life(int numSteps)
 
 void GameofLife::put_all_nodes_in_nodeset()
 {
+    m_bulkData.modification_begin();
+
     stk::mesh::EntityVector nodes;
     stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
     stk::mesh::Part& nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
     for(stk::mesh::Entity node : nodes)
         m_bulkData.change_entity_parts(node, stk::mesh::ConstPartVector {&nodeset1Part});
+
+    m_bulkData.modification_end();
+}
+
+void destroy_disabled_elements(stk::mesh::BulkData &bulk, const ScalarIntField &lifeField)
+{
+    bulk.modification_begin();
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, elements);
+    for(stk::mesh::Entity element : elements)
+    {
+        if ( *stk::mesh::field_data(lifeField, element) != 1)
+        {
+            stk::mesh::EntityVector nodes(bulk.begin_nodes(element), bulk.end_nodes(element));
+            bulk.destroy_entity(element);
+            for(unsigned j=0; j<nodes.size(); j++)
+                bulk.destroy_entity(nodes[j]);
+        }
+    }
+
+    bulk.modification_end();
 }
 
 void GameofLife::write_mesh()
 {
-    m_bulkData.modification_begin();
-
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
-    for(stk::mesh::Entity element : elements)
-    {
-        if ( *stk::mesh::field_data(m_lifeField, element) != 1)
-        {
-            stk::mesh::EntityVector nodes(m_bulkData.begin_nodes(element), m_bulkData.end_nodes(element));
-            m_bulkData.destroy_entity(element);
-            for(unsigned j=0; j<nodes.size(); j++)
-                m_bulkData.destroy_entity(nodes[j]);
-        }
-    }
+    destroy_disabled_elements(m_bulkData, m_lifeField);
 
     put_all_nodes_in_nodeset();
-
-    m_bulkData.modification_end();
 
     stk::io::StkMeshIoBroker stkIo(m_bulkData.parallel());
     stkIo.set_bulk_data(m_bulkData);
@@ -374,3 +383,16 @@ void FieldGameofLife::deactivate_element(stk::mesh::Entity elem)
 {
     *stk::mesh::field_data(m_lifeField, elem) = 0;
 }
+
+void TodstwdGameOfLife::write_mesh()
+{
+    destroy_disabled_elements(m_bulkData, m_lifeField);
+
+    stk::io::StkMeshIoBroker stkIo(m_bulkData.parallel());
+    stkIo.set_bulk_data(m_bulkData);
+    size_t fh = stkIo.create_output_mesh("pic.g", stk::io::WRITE_RESULTS);
+    stkIo.begin_output_step(fh, 0);
+    stkIo.write_defined_output_fields(fh);
+    stkIo.end_output_step(fh);
+}
+

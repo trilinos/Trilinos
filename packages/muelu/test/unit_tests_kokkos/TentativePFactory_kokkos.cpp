@@ -245,32 +245,59 @@ namespace MueLuTests {
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
   }
 
-#if 0
-  TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeUsingDefaultNullSpace)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDefaultNullSpace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
+    typedef Teuchos::ScalarTraits<Scalar> TST;
+
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel;
+    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
 
     fineLevel.Set("A", A);
 
-    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
-    coarseLevel.Request("P",tentativePFact.get());  // request Ptent
-    coarseLevel.Request("Nullspace", tentativePFact.get());  // request coarse nullspace
-    coarseLevel.Request(*tentativePFact);
-    tentativePFact->Build(fineLevel,coarseLevel);
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+
+    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    ParameterList aggParams;
+    aggParams.set("aggregation: ordering",              "natural");
+    aggParams.set("aggregation: min agg size",           3);
+    aggParams.set("aggregation: max selected neighbors", 0);
+    aggFact->SetParameterList(aggParams);
+    aggFact->SetFactory("DofsPerNode",  dropFact);
+    aggFact->SetFactory("Graph",        dropFact);
+
+    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    coarseMapFact->SetFactory("Aggregates", aggFact);
+
+    RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
+    TentativePFact->SetFactory("Aggregates",         aggFact);
+    TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    TentativePFact->SetFactory("CoarseMap",          coarseMapFact);
+
+
+    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+    coarseLevel.Request("Nullspace", TentativePFact.get());  // request coarse nullspace
+    coarseLevel.Request(*TentativePFact);
+    TentativePFact->Build(fineLevel,coarseLevel);
 
     RCP<Matrix> Ptent;
-    coarseLevel.Get("P",Ptent,tentativePFact.get());
+    coarseLevel.Get("P",Ptent,TentativePFact.get());
 
-    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",tentativePFact.get());
+    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
 
-    coarseLevel.Release("P",tentativePFact.get()); // release Ptent
-    coarseLevel.Release("Nullspace",tentativePFact.get());   // release coarse nullspace
+    coarseLevel.Release("P",TentativePFact.get()); // release Ptent
+    coarseLevel.Release("Nullspace",TentativePFact.get());   // release coarse nullspace
 
     //grab default fine level nullspace (vector of all ones)
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -287,15 +314,16 @@ namespace MueLuTests {
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
     diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
     diff->norm2(norms);
     for (LO i=0; i<NSdim; ++i) {
       out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
       TEST_EQUALITY(norms[i]<1e-12, true);
     }
 
-  } //MakeTentative
+  } //MakeTentativeUsingDefaultNullSpace
 
+#if 0
   TEUCHOS_UNIT_TEST(TentativePFactory, NonStandardMaps)
   {
 
@@ -616,7 +644,8 @@ namespace MueLuTests {
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, Constructor,   SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, MakeTentative, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, MakeTentative, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, MakeTentativeUsingDefaultNullSpace, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

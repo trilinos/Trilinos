@@ -40,6 +40,11 @@ public:
                                            const stk::mesh::FieldVector& fieldsCreatedDuringRuntime,
                                            stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
     {
+        if(fieldsCreatedDuringRuntime.size()>0)
+        {
+            mHaveFields = true;
+        }
+
         size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
 
         for(stk::mesh::FieldBase * out_field : fieldsCreatedDuringRuntime)
@@ -77,7 +82,10 @@ protected:
         }
     }
 
-    bool has_field_data() const { return numSteps>0; }
+    bool has_field_data() const
+    {
+        return numSteps>0 || mHaveFields;
+    }
 
     void fill_time_data()
     {
@@ -111,6 +119,7 @@ protected:
     int numSteps;
     double maxTime;
     stk::io::StkMeshIoBroker stkIo;
+    bool mHaveFields = false;
 };
 
 class AllStepFieldWriterAutoDecomp : public LastStepFieldWriter

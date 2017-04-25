@@ -94,9 +94,6 @@ namespace MueLuTests {
     std::string xmlFileName = "UserData/test.xml";
     Teuchos::RCP<Teuchos::ParameterList> inParamList = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 
     // Matrix

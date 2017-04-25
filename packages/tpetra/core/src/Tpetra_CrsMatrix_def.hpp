@@ -56,7 +56,7 @@
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
-//#include "Tpetra_Details_gathervPrint.hpp" (from above header)
+#include "Tpetra_Details_gathervPrint.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
@@ -3892,7 +3892,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool 
+  bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   haveGlobalConstants() const {
     return getCrsGraph ()->haveGlobalConstants ();
@@ -5970,17 +5970,51 @@ namespace Tpetra {
         Teuchos::Array<char>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
         size_t& constantNumPackets,
-        Distributor& distor) const
+        Distributor& dist) const
   {
+    using Details::packCrsMatrix;
+
     if (this->isStaticGraph ()) {
       const map_type& colMap = * (this->staticGraph_->colMap_);
-      Details::packCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,classic> (
-                          exportLIDs, exports, numPacketsPerLID,
-                          constantNumPackets, distor, colMap, this->lclMatrix_);
+      const auto lclColMap = colMap.getLocalMap ();
+      const int myRank =
+        colMap.getComm ().is_null () ? 0 : colMap.getComm ()->getRank ();
+      std::unique_ptr<std::string> errStr;
+#ifdef HAVE_TPETRA_DEBUG
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      const bool locallyCorrect =
+        packCrsMatrix (errStr, exports, numPacketsPerLID,
+                       constantNumPackets, exportLIDs, this->lclMatrix_,
+                       lclColMap, myRank, dist);
+      const int lclOK = locallyCorrect ? 1 : 0;
+      int gblOK = 1; // output argument
+      if (! colMap.getComm ().is_null ()) {
+        reduceAll<int, int> (* (colMap.getComm ()), REDUCE_MIN,
+                             lclOK, outArg (gblOK));
+        if (gblOK != 1) {
+          std::ostringstream out;
+          if (colMap.getComm ()->getRank () == 0) {
+            out << "Error in packCrsMatrix!" << std::endl;
+          }
+          using ::Tpetra::Details::gathervPrint;
+          const std::string errStr2 =
+            errStr.get () == NULL ? std::string ("") : *errStr;
+          gathervPrint (out, errStr2, * (colMap.getComm ()));
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, out.str ());
+        }
+      }
+#else // NOT HAVE_TPETRA_DEBUG
+      (void) packCrsMatrix (errStr, exports, numPacketsPerLID,
+                            constantNumPackets, exportLIDs,
+                            this->lclMatrix_, lclColMap, myRank,
+                            dist);
+#endif // HAVE_TPETRA_DEBUG
     }
     else {
       this->packNonStatic (exportLIDs, exports, numPacketsPerLID,
-                           constantNumPackets, distor);
+                           constantNumPackets, dist);
     }
   }
 

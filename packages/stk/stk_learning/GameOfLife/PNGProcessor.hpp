@@ -159,6 +159,8 @@ public:
 
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
+    size_t get_number_other_pixels() { return mOtherPixelCount; }
+
     std::vector<Pixel> get_red_color_coords() { return mRedPixels; }
     std::vector<Pixel> get_green_color_coords() { return mGreenPixels; }
     std::vector<Pixel> get_blue_color_coords() { return mBluePixels; }
@@ -168,6 +170,7 @@ private:
     void store_special_colors_with_coordinates(unsigned row, unsigned col);
     void update_image_value_ignoring_white(unsigned row, unsigned col);
 private:
+    size_t mOtherPixelCount;
     stk::mesh::EntityIdVector mRedElementIds;
 
     std::vector<Pixel> mRedPixels;

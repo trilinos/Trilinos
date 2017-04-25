@@ -235,10 +235,12 @@ V_Reciprocal_Generic (const RV& R, const XV& X)
 
 //! Implementation of KokkosBlas::reciprocal for (multi)vectors.
 template<class RMV, class XMV, int rank = RMV::rank>
-struct Reciprocal {};
+struct Reciprocal;
 
 template<class RMV, class XMV>
-struct Reciprocal<RMV, XMV, 2> {
+struct Reciprocal<RMV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XMV::size_type size_type;
 
   static void reciprocal (const RMV& R, const XMV& X)
@@ -264,11 +266,14 @@ struct Reciprocal<RMV, XMV, 2> {
       MV_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
   }
-};
+}
+#endif
+;
 
 //! Partial specialization of Reciprocal for single vectors (1-D Views).
 template<class RMV, class XMV>
 struct Reciprocal<RMV, XMV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XMV::size_type size_type;
 
@@ -294,7 +299,9 @@ struct Reciprocal<RMV, XMV, 1>
       V_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -304,9 +311,8 @@ struct Reciprocal<RMV, XMV, 1>
 // across one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Reciprocal<Kokkos::View<SCALAR**, \
+#define KOKKOSBLAS1_IMPL_MV_RECIP_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct Reciprocal<Kokkos::View<SCALAR**, \
                                LAYOUT, \
                                Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -314,58 +320,15 @@ struct Reciprocal<Kokkos::View<SCALAR**, \
                                LAYOUT, \
                                Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                  2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RMV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef XMV::size_type size_type; \
- \
-  static void reciprocal (const RMV& R, const XMV& X); \
-};
-
-//
-// Declarations of full specializations of Impl::Reciprocal for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+                                  2>;
 
 //
 // Macro for declaration of full specialization of
 // KokkosBlas::Impl::Reciprocal for rank == 2.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_RECIP_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Reciprocal<Kokkos::View<SCALAR**, \
+#define KOKKOSBLAS1_IMPL_MV_RECIP_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct Reciprocal<Kokkos::View<SCALAR**, \
                         LAYOUT, \
                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -373,32 +336,9 @@ Reciprocal<Kokkos::View<SCALAR**, \
                         LAYOUT, \
                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-           2>:: \
-reciprocal (const RMV& R, const XMV& X) \
-{ \
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::" \
-                 "Reciprocal<2-D>: RMV is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::" \
-                 "Reciprocal<2-D>: XMV is not a Kokkos::View."); \
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: " \
-                 "RMV is not rank 2."); \
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: " \
-                 "XMV is not rank 2."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Reciprocal_Generic<RMV, XMV, index_type> (R, X); \
-  } \
-  else { \
-    typedef XMV::size_type index_type; \
-    MV_Reciprocal_Generic<RMV, XMV, index_type> (R, X); \
-  } \
-}
+                           2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
-
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_

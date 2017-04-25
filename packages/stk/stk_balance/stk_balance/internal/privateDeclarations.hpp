@@ -55,8 +55,9 @@ void rebalance(DecompositionChangeList &changeList);
 
 void logMessage(MPI_Comm communicator, const std::string &message);
 
-void fill_zoltan2_graph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, Zoltan2ParallelGraph& zoltan2Graph,
-                        const stk::mesh::Selector& searchSelector, const stk::mesh::impl::LocalIdMapper& localIds);
+void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
+                               const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
+                               Zoltan2ParallelGraph& zoltan2Graph);
 
 void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element, int newOwningProc, stk::mesh::EntityRank rank, std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs);
 
