@@ -61,7 +61,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
+SET(BUILD_DIR_NAME openmpi-1.8.7_Debug_DEV_Werror)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Note: To send output to the "Specialized" track on CDash, we need to
