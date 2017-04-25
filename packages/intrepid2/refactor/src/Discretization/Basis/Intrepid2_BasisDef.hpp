@@ -257,8 +257,8 @@ namespace Intrepid2 {
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
   ordinal_type getPnEnumeration(const ordinal_type p,
-                                const ordinal_type q = 0,
-                                const ordinal_type r = 0) {
+                                const ordinal_type q /* = 0*/,
+                                const ordinal_type r /* = 0*/) {
     return (spaceDim==1) ? p :
            (spaceDim==2) ? (p+q)*(p+q+1)/2+q :
                            (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
