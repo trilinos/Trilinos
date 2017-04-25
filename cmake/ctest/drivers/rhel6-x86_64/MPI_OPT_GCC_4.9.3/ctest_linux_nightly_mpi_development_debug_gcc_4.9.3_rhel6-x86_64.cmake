@@ -70,12 +70,6 @@ SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
 SET(CTEST_TEST_TYPE Specialized)
 SET(Trilinos_TRACK Specialized)
 
-MESSAGE(STATUS "**********************************")
-MESSAGE(STATUS "CTEST_TEST_TYPE: ${CTEST_TEST_TYPE}")
-MESSAGE(STATUS "Trilinos_TRACK : ${Trilinos_TRACK}")
-MESSAGE(STATUS "**********************************")
-
-
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
