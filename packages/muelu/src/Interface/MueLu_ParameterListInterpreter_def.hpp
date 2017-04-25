@@ -662,40 +662,7 @@ namespace MueLu {
 #endif
 
     // === Semi-coarsening ===
-    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
-    if (paramList.isParameter("semicoarsen: number of levels") &&
-        paramList.get<int>("semicoarsen: number of levels") > 0) {
-
-      ParameterList togglePParams;
-      ParameterList semicoarsenPParams;
-      ParameterList linedetectionParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
-
-      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
-      RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
-      RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
-
-      linedetectionFactory->SetParameterList(linedetectionParams);
-      semicoarsenFactory->SetParameterList(semicoarsenPParams);
-      togglePFactory->SetParameterList(togglePParams);
-      togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
-      togglePFactory->AddProlongatorFactory(semicoarsenFactory);
-      togglePFactory->AddPtentFactory(semicoarsenFactory);
-      togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
-      togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
-      togglePFactory->AddPtentFactory(manager.GetFactory("Ptent"));
-
-      manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
-      manager.SetFactory("LineDetection_Layers", linedetectionFactory);
-      manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
-
-      manager.SetFactory("P",         togglePFactory);
-      manager.SetFactory("Ptent",     togglePFactory);
-      manager.SetFactory("Nullspace", togglePFactory);
-    }
+    UpdateFactoryManager_SemiCoarsen(paramList,defaultList,manager,levelID,keeps);
 
     // === Restriction ===
     if (!this->implicitTranspose_) {
@@ -741,14 +708,14 @@ namespace MueLu {
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
 
-        if (paramList.isParameter("semicoarsen: number of levels")) {
+	/*      if (paramList.isParameter("semicoarsen: number of levels")) {
           RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
           tf->SetFactory("Chosen P", manager.GetFactory("P"));
           tf->AddCoordTransferFactory(semicoarsenFactory);
           tf->AddCoordTransferFactory(coords);
           manager.SetFactory("Coordinates", tf);
 
-        }
+	  }*/
 	RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
@@ -1357,12 +1324,64 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
         keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
         keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
       }
-    }
-
-  
-
+    }    
 }
 
+
+  // =====================================================================================================
+  // ======================================= SemiCoarsening ==============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_SemiCoarsen(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+
+   // === Semi-coarsening ===
+    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
+    if (paramList.isParameter("semicoarsen: number of levels") &&
+        paramList.get<int>("semicoarsen: number of levels") > 0) {
+
+      ParameterList togglePParams;
+      ParameterList semicoarsenPParams;
+      ParameterList linedetectionParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
+
+      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
+      RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
+      RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
+
+      linedetectionFactory->SetParameterList(linedetectionParams);
+      semicoarsenFactory->SetParameterList(semicoarsenPParams);
+      togglePFactory->SetParameterList(togglePParams);
+      togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
+      togglePFactory->AddProlongatorFactory(semicoarsenFactory);
+      togglePFactory->AddPtentFactory(semicoarsenFactory);
+      togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
+      togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
+      togglePFactory->AddPtentFactory(manager.GetFactory("Ptent"));
+
+      manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
+      manager.SetFactory("LineDetection_Layers", linedetectionFactory);
+      manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
+
+      manager.SetFactory("P",         togglePFactory);
+      manager.SetFactory("Ptent",     togglePFactory);
+      manager.SetFactory("Nullspace", togglePFactory);
+    }
+
+    
+    if (paramList.isParameter("semicoarsen: number of levels")) {
+      RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
+      tf->SetFactory("Chosen P", manager.GetFactory("P"));
+      tf->AddCoordTransferFactory(semicoarsenFactory);
+      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+      tf->AddCoordTransferFactory(coords);
+      manager.SetFactory("Coordinates", tf);      
+    }
+}
 
 #undef MUELU_SET_VAR_2LIST
 #undef MUELU_TEST_AND_SET_VAR

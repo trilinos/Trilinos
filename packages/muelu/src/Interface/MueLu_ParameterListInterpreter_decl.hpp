@@ -209,7 +209,8 @@ namespace MueLu {
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 				  int levelID, std::vector<keep_pair>& keeps) const;
 
-
+    void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+					  int levelID, std::vector<keep_pair>& keeps) const;
 
 
     bool useCoordinates_;
