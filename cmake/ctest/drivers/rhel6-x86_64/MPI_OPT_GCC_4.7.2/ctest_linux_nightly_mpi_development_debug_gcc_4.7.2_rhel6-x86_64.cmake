@@ -64,7 +64,10 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
 #SET(CTEST_TEST_TIMEOUT 900)
 
+# NOTE: Tribits requires BOTH CTEST_TEST_TYPE and Trilinos_TRACK to be set to "Specialized"
+#       for this test to populate on the Specialized track in CDash.
 SET(CTEST_TEST_TYPE Specialized)
+SET(Trilinos_TRACK  Specialized)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 

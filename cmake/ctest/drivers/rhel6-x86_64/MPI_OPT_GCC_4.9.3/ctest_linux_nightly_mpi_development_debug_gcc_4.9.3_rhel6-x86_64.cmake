@@ -64,9 +64,8 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME MPI_Debug_Werror_DEV)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-# NOTE:  CTEST_TEST_TYPE defaults to "Experimental".
-#        if CTEST_TEST_TYPE is "Experimental", then Tribits will force Trilinos_TRACK to "Experimental"
-#        too.
+# NOTE: Tribits requires BOTH CTEST_TEST_TYPE and Trilinos_TRACK to be set to "Specialized"
+#       for this test to populate on the Specialized track in CDash.
 SET(CTEST_TEST_TYPE Specialized)
 SET(Trilinos_TRACK Specialized)
 
