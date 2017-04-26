@@ -145,15 +145,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalVectorDataImp
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::assignVecImpl(
-  const VectorBase<Scalar>& x
-  )
-{
-  this->assignMultiVecImpl(x);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::randomizeImpl(
   Scalar l,
   Scalar u
@@ -237,46 +228,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::eleWiseScaleImpl(
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateVecImpl(
-  Scalar alpha,
-  const VectorBase<Scalar>& x
-  )
-{
-  this->updateImpl(alpha, x);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationVecImpl(
-  const ArrayView<const Scalar>& alpha,
-  const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
-  const Scalar& beta
-  )
-{
-  Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > > mv(x.size());
-  for (typename Teuchos::Array<Ptr<const MultiVectorBase<Scalar> > >::size_type i = 0; i < mv.size(); ++i)
-    mv[i] = Teuchos::ptr_static_cast<const MultiVectorBase<Scalar> >(x[i]);
-  this->linearCombinationImpl(alpha, mv(), beta);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1Impl() const
-{
-  return tpetraVector_.getConstObj()->norm1();
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2Impl() const
-{
-  return tpetraVector_.getConstObj()->norm2();
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2WeightedImpl(
   const VectorBase<Scalar>& x
@@ -299,14 +250,6 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2WeightedImpl(
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     return VectorDefaultBase<Scalar>::norm2WeightedImpl(x);
   }
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInfImpl() const
-{
-  return tpetraVector_.getConstObj()->normInf();
 }
 
 

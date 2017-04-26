@@ -201,10 +201,7 @@ VectorDefaultBase<Scalar>::clone_v() const
 template<class Scalar>
 void VectorDefaultBase<Scalar>::assignVecImpl(const VectorBase<Scalar>& x)
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
-  Thyra::applyOp<Scalar>(assign_vectors_op, tuple(ptrInArg(x)),
-    tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
+  this->assign(static_cast<const MultiVectorBase<Scalar>& >(x));
 }
 
 
@@ -255,10 +252,7 @@ void VectorDefaultBase<Scalar>::updateVecImpl(
   Scalar alpha,
   const VectorBase<Scalar>& x)
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  applyOp<Scalar>(axpy_op, tuple(ptrInArg(x)),
-    tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
+  this->update(alpha, static_cast<const MultiVectorBase<Scalar>& >(x));
 }
 
 
@@ -269,23 +263,10 @@ void VectorDefaultBase<Scalar>::linearCombinationVecImpl(
   const Scalar& beta
   )
 {
-  using Teuchos::tuple; using Teuchos::ptr; using Teuchos::ptrInArg;
-  using Teuchos::null;
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(alpha.size(), x.size());
-#endif
-  const int m = x.size();
-  if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
-    this->update(alpha[0], *x[0]);
-    return;
-  }
-  else if( m == 0 ) {
-    this->scale(beta);
-    return;
-  }
-  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha,beta);
-  applyOp<Scalar>(lin_comb_op, x,
-    tuple<Ptr<VectorBase<Scalar> > >(ptr(this)), null);
+  Array<Ptr<const MultiVectorBase<Scalar> >> mv(x.size());
+  for (Ordinal i = 0; i < x.size(); ++i)
+    mv[i] = Teuchos::ptr_static_cast<const MultiVectorBase<Scalar> >(x[i]);
+  this->linear_combination(alpha, mv(), beta);
 }
 
 
@@ -302,14 +283,9 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 VectorDefaultBase<Scalar>::norm1Impl() const
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNorm1<Scalar> norm_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_targ = norm_op.reduct_obj_create();
-  applyOp<Scalar>(norm_op,
-    tuple<Ptr<const VectorBase<Scalar> > >(ptrInArg(*this)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_targ.ptr());
-  return norm_op(*norm_targ);
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm;
+  this->norms_1(Teuchos::arrayView(&norm, 1));
+  return norm;
 }
 
 
@@ -317,14 +293,9 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 VectorDefaultBase<Scalar>::norm2Impl() const
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNorm2<Scalar> norm_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_targ = norm_op.reduct_obj_create();
-  applyOp<Scalar>(norm_op,
-    tuple<Ptr<const VectorBase<Scalar> > >(ptrInArg(*this)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_targ.ptr());
-  return norm_op(*norm_targ);
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm;
+  this->norms_2(Teuchos::arrayView(&norm, 1));
+  return norm;
 }
 
 
@@ -346,14 +317,9 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 VectorDefaultBase<Scalar>::normInfImpl() const
 {
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpNormInf<Scalar> norm_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> norm_targ = norm_op.reduct_obj_create();
-  applyOp<Scalar>(norm_op,
-    tuple<Ptr<const VectorBase<Scalar> > >(ptrInArg(*this)),
-    ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    norm_targ.ptr());
-  return norm_op(*norm_targ);
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm;
+  this->norms_inf(Teuchos::arrayView(&norm, 1));
+  return norm;
 }
 
 
