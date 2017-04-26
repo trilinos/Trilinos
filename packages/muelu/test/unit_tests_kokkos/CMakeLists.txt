@@ -16,7 +16,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
-  #Aggregates_kokkos.cpp
+  Aggregates_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
