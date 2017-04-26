@@ -104,7 +104,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   // Problem construction
   // =========================================================================
-  ParameterList matrixParameters;
+  Teuchos::ParameterList matrixParameters;
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
@@ -206,7 +206,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         } else if (dirList[k] == "MLParameterListInterpreter2/") {
           //std::cout << "ML ParameterList: " << std::endl;
           //std::cout << paramList << std::endl;
-          RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
           //std::cout << "MueLu ParameterList: " << std::endl;
           //std::cout << *mueluParamList << std::endl;
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));

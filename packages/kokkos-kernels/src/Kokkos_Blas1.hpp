@@ -44,7 +44,7 @@
 #ifndef KOKKOS_BLAS1_HPP_
 #define KOKKOS_BLAS1_HPP_
 
-#include <Kokkos_Blas1_impl.hpp>
+#include <Kokkos_Blas1_V_impl_dot.hpp>
 #include <type_traits> // requires C++11
 
 namespace KokkosBlas {

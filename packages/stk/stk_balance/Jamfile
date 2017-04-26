@@ -115,9 +115,10 @@ lib stk_balance_lib
   :
     [ ifdevbuild 
       [ glob 
-             $(stk_balance-root)/stk_balance/balance.cpp 
-             $(stk_balance-root)/stk_balance/balanceUtils.cpp 
+             $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
+          :
+             $(stk_balance-root)/stk_balance/main.cpp 
       ] 
     ]
     /sierra/stk_io//stk_io
@@ -189,10 +190,9 @@ exe stk_balance_integration_tester
 exe stk_balance
   :
     [ glob 
-        $(stk_balance-root)/stk_balance/main.c*
+        $(stk_balance-root)/stk_balance/main.cpp
     ]
     stk_balance_lib
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /mpi//mpi
   :
     <tag>@sierra-exec-tag

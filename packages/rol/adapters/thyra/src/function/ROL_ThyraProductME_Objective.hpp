@@ -81,7 +81,7 @@ public:
 
 
     outArgs.set_g(g_index, g);
-    for(int i=0; i<p_indices.size(); ++i)
+    for(std::size_t i=0; i<p_indices.size(); ++i)
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
     thyra_model.evalModel(inArgs, outArgs);
@@ -106,10 +106,10 @@ public:
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
 
-    for(int i=0; i<p_indices.size(); ++i)
+    for(std::size_t i=0; i<p_indices.size(); ++i)
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
-    for(int i=0; i<p_indices.size(); ++i) {
+    for(std::size_t i=0; i<p_indices.size(); ++i) {
       Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices[i]);

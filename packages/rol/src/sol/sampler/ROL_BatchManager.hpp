@@ -78,6 +78,8 @@ public:
     output[0] = input[0];
   }
 
+  virtual void broadcast(Real *input, int cnt, int root) {}
+
   virtual void barrier(void) {}
 };
 

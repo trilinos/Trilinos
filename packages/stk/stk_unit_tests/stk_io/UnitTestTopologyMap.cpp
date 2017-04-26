@@ -55,7 +55,7 @@ int my_assert(T a, T b, U msg) {
 }
 
 namespace {
-int testElement(const std::string &name)
+int testElement(const std::string &name, unsigned spatialDim)
 {
   int errors = 0;
   Ioss::ElementTopology *element = Ioss::ElementTopology::factory(name);
@@ -83,7 +83,7 @@ int testElement(const std::string &name)
   }
 
   // Get the corresponding stk::topology:
-  stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
+  stk::topology cell = stk::io::map_ioss_topology_to_stk(element, spatialDim);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
     std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '" << name << "'.\n";
     return 1;
@@ -140,13 +140,14 @@ TEST(UnitTestTopology, testUnit)
   int element_count = Ioss::ElementTopology::describe(&elements);
 
   int errors = 0;
+  unsigned spatialDim = 3;
   for (int i=0; i < element_count; i++) {
     // FIXME: Need to totally skip tetra7 for now
     if (elements[i] == "tetra7") {
       continue;
     }
 
-    int current_error = testElement(elements[i]);
+    int current_error = testElement(elements[i], spatialDim);
     if (elements[i] != "node" &&
         elements[i] != "rod3d2" &&
         elements[i] != "rod3d3" &&

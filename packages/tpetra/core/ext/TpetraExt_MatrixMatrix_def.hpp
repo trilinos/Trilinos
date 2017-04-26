@@ -1161,7 +1161,7 @@ void mult_A_B(
 
     for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
-      Scalar Aval = Avals[k];
+      const Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
@@ -1202,7 +1202,7 @@ void mult_A_B(
 
     for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
-      Scalar Aval = Avals[k];
+      const Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
@@ -1275,9 +1275,9 @@ size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
   if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumEntries() : 100;
+    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
   if (B.getNodeNumEntries() > 0)
-    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumEntries() : 100;
+    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
@@ -1553,7 +1553,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
     // mfh 27 Sep 2016: For each entry of A in the current row of A
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k]; // local column index of current entry of A
-      SC Aval = Avals[k];   // value of current entry of A
+      const SC Aval = Avals[k];   // value of current entry of A
       if (Aval == SC_ZERO)
         continue; // skip explicitly stored zero values in A
 
@@ -2016,7 +2016,7 @@ void mult_A_B_reuse(
 
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 
@@ -2294,7 +2294,7 @@ void jacobi_A_B_newmatrix(
     // Entries of -omega * Dinv * A * B
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 
@@ -2547,7 +2547,7 @@ void jacobi_A_B_reuse(
     // Entries of -omega * Dinv * A * B
     for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
       LO Aik  = Acolind[k];
-      SC Aval = Avals[k];
+      const SC Aval = Avals[k];
       if (Aval == SC_ZERO)
         continue;
 

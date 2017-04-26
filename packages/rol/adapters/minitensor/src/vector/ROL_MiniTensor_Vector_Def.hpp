@@ -207,7 +207,7 @@ clone() const
   dim = vector_.get_dimension();
 
   minitensor::Vector<T, N>
-  val(dim, minitensor::ZEROS);
+  val(dim, minitensor::Filler::ZEROS);
 
   Teuchos::RCP<MiniTensorVector>
   e = Teuchos::rcp(new MiniTensorVector(val));
@@ -249,7 +249,7 @@ basis(int const i) const
   dim = vector_.get_dimension();
 
   minitensor::Vector<T, N>
-  val(dim, minitensor::ZEROS);
+  val(dim, minitensor::Filler::ZEROS);
 
   val(i) = 1.0;
 

@@ -100,7 +100,3 @@
 
 #endif // #ifndef CONFIG_STK_SIMD_H
 
-
-
-
-

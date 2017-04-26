@@ -1041,6 +1041,9 @@ C=======================================================================
         VERB = ' '
         
 C=======================================================================
+C NAME BLOCK|SIDESET|SSET|NODESET|NSET id newname
+C NAME ATTRIBUTE attindex BLOCK id newname
+
       ELSE IF (VERB .EQ. 'NAME') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
@@ -1053,10 +1056,18 @@ C=======================================================================
         ELSE IF (MATSTR(WORD,'NODESETS',3) .OR.
      $      MATSTR(WORD,'NSETS',   3) ) THEN
           itype = 'N'
+        ELSE IF (MATSTR(WORD,'ATTRIBUTE',3)) THEN
+          itype = 'A'
         END IF
 
         CALL FFINTG (IFLD, INTYP, IFIELD,
-     $    'block ID', 0, IDOLD, *420)
+     $    'entity ID', 0, IDOLD, *420)
+        if (itype .eq. 'A') then
+C.. Skip over 'block' and get block id 
+          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+          CALL FFINTG (IFLD, INTYP, IFIELD,
+     $      'block ID', 0, IDBLK, *420)
+        end if
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
         if (itype .eq. 'B') then
           CALL NEWNAM ('B', IDELB, EBNAME, NELBLK, IDOLD, WORD)
@@ -1064,6 +1075,9 @@ C=======================================================================
           CALL NEWNAM ('N', IDNPS, NSNAME, NUMNPS, IDOLD, WORD)
         else if (itype .eq. 'S') then
           CALL NEWNAM ('S', IDESS, SSNAME, NUMESS, IDOLD, WORD)
+        else if (itype .eq. 'A') then
+          CALL NEWATT (IDELB, IDBLK,  NELBLK, IDOLD, NUMATR, ATNAME,
+     *      WORD)
         end if
         verb = ' '
 C=======================================================================
@@ -1073,7 +1087,7 @@ C=======================================================================
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
         if (.NOT. MATSTR (WORD2, 'VARIABLE', 2)) THEN
           call PRTERR('CMDERR',
-     *      'SYNTAX: RENAME [global|nodal|node|elemnet|nodeset|nset|',
+     *      'SYNTAX: RENAME [global|nodal|node|element|nodeset|nset|',
      *      'sideset|sset] VARIABLE [oldname] [newname]')
           go to 399
         end if

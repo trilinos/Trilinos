@@ -44,6 +44,7 @@
 
 #include "MiniTensor_config.h"
 #include "Sacado.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace minitensor {
 

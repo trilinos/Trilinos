@@ -46,7 +46,7 @@
 #include "Kokkos_Core.hpp"
 
 template <typename Storage>
-void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
+void mainHost(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config) {
 #ifdef __MIC__
   const int entry_min = 8;
   const int entry_max = 48;
@@ -62,9 +62,9 @@ void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
 }
 
 #ifdef KOKKOS_HAVE_PTHREAD
-template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Threads> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Threads> >(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 #endif
 
 #ifdef KOKKOS_HAVE_OPENMP
-template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::OpenMP> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::OpenMP> >(int nGrid, int nIter, KokkosSparse::DeviceConfig dev_config);
 #endif

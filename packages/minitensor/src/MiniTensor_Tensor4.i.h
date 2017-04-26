@@ -70,7 +70,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(ComponentValue const value) :
+Tensor4<T, N, ES>::Tensor4(Filler const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
@@ -78,7 +78,7 @@ TensorBase<T, Store>::TensorBase(N, ORDER, value)
 
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Index const dimension, ComponentValue const value) :
+Tensor4<T, N, ES>::Tensor4(Index const dimension, Filler const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -391,9 +391,9 @@ Tensor4<T, N, ES>::operator()(
   return self[((i * dimension + j) * dimension + k) * dimension + l];
 }
 
-///
-/// 4th-order inverse
-///
+//
+// 4th-order inverse
+//
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES>

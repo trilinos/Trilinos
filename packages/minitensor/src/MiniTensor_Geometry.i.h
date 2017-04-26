@@ -402,7 +402,7 @@ TangentParametrization<T, N, ES>::get_normal(
   r = std::sqrt(x * x + y * y);
 
   Vector<T, N, ES>
-  normal(3, ZEROS);
+  normal(3, Filler::ZEROS);
 
   if (r > 0.0) {
     normal(0) = x * sin(r) / r;
@@ -566,7 +566,7 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
     total_number_points *= points_per_dimension_(dimension);
   }
 
-  Vector<LongIndex, N, ES> steps(number_parameters, ONES);
+  Vector<LongIndex, N, ES> steps(number_parameters, Filler::ONES);
 
   for (Index dimension = 1; dimension < number_parameters; ++dimension) {
     steps(dimension) =
@@ -574,10 +574,10 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
   }
 
   Vector<Index, N, ES>
-  indices(number_parameters, ZEROS);
+  indices(number_parameters, Filler::ZEROS);
 
   Vector<T, N, ES>
-  position_in_grid(number_parameters, ZEROS);
+  position_in_grid(number_parameters, Filler::ZEROS);
 
   Vector<T, N, ES> const
   span = upper_ - lower_;

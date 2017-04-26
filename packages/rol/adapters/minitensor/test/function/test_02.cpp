@@ -110,7 +110,7 @@ TEST(MiniTensor_ROL, Paraboloid)
 
   // Set Initial Guess
   minitensor::Vector<Real, DIM>
-  xval(minitensor::RANDOM);
+  xval(minitensor::Filler::RANDOM);
 
   ROL::MiniTensorVector<Real, DIM> x(xval);
 
@@ -177,7 +177,7 @@ TEST(MiniTensor_ROL, Rosenbrock)
 
   // Set Initial Guess
   minitensor::Vector<Real, DIM>
-  xval(minitensor::RANDOM);
+  xval(minitensor::Filler::RANDOM);
 
   ROL::MiniTensorVector<Real, DIM>
   x(xval);
@@ -231,13 +231,13 @@ TEST(MiniTensor_ROL, NLLS01)
   constr(msec);
 
   minitensor::Vector<Real, NUM_VAR>
-  xval(minitensor::ZEROS);
+  xval(minitensor::Filler::ZEROS);
 
   minitensor::Vector<Real, NUM_CONSTR>
-  cval(minitensor::ZEROS);
+  cval(minitensor::Filler::ZEROS);
 
   minitensor::Vector<Real, NUM_VAR>
-  solval(minitensor::ZEROS);
+  solval(minitensor::Filler::ZEROS);
 
   // Set initial guess.
   xval(0) = -1.8;

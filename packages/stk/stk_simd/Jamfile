@@ -99,7 +99,7 @@ install install-user-jamfile
 
 explicit install-user-include ;
 install install-user-include
-  : [ path.glob-tree $(stk_simd-root) : *.hpp sse/*hpp avx/*hpp avx_512/*hpp  ]
+  : [ path.glob-tree $(stk_simd-root) : *.hpp no_simd/*hpp sse/*hpp avx/*hpp avx_512/*hpp  ]
   : <location>$(install-root)/stk/stk_simd
     <install-source-root>$(stk_simd-root)
   ;
@@ -123,7 +123,6 @@ alias stk_simd_headers
 exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/unit_tests/*.cpp ]
-    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
@@ -147,7 +146,7 @@ exe stk_simd_unit
 exe stk_simd_docs_tests
   :
     [ glob $(stk_simd-root)/testsForDocumentation/*.cpp ]
-    /sierra/stk_unit_test_utils//stk_unit_main
+    [ glob $(stk_simd-root)/unit_tests/*.cpp ]
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag

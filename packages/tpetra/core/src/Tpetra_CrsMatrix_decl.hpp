@@ -244,7 +244,7 @@ namespace Tpetra {
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
+    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
                               typename local_graph_type::size_type> local_matrix_type;
 
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
@@ -3242,7 +3242,16 @@ namespace Tpetra {
                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                           size_t constantNumPackets,
                           Distributor& distor,
-                          CombineMode combineMode);
+                          CombineMode combineMode,
+                          const bool atomic = useAtomicUpdatesByDefault);
+    void
+    unpackAndCombineImplNonStatic (
+        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+        const Teuchos::ArrayView<const char>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        size_t constantNumPackets,
+        Distributor& distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and combine into matrix.
@@ -3388,6 +3397,12 @@ namespace Tpetra {
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
           size_t& constantNumPackets,
           Distributor& distor) const;
+    void
+    packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                   Teuchos::Array<char>& exports,
+                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                   size_t& constantNumPackets,
+                   Distributor& distor) const;
 
   private:
     /// \brief Pack data for the current row to send.

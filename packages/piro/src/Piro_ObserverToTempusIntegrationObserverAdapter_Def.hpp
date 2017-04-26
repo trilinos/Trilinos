@@ -59,7 +59,7 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
 {
   //Currently, sensitivities are not supported in Tempus.
   hasSensitivities_ = false;
-};
+}
 
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter()

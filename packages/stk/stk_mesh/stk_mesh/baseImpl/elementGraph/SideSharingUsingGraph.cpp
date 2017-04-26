@@ -91,27 +91,51 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &
             continue;
         }
         stk::mesh::impl::LocalId localElemId = graph.get_local_element_id(elementAndSide.element);
+
+        std::vector<int> sharedCoincProcs;
+        int minSharedCoincProc = bulkData.parallel_rank();
+
+        sharedCoincProcs.push_back(bulkData.parallel_rank());
         for(const stk::mesh::GraphEdge& edge : graph.get_edges_for_element(localElemId))
         {
             if(edge.side1() == elementAndSide.side && edge.elem2() < 0)
             {
                 const stk::mesh::impl::ParallelInfo &pInfo = graph.get_parallel_info_for_graph_edge(edge);
+                sharedCoincProcs.push_back( pInfo.get_proc_rank_of_neighbor() );
+                minSharedCoincProc = std::min(minSharedCoincProc, pInfo.get_proc_rank_of_neighbor());
 
-                SideSharingData localTemp({bulkData.identifier(elementAndSide.element), elementAndSide.side},
-                                          sidesThatNeedFixing[i],
-                                          pInfo.get_proc_rank_of_neighbor(),
-                                          std::min(bulkData.parallel_rank(),pInfo.get_proc_rank_of_neighbor()),
-                                          bulkData.identifier(sidesThatNeedFixing[i]));
+                stk::mesh::EntityId globalId = -edge.elem2();
+                idAndSides.push_back({globalId, edge.side2()});
+            }
+        }
 
-                fill_part_ordinals_besides_owned_and_shared(bulkData.bucket(sidesThatNeedFixing[i]), sharedOrd, localTemp.partOrdinals);
 
+        SideSharingData localTemp( {bulkData.identifier(elementAndSide.element), elementAndSide.side},
+                                  sidesThatNeedFixing[i],
+                                  -1,
+                                  sharedCoincProcs,
+                                  minSharedCoincProc,
+                                  bulkData.identifier(sidesThatNeedFixing[i]));
+
+        fill_part_ordinals_besides_owned_and_shared(bulkData.bucket(sidesThatNeedFixing[i]), sharedOrd, localTemp.partOrdinals);
+
+        for(int sharingProc : sharedCoincProcs)
+        {
+            if(sharingProc != bulkData.parallel_rank())
+            {
+                localTemp.sharingProc = sharingProc;
                 sideSharingDataThisProc.push_back(localTemp);
-
-                stk::mesh::EntityId localId = -edge.elem2();
-                idAndSides.push_back({localId, edge.side2()});
             }
         }
     }
+}
+
+template <typename T>
+void pack_vector(CommBuffer &buffer, const std::vector<T> &vec)
+{
+    buffer.pack<size_t>(vec.size());
+    for(const T& entry : vec)
+        buffer.pack<T>(entry);
 }
 
 void pack_data(stk::CommSparse& comm, const std::vector<SideSharingData>& sideSharingDataThisProc, const std::vector<stk::mesh::impl::IdViaSidePair>& idAndSides)
@@ -119,13 +143,13 @@ void pack_data(stk::CommSparse& comm, const std::vector<SideSharingData>& sideSh
     for(size_t i=0;i<idAndSides.size();++i)
     {
         int other_proc = sideSharingDataThisProc[i].sharingProc;
-        comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(idAndSides[i].id);
-        comm.send_buffer(other_proc).pack<int>(idAndSides[i].side);
-        comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(sideSharingDataThisProc[i].chosenSideId);
-        comm.send_buffer(other_proc).pack<size_t>(sideSharingDataThisProc[i].partOrdinals.size());
-        for(stk::mesh::PartOrdinal partOrd : sideSharingDataThisProc[i].partOrdinals) {
-            comm.send_buffer(other_proc).pack<stk::mesh::PartOrdinal>(partOrd);
-        }
+        CommBuffer &buffer = comm.send_buffer(other_proc);
+
+        buffer.pack<stk::mesh::EntityId>(idAndSides[i].id);
+        buffer.pack<int>(idAndSides[i].side);
+        buffer.pack<stk::mesh::EntityId>(sideSharingDataThisProc[i].chosenSideId);
+        pack_vector(buffer, sideSharingDataThisProc[i].allSharingProcs);
+        pack_vector(buffer, sideSharingDataThisProc[i].partOrdinals);
     }
 }
 
@@ -164,6 +188,7 @@ void unpack_data(stk::CommSparse& comm, int my_proc_id, int num_procs, std::vect
             localTemp.owningProc = std::min(my_proc_id, i);
             localTemp.sharingProc = i;
             localTemp.chosenSideId = chosenId;
+            unpack_vector(comm.recv_buffer(i), localTemp.allSharingProcs);
             unpack_vector(comm.recv_buffer(i), localTemp.partOrdinals);
 
             sideSharingDataThisProc.push_back(localTemp);

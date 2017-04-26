@@ -550,7 +550,7 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A)
   dimension = A.get_dimension();
 
   Vector<T, N, ES>
-  v(dimension, ONES);
+  v(dimension, Filler::ONES);
 
   Index const
   maximum_iterations = 128;
@@ -624,7 +624,7 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
   dimension = A.get_dimension();
 
   Vector<T, N, ES>
-  eigenvector(dimension, ONES);
+  eigenvector(dimension, Filler::ONES);
 
   eigenvector /= dimension;
 

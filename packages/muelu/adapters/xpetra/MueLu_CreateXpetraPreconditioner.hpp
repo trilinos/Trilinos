@@ -23,6 +23,8 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyUtils.hpp>
 
+#include <stdlib.h>
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -105,6 +107,68 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
+
+    mueLuFactory->SetupHierarchy(*H);
+
+    tm->stop();
+    tm->incrementNumCalls();
+
+    if (H->GetVerbLevel() & Statistics0) {
+      const bool alwaysWriteLocal = true;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = timerName;
+      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                                      writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+    }
+
+    tm->reset();
+
+    return H;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                             const Teuchos::ParameterList& inParamList,
+                             const Teuchos::ParameterList& dummy) {
+    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
+    typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
+    typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
+    typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
+    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
+
+    std::string timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
+
+    bool hasParamList = inParamList.numParams();
+
+    RCP<HierarchyManager> mueLuFactory;
+
+    // Rip off non-serializable data before validation
+    Teuchos::ParameterList nonSerialList,paramList;
+    MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
+
+    std::string syntaxStr = "parameterlist: syntax";
+    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
+      paramList.remove(syntaxStr);
+      mueLuFactory = rcp(new MLParameterListInterpreter(paramList));
+    } else {
+      mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
+    }
+
+    // Create Hierarchy
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->setlib(op->getDomainMap()->lib());
+
+    // Stick the non-serializible data on the hierarchy.
+    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
+
+    // Set fine level operator
+    H->GetLevel(0)->Set("A", op);
 
     mueLuFactory->SetupHierarchy(*H);
 

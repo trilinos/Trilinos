@@ -2,17 +2,18 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_SUBDIRECTORIES(graph)
+ADD_SUBDIRECTORIES(gtest_unit)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrixUnitTest
-  SOURCES
-    TestCrsMatrix.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  FAIL_REGULAR_EXPRESSION "  FAILED  "
-  )
+#MD: test is moved to gtest folder.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  CrsMatrixUnitTest
+#  SOURCES
+#    TestCrsMatrix.cpp
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  FAIL_REGULAR_EXPRESSION "  FAILED  "
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ArithTraits
@@ -102,45 +103,51 @@ ENDIF ()
 
 # This test needs to be able to control when Kokkos gets initialized,
 # so it can't use the Teuchos unit test "main" .cpp file.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  findRelOffset
-  SOURCES findRelOffset.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+#MD: Test is moved to gtest directory.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  findRelOffset
+#  SOURCES findRelOffset.cpp
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
 
 # This test needs to be able to control when Kokkos gets initialized,
 # so it can't use the Teuchos unit test "main" .cpp file.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  replaceSumInto
-  SOURCES replaceSumInto.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+#MD:test is moved to gtest
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  replaceSumInto
+#  SOURCES replaceSumInto.cpp
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
 
 # This test needs to be able to control when Kokkos gets initialized,
 # so it can't use the Teuchos unit test "main" .cpp file.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  replaceSumIntoLonger
-  SOURCES replaceSumIntoLonger.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+#MD: test is moved to gtest
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  replaceSumIntoLonger
+#  SOURCES replaceSumIntoLonger.cpp
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
+
+#This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+#MD: test is moved to gtest
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  copyIntegers
+#  SOURCES copyIntegers.cpp
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
 
 # This test needs to be able to control when Kokkos gets initialized,
 # so it can't use the Teuchos unit test "main" .cpp file.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  copyIntegers
-  SOURCES copyIntegers.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
-# This test needs to be able to control when Kokkos gets initialized,
-# so it can't use the Teuchos unit test "main" .cpp file.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MKL_sparseMatrixHandle
-  SOURCES MKL_sparseMatrixHandle.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+#MD: test is moved to gtest
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  MKL_sparseMatrixHandle
+#  SOURCES MKL_sparseMatrixHandle.cpp
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  )
+ 

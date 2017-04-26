@@ -1065,6 +1065,32 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Fi
       else if (field.get_name() == "connectivity") {
         // Do nothing, just handles an idiosyncracy of the GroupingEntity
       }
+      else if (field.get_name() == "owning_processor") {
+        if (isParallel) {
+          Ioss::CommSet *css   = get_region()->get_commset("commset_node");
+          int *          idata = static_cast<int *>(data);
+          for (size_t i = 0; i < num_to_get; i++) {
+            idata[i] = myProcessor;
+          }
+
+          std::vector<int> ent_proc;
+          css->get_field_data("entity_processor_raw", ent_proc);
+          for (size_t i = 0; i < ent_proc.size(); i += 2) {
+            int node = ent_proc[i + 0];
+            int proc = ent_proc[i + 1];
+            if (proc < myProcessor) {
+              idata[node - 1] = proc;
+            }
+          }
+        }
+        else {
+          // Serial case...
+          int *idata = static_cast<int *>(data);
+          for (int64_t i = 0; i < nodeCount; i++) {
+            idata[i] = 0;
+          }
+        }
+      }
       else {
         num_to_get = Ioss::Utils::field_warning(nb, field, "input");
       }
@@ -1145,7 +1171,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
       int entity_count = cs->get_property("entity_count").get_int();
 
       // Return the <entity (node or side), processor> pair
-      if (field.get_name() == "entity_processor") {
+      if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
 
         // Check type -- node or side
         std::string type = cs->get_property("entity_type").get_string();
@@ -1167,14 +1193,23 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
           assert(cm_offset == entity_count);
 
           // Convert local node id to global node id and store in 'data'
-          int *                     entity_proc = static_cast<int *>(data);
-          const Ioss::MapContainer &map         = get_node_map().map;
+          int *entity_proc = static_cast<int *>(data);
+          if (field.get_name() == "entity_processor") {
+            const Ioss::MapContainer &map = get_node_map().map;
 
-          int j = 0;
-          for (i = 0; i < entity_count; i++) {
-            int local_id     = entities[i];
-            entity_proc[j++] = map[local_id];
-            entity_proc[j++] = procs[i];
+            int j = 0;
+            for (i = 0; i < entity_count; i++) {
+              int local_id     = entities[i];
+              entity_proc[j++] = map[local_id];
+              entity_proc[j++] = procs[i];
+            }
+          }
+          else {
+            int j = 0;
+            for (i = 0; i < entity_count; i++) {
+              entity_proc[j++] = entities[i];
+              entity_proc[j++] = procs[i];
+            }
           }
         }
         else if (type == "side") {
@@ -1190,15 +1225,25 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
           }
           assert(cm_offset == entity_count);
 
-          int *                     entity_proc = static_cast<int *>(data);
-          const Ioss::MapContainer &map         = get_element_map().map;
+          int *entity_proc = static_cast<int *>(data);
+          if (field.get_name() == "entity_processor") {
+            const Ioss::MapContainer &map = get_element_map().map;
 
-          int j = 0;
-          for (i = 0; i < entity_count; i++) {
-            int local_id     = entities[i];
-            entity_proc[j++] = map[local_id];
-            entity_proc[j++] = sides[i];
-            entity_proc[j++] = procs[i];
+            int j = 0;
+            for (i = 0; i < entity_count; i++) {
+              int local_id     = entities[i];
+              entity_proc[j++] = map[local_id];
+              entity_proc[j++] = sides[i];
+              entity_proc[j++] = procs[i];
+            }
+          }
+          else {
+            int j = 0;
+            for (i = 0; i < entity_count; i++) {
+              entity_proc[j++] = entities[i];
+              entity_proc[j++] = sides[i];
+              entity_proc[j++] = procs[i];
+            }
           }
         }
         else {

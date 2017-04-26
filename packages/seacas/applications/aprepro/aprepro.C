@@ -120,4 +120,7 @@ int main(int argc, char *argv[])
       }
     }
   }
+  if (aprepro.ap_options.debugging) {
+    aprepro.dumpsym("variable", false);
+  }
 }

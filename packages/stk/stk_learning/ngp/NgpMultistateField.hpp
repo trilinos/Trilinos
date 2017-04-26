@@ -2,8 +2,6 @@
 #define PACKAGES_STK_STK_LEARNING_KOKKOS_NGPSTATEDFIELD_H_
 
 #include <ngp/Ngp.hpp>
-#include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>

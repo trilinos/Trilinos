@@ -146,7 +146,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_1()
 {
-  Tensor4<T, N, ES> I(N, ZEROS);
+  Tensor4<T, N, ES> I(N, Filler::ZEROS);
   ones_in_ikjl(I);
   return I;
 }
@@ -156,7 +156,7 @@ KOKKOS_INLINE_FUNCTION
 const Tensor4<T, DYNAMIC, ES>
 identity_1(Index const dimension)
 {
-  Tensor4<T, DYNAMIC, ES> I(dimension, ZEROS);
+  Tensor4<T, DYNAMIC, ES> I(dimension, Filler::ZEROS);
   ones_in_ikjl(I);
   return I;
 }
@@ -168,7 +168,7 @@ identity_1(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor4<T, N, ES> I(dimension, ZEROS);
+  Tensor4<T, N, ES> I(dimension, Filler::ZEROS);
   ones_in_ikjl(I);
   return I;
 }
@@ -182,7 +182,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_2()
 {
-  Tensor4<T, N, ES> I(N, ZEROS);
+  Tensor4<T, N, ES> I(N, Filler::ZEROS);
   ones_in_iljk(I);
   return I;
 }
@@ -192,7 +192,7 @@ KOKKOS_INLINE_FUNCTION
 const Tensor4<T, DYNAMIC, ES>
 identity_2(Index const dimension)
 {
-  Tensor4<T, DYNAMIC, ES> I(dimension, ZEROS);
+  Tensor4<T, DYNAMIC, ES> I(dimension, Filler::ZEROS);
   ones_in_iljk(I);
   return I;
 }
@@ -204,7 +204,7 @@ identity_2(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor4<T, N, ES> I(dimension, ZEROS);
+  Tensor4<T, N, ES> I(dimension, Filler::ZEROS);
   ones_in_iljk(I);
   return I;
 }
@@ -218,7 +218,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_3()
 {
-  Tensor4<T, N, ES> I(N, ZEROS);
+  Tensor4<T, N, ES> I(N, Filler::ZEROS);
   ones_in_ijkl(I);
   return I;
 }
@@ -228,7 +228,7 @@ KOKKOS_INLINE_FUNCTION
 const Tensor4<T, DYNAMIC, ES>
 identity_3(Index const dimension)
 {
-  Tensor4<T, DYNAMIC, ES> I(dimension, ZEROS);
+  Tensor4<T, DYNAMIC, ES> I(dimension, Filler::ZEROS);
   ones_in_ijkl(I);
   return I;
 }
@@ -238,7 +238,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_3(Index const dimension)
 {
-  Tensor4<T, N, ES> I(dimension, ZEROS);
+  Tensor4<T, N, ES> I(dimension, Filler::ZEROS);
   ones_in_ijkl(I);
   return I;
 }
@@ -252,7 +252,7 @@ Tensor4<T, N, ES> const
 levi_civita_4()
 {
   Tensor4<T, N, ES>
-  A(N, ZEROS);
+  A(N, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -265,7 +265,7 @@ Tensor4<T, DYNAMIC, ES> const
 levi_civita_4(Index const dimension)
 {
   Tensor4<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -280,7 +280,7 @@ levi_civita_4(Index const dimension)
   if (N != DYNAMIC) assert(dimension == N);
 
   Tensor4<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 

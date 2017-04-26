@@ -48,7 +48,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "4.33 (2017/01/12)";
+  const char *       version_string = "4.34 (2017/04/06)";
 
   unsigned hash_symbol(const char *symbol)
   {
@@ -469,6 +469,7 @@ namespace SEAMS {
           << "                var=val: Assign value 'val' to variable 'var'    \n"
           << "                         Use var=\\\"sval\\\" for a string variable\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
+          << "\tEnter {DUMP()} for list of user-defined variables\n"
           << "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
           << "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
           << "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n";
@@ -585,6 +586,16 @@ namespace SEAMS {
       if (strcmp(ptr->name.c_str(), sym_name) == 0)
         return ptr;
     return nullptr;
+  }
+
+  void Aprepro::dumpsym(const char *type, bool doInternal) const
+  {
+    if (type[0] == 'v') {
+      dumpsym(Parser::token::VAR, doInternal);
+    }
+    else if (type[0] == 'f') {
+      dumpsym(Parser::token::FNCT, doInternal);
+    }
   }
 
   void Aprepro::dumpsym(int type, bool doInternal) const

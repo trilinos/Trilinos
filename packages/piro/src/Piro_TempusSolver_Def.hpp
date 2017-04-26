@@ -108,9 +108,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     bool computeSensitivities,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
+  computeSensitivities_(computeSensitivities),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  isInitialized(false),
-  computeSensitivities_(computeSensitivities)
+  isInitialized(false)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";

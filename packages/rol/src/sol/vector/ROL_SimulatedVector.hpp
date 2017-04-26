@@ -297,12 +297,14 @@ private:
   const Teuchos::RCP<SampleGenerator<Real> >        sampler_;
   mutable std::vector<Teuchos::RCP<Vector<Real> > > dual_vecs_;
   mutable Teuchos::RCP<DualSimulatedVector<Real> >  dual_pvec_;
+  mutable bool isDualInitialized_;
 public:
 
   PrimalSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
                         const Teuchos::RCP<BatchManager<Real> >         &bman,
                         const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
-    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler) {
+    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
+      isDualInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       dual_vecs_.push_back((vecs_[i]->dual()).clone());
     }
@@ -316,10 +318,15 @@ public:
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 
+    Real c = 0;
     Real locresult = 0;
     Real result = 0;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
-      locresult += sampler_->getMyWeight(i) * vecs_[i]->dot(*xs.get(i));
+      //locresult += sampler_->getMyWeight(i) * vecs_[i]->dot(*xs.get(i));
+      Real y = sampler_->getMyWeight(i) * vecs_[i]->dot(*xs.get(i)) - c;
+      Real t = locresult + y;
+      c = (t - locresult) - y;
+      locresult = t;
     }
 
     bman_->sumAll(&locresult, &result, 1);
@@ -336,11 +343,14 @@ public:
   }
 
   const Vector<Real>& dual(void) const {
+    if (!isDualInitialized_) {
+      dual_pvec_ = Teuchos::rcp( new DualSimulatedVector<Real>(dual_vecs_, bman_, sampler_) );
+      isDualInitialized_ = true;
+    }
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
       dual_vecs_[i]->scale(sampler_->getMyWeight(i));
     }
-    dual_pvec_ = Teuchos::rcp( new DualSimulatedVector<Real>(dual_vecs_, bman_, sampler_) );
     return *dual_pvec_;
   }
 
@@ -354,12 +364,14 @@ private:
   const Teuchos::RCP<SampleGenerator<Real> >         sampler_;
   mutable std::vector<Teuchos::RCP<Vector<Real> > >  primal_vecs_;
   mutable Teuchos::RCP<PrimalSimulatedVector<Real> > primal_pvec_;
+  mutable bool isPrimalInitialized_;
 public:
 
   DualSimulatedVector(const std::vector<Teuchos::RCP<Vector<Real> > > &vecs,
                       const Teuchos::RCP<BatchManager<Real> >         &bman,
                       const Teuchos::RCP<SampleGenerator<Real> >      &sampler)
-    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler) {
+    : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
+      isPrimalInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       primal_vecs_.push_back((vecs_[i]->dual()).clone());
     }
@@ -373,10 +385,15 @@ public:
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 
+    Real c = 0;
     Real locresult = 0;
     Real result = 0;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
-      locresult += vecs_[i]->dot(*xs.get(i)) / sampler_->getMyWeight(i);
+      //locresult += vecs_[i]->dot(*xs.get(i)) / sampler_->getMyWeight(i);
+      Real y = vecs_[i]->dot(*xs.get(i)) / sampler_->getMyWeight(i) - c;
+      Real t = locresult + y;
+      c = (t - locresult) - y;
+      locresult = t;
     }
 
     bman_->sumAll(&locresult, &result, 1);
@@ -393,12 +410,15 @@ public:
   }
 
   const Vector<Real>& dual(void) const {
+    if (!isPrimalInitialized_) {
+      primal_pvec_ = Teuchos::rcp( new PrimalSimulatedVector<Real>(primal_vecs_, bman_, sampler_) );
+      isPrimalInitialized_ = true;
+    }
     const Real one(1);
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       primal_vecs_[i]->set(vecs_[i]->dual());
       primal_vecs_[i]->scale(one/sampler_->getMyWeight(i));
     }
-    primal_pvec_ = Teuchos::rcp( new PrimalSimulatedVector<Real>(primal_vecs_, bman_, sampler_) );
     return *primal_pvec_;
   }
 

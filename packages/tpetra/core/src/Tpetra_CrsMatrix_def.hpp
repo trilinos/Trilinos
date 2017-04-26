@@ -56,10 +56,13 @@
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
-//#include "Tpetra_Details_gathervPrint.hpp" (from above header)
+#include "Tpetra_Details_gathervPrint.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_Environment.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -3891,7 +3894,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool 
+  bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   haveGlobalConstants() const {
     return getCrsGraph ()->haveGlobalConstants ();
@@ -5885,81 +5888,6 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  packRowStatic (char* const numEntOut,
-                 char* const valOut,
-                 char* const indOut,
-                 const size_t numEnt,
-                 const LocalOrdinal lclRow) const
-  {
-    typedef impl_scalar_type IST;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef typename local_matrix_type::size_type offset_type;
-    typedef Kokkos::pair<offset_type, offset_type> pair_type;
-
-#ifdef HAVE_TPETRA_DEBUG
-    if (! this->isStaticGraph ()) {
-      return false;
-    }
-#endif // HAVE_TPETRA_DEBUG
-    const LO numEntLO = static_cast<LO> (numEnt);
-    memcpy (numEntOut, &numEntLO, sizeof (LO));
-    if (numEnt == 0) {
-      return true; // nothing more to pack
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    if (lclRow >= this->lclMatrix_.numRows () ||
-        static_cast<size_t> (lclRow + 1) >= static_cast<size_t> (this->lclMatrix_.graph.row_map.dimension_0 ())) {
-#else // NOT HAVE_TPETRA_DEBUG
-    if (lclRow >= this->lclMatrix_.numRows ()) {
-#endif // HAVE_TPETRA_DEBUG
-      // It's bad if this is not a valid local row index.  One thing
-      // we can do is just pack the flag invalid value for the column
-      // indices.  That makes sure that the receiving process knows
-      // something went wrong.
-      const GO flag = Tpetra::Details::OrdinalTraits<GO>::invalid ();
-      for (size_t k = 0; k < numEnt; ++k) {
-        memcpy (indOut + k * sizeof (GO), &flag, sizeof (GO));
-      }
-      // The values don't actually matter, but we might as well pack
-      // something here.
-      const IST zero = Kokkos::ArithTraits<IST>::zero ();
-      for (size_t k = 0; k < numEnt; ++k) {
-        memcpy (valOut + k * sizeof (GO), &zero, sizeof (GO));
-      }
-      return false;
-    }
-
-    // FIXME (mfh 24 Mar 2017) Everything here assumes UVM.  If we
-    // want to fix that, we need to write a pack kernel for the whole
-    // matrix, that runs on device.
-
-    // Since the matrix is locally indexed on the calling process, we
-    // have to use its column Map (which it _must_ have in this case)
-    // to convert to global indices.
-    const offset_type rowBeg = this->lclMatrix_.graph.row_map[lclRow];
-    const offset_type rowEnd = this->lclMatrix_.graph.row_map[lclRow + 1];
-
-    auto indIn = Kokkos::subview (this->lclMatrix_.graph.entries,
-                                  pair_type (rowBeg, rowEnd));
-    auto valIn = Kokkos::subview (this->lclMatrix_.values,
-                                  pair_type (rowBeg, rowEnd));
-    // RCP::operator* should not update the reference count, so this
-    // is still thread safe (see #229).
-    const map_type& colMap = * (this->staticGraph_->colMap_);
-    // Copy column indices one at a time, so that we don't need
-    // temporary storage.
-    for (size_t k = 0; k < numEnt; ++k) {
-      const GO gblIndIn = colMap.getGlobalElement (indIn[k]);
-      memcpy (indOut + k * sizeof (GO), &gblIndIn, sizeof (GO));
-    }
-    memcpy (valOut, valIn.ptr_on_device (), numEnt * sizeof (IST));
-    return true;
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   unpackRow (impl_scalar_type* const valInTmp,
              GlobalOrdinal* const indInTmp,
              const size_t tmpSize,
@@ -6044,7 +5972,61 @@ namespace Tpetra {
         Teuchos::Array<char>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
         size_t& constantNumPackets,
-        Distributor& distor) const
+        Distributor& dist) const
+  {
+    using Details::packCrsMatrix;
+
+    if (this->isStaticGraph ()) {
+      const map_type& colMap = * (this->staticGraph_->colMap_);
+      const auto lclColMap = colMap.getLocalMap ();
+      const int myRank =
+        colMap.getComm ().is_null () ? 0 : colMap.getComm ()->getRank ();
+      std::unique_ptr<std::string> errStr;
+#ifdef HAVE_TPETRA_DEBUG
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      const bool locallyCorrect =
+        packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                       exports, numPacketsPerLID, constantNumPackets,
+                       exportLIDs, myRank, dist);
+      const int lclOK = locallyCorrect ? 1 : 0;
+      int gblOK = 1; // output argument
+      if (! colMap.getComm ().is_null ()) {
+        reduceAll<int, int> (* (colMap.getComm ()), REDUCE_MIN,
+                             lclOK, outArg (gblOK));
+        if (gblOK != 1) {
+          std::ostringstream out;
+          if (colMap.getComm ()->getRank () == 0) {
+            out << "Error in packCrsMatrix!" << std::endl;
+          }
+          using ::Tpetra::Details::gathervPrint;
+          const std::string errStr2 =
+            errStr.get () == NULL ? std::string ("") : *errStr;
+          gathervPrint (out, errStr2, * (colMap.getComm ()));
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, out.str ());
+        }
+      }
+#else // NOT HAVE_TPETRA_DEBUG
+      (void) packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                            exports, numPacketsPerLID, constantNumPackets,
+                            exportLIDs, myRank, dist);
+#endif // HAVE_TPETRA_DEBUG
+    }
+    else {
+      this->packNonStatic (exportLIDs, exports, numPacketsPerLID,
+                           constantNumPackets, dist);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                 Teuchos::Array<char>& exports,
+                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                 size_t& constantNumPackets,
+                 Distributor& distor) const
   {
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
@@ -6087,25 +6069,11 @@ namespace Tpetra {
 
     char* const exportsRawPtr = exports.getRawPtr ();
     size_t offset = 0; // current index into 'exports' array.
-    // If the graph is static, then we can go straight to lclMatrix_
-    // for the data.  This makes packing faster, and also makes
-    // thread-parallel packing possible: see #800.
-    const bool staticGraph = this->isStaticGraph ();
-
     for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs[i];
 
       size_t numEnt;
-      if (staticGraph) {
-        // FIXME (mfh 24 Mar 2017) Everything here assumes UVM.  If
-        // we want to fix that, we need to write a pack kernel for
-        // the whole matrix, that runs on device.
-        numEnt = static_cast<size_t> (this->lclMatrix_.graph.row_map[lclRow+1] -
-                                      this->lclMatrix_.graph.row_map[lclRow]);
-      }
-      else {
-        numEnt = this->getNumEntriesInLocalRow (lclRow);
-      }
+      numEnt = this->getNumEntriesInLocalRow (lclRow);
 
       // Only pack this row's data if it has a nonzero number of
       // entries.  We can do this because receiving processes get the
@@ -6129,12 +6097,7 @@ namespace Tpetra {
           outOfBounds = true;
           break;
         }
-        if (staticGraph) {
-          packErr = ! this->packRowStatic (numEntBeg, valBeg, indBeg, numEnt, lclRow);
-        }
-        else {
-          packErr = ! this->packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
-        }
+        packErr = ! this->packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
         if (packErr) {
           firstBadIndex = i;
           firstBadOffset = offset;
@@ -6170,83 +6133,20 @@ namespace Tpetra {
                           const GlobalOrdinal cols[],
                           const Tpetra::CombineMode combineMode)
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::View;
-    typedef impl_scalar_type IST;
-    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef device_type DD;
-    typedef Kokkos::Device<typename View<LO*, DD>::HostMirror::execution_space, Kokkos::HostSpace> HD;
     //const char tfecfFuncName[] = "combineGlobalValuesRaw: ";
 
-    if (this->isStaticGraph ()) {
-      // INSERT doesn't make sense for a static graph, since you
-      // aren't allowed to change the structure of the graph.
-      // However, all the other combine modes work.
+    // mfh 23 Mar 2017: This branch is not thread safe in a debug
+    // build, due to use of Teuchos::ArrayView; see #229.
+    const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
+    Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+    Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
 
-      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
-      if (static_cast<LO> (rowInfo.localRow) != lclRow) {
-        return static_cast<LO> (0); // invalid local row
-      }
-      auto curVals = this->getRowViewNonConst (rowInfo);
-
-      if (combineMode == ADD) {
-        View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : cols, numEnt);
-        // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // unpack different rows, so we don't need atomic updates.  If
-        // we change that in the future, we'll need to change this.
-        constexpr bool atomic = false;
-        return this->staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
-                                                                              curVals,
-                                                                              indsIn,
-                                                                              valsIn,
-                                                                              atomic);
-      }
-      else if (combineMode == REPLACE) {
-        typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
-        typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
-        typedef typename std::decay<decltype (curVals) >::type OSVT; // output scalar view type
-        ISVT valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        GIVT indsIn (numEnt == 0 ? NULL : cols, numEnt);
-
-        // // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // // unpack different rows, so we don't need atomic updates.  If
-        // // we change that in the future, we'll need to change this.
-        // constexpr bool atomic = false;
-        return this->staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
-                                                                                   curVals,
-                                                                                   indsIn,
-                                                                                   valsIn);
-      }
-      else {
-        // mfh 23 Mar 2017: This branch is not thread safe in a debug
-        // build, due to use of Teuchos::ArrayView; see #229.
-        const GO gblRow = this->staticGraph_->rowMap_->getGlobalElement (lclRow);
-        Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-        Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-        // FIXME (mfh 23 Mar 2017) This is a work-around for less
-        // common combine modes.  combineGlobalValues throws on error;
-        // it does not return an error code.  Thus, if it returns, it
-        // succeeded.
-        this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-        return numEnt;
-      }
-    }
-    else { // no static graph
-      // mfh 23 Mar 2017: This branch is not thread safe in a debug
-      // build, due to use of Teuchos::ArrayView; see #229.
-      const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
-      Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-      Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-      // FIXME (mfh 23 Mar 2017) This is a work-around for less common
-      // combine modes.  combineGlobalValues throws on error; it does
-      // not return an error code.  Thus, if it returns, it succeeded.
-      this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-      return numEnt;
-    }
+    // FIXME (mfh 23 Mar 2017) This is a work-around for less common
+    // combine modes.  combineGlobalValues throws on error; it does
+    // not return an error code.  Thus, if it returns, it succeeded.
+    this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+    return numEnt;
   }
 
 
@@ -6407,8 +6307,38 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const char>& imports,
                         const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                         size_t constantNumPackets,
-                        Distributor & /* distor */,
-                        CombineMode combineMode)
+                        Distributor & distor,
+                        CombineMode combineMode,
+                        const bool atomic)
+  {
+    if (this->isStaticGraph()) {
+      using Details::unpackCrsMatrixAndCombine;
+      const map_type& colMap = * (this->staticGraph_->colMap_);
+      const auto lclColMap = colMap.getLocalMap ();
+      std::unique_ptr<std::string> errStr;
+      bool locallyCorrect = unpackCrsMatrixAndCombine (
+          this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
+          numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
+      if (!locallyCorrect) {
+        throw errStr->c_str();
+      }
+    }
+    else {
+      this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,
+                                           constantNumPackets, distor, combineMode);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  unpackAndCombineImplNonStatic (
+      const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+      const Teuchos::ArrayView<const char>& imports,
+      const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor & /* distor */,
+      CombineMode combineMode)
   {
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;

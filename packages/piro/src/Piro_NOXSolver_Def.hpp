@@ -74,9 +74,9 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   SteadyStateSolver<Scalar>(model_),
   appParams(appParams_),
   observer(observer_),
-  model(model_), 
   solver(new Thyra::NOXNonlinearSolver),
-  out(Teuchos::VerboseObjectBase::getDefaultOStream())
+  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  model(model_)
 {
   using Teuchos::RCP;
 

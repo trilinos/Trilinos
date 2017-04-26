@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
 int convert_ioss_to_stk_topology()
 {
   int err_count = 0;
+  unsigned spatialDim = 3;
 
   Ioss::NameList topologies;
   int topology_count = Ioss::ElementTopology::describe(&topologies);
@@ -91,7 +92,7 @@ int convert_ioss_to_stk_topology()
 
     OUTPUT << "Testing ioss topology: " << std::setw(20) << topologies[i] << "\n";
     Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(topologies[i], false);
-    stk::topology stk_topo = stk::io::map_ioss_topology_to_stk(ioss_topo);
+    stk::topology stk_topo = stk::io::map_ioss_topology_to_stk(ioss_topo, spatialDim);
 
     if (stk_topo == stk::topology::INVALID_TOPOLOGY && topologies[i] != "unknown") {
       OUTPUT << "ERROR: IOSS topology '" << topologies[i] << "' could not be converted to STK topology.\n";
@@ -124,6 +125,7 @@ int convert_ioss_to_stk_topology()
 int convert_stk_to_ioss_topology()
 {
   int err_count = 0;
+  unsigned spatialDim = 3;
 
   for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {
     OUTPUT << "Testing stk topology: " << std::setw(20) << topo.name() << "\n";
@@ -136,7 +138,7 @@ int convert_stk_to_ioss_topology()
     }
 
     // See if get the same type back...
-    stk::topology stk_topo = stk::io::map_ioss_topology_to_stk(ioss_topo);
+    stk::topology stk_topo = stk::io::map_ioss_topology_to_stk(ioss_topo, spatialDim);
     if (stk_topo == stk::topology::INVALID_TOPOLOGY && ioss_topo->name() != "unknown") {
       OUTPUT << "ERROR: IOSS topology '" << ioss_topo->name() << "' created from stk topology '"
           << topo.name() << "' could not be converted to back STK topology.\n";

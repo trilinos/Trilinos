@@ -76,7 +76,7 @@
 #include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Sparse.hpp>
 
-#ifdef HAVE_TRILINOS
+#ifdef HAVE_KK_KERNELS
 
 
 template<typename AType, typename XType, typename YType>

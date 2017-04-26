@@ -8,7 +8,7 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_io/InputFile.hpp"         // for InputFile
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_balance/balance.hpp"
+#include <stk_balance/fixSplitCoincidentElements.hpp>
 
 class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 {

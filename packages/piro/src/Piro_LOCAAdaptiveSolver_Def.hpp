@@ -92,10 +92,10 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   globalData_(LOCA::createGlobalData(piroParams)),
   paramVector_(),
   solMgr_(solMgr),
-  model_(model), 
   locaStatusTests_(),
   noxStatusTests_(),
-  stepper_()
+  stepper_(),
+  model_(model)
 {
   const int l = 0; // TODO: Allow user to select parameter index
   const Detail::ModelEvaluatorParamName paramName(this->getModel().get_p_names(l));

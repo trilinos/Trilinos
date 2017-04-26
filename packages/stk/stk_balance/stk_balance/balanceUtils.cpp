@@ -141,6 +141,12 @@ bool BalanceSettings::allowModificationOfVertexWeightsForSmallMeshes() const
     return true;
 }
 
+// For graph based methods (parmetis) only
+bool BalanceSettings::shouldFixMechanisms() const
+{
+    return false;
+}
+
 
 //////////////////////////////////////
 
@@ -362,6 +368,12 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
     };
     return tableIndex;
 }
+
+bool GraphCreationSettings::shouldFixMechanisms() const
+{
+    return true;
+}
+
 
 }
 }
