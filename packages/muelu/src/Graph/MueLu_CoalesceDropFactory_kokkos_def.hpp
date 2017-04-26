@@ -439,11 +439,8 @@ namespace MueLu {
       // Detect and record rows that correspond to Dirichlet boundary conditions
       boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
       graph->SetBoundaryNodeMap(boundaryNodes);
-
       numTotal = A->getNodeNumEntries();
-
       dofsPerNode = 1;
-
     } else if (blkSize > 1 && threshold == zero) {
       // Case 3:  block problem without filtering
 
@@ -501,16 +498,16 @@ namespace MueLu {
 
       LO numDofCols = 0;
       Stage1aVectorFunctor<decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize)> stage1aFunctor(kokkosMatrix, dofNnz, blkPartSize);
-      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1a", numNodes, stage1aFunctor, numDofCols);
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1a", range_type(0,numNodes), stage1aFunctor, numDofCols);
 
       // parallel_scan (exclusive)
       ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
-      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numNodes+1, scanFunctor);
+      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
 
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
       Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
-      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", numNodes, stage1bFunctor);
+      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", range_type(0,numNodes), stage1bFunctor);
 
 
       // we have dofcols and dofids from Stage1dVectorFunctor
@@ -518,18 +515,18 @@ namespace MueLu {
       typename row_map_type::non_const_type rows("nnz_nodemap", numNodes + 1);
       typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numNodes);
       Stage1cVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(colTranslation), decltype(bndNodes)> stage1cFunctor(dofNnz, dofcols, colTranslation,rows,bndNodes);
-      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", numNodes, stage1cFunctor,numNodeCols);
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1cFunctor,numNodeCols);
 
       // parallel_scan (exclusive)
       ScanFunctor<LO,decltype(rows)> scanNodeFunctor(rows);
-      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numNodes+1, scanNodeFunctor);
+      Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanNodeFunctor);
 
       // create column node view
       typename entries_type::non_const_type cols("nodecols", numNodeCols);
 
 
       Stage1dVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(rows), decltype(cols)> stage1dFunctor(dofcols, dofNnz, cols, rows);
-      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", numNodes, stage1dFunctor);
+      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1dFunctor);
 
       kokkos_graph_type kokkosGraph(cols, rows);
 
@@ -568,11 +565,11 @@ namespace MueLu {
         LO realnnz = 0;
 
         Stage1ScalarFunctor<decltype(kokkosMatrix), decltype(ghostedDiag), decltype(rows)> stage1Functor(kokkosMatrix, threshold, ghostedDiag, rows);
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", numRows, stage1Functor, realnnz);
+        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", range_type(0,numRows), stage1Functor, realnnz);
 
         // parallel_scan (exclusive)
         ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
-        Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numRows+1, scanFunctor);
+        Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numRows+1), scanFunctor);
 
 
         // Stage 2: fill in the column indices
@@ -583,7 +580,7 @@ namespace MueLu {
 
         Stage2ScalarFunctor<decltype(kokkosMatrix), decltype(ghostedDiag), decltype(rows), decltype(cols), decltype(bndNodes)>
           stage2Functor(kokkosMatrix, ghostedDiag, rows, cols, bndNodes, threshold);
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, stage2Functor, kokkos_numDropped);
+        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", range_type(0,numRows), stage2Functor, kokkos_numDropped);
         numDropped = kokkos_numDropped;
 
         boundaryNodes = bndNodes;
@@ -622,13 +619,12 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Block systems with filtering are not implemented");
       }
     }
-
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
 #if 0
       // Convert to functors later
-      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", boundaryNodes.dimension_0(), KOKKOS_LAMBDA(const LO i, GO& n) {
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", range_type(0,boundaryNodes.dimension_0()), KOKKOS_LAMBDA(const LO i, GO& n) {
         if (boundaryNodes(i))
           n++;
       }, numLocalBoundaryNodes);
@@ -638,7 +634,6 @@ namespace MueLu {
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
       GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
     }
-
     if ((GetVerbLevel() & Statistics1) && threshold != zero) {
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
@@ -650,7 +645,6 @@ namespace MueLu {
             << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
       }
     }
-
     Set(currentLevel, "DofsPerNode",  dofsPerNode);
     Set(currentLevel, "Graph",        graph);
   }
