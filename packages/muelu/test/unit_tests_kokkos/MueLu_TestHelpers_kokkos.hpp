@@ -60,13 +60,10 @@
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_Parameters.hpp>
+#include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_CrsGraph.hpp>
-
-// Galeri
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraMatrixTypes.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -78,10 +75,17 @@
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Level.hpp"
 
+// Galeri
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraMatrixTypes.hpp>
+
 #include "MueLu_NoFactory.hpp"
+
+
 
 // Conditional Tpetra stuff
 #ifdef HAVE_MUELU_TPETRA
+#include <TpetraCore_config.h>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
@@ -89,6 +93,8 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>
 #endif
+
+#include <MueLu_TestHelpers_Common_kokkos.hpp>
 
 namespace MueLuTests {
   using Teuchos::arcp;
