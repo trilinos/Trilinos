@@ -134,15 +134,15 @@ namespace TeuchosTests
   {
     std::string xmlString =
       "  <ParameterList>\n"
+      "    <ParameterList name=\"Discretization\">\n"
+      "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
+      "    </ParameterList>\n"
       "    <ParameterList name=\"Problem\">\n"
       "      <ParameterList name=\"Neumann BCs\">\n"
       "        <ParameterList name=\"Time Dependent NBC on SS cyl_outside for DOF all set P\">\n"
       "          <Parameter name=\"BC Values\" type=\"TwoDArray(double)\" value=\"3x1:{ 0.0, 10.0, 20.0}\"/>\n"
       "        </ParameterList>\n"
       "      </ParameterList>\n"
-      "    </ParameterList>\n"
-      "    <ParameterList name=\"Discretization\">\n"
-      "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
       "    </ParameterList>\n"
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
@@ -153,12 +153,12 @@ namespace TeuchosTests
       "%YAML 1.1\n"
       "---\n"
       "ANONYMOUS:\n"
+      "  Discretization: \n"
+      "    Node Set Associations: [['1', '2'], [top, bottom]]\n"
       "  Problem: \n"
       "    Neumann BCs: \n"
       "      Time Dependent NBC on SS cyl_outside for DOF all set P: \n"
       "        BC Values: [[0], [10], [20]]\n"
-      "  Discretization: \n"
-      "    Node Set Associations: [['1', '2'], [top, bottom]]\n"
       "...\n";
     TEST_EQUALITY(yamlString, expectedYamlString);
     std::stringstream yamlInStream(yamlString);
