@@ -13,7 +13,6 @@ while (<STDIN>)
 }
 
 $numLines = scalar @LINES;
-$pastSummary = 0;
 
 use Class::Struct;
 struct Entry => {
@@ -47,25 +46,52 @@ sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 # my $trimmed = trim $trimTest;
 # print "Trimmed string: \"$trimmed\"\n";
 
-my @entries;
+my @entries, my @entriesNightly, my @entriesExperimental;
 my $gitFailure = "";
+
+my %testType;
+$testType = "Nightly";
+my $pastSummary = 0;
 
 for ($i=0; $i<$numLines; $i++)
 {
   my $line = $LINES[$i];
   #print $line;
-  if ($line =~ /git update FAILED/)
+  if ($pastSummary == 0)
   {
-    $gitFailure = "<font color=\"red\">*** git update FAILED ***</font>";
+#     print "NOT past summary.\n";
+    if ($line =~ /git update FAILED/)
+    {
+      $gitFailure = "<font color=\"red\">*** git update FAILED ***</font>";
+    }
+    if ($line =~ /\++ Nightly \++/)
+    {
+      $testType = "Nightly";
+    }
+    elsif ($line =~ /\++ Experimental \++/)
+    {
+      $testType = "Experimental";
+    }
+    
+    if ($line =~ /(.*)\s+\.\.\. [pF]/)
+    {
+      $testName = trim $1;
+      $testType{$testName} = $testType;
+    }
+    else
+    {
+      #print "line did not match the test listing regex: $line.\n";
+    }
+    if ($line =~ /-----------------------------------------------------------------------------/)
+    {
+      $pastSummary = 1;
+      #print "FOUND THE END OF THE SUMMARY";
+      $i++; # blank line follows the --- line: we ignore this one.
+      $i++;
+    }
   }
-  if ($line =~ /-----------------------------------------------------------------------------/)
-  {
-    $pastSummary = 1;
-    #print "FOUND THE END OF THE SUMMARY";
-    $i++; # blank line follows the --- line: we ignore this one.
-    $i++;
-  }
-  if ($pastSummary)
+  
+  if ($pastSummary == 1)
   {
 #entries are of the following form:
 #     OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_SERIAL             
@@ -146,6 +172,15 @@ for ($i=0; $i<$numLines; $i++)
       }
     }
     push @entries, $entry;
+    $name = $entry->name;
+    if ($testType{$name} eq "Nightly")
+    {
+      push @entriesNightly, $entry;
+    }
+    elsif ($testType{$name} eq "Experimental")
+    {
+      push @entriesExperimental, $entry;
+    }
   }
 }
 
@@ -283,8 +318,13 @@ Content-Type: text/html
 <br>
 
 
-<h3>Geminga Test Summary</h3>
+<h2>Geminga Test Summary</h2>
 <h2>$gitFailure</h2>
+EOF
+
+sub printTableHeader
+{
+  print <<EOF;
 <table class="thintable">
 <tr style="border-style: none;">
 <th></th>
@@ -310,55 +350,63 @@ Content-Type: text/html
 <th class="midth">warnings</th>
 </tr>
 EOF
-
-for $entry (@entries)
+}
+sub printTableFooter
 {
-  $name = $entry->name;
-  $XpetraBuildWarnings = $entry->XpetraBuildWarnings;
-  $XpetraBuildErrors = $entry->XpetraBuildErrors;
-  $XpetraTestPasses = $entry->XpetraTestPasses;
-  $XpetraTestFailures = $entry->XpetraTestFailures;
-  $XpetraLibBuildWarnings = $entry->XpetraLibBuildWarnings;
-  $XpetraLibBuildErrors = $entry->XpetraLibBuildErrors;
-  $MueLuBuildWarnings = $entry->MueLuBuildWarnings;
-  $MueLuBuildErrors = $entry->MueLuBuildErrors;
-  $MueLuTestPasses = $entry->MueLuTestPasses;
-  $MueLuTestFailures = $entry->MueLuTestFailures;
-  $MueLuLibBuildWarnings = $entry->MueLuLibBuildWarnings;
-  $MueLuLibBuildErrors = $entry->MueLuLibBuildErrors;
-  my $MueLuTestPassColor = 'g';
-  my $MueLuTestFailureColor = 'g';
-  if ($MueLuTestPasses + $MueLuTestFailures == 0)
+ print <<EOF;
+</table>
+EOF
+}
+
+sub printEntries {
+  my @entriesToPrint = @{$_[0]};
+  for $entry (@entriesToPrint)
   {
-    $MueLuTestPassColor = 'y';
-    $MueLuTestFailureColor = 'y';
-  }
-  elsif ($MueLuTestFailures > 0)
-  {
-    $MueLuTestFailureColor = 'r';
-  }
-  my $MueLuBuildErrorColor = ($MueLuBuildErrors > 0) ? 'r' : 'g';
-  my $MueLuBuildWarningColor = ($MueLuBuildWarnings > 0) ? 'y' : 'g';
-  my $MueLuLibBuildErrorColor = ($MueLuLibBuildErrors > 0) ? 'r' : 'g';
-  my $MueLuLibBuildWarningColor = ($MueLuLibBuildWarnings > 0) ? 'y' : 'g';
-  my $XpetraTestPassColor = 'g';
-  my $XpetraTestFailureColor = 'g';
-  if ($XpetraTestPasses + $XpetraTestFailures == 0)
-  {
-    $XpetraTestPassColor = 'y';
-    $XpetraTestFailureColor = 'y';
-  }
-  elsif ($XpetraTestFailures > 0)
-  {
-    $XpetraTestFailureColor = 'r';
-  }
-  my $XpetraBuildErrorColor = ($XpetraBuildErrors > 0) ? 'r' : 'g';
-  my $XpetraBuildWarningColor = ($XpetraBuildWarnings > 0) ? 'y' : 'g';
-  my $XpetraLibBuildErrorColor = ($XpetraLibBuildErrors > 0) ? 'r' : 'g';
-  my $XpetraLibBuildWarningColor = ($XpetraLibBuildWarnings > 0) ? 'y' : 'g';
-  #TODO: make colors correspond to things
-  print <<EOE;
-  <tr class="midtr">
+    $name = $entry->name;
+    $XpetraBuildWarnings = $entry->XpetraBuildWarnings;
+    $XpetraBuildErrors = $entry->XpetraBuildErrors;
+    $XpetraTestPasses = $entry->XpetraTestPasses;
+    $XpetraTestFailures = $entry->XpetraTestFailures;
+    $XpetraLibBuildWarnings = $entry->XpetraLibBuildWarnings;
+    $XpetraLibBuildErrors = $entry->XpetraLibBuildErrors;
+    $MueLuBuildWarnings = $entry->MueLuBuildWarnings;
+    $MueLuBuildErrors = $entry->MueLuBuildErrors;
+    $MueLuTestPasses = $entry->MueLuTestPasses;
+    $MueLuTestFailures = $entry->MueLuTestFailures;
+    $MueLuLibBuildWarnings = $entry->MueLuLibBuildWarnings;
+    $MueLuLibBuildErrors = $entry->MueLuLibBuildErrors;
+    my $MueLuTestPassColor = 'g';
+    my $MueLuTestFailureColor = 'g';
+    if ($MueLuTestPasses + $MueLuTestFailures == 0)
+    {
+      $MueLuTestPassColor = 'y';
+      $MueLuTestFailureColor = 'y';
+    }
+    elsif ($MueLuTestFailures > 0)
+    {
+      $MueLuTestFailureColor = 'r';
+    }
+    my $MueLuBuildErrorColor = ($MueLuBuildErrors > 0) ? 'r' : 'g';
+    my $MueLuBuildWarningColor = ($MueLuBuildWarnings > 0) ? 'y' : 'g';
+    my $MueLuLibBuildErrorColor = ($MueLuLibBuildErrors > 0) ? 'r' : 'g';
+    my $MueLuLibBuildWarningColor = ($MueLuLibBuildWarnings > 0) ? 'y' : 'g';
+    my $XpetraTestPassColor = 'g';
+    my $XpetraTestFailureColor = 'g';
+    if ($XpetraTestPasses + $XpetraTestFailures == 0)
+    {
+      $XpetraTestPassColor = 'y';
+      $XpetraTestFailureColor = 'y';
+    }
+    elsif ($XpetraTestFailures > 0)
+    {
+      $XpetraTestFailureColor = 'r';
+    }
+    my $XpetraBuildErrorColor = ($XpetraBuildErrors > 0) ? 'r' : 'g';
+    my $XpetraBuildWarningColor = ($XpetraBuildWarnings > 0) ? 'y' : 'g';
+    my $XpetraLibBuildErrorColor = ($XpetraLibBuildErrors > 0) ? 'r' : 'g';
+    my $XpetraLibBuildWarningColor = ($XpetraLibBuildWarnings > 0) ? 'y' : 'g';
+    print <<EOE;
+<tr class="midtr">
 <td>$name</td>
 <td class="grptd$MueLuTestPassColor"><b>$MueLuTestPasses</b></td>
 <td class="midtd$MueLuTestFailureColor"><b>$MueLuTestFailures</b></td>
@@ -374,11 +422,20 @@ for $entry (@entries)
 <td class="midtd$XpetraLibBuildWarningColor"><b>$XpetraLibBuildWarnings</b></td>
 </tr>
 EOE
+  }
 }
 
-print <<EOF;
-</table>
+print "<h3>Nightly Tests</h3>\n";
+printTableHeader;
+printEntries(\@entriesNightly);
+printTableFooter;
 
+print "<h3>Experimental Tests</h3>\n";
+printTableHeader;
+printEntries(\@entriesExperimental);
+printTableFooter;
+
+print <<EOF;
 <br>
 <hr>
 
