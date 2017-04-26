@@ -16,13 +16,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
-  Aggregates_kokkos.cpp
+  #Aggregates_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
-  SaPFactory_kokkos.cpp
-  TentativePFactory_kokkos.cpp
+  #SaPFactory_kokkos.cpp
+  #TentativePFactory_kokkos.cpp
 )
 
 ### Tests that require other Trilinos packages
