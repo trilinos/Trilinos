@@ -89,13 +89,13 @@ combineCrsMatrixValues(LocalMatrix& lclMatrix,
 
   LO numValid = 0; // number of valid input column indices
   if (combineMode == ADD) {
-    for (size_t k=0; k<numEnt; k++) {
+    for (int k=0; k<numEnt; k++) {
       LO lclColInd = lclColMap.getLocalElement(cols[k]);
       numValid += lclMatrix.sumIntoValues(lclRow, &lclColInd, 1, &vals[k], false, atomic);
     }
   }
   else if (combineMode == REPLACE) {
-    for (size_t k=0; k<numEnt; k++) {
+    for (int k=0; k<numEnt; k++) {
       LO lclColInd = lclColMap.getLocalElement(cols[k]);
       numValid += lclMatrix.replaceValues(lclRow, &lclColInd, 1, &vals[k], false, atomic);
     }
