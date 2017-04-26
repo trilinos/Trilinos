@@ -74,10 +74,29 @@ TEST( Graph, scotch ) {
   Ad.copy(Ah);
 
   Graph G(Ad);
-  // GraphTools_Scotch S(G);
-  // S.reorder();
-  // std::ofstream file("test_graph_scotch.txt");
-  // //S.showMe(file);
+  GraphTools_Scotch S(G);
+
+  const ordinal_type m = G.NumRows();
+  S.setTreeLevel(log2(m));
+  S.setStrategy( SCOTCH_STRATSPEED
+                 | SCOTCH_STRATSPEED
+                 | SCOTCH_STRATLEVELMAX
+                 | SCOTCH_STRATLEVELMIN
+                 | SCOTCH_STRATLEAFSIMPLE
+                 | SCOTCH_STRATSEPASIMPLE
+                 );
+  S.reorder();
+
+  ///
+  /// perm and invperm should be properly setup 
+  ///
+  const auto perm = S.PermVector();
+  const auto peri = S.InvPermVector();
+
+  for (ordinal_type i=0;i<m;++i) {
+    EXPECT_EQ(i, peri(perm(i)));
+  }
+  
 }
 #endif
 

@@ -17,7 +17,9 @@ namespace Tacho {
     public:
       typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
       typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,   host_exec_space> size_type_array;
+
+      // scotch use int and long is misinterpreted in pointers
+      typedef Kokkos::View<ordinal_type*,host_exec_space> size_type_array;
 
     private:
       ordinal_type _m;
@@ -55,7 +57,7 @@ namespace Tacho {
             if (i != aj) _cidx(_nnz++) = aj;
           }
         }
-        _rptr[_m] = _nnz;        
+        _rptr(_m) = _nnz;        
       }
 
       inline

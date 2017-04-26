@@ -264,7 +264,7 @@ namespace Tacho {
       }
 
       /// \brief print out to stream
-      std::ostream& showMe(std::ostream &os) const {
+      std::ostream& showMe(std::ostream &os, const bool detail = false) const {
         std::streamsize prec = os.precision();
         os.precision(16);
         os << std::scientific;
@@ -279,22 +279,24 @@ namespace Tacho {
            << "    ValueArray length  = " << _ax.dimension_0() << std::endl
            << std::endl;
       
-        const int w = 10;
-        if ( (_ap.size() >  _m  ) && 
-             (_aj.size() >= _nnz) &&
-             (_ax.size() >= _nnz) ) {
-          os << std::setw(w) <<  "Row" << "  " 
-             << std::setw(w) <<  "Col" << "  " 
-             << std::setw(w) <<  "Val" << std::endl;
-          for (ordinal_type i=0;i<_m;++i) {
-            const size_type jbegin = _ap[i], jend = _ap[i+1];
-            for (size_type j=jbegin;j<jend;++j) {
-              value_type val = _ax[j];
-              os << std::setw(w) <<      i << "  " 
-                 << std::setw(w) << _aj[j] << "  " 
-                 << std::setw(w) 
-                 << std::showpos <<    val << std::noshowpos
-                 << std::endl;
+        if (detail) {
+          const int w = 10;
+          if ( (_ap.size() >  _m  ) && 
+               (_aj.size() >= _nnz) &&
+               (_ax.size() >= _nnz) ) {
+            os << std::setw(w) <<  "Row" << "  " 
+               << std::setw(w) <<  "Col" << "  " 
+               << std::setw(w) <<  "Val" << std::endl;
+            for (ordinal_type i=0;i<_m;++i) {
+              const size_type jbegin = _ap[i], jend = _ap[i+1];
+              for (size_type j=jbegin;j<jend;++j) {
+                value_type val = _ax[j];
+                os << std::setw(w) <<      i << "  " 
+                   << std::setw(w) << _aj[j] << "  " 
+                   << std::setw(w) 
+                   << std::showpos <<    val << std::noshowpos
+                   << std::endl;
+              }
             }
           }
         }

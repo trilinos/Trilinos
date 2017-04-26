@@ -32,9 +32,9 @@ namespace Tacho {
     /// 
     /// error macros
     ///
-#define MSG_NOT_YET_IMPLEMENTED(what) "Not yet implemented: " #what
-#define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
-#define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
+// #define MSG_NOT_YET_IMPLEMENTED(what) "Not yet implemented: " #what
+// #define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
+// #define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
     
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
     if ((ierr) != 0) {                                                  \

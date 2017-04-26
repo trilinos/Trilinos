@@ -65,8 +65,8 @@ namespace Tacho {
       
         // construct scotch graph
         int ierr = 0;
-        ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(g.RowPtr().data());
-        ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(g.ColIdx().data());
+        const SCOTCH_Num *rptr_ptr = reinterpret_cast<const SCOTCH_Num*>(g.RowPtr().data());
+        const SCOTCH_Num *cidx_ptr = reinterpret_cast<const SCOTCH_Num*>(g.ColIdx().data());
 
         ierr = SCOTCH_graphInit(&_graph);
         TACHO_TEST_FOR_EXCEPTION(ierr, std::runtime_error, "Failed in SCOTCH_graphInit");
@@ -197,7 +197,7 @@ namespace Tacho {
         return r_val;
       }
     
-      std::ostream& showMe(std::ostream &os) const {
+      std::ostream& showMe(std::ostream &os, const bool detail = false) const {
         std::streamsize prec = os.precision();
         os.precision(4);
         os << std::scientific;
@@ -209,13 +209,14 @@ namespace Tacho {
         else 
           os << " -- Not Ordered -- " << std::endl;
 
-        const ordinal_type w = 6, m = _perm.dimension_0();
-        for (ordinal_type i=0;i<m;++i)
-          os << std::setw(w) << _perm[i] << "   "
-             << std::setw(w) << _peri[i] << "   "
-             << std::setw(w) << _range[i] << "   "
-             << std::setw(w) << _tree[i] << std::endl;
-
+        if (detail) {
+          const ordinal_type w = 6, m = _perm.dimension_0();
+          for (ordinal_type i=0;i<m;++i)
+            os << std::setw(w) << _perm[i] << "   "
+               << std::setw(w) << _peri[i] << "   "
+               << std::setw(w) << _range[i] << "   "
+               << std::setw(w) << _tree[i] << std::endl;
+        }
         os.unsetf(std::ios::scientific);
         os.precision(prec);
 

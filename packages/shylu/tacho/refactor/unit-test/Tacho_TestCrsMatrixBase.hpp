@@ -12,17 +12,17 @@
 
 using namespace Tacho::Experimental;
 
-TEST( CrsMatrixBase, constructor ) {
+typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
+typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
-  typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-  typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
-  
+TEST( CrsMatrixBase, constructor ) {  
   ///
   /// host space crs matrix base
   ///
-  const ordinal_type m = 4;
-  const ordinal_type n = 4;
-  const ordinal_type nnz = 16;
+  const ordinal_type 
+    m = 4,
+    n = 4,
+    nnz = 16;
 
   CrsMatrixBaseHostType Ah("A host", m, n, nnz);
   EXPECT_EQ(Ah.NumRows(), m);
@@ -80,24 +80,43 @@ TEST( CrsMatrixBase, constructor ) {
   EXPECT_EQ(Bh.NumRows(), 0);
   EXPECT_EQ(Bh.NumCols(), 0);
   EXPECT_EQ(Bh.NumNonZeros(), 0);
+
+  EXPECT_EQ(Bh.RowPtr().dimension_0(), 0);
+  EXPECT_EQ(Bh.Cols().dimension_0(), 0);
+  EXPECT_EQ(Bh.Values().dimension_0(), 0);
+
+  EXPECT_TRUE(Bh.RowPtr().data() == NULL);
+  EXPECT_TRUE(Bh.Cols().data() == NULL);
+  EXPECT_TRUE(Bh.Values().data() == NULL);
 }
-// TEST( CrsMatrixBase, matrixmarket ) {
-//   typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 
-//   ///
-//   /// Read from matrix market
-//   ///
-//   ///     input  - file
-//   ///     output - AA
-//   ///
-//   CrsMatrixBaseHostType AA("AA");
-//   AA = MatrixMarket<ValueType>::read("../test.mtx");
+TEST( CrsMatrixBase, matrixmarket ) {
+  CrsMatrixBaseHostType Ah("A host");
+  Ah = MatrixMarket<ValueType>::read("test.mtx");
 
-//   // if (verbose) {
-//   //   std::ofstream out("test_output.mtx");
-//   //   MatrixMarket<ValueType>::write(out, AA);
-//   //   AA.showMe(std::cout) << std::endl;
-//   // }
-// }
+  std::ofstream out("test_mm_read_output.mtx");
+  MatrixMarket<ValueType>::write(out, Ah);
+
+  CrsMatrixBaseHostType Bh("B host");
+  Bh = MatrixMarket<ValueType>::read("test_mm_read_output.mtx");
+  
+  ///
+  /// read and write the matrix and read again, 
+  /// then check if they are same
+  ///
+  EXPECT_EQ(Ah.NumRows(), Bh.NumRows());
+  EXPECT_EQ(Ah.NumCols(), Bh.NumCols());
+  EXPECT_EQ(Ah.NumNonZeros(), Bh.NumNonZeros());
+
+  const ordinal_type m = Ah.NumRows();
+  for (ordinal_type i=0;i<m;++i) {
+    EXPECT_EQ(Ah.RowPtrBegin(i), Bh.RowPtrBegin(i));
+    const ordinal_type jbeg = Ah.RowPtrBegin(i), jend = Ah.RowPtrEnd(i);
+    for (ordinal_type j=jbeg;j<jend;++j) {
+      EXPECT_EQ(Ah.Col(j), Bh.Col(j));      
+      EXPECT_EQ(Ah.Value(j), Bh.Value(j));      
+    }
+  }
+}
 
 #endif
