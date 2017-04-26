@@ -46,8 +46,8 @@
             Kokkorized by Kyungjoo Kim
 */
 
-#ifndef __INTREPID2_HDIV_TRI_CN_FEM_DEF_HPP__
-#define __INTREPID2_HDIV_TRI_CN_FEM_DEF_HPP__
+#ifndef __INTREPID2_HDIV_TRI_IN_FEM_DEF_HPP__
+#define __INTREPID2_HDIV_TRI_IN_FEM_DEF_HPP__
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
@@ -237,11 +237,11 @@ namespace Intrepid2 {
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
 
     // now do the integration
-    for (int i=0;i<order;i++) {
-      for (int j=0;j<cardPn;j++) { // int (x,y) phi_i \cdot (phi_j,phi_{j+cardPn})
+    for (ordinal_type i=0;i<order;i++) {
+      for (ordinal_type j=0;j<cardPn;j++) { // int (x,y) phi_i \cdot (phi_j,phi_{j+cardPn})
         V1(j,cardVecPnm1+i) = 0.0;
         for (ordinal_type d=0; d< spaceDim; ++d)
-          for (int k=0;k<myCub.getNumPoints();k++) {
+          for (ordinal_type k=0;k<myCub.getNumPoints();k++) {
             V1(j+d*cardPn,cardVecPnm1+i) +=
               cubWeights(k) * cubPoints(k,d)
               * phisAtCubPoints(cardPnm2+i,k)
@@ -277,7 +277,7 @@ namespace Intrepid2 {
     const scalarType nx[] = {0.0,1.0,-1.0};
     const scalarType ny[] = {-1.0,1.0,0.0};
 
-    for (int i=0;i<numEdges;i++) {  // loop over edges
+    for (ordinal_type i=0;i<numEdges;i++) {  // loop over edges
       CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
                                                 linePts ,
                                                 1 ,
@@ -318,7 +318,7 @@ namespace Intrepid2 {
     // the degree == 1 space corresponds classicaly to RT0 and so gets
     // no internal nodes, and degree == 2 corresponds to RT1 and needs
     // one internal node per vector component.
-    const int numInternalPoints = PointTools::getLatticeSize( this->basisCellTopology_ ,
+    const ordinal_type numInternalPoints = PointTools::getLatticeSize( this->basisCellTopology_ ,
                                                               order + 1 ,
                                                               1 );
 
@@ -336,11 +336,11 @@ namespace Intrepid2 {
       Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
 
       // copy values into right positions of V2
-      for (int i=0;i<numInternalPoints;i++) {
+      for (ordinal_type i=0;i<numInternalPoints;i++) {
 
         const ordinal_type i_card = numEdges*order+i;
 
-        for (int j=0;j<cardPn;j++) {
+        for (ordinal_type j=0;j<cardPn;j++) {
           // x component
           V2(i_card,j) = phisAtInternalPoints(j,i);
           // y component
