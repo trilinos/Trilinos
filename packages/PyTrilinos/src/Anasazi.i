@@ -325,15 +325,15 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////
 %extend Anasazi::Eigensolution
 {
-  std::vector< Anasazi::Value< ScalarType > > Evals()
+  std::vector< Anasazi::Value< ScalarType > > evals()
   {
     return self->Evals;
   }
-  MV & Evecs()
+  MV & evecs()
   {
     return *(self->Evecs);
   }
-  MV & Espace()
+  MV & espace()
   {
     return *(self->Espace);
   }
@@ -342,6 +342,7 @@ __version__ = Anasazi_Version().split()[2]
 %ignore Anasazi::Eigensolution::Evecs;
 %ignore Anasazi::Eigensolution::Espace;
 %include "AnasaziTypes.hpp"
+
 %extend Anasazi::Value
 {
   std::string __str__()
@@ -562,6 +563,12 @@ Anasazi::MultiVecTraits< double,
   Anasazi::LOBPCGSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
 %template(EigensolutionEpetra)
   Anasazi::Eigensolution< double, Epetra_MultiVector >;
+%pythoncode
+%{
+EigensolutionEpetra.Evals  = EigensolutionEpetra.evals
+EigensolutionEpetra.Evecs  = EigensolutionEpetra.evecs
+EigensolutionEpetra.Espace = EigensolutionEpetra.espace
+%}
 #endif
 
 /////////////////////////

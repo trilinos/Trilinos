@@ -146,7 +146,7 @@ Argument buffer can be a numpy array or any sequence that can be
 converted to a numpy array.  Its scalar data type can be any numerical
 type supported by numpy.  The return argument is a numpy array of the
 same type.")
-Teuchos::Comm::reduceAll;
+Teuchos::Comm::scan;
 %extend Teuchos::Comm
 {
   PyObject * broadcast(int rootRank, PyObject * bcastObj) const
@@ -337,16 +337,34 @@ Teuchos::Comm::reduceAll;
     return self->description();
   }
 }
-%ignore Teuchos::Comm::broadcast;
-%ignore Teuchos::Comm::gatherAll;
-%ignore Teuchos::Comm::reduceAll;
-%ignore Teuchos::Comm::scan;
-%ignore Teuchos::Comm::isend;
-%ignore Teuchos::Comm::ireceive;
-%ignore Teuchos::Comm::wait;
-%ignore Teuchos::Comm::waitAll;
-%ignore Teuchos::Comm::readySend;
-%ignore Teuchos::broadcast(const Comm&, const int, const ArrayView&);
+%ignore Teuchos::Comm::broadcast(const int rootRank,
+                                 const Ordinal bytes,
+                                 char buffer[]) const;
+%ignore Teuchos::Comm::gatherAll(const Ordinal sendBytes,
+                                 const char sendBuffer[],
+                                 const Ordinal recvBytes,
+                                 char recvBuffer[]) const;
+%ignore Teuchos::Comm::reduceAll(const ValueTypeReductionOp<Ordinal,char> &reductOp,
+                                 const Ordinal bytes,
+                                 const char sendBuffer[],
+                                 char globalReducts[]) const;
+%ignore Teuchos::Comm::scan(const ValueTypeReductionOp<Ordinal,char> &reductOp,
+                            const Ordinal bytes,
+                            const char sendBuffer[],
+                            char scanReducts[]) const;
+%ignore Teuchos::Comm::isend(const ArrayView<const char> &sendBuffer,
+                             const int destRank) const;
+%ignore Teuchos::Comm::ireceive(const ArrayView<char> &recvBuffer,
+                                const int sourceRank) const;
+%ignore Teuchos::Comm::wait(const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
+%ignore Teuchos::Comm::waitAll(const ArrayView<RCP<CommRequest<Ordinal> > > &requests) const;
+%ignore Teuchos::Comm::waitAll(const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
+                               const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+%ignore Teuchos::Comm::readySend(const ArrayView<const char> &sendBuffer,
+                                 const int destRank) const;
+%ignore Teuchos::broadcast(const Comm&,
+                           const int,
+                           const ArrayView&);
 %ignore Teuchos::wait;
 %ignore Teuchos::waitAll;
 %include "Teuchos_Comm.hpp"
@@ -564,7 +582,11 @@ else:
   }
 #endif
 }
-%ignore Teuchos::MpiComm::MpiComm;
+%ignore Teuchos::MpiComm::MpiComm(MPI_Comm rawMpiComm);
+%ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
+%ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
+                                  const int defaultTag);
+%ignore Teuchos::MpiComm::MpiComm(const MpiComm<Ordinal>& other);
 %ignore Teuchos::MpiComm::getRawMpiComm;
 %ignore Teuchos::MpiComm::broadcast;
 %ignore Teuchos::MpiComm::gatherAll;

@@ -588,8 +588,8 @@ MDMap = MDMap_default
 }
 %ignore Domi::MDVector::operator=;
 %ignore Domi::MDVector::operator[];
-%ignore Domi::MDVector::getDataNonConst;
-%ignore Domi::MDVector::getData;
+%ignore Domi::MDVector::getDataNonConst(bool includePadding = true);
+%ignore Domi::MDVector::getData(bool includePadding = true) const;
 %include "Domi_MDVector.hpp"
 %teuchos_rcp(Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >)
