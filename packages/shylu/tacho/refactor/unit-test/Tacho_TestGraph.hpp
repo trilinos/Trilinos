@@ -11,8 +11,13 @@
 #include "TachoExp_MatrixMarket.hpp"
 
 #include "TachoExp_Graph.hpp"
+
 #if defined(HAVE_SHYLUTACHO_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
+#endif
+
+#if defined(HAVE_SHYLUTACHO_METIS)
+#include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
 using namespace Tacho::Experimental;
@@ -93,6 +98,34 @@ TEST( Graph, scotch ) {
   const auto perm = S.PermVector();
   const auto peri = S.InvPermVector();
 
+  for (ordinal_type i=0;i<m;++i) {
+    EXPECT_EQ(i, peri(perm(i)));
+  }
+  
+}
+#endif
+
+#if defined(HAVE_SHYLUTACHO_METIS)
+TEST( Graph, metis ) {
+  CrsMatrixBaseHostType Ah("A host");
+  Ah = MatrixMarket<ValueType>::read("test.mtx");
+
+  CrsMatrixBaseDeviceType Ad("A device");
+  Ad.createMirror(Ah);
+  Ad.copy(Ah);
+
+  Graph G(Ad);
+  GraphTools_Metis M(G);
+
+  M.reorder();
+
+  ///
+  /// perm and invperm should be properly setup 
+  ///
+  const auto perm = M.PermVector();
+  const auto peri = M.InvPermVector();
+
+  const ordinal_type m = G.NumRows();
   for (ordinal_type i=0;i<m;++i) {
     EXPECT_EQ(i, peri(perm(i)));
   }

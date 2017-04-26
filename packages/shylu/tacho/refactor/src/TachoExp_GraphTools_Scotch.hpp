@@ -17,8 +17,7 @@ namespace Tacho {
     class GraphTools_Scotch {
     public:
       typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
-      typedef Kokkos::View<size_type*,   host_exec_space> size_type_array;
+      typedef Kokkos::View<SCOTCH_Num*,host_exec_space> ordinal_type_array;
 
       enum : int { DefaultRandomSeed = -1 };
 
@@ -203,7 +202,7 @@ namespace Tacho {
         os << std::scientific;
 
         if (_is_ordered)
-          os << " -- Ordering -- " << std::endl
+          os << " -- Scotch Ordering -- " << std::endl
              << "    CBLK   = " << _cblk << std::endl
              << "  PERM     PERI     RANG     TREE" << std::endl;
         else 
