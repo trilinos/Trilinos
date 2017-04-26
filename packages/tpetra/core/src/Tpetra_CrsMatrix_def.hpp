@@ -61,6 +61,8 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_Environment.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -5985,9 +5987,9 @@ namespace Tpetra {
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
       const bool locallyCorrect =
-        packCrsMatrix (errStr, exports, numPacketsPerLID,
-                       constantNumPackets, exportLIDs, this->lclMatrix_,
-                       lclColMap, myRank, dist);
+        packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                       exports, numPacketsPerLID, constantNumPackets,
+                       exportLIDs, myRank, dist);
       const int lclOK = locallyCorrect ? 1 : 0;
       int gblOK = 1; // output argument
       if (! colMap.getComm ().is_null ()) {
@@ -6006,10 +6008,9 @@ namespace Tpetra {
         }
       }
 #else // NOT HAVE_TPETRA_DEBUG
-      (void) packCrsMatrix (errStr, exports, numPacketsPerLID,
-                            constantNumPackets, exportLIDs,
-                            this->lclMatrix_, lclColMap, myRank,
-                            dist);
+      (void) packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                            exports, numPacketsPerLID, constantNumPackets,
+                            exportLIDs, myRank, dist);
 #endif // HAVE_TPETRA_DEBUG
     }
     else {
@@ -6132,83 +6133,20 @@ namespace Tpetra {
                           const GlobalOrdinal cols[],
                           const Tpetra::CombineMode combineMode)
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::View;
-    typedef impl_scalar_type IST;
-    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef device_type DD;
-    typedef Kokkos::Device<typename View<LO*, DD>::HostMirror::execution_space, Kokkos::HostSpace> HD;
     //const char tfecfFuncName[] = "combineGlobalValuesRaw: ";
 
-    if (this->isStaticGraph ()) {
-      // INSERT doesn't make sense for a static graph, since you
-      // aren't allowed to change the structure of the graph.
-      // However, all the other combine modes work.
+    // mfh 23 Mar 2017: This branch is not thread safe in a debug
+    // build, due to use of Teuchos::ArrayView; see #229.
+    const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
+    Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+    Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
 
-      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
-      if (static_cast<LO> (rowInfo.localRow) != lclRow) {
-        return static_cast<LO> (0); // invalid local row
-      }
-      auto curVals = this->getRowViewNonConst (rowInfo);
-
-      if (combineMode == ADD) {
-        View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : cols, numEnt);
-        // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // unpack different rows, so we don't need atomic updates.  If
-        // we change that in the future, we'll need to change this.
-        constexpr bool atomic = false;
-        return this->staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
-                                                                              curVals,
-                                                                              indsIn,
-                                                                              valsIn,
-                                                                              atomic);
-      }
-      else if (combineMode == REPLACE) {
-        typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
-        typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
-        typedef typename std::decay<decltype (curVals) >::type OSVT; // output scalar view type
-        ISVT valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        GIVT indsIn (numEnt == 0 ? NULL : cols, numEnt);
-
-        // // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // // unpack different rows, so we don't need atomic updates.  If
-        // // we change that in the future, we'll need to change this.
-        // constexpr bool atomic = false;
-        return this->staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
-                                                                                   curVals,
-                                                                                   indsIn,
-                                                                                   valsIn);
-      }
-      else {
-        // mfh 23 Mar 2017: This branch is not thread safe in a debug
-        // build, due to use of Teuchos::ArrayView; see #229.
-        const GO gblRow = this->staticGraph_->rowMap_->getGlobalElement (lclRow);
-        Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-        Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-        // FIXME (mfh 23 Mar 2017) This is a work-around for less
-        // common combine modes.  combineGlobalValues throws on error;
-        // it does not return an error code.  Thus, if it returns, it
-        // succeeded.
-        this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-        return numEnt;
-      }
-    }
-    else { // no static graph
-      // mfh 23 Mar 2017: This branch is not thread safe in a debug
-      // build, due to use of Teuchos::ArrayView; see #229.
-      const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
-      Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-      Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-      // FIXME (mfh 23 Mar 2017) This is a work-around for less common
-      // combine modes.  combineGlobalValues throws on error; it does
-      // not return an error code.  Thus, if it returns, it succeeded.
-      this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-      return numEnt;
-    }
+    // FIXME (mfh 23 Mar 2017) This is a work-around for less common
+    // combine modes.  combineGlobalValues throws on error; it does
+    // not return an error code.  Thus, if it returns, it succeeded.
+    this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+    return numEnt;
   }
 
 
@@ -6369,8 +6307,38 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const char>& imports,
                         const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                         size_t constantNumPackets,
-                        Distributor & /* distor */,
-                        CombineMode combineMode)
+                        Distributor & distor,
+                        CombineMode combineMode,
+                        const bool atomic)
+  {
+    if (this->isStaticGraph()) {
+      using Details::unpackCrsMatrixAndCombine;
+      const map_type& colMap = * (this->staticGraph_->colMap_);
+      const auto lclColMap = colMap.getLocalMap ();
+      std::unique_ptr<std::string> errStr;
+      bool locallyCorrect = unpackCrsMatrixAndCombine (
+          this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
+          numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
+      if (!locallyCorrect) {
+        throw errStr->c_str();
+      }
+    }
+    else {
+      this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,
+                                           constantNumPackets, distor, combineMode);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  unpackAndCombineImplNonStatic (
+      const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+      const Teuchos::ArrayView<const char>& imports,
+      const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor & /* distor */,
+      CombineMode combineMode)
   {
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
