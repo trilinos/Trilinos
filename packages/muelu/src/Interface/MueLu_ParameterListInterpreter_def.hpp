@@ -693,7 +693,6 @@ namespace MueLu {
       manager.SetFactory("R", Teuchos::null);
     }
 
-
     // === RAP ===
     UpdateFactoryManager_RAP(paramList,defaultList,manager,levelID,keeps);
 
@@ -708,14 +707,6 @@ namespace MueLu {
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
 
-	/*      if (paramList.isParameter("semicoarsen: number of levels")) {
-          RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
-          tf->SetFactory("Chosen P", manager.GetFactory("P"));
-          tf->AddCoordTransferFactory(semicoarsenFactory);
-          tf->AddCoordTransferFactory(coords);
-          manager.SetFactory("Coordinates", tf);
-
-	  }*/
 	RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
