@@ -215,7 +215,12 @@ namespace MueLu {
     // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					  int levelID, std::vector<keep_pair>& keeps) const;
-
+    void UpdateFactoryManager_PCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+				       int levelID, std::vector<keep_pair>& keeps) const;
+    /*    void UpdateFactoryManager_SA(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+				 int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Emin(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+    int levelID, std::vector<keep_pair>& keeps) const;*/
 
     bool useCoordinates_;
     //@}
