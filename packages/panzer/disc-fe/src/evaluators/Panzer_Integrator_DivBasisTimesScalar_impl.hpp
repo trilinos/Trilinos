@@ -70,7 +70,7 @@ PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->requiresOrientations(),std::logic_error,
                              "Integration_DivBasisTimesScalar: Basis of type \"" << basis->name() << "\" should require orientations. So we are throwing.");
 
-  scalar = PHX::MDField<ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
+  scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
                                           p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
 
   this->addEvaluatedField(residual);
@@ -84,12 +84,12 @@ PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
 
     for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
          name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -106,7 +106,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
   this->utils.setFieldData(scalar,fm);
   // this->utils.setFieldData(dof_orientation,fm);
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
@@ -127,7 +127,7 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       ScalarT tmpVar = 1.0;
-      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
            field != field_multipliers.end(); ++field)
         tmpVar = tmpVar * (*field)(cell,qp);  
 

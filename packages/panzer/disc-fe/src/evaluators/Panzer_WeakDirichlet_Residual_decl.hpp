@@ -62,11 +62,11 @@ PANZER_EVALUATOR_CLASS(WeakDirichletResidual)
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux_plus_pen;
-  PHX::MDField<ScalarT> flux; // i.e., -K \nabla u
-  PHX::MDField<ScalarT> normal;
-  PHX::MDField<ScalarT> sigma;
-  PHX::MDField<ScalarT> dof;
-  PHX::MDField<ScalarT> value;
+  PHX::MDField<const ScalarT> flux; // i.e., -K \nabla u
+  PHX::MDField<const ScalarT> normal;
+  PHX::MDField<const ScalarT> sigma;
+  PHX::MDField<const ScalarT> dof;
+  PHX::MDField<const ScalarT> value;
 
   std::string basis_name;
   std::size_t basis_index;

@@ -55,7 +55,7 @@ namespace {
 template <typename ScalarT,typename ArrayT>
 struct evaluateGrad_withSens {
   evaluateGrad_withSens (PHX::MDField<ScalarT> dof_grad,
-      PHX::MDField<ScalarT,Cell,Point> dof_value,
+      PHX::MDField<const ScalarT,Cell,Point> dof_value,
       const ArrayT  grad_basis) :
         dof_grad_(dof_grad),dof_value_(dof_value),grad_basis_(grad_basis)
       {}
@@ -77,7 +77,7 @@ struct evaluateGrad_withSens {
     }
   }
   PHX::MDField<ScalarT>  dof_grad_;
-  PHX::MDField<ScalarT,Cell,Point>  dof_value_;
+  PHX::MDField<const ScalarT,Cell,Point>  dof_value_;
   const ArrayT grad_basis_;
 
 };

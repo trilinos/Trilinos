@@ -52,7 +52,7 @@ namespace panzer {
 
 PANZER_EVALUATOR_CLASS(TestScatter)
   PHX::MDField<ScalarT,Cell,NODE> scatter_value;
-  PHX::MDField<ScalarT,Cell,NODE> value;
+  PHX::MDField<const ScalarT,Cell,NODE> value;
   int localOffset;
 
   std::size_t num_nodes;

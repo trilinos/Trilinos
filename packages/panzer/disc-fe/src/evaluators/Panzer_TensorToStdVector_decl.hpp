@@ -64,7 +64,7 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(TensorToStdVector)
 
     //! Tensor (to be distributed to vector)
-    PHX::MDField<ScalarT,Cell,Point,Dim,Dim> tensor_field;
+    PHX::MDField<const ScalarT,Cell,Point,Dim,Dim> tensor_field;
 
     //! Vector (to be filled)
     std::vector<PHX::MDField<ScalarT,Cell,Point,Dim> > vector_fields;

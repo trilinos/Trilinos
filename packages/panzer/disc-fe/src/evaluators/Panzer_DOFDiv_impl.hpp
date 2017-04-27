@@ -57,7 +57,7 @@ template<typename ScalarT,typename ArrayT>
 void evaluateDiv_withSens(int numCells,
                           int basis_dimension,
                           PHX::MDField<ScalarT,Cell,IP> & dof_div, 
-                          PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                          PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                           const ArrayT & div_basis)
 { 
   if(numCells>0) {

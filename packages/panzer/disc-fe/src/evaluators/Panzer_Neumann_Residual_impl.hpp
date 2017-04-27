@@ -70,8 +70,8 @@ PHX_EVALUATOR_CTOR(NeumannResidual,p)
 
   residual = PHX::MDField<ScalarT>(residual_name, basis->functional);
   normal_dot_flux = PHX::MDField<ScalarT>(normal_dot_flux_name, ir->dl_scalar);
-  flux = PHX::MDField<ScalarT>(flux_name, ir->dl_vector);
-  normal = PHX::MDField<ScalarT>(normal_name, ir->dl_vector);
+  flux = PHX::MDField<const ScalarT>(flux_name, ir->dl_vector);
+  normal = PHX::MDField<const ScalarT>(normal_name, ir->dl_vector);
 
   this->addEvaluatedField(residual);
   this->addEvaluatedField(normal_dot_flux);

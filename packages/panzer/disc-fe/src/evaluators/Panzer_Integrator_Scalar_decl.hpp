@@ -70,9 +70,9 @@ PANZER_EVALUATOR_CLASS(Integrator_Scalar)
   
   PHX::MDField<ScalarT> integral;  // result
     
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+  PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_qp;
   std::size_t quad_index;

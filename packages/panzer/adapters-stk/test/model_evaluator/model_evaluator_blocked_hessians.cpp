@@ -134,12 +134,10 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_blocked_hessians, d2g_dx2)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -266,11 +264,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_blocked_hessians, d2g_dp2)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -393,12 +389,9 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_blocked_hessians, d2g_dpdx)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -522,12 +515,10 @@ namespace panzer {
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_blocked_hessians, d2g_dxdp)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -657,7 +648,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -759,7 +749,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -863,7 +852,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -967,7 +955,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;

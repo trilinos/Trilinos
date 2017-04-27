@@ -500,7 +500,7 @@ void testAssociatedNeighbors(const STKConnManager<int>& connMngr,
 {
   for (int i = 0; i < static_cast<int>(vals.size()); ++i)
   {
-    const std::size_t sz = connMngr.getAssociatedNeighbors(vals[i][0]).size();
+    const int sz(connMngr.getAssociatedNeighbors(vals[i][0]).size());
     TEST_EQUALITY(sz, vals[i][1]);
     if (sz)
       TEST_EQUALITY(connMngr.getAssociatedNeighbors(vals[i][0])[0], vals[i][2]);  

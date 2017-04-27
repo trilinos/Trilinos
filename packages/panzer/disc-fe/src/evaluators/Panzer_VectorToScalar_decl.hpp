@@ -56,7 +56,7 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(VectorToScalar)
   
   std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
-  PHX::MDField<ScalarT,Cell,Point,Dim> vector_field;
+  PHX::MDField<const ScalarT,Cell,Point,Dim> vector_field;
 
 PANZER_EVALUATOR_CLASS_END
 

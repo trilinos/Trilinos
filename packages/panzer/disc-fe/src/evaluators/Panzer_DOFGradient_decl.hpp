@@ -54,7 +54,7 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(DOFGradient)
   
   // <cell,point>
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   // <cell,point,dim>
   PHX::MDField<ScalarT> dof_gradient;
 
