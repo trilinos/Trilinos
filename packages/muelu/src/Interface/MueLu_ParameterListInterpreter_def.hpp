@@ -448,9 +448,6 @@ namespace MueLu {
         "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
 
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
-    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
-
     // Only some combinations of reuse and multigrid algorithms are tested, all
     // other are considered invalid at the moment
     if (reuseType == "none" || reuseType == "S" || reuseType == "RP" || reuseType == "RAP") {
@@ -496,6 +493,8 @@ namespace MueLu {
     }
  
     // === Prolongation ===
+    // NOTE: None of the UpdateFactoryManager routines called here check the multigridAlgo.  This is intentional, to allow for
+    // reuse of components underneath.  Thus, the multigridAlgo must be checked here.
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
                                && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
@@ -513,34 +512,7 @@ namespace MueLu {
       // Unsmoothed aggregation
       manager.SetFactory("P", manager.GetFactory("Ptent"));
     } else if (multigridAlgo == "sa") {
-      // Smoothed aggregation
-      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
-      ParameterList Pparams;
-      if(paramList.isSublist("matrixmatrix: kernel params"))   Pparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
-      if(defaultList.isSublist("matrixmatrix: kernel params")) Pparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
-      P->SetParameterList(Pparams);
-
-      // Filtering
-      if (useFiltering) {
-        MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
-        ParameterList fParams;
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
-        filterFactory->SetParameterList(fParams);
-        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
-        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
-        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
-        P->SetFactory("A", filterFactory);
-      }
-
-      P->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-
-      if (reuseType == "tP" && !filteringChangesMatrix)
-        keeps.push_back(keep_pair("AP reuse data", P.get()));
-
+      UpdateFactoryManager_SA(paramList,defaultList,manager,levelID,keeps);
     } else if (multigridAlgo == "emin") {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
       TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
@@ -1341,75 +1313,89 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
   // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_PCoarsen(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
-  MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
-  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-  bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
 #ifdef HAVE_MUELU_INTREPID2
-  if(multigridAlgo == "pcoarsen") {
-    // This only makes sense to invoke from the default list.
-    if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
-      // P-Coarsening by schedule (new interface)
-      // NOTE: levelID represents the *coarse* level in this case
-      Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
-      std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
-      
-      if(levelID >= (int)pcoarsen_schedule.size()) {
-	// Smoothed aggregation
-	// NOTE: This is copied directly from above.  Not sure this is the best idea.  We should really just call the SA function here
-	MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
-	ParameterList Pparams;
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
-	P->SetParameterList(Pparams);
-	// Filtering
-	if (useFiltering) {
-	  MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
-	  ParameterList fParams;
-	  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
-	  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
-	  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
-	  filterFactory->SetParameterList(fParams);
-	  filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
-	  // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
-	  filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
-	  P->SetFactory("A", filterFactory);
-	}
-	P->SetFactory("P", manager.GetFactory("Ptent"));
-	manager.SetFactory("P", P);
-	
-	if (reuseType == "tP" && !filteringChangesMatrix)
-	  keeps.push_back(keep_pair("AP reuse data", P.get()));
-      }
-      else {
-	// P-Coarsening
-	ParameterList Pparams;
-	RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
-	std::string hi;
-	std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
-	if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
-	else hi = lo;
-	Pparams.set("pcoarsen: hi basis",hi);
-	Pparams.set("pcoarsen: lo basis",lo);
-	P->SetParameterList(Pparams);
-	manager.SetFactory("P", P);
-	// Add special nullspace handling
-	Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace",manager.GetFactory("P"));
-      }
+  // This only makes sense to invoke from the default list.
+  if(defaultList.isParameter("pcoarsen: schedule") && defaultList.isParameter("pcoarsen: element")){
+    // P-Coarsening by schedule (new interface)
+    // NOTE: levelID represents the *coarse* level in this case
+    Teuchos::Array<int> pcoarsen_schedule = Teuchos::getArrayFromStringParameter<int>(defaultList,"pcoarsen: schedule");
+    std::string pcoarsen_element = defaultList.get<std::string>("pcoarsen: element");
+    
+    if(levelID >= (int)pcoarsen_schedule.size()) {
+      // Past the p-coarsening levels, we do Smoothed Aggregation
+      // NOTE: We should probably consider allowing other options past p-coarsening
+      UpdateFactoryManager_SA(paramList,defaultList, manager,levelID,keeps);
     }
     else {
-      // P-Coarsening by manual specification (old interface)
+      // P-Coarsening
       ParameterList Pparams;
       RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
+      std::string hi;
+      std::string lo = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID]);
+      if(levelID!=0) hi = pcoarsen_element + std::to_string(pcoarsen_schedule[levelID-1]);
+      else hi = lo;
+      Pparams.set("pcoarsen: hi basis",hi);
+      Pparams.set("pcoarsen: lo basis",lo);
       P->SetParameterList(Pparams);
       manager.SetFactory("P", P);
       // Add special nullspace handling
       Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace",manager.GetFactory("P"));
     }
   }
-}
+  else {
+    // P-Coarsening by manual specification (old interface)
+    ParameterList Pparams;
+    RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: hi basis", std::string, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "pcoarsen: lo basis", std::string, Pparams);
+    P->SetParameterList(Pparams);
+    manager.SetFactory("P", P);
+    // Add special nullspace handling
+    Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace",manager.GetFactory("P"));
+  }
+
 #endif
+}
+
+
+  // =====================================================================================================
+  // ============================== Algorithm: Smoothed Aggregation ======================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_SA(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
+
+  // Smoothed aggregation
+  MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
+  ParameterList Pparams;
+  if(paramList.isSublist("matrixmatrix: kernel params"))   Pparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+  if(defaultList.isSublist("matrixmatrix: kernel params")) Pparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+  P->SetParameterList(Pparams);
+  
+  // Filtering
+  if (useFiltering) {
+    MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
+    ParameterList fParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+    filterFactory->SetParameterList(fParams);
+    filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+    // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+    filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
+    P->SetFactory("A", filterFactory);
+  }
+  
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+  
+  if (reuseType == "tP" && !filteringChangesMatrix)
+    keeps.push_back(keep_pair("AP reuse data", P.get()));    
+} 
+
 
 
 #undef MUELU_SET_VAR_2LIST
