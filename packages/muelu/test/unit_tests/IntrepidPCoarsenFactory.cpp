@@ -86,7 +86,7 @@
 namespace MueLuTests {
 
   /**** some helper methods and classes by Nate ****/
-#ifdef HAVE_INTREPID2_DEBUG
+#ifndef TEST_MORE_COMBINATIONS
   static const int MAX_LINE_DEGREE = 10;
   static const int MAX_QUAD_DEGREE = 10;
   static const int MAX_HEX_DEGREE = 4;
