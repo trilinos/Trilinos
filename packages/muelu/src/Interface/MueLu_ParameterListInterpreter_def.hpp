@@ -224,10 +224,10 @@ namespace MueLu {
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
-  if (!useKokkos) varName = rcp(new oldFactory()); \
+  if (!useKokkos_) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
 #define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
-  if (!useKokkos) varName = rcp(new oldFactory()); \
+  if (!useKokkos_) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
 #endif
 
@@ -244,6 +244,10 @@ namespace MueLu {
       // Working with a modifiable list is much much easier than with original one
       paramList = constParamList;
     }
+
+    // Check for Kokkos
+    MUELU_SET_VAR_2LIST(constParamList,constParamList, "use kokkos refactor", bool, useKokkos);
+    useKokkos_ = useKokkos;
 
     // Translate cycle type parameter
     if (paramList.isParameter("cycle type")) {
@@ -462,16 +466,10 @@ namespace MueLu {
       this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
     }
 
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "use kokkos refactor", bool, useKokkos);
-    (void) useKokkos;
-
     // == Non-serializable data ===
     // Check both the parameter and the type
     bool have_userP = false,have_userCO = false; //, have_userA = false, have_userR = false, have_userNS = false;
-      //    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
     if (paramList.isParameter("P")           && !paramList.get<RCP<Matrix> >     ("P")          .is_null()) have_userP  = true;
-    //    if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
-    //    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
     // == Smoothers ==
@@ -483,14 +481,8 @@ namespace MueLu {
     // === Aggregation ===
     UpdateFactoryManager_Aggregation_TentativeP(paramList,defaultList,manager,levelID,keeps);
     
-    // Nullspace
-    MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
-    bool have_userNS = false;
-    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
-    if (!have_userNS) {
-      nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
-      manager.SetFactory("Nullspace", nullSpace);
-    }
+    // === Nullspace ===
+    UpdateFactoryManager_Nullspace(paramList,defaultList,manager,levelID,keeps);
  
     // === Prolongation ===
     // NOTE: None of the UpdateFactoryManager routines called here check the multigridAlgo.  This is intentional, to allow for
@@ -1052,7 +1044,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
 }
 
   // =====================================================================================================
-  // ======================================= Repartition ==============================================
+  // ========================================= Repartition ==============================================
   // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Repartition(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
@@ -1210,6 +1202,20 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
 #endif
   }
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Nullspace(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  // Nullspace
+  MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
+  bool have_userNS = false;
+  if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
+  if (!have_userNS) {
+    nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
+    manager.SetFactory("Nullspace", nullSpace);
+  }
+}
+ 
+
   // =====================================================================================================
   // ================================= Algorithm: SemiCoarsening =========================================
   // =====================================================================================================
@@ -1264,6 +1270,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
       manager.SetFactory("Coordinates", tf);      
     }
 }
+
 
   // =====================================================================================================
   // ================================== Algorithm: P-Coarsening ==========================================

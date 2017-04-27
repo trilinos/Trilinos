@@ -93,13 +93,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFactoryNonConst(const std::string& varName) {
-    if (factoryTable_.count(varName)) {
-      // Search user provided factories
-      return Teuchos::rcp_const_cast<FactoryBase>(factoryTable_.find(varName)->second);
-    }
-
-    // Search/create default factory for this name
-    return  Teuchos::rcp_const_cast<FactoryBase>(GetDefaultFactory(varName));
+    return Teuchos::rcp_const_cast<FactoryBase>(GetFactory(varName));
   }
 
 

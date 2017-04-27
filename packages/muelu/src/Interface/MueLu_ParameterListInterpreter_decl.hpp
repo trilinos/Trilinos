@@ -211,6 +211,8 @@ namespace MueLu {
 				  int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+					int levelID, std::vector<keep_pair>& keeps) const;
 
     // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
@@ -227,6 +229,7 @@ namespace MueLu {
 				     int levelID, std::vector<keep_pair>& keeps) const;
     
     bool useCoordinates_;
+    bool useKokkos_;
     //@}
 
     //! Factory interpreter stuff
