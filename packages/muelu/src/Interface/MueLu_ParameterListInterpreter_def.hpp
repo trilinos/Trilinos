@@ -470,10 +470,10 @@ namespace MueLu {
 
     // == Non-serializable data ===
     // Check both the parameter and the type
-    bool have_userA = false, have_userP = false, have_userR = false, have_userCO = false; //have_userNS = false, 
-    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
+    bool have_userP = false,have_userCO = false; //, have_userA = false, have_userR = false, have_userNS = false;
+      //    if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
     if (paramList.isParameter("P")           && !paramList.get<RCP<Matrix> >     ("P")          .is_null()) have_userP  = true;
-    if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
+    //    if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
     //    if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
@@ -665,33 +665,7 @@ namespace MueLu {
     UpdateFactoryManager_SemiCoarsen(paramList,defaultList,manager,levelID,keeps);
 
     // === Restriction ===
-    if (!this->implicitTranspose_) {
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
-      if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
-        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
-        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
-        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
-        isSymmetric = true;
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
-            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
-            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
-            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
-
-      if (have_userR) {
-        manager.SetFactory("R", NoFactory::getRCP());
-      } else {
-        RCP<Factory> R;
-        if (isSymmetric)  R = rcp(new TransPFactory());
-        else              R = rcp(new GenericRFactory());
-
-        R->SetFactory("P", manager.GetFactory("P"));
-        manager.SetFactory("R", R);
-      }
-
-    } else {
-      manager.SetFactory("R", Teuchos::null);
-    }
+    UpdateFactoryManager_Restriction(paramList,defaultList,manager,levelID,keeps);
 
     // === RAP ===
     UpdateFactoryManager_RAP(paramList,defaultList,manager,levelID,keeps);
@@ -1255,9 +1229,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_RAP(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {												 
-  bool have_userA = false, have_userCO = false;
+  bool have_userA = false;
     if (paramList.isParameter("A")           && !paramList.get<RCP<Matrix> >     ("A")          .is_null()) have_userA  = true;
-    if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
@@ -1373,6 +1346,45 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
       manager.SetFactory("Coordinates", tf);      
     }
 }
+
+  // =====================================================================================================
+  // ======================================= Restriction ==============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Restriction(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+  bool have_userR=false;
+  if (paramList.isParameter("R")           && !paramList.get<RCP<Matrix> >     ("R")          .is_null()) have_userR  = true;
+   // === Restriction ===
+    if (!this->implicitTranspose_) {
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
+      if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
+        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
+        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
+        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
+        isSymmetric = true;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
+            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
+            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
+            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
+
+      if (have_userR) {
+        manager.SetFactory("R", NoFactory::getRCP());
+      } else {
+        RCP<Factory> R;
+        if (isSymmetric)  R = rcp(new TransPFactory());
+        else              R = rcp(new GenericRFactory());
+
+        R->SetFactory("P", manager.GetFactory("P"));
+        manager.SetFactory("R", R);
+      }
+
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
+}
+
 
 #undef MUELU_SET_VAR_2LIST
 #undef MUELU_TEST_AND_SET_VAR

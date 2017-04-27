@@ -198,7 +198,7 @@ namespace MueLu {
     void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                               int levelID, std::vector<keep_pair>& keeps) const;
 
-    // Various sub-functions for UpdateFactoryManager
+    // "Generic components" for UpdateFactoryManager
     void UpdateFactoryManager_Smoothers(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_CoarseSolvers(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
@@ -206,9 +206,12 @@ namespace MueLu {
     void UpdateFactoryManager_Aggregation_TentativeP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 						     int levelID, std::vector<keep_pair>& keeps) const;
 
+    void UpdateFactoryManager_Restriction(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+					int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 				  int levelID, std::vector<keep_pair>& keeps) const;
 
+    // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					  int levelID, std::vector<keep_pair>& keeps) const;
 
