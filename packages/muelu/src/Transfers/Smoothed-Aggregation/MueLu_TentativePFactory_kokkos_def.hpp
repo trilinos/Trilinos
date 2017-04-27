@@ -217,9 +217,6 @@ namespace MueLu {
       }
     };
 
-
-    typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
-
     // local QR decomposition
     template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
     class LocalQRDecompFunctor {
@@ -228,8 +225,10 @@ namespace MueLu {
       typedef GOType GO;
       typedef SCType SC;
 
-      typedef Kokkos::View<SC**,Kokkos::MemoryUnmanaged> shared_matrix;
-      typedef Kokkos::View<SC*,Kokkos::MemoryUnmanaged> shared_vector;
+      typedef typename DeviceType::execution_space execution_space;
+
+      typedef Kokkos::View<SC**,execution_space,Kokkos::MemoryUnmanaged> shared_matrix;
+      typedef Kokkos::View<SC* ,execution_space,Kokkos::MemoryUnmanaged> shared_vector;
 
     private:
 
@@ -258,7 +257,7 @@ namespace MueLu {
         { }
 
       KOKKOS_INLINE_FUNCTION
-      void operator() ( const team_member & thread, size_t& nnz) const {
+      void operator() ( const typename Kokkos::TeamPolicy<execution_space>::member_type & thread, size_t& nnz) const {
         auto agg = thread.league_rank();
 
         // size of aggregate: number of DOFs in aggregate
@@ -885,7 +884,8 @@ namespace MueLu {
       // Each team handles a slice of the data associated with one aggregate
       // and performs a local QR decomposition
       const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
-      Kokkos::parallel_reduce( policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
+      const Kokkos::TeamPolicy<execution_space> testtp(numAggregates,1);
+      Kokkos::parallel_reduce(testtp, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
       for (int i = 0; i < statusHost.size(); i++)
