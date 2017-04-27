@@ -114,7 +114,8 @@ namespace panzer_stk {
                               #endif
                               writeCoordinates,
                               writeTopo,
-                              auxGlobalIndexer
+                              auxGlobalIndexer,
+                              useCoordinates
                               );
 #endif
 
@@ -126,7 +127,8 @@ namespace panzer_stk {
                               #endif
                               writeCoordinates,
                               writeTopo,
-                              auxGlobalIndexer
+                              auxGlobalIndexer,
+                              useCoordinates
                               );
 
     // should never reach this
