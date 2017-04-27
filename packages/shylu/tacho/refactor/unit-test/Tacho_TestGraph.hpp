@@ -20,6 +20,8 @@
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
+#include "TachoExp_GraphTools_CAMD.hpp"
+
 using namespace Tacho::Experimental;
 
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
@@ -130,6 +132,49 @@ TEST( Graph, metis ) {
     EXPECT_EQ(i, peri(perm(i)));
   }
   
+}
+#endif
+
+#if defined(HAVE_SHYLUTACHO_SCOTCH)
+TEST( Graph, camd ) {
+
+  CrsMatrixBaseHostType Ah("A host");
+  Ah = MatrixMarket<ValueType>::read("test.mtx");
+
+  CrsMatrixBaseDeviceType Ad("A device");
+  Ad.createMirror(Ah);
+  Ad.copy(Ah);
+
+  Graph G(Ad);
+  GraphTools_Scotch S(G);
+
+  const ordinal_type m = G.NumRows();
+  S.setTreeLevel(log2(m));
+  S.setStrategy( SCOTCH_STRATSPEED
+                 | SCOTCH_STRATSPEED
+                 | SCOTCH_STRATLEVELMAX
+                 | SCOTCH_STRATLEVELMIN
+                 | SCOTCH_STRATLEAFSIMPLE
+                 | SCOTCH_STRATSEPASIMPLE
+                 );
+  S.reorder();
+
+  GraphTools_CAMD C(G);
+  C.setConstraint(S.NumBlocks(), 
+                  S.RangeVector(), 
+                  S.InvPermVector());
+  C.reorder();
+
+  const auto perm = C.PermVector();
+  const auto peri = C.InvPermVector();
+  
+  ///
+  /// perm and invperm should be properly setup 
+  ///
+  for (ordinal_type i=0;i<m;++i) {
+    EXPECT_EQ(i, peri(perm(i)));
+  }
+
 }
 #endif
 
