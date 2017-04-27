@@ -47,12 +47,11 @@
 #include "PyTrilinos_PythonException.hpp"
 
 // Epetra includes
-// #include "Epetra_SerialComm.h"
-// #include "Epetra_MultiVector.h"
-// #include "Epetra_Vector.h"
-// #include "Epetra_FEVector.h"
-// #include "Epetra_IntVector.h"
-#include "PyTrilinos_Epetra_Headers.hpp"
+#include "Epetra_SerialComm.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_IntVector.h"
 
 %}
 

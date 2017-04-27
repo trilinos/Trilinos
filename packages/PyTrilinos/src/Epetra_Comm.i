@@ -44,12 +44,11 @@
 
 %{
 // Epetra includes
-// #include "Epetra_Object.h"
-// #include "Epetra_Comm.h"
-// #include "Epetra_SerialComm.h"
-// #include "Epetra_Distributor.h"
-// #include "Epetra_SerialDistributor.h"
-#include "PyTrilinos_Epetra_Headers.hpp"
+#include "Epetra_Object.h"
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
+#include "Epetra_Distributor.h"
+#include "Epetra_SerialDistributor.h"
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"

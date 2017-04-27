@@ -99,7 +99,6 @@ exAmesos_Factory.py.
 #endif
 
 // Teuchos includes
-//#include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"

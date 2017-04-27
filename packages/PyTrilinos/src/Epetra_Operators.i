@@ -43,20 +43,18 @@
 // @HEADER
 
 %{
-// #include "Epetra_Operator.h"
-// #include "Epetra_InvOperator.h"
-// #include "Epetra_RowMatrix.h"
-// #include "Epetra_BasicRowMatrix.h"
-// #include "Epetra_CrsMatrix.h"
-// #include "Epetra_FECrsMatrix.h"
-// #include "Epetra_CrsSingletonFilter.h"
-// #include "Epetra_VbrMatrix.h"
-// #include "Epetra_FEVbrMatrix.h"
-// #include "Epetra_JadMatrix.h"
-// #include "Epetra_LinearProblem.h"
-// #include "Epetra_Util.h"
-#include "PyTrilinos_Epetra_Headers.hpp"
-
+#include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_CrsSingletonFilter.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Util.h"
 #include "PyTrilinos_Epetra_Util.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 

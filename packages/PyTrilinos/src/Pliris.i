@@ -75,16 +75,7 @@ python version of the Pliris package supports the following class:
 #ifdef HAVE_EPETRA
 #undef HAVE_INTTYPES_H
 #undef HAVE_STDINT_H
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-// #include "Epetra_MultiVector.h"
-// #include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy includes
 #define NO_IMPORT_ARRAY

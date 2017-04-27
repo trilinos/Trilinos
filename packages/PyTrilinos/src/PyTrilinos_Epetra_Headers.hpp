@@ -40,16 +40,23 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef PYTRILINOS_EPETRA_HEADERS_
+#define PYTRILINOS_EPETRA_HEADERS_
+
 // Configuration
 #include "PyTrilinos_config.h"
 #include "Epetra_ConfigDefs.h"
 
 // Epetra includes
 #include "Epetra_DLLExportMacro.h"
+#include "Epetra_Time.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_BasicDirectory.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
@@ -57,6 +64,7 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_CrsSingletonFilter.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
@@ -66,9 +74,12 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDistributor.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiDistributor.h"
 #endif
 #include "PyTrilinos_LinearProblem.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
+
+#endif
