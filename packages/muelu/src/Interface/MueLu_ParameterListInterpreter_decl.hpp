@@ -205,11 +205,12 @@ namespace MueLu {
 					    int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Aggregation_TentativeP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 						     int levelID, std::vector<keep_pair>& keeps) const;
-
     void UpdateFactoryManager_Restriction(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 				  int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+					int levelID, std::vector<keep_pair>& keeps) const;
 
     // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

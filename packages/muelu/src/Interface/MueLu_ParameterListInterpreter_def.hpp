@@ -697,160 +697,11 @@ namespace MueLu {
     if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
 
-
  
     // === Repartitioning ===
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    if (enableRepart) {
-#ifdef HAVE_MPI
-      // Short summary of the issue: RebalanceTransferFactory shares ownership
-      // of "P" with SaPFactory, and therefore, changes the stored version.
-      // That means that if SaPFactory generated P, and stored it on the level,
-      // then after rebalancing the value in that storage changed. It goes
-      // against the concept of factories (I think), that every factory is
-      // responsible for its own objects, and they are immutable outside.
-      //
-      // In reuse, this is what happens: as we reuse Importer across setups,
-      // the order of factories changes, and coupled with shared ownership
-      // leads to problems.
-      // *First setup*
-      //    SaP               builds     P [and stores it]
-      //    TransP            builds     R [and stores it]
-      //    RAP               builds     A [and stores it]
-      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (*)
-      //    RebalanceTransfer rebalances R
-      //    RebalanceAc       rebalances A
-      // *Second setup* ("RP" reuse)
-      //    RebalanceTransfer rebalances P [which is incorrect due to (*)]
-      //    RebalanceTransfer rebalances R
-      //    RAP               builds     A [which is incorrect due to (*)]
-      //    RebalanceAc       rebalances A [which throws due to map inconsistency]
-      //    ...
-      // *Second setup* ("tP" reuse)
-      //    SaP               builds     P [and stores it]
-      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (**)
-      //    TransP            builds     R [which is incorrect due to (**)]
-      //    RebalanceTransfer rebalances R
-      //    ...
-      //
-      // Couple solutions to this:
-      //    1. [implemented] Requre "tP" and "PR" reuse to only be used with
-      //       implicit rebalancing.
-      //    2. Do deep copy of P, and changed domain map and importer there.
-      //       Need to investigate how expensive this is.
-      TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
-                                 "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
+    UpdateFactoryManager_Repartition(paramList,defaultList,manager,levelID,keeps);
 
-      //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
-      //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
 
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
-      TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
-                                 "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
-
-      // RepartitionHeuristic
-      RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
-      ParameterList repartheurParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
-      repartheurFactory->SetParameterList(repartheurParams);
-      repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
-      manager.SetFactory("number of partitions", repartheurFactory);
-
-      // Partitioner
-      RCP<Factory> partitioner;
-      if (partName == "zoltan") {
-#ifdef HAVE_MUELU_ZOLTAN
-        partitioner = rcp(new ZoltanInterface());
-        // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-#else
-        throw Exceptions::RuntimeError("Zoltan interface is not available");
-#endif
-      } else if (partName == "zoltan2") {
-#ifdef HAVE_MUELU_ZOLTAN2
-        partitioner = rcp(new Zoltan2Interface());
-        ParameterList partParams;
-        RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
-        partParams.set("ParameterList", partpartParams);
-        partitioner->SetParameterList(partParams);
-#else
-        throw Exceptions::RuntimeError("Zoltan2 interface is not available");
-#endif
-      }
-      partitioner->SetFactory("A",           manager.GetFactory("A"));
-      partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
-      partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("Partition", partitioner);
-
-      // Repartitioner
-      RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
-      ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
-      repartFactory->SetParameterList(repartParams);
-      repartFactory->SetFactory("A",         manager.GetFactory("A"));
-      repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
-      repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
-      manager.SetFactory("Importer", repartFactory);
-      if (reuseType != "none" && reuseType != "S" && levelID)
-        keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
-
-      // Rebalanced A
-      RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
-      ParameterList rebAcParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
-      newA->SetParameterList(rebAcParams);
-      newA->SetFactory("A",         manager.GetFactory("A"));
-      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
-      manager.SetFactory("A", newA);
-
-      // Rebalanced P
-      RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
-      ParameterList newPparams;
-      newPparams.set("type",                           "Interpolation");
-      if (changedPRrebalance_)
-        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
-      newP->  SetParameterList(newPparams);
-      newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newP->  SetFactory("P",           manager.GetFactory("P"));
-      if (!paramList.isParameter("semicoarsen: number of levels"))
-        newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      else
-        newP->  SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
-      newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("P",           newP);
-      manager.SetFactory("Coordinates", newP);
-
-      // Rebalanced R
-      RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
-      ParameterList newRparams;
-      newRparams.set("type",                           "Restriction");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
-      if (changedPRrebalance_)
-        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      if (changedImplicitTranspose_)
-        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
-      newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
-      if (!this->implicitTranspose_) {
-        newR->SetFactory("R",              manager.GetFactory("R"));
-        manager.SetFactory("R",            newR);
-      }
-
-      // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
-      // level if a user does not do that. For all other levels it simply passes
-      // nullspace from a real factory to whoever needs it. If we don't use
-      // repartitioning, that factory is "TentativePFactory"; if we do, it is
-      // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
-      // the "Nullspace" of the manager
-      nullSpace->SetFactory("Nullspace", newP);
-#else
-      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
-#endif
-    }
     if ((reuseType == "RAP" || reuseType == "full") && levelID) {
       keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
       if (!this->implicitTranspose_)
@@ -1385,6 +1236,165 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
     }
 }
 
+  // =====================================================================================================
+  // ======================================= Repartition ==============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Repartition(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  // === Repartitioning ===
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
+  if (enableRepart) {
+#ifdef HAVE_MPI
+    // Short summary of the issue: RebalanceTransferFactory shares ownership
+    // of "P" with SaPFactory, and therefore, changes the stored version.
+    // That means that if SaPFactory generated P, and stored it on the level,
+    // then after rebalancing the value in that storage changed. It goes
+    // against the concept of factories (I think), that every factory is
+    // responsible for its own objects, and they are immutable outside.
+    //
+    // In reuse, this is what happens: as we reuse Importer across setups,
+    // the order of factories changes, and coupled with shared ownership
+    // leads to problems.
+    // *First setup*
+    //    SaP               builds     P [and stores it]
+    //    TransP            builds     R [and stores it]
+    //    RAP               builds     A [and stores it]
+    //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (*)
+    //    RebalanceTransfer rebalances R
+    //    RebalanceAc       rebalances A
+    // *Second setup* ("RP" reuse)
+    //    RebalanceTransfer rebalances P [which is incorrect due to (*)]
+    //    RebalanceTransfer rebalances R
+    //    RAP               builds     A [which is incorrect due to (*)]
+    //    RebalanceAc       rebalances A [which throws due to map inconsistency]
+    //    ...
+    // *Second setup* ("tP" reuse)
+    //    SaP               builds     P [and stores it]
+    //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (**)
+    //    TransP            builds     R [which is incorrect due to (**)]
+    //    RebalanceTransfer rebalances R
+    //    ...
+    //
+    // Couple solutions to this:
+    //    1. [implemented] Requre "tP" and "PR" reuse to only be used with
+    //       implicit rebalancing.
+    //    2. Do deep copy of P, and changed domain map and importer there.
+    //       Need to investigate how expensive this is.
+    TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
+			       "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
+
+    //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
+    //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
+    TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
+			       "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
+
+    // RepartitionHeuristic
+    RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
+    ParameterList repartheurParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
+    repartheurFactory->SetParameterList(repartheurParams);
+    repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
+    manager.SetFactory("number of partitions", repartheurFactory);
+
+    // Partitioner
+    RCP<Factory> partitioner;
+    if (partName == "zoltan") {
+#ifdef HAVE_MUELU_ZOLTAN
+      partitioner = rcp(new ZoltanInterface());
+      // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
+#else
+      throw Exceptions::RuntimeError("Zoltan interface is not available");
+#endif
+    } else if (partName == "zoltan2") {
+#ifdef HAVE_MUELU_ZOLTAN2
+      partitioner = rcp(new Zoltan2Interface());
+      ParameterList partParams;
+      RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
+      partParams.set("ParameterList", partpartParams);
+      partitioner->SetParameterList(partParams);
+#else
+      throw Exceptions::RuntimeError("Zoltan2 interface is not available");
+#endif
+    }
+    partitioner->SetFactory("A",           manager.GetFactory("A"));
+    partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
+    partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+    manager.SetFactory("Partition", partitioner);
+
+    // Repartitioner
+    RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
+    ParameterList repartParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
+    repartFactory->SetParameterList(repartParams);
+    repartFactory->SetFactory("A",         manager.GetFactory("A"));
+    repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
+    repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
+    manager.SetFactory("Importer", repartFactory);
+    if (reuseType != "none" && reuseType != "S" && levelID)
+      keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
+
+    // Rebalanced A
+    RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
+    ParameterList rebAcParams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
+    newA->SetParameterList(rebAcParams);
+    newA->SetFactory("A",         manager.GetFactory("A"));
+    newA->SetFactory("Importer",  manager.GetFactory("Importer"));
+    manager.SetFactory("A", newA);
+
+    // Rebalanced P
+    RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
+    ParameterList newPparams;
+    newPparams.set("type",                           "Interpolation");
+    if (changedPRrebalance_)
+      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
+    newP->  SetParameterList(newPparams);
+    newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
+    newP->  SetFactory("P",           manager.GetFactory("P"));
+    if (!paramList.isParameter("semicoarsen: number of levels"))
+      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+    else
+      newP->  SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
+    newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+    manager.SetFactory("P",           newP);
+    manager.SetFactory("Coordinates", newP);
+
+    // Rebalanced R
+    RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
+    ParameterList newRparams;
+    newRparams.set("type",                           "Restriction");
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
+    if (changedPRrebalance_)
+      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+    if (changedImplicitTranspose_)
+      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+    newR->  SetParameterList(newRparams);
+    newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
+    if (!this->implicitTranspose_) {
+      newR->SetFactory("R",              manager.GetFactory("R"));
+      manager.SetFactory("R",            newR);
+    }
+
+    // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
+    // level if a user does not do that. For all other levels it simply passes
+    // nullspace from a real factory to whoever needs it. If we don't use
+    // repartitioning, that factory is "TentativePFactory"; if we do, it is
+    // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
+    // the "Nullspace" of the manager
+    Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace", newP);    
+#else
+    throw Exceptions::RuntimeError("No repartitioning available for a serial run");
+#endif
+  }
+}
 
 #undef MUELU_SET_VAR_2LIST
 #undef MUELU_TEST_AND_SET_VAR
