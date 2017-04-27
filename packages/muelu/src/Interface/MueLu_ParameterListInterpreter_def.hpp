@@ -468,9 +468,8 @@ namespace MueLu {
 
     // == Non-serializable data ===
     // Check both the parameter and the type
-    bool have_userP = false,have_userCO = false; //, have_userA = false, have_userR = false, have_userNS = false;
+    bool have_userP = false;
     if (paramList.isParameter("P")           && !paramList.get<RCP<Matrix> >     ("P")          .is_null()) have_userP  = true;
-    if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
     // == Smoothers ==
     UpdateFactoryManager_Smoothers(paramList,defaultList,manager,levelID,keeps);
@@ -530,21 +529,9 @@ namespace MueLu {
     UpdateFactoryManager_RAP(paramList,defaultList,manager,levelID,keeps);
 
     // === Coordinates ===
-    if (useCoordinates_) {
-      if (have_userCO) {
-        manager.SetFactory("Coordinates", NoFactory::getRCP());
+    UpdateFactoryManager_Coordinates(paramList,defaultList,manager,levelID,keeps);
 
-      } else {
-        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
-        coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-        coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-        manager.SetFactory("Coordinates", coords);
-
-	RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
-        RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
-      }
-    }
-
+    // === Pre-Repartition Keeps for Reuse ===
     if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
       keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Nullspace").get()));
 
@@ -555,11 +542,9 @@ namespace MueLu {
     }
     if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
-
  
     // === Repartitioning ===
     UpdateFactoryManager_Repartition(paramList,defaultList,manager,levelID,keeps);
-
 
     // === Final Keeps for Reuse ===
     if ((reuseType == "RAP" || reuseType == "full") && levelID) {
@@ -1002,8 +987,29 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
     }    
 }
 
+ // =====================================================================================================
+ // ======================================= Restriction ==============================================
+ // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Coordinates(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  bool have_userCO=false;
+  if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
-
+  if (useCoordinates_) {
+    if (have_userCO) {
+      manager.SetFactory("Coordinates", NoFactory::getRCP());
+      
+    } else {
+      MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+      manager.SetFactory("Coordinates", coords);
+      
+      RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+      RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+    }
+  }
+}
 
   // =====================================================================================================
   // ======================================= Restriction ==============================================

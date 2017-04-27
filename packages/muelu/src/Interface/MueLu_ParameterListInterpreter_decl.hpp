@@ -209,6 +209,8 @@ namespace MueLu {
 					int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_RAP(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 				  int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Coordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+					  int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
 					int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
