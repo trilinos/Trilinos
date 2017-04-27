@@ -3,5 +3,6 @@
 
 #include "Tacho_TestCrsMatrixBase.hpp"
 #include "Tacho_TestGraph.hpp"
+#include "Tacho_TestSymbolic.hpp"
 
 #endif
