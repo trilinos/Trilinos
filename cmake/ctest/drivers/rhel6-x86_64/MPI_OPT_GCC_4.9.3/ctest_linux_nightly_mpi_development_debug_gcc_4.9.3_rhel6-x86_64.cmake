@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.9.3.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.9.3-sems.cmake")
 
 #
 # Set the options specific to this build case
