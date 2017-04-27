@@ -512,61 +512,18 @@ namespace MueLu {
       // Unsmoothed aggregation
       manager.SetFactory("P", manager.GetFactory("Ptent"));
     } else if (multigridAlgo == "sa") {
+      // Smoothed aggregation
       UpdateFactoryManager_SA(paramList,defaultList,manager,levelID,keeps);
     } else if (multigridAlgo == "emin") {
-      MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
-      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
-                                 "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
-      // Pattern
-      RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
-      ParameterList patternParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
-      patternFactory->SetParameterList(patternParams);
-      patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("Ppattern", patternFactory);
-
-      // Constraint
-      RCP<ConstraintFactory> constraintFactory = rcp(new ConstraintFactory());
-      constraintFactory->SetFactory("Ppattern",        manager.GetFactory("Ppattern"));
-      constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
-      manager.SetFactory("Constraint", constraintFactory);
-
       // Energy minimization
-      RCP<EminPFactory> P = rcp(new EminPFactory());
-      ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
-      if (reuseType == "emin") {
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
-        Pparams.set("Keep P0",          true);
-        Pparams.set("Keep Constraint0", true);
-      }
-      P->SetParameterList(Pparams);
-      P->SetFactory("P",          manager.GetFactory("Ptent"));
-      P->SetFactory("Constraint", manager.GetFactory("Constraint"));
-      manager.SetFactory("P", P);
-
+      UpdateFactoryManager_Emin(paramList,defaultList,manager,levelID,keeps);
     } else if (multigridAlgo == "pg") {
-      TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
-            "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
-            "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
-            "does not allow the usage of implicit transpose easily.");
-
       // Petrov-Galerkin
-      RCP<PgPFactory> P = rcp(new PgPFactory());
-      P->SetFactory("P", manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-    }
-#ifdef HAVE_MUELU_MATLAB
-    else if(multigridAlgo == "matlab") {
-      ParameterList Pparams = paramList.sublist("transfer: params");
-      RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
-      P->SetParameterList(Pparams);
-      P->SetFactory("P",manager.GetFactory("Ptent"));
-      manager.SetFactory("P", P);
-    }
-#endif
-    else if(multigridAlgo == "pcoarsen") {
+      UpdateFactoryManager_PG(paramList,defaultList,manager,levelID,keeps);
+    } else if(multigridAlgo == "matlab") {
+      // Matlab Coarsneing
+      UpdateFactoryManager_Matlab(paramList,defaultList,manager,levelID,keeps);
+    } else if(multigridAlgo == "pcoarsen") {
       // P-Coarsening
       UpdateFactoryManager_PCoarsen(paramList,defaultList,manager,levelID,keeps);
     }
@@ -1395,6 +1352,76 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
   if (reuseType == "tP" && !filteringChangesMatrix)
     keeps.push_back(keep_pair("AP reuse data", P.get()));    
 } 
+
+  // =====================================================================================================
+  // =============================== Algorithm: Energy Minimization ======================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Emin(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+  TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
+			     "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
+  // Pattern
+  RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
+  ParameterList patternParams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
+  patternFactory->SetParameterList(patternParams);
+  patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("Ppattern", patternFactory);
+  
+  // Constraint
+  RCP<ConstraintFactory> constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern",        manager.GetFactory("Ppattern"));
+  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
+  manager.SetFactory("Constraint", constraintFactory);
+  
+  // Energy minimization
+  RCP<EminPFactory> P = rcp(new EminPFactory());
+  ParameterList Pparams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+  if (reuseType == "emin") {
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
+    Pparams.set("Keep P0",          true);
+    Pparams.set("Keep Constraint0", true);
+  }
+  P->SetParameterList(Pparams);
+  P->SetFactory("P",          manager.GetFactory("Ptent"));
+  P->SetFactory("Constraint", manager.GetFactory("Constraint"));
+  manager.SetFactory("P", P);
+}  
+
+  // =====================================================================================================
+  // ================================= Algorithm: Petrov-Galerkin ========================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_PG(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
+			     "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
+			     "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
+			     "does not allow the usage of implicit transpose easily.");
+  
+  // Petrov-Galerkin
+  RCP<PgPFactory> P = rcp(new PgPFactory());
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+}
+
+
+  // =====================================================================================================
+  // ====================================== Algorithm: Matlab ============================================
+  // =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Matlab(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+#ifdef HAVE_MUELU_MATLAB
+  ParameterList Pparams = paramList.sublist("transfer: params");
+  RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+  P->SetParameterList(Pparams);
+  P->SetFactory("P",manager.GetFactory("Ptent"));
+  manager.SetFactory("P", P);
+#endif
+}
 
 
 
