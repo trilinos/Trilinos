@@ -153,9 +153,9 @@ namespace MueLu {
       }
     }
 
-    if(numMyRows <= 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
+    if(numMyRows == 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
 #else
-    if(numMyRows <= 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
+    if(numMyRows == 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
 #endif
 
     std::string outstr;
