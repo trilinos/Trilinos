@@ -131,6 +131,14 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 %}
 
+// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
+// that.
+%pythoncode
+%{
+del ___init__
+from . import ___init__
+%}
+
 %ignore *::operator=;
 
 // SWIG library includes
@@ -223,14 +231,10 @@ from .. import Abstract
 
 // The above %import(module="Abstract") ... directives can cause an
 // "import Abstract" to appear in the .py file, causing Abstract to
-// point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
-// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
-// that, too.
+// point to NOX.Abstract.  Force it back to LOCA.Abstract.
 %pythoncode
 %{
-del ___init__
 from .. import Abstract
-from .  import ___init__
 %}
 
 // Director exception handling

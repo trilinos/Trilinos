@@ -70,6 +70,7 @@ namespace Intrepid2 {
                      workViewType   work,
                const vinvViewType   vinv ) {
 
+      constexpr ordinal_type spaceDim = 3;
       const ordinal_type 
         card = vinv.dimension(0),
         npts = input.dimension(0);
@@ -77,7 +78,7 @@ namespace Intrepid2 {
       // compute order
       ordinal_type order = 0;
       for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
-        if (card == ((p+1)*(p+2)*(p+3))/6) {
+        if (card == Intrepid2::getPnCardinality<spaceDim>(p)) {
           order = p;
           break;
         }
@@ -110,7 +111,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10: {
-        const ordinal_type dkcard = getDkCardinality(opType,3);//(orDn + 1)*(orDn + 2)/2;
+        const ordinal_type dkcard = getDkCardinality(opType,spaceDim);//(orDn + 1)*(orDn + 2)/2;
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
@@ -195,8 +196,9 @@ namespace Intrepid2 {
   Basis_HGRAD_TET_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
                           const EPointType   pointType ) {
+    constexpr ordinal_type spaceDim = 3;
 
-    this->basisCardinality_  = (order+1)*(order+2)*(order+3)/6; // bigN
+    this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
     this->basisDegree_       = order; // small n
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
     this->basisType_         = BASIS_FEM_FIAT;
@@ -205,8 +207,8 @@ namespace Intrepid2 {
     const ordinal_type card = this->basisCardinality_;
 
     // points are computed in the host and will be copied
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("Hgrad::Tet::Cn::dofCoords", card, 3);
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("Hgrad::Tet::Cn::dofCoords", card, spaceDim);
     
     // construct lattice
     const ordinal_type offset = 0;
@@ -221,7 +223,7 @@ namespace Intrepid2 {
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
     const ordinal_type lwork = card*card;
-    Kokkos::DynRankView<PT,Kokkos::LayoutLeft,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,Kokkos::LayoutLeft,Kokkos::HostSpace>
       vmat("Hgrad::Tet::Cn::vmat", card, card),
       work("Hgrad::Tet::Cn::work", lwork),
       ipiv("Hgrad::Tet::Cn::ipiv", card);
@@ -229,7 +231,7 @@ namespace Intrepid2 {
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
 
     ordinal_type info = 0;
-    Teuchos::LAPACK<ordinal_type,PT> lapack;
+    Teuchos::LAPACK<ordinal_type,scalarType> lapack;
     
     lapack.GETRF(card, card,
                  vmat.data(), vmat.stride_1(),
@@ -238,7 +240,7 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
                                   std::runtime_error ,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRF returns nonzero info." );
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM) lapack.GETRF returns nonzero info." );
 
     lapack.GETRI(card,
                  vmat.data(), vmat.stride_1(),
@@ -248,10 +250,10 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
                                   std::runtime_error ,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM) lapack.GETRI returns nonzero info." );
 
     // create host mirror
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
     for (ordinal_type i=0;i<card;++i)
@@ -269,16 +271,16 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
-      constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6;
+      constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
       ordinal_type tags[maxCard][tagSize];
 
       const ordinal_type 
-        numEdgeDof = (order - 1),
-        numFaceDof = (order > 2 ? (order-2)*(order-1)/2 : 0),
-        numElemDof = (order > 3 ? (order-3)*(order-2)*(order-1)/6 : 0);
+        numEdgeDof = Intrepid2::getPnCardinality<1>(order-2),
+        numFaceDof = (order > 2 ? Intrepid2::getPnCardinality<2>(order-3) : 0),
+        numElemDof = (order > 3 ? Intrepid2::getPnCardinality<3>(order-4) : 0);
 
-      typename scalarViewType::value_type xi0, xi1, xi2, xi3;
-      const typename scalarViewType::value_type eps = threshold();
+      scalarType xi0, xi1, xi2, xi3;
+      const scalarType eps = threshold();
 
       ordinal_type edgeId[6] = {}, faceId[4] = {}, elemId = 0;
       for (ordinal_type i=0;i<card;++i) {

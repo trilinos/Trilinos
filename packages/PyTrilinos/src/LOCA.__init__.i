@@ -155,6 +155,13 @@ and classes:
 #include "numpy_include.hpp"
 %}
 
+%pythoncode
+%{
+# Fix ___init__ ambiguity
+del ___init__
+from . import ___init__
+%}
+
 // Ignore/renames
 %ignore *::operator=;
 %ignore *::operator[];
@@ -306,9 +313,5 @@ from . import AnasaziOperator
 # Epetra namespace
 __all__.append("Epetra")
 from . import Epetra
-
-# Fix ___init__ ambiguity
-del ___init__
-from . import ___init__
 %}
 #endif

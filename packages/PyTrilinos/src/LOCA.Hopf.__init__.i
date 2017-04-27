@@ -164,6 +164,9 @@ import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
+if "delete_ComplexMultiVector" not in dir(___init__):
+    del ___init__
+    from . import ___init__
 %}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"

@@ -681,7 +681,7 @@ getWarpBlendLatticeTetrahedron(Kokkos::DynRankView<pointValueType,pointPropertie
    pointValueType alpha;
 
    if (order <= 15) {
-     alpha = alphastore[order-1];
+     alpha = alphastore[std::max(order-1,0)];
    }
    else {
      alpha = 1.0;

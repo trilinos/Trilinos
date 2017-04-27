@@ -622,22 +622,73 @@ namespace Intrepid2 {
       \endverbatim
       The enumeration formula for this lexicographical order is
       <table>
-      <tr> <td>\f$i(xMult)            = 0\f$                            </td> <td>in 1D (only 1 derivative)</td> </tr>
-      <tr> <td>\f$i(xMult,yMult)      =yMult\f$                         </td> <td>in 2D</td> </tr>
-      <tr> <td>\f$i(xMult,yMult,zMult)=zMult+\sum_{r = 0}^{k-xMult} r\f$</td> <td>in 3D</td> </tr>
+      <tr> <td>\f$i()            = 0\f$                            </td> <td>in 1D (only 1 derivative)</td> </tr>
+      <tr> <td>\f$i(yMult)      =yMult\f$                         </td> <td>in 2D</td> </tr>
+      <tr> <td>\f$i(yMult,zMult)=zMult+\sum_{r = 0}^{k-xMult} r\f$</td> <td>in 3D</td> </tr>
       </table>
-      where the order k of Dk is implicitly defined by xMult + yMult + zMult. Space dimension is
-      implicitly defined by the default values of the multiplicities of y and z derivatives.
+      where the order k of Dk is defined by xMult + yMult + zMult. However, xMult is not really needed needed.
+      Enumeration goes from 0 to ( (k+spaceDim-1) choose (spaceDim-1) )-1.
 
-      \param  xMult            [in]    - multiplicity of dx
       \param  yMult            [in]    - multiplicity of dy (default = -1)
       \param  zMult            [in]    - multiplicity of dz (default = -1)
       \return the ordinal of partial derivative of order k as function of dx, dy, dz multiplicities
   */
+  template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
   ordinal_type getDkEnumeration(const ordinal_type xMult,
                                 const ordinal_type yMult = -1,
-                                const ordinal_type zMult = -1);
+                                const ordinal_type zMult = -1);  template<ordinal_type spaceDim>
+
+
+  /** \brief  Returns the index of the term x^p y^q z^r of a polynomial of degree n  (p+q+r <= n).
+      In 2D, the terms of a polynomial of degree 2 are ordered as  1,  x,  y, x^2,  xy, y^2.
+      So if p=q=1, the term x^p y^q has index 4 (counting from 0), while p=2, q=0 has index 3.
+      Enumeration goes from 0 to ( (n+spaceDim) choose (spaceDim) )-1.
+
+      \param  p            [in]    - exponent of x in the polynomial term x^p y^q z^r
+      \param  q            [in]    - exponent of y in the polynomial term x^p y^q z^r (default = 0)
+      \param  r            [in]    - exponent of z in the polynomial term x^p y^q z^r (default = 0)
+      \return the index of the term x^p y^q z^r of a polynomial of degree k  (p+q+r <= n)
+  */
+
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getPnEnumeration(const ordinal_type p,
+                                const ordinal_type q = 0,
+                                const ordinal_type r = 0);
+
+
+
+  /** \brief function for computing the Jacobi recurrence coefficients so that
+    \param an    [out] - the a weight for recurrence
+    \param bn    [out] - the b weight for recurrence
+    \param cn    [out] - the c weight for recurrence
+    \param alpha [in] - the first Jacobi weight
+    \param beta  [in] - the second Jacobi weight
+    \param n     [n]  - the polynomial degree
+
+    The recurrence is
+    \f[
+    P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
+    \f],
+    where
+    \f[
+    P^{\alpha,\beta}_0 = 1
+    \f]
+*/
+
+template<typename value_type>
+KOKKOS_INLINE_FUNCTION
+void getJacobyRecurrenceCoeffs (
+          value_type  &an,
+          value_type  &bn,
+          value_type  &cn,
+    const ordinal_type alpha,
+    const ordinal_type beta ,
+    const ordinal_type n);
+
+
+
+
 
   // /** \brief  Returns multiplicities of dx, dy, and dz based on the enumeration of the partial
   //     derivative, its order and the space dimension. Inverse of the getDkEnumeration() method.
@@ -675,6 +726,25 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   ordinal_type getDkCardinality(const EOperator    operatorType,
                                 const ordinal_type spaceDim);
+
+
+
+  /** \brief  Returns cardinality of Polynomials of order n (P^n).
+
+       \li     in 1D: cardinality = n+1
+       \li     in 2D: cardinality = (n+1)*(n+2)/2
+       \li     in 3D: cardinality = (n+1)*(n+2)*(n+3)/6
+
+       \param  n     [in]     - polynomial order
+       \return dimension of polynomial space
+   */
+   template<ordinal_type spaceDim>
+   KOKKOS_INLINE_FUNCTION
+   ordinal_type getPnCardinality (ordinal_type n);
+
+   template<ordinal_type spaceDim, ordinal_type n>
+   KOKKOS_INLINE_FUNCTION
+   constexpr ordinal_type getPnCardinality ();
 
 
 

@@ -138,7 +138,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_ABORT(mat.dimension_0() != mat.dimension_1(), "mat should be a square matrix.");
         INTREPID2_TEST_FOR_ABORT(mat.dimension_0() > 3, "Higher dimensions (> 3) are not supported.");
 
-        typename matViewType::non_const_value_type r_val;
+        typename matViewType::non_const_value_type r_val(0);
         const int m = mat.dimension_0();
         switch (m) {
         case 1: 
