@@ -755,7 +755,6 @@ namespace MueLu {
             RCP<EpetraCrsMatrix> AA   = rcp(new EpetraCrsMatrix(rcpA));
             RCP<CrsMatrix>       AAA  = rcp_implicit_cast<CrsMatrix>(AA);
             RCP<Matrix>          AAAA = rcp( new CrsMatrixWrap(AAA));
-            AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
 
             if (Op.IsView("stridedMaps"))
               AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true/*doTranspose*/);

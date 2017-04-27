@@ -72,6 +72,7 @@ Level 1
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
    
@@ -89,7 +90,7 @@ Level 1
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1d84830,node=0x1c20dd0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x22f7a30,node=0x2022390,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -186,6 +187,7 @@ Level 2
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
    
@@ -203,7 +205,7 @@ Level 2
    
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1d79a90,node=0x1cce1c0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2073de0,node=0x20bb210,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -245,7 +247,7 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -314,6 +316,7 @@ Level 1
    Reusing previous AP data
    Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
+  Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
   
@@ -391,6 +394,7 @@ Level 2
    Reusing previous AP data
    Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
+  Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
   
@@ -421,6 +425,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
 

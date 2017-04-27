@@ -117,42 +117,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_Teuchos_Util.hpp"
 
 // Epetra includes
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Object.h"
-#include "Epetra_Comm.h"
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_LocalMap.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_VbrRowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SerialDenseOperator.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#include "Epetra_GIDTypeVector.h"
-#include "PyTrilinos_LinearProblem.hpp"
+#include "PyTrilinos_Epetra_Headers.hpp"
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY
@@ -179,8 +144,6 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_XMLWriter.h"
 #include "EpetraExt_SubCopy_CrsMatrix.h"
 #include "EpetraExt_ModelEvaluator.h"
-
-// EpetraExt python includes
 #include "PyTrilinos_EpetraExt_Util.hpp"
 %}
 

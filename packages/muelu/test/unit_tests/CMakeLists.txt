@@ -21,6 +21,7 @@ APPEND_SET(SOURCES
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
   FineLevelInputDataFactory.cpp
+  GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
   IntrepidPCoarsenFactory.cpp
