@@ -4,6 +4,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_balance/internal/Inputs.hpp>
+#include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <fstream>
 
 namespace
@@ -76,7 +77,7 @@ TEST(ParsedInput, checkIfFilenameExistsWhenFileExists)
     {
         stk::balance::Inputs parsedInput= get_inputs_for_filename_only();
         touch_new_file(parsedInput.get_exodus_filename());
-        EXPECT_TRUE( stk::balance::does_file_exist( parsedInput.get_exodus_filename() ));
+        EXPECT_TRUE( stk::parallel::does_file_exist( parsedInput.get_exodus_filename() ));
         unlink(parsedInput.get_exodus_filename().c_str());
     }
 }
@@ -84,7 +85,7 @@ TEST(ParsedInput, checkIfFilenameExistsWhenFileExists)
 TEST(ParsedInput, checkIfFilenameExistsWhenFileDoesNotExist)
 {
     stk::balance::Inputs parsedInput= get_inputs_for_filename_only();
-    EXPECT_FALSE( stk::balance::does_file_exist( parsedInput.get_exodus_filename() ));
+    EXPECT_FALSE( stk::parallel::does_file_exist( parsedInput.get_exodus_filename() ));
 }
 
 

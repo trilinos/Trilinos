@@ -947,14 +947,14 @@ template<typename PARTVECTOR>
 Entity BulkData::declare_element_side(Entity elem, const unsigned sideOrd, const PARTVECTOR& parts)
 {
     stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
-    return declare_element_side(chosenId, elem, sideOrd, parts);
+    return declare_element_side_with_id(chosenId, elem, sideOrd, parts);
 }
 
 template Entity BulkData::declare_element_side<stk::mesh::PartVector>(Entity, const unsigned, const stk::mesh::PartVector&);
 template Entity BulkData::declare_element_side<stk::mesh::ConstPartVector>(Entity, const unsigned, const stk::mesh::ConstPartVector&);
 
 template<typename PARTVECTOR>
-Entity BulkData::declare_element_side(const stk::mesh::EntityId globalSideId,
+Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSideId,
                                       Entity elem,
                                       const unsigned sideOrd,
                                       const PARTVECTOR& parts)
@@ -980,8 +980,8 @@ Entity BulkData::declare_element_side(const stk::mesh::EntityId globalSideId,
     return side;
 }
 
-template Entity BulkData::declare_element_side<stk::mesh::PartVector>(const stk::mesh::EntityId, Entity, const unsigned, const stk::mesh::PartVector&);
-template Entity BulkData::declare_element_side<stk::mesh::ConstPartVector>(const stk::mesh::EntityId, Entity, const unsigned, const stk::mesh::ConstPartVector&);
+template Entity BulkData::declare_element_side_with_id<stk::mesh::PartVector>(const stk::mesh::EntityId, Entity, const unsigned, const stk::mesh::PartVector&);
+template Entity BulkData::declare_element_side_with_id<stk::mesh::ConstPartVector>(const stk::mesh::EntityId, Entity, const unsigned, const stk::mesh::ConstPartVector&);
 
 void BulkData::add_node_sharing( Entity node, int sharing_proc )
 {

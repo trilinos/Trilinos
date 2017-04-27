@@ -17,17 +17,16 @@ std::vector<unsigned> assign_target_subdomains_roundrobin_to_procs(unsigned num_
     return targetSubdomainsToProc;
 }
 
-void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, stk::mesh::EntityProcVec &decomp)
+void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp)
 {
-    stk::balance::BasicZoltan2Settings graphSettings;
     std::vector<stk::mesh::Selector> selectors = { bulk.mesh_meta_data().locally_owned_part() };
     stk::balance::internal::calculateGeometricOrGraphBasedDecomp(graphSettings, num_partitions, decomp, bulk, selectors);
 }
 
-stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk)
+stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings)
 {
     stk::mesh::EntityProcVec decomp;
-    fill_decomp(num_partitions, bulk, decomp);
+    fill_decomp(num_partitions, bulk, graphSettings, decomp);
     return decomp;
 }
 

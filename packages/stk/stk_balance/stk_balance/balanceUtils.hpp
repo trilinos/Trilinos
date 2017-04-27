@@ -7,12 +7,15 @@
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"
+#include <memory>
 
 namespace stk
 {
 namespace balance
 {
 //rcb, multijagged, rib, hsfc, patoh, phg, metis, parmetis, parma, scotch, ptscotch, block, cyclic, random, zoltan, nd
+
+class FaceSearchTolerance;
 
 typedef std::vector<int> ElementDecomposition;
 typedef stk::mesh::Field<double> DoubleFieldType;
@@ -57,7 +60,10 @@ public:
 
     // Graph (parmetis) based options only
     virtual bool includeSearchResultsInGraph() const;
-    virtual double getToleranceForFaceSearch() const;
+
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
+
     virtual double getToleranceForParticleSearch() const;
     virtual double getGraphEdgeWeightForSearch() const;
     virtual bool getEdgesForParticlesUsingSearch() const;
@@ -106,7 +112,8 @@ public:
                              mToleranceForParticleSearch(particleSearchTol),
                              edgeWeightForSearch (edgeWeightSearch),
                              method(decompMethod),
-                             vertexWeightMultiplierForVertexInSearch(multiplierVWSearch)
+                             vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
+                             m_UseConstantToleranceForFaceSearch(true)
     {}
 
     virtual ~GraphCreationSettings() {}
@@ -124,7 +131,10 @@ public:
     virtual GraphOption getGraphOption() const;
     virtual bool includeSearchResultsInGraph() const ;
     virtual double getToleranceForParticleSearch() const ;
-    virtual double getToleranceForFaceSearch() const ;
+
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
+
     virtual bool getEdgesForParticlesUsingSearch() const ;
     virtual double getVertexWeightMultiplierForVertexInSearch() const ;
     virtual std::string getDecompMethod() const ;
@@ -141,41 +151,31 @@ protected:
     double edgeWeightForSearch;
     std::string method;
     double vertexWeightMultiplierForVertexInSearch;
+    bool m_UseConstantToleranceForFaceSearch;
+    std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
 };
 
 class GraphCreationSettingsWithCustomTolerances : public GraphCreationSettings
 {
 public:
-    GraphCreationSettingsWithCustomTolerances() : mToleranceForFaceSearch(0.1), mToleranceForParticleSearch(1.0) { }
-
-    virtual double getToleranceForFaceSearch() const { return mToleranceForFaceSearch; }
-    void setToleranceForFaceSearch(double tol) { mToleranceForFaceSearch = tol; }
-
-    virtual double getToleranceForParticleSearch() const { return mToleranceForParticleSearch; }
-    void setToleranceForParticleSearch(double tol)
+    GraphCreationSettingsWithCustomTolerances()
+      : GraphCreationSettings()
     {
-        mToleranceForParticleSearch = tol;
+        mToleranceForFaceSearch = 0.1;
+        mToleranceForParticleSearch = 1.0;
     }
+
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
-
-private:
-    double mToleranceForFaceSearch;
-    double mToleranceForParticleSearch;
 };
 
 class BasicZoltan2Settings : public GraphCreationSettings
 {
 public:
+    BasicZoltan2Settings()
+      : GraphCreationSettings(0.0005, 0.3, 100.0, "rcb", 6.0) {}
     virtual bool includeSearchResultsInGraph() const { return false; }
-
-    virtual double getToleranceForFaceSearch() const { return 0.0005 ; }
-    virtual double getToleranceForParticleSearch() const { return 0.3; }
-    virtual double getGraphEdgeWeightForSearch() const { return 100.0; }
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }
-    //virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual std::string getDecompMethod() const { return std::string("rcb"); }
 };
 
 class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings

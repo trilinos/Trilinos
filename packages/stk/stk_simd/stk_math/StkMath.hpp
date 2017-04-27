@@ -35,6 +35,10 @@ STK_MATH_FORCE_INLINE double log(const double x) {
   return std::log(x);
 }
 
+STK_MATH_FORCE_INLINE double log10(const double x) {
+  return std::log10(x);
+}
+
 STK_MATH_FORCE_INLINE double exp(const double x) {
   return std::exp(x);
 }
@@ -57,6 +61,18 @@ STK_MATH_FORCE_INLINE double cos(const double a) {
 
 STK_MATH_FORCE_INLINE double tan(const double a) {
   return std::tan(a);
+}
+
+STK_MATH_FORCE_INLINE double sinh(const double a) {
+  return std::sinh(a);
+}
+
+STK_MATH_FORCE_INLINE double cosh(const double a) {
+  return std::cosh(a);
+}
+
+STK_MATH_FORCE_INLINE double tanh(const double a) {
+  return std::tanh(a);
 }
 
 STK_MATH_FORCE_INLINE double asin(const double a) {
@@ -133,6 +149,10 @@ STK_MATH_FORCE_INLINE float log(const float x) {
   return std::log(x);
 }
 
+STK_MATH_FORCE_INLINE float log10(const float x) {
+  return std::log10(x);
+}
+
 STK_MATH_FORCE_INLINE float exp(const float x) {
   return std::exp(x);
 }
@@ -155,6 +175,18 @@ STK_MATH_FORCE_INLINE float cos(const float a) {
 
 STK_MATH_FORCE_INLINE float tan(const float a) {
   return std::tan(a);
+}
+
+STK_MATH_FORCE_INLINE float sinh(const float a) {
+  return std::sinh(a);
+}
+
+STK_MATH_FORCE_INLINE float cosh(const float a) {
+  return std::cosh(a);
+}
+
+STK_MATH_FORCE_INLINE float tanh(const float a) {
+  return std::tanh(a);
 }
 
 STK_MATH_FORCE_INLINE float asin(const float a) {

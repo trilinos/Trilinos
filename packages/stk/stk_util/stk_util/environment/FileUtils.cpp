@@ -41,27 +41,6 @@
 
 
 namespace {
-  std::string tailname(const std::string &filename)
-  {
-    size_t ind = filename.find_last_of("/", filename.size());
-    if (ind != std::string::npos) {
-      return filename.substr(ind+1, filename.size());
-    }
-    return filename; // No path, just return the filename
-  }
-
-  std::string basename(const std::string &filename)
-  {
-    std::string tail = tailname(filename);
-
-    // Strip off the extension
-    size_t ind = tail.find_last_of('.', tail.size());
-    if (ind != std::string::npos) {
-      return tail.substr(0,ind);
-    }
-    return tail;
-  }
-
   std::string  get_input_file_basename()
   {
     std::string filename;
@@ -71,7 +50,7 @@ namespace {
       input_file_name = stk::EnvData::instance().m_inputFile;
     }
 
-    std::string base = basename(input_file_name);
+    std::string base = stk::util::basename(input_file_name);
 
     // See if name contains ".aprepro"
     size_t pos = base.find(".aprepro");
@@ -87,11 +66,26 @@ namespace {
 
 namespace stk {
   namespace util {
-    template <class T> static std::string to_string(const T & t)
+
+    std::string tailname(const std::string &filename)
     {
-      std::ostringstream os;
-      os << t;
-      return os.str();
+      size_t ind = filename.find_last_of("/", filename.size());
+      if (ind != std::string::npos) {
+        return filename.substr(ind+1, filename.size());
+      }
+      return filename; // No path, just return the filename
+    }
+
+    std::string basename(const std::string &filename)
+    {
+      std::string tail = tailname(filename);
+
+      // Strip off the extension
+      size_t ind = tail.find_last_of('.', tail.size());
+      if (ind != std::string::npos) {
+        return tail.substr(0,ind);
+      }
+      return tail;
     }
 
     void filename_substitution(std::string &filename)
@@ -104,7 +98,7 @@ namespace stk {
 	// Found the characters...  Replace with the processor count...
 	int num_proc = std::max(1, EnvData::instance().m_parallelSize);
 	std::string tmp(filename, 0, pos);
-	tmp += to_string(num_proc);
+	tmp += std::to_string(num_proc);
 	tmp += filename.substr(pos+2);
 	filename = tmp;
       }

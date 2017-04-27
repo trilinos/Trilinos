@@ -61,8 +61,9 @@ std::vector<size_t> get_entity_counts(const stk::mesh::BulkData &bulk, const stk
 
 struct EntityConnectivity
 {
-    EntityConnectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity, stk::mesh::EntityRank relationRank_)
-    : relationRank(relationRank_),
+    EntityConnectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity argEntity, stk::mesh::EntityRank relationRank_)
+    : entity(argEntity),
+      relationRank(relationRank_),
       numConnected(bulk.num_connectivity(entity, relationRank)),
       connected(bulk.begin(entity, relationRank), bulk.begin(entity, relationRank)+numConnected),
       ords(bulk.begin_ordinals(entity, relationRank), bulk.begin_ordinals(entity, relationRank)+numConnected),
@@ -122,6 +123,7 @@ struct EntityConnectivity
         numConnected = connected.size();
     }
 
+    stk::mesh::Entity entity;
     stk::mesh::EntityRank relationRank;
     unsigned numConnected;
     std::vector<stk::mesh::Entity> connected;
@@ -135,7 +137,7 @@ void expect_equal_entity_connectivity(const stk::mesh::BulkData &oldBulk,
                                       const EntityConnectivity &newConnectivity,
                                       stk::mesh::EntityRank rank)
 {
-    ASSERT_EQ(oldConnectivity.numConnected, newConnectivity.numConnected);
+    ASSERT_EQ(oldConnectivity.numConnected, newConnectivity.numConnected) << "rank: "<<rank << " oldEntity = " << oldBulk.entity_key(oldConnectivity.entity) << " newEntity = " << newBulk.entity_key(newConnectivity.entity);
     unsigned newConIndex = 0;
     for(unsigned oldConIndex = 0; oldConIndex < oldConnectivity.numConnected; oldConIndex++)
     {
@@ -207,7 +209,7 @@ void expect_equal_entity_counts(const stk::mesh::BulkData &oldBulk, const stk::m
         EXPECT_EQ(oldCounts[rank], newCounts[rank]) << rank;
 }
 
-void expect_equal_sharing(const stk::mesh::Selector& oldSelector, const stk::mesh::BulkData& oldBulk, stk::mesh::Entity oldEntity,
+void expect_equal_sharing(const stk::mesh::BulkData& oldBulk, stk::mesh::Entity oldEntity,
                           const stk::mesh::BulkData& newBulk, stk::mesh::Entity newEntity)
 {
     std::vector<int> oldSharingProcs;
@@ -218,6 +220,23 @@ void expect_equal_sharing(const stk::mesh::Selector& oldSelector, const stk::mes
     for(size_t i=0; i<oldSharingProcs.size(); ++i) {
         EXPECT_EQ(oldSharingProcs[i], newSharingProcs[i]);
     }
+}
+
+void expect_superset_sharing(const stk::mesh::BulkData& oldBulk, stk::mesh::Entity oldEntity,
+                             const stk::mesh::BulkData& newBulk, stk::mesh::Entity newEntity)
+{
+    std::vector<int> oldSharingProcs;
+    std::vector<int> newSharingProcs;
+    oldBulk.comm_shared_procs(oldBulk.entity_key(oldEntity), oldSharingProcs);
+    newBulk.comm_shared_procs(newBulk.entity_key(newEntity), newSharingProcs);
+    ASSERT_GE(oldSharingProcs.size(), newSharingProcs.size());
+
+    std::set<int> oldSharingProcsSet(oldSharingProcs.begin(), oldSharingProcs.end());
+    std::set<int> newSharingProcsSet(newSharingProcs.begin(), newSharingProcs.end());
+    ASSERT_TRUE(
+      std::includes(oldSharingProcsSet.begin(), oldSharingProcsSet.end(),
+                    newSharingProcsSet.begin(), newSharingProcsSet.end())
+    );
 }
 
 class CloningMesh : public stk::unit_test_util::MeshFixture
@@ -278,47 +297,95 @@ protected:
         stk::mesh::BulkData & oldBulk = get_bulk();
         stk::mesh::MetaData newMeta;
         stk::mesh::BulkData newBulk(newMeta, oldBulk.parallel(), auraOption);
-        stk::tools::copy_mesh(oldBulk, get_meta().universal_part(), newBulk);
-        test_cloned_submesh(oldBulk, get_meta().universal_part(), newBulk);
-        expect_equal_entity_part_ordinals(oldBulk, get_meta().universal_part(), newBulk);
+        stk::mesh::Selector copySelector = get_meta().universal_part();
+        stk::tools::copy_mesh(oldBulk, copySelector, newBulk);
+        test_cloned_mesh(oldBulk, newBulk);
+        expect_equal_entity_part_ordinals(oldBulk, copySelector, newBulk);
     }
 
     void do_clone_test_with_submesh_selector(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::Part *submesh = get_meta().get_part("submesh");
         stk::mesh::Part *block1 = get_meta().get_part("block_1");
-        stk::mesh::Selector selector = *submesh | *block1;
+        stk::mesh::Selector copySelector = *submesh | *block1;
         stk::mesh::BulkData & oldBulk = get_bulk();
         stk::mesh::MetaData newMeta;
         stk::mesh::BulkData newBulk(newMeta, oldBulk.parallel(), auraOption);
-        stk::tools::copy_mesh(oldBulk, selector, newBulk);
-        test_cloned_submesh(oldBulk, selector, newBulk);
+        stk::tools::copy_mesh(oldBulk, copySelector, newBulk);
+        test_cloned_submesh(oldBulk, copySelector, newBulk);
     }
 
-    void test_cloned_submesh(stk::mesh::BulkData &oldBulk, const stk::mesh::Selector &oldSelector, const stk::mesh::BulkData &newBulk)
+    void test_cloned_mesh(stk::mesh::BulkData &oldBulk, const stk::mesh::BulkData &newBulk)
     {
-        expect_equal_entity_counts(oldBulk, oldSelector, newBulk);
+        stk::mesh::Part& universalPart = oldBulk.mesh_meta_data().universal_part();
+
+        expect_equal_entity_counts(oldBulk, universalPart, newBulk);
 
         const stk::mesh::MetaData &oldMeta = oldBulk.mesh_meta_data();
-        const stk::mesh::MetaData &newMeta = newBulk.mesh_meta_data();
         ASSERT_EQ(5u, oldMeta.entity_rank_count());
+        stk::mesh::Selector localOrSharedSelector = oldMeta.locally_owned_part() | oldMeta.globally_shared_part();
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(oldMeta.entity_rank_count());
         stk::mesh::EntityVector oldEntities;
-        stk::mesh::EntityVector newEntities;
-        stk::mesh::Selector oldOwnedOrShared = oldMeta.locally_owned_part() | oldMeta.globally_shared_part();
-        stk::mesh::Selector newOwnedOrShared = newMeta.locally_owned_part() | newMeta.globally_shared_part();
         for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; rank++)
         {
+            stk::mesh::get_selected_entities(localOrSharedSelector, oldBulk.buckets(rank), oldEntities);
             for(stk::mesh::Entity oldEntity : oldEntities)
             {
                 stk::mesh::Entity newEntity = newBulk.get_entity(rank, oldBulk.identifier(oldEntity));
                 EXPECT_TRUE(newBulk.is_valid(newEntity));
                 if (rank < stk::topology::ELEM_RANK)
                 {
-                    expect_equal_sharing(oldSelector, oldBulk, oldEntity, newBulk, newEntity);
+                    expect_equal_sharing(oldBulk, oldEntity, newBulk, newEntity);
                 }
-                expect_equal_relations(oldSelector, oldBulk, oldEntity, newBulk, newEntity, endRank);
+                expect_equal_relations(universalPart, oldBulk, oldEntity, newBulk, newEntity, endRank);
                 expect_equal_field_data(oldBulk, oldEntity, newBulk, newEntity, rank);
+            }
+        }
+        ASSERT_EQ(oldBulk.has_face_adjacent_element_graph(), newBulk.has_face_adjacent_element_graph());
+    }
+
+    bool isEntityConnectedToOwnedSelectedElement(stk::mesh::Entity entity, const stk::mesh::Selector& selector, stk::mesh::BulkData& bulk)
+    {
+        stk::mesh::Selector alsoOwnedSelector = selector & bulk.mesh_meta_data().locally_owned_part();
+        bool foundSelectedElement = false;
+        const stk::mesh::Entity* elemIt = bulk.begin_elements(entity);
+        const stk::mesh::Entity* elemEndIt = bulk.end_elements(entity);
+        for (; (elemIt != elemEndIt) && !foundSelectedElement; ++elemIt)
+        {
+            if (alsoOwnedSelector(bulk.bucket(*elemIt)))
+            {
+                foundSelectedElement= true;
+            }
+        }
+        return foundSelectedElement;
+    }
+
+    void test_cloned_submesh(stk::mesh::BulkData &oldBulk, const stk::mesh::Selector &copySelector, const stk::mesh::BulkData &newBulk)
+    {
+        expect_equal_entity_counts(oldBulk, copySelector, newBulk);
+
+        const stk::mesh::MetaData &oldMeta = oldBulk.mesh_meta_data();
+        ASSERT_EQ(5u, oldMeta.entity_rank_count());
+        stk::mesh::Selector localOrSharedSelector = copySelector & (oldMeta.locally_owned_part() | oldMeta.globally_shared_part());
+        stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(oldMeta.entity_rank_count());
+        stk::mesh::EntityVector oldEntities;
+        for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; rank++)
+        {
+            stk::mesh::get_selected_entities(localOrSharedSelector, oldBulk.buckets(rank), oldEntities);
+            for(stk::mesh::Entity oldEntity : oldEntities)
+            {
+                bool shouldBeValidInNewBulk = isEntityConnectedToOwnedSelectedElement(oldEntity, copySelector, oldBulk);
+                if (shouldBeValidInNewBulk)
+                {
+                    stk::mesh::Entity newEntity = newBulk.get_entity(rank, oldBulk.identifier(oldEntity));
+                    ASSERT_TRUE(newBulk.is_valid(newEntity)) << "Entity = " << oldBulk.entity_key(oldEntity);
+                    if (rank < stk::topology::ELEM_RANK)
+                    {
+                        expect_superset_sharing(oldBulk, oldEntity, newBulk, newEntity);
+                    }
+                    //expect_equal_relations(copySelector, oldBulk, oldEntity, newBulk, newEntity, endRank); // Faces are different
+                    expect_equal_field_data(oldBulk, oldEntity, newBulk, newEntity, rank);
+                }
             }
         }
         ASSERT_EQ(oldBulk.has_face_adjacent_element_graph(), newBulk.has_face_adjacent_element_graph());

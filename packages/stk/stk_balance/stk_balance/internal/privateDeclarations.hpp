@@ -42,8 +42,6 @@ void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData,  const stk::
 
 void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord);
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
-
 void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings,
                                    std::vector<GraphEdge>& graphEdges, const stk::mesh::Selector& searchSelector);
 

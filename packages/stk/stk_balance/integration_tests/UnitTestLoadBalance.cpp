@@ -973,9 +973,10 @@ TEST(LoadBalance, doOneElementSearch)
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
         stk::balance::internal::BoxVectorWithStkId faceBoxes;
-        const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
-        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
+        stk::balance::GraphCreationSettings settings;
+        settings.setToleranceForFaceSearch( 0.1 );
+        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
 
         size_t goldNumFaceBoxes = 6u;
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
@@ -1086,9 +1087,10 @@ TEST(LoadBalance, doSearch)
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
         stk::balance::internal::BoxVectorWithStkId faceBoxes;
-        const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
-        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
+        stk::balance::GraphCreationSettings settings;
+        settings.setToleranceForFaceSearch( 0.1 );
+        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
 
         std::vector<stk::balance::internal::StkBox> faceItems(faceBoxes.size());
         for(size_t i = 0; i < faceBoxes.size(); i++)

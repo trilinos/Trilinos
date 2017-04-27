@@ -3,11 +3,12 @@
 #ifndef STK_SIMD_FUNCTIONS_H
 #define STK_SIMD_FUNCTIONS_H
 
-#include "stk_simd/SimdConfig.hpp"
+#include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
 
 #include <stk_math/StkMath.hpp>
 
+// IWYU pragma: begin_exports
 #if defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
 #elif defined ( STK_SIMD_AVX )
@@ -20,6 +21,7 @@
 
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
+// IWYU pragma: end_exports
 
 #include <Kokkos_Macros.hpp>
 #include <sys/time.h>
@@ -407,6 +409,7 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 }
 
 } // namespace simd
+
 } // namespace stk
 
 #endif // #ifndef SIMD_H__

@@ -5,9 +5,7 @@ namespace simd {
 
 struct Double {
 
-  STK_MATH_FORCE_INLINE Double() 
-    : _data(_mm256_setzero_pd()) {
-  }
+  STK_MATH_FORCE_INLINE Double() {}
 
   STK_MATH_FORCE_INLINE Double(const double* x) 
     : _data(_mm256_loadu_pd(x)) {

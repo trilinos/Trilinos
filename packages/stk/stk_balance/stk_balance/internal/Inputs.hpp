@@ -92,15 +92,6 @@ bool should_write_usage_info(const std::string& filename)
     return filename.empty();
 }
 
-inline
-bool does_file_exist(const std::string& filename)
-{
-    bool exists = true;
-    if(!std::ifstream(filename))
-        exists = false;
-    return exists;
-}
-
 }
 }
 
