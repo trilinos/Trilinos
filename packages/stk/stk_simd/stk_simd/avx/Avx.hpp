@@ -15,6 +15,7 @@ constexpr int nfloats = 8;
 }
 }
 
+// IWYU pragma: begin_exports
 #include "./AvxDouble.hpp"
 #include "./AvxFloat.hpp"
 #include "./AvxBool.hpp"
@@ -27,6 +28,7 @@ constexpr int nfloats = 8;
 #include "./AvxFloatOperators.hpp"
 #include "./AvxFloatLoadStore.hpp"
 #include "./AvxFloatMath.hpp"
+// IWYU pragma: end_exports
 
 namespace stk {
 namespace simd {

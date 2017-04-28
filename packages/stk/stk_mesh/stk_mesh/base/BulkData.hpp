@@ -847,7 +847,7 @@ protected: //functions
 
 
   template<typename PARTVECTOR>
-  Entity declare_element_side(const stk::mesh::EntityId globalSideId,
+  Entity declare_element_side_with_id(const stk::mesh::EntityId globalSideId,
                               Entity elem,
                               const unsigned sideOrd,
                               const PARTVECTOR& parts);

@@ -12,9 +12,11 @@ namespace stk {
 namespace balance {
 namespace internal {
 
-MtoNRebalancer::MtoNRebalancer(stk::mesh::BulkData &bulkData, int num_target_procs) : mBulkData(bulkData), mNumTargetProcs(num_target_procs), decomp()
+MtoNRebalancer::MtoNRebalancer(stk::mesh::BulkData &bulkData, stk::mesh::Field<double> &targetField,
+                               const stk::balance::BalanceSettings &graphSettings, int num_target_procs)
+: mBulkData(bulkData), targetDecompField(targetField), mNumTargetProcs(num_target_procs), decomp()
 {
-    decomp = stk::balance::internal::get_element_decomp(mNumTargetProcs, mBulkData);
+    decomp = stk::balance::internal::get_element_decomp(mNumTargetProcs, mBulkData, graphSettings);
 }
 
 MtoNRebalancer::~MtoNRebalancer() {}
@@ -99,7 +101,7 @@ void MtoNRebalancer::add_owned_entities_from_bucket_using_target_decomp_field(co
 
 void MtoNRebalancer::add_entities_from_bucket_using_target_decomp_field(const stk::mesh::Bucket& bucket, size_t subdomain_num, stk::mesh::EntityVector& entities)
 {
-    double *bucketSubdomainData = static_cast<double*>(stk::mesh::field_data(*get_target_decomp_field(), bucket));
+    double *bucketSubdomainData = static_cast<double*>(stk::mesh::field_data(targetDecompField, bucket));
     for(size_t k = 0; k < bucket.size(); k++)
     {
         if(bucketSubdomainData[k] == static_cast<double>(subdomain_num))
@@ -123,17 +125,7 @@ void MtoNRebalancer::declare_all_subdomain_parts()
 
 void MtoNRebalancer::store_off_target_proc_on_elements_before_moving_subdomains()
 {
-    stk::balance::internal::put_entity_data_to_field(decomp, get_target_decomp_field());
-}
-
-stk::mesh::FieldBase* MtoNRebalancer::get_target_decomp_field()
-{
-    return mBulkData.mesh_meta_data().get_field(stk::topology::ELEMENT_RANK, get_target_decomp_field_name());
-}
-
-const std::string MtoNRebalancer::get_target_decomp_field_name()
-{
-    return "TargetDecomp";
+    stk::balance::internal::put_entity_data_to_field(decomp, &targetDecompField);
 }
 
 bool MtoNRebalancer::does_this_proc_own_subdomain(unsigned subdomainOwner)

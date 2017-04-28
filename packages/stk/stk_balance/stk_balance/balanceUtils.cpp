@@ -5,6 +5,7 @@
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "FaceSearchTolerance.hpp"
 
 namespace stk
 {
@@ -43,9 +44,13 @@ bool BalanceSettings::includeSearchResultsInGraph() const
     return false;
 }
 
-double BalanceSettings::getToleranceForFaceSearch() const
+double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
 {
     return 0.0;
+}
+
+void BalanceSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance)
+{
 }
 
 double BalanceSettings::getToleranceForParticleSearch() const
@@ -271,9 +276,20 @@ double GraphCreationSettings::getToleranceForParticleSearch() const
     return mToleranceForParticleSearch;
 }
 
-double GraphCreationSettings::getToleranceForFaceSearch() const
+void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance)
 {
-    return mToleranceForFaceSearch;
+    m_faceSearchToleranceFunction = faceSearchTolerance;
+    m_UseConstantToleranceForFaceSearch = false;
+}
+
+double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
+{
+    if (m_UseConstantToleranceForFaceSearch) {
+        return mToleranceForFaceSearch;
+    }
+    else {
+        return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes);
+    }
 }
 
 bool GraphCreationSettings::getEdgesForParticlesUsingSearch() const

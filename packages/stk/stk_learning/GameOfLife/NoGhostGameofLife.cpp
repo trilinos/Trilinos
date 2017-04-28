@@ -31,16 +31,16 @@ NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name)
 {
     finish_construction();
 }
-NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData& bulkData,
-                                     ScalarIntField& lifeField,
-                                     ScalarIntField& neighborField,
-                                     std::string name)
-: m_bulkData(bulkData), m_numProcs(m_bulkData.parallel_size()),
-  m_lifeField(lifeField), m_neighborField(neighborField), m_name(name),
-  m_stkIo(m_bulkData.parallel())
-{
-    finish_construction();
-}
+//NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData& bulkData,
+//                                     ScalarIntField& lifeField,
+//                                     ScalarIntField& neighborField,
+//                                     std::string name)
+//: m_bulkData(bulkData), m_numProcs(m_bulkData.parallel_size()),
+//  m_lifeField(lifeField), m_neighborField(neighborField), m_name(name),
+//  m_stkIo(m_bulkData.parallel())
+//{
+//    finish_construction();
+//}
 void NoGhostGameofLife::activate_these_ids(stk::mesh::EntityIdVector& elemIds)
 {
    for (stk::mesh::EntityId elemId : elemIds)

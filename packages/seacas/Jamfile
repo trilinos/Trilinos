@@ -688,7 +688,6 @@ lib iovs
         [ glob $(seacas-root)/libraries/ioss/src/visualization/*.C ]
     ]
     ioss
-    exodus
   :
     <runtime-link>shared:<define>IOSS_DLOPEN_ENABLED
     [ ifdevbuild
@@ -887,7 +886,6 @@ lib nemesis
         $(seacas-root)/libraries/nemesis/nemesis_wrapper.c
     ]
     exodus
-    /tpl/netcdf//netcdf
   : 
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -923,9 +921,7 @@ lib suplib
         [ glob $(seacas-root)/libraries/suplib/*.f ]
         [ glob $(seacas-root)/libraries/suplib/*.F ]
     ]
-    exodus_for
     supes
-    /tpl/netcdf//netcdf
   : 
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development

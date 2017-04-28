@@ -59,30 +59,6 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
   stk::io::default_part_processing(node_sets, meta);
 
-  stk::mesh::Field<double> & distribution_factors_field =
-    meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
-  stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
-
-  /** \todo REFACTOR How to associate distribution_factors field
-   * with the nodeset part if a node is a member of multiple
-   * nodesets
-   */
-
-  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
-      it != node_sets.end(); ++it) {
-    Ioss::NodeSet *entity = *it;
-
-    if (stk::io::include_entity(entity)) {
-      stk::mesh::Part* const part = meta.get_part(entity->name());
-
-      STKIORequire(part != NULL);
-      STKIORequire(entity->field_exists("distribution_factors"));
-
-      stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field, *part);
-    }
-  }
-
   for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
       it != node_sets.end(); ++it) {
     Ioss::NodeSet *entity = *it;

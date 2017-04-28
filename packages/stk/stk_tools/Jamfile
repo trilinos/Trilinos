@@ -111,6 +111,7 @@ exe stk_block_extractor
   :
     $(stk_tools-root)/stk_tools/block_extractor/main.cpp 
     stk_tools_lib
+    /sierra/stk_util//stk_util_command_line
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;

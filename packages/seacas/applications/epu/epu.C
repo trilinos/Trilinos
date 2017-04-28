@@ -749,17 +749,25 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     get_variable_params(id, global_vars, interface.global_var_names());
     get_variable_params(id, nodal_vars, interface.node_var_names());
     get_variable_params(id, element_vars, interface.elem_var_names());
-    get_variable_params(id, nodeset_vars, interface.nset_var_names());
-    get_variable_params(id, sideset_vars, interface.sset_var_names());
+    if (!interface.omit_nodesets()) {
+      get_variable_params(id, nodeset_vars, interface.nset_var_names());
+    }
+    if (!interface.omit_sidesets()) {
+      get_variable_params(id, sideset_vars, interface.sset_var_names());
+    }
 
     get_truth_table(global, glob_blocks, local_mesh, element_vars, 4);
     filter_truth_table(id, global, glob_blocks, element_vars, interface.elem_var_names());
 
-    get_truth_table(global, glob_nsets, local_mesh, nodeset_vars, 32);
-    filter_truth_table(id, global, glob_nsets, nodeset_vars, interface.nset_var_names());
+    if (!interface.omit_nodesets()) {
+      get_truth_table(global, glob_nsets, local_mesh, nodeset_vars, 32);
+      filter_truth_table(id, global, glob_nsets, nodeset_vars, interface.nset_var_names());
+    }
 
-    get_truth_table(global, glob_ssets, local_mesh, sideset_vars, 16);
-    filter_truth_table(id, global, glob_ssets, sideset_vars, interface.sset_var_names());
+    if (!interface.omit_sidesets()) {
+      get_truth_table(global, glob_ssets, local_mesh, sideset_vars, 16);
+      filter_truth_table(id, global, glob_ssets, sideset_vars, interface.sset_var_names());
+    }
   }
 
   // There is a slightly tricky situation here. The truthTable block order
@@ -795,8 +803,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     get_put_variable_names(id, ExodusFile::output(), global_vars, interface);
     get_put_variable_names(id, ExodusFile::output(), nodal_vars, interface);
     get_put_variable_names(id, ExodusFile::output(), element_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), nodeset_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), sideset_vars, interface);
+    if (!interface.omit_nodesets()) {
+      get_put_variable_names(id, ExodusFile::output(), nodeset_vars, interface);
+    }
+    if (!interface.omit_sidesets()) {
+      get_put_variable_names(id, ExodusFile::output(), sideset_vars, interface);
+    }
   }
   if (!interface.append())
     ex_update(ExodusFile::output());
@@ -1106,6 +1118,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     // ========================================================================
     // Extracting sideset transient variable data
+    if (!interface.omit_nodesets()) {
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
 
@@ -1120,7 +1133,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
       output_master_values(sideset_vars, global, glob_ssets, master_sideset_values, time_step_out);
     }
+    }
 
+    if (!interface.omit_nodesets()) {
     // ========================================================================
     // Extracting nodeset transient variable data
     if (debug_level & 1)
@@ -1137,7 +1152,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
       output_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values, time_step_out);
     }
-
+    }
     // ========================================================================
     ex_update(ExodusFile::output());
 
@@ -1919,7 +1934,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
     bool is_contiguous =
-      (size_t)global_node_map.back() == global_node_map.size();
+      global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
     std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map the maps from a local processor node to the

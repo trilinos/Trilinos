@@ -78,7 +78,7 @@ const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& met
     return coord;
 }
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, stk::balance::internal::BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
 {
     stkMeshBulkData.initialize_face_adjacent_element_graph();
     stk::mesh::ElemElemGraph& elemElemGraph = stkMeshBulkData.get_face_adjacent_element_graph();
@@ -91,6 +91,7 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps
         stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
         stk::mesh::EntityVector sideNodes;
         stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement, stkMeshBulkData.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
+        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes);
         addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps, stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
 }
@@ -130,7 +131,7 @@ StkSearchResults getSearchResultsForFacesParticles(stk::mesh::BulkData& stkMeshB
     const stk::mesh::FieldBase* coord = get_coordinate_field(stkMeshBulkData.mesh_meta_data(), balanceSettings.getCoordinateFieldName());
 
     stk::balance::internal::BoxVectorWithStkId faceBoxes;
-    fillFaceBoxesWithIds(stkMeshBulkData, balanceSettings.getToleranceForFaceSearch(), coord, faceBoxes, searchSelector);
+    fillFaceBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes, searchSelector);
 
     if ( balanceSettings.getEdgesForParticlesUsingSearch() )
     {

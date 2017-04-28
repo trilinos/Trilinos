@@ -25,8 +25,6 @@
 #include <time.h>
 #include <vector>
 
-#include <exodusII.h>
-
 class ParaViewCatalystIossAdapterBase;
 
 /** \brief A namespace for the visualization database format.
