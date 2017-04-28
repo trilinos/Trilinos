@@ -327,7 +327,7 @@ namespace MueLu {
         // at the boundaries.
         if( (gIndices[mapDirG2L[i]] + lFineNodesPerDir[i]) == gFineNodesPerDir[mapDirG2L[i]] ) {
           lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] - endRate[mapDirG2L[i]] + offsets[mapDirG2L[i]] - 1) / coarseRate[mapDirG2L[i]] + 1;
-          if( (offsets[mapDirG2L[i]] == 0) ) {++lCoarseNodesPerDir[i];}
+          if(offsets[mapDirG2L[i]] == 0) {++lCoarseNodesPerDir[i];}
         } else {
           lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] + offsets[mapDirG2L[i]] - 1) / coarseRate[mapDirG2L[i]];
           if(offsets[mapDirG2L[i]] == 0) {++lCoarseNodesPerDir[i];}
