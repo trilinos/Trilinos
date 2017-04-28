@@ -826,7 +826,7 @@ namespace MueLu {
                                                         rowMapP->getComm());
 
     // Do the actual import using the fineCoordsMap
-    RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO>::Build(fineCoordsMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), ghostsGIDs.view(0, lNumGhostNodes),
+    RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO,NO>::Build(fineCoordsMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), ghostsGIDs.view(0, lNumGhostNodes),
                                                                fineCoordsMap->getIndexBase(), rowMapP->getComm());
     RCP<const Import> importer = ImportFactory::Build(fineCoordsMap, ghostMap);
     RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(ghostMap, ndm);
