@@ -81,6 +81,45 @@ namespace MueLu {
       RowType rows_;
     };
 
+    // only limited support for lambdas with CUDA 7.5
+    // see https://github.com/kokkos/kokkos/issues/763
+    // This functor probably can go away when using CUDA 8.0
+    template<class LocalOrdinal, class rowType, class NSDimType>
+    class FillRowAuxArrayFunctor {
+    public:
+      FillRowAuxArrayFunctor(rowType rows, NSDimType nsDim) : rows_(rows), nsDim_(nsDim) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LocalOrdinal row) const {
+        rows_(row) = row*nsDim_;
+      }
+
+    private:
+      rowType   rows_;
+      NSDimType nsDim_;
+    };
+
+    // only limited support for lambdas with CUDA 7.5
+    // see https://github.com/kokkos/kokkos/issues/763
+    // This functor probably can go away when using CUDA 8.0
+    template<class SC, class LO, class colType, class valType>
+    class FillColAuxArrayFunctor {
+    public:
+      FillColAuxArrayFunctor(SC zero, LO invalid, colType cols, valType vals) : zero_(zero), invalid_(invalid), cols_(cols), vals_(vals) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO col) const {
+        cols_(col) = 21; //invalid_;
+        vals_(col) = 0.0; //zero_;
+      }
+
+    private:
+      SC        zero_;
+      LO        invalid_;
+      colType   cols_;
+      valType   vals_;
+    };
+
     // collect aggregate sizes (number of dofs associated with all nodes in aggregate)
     template<class aggSizesType, class vertex2AggIdType, class procWinnerType, class nodeGlobalEltsType, class isNodeGlobalEltsType, class LOType, class GOType>
     class CollectAggregateSizeFunctor {
@@ -213,6 +252,91 @@ namespace MueLu {
               }
             }
           }
+        }
+      }
+    };
+
+    // local QR decomposition (scalar case, no real QR decomposition necessary)
+    // Use exactly the same template types. The only one that is not really necessary is the maxAggDofSizeType
+    // for reserving temporary scratch space
+    template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
+    class LocalScalarQRDecompFunctor {
+    private:
+      typedef LOType LO;
+      typedef GOType GO;
+      typedef SCType SC;
+
+      typedef typename DeviceType::execution_space execution_space;
+
+    private:
+
+      NspType fineNSRandom;
+      NspType coarseNS;
+      aggRowsType aggRows;
+      maxAggDofSizeType maxAggDofSize; //< maximum number of dofs in aggregate (max size of aggregate * numDofsPerNode)
+      agg2RowMapLOType agg2RowMapLO;
+      statusType statusAtomic;
+      rowsType rows;
+      rowsAuxType rowsAux;
+      colsAuxType colsAux;
+      valsAuxType valsAux;
+    public:
+      LocalScalarQRDecompFunctor(NspType fineNSRandom_, NspType coarseNS_, aggRowsType aggRows_, maxAggDofSizeType maxAggDofSize_, agg2RowMapLOType agg2RowMapLO_, statusType statusAtomic_, rowsType rows_, rowsAuxType rowsAux_, colsAuxType colsAux_, valsAuxType valsAux_) :
+        fineNSRandom(fineNSRandom_),
+        coarseNS(coarseNS_),
+        aggRows(aggRows_),
+        maxAggDofSize(maxAggDofSize_),
+        agg2RowMapLO(agg2RowMapLO_),
+        statusAtomic(statusAtomic_),
+        rows(rows_),
+        rowsAux(rowsAux_),
+        colsAux(colsAux_),
+        valsAux(valsAux_)
+        { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator() ( const typename Kokkos::TeamPolicy<execution_space>::member_type & thread, size_t& rowNnz) const {
+        auto agg = thread.league_rank();
+
+        // size of aggregate: number of DOFs in aggregate
+        LO aggSize = aggRows(agg+1) - aggRows(agg);
+
+        // Extract the piece of the nullspace corresponding to the aggregate, and
+        // put it in the flat array, "localQR" (in column major format) for the
+        // QR routine. Trivial in 1D.
+
+        // Calculate QR by hand
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        typedef typename ATS::magnitudeType Magnitude;
+
+        Magnitude norm = ATS::zero();
+        for (size_t k = 0; k < aggSize; k++) {
+          Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
+          norm += dnorm*dnorm;
+        }
+        norm = sqrt(norm);
+
+        if (norm == ATS::zero()) {
+          // zero column; terminate the execution
+          statusAtomic(1) = true;
+          return;
+        }
+
+        // R = norm
+        coarseNS(agg, 0) = norm;
+
+        // Q = localQR(:,0)/norm
+        for (LO k = 0; k < aggSize; k++) {
+          LO localRow = agg2RowMapLO(aggRows(agg)+k);
+          SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
+
+          size_t rowStart = rowsAux(localRow);
+          colsAux(rowStart) = agg;
+          valsAux(rowStart) = localVal;
+
+          // Store true number of nonzeros per row
+          rows(localRow+1) = 1;
+          rowNnz          += 1;
         }
       }
     };
@@ -627,7 +751,7 @@ namespace MueLu {
     auto     aggGraph = aggregates->GetGraph();
     auto     aggRows  = aggGraph.row_map;
     auto     aggCols  = aggGraph.entries;
-    const GO numAggs  = aggregates->GetNumAggregates();
+    //const GO numAggs  = aggregates->GetNumAggregates();
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -689,8 +813,7 @@ namespace MueLu {
     // Each process has to loop over all nodes. The parallel for loop is over an additional
     // outer for loop over the aggregates which actually is not needed in the serial code.
     CollectAggregateSizeFunctor <decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> collectAggregateSizes(sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
-    Kokkos::parallel_for("MueLu:TentativePF:Build:getaggsizes", numAggregates, collectAggregateSizes);
-
+    Kokkos::parallel_for("MueLu:TentativePF:Build:getaggsizes", range_type(0,numAggregates), collectAggregateSizes);
     // the alternative would be to avoid race conditions and allow parallel write acces to sizes
 #else
     // we have to avoid race conditions when parallelizing the loops below
@@ -728,19 +851,17 @@ namespace MueLu {
       if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
     }
 
-
     // parallel_scan (exclusive)
     // The Kokkos::View sizes then contains the aggreate Dof offsets
     ScanFunctor<LO,decltype(sizes)> scanFunctorAggSizes(sizes);
-    Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", numAggregates+1, scanFunctorAggSizes);
-
+    Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", range_type(0,numAggregates+1), scanFunctorAggSizes);
     // Create Kokkos::View on the device to store mapping between (local) aggregate id and row map ids (LIDs)
     Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", numRows); // initialized to 0
 
 
 #if 1
     CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
-    Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", numAggregates, createAgg2RowMap);
+    Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0,numAggregates), createAgg2RowMap);
 #else
     Kokkos::View<LO*, DeviceType> numDofs("countDofsPerAggregate", numAggregates); // helper view. We probably don't need that
     if(stridedBlockSize == 1) {
@@ -783,7 +904,8 @@ namespace MueLu {
     size_t nnzEstimate = numRows * NSDim; // maximum number of possible nnz
     size_t nnz = 0;                       // actual number of nnz
 
-    typedef typename Matrix::local_matrix_type          local_matrix_type;
+    // TODO replace views!!!
+    typedef typename Xpetra::Matrix<SC,LO,GO,NO>::local_matrix_type          local_matrix_type;
     typedef typename local_matrix_type::row_map_type    rows_type;
     typedef typename local_matrix_type::index_type      cols_type;
     typedef typename local_matrix_type::values_type     vals_type;
@@ -795,13 +917,22 @@ namespace MueLu {
     typename cols_type::non_const_type colsAux("Ptent_aux_cols", nnzEstimate);
     typename vals_type::non_const_type valsAux("Ptent_aux_vals", nnzEstimate);
 
-    Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", numRows+1, KOKKOS_LAMBDA(const LO row) {
+#if 1
+    // only limited support for lambdas with CUDA 7.5
+    // see https://github.com/kokkos/kokkos/issues/763
+    FillRowAuxArrayFunctor<LO, decltype(rowsAux), decltype(NSDim)> rauxf(rowsAux, NSDim);
+    Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", range_type(0,numRows+1), rauxf);
+    FillColAuxArrayFunctor<SC, LO, decltype(colsAux), decltype(valsAux)> cauxf(zero, INVALID, colsAux, valsAux);
+    Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0,nnzEstimate), cauxf);
+#else
+    Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", range_type(0,numRows+1), KOKKOS_LAMBDA(const LO row) {
       rowsAux(row) = row*NSDim;
     });
     Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", nnzEstimate, KOKKOS_LAMBDA(const LO j) {
-      colsAux(j) = INVALID;
-      valsAux(j) = zero;
+     colsAux(j) = INVALID;
+     valsAux(j) = zero;
     });
+#endif
 
     // Device View for status (error messages...)
     typedef Kokkos::View<int[10], DeviceType> status_type;
@@ -812,10 +943,26 @@ namespace MueLu {
     // Run one thread per aggregate.
     typename AppendTrait<decltype(fineNS), Kokkos::RandomAccess>::type fineNSRandom = fineNS;
     typename AppendTrait<status_type,      Kokkos::Atomic>      ::type statusAtomic = status;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError, "Only works for non-overlapping aggregates (goodMap == true)");
+
     if (NSDim == 1) {
+
+#if 1
+      // only limited support for lambdas with CUDA 7.5
+      // see https://github.com/kokkos/kokkos/issues/763
+      //
+      // Set up team policy with numAggregates teams and one thread per team.
+      // Each team handles a slice of the data associated with one aggregate
+      // and performs a local QR decomposition (in this case no real QR decomp
+      // is necessary)
+      const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
+      Kokkos::parallel_reduce(policy, LocalScalarQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
+#else
+      // Andrey's original implementation as a lambda
       // 1D is special, as it is the easiest. We don't even need to the QR,
       // just normalize an array. Plus, no worries abot small aggregates.
-      Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
+      Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggregates, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
         // Extract the piece of the nullspace corresponding to the aggregate, and
@@ -863,6 +1010,7 @@ namespace MueLu {
           return;
         }
       }, nnz);
+#endif
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
       for (int i = 0; i < statusHost.size(); i++)
@@ -878,14 +1026,12 @@ namespace MueLu {
 
     } else { // NSdim > 1
 
-      TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError, "Only works for non-overlapping aggregates (goodMap == true)");
-
       // Set up team policy with numAggregates teams and one thread per team.
       // Each team handles a slice of the data associated with one aggregate
       // and performs a local QR decomposition
-      const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
-      const Kokkos::TeamPolicy<execution_space> testtp(numAggregates,1);
-      Kokkos::parallel_reduce(testtp, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
+      //const Kokkos::TeamPolicy<> policy( numAggregates, 1); // numAggregates teams a 1 thread
+      const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1);
+      Kokkos::parallel_reduce(policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
       for (int i = 0; i < statusHost.size(); i++)
@@ -902,7 +1048,9 @@ namespace MueLu {
 
     // Stage 2: compress the arrays
     ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
-    Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", numRows+1, scanFunctor);
+    Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1), scanFunctor);
+
+    std::cout << " LLL " << std::endl;
 
     // The real cols and vals are constructed using calculated (not estimated) nnz
     typename cols_type::non_const_type cols("Ptent_cols", nnz);
@@ -918,6 +1066,8 @@ namespace MueLu {
           lnnz++;
         }
     });
+
+    std::cout << " MMM " << std::endl;
 
     GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
 
