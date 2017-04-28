@@ -57,12 +57,12 @@ TEST( Symbolic, constructor ) {
   SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
 }
 
-TEST( Symbolic, eliminationtree ) {  
+TEST( Symbolic, functions ) {  
   CrsMatrixBaseHostType A("A");
   A = MatrixMarket<ValueType>::read("test.mtx");
-
+  
   Graph G(A);
-
+  
 #if   defined(HAVE_SHYLUTACHO_METIS)
   GraphTools_Metis T(G);
 #elif defined(HAVE_SHYLUTACHO_SCOTCH)
@@ -86,14 +86,47 @@ TEST( Symbolic, eliminationtree ) {
   
   SymbolicTools::computeEliminationTree(m, ap, aj, perm, peri, parent, ancestor);
   
-  ordinal_type_array 
-    post("post", m),
-    work("work", m*3);
-  SymbolicTools::computePostOrdering(m, parent, post, work);
+  ordinal_type_array work("work", m*4);
 
+  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+  auto post = Kokkos::subview(work, range_type(0*m, 1*m));
+  auto w    = Kokkos::subview(work, range_type(1*m, 4*m));
+  SymbolicTools::computePostOrdering(m, parent, post, w);
+  
   size_type_array up;
   ordinal_type_array uj;
   SymbolicTools::computeFillPatternUpper(m, ap, aj, perm, peri, up, uj, work);
+  
+  ordinal_type_array supernodes;
+  SymbolicTools::computeSuperNodes(m, ap, aj, perm, peri, parent, supernodes, work);                    
+
+  // allocate supernodes
+  size_type_array gid_super_panel_ptr, sid_super_panel_ptr;
+  ordinal_type_array gid_super_panel_colidx, sid_super_panel_colidx, blk_super_panel_colidx;
+  SymbolicTools::allocateSuperNodes(m, up, uj, supernodes, work,
+                                    gid_super_panel_ptr,
+                                    gid_super_panel_colidx,
+                                    sid_super_panel_ptr,
+                                    sid_super_panel_colidx,
+                                    blk_super_panel_colidx);
+  // const size_type numSuperNodes = supernodes.dimension_0() - 1;
+  // printf("supernodes = \n");
+  // for (size_type i=0;i<numSuperNodes;++i) {
+  //   printf("sid=  %d\n", supernodes(i));
+  //   printf("-- gid = \n");
+  //   for (size_type j=gid_super_panel_ptr(i);j<gid_super_panel_ptr(i+1);++j) 
+  //     printf("  %d", gid_super_panel_colidx(j));
+  //   printf("\n");
+
+  //   printf("-- supernodes id connected = \n");
+  //   for (size_type j=sid_super_panel_ptr(i);j<(sid_super_panel_ptr(i+1)-1);++j) 
+  //     printf("  %d", sid_super_panel_colidx(j));
+  //   printf("\n");
+  //   printf("-- supernodes blocks connected = \n");
+  //   for (size_type j=sid_super_panel_ptr(i);j<sid_super_panel_ptr(i+1);++j) 
+  //     printf("  %d", blk_super_panel_colidx(j));
+  //   printf("\n");
+  // }
 }
 
 
