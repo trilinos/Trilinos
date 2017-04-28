@@ -51,7 +51,6 @@
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
-#include "Intrepid2_CubatureDirectLineGauss.hpp"
 
 namespace Intrepid2 {
 
@@ -81,7 +80,7 @@ getValues(       outputViewType output,
   // compute order
   ordinal_type order = 0;
   for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
-    if (card == p*(p+2)) {
+    if (card == CardinalityHCurlTri(p)) {
       order = p;
       break;
     }
@@ -177,7 +176,7 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
     const EPointType   pointType ) {
 
   constexpr ordinal_type spaceDim = 2;
-  this->basisCardinality_  = order*(order+2);
+  this->basisCardinality_  = CardinalityHCurlTri(order);
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
   this->basisType_         = BASIS_FEM_FIAT;
@@ -194,7 +193,7 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
 
   // Basis-dependent initializations
   constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-  constexpr ordinal_type maxCard = (Parameters::MaxOrder)*(Parameters::MaxOrder+2);
+  constexpr ordinal_type maxCard = CardinalityHCurlTri(Parameters::MaxOrder);
   ordinal_type tags[maxCard][tagSize];
 
   // points are computed in the host and will be copied
@@ -211,7 +210,6 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
   const ordinal_type lwork = card*card;
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
   V1("Hcurl::Tri::In::V1", cardVecPn, card);
-  Kokkos::deep_copy(V1,0);
 
   // basis for the space is
   // { (phi_i,0) }_{i=0}^{cardPnm1-1} ,
@@ -222,10 +220,10 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
   // for P_{n}^2
 
   // these two loops get the first two sets of basis functions
-  for (ordinal_type i=0;i<cardPnm1;i++) {
-    V1(i,i) = 1.0;
-    V1(cardPn+i,cardPnm1+i) = 1.0;
-  }
+  for (ordinal_type i=0;i<cardPnm1;i++)
+    for (ordinal_type d=0;d<spaceDim;d++)
+      V1(d*cardPn+i,d*cardPnm1+i) = 1.0;
+
 
   // now I need to integrate { (x,y) \times phi } against the big basis
   // first, get a cubature rule.
@@ -238,19 +236,19 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hcurl::Tri::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
   Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
 
-  scalarType m1tod[spaceDim] = {1, -1};  // (-1)^d
-
   // now do the integration
   for (ordinal_type i=0;i<order;i++) {
     for (ordinal_type j=0;j<cardPn;j++) { // int (x,y) phi_i \cdot (phi_j,phi_{j+cardPn})
-      V1(j,cardVecPnm1+i) = 0.0;
-      for (ordinal_type d=0; d< spaceDim; ++d)
-        for (ordinal_type k=0;k<myCub.getNumPoints();k++) {
-          V1(j+d*cardPn,cardVecPnm1+i) -= m1tod[d] *
-              cubWeights(k) * cubPoints(k,spaceDim-1-d)
-              * phisAtCubPoints(cardPnm2+i,k)
-              * phisAtCubPoints(j,k);
-        }
+      for (ordinal_type k=0;k<myCub.getNumPoints();k++) {
+        V1(j,cardVecPnm1+i) -=
+            cubWeights(k) * cubPoints(k,1)
+            * phisAtCubPoints(cardPnm2+i,k)
+            * phisAtCubPoints(j,k);
+        V1(j+cardPn,cardVecPnm1+i) +=
+            cubWeights(k) * cubPoints(k,0)
+            * phisAtCubPoints(cardPnm2+i,k)
+            * phisAtCubPoints(j,k);
+      }
     }
   }
 
@@ -258,49 +256,51 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
   V2("Hcurl::Tri::In::V2", card ,cardVecPn);
 
-  constexpr ordinal_type numEdges = 3;
+  const ordinal_type numEdges = this->basisCellTopology_.getEdgeCount();
 
-  // first numEdges * degree nodes are normals at each edge
+  shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
+
+  const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+      order+1 ,
+      1 );
+
+  // first numEdges * degree nodes are tangents at each edge
   // get the points on the line
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> linePts("Hcurl::Tri::In::linePts", order , 1 );
-
-
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> linePts("Hcurl::Tri::In::linePts", numPtsPerEdge , 1 );
 
   // construct lattice
   const ordinal_type offset = 1;
-
-  shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
   PointTools::getLattice( linePts,
-      linetop,
+      edgeTop,
       order+1, offset,
       pointType );
 
   // holds the image of the line points
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tri::In::edgePts", order , spaceDim );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> phisAtEdgePoints("Hcurl::Tri::In::phisAtEdgePoints", cardPn , order );
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tri::In::edgePts", numPtsPerEdge , spaceDim );
+  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> phisAtEdgePoints("Hcurl::Tri::In::phisAtEdgePoints", cardPn , numPtsPerEdge );
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgeTan("Hcurl::Tri::In::edgeTan", spaceDim );
 
   // these are tangents scaled by the appropriate edge lengths.
-  for (ordinal_type i=0;i<numEdges;i++) {  // loop over edges
+  for (ordinal_type edge=0;edge<numEdges;edge++) {  // loop over edges
     CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( edgeTan ,
-        i ,
+        edge ,
         this->basisCellTopology_ );
     /* multiply by 2.0 to account for a Jacobian in Pavel's definition */
-    for (ordinal_type j=0;j<2;j++)
+    for (ordinal_type j=0;j<spaceDim;j++)
       edgeTan(j) *= 2.0;
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
         linePts ,
         1 ,
-        i ,
+        edge ,
         this->basisCellTopology_ );
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtEdgePoints , edgePts, order, OPERATOR_VALUE);
 
     // loop over points (rows of V2)
-    for (ordinal_type j=0;j<order;j++) {
+    for (ordinal_type j=0;j<numPtsPerEdge;j++) {
 
-      const ordinal_type i_card = order*i+j;
+      const ordinal_type i_card = numPtsPerEdge*edge+j;
 
       // loop over orthonormal basis functions (columns of V2)
       for (ordinal_type k=0;k<cardPn;k++) {
@@ -314,9 +314,9 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
         dofCoords(i_card,k) = edgePts(j,k);
 
       tags[i_card][0] = 1; // edge dof
-      tags[i_card][1] = i; // edge id
+      tags[i_card][1] = edge; // edge id
       tags[i_card][2] = j; // local dof id
-      tags[i_card][3] = order; // total vert dof
+      tags[i_card][3] = numPtsPerEdge; // total edge dof
 
     }
 
@@ -328,13 +328,13 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
   // the degree == 1 space corresponds classicaly to RT0 and so gets
   // no internal nodes, and degree == 2 corresponds to RT1 and needs
   // one internal node per vector component.
-  const ordinal_type numInternalPoints = PointTools::getLatticeSize( this->basisCellTopology_ ,
+  const ordinal_type numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
       order + 1 ,
       1 );
 
-  if (numInternalPoints > 0) {
+  if (numPtsPerCell > 0) {
     Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
-    internalPoints( "Hcurl::Tri::In::internalPoints", numInternalPoints , spaceDim );
+    internalPoints( "Hcurl::Tri::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
         this->basisCellTopology_ ,
         order + 1 ,
@@ -342,31 +342,31 @@ Basis_HCURL_TRI_In_FEM( const ordinal_type order,
         pointType );
 
     Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
-    phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numInternalPoints );
+    phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
 
     // copy values into right positions of V2
-    for (ordinal_type i=0;i<numInternalPoints;i++) {
+    for (ordinal_type j=0;j<numPtsPerCell;j++) {
 
-      const ordinal_type i_card = numEdges*order+i;
+      const ordinal_type i_card = numEdges*order+j;
 
-      for (ordinal_type j=0;j<cardPn;j++) {
+      for (ordinal_type k=0;k<cardPn;k++) {
         // x component
-        V2(i_card,j) = phisAtInternalPoints(j,i);
+        V2(i_card,k) = phisAtInternalPoints(k,j);
         // y component
-        V2(i_card+numInternalPoints,cardPn+j) = phisAtInternalPoints(j,i);
+        V2(i_card+numPtsPerCell,cardPn+k) = phisAtInternalPoints(k,j);
       }
 
       //save dof coordinates
-      for(ordinal_type k=0; k<spaceDim; ++k) {
-        dofCoords(i_card,k) = internalPoints(i,k);
-        dofCoords(i_card+numInternalPoints,k) = internalPoints(i,k);
+      for(ordinal_type d=0; d<spaceDim; ++d) {
+        dofCoords(i_card,d) = internalPoints(j,d);
+        dofCoords(i_card+numPtsPerCell,d) = internalPoints(j,d);
 
 
-        tags[i_card+k*numInternalPoints][0] = spaceDim; // elem dof
-        tags[i_card+k*numInternalPoints][1] = 0; // elem id
-        tags[i_card+k*numInternalPoints][2] = spaceDim*i+k; // local dof id
-        tags[i_card+k*numInternalPoints][3] = spaceDim*numInternalPoints; // total vert dof
+        tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
+        tags[i_card+d*numPtsPerCell][1] = 0; // elem id
+        tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
+        tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
       }
     }
   }

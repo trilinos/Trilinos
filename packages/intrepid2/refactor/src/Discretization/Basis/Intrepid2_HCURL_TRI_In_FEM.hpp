@@ -76,6 +76,8 @@ namespace Intrepid2 {
 
  */
 
+#define CardinalityHCurlTri(order) (order*(order+2))
+
 namespace Impl {
 
 class Basis_HCURL_TRI_In_FEM {
@@ -130,7 +132,7 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
-      constexpr ordinal_type bufSize = (Parameters::MaxOrder)*(Parameters::MaxOrder+2)*numPtsEval;
+      constexpr ordinal_type bufSize = CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval;
       outputValueType buf[bufSize];
 
       Kokkos::DynRankView<outputValueType,
@@ -193,12 +195,12 @@ class Basis_HCURL_TRI_In_FEM
         this->getBaseCellTopology(),
         this->getCardinality() );
 #endif
-constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
-Impl::Basis_HCURL_TRI_In_FEM::
-getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-    inputPoints,
-    this->coeffs_,
-    operatorType);
+    constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
+    Impl::Basis_HCURL_TRI_In_FEM::
+    getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+        inputPoints,
+        this->coeffs_,
+        operatorType);
   }
 
   virtual

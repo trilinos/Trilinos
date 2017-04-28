@@ -44,7 +44,7 @@
     \brief  Header file for the Intrepid2::HDIV_TRI_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
-*/
+ */
 
 #ifndef __INTREPID2_HDIV_TRI_IN_FEM_HPP__
 #define __INTREPID2_HDIV_TRI_IN_FEM_HPP__
@@ -59,13 +59,13 @@ namespace Intrepid2 {
 
 /** \class  Intrepid::Basis_HDIV_TRI_In_FEM
     \brief  Implementation of the default H(div)-compatible Raviart-Thomas basis of arbitrary degree  on Triangle cell 
-  
+
             Implements nodal basis of degree n (n>=1) on the reference Triangle cell. The basis has
             cardinality n(n+2) and spans an INCOMPLETE polynomial
             space of degree n. Basis functions are dual to a
             unisolvent set of degrees-of-freedom (DoF) defined and
             enumerated as
-            
+
             \li The normal component on a lattice of order n+1 and
             offset 1 on each edge (see PointTools). This gives one point per edge in
             the lowest-order case.  These are the first
@@ -82,176 +82,178 @@ namespace Intrepid2 {
             are chosen on each edge and the interior of warp-blend lattice of order n+1 is chosen for
             the interior points.
 
-  
-  */
 
-  namespace Impl {
+ */
 
-    class Basis_HDIV_TRI_In_FEM {
+#define CardinalityHDIvTri(order) (order*(order+2))
+
+namespace Impl {
+
+class Basis_HDIV_TRI_In_FEM {
+public:
+
+  template<EOperator opType>
+  struct Serial {
+    template<typename outputValueViewType,
+    typename inputPointViewType,
+    typename workViewType,
+    typename vinvViewType>
+    KOKKOS_INLINE_FUNCTION
+    static void
+    getValues(       outputValueViewType outputValues,
+        const inputPointViewType  inputPoints,
+        workViewType        work,
+        const vinvViewType        vinv );
+  };
+
+  template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+  typename outputValueValueType, class ...outputValueProperties,
+  typename inputPointValueType,  class ...inputPointProperties,
+  typename vinvValueType,        class ...vinvProperties>
+  static void
+  getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+      const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+      const EOperator operatorType);
+
+  template<typename outputValueViewType,
+  typename inputPointViewType,
+  typename vinvViewType,
+  EOperator opType,
+  ordinal_type numPtsEval>
+  struct Functor {
+    outputValueViewType _outputValues;
+    const inputPointViewType  _inputPoints;
+    const vinvViewType        _coeffs;
+
+    KOKKOS_INLINE_FUNCTION
+    Functor(       outputValueViewType outputValues_,
+        inputPointViewType  inputPoints_,
+        vinvViewType        coeffs_ )
+    : _outputValues(outputValues_), _inputPoints(inputPoints_), _coeffs(coeffs_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_type iter) const {
+      const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
+      const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+
+      const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
+      const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
+
+      typedef typename outputValueViewType::value_type outputValueType;
+      constexpr ordinal_type bufSize = CardinalityHDIvTri(Parameters::MaxOrder)*numPtsEval;
+      outputValueType buf[bufSize];
+
+      Kokkos::DynRankView<outputValueType,
+      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+
+      switch (opType) {
+      case OPERATOR_VALUE : {
+        auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL()  );
+        Serial<opType>::getValues( output, input, work, _coeffs );
+        break;
+      }
+      case OPERATOR_DIV: {
+        auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
+        Serial<opType>::getValues( output, input, work, _coeffs );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::Functor) operator is not supported");
+
+      }
+      }
+    }
+  };
+};
+}
+
+template<typename ExecSpaceType = void,
+    typename outputValueType = double,
+    typename pointValueType = double>
+class Basis_HDIV_TRI_In_FEM
+    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
     public:
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
-      template<EOperator opType>
-      struct Serial {
-        template<typename outputValueViewType,
-                 typename inputPointViewType,
-                 typename workViewType,
-                 typename vinvViewType>
-        KOKKOS_INLINE_FUNCTION
-        static void
-        getValues(       outputValueViewType outputValues,
-                   const inputPointViewType  inputPoints,
-                         workViewType        work,
-                   const vinvViewType        vinv );
-      };
+  /** \brief  Constructor.
+   */
+  Basis_HDIV_TRI_In_FEM(const ordinal_type order,
+      const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
-               typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties,
-               typename vinvValueType,        class ...vinvProperties>
-      static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                  const EOperator operatorType);
 
-      template<typename outputValueViewType,
-               typename inputPointViewType,
-               typename vinvViewType,
-               EOperator opType,
-               ordinal_type numPtsEval>
-      struct Functor {
-              outputValueViewType _outputValues;
-        const inputPointViewType  _inputPoints;
-        const vinvViewType        _coeffs;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
 
-        KOKKOS_INLINE_FUNCTION
-        Functor(       outputValueViewType outputValues_,
-                       inputPointViewType  inputPoints_,
-                       vinvViewType        coeffs_ )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), _coeffs(coeffs_) {}
+  using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type iter) const {
-          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
-
-          const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
-          const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
-
-          typedef typename outputValueViewType::value_type outputValueType;
-          constexpr ordinal_type bufSize = (Parameters::MaxOrder)*(Parameters::MaxOrder+2)*numPtsEval;
-          outputValueType buf[bufSize];
-
-          Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
-
-          switch (opType) {
-          case OPERATOR_VALUE : {
-            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL()  );
-            Serial<opType>::getValues( output, input, work, _coeffs );
-            break;
-          }
-          case OPERATOR_DIV: {
-            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
-            Serial<opType>::getValues( output, input, work, _coeffs );
-            break;
-          }
-          default: {
-            INTREPID2_TEST_FOR_ABORT( true,
-                                      ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::Functor) operator is not supported");
-
-          }
-          }
-        }
-      };
-    };
+  virtual
+  void
+  getValues(       outputViewType outputValues,
+      const pointViewType  inputPoints,
+      const EOperator operatorType = OPERATOR_VALUE) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    Intrepid2::getValues_HDIV_Args(outputValues,
+        inputPoints,
+        operatorType,
+        this->getBaseCellTopology(),
+        this->getCardinality() );
+#endif
+    constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
+    Impl::Basis_HDIV_TRI_In_FEM::
+    getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+        inputPoints,
+        this->coeffs_,
+        operatorType);
   }
 
-  template<typename ExecSpaceType = void,
-           typename outputValueType = double,
-           typename pointValueType = double>
-  class Basis_HDIV_TRI_In_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
-  public:
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
-
-    /** \brief  Constructor.
-     */
-    Basis_HDIV_TRI_In_FEM(const ordinal_type order,
-                           const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
-
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
-
-    virtual
-    void
-    getValues(       outputViewType outputValues,
-               const pointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE) const {
+  virtual
+  void
+  getDofCoords( scalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-      Intrepid2::getValues_HDIV_Args(outputValues,
-                                      inputPoints,
-                                      operatorType,
-                                      this->getBaseCellTopology(),
-                                      this->getCardinality() );
+    // Verify rank of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) rank = 2 required for dofCoords array");
+    // Verify 0th dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+    // Verify 1st dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-      constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
-      Impl::Basis_HDIV_TRI_In_FEM::
-        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->coeffs_,
-                                                operatorType);
-    }
+    Kokkos::deep_copy(dofCoords, this->dofCoords_);
+  }
 
-    virtual
-    void
-    getDofCoords( scalarViewType dofCoords ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-      // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) rank = 2 required for dofCoords array");
-      // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
-      // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                    ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
-#endif
-      Kokkos::deep_copy(dofCoords, this->dofCoords_);
-    }
+  void
+  getExpansionCoeffs( scalarViewType coeffs ) const {
+    // has to be same rank and dimensions
+    Kokkos::deep_copy(coeffs, this->coeffs_);
+  }
 
-    void
-    getExpansionCoeffs( scalarViewType coeffs ) const {
-      // has to be same rank and dimensions
-      Kokkos::deep_copy(coeffs, this->coeffs_);
-    }
+  virtual
+  const char*
+  getName() const {
+    return "Intrepid2_HDIV_TRI_In_FEM";
+  }
 
-    virtual
-    const char*
-    getName() const {
-      return "Intrepid2_HDIV_TRI_In_FEM";
-    }
+  virtual
+  bool
+  requireOrientation() const {
+    return (this->basisDegree_ > 1);
+  }
 
-    virtual
-    bool
-    requireOrientation() const {
-      return (this->basisDegree_ > 1);
-    }
+    private:
 
-  private:
-
-    /** \brief expansion coefficients of the nodal basis in terms of the
+  /** \brief expansion coefficients of the nodal basis in terms of the
         orthgonal one */
-    Kokkos::DynRankView<scalarType,ExecSpaceType> coeffs_;
+  Kokkos::DynRankView<scalarType,ExecSpaceType> coeffs_;
 
-  };
+};
 
 }// namespace Intrepid2
 
