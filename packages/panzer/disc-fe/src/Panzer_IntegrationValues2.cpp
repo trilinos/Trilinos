@@ -754,9 +754,9 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         convertNormalToRotationMatrix<Scalar>(normal,transverse,binormal);
 
         for(int dim=0; dim<3; ++dim){
-          surface_rotation_matrices(cell,point,dim,0) = normal[dim];
-          surface_rotation_matrices(cell,point,dim,1) = transverse[dim];
-          surface_rotation_matrices(cell,point,dim,2) = binormal[dim];
+          surface_rotation_matrices(cell,point,0,dim) = normal[dim];
+          surface_rotation_matrices(cell,point,1,dim) = transverse[dim];
+          surface_rotation_matrices(cell,point,2,dim) = binormal[dim];
         }
       }
     }
