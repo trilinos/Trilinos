@@ -129,5 +129,29 @@ TEST( Symbolic, functions ) {
   // }
 }
 
+TEST( Symbolic, interface ) {  
+  CrsMatrixBaseHostType A("A");
+  A = MatrixMarket<ValueType>::read("test.mtx");
+  
+  Graph G(A);
+  
+#if   defined(HAVE_SHYLUTACHO_METIS)
+  GraphTools_Metis T(G);
+#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+  GraphTools_Scotch T(G);
+#else
+  GraphTools_CAMD T(G);  
+#endif
+  T.reorder();
+
+  SymbolicTools S(A.NumRows(), 
+                  A.RowPtr(), 
+                  A.Cols(), 
+                  T.PermVector(),
+                  T.InvPermVector());
+
+  S.symbolicFactorize();
+}
+
 
 #endif

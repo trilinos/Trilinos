@@ -424,7 +424,7 @@ namespace Tacho {
 
       inline
       void
-      SymbolicFactorize() {
+      symbolicFactorize() {
         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
         // compute elimination tree
