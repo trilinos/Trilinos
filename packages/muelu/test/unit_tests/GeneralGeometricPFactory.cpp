@@ -84,7 +84,7 @@ namespace MueLuTests {
     virtual ~GeneralGeometricPFactoryTester() { }
     //@}
 
-    void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac, const LO numDimension, const SC coord[9][3], SC stencil[8]) const{
+    void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac, const LO numDimension, const double coord[9][3], SC stencil[8]) const{
       // Call the method to be tested.
       MueLu::GeneralGeometricPFactory<SC,LO,GO,Node> myGGPFactory;
       myGGPFactory.ComputeLinearInterpolationStencil(numDimension, coord, stencil);
@@ -116,15 +116,15 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    SC coord[9][3] = {{0.3, 0.9, 0.1},
-                      {0.0, 0.0, 0.0},
-                      {1.0, 0.0, 0.0},
-                      {0.0, 1.0, 0.0},
-                      {1.0, 1.0, 0.0},
-                      {0.0, 0.0, 1.0},
-                      {1.0, 0.0, 1.0},
-                      {0.0, 1.0, 1.0},
-                      {1.0, 1.0, 1.0}};
+    double coord[9][3] = {{0.3, 0.9, 0.1},
+                          {0.0, 0.0, 0.0},
+                          {1.0, 0.0, 0.0},
+                          {0.0, 1.0, 0.0},
+                          {1.0, 1.0, 0.0},
+                          {0.0, 0.0, 1.0},
+                          {1.0, 0.0, 1.0},
+                          {0.0, 1.0, 1.0},
+                          {1.0, 1.0, 1.0}};
     SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
@@ -134,14 +134,6 @@ namespace MueLuTests {
       y += stencil[i]*coord[i+1][1];
       z += stencil[i]*coord[i+1][2];
     }
-
-    std::cout << "Recovered coordinates: (" << x << ", " << y << ", " << z << ")" << std::endl;
-
-    std::cout << "Stencil =(";
-    for(LO i = 0; i < 7; ++i) {
-      std::cout << stencil[i] << ", ";
-    }
-    std::cout << stencil[7] << ")" << std::endl;
 
     TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5) && (std::fabs(y - coord[0][1]) < 1e-5) && (std::fabs(z - coord[0][2]) < 1e-5), true);
 
@@ -159,15 +151,15 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    SC coord[9][3] = {{1.1, 0.3, 0.8},
-                      {0.0, 0.0, 0.0},
-                      {1.0, 0.0, 0.0},
-                      {0.0, 1.0, 0.0},
-                      {1.0, 1.0, 0.0},
-                      {0.0, 0.0, 1.0},
-                      {1.0, 0.0, 1.0},
-                      {0.0, 1.0, 1.0},
-                      {1.0, 1.0, 1.0}};
+    double coord[9][3] = {{1.1, 0.3, 0.8},
+                          {0.0, 0.0, 0.0},
+                          {1.0, 0.0, 0.0},
+                          {0.0, 1.0, 0.0},
+                          {1.0, 1.0, 0.0},
+                          {0.0, 0.0, 1.0},
+                          {1.0, 0.0, 1.0},
+                          {0.0, 1.0, 1.0},
+                          {1.0, 1.0, 1.0}};
     SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
@@ -246,20 +238,20 @@ namespace MueLuTests {
     // build coordinates on rank 0
     global_size_t numGlobalElements = numPoints;
     size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
-    RCP<const Map> exportMap = Xpetra::MapFactory<LO,GO>::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<MultiVector> source_coordinates = MultiVectorFactory::Build(exportMap, 3);
+    RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
     if (comm->getRank() == 0) {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
-            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i] = i / Teuchos::as<SC>(gNodesPerDim[0]-1);
-            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i] = j / Teuchos::as<SC>(gNodesPerDim[1]-1);
-            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i] = k / Teuchos::as<SC>(gNodesPerDim[2]-1);
+            source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i] = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+            source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i] = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+            source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i] = k / Teuchos::as<double>(gNodesPerDim[2]-1);
           }
         }
       }
     }
-    RCP<MultiVector> coordinates = MultiVectorFactory::Build(map,3);
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
     RCP<Xpetra::Export<LO,GO,Node> > coords_exporter = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
     coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);
 
@@ -334,8 +326,8 @@ namespace MueLuTests {
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<MultiVector> vector0 = MultiVectorFactory::Build(PCrs->getRangeMap(),1);
-    RCP<MultiVector> vector1 = MultiVectorFactory::Build(PCrs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       for(LO i = 0; i < 3; ++i) {
@@ -365,7 +357,7 @@ namespace MueLuTests {
       for(LO i = 0; i < 9; ++i) {
         if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
       }
-      SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4;
+      SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4.0;
       if(fabs(fine_data[5] - linear_avg) > 1.0e-10) { is_linear = false; }
     }
 

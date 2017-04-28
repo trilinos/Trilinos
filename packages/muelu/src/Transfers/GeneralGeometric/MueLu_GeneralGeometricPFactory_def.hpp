@@ -83,8 +83,8 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("A",                         Teuchos::null, "Generating factory of the matrix A");
     validParamList->set<RCP<const FactoryBase> >("Nullspace",                 Teuchos::null, "Generating factory of the nullspace");
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
-    validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",               Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",               Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<std::string >("axisPermutation",                    "", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
 
     return validParamList;
@@ -130,18 +130,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-
-    // Print from all processes
-    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    Teuchos::FancyOStream& out  = *fancy;
-    // // Print from a particular rank
-    // const int procRank = Teuchos::GlobalMPISession::getRank();
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = ( procRank == 0 ? std::cout : blackhole );
-    // // Do not print anything
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = blackhole;
 
     // Obtain general variables
     using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
@@ -191,7 +179,7 @@ namespace MueLu {
     try {
       crates = Teuchos::fromStringToArray<LO>(coarsenRate);
     } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-      out << " *** Coarsen must be a string convertible into an array! *** " << std::endl;
+      GetOStream(Errors,-1) << " *** Coarsen must be a string convertible into an array! *** " << std::endl;
       throw e;
     }
     TEUCHOS_TEST_FOR_EXCEPTION((crates.size()>1) && (crates.size()<numDimensions),
@@ -214,7 +202,7 @@ namespace MueLu {
     try {
       mapDirG2L = Teuchos::fromStringToArray<LO>(axisPermutation);
     } catch(const Teuchos::InvalidArrayStringRepresentation e) {
-      out << " *** Coarsen must be a string convertible into an array! *** " << std::endl;
+      GetOStream(Errors,-1) << " *** axisPermutation must be a string convertible into an array! *** " << std::endl;
       throw e;
     }
     for(LO i = 0; i < numDimensions; ++i) {

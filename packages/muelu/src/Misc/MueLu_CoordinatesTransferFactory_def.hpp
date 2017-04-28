@@ -117,9 +117,6 @@ namespace MueLu {
       coarseCoords       = Get<RCP<xdMV> >(coarseLevel, "coarseCoordinates");
       gCoarseNodesPerDim = Get<Array<GO> >(coarseLevel, "gCoarseNodesPerDim");
       lCoarseNodesPerDim = Get<Array<LO> >(coarseLevel, "lCoarseNodesPerDim");
-      std::cout << "gNodesPerDim stored by CoordinatesTransferFactory: (" << gCoarseNodesPerDim[0] << ", " << gCoarseNodesPerDim[1] << ", " << gCoarseNodesPerDim[2] << ")" << std::endl;
-      std::cout << "lNodesPerDim stored by CoordinatesTransferFactory: (" << lCoarseNodesPerDim[0] << ", " << lCoarseNodesPerDim[1] << ", " << lCoarseNodesPerDim[2] << ")" << std::endl;
-      std::cout << "Address of CoordinatesTransferFactory: " << this << std::endl;
       Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDim);
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDim);
         ;
