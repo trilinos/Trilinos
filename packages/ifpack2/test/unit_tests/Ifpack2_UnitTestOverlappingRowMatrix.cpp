@@ -288,8 +288,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
 
   // This test assumes indexBase == 0.
 
-  const size_t numLocalRows = 4;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Short circuit --- this test should only be run in parallel.
+  if (comm->getSize() == 1) {
+    out << "This test is only meaningful if run with multiple MPI processes."
+        << endl;
+    return;
+  }
+
+  const size_t numLocalRows = 4;
   int myRank = comm->getRank();
   const Tpetra::global_size_t globalNumRows = comm->getSize() * numLocalRows;
 
