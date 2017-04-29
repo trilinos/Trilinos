@@ -494,6 +494,33 @@ namespace Tacho {
         Kokkos::deep_copy(_perm, G.PermVector());
         Kokkos::deep_copy(_peri, G.InvPermVector());
       }
+
+      inline
+      ordinal_type NumSuperNodes() const { return _supernodes.dimension_0() - 1; }
+      
+      inline
+      ordinal_type_array SuperNodes() const { return _supernodes; }
+      
+      inline 
+      size_type_array gidSuperPanelPtr() const { return _gid_super_panel_ptr; }
+
+      inline 
+      ordinal_type_array gidSuperPanelColIdx() const { return _gid_super_panel_colidx; }
+
+      inline 
+      size_type_array sidSuperPanelPtr() const { return _sid_super_panel_ptr; }
+
+      inline 
+      ordinal_type_array sidSuperPanelColIdx() const { return _sid_super_panel_colidx; }
+
+      inline 
+      ordinal_type_array blkSuperPanelColIdx() const { return _blk_super_panel_colidx; }
+      
+      inline 
+      size_type_array SuperNodesTreePtr() const { return _stree_ptr; }
+
+      inline 
+      ordinal_type_array SuperNodesTreeChildren() const { return _stree_children; }
       
       inline
       void
