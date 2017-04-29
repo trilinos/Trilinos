@@ -241,7 +241,7 @@ namespace Tacho {
 
       /// \brief deep copy of matrix b
       template<typename SpT>
-      KOKKOS_INLINE_FUNCTION
+      inline
       void
       createMirror(const CrsMatrixBase<value_type,SpT> &b) {
         _m        = b._m;
@@ -255,7 +255,7 @@ namespace Tacho {
 
       /// \brief deep copy of matrix b
       template<typename SpT>
-      KOKKOS_INLINE_FUNCTION
+      inline
       void
       copy(const CrsMatrixBase<value_type,SpT> &b) {
         Kokkos::deep_copy(_ap, b._ap);
@@ -264,6 +264,7 @@ namespace Tacho {
       }
 
       /// \brief print out to stream
+      inline
       std::ostream& showMe(std::ostream &os, const bool detail = false) const {
         std::streamsize prec = os.precision();
         os.precision(16);

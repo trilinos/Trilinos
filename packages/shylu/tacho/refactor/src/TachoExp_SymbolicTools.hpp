@@ -16,6 +16,8 @@ namespace Tacho {
       typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
       typedef Kokkos::View<size_type*,host_exec_space> size_type_array;
 
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
       // Tim Davis, Direct Methods for Sparse Linear Systems, Siam, p 42.
       inline
       static void
@@ -75,7 +77,6 @@ namespace Tacho {
                           const ordinal_type_array &parent,
                           const ordinal_type_array &post,
                           const ordinal_type_array &work) {
-        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
         auto head  = Kokkos::subview(work, range_type(0*m, 1*m));
         auto next  = Kokkos::subview(work, range_type(1*m, 2*m));
         auto stack = Kokkos::subview(work, range_type(2*m, 3*m));
@@ -108,8 +109,6 @@ namespace Tacho {
                               /* */ size_type_array &up,
                               /* */ ordinal_type_array &uj,
                               const ordinal_type_array &work) {        
-        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-
         auto parent        = Kokkos::subview(work, range_type(0*m, 1*m));
         auto flag          = Kokkos::subview(work, range_type(1*m, 2*m));
         auto upper_row_cnt = Kokkos::subview(work, range_type(2*m, 3*m));
@@ -170,8 +169,6 @@ namespace Tacho {
                         const ordinal_type_array &parent,
                         /* */ ordinal_type_array &supernodes,
                         const ordinal_type_array &work) {        
-        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-
         // workspace
         auto flag  = Kokkos::subview(work, range_type(0*m, 1*m));
         auto count = Kokkos::subview(work, range_type(1*m, 2*m));
@@ -297,7 +294,6 @@ namespace Tacho {
           return cnt;
         };
         
-        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
         auto flag = Kokkos::subview(work, range_type(0*m, 1*m));
         auto cid  = Kokkos::subview(work, range_type(1*m, 2*m));
         auto rid  = Kokkos::subview(work, range_type(2*m, 3*m));
@@ -384,6 +380,63 @@ namespace Tacho {
         }
       }
 
+      /// construct tree explicitly
+      inline
+      static void
+      computeSuperNodesAssemblyTree(const ordinal_type_array &parent,
+                                    const ordinal_type_array &supernodes,
+                                    /* */ size_type_array &stree_ptr,
+                                    /* */ ordinal_type_array &stree_children,
+                                    const ordinal_type_array &work) {
+        const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
+        const ordinal_type m = supernodes(numSuperNodes);
+
+        auto sparent = Kokkos::subview(work, range_type(0*m, 1*m));        
+        auto flag    = Kokkos::subview(work, range_type(1*m, 2*m));        
+
+        // color flag with supernodes (for the ease to detect supernode id from dofs)
+        for (ordinal_type i=0;i<numSuperNodes;++i) 
+          for (ordinal_type j=supernodes(i);j<supernodes(i+1);++j) 
+            flag(j) = i;
+
+        // coarse parent into sparent
+        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+          sparent(sid) = -1;
+          for (ordinal_type i=supernodes(sid);i<supernodes(sid+1);++i) {
+            if (parent(i) >= 0) {
+              const ordinal_type sidpar = flag(parent(i));
+              if (sidpar != sid) sparent(sid) = sidpar;
+            }
+          }
+        }
+
+        auto clear_array = [](const ordinal_type cnt,
+                              const ordinal_type_array &a) {
+          memset(a.data(), 0, cnt*sizeof(typename ordinal_type_array::value_type));
+        };
+        
+        clear_array(m, flag);
+
+        // construct parent - child relations
+        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+          const ordinal_type sidpar = sparent(sid); 
+          if (sidpar != -1)
+            ++flag(sparent(sid));
+        }
+        clear_array(numSuperNodes, flag);
+        
+        // prefix scan
+        stree_ptr = size_type_array("stree_ptr", numSuperNodes + 1);
+        for (ordinal_type sid=0;sid<numSuperNodes;++sid)
+          stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
+
+        clear_array(numSuperNodes, flag);
+        stree_children = ordinal_type_array("stree_children", stree_ptr(numSuperNodes));
+        for (ordinal_type sid=0;sid<numSuperNodes;++sid)
+          if (sparent(sid) != -1)
+            stree_ptr(flag(sparent(sid))++) = sid;
+      }
+
     private:
       // matrix input
       ordinal_type _m;
@@ -403,6 +456,10 @@ namespace Tacho {
       // supernode map and panel size configuration
       size_type_array _sid_super_panel_ptr;
       ordinal_type_array _sid_super_panel_colidx, _blk_super_panel_colidx;
+
+      // supernode elimination tree (parent - children)
+      size_type_array _stree_ptr;
+      ordinal_type_array _stree_children;
       
     public:
       SymbolicTools() = default;
@@ -421,12 +478,26 @@ namespace Tacho {
           _aj(aj),
           _perm(perm),
           _peri(peri) {}
+      
+      template<typename CrsMatBaseType, typename GraphToolType>
+      SymbolicTools(CrsMatBaseType &A,
+                    GraphToolType &G) {
+        _m = A.NumRows();
+        
+        _ap   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.RowPtr());
+        _aj   = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), A.Cols());
+        _perm = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.PermVector());
+        _peri = Kokkos::create_mirror_view(typename host_exec_space::memory_space(), G.InvPermVector());
 
+        Kokkos::deep_copy(_ap, A.RowPtr());
+        Kokkos::deep_copy(_aj, A.Cols());
+        Kokkos::deep_copy(_perm, G.PermVector());
+        Kokkos::deep_copy(_peri, G.InvPermVector());
+      }
+      
       inline
       void
       symbolicFactorize() {
-        typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-
         // compute elimination tree
         ordinal_type_array work("work", _m*4);
         ordinal_type_array parent("parent", _m);
@@ -462,7 +533,13 @@ namespace Tacho {
                            _sid_super_panel_ptr,
                            _sid_super_panel_colidx,
                            _blk_super_panel_colidx);
-        
+
+        // supernode assembly tree
+        computeSuperNodesAssemblyTree(parent,                                                 
+                                      _supernodes,                                             
+                                      _stree_ptr,                                                 
+                                      _stree_children,                                         
+                                      work);        
       }            
     };
 
