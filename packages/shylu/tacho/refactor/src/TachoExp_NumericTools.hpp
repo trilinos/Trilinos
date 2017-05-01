@@ -173,13 +173,86 @@ namespace Tacho {
 
       // supernode tree
       size_type_array_host _stree_ptr;
-      ordinal_type_array_host _stree_children;
+      ordinal_type_array_host _stree_children, _stree_roots;
 
       // output : factors
       size_type_array_host _super_panel_ptr;
       value_type_array_host _super_panel_buf;
 
       ordinal_type_array_host _work;
+
+    private:
+
+      template<typename ViewType>
+      KOKKOS_INLINE_FUNCTION
+      void
+      update(const ordinal_type sid, ViewType &A, const ordinal_type sidpar) {
+
+        // loop over superdnoes
+        const size_type sbeg = _sid_super_panel_ptr(sid)+1, send = _sid_super_panel_ptr(sid+1)-1;
+        for (size_type i=sbeg;i<send;++i) {
+          const ordinal_type row = _sid_super_panel_colidx(i);
+
+          const size_type tbeg = _sid_super_panel_ptr(row), tend = _sid_super_panel_ptr(row+1);
+          for (size_type j=i;j<send;++j) {
+            const ordinal_type src = _sid_super_panel_colidx(j);
+
+            for (size_type k=tbeg;k<tend;++k) {
+              const ordinal_type tgt = _sid_super_panel_colidx(k);
+              
+              if (src == tgt) {
+                printf(" -- block update %d %d --> %d %d\n", sid, src, row, tgt);
+                
+              }
+            }
+          }
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void
+      recursiveSerialChol(const ordinal_type sid, const ordinal_type sidpar) {
+        // recursion
+        const ordinal_type ibeg = _stree_ptr(sid), iend = _stree_ptr(sid+1);
+        for (ordinal_type i=ibeg;i<iend;++i)
+          recursiveSerialChol(_stree_children(i), sid);
+        
+        ///
+        /// body ( panel factorization and herk update
+        ///
+        
+        // chol
+        ordinal_type mm, nn;
+        getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, mm, nn);
+        value_type *ptr = &_super_panel_buf(_super_panel_ptr(sid));
+
+        const ordinal_type m = mm, n = nn - mm;
+
+        Kokkos::View<value_type**,Kokkos::LayoutLeft,
+          typename value_type_array_host::execution_space,
+          Kokkos::MemoryUnmanaged> ATL(ptr, m, m), ATR(ptr+m*m, m, n);
+        
+        // chol(ATL),  trsm(ATL, ATR);
+        // Chol<Uplo::Upper>::invoke(dummy, dummy, ATL); 
+        printf("chol ATL\n");
+        //Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose>::invoke(dummy, dummy, 1.0, ATL, ATR);
+        printf("trsm ATL, ATR\n");
+
+        // if this is not root, there is something to update
+        if (sidpar != -1) {
+          // temporary workspace ; replaced with memory pool
+          Kokkos::View<value_type**,Kokkos::LayoutLeft,
+            typename value_type_array_host::execution_space> ABR("ABR", n, n);
+          
+          // herk(ATR, ABR)
+          //Herk<Uplo::Upper,Trans::ConjTranspose>::invoke(dummy, dummy, -1.0, ATR, 1.0, ABR);
+          printf("herk ATR, ABR\n");
+
+          // copy back to its parent
+          update(sid, ABR, sidpar);          
+        }
+        
+      }
 
     public:
       NumericTools() = default;
@@ -205,7 +278,8 @@ namespace Tacho {
                    const ordinal_type_array_host &sid_super_panel_colidx,
                    const ordinal_type_array_host &blk_super_panel_colidx,
                    const size_type_array_host &stree_ptr,
-                   const ordinal_type_array_host &stree_children)
+                   const ordinal_type_array_host &stree_children,
+                   const ordinal_type_array_host &stree_roots)
         : _m(m),
           _ap(ap),
           _aj(aj),
@@ -220,7 +294,8 @@ namespace Tacho {
           _sid_super_panel_colidx(sid_super_panel_colidx),
           _blk_super_panel_colidx(blk_super_panel_colidx),
           _stree_ptr(stree_ptr),
-          _stree_children(stree_children) {}
+          _stree_children(stree_children),
+          _stree_roots(stree_roots) {}
 
       ///
       /// host only input (value array can be rewritten in the same sparse structure)
@@ -241,6 +316,10 @@ namespace Tacho {
                                 _sid_super_panel_ptr, _blk_super_panel_colidx,
                                 _super_panel_ptr, _super_panel_buf,
                                 _work);
+        
+        const ordinal_type numRoots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<numRoots;++i) 
+          recursiveSerialChol(_stree_roots(i), -1);
       }
       
       // matrix values are only changed (keep workspace)
@@ -257,6 +336,7 @@ namespace Tacho {
                                 _sid_super_panel_ptr, _blk_super_panel_colidx,
                                 _super_panel_ptr, _super_panel_buf,
                                 _work);
+        
 
       }
     };
