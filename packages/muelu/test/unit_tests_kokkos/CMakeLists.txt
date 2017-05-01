@@ -22,7 +22,7 @@ APPEND_SET(SOURCES
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
   #SaPFactory_kokkos.cpp
-  #TentativePFactory_kokkos.cpp
+  TentativePFactory_kokkos.cpp
 )
 
 ### Tests that require other Trilinos packages
