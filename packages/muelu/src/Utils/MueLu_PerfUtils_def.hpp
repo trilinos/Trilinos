@@ -132,10 +132,10 @@ namespace MueLu {
     // Create communicator only for active processes
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();
     bool activeProc = true;
+    int numProc = origComm->getSize();
+    int numActiveProcs = 1;
 #ifdef HAVE_MPI
     RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
-    int numProc = origComm->getSize();
-    int numActiveProcs = 0;
     MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
 
     std::vector<size_t> numRowsPerProc(numProc);
