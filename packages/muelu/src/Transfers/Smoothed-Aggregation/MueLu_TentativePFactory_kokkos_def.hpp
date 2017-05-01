@@ -109,8 +109,8 @@ namespace MueLu {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const LO col) const {
-        cols_(col) = 21; //invalid_;
-        vals_(col) = 0.0; //zero_;
+        cols_(col) = invalid_;
+        vals_(col) = zero_;
       }
 
     private:
@@ -310,7 +310,7 @@ namespace MueLu {
         typedef typename ATS::magnitudeType Magnitude;
 
         Magnitude norm = ATS::zero();
-        for (size_t k = 0; k < aggSize; k++) {
+        for (decltype(aggSize) k = 0; k < aggSize; k++) {
           Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
           norm += dnorm*dnorm;
         }
@@ -385,7 +385,7 @@ namespace MueLu {
         auto agg = thread.league_rank();
 
         // size of aggregate: number of DOFs in aggregate
-        LO aggSize = aggRows(agg+1) - aggRows(agg);
+        auto aggSize = aggRows(agg+1) - aggRows(agg);
 
         typedef Kokkos::ArithTraits<SC>     ATS;
         SC one  = ATS::one();
@@ -419,7 +419,7 @@ namespace MueLu {
         shared_matrix q (thread.team_shmem(),aggSize,aggSize);  // memory containing q part in the end
 
         // Calculate QR decomposition (standard)
-        if (aggSize >= fineNS.dimension_1()) {
+        if (aggSize >= decltype(aggSize)( fineNS.dimension_1() )) {
 
           // Reserve temporary shared memory for local QR decomposition
           shared_matrix r(thread.team_shmem(),aggSize,fineNS.dimension_1()); // memory containing the r part in the end
@@ -506,13 +506,13 @@ namespace MueLu {
           // R = extended (by adding identity rowsAux) localQR
           for (decltype(fineNS.dimension_1()) j = 0; j < fineNS.dimension_1(); j++)
             for (decltype(fineNS.dimension_1()) k = 0; k < fineNS.dimension_1(); k++)
-              if (k < aggSize)
+              if (k < decltype(k)(aggSize))
                 coarseNS(offset+k,j) = localQR(k,j);
               else
                 coarseNS(offset+k,j) = (k == j ? one : zero);
 
           // Q = I (rectangular)
-          for (decltype(fineNS.dimension_1()) i = 0; i < aggSize; i++)
+          for (decltype(fineNS.dimension_1()) i = 0; i < decltype(fineNS.dimension_1()) (aggSize); i++)
             for (decltype(fineNS.dimension_1()) j = 0; j < fineNS.dimension_1(); j++)
               q(i,j) = (j == i ? one : zero);
         }
@@ -664,6 +664,36 @@ namespace MueLu {
     };
 
 
+    // only limited support for lambdas with CUDA 7.5
+    // see https://github.com/kokkos/kokkos/issues/763
+    // This functor probably can go away when using CUDA 8.0
+    template<class LO, class rowType, class colType, class valType>
+    class CompressArraysFunctor {
+    public:
+      CompressArraysFunctor(LO invalid, rowType rowsAux, colType colsAux, valType valsAux, rowType rows, colType cols, valType vals) : invalid_(invalid), rowsAux_(rowsAux), colsAux_(colsAux), valsAux_(valsAux), rows_(rows), cols_(cols), vals_(vals) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO i) const {
+        LO rowStart = rows_(i);
+
+        size_t lnnz = 0;
+        for (decltype(rowsAux_(i)) j = rowsAux_(i); j < rowsAux_(i+1); j++)
+          if (colsAux_(j) != invalid_) {
+            cols_(rowStart+lnnz) = colsAux_(j);
+            vals_(rowStart+lnnz) = valsAux_(j);
+            lnnz++;
+          }
+      }
+
+    private:
+      LO        invalid_;
+      rowType   rows_;
+      colType   cols_;
+      valType   vals_;
+      rowType   rowsAux_;
+      colType   colsAux_;
+      valType   valsAux_;
+    };
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -847,7 +877,7 @@ namespace MueLu {
     // Later used to reserve enough scratch space for local QR decompositions
     // TODO can be done with a parallel reduce
     LO maxAggSize = 0;
-    for(LO i = 0; i < sizes.dimension_0(); i++) {
+    for(decltype(sizes.dimension_0()) i = 0; i < sizes.dimension_0(); i++) {
       if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
     }
 
@@ -904,7 +934,6 @@ namespace MueLu {
     size_t nnzEstimate = numRows * NSDim; // maximum number of possible nnz
     size_t nnz = 0;                       // actual number of nnz
 
-    // TODO replace views!!!
     typedef typename Xpetra::Matrix<SC,LO,GO,NO>::local_matrix_type          local_matrix_type;
     typedef typename local_matrix_type::row_map_type    rows_type;
     typedef typename local_matrix_type::index_type      cols_type;
@@ -1013,7 +1042,7 @@ namespace MueLu {
 #endif
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-      for (int i = 0; i < statusHost.size(); i++)
+      for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
         if (statusHost(i)) {
           std::ostringstream oss;
           oss << "MueLu::TentativePFactory::MakeTentative: ";
@@ -1034,7 +1063,7 @@ namespace MueLu {
       Kokkos::parallel_reduce(policy, LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom), decltype(sizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO), decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux), decltype(valsAux)>(fineNSRandom,coarseNS,sizes,maxAggSize,agg2RowMapLO,statusAtomic,rows,rowsAux,colsAux,valsAux),nnz);
 
       typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-      for (int i = 0; i < statusHost.size(); i++)
+      for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
         if (statusHost(i)) {
           std::ostringstream oss;
           oss << "MueLu::TentativePFactory::MakeTentative: ";
@@ -1050,11 +1079,14 @@ namespace MueLu {
     ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
     Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1), scanFunctor);
 
-    std::cout << " LLL " << std::endl;
-
     // The real cols and vals are constructed using calculated (not estimated) nnz
     typename cols_type::non_const_type cols("Ptent_cols", nnz);
     typename vals_type::non_const_type vals("Ptent_vals", nnz);
+
+#if 1
+    CompressArraysFunctor<LO, decltype(rows),decltype(cols),decltype(vals)> comprArr(INVALID, rowsAux, colsAux, valsAux, rows, cols, vals);
+    Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", range_type(0,numRows), comprArr);
+#else
     Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows, KOKKOS_LAMBDA(const LO i) {
       LO rowStart = rows(i);
 
@@ -1066,8 +1098,7 @@ namespace MueLu {
           lnnz++;
         }
     });
-
-    std::cout << " MMM " << std::endl;
+#endif
 
     GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
 
