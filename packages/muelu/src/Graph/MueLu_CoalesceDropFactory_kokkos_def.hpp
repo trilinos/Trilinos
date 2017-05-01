@@ -292,7 +292,6 @@ namespace MueLu {
         LO begin = coldofnnz(rowNode);
         LO end   = coldofnnz(rowNode+1);
         LO n     = end - begin;
-
         for (LO i = 0; i < (n-1); i++) {
           for (LO j = 0; j < (n-i-1); j++) {
             if (coldofs(j+begin) > coldofs(j+begin+1)) {
@@ -302,7 +301,6 @@ namespace MueLu {
             }
           }
         }
-
         size_t cnt = 0;
         LO lastNodeID = -1;
         for (LO i = 0; i < n; i++) {
@@ -444,6 +442,8 @@ namespace MueLu {
     } else if (blkSize > 1 && threshold == zero) {
       // Case 3:  block problem without filtering
 
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() % blkSize != 0, MueLu::Exceptions::RuntimeError, "MueLu::CoalesceDropFactory: Number of local elements is " << A->getRowMap()->getNodeNumElements() << " but should be a multiply of " << blkSize);
+
       const RCP<const Map> rowMap = A->getRowMap();
       const RCP<const Map> colMap = A->getColMap();
 
@@ -459,7 +459,6 @@ namespace MueLu {
 
       // get number of local nodes
       LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
-
       typedef typename Kokkos::View<LocalOrdinal*, DeviceType> id_translation_type;
       id_translation_type rowTranslation("dofId2nodeId",rowTranslationArray.size());
       id_translation_type colTranslation("ov_dofId2nodeId",colTranslationArray.size());
@@ -469,7 +468,6 @@ namespace MueLu {
         rowTranslation(i) = rowTranslationArray[i];
       for (decltype(colTranslationArray.size()) i = 0; i < colTranslationArray.size(); ++i)
         colTranslation(i) = colTranslationArray[i];
-
       // extract striding information
       blkSize = A->GetFixedBlockSize();  //< the full block size (number of dofs per node in strided map)
       LocalOrdinal blkId   = -1;         //< the block id within a strided map or -1 if it is a full block map
@@ -483,7 +481,6 @@ namespace MueLu {
         if (blkId > -1)
           blkPartSize = Teuchos::as<LocalOrdinal>(strMap->getStridingData()[blkId]);
       }
-
       auto kokkosMatrix = A->getLocalMatrix(); // access underlying kokkos data
 
       //
@@ -495,20 +492,16 @@ namespace MueLu {
 
       // Stage 1c: get number of dof-nonzeros per blkSize node rows
       typename row_map_type::non_const_type dofNnz("nnz_map", numNodes + 1);
-
       LO numDofCols = 0;
       Stage1aVectorFunctor<decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize)> stage1aFunctor(kokkosMatrix, dofNnz, blkPartSize);
       Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1a", range_type(0,numNodes), stage1aFunctor, numDofCols);
-
       // parallel_scan (exclusive)
       ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
-
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
       Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
       Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", range_type(0,numNodes), stage1bFunctor);
-
 
       // we have dofcols and dofids from Stage1dVectorFunctor
       LO numNodeCols = 0;
@@ -527,16 +520,13 @@ namespace MueLu {
 
       Stage1dVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(rows), decltype(cols)> stage1dFunctor(dofcols, dofNnz, cols, rows);
       Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1dFunctor);
-
       kokkos_graph_type kokkosGraph(cols, rows);
 
       // create LW graph
       graph = rcp(new LWGraph_kokkos(kokkosGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
 
-
       boundaryNodes = bndNodes;
       graph->SetBoundaryNodeMap(boundaryNodes);
-
       numTotal = A->getNodeNumEntries();
 
       dofsPerNode = blkSize;
