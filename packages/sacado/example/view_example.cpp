@@ -44,73 +44,101 @@
 //
 // A simple example showing how to use Sacado with Kokkos
 //
-
-// This code uses lambda's which only work on more recent versions of Cuda
-// with a special command-line argument
-#if !defined(__CUDACC__)
+// The code would be simpler using lambda's instead of functors, but that
+// can be problematic for Cuda and for versions of g++ that claim to, but
+// don't really support C++11
+//
 
 // This code relies on the Kokkos view specializations being enabled, which
 // is the default, but can be disabled by the user
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-// Function to compute matrix-vector product c = A*b using Kokkos
+// Functor to compute matrix-vector product c = A*b using Kokkos
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
-void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c) {
+class MatVec {
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<execution_space>( 0,m ),
-    KOKKOS_LAMBDA (const size_t i) {
-      scalar_type t = 0.0;
-      for (size_t j=0; j<n; ++j)
-        t += A(i,j)*b(j);
-      c(i) = t;
-    }
-  );
+  const ViewTypeA A;
+  const ViewTypeB b;
+  const ViewTypeC c;
+  const size_t m, n;
+
+public:
+
+  MatVec(const ViewTypeA& A_, const ViewTypeB& b_, const ViewTypeC& c_) :
+    A(A_), b(b_), c(c_),
+    m(A.dimension_0()), n(A.dimension_1())
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
+  }
+
+  void operator() (const size_t i) const {
+    scalar_type t = 0.0;
+    for (size_t j=0; j<n; ++j)
+      t += A(i,j)*b(j);
+    c(i) = t;
+  }
+};
+
+// Function to run mat-vec functor above
+template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
+void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b,const ViewTypeC& c)
+{
+  MatVec<ViewTypeA,ViewTypeB,ViewTypeC> f(A,b,c);
 }
 
-// Function to compute the derivative of the matrix-vector product
+// Functor to compute the derivative of the matrix-vector product
 // c = A*b using Kokkos.
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
-void run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b,
-                       const ViewTypeC& c) {
+class MatVecDeriv {
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
-  const size_t p = A.dimension_2()-1;
-  Kokkos::parallel_for(
-    Kokkos::RangePolicy<execution_space>( 0,m ),
-    KOKKOS_LAMBDA (const int i) {
-      // Derivative portion
-      for (size_t k=0; k<p; ++k) {
-        scalar_type t = 0.0;
-        for (size_t j=0; j<n; ++j)
-          t += A(i,j,k)*b(j,p) + A(i,j,p)*b(j,k);
-        c(i,k) = t;
-      }
+  const ViewTypeA A;
+  const ViewTypeB b;
+  const ViewTypeC c;
+  const size_t m, n, p;
 
-      // Value portion
+public:
+
+  MatVecDeriv(const ViewTypeA& A_, const ViewTypeB& b_, const ViewTypeC& c_) :
+    A(A_), b(b_), c(c_),
+    m(A.dimension_0()), n(A.dimension_1()), p(A.dimension_2()-1)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
+  }
+
+  void operator() (const size_t i) const {
+    // Derivative portion
+    for (size_t k=0; k<p; ++k) {
       scalar_type t = 0.0;
       for (size_t j=0; j<n; ++j)
-        t += A(i,j,p)*b(j,p);
-      c(i,p) = t;
+        t += A(i,j,k)*b(j,p) + A(i,j,p)*b(j,k);
+      c(i,k) = t;
     }
-  );
-}
 
-#endif
+    // Value portion
+    scalar_type t = 0.0;
+    for (size_t j=0; j<n; ++j)
+      t += A(i,j,p)*b(j,p);
+    c(i,p) = t;
+  }
+};
+
+// Function to run mat-vec derivative functor above
+template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
+void run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b,
+                       const ViewTypeC& c)
+{
+  MatVecDeriv<ViewTypeA,ViewTypeB,ViewTypeC> f(A,b,c);
+}
 
 #endif
 
 int main(int argc, char* argv[]) {
   int ret = 0;
 
-#if !defined(__CUDACC__)
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
   Kokkos::initialize(argc, argv);
@@ -175,7 +203,6 @@ int main(int argc, char* argv[]) {
   }
   Kokkos::finalize();
 
-#endif
 #endif
 
   return ret;
