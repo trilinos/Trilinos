@@ -348,6 +348,9 @@ Teuchos::RCP<Teuchos::ParameterList> getInputParamList()
   validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Factory for the nullspace.");
   validParamList->set<RCP<const FactoryBase>>("Aggregates",  Teuchos::null, "Factory for the aggregates.");
   validParamList->set<RCP<const FactoryBase>>("UnamalgamationInfo", Teuchos::null, "Factory for amalgamation.");
+#ifdef HAVE_MUELU_INTREPID2
+  validParamList->set<RCP<const FactoryBase>>("pcoarsen: element to node map", Teuchos::null, "Generating factory of the element to node map");
+#endif
   return validParamList;
 }
 
