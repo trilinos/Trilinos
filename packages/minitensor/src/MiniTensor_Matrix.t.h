@@ -86,7 +86,7 @@ operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   for (Index i = 0; i < num_rows; ++i) {
 

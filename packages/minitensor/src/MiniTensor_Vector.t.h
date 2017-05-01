@@ -81,7 +81,7 @@ operator<<(std::ostream & os, Vector<T, N, ES> const & u)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   os << std::setw(24) << u(0);
 

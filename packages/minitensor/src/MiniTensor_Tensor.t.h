@@ -78,7 +78,7 @@ operator<<(std::ostream & os, Tensor<T, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   for (Index i = 0; i < dimension; ++i) {
 
