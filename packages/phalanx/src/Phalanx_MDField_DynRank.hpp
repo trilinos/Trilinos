@@ -90,10 +90,23 @@ namespace PHX {
     MDField(const PHX::Tag<DataT>& v);
     
     MDField();
+
+    template<typename CopyDataT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
     
     ~MDField();
     
     const PHX::FieldTag& fieldTag() const;
+
+    template<typename CopyDataT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
+    PHX::MDField<DataT,void,void,void,void,void,void,void,void>&
+    operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
     
     // template<typename iType0, typename iType1, typename iType2, typename iType3,
     // 	     typename iType4, typename iType5, typename iType6, typename iType7>
@@ -231,6 +244,11 @@ namespace PHX {
     static const std::string m_field_tag_error_msg;
     static const std::string m_field_data_error_msg;
 #endif
+    
+    template<typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    friend class PHX::MDField;
 
   };
   

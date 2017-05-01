@@ -47,6 +47,7 @@
 
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
@@ -155,15 +156,28 @@ namespace PHX {
     MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
     
     MDField(const PHX::Tag<DataT>& v);
-    
+
     MDField();
-    
+
+    template<typename CopyDataT,
+             typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);
+
     ~MDField();
 
     static const int ArrayRank=array_type::Rank;
     
     const PHX::FieldTag& fieldTag() const;
 
+    template<typename CopyDataT,
+             typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>&
+    operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source);    
+    
     template<typename iType0, typename iType1, typename iType2, typename iType3,
 	     typename iType4, typename iType5, typename iType6, typename iType7>
     KOKKOS_FORCEINLINE_FUNCTION
@@ -317,6 +331,11 @@ namespace PHX {
     static const std::string m_field_data_error_msg;
 #endif
 
+    template<typename T0 = void, typename T1 = void, typename T2 = void, 
+             typename T3 = void, typename T4 = void, typename T5 = void,
+             typename T6 = void, typename T7 = void>
+    friend class PHX::MDField;
+    
   };
   
   template<typename DataT,

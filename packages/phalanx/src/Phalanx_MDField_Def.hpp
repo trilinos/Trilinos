@@ -128,6 +128,29 @@ MDField() :
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+template<typename CopyDataT,
+         typename T0, typename T1, typename T2, 
+         typename T3, typename T4, typename T5,
+         typename T6, typename T7>
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+MDField(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source) :
+  m_tag(source.m_tag),
+  m_field_data(source.m_field_data)
+#ifdef PHX_DEBUG
+  ,m_tag_set(source.m_tag_set),
+  m_data_set(source.m_data_set)
+#endif  
+{
+  static_assert(ArrayRank == std::decay<decltype(source)>::type::ArrayRank,
+                "ERROR: Compiletime MDField copy ctor requires rank to be the same!");
+  static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
+                "ERROR: Compiletime MDField copy ctor requires scalar types to be the same!");
+}
+
+//**********************************************************************
+template<typename DataT,
+	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 ~MDField()
 { }
@@ -144,6 +167,32 @@ fieldTag() const
   TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
+}
+
+//**********************************************************************
+template<typename DataT,
+	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+template<typename CopyDataT,
+         typename T0, typename T1, typename T2, 
+         typename T3, typename T4, typename T5,
+         typename T6, typename T7>
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>&
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+operator=(const MDField<CopyDataT,T0,T1,T2,T3,T4,T5,T6,T7>& source)
+{
+  m_tag = source.m_tag;
+  m_field_data = source.m_field_data;
+#ifdef PHX_DEBUG
+  m_tag_set = source.m_tag_set;
+  m_data_set = source.m_data_set;
+#endif
+  static_assert(ArrayRank == std::decay<decltype(source)>::type::ArrayRank,
+                "ERROR: Compiletime MDField assignment operator requires rank to be the same!");
+  static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
+                "ERROR: Compiletime MDField assignment operator requires scalar types to be the same!");
+
+  return *this;
 }
 
 //**********************************************************************
