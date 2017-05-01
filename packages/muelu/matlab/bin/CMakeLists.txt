@@ -55,10 +55,10 @@ if(TPL_ENABLE_MATLAB)
   # g++ -O -pthread -shared -Wl,--version-script,/usr/local/matlab/7.9/extern/lib/glnxa64/mexFunction.map -Wl,--no-undefined -o  "mlmex.mexa64"   "mlmex-mlmex.o"  -lm -Wl,-rpath-link,/usr/local/matlab/7.9/bin/glnxa64 -L/usr/local/matlab/7.9/bin/glnxa64 -lmx -lmex -lmat -lm
   if (NOT APPLE)
     SET(MLMEX_OPTS1 "-pthread;-shared;-Wl,--version-script,${MATLAB_ROOT}/extern/lib/${MATLAB_ARCH}/mexFunction.map;-Wl,--no-undefined")
-    SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+    SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH}")
   else()
     SET(MLMEX_OPTS1 "-shared")
-    SET(MLMEX_OPTS2 "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+    SET(MLMEX_OPTS2 "")
   endif()
 
   # Use TARGET_LINK_LIBRARIES and the C++ compiler to link the mlmex.cpp file to the rest of Trilinos & the mex libs.
@@ -69,7 +69,7 @@ if(TPL_ENABLE_MATLAB)
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
   TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES ${SOURCES_EXEC}   NOEXEPREFIX NOEXESUFFIX)
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
-  TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
+  TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
 
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp

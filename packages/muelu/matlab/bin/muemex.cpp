@@ -1167,10 +1167,12 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
       opt_int = (int*) mxGetData(prhs);
       if(M == 1 && N == 1)
         List->set(option_name, *opt_int);
-      else
-      {
-        List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
-      }
+#ifdef HAVE_MUELU_INTREPID2
+      else if (strcmp(option_name, "pcoarsen: element to node map") == 0)
+	List->set(option_name, loadDataFromMatlab<RCP<FieldContainer_ordinal>>(prhs));
+#endif
+      else 
+	List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
       break;
       // NTS: 64-bit ints will break on a 32-bit machine.        We
       // should probably detect machine type, or somthing, but that would
