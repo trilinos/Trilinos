@@ -195,7 +195,7 @@ template<>
 string loadDataFromMatlab<string>(const mxArray* mxa)
 {
   string rv = "";
-  if(!mxGetClassID(mxa) != mxCHAR_CLASS)
+  if (mxGetClassID(mxa) != mxCHAR_CLASS)
   {
     throw runtime_error("Can't construct string from anything but a char array.");
   }
@@ -1295,7 +1295,7 @@ T& MuemexData<T>::getData()
 template<typename T>
 void MuemexData<T>::setData(T& newData)
 {
-  this->data = data;
+  this->data = newData;
 }
 
 /* ***************************** */
@@ -1323,7 +1323,7 @@ const T& getLevelVariable(std::string& name, Level& lvl)
 }
 
 //Functions used to put data through matlab factories - first arg is "this" pointer of matlab factory
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::string& needsParam, Level& lvl)
 {
   using namespace std;
@@ -1455,7 +1455,7 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
   return args;
 }
 
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl)
 {
   using namespace std;

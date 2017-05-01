@@ -53,9 +53,13 @@ if(TPL_ENABLE_MATLAB)
 
   # Manually drop in options from the mex script (R2009b) on a linux platform.
   # g++ -O -pthread -shared -Wl,--version-script,/usr/local/matlab/7.9/extern/lib/glnxa64/mexFunction.map -Wl,--no-undefined -o  "mlmex.mexa64"   "mlmex-mlmex.o"  -lm -Wl,-rpath-link,/usr/local/matlab/7.9/bin/glnxa64 -L/usr/local/matlab/7.9/bin/glnxa64 -lmx -lmex -lmat -lm
-  SET(MLMEX_OPTS1 "-pthread;-shared;-Wl,--version-script,${MATLAB_ROOT}/extern/lib/${MATLAB_ARCH}/mexFunction.map;-Wl,--no-undefined")
-
-  SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+  if (NOT APPLE)
+    SET(MLMEX_OPTS1 "-pthread;-shared;-Wl,--version-script,${MATLAB_ROOT}/extern/lib/${MATLAB_ARCH}/mexFunction.map;-Wl,--no-undefined")
+    SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+  else()
+    SET(MLMEX_OPTS1 "-shared")
+    SET(MLMEX_OPTS2 "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+  endif()
 
   # Use TARGET_LINK_LIBRARIES and the C++ compiler to link the mlmex.cpp file to the rest of Trilinos & the mex libs.
   # This code is extremely fragile and probably won't work on any system but GNU/Linux with gcc.
