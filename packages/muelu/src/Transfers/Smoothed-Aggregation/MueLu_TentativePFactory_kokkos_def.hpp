@@ -448,7 +448,6 @@ namespace MueLu {
             // build k-th unit vector
             for(decltype(e.dimension_0()) i = 0; i < e.dimension_0(); i++)
               e(i) = (i==k) ?  one : zero;
-
             vmadd(e, x, xn); // e = x + xn * e;
             SC en = vnorm(e);
             vdiv(e,en); // scale vector e
@@ -461,6 +460,7 @@ namespace MueLu {
             else {
               matrix_clear(qk); // zero out old qk
               vmul ( e, qk);
+
               matrix_mul ( qk, q, qt);  // TODO can we avoid qt?
               matrix_copy(qt,q);
               matrix_mul(qk, r, z);
@@ -533,14 +533,16 @@ namespace MueLu {
           rows(localRow+1) = lnnz;
           nnz += lnnz;
         }
+
+        // debug
         /*printf("R\n");
         for(int i=0; i<aggSize; i++) {
           for(int j=0; j<fineNS.dimension_1(); j++) {
-            printf(" %.3g ",r(i,j));
+            printf(" %.3g ",coarseNS(i,j));
           }
           printf("\n");
-        }*/
-        /*printf("Q\n");
+        }
+        printf("Q\n");
 
         for(int i=0; i<aggSize; i++) {
           for(int j=0; j<aggSize; j++) {
@@ -548,6 +550,8 @@ namespace MueLu {
           }
           printf("\n");
         }*/
+        // end debug
+
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -583,9 +587,11 @@ namespace MueLu {
 
       KOKKOS_FUNCTION
       void matrix_mul ( const shared_matrix & m1, const shared_matrix & m2, shared_matrix & m1m2) const {
-        matrix_clear(m1m2);
+        typedef Kokkos::ArithTraits<SC>     ATS;
+        SC zero = ATS::zero();
         for(decltype(m1.dimension_0()) i = 0; i < m1.dimension_0(); i++) {
           for(decltype(m1.dimension_1()) j = 0; j < m1.dimension_1(); j++) {
+            m1m2(i,j) = zero;
             for(decltype(m1.dimension_1()) k = 0; k < m1.dimension_1(); k++) {
               m1m2(i,j) += m1(i,k) * m2(k,j);
             }
@@ -887,7 +893,6 @@ namespace MueLu {
     Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", range_type(0,numAggregates+1), scanFunctorAggSizes);
     // Create Kokkos::View on the device to store mapping between (local) aggregate id and row map ids (LIDs)
     Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", numRows); // initialized to 0
-
 
 #if 1
     CreateAgg2RowMapLOFunctor<decltype(agg2RowMapLO), decltype(sizes), decltype(vertex2AggId), decltype(procWinner), decltype(nodeGlobalElts), decltype(isNodeGlobalElement), LO, GO> createAgg2RowMap (agg2RowMapLO, sizes, vertex2AggId, procWinner, nodeGlobalElts, isNodeGlobalElement, fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase, globalOffset, myPid );
