@@ -125,6 +125,11 @@ template<> MuemexType getMuemexType<RCP<MAmalInfo>>() {return AMALGAMATION_INFO;
 template<> MuemexType getMuemexType(const RCP<MGraph>& data) {return GRAPH;}
 template<> MuemexType getMuemexType<RCP<MGraph>>() {return GRAPH;}
 
+#ifdef HAVE_MUELU_INTREPID2
+template<> MuemexType getMuemexType(const RCP<FieldContainer_ordinal>& data) {return FIELDCONTAINER_ORDINAL;}
+template<> MuemexType getMuemexType<RCP<FieldContainer_ordinal>>() {return FIELDCONTAINER_ORDINAL;}
+#endif
+
 /* "prototypes" for specialized functions used in other specialized functions */
 
 template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz);
@@ -655,6 +660,34 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
   mgraph->SetBoundaryNodeMap(boundaryNodesInput);
   return mgraph;
 }
+
+
+#ifdef HAVE_MUELU_INTREPID2
+template<>
+RCP<FieldContainer_ordinal> loadDataFromMatlab<RCP<FieldContainer_ordinal>>(const mxArray* mxa)
+{
+  if(mxGetClassID(mxa) != mxINT32_CLASS)
+    throw runtime_error("FieldContainer must have integer storage entries");
+
+  int *data = (int *) mxGetData(mxa);
+  int nr = mxGetM(mxa);
+  int nc = mxGetN(mxa);
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+  RCP<FieldContainer_ordinal> fc = rcp(new FieldContainer_ordinal("FC from Matlab",nr,nc));
+#else
+  RCP<FieldContainer_ordinal> fc = rcp(new FieldContainer_ordinal(nr,nc));
+#endif
+  for(int col = 0; col < nc; col++)
+  {
+    for(int row = 0; row < nr; row++)
+    {
+      (*fc)(row,col) = data[col * nr + row];
+    }
+  }
+  return fc;
+}
+#endif
 
 /* ******************************* */
 /* saveDataToMatlab                */
@@ -1264,6 +1297,34 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data)
   mexCallMATLAB(1, out, 2, constructArgs, "constructGraph");
   return out[0];
 }
+
+#ifdef HAVE_MUELU_INTREPID2
+template<>
+mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
+{
+  int rank = data->rank();
+  // NOTE: Only supports rank 2 arrays
+  if(rank!=2)
+    throw std::runtime_error("Error: Only rank two FieldContainers are supported.");
+
+  int nr = data->dimension(0);
+  int nc = data->dimension(1);
+  
+  mwSize dims[]={(mwSize)nr,(mwSize)nc};
+  mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);
+  int *array = (int*) mxGetData(mxa);
+  
+  for(int col = 0; col < nc; col++)
+  {
+    for(int row = 0; row < nr; row++)
+    {
+      array[col * nr + row] = (*data)(row,col);
+    }
+  }
+  return mxa;
+}
+#endif
+
 
 template<typename T>
 MuemexData<T>::MuemexData(const mxArray* mxa) : MuemexArg(getMuemexType<T>())

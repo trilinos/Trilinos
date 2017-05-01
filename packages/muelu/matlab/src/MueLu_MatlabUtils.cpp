@@ -204,7 +204,11 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
           break;
         case GRAPH:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MGraph>>, MuemexArg>(args[i])->convertToMatlab();
+#ifdef HAVE_MUELU_INTREPID2
+        case FIELDCONTAINER_ORDINAL:
+          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<FieldContainer_ordinal>>, MuemexArg>(args[i])->convertToMatlab();
           break;
+#endif
       }
     }
     catch (std::exception& e)
