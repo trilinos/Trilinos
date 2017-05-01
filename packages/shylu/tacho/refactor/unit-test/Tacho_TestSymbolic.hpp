@@ -111,11 +111,12 @@ TEST( Symbolic, functions ) {
                                     blk_super_panel_colidx);
 
   size_type_array stree_ptr;
-  ordinal_type_array stree_children;
+  ordinal_type_array stree_children, stree_roots;
   SymbolicTools::computeSuperNodesAssemblyTree(parent,
                                                supernodes,
                                                stree_ptr,
                                                stree_children,
+                                               stree_roots,
                                                work);
 
   // const size_type numSuperNodes = supernodes.dimension_0() - 1;

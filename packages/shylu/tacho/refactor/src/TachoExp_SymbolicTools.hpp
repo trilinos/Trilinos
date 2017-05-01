@@ -387,6 +387,7 @@ namespace Tacho {
                                     const ordinal_type_array &supernodes,
                                     /* */ size_type_array &stree_ptr,
                                     /* */ ordinal_type_array &stree_children,
+                                    /* */ ordinal_type_array &stree_roots,
                                     const ordinal_type_array &work) {
         const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
         const ordinal_type m = supernodes(numSuperNodes);
@@ -414,27 +415,40 @@ namespace Tacho {
                               const ordinal_type_array &a) {
           memset(a.data(), 0, cnt*sizeof(typename ordinal_type_array::value_type));
         };
-        
-        clear_array(m, flag);
 
         // construct parent - child relations
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-          const ordinal_type sidpar = sparent(sid); 
-          if (sidpar != -1)
-            ++flag(sparent(sid));
+        {
+          clear_array(m, flag);
+          ordinal_type cnt = 0;
+          for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+            const ordinal_type sidpar = sparent(sid); 
+            if (sidpar == -1) 
+              ++cnt;
+            else
+              ++flag(sparent(sid));
+          }
+          stree_roots = ordinal_type_array("stree_roots", cnt);
         }
-        clear_array(numSuperNodes, flag);
-        
-        // prefix scan
-        stree_ptr = size_type_array("stree_ptr", numSuperNodes + 1);
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid)
-          stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
 
-        clear_array(numSuperNodes, flag);
-        stree_children = ordinal_type_array("stree_children", stree_ptr(numSuperNodes));
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid)
-          if (sparent(sid) != -1)
-            stree_ptr(flag(sparent(sid))++) = sid;
+        // prefix scan
+        {
+          stree_ptr = size_type_array("stree_ptr", numSuperNodes + 1);
+          for (ordinal_type sid=0;sid<numSuperNodes;++sid)
+            stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
+        }
+
+        {
+          clear_array(numSuperNodes, flag);
+          ordinal_type cnt = 0;
+          stree_children = ordinal_type_array("stree_children", stree_ptr(numSuperNodes));
+          for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+            const ordinal_type sidpar = sparent(sid);                       
+            if (sidpar == -1) 
+              stree_roots(cnt++) = sid;
+            else
+              stree_children(stree_ptr(sidpar)+flag(sidpar)++) = sid;
+          }
+        }
       }
 
     private:
@@ -459,7 +473,7 @@ namespace Tacho {
 
       // supernode elimination tree (parent - children)
       size_type_array _stree_ptr;
-      ordinal_type_array _stree_children;
+      ordinal_type_array _stree_children, _stree_roots;
       
     public:
       SymbolicTools() = default;
@@ -522,6 +536,9 @@ namespace Tacho {
       inline 
       ordinal_type_array SuperNodesTreeChildren() const { return _stree_children; }
       
+      inline 
+      ordinal_type_array SuperNodesTreeRoots() const { return _stree_roots; }
+      
       inline
       void
       symbolicFactorize() {
@@ -565,8 +582,9 @@ namespace Tacho {
         computeSuperNodesAssemblyTree(parent,                                                 
                                       _supernodes,                                             
                                       _stree_ptr,                                                 
-                                      _stree_children,                                         
-                                      work);        
+                                      _stree_children,
+                                      _stree_roots,
+                                      work);              
       }            
     };
 
