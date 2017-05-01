@@ -3242,7 +3242,16 @@ namespace Tpetra {
                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                           size_t constantNumPackets,
                           Distributor& distor,
-                          CombineMode combineMode);
+                          CombineMode combineMode,
+                          const bool atomic = useAtomicUpdatesByDefault);
+    void
+    unpackAndCombineImplNonStatic (
+        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+        const Teuchos::ArrayView<const char>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        size_t constantNumPackets,
+        Distributor& distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and combine into matrix.
