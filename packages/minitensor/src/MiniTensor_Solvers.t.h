@@ -363,7 +363,7 @@ printReport(std::ostream & os)
   os << "Max Iters    : " << max_num_iter << '\n';
   os << "Iters Taken  : " << num_iter << '\n';
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
   os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
