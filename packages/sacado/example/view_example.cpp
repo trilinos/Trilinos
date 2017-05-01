@@ -56,9 +56,6 @@
 // Functor to compute matrix-vector product c = A*b using Kokkos
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 class MatVec {
-  typedef typename ViewTypeC::value_type scalar_type;
-  typedef typename ViewTypeC::execution_space execution_space;
-
   const ViewTypeA A;
   const ViewTypeB b;
   const ViewTypeC c;
@@ -70,10 +67,13 @@ public:
     A(A_), b(b_), c(c_),
     m(A.dimension_0()), n(A.dimension_1())
   {
+    typedef typename ViewTypeC::execution_space execution_space;
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
   }
 
   void operator() (const size_t i) const {
+    typedef typename ViewTypeC::value_type scalar_type;
+
     scalar_type t = 0.0;
     for (size_t j=0; j<n; ++j)
       t += A(i,j)*b(j);
@@ -92,9 +92,6 @@ void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b,const ViewTypeC& c)
 // c = A*b using Kokkos.
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 class MatVecDeriv {
-  typedef typename ViewTypeC::value_type scalar_type;
-  typedef typename ViewTypeC::execution_space execution_space;
-
   const ViewTypeA A;
   const ViewTypeB b;
   const ViewTypeC c;
@@ -106,10 +103,13 @@ public:
     A(A_), b(b_), c(c_),
     m(A.dimension_0()), n(A.dimension_1()), p(A.dimension_2()-1)
   {
+    typedef typename ViewTypeC::execution_space execution_space;
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
   }
 
   void operator() (const size_t i) const {
+    typedef typename ViewTypeC::value_type scalar_type;
+
     // Derivative portion
     for (size_t k=0; k<p; ++k) {
       scalar_type t = 0.0;
