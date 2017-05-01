@@ -91,28 +91,62 @@ namespace Tacho {
                               // work array to store map
                               const ordinal_type_array_host &work) {
         ordinal_type m, n;
+
+        Kokkos::deep_copy(Kokkos::subview(work, range_type(0,m)), -1);        
+        
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          // get panel for this sid
+          // get panel for this sid (column major order to use blas and lapack)
           getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
           Kokkos::View<value_type**,Kokkos::LayoutLeft,
             typename value_type_array_host::execution_space,
-            Kokkos::MemoryUnmanaged> tgt(&super_panel_buf(super_panel_ptr(sid)), m, n);
+            Kokkos::MemoryUnmanaged> tgt(&super_panel_buf(super_panel_ptr(sid)), m, n);          
 
           // local to global map
           const ordinal_type goffset = gid_super_panel_ptr(sid);
           for (ordinal_type j=0;j<n;++j) {
-            const ordinal_type col = peri(gid_super_panel_colidx(j+goffset)); // global idx in sparse matrix
+            const ordinal_type col = perm(gid_super_panel_colidx(j+goffset)); 
             work(col) = j;
           }
 
           // row major access to sparse src
           const ordinal_type soffset = supernodes(sid);
           for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type row = peri(i+soffset); // row in sparse matrix
-            for (ordinal_type k=ap(row);k<ap(row+1);++k)
-              tgt(i, work(aj(k))) = ax(k);
+            const ordinal_type row = perm(i+soffset); // row in sparse matrix
+            for (ordinal_type k=ap(row);k<ap(row+1);++k) {
+              const ordinal_type j = work(aj(k));
+              const ordinal_type col = aj(k);
+              if (j != -1 && i <= j)  // upper triangular 
+                tgt(i, work(aj(k))) = ax(k);
+            }
+          }
+          
+          // reset workspace
+          for (ordinal_type j=0;j<n;++j) {
+            const ordinal_type col = perm(gid_super_panel_colidx(j+goffset)); 
+            work(col) = -1;
           }
         }
+
+        // // check copy
+        // for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+        //   // get panel for this sid (column major order to use blas and lapack)
+        //   getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
+        //   Kokkos::View<value_type**,Kokkos::LayoutLeft,
+        //     typename value_type_array_host::execution_space,
+        //     Kokkos::MemoryUnmanaged> tgt(&super_panel_buf(super_panel_ptr(sid)), m, n);          
+
+        //   const ordinal_type soffset = supernodes(sid);
+        //   const ordinal_type goffset = gid_super_panel_ptr(sid);
+        //   for (ordinal_type i=0;i<m;++i) {
+        //     for (ordinal_type j=i;j<n;++j) { 
+        //       printf("%d %d %f\n", 
+        //              (i+soffset), 
+        //              (gid_super_panel_colidx(j+goffset)),
+        //              tgt(i,j));
+        //     }
+        //   }
+        // }
+        // printf("\n\n\n");
       }
 
     private:
@@ -142,8 +176,8 @@ namespace Tacho {
       ordinal_type_array_host _stree_children;
 
       // output : factors
-      size_type_array_host _super_panel_ptr;                                                                         
-      value_type_array_host _super_panel_buf;  
+      size_type_array_host _super_panel_ptr;
+      value_type_array_host _super_panel_buf;
 
       ordinal_type_array_host _work;
 
@@ -200,15 +234,15 @@ namespace Tacho {
         allocateSuperPanels(_nsupernodes, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx,
                             _super_panel_ptr, _super_panel_buf, _work);
 
-        // /// copy the input matrix into spanel_buf;
-        // copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri,
-        //                         _nsupernodes, _supernodes,
-        //                         _gid_super_panel_ptr, _gid_super_panel_colidx,
-        //                         _sid_super_panel_ptr, _blk_super_panel_colidx,
-        //                         _super_panel_ptr, _super_panel_buf,
-        //                         _work);
+        /// copy the input matrix into spanel_buf;
+        copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri,
+                                _nsupernodes, _supernodes,
+                                _gid_super_panel_ptr, _gid_super_panel_colidx,
+                                _sid_super_panel_ptr, _blk_super_panel_colidx,
+                                _super_panel_ptr, _super_panel_buf,
+                                _work);
       }
-
+      
       // matrix values are only changed (keep workspace)
       inline
       void
