@@ -157,3 +157,14 @@ IF(Sacado_ENABLE_Teuchos)
   ENDIF()
 
 ENDIF()
+
+IF (Sacado_ENABLE_KokkosCore)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    view_example
+    SOURCES view_example.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
