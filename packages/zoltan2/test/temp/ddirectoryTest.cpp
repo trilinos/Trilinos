@@ -188,10 +188,10 @@ private:
 template <typename id_t>
 bool IDs<id_t>::TpetraDDTest()
 {
-  typedef typename Tpetra::Map<id_t, id_t> map_t;
+  typedef typename Tpetra::Map<int, id_t> map_t;
   typedef typename Teuchos::RCP<const map_t> rcpmap_t;
 
-  typedef typename Tpetra::Vector<scalar_t, id_t, id_t> vector_t;
+  typedef typename Tpetra::Vector<scalar_t, int, id_t> vector_t;
   typedef typename Teuchos::ArrayRCP<scalar_t> vectordata_t;
 
   // Step T1
@@ -272,7 +272,7 @@ bool IDs<id_t>::TpetraDDTest()
 
   // Create an exporter between the two maps
 
-  typedef Tpetra::Export<id_t, id_t> export_t;
+  typedef Tpetra::Export<int, id_t> export_t;
 
   export_t idExporter(idMap, oto_idMap);
 
