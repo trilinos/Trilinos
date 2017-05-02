@@ -233,18 +233,31 @@ namespace Tacho {
 
         // map between source and target
         ordinal_type_array_host map("map", src_col_size);
-        auto src_map = Kokkos::subview(_gid_super_panel_colidx, range_type(src_col_beg, src_col_end));
+        const ordinal_type smapoff = _gid_super_panel_ptr(sid);
+        auto src_map = Kokkos::subview(_gid_super_panel_colidx, 
+                                       range_type(smapoff + src_col_beg,smapoff + src_col_end));
+
+        printf("src map = ");
+        for (size_type ii=0;ii<src_map.dimension_0();++ii)
+          printf("%d  ", src_map(ii));
+        printf("\n");
+
         for (size_type i=sbeg;i<send;++i) {        
           const ordinal_type row = _sid_super_panel_colidx(i);
           const size_type rbeg = _sid_super_panel_ptr(row), rend = _sid_super_panel_ptr(row+1)-1;
-
           const ordinal_type 
             tgt_col_beg = _blk_super_panel_colidx(rbeg),
-            tgt_col_end = _blk_super_panel_colidx(rend+1),
-            //tgt_col_offset = tgt_col_beg,
+            tgt_col_end = _blk_super_panel_colidx(rend),
             tgt_col_size = tgt_col_end - tgt_col_beg;
           
-          auto tgt_map = Kokkos::subview(_gid_super_panel_colidx, range_type(tgt_col_beg, tgt_col_end));
+          const ordinal_type tmapoff = _gid_super_panel_ptr(row);
+          auto tgt_map = Kokkos::subview(_gid_super_panel_colidx, 
+                                         range_type(tmapoff + tgt_col_beg, tmapoff + tgt_col_end));
+
+          printf("tgt map at row = %d, %d %d\n", row, tgt_col_beg, tgt_col_end);
+          for (size_type ii=0;ii<tgt_map.dimension_0();++ii)
+            printf("%d  ", tgt_map(ii));
+          printf("\n");
 
           for (ordinal_type k=0,l=0;k<src_col_size;++k) {
             map(k) = -1;
