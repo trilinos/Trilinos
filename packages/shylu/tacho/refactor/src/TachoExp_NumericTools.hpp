@@ -187,9 +187,6 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       void
       update(const ordinal_type sid, ViewType &ABR) {
-        
-        printf("entering : sid = %d, m = %d, n = %d \n", sid, ABR.dimension_0(), ABR.dimension_1());
-
         const size_type sbeg = _sid_super_panel_ptr(sid)+1, send = _sid_super_panel_ptr(sid+1)-1;
         const ordinal_type 
           src_col_beg = _blk_super_panel_colidx(sbeg),
@@ -201,11 +198,6 @@ namespace Tacho {
         auto src_map = Kokkos::subview(_gid_super_panel_colidx, 
                                        range_type(smapoff + src_col_beg,smapoff + src_col_end));
         
-        printf("src map = ");
-        for (size_type ii=0;ii<src_map.dimension_0();++ii)
-          printf("%d  ", src_map(ii));
-        printf("\n");
-
         // walk through source rows
         const ordinal_type src_row_offset = _blk_super_panel_colidx(sbeg);
         for (size_type i=sbeg;i<send;++i) {        
@@ -222,18 +214,6 @@ namespace Tacho {
             typename value_type_array_host::execution_space,
             Kokkos::MemoryUnmanaged> A(&_super_panel_buf(_super_panel_ptr(row)), m, n);          
 
-          printf("souce block to update super row %d \n", _sid_super_panel_colidx(i));
-          for (ordinal_type jj=0;jj<src_col_size;++jj)          
-            for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii)
-              printf("ABR(%d,%d) = %f\n", 
-                     ii-src_row_offset, jj,
-                     ABR(ii-src_row_offset, jj));
-
-          printf("target block to update super row %d, dim = (%d,%d) \n", row, m, n);
-          for (ordinal_type jj=0;jj<n;++jj)          
-            for (ordinal_type ii=0;ii<m;++ii)
-              printf("A(%d,%d) = %f\n", row, ii, jj, A(ii,jj));
-
           /// ** map
           const size_type rbeg = _sid_super_panel_ptr(row), rend = _sid_super_panel_ptr(row+1)-1;
           const ordinal_type 
@@ -245,11 +225,6 @@ namespace Tacho {
           auto tgt_map = Kokkos::subview(_gid_super_panel_colidx, 
                                          range_type(tmapoff + tgt_col_beg, tmapoff + tgt_col_end));
 
-          printf("tgt map at row = %d, %d %d\n", row, tgt_col_beg, tgt_col_end);
-          for (size_type ii=0;ii<tgt_map.dimension_0();++ii)
-            printf("%d  ", tgt_map(ii));
-          printf("\n");
-
           for (ordinal_type k=0,l=0;k<src_col_size;++k) {
             map(k) = -1;
             for (;l<tgt_col_size && tgt_map(l) <= src_map(k);++l)
@@ -259,22 +234,12 @@ namespace Tacho {
               }
           }
           
-          for (ordinal_type ii=0;ii<src_col_size;++ii) 
-            printf("map (%d) = %d\n", ii, map(ii));
-
           ordinal_type mbeg = 0; for (;map(mbeg) == -1; ++mbeg) ;
-          printf("mbeg = %d, %d %d \n", mbeg, A.dimension_0(), A.dimension_1());
-
-
           for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
             const ordinal_type mj = map(jj);
             for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
               const ordinal_type mi = ii+map(mbeg)-src_row_beg;
-              printf(" src %d %d --> tgt %d %d\n",
-                     ii-src_row_offset,jj,
-                     mi, mj);
-              ///ii-src_row_beg is wrong
-              A(ii-src_row_beg, mj) += ABR(ii-src_row_offset,jj);
+              A(mi, mj) += ABR(ii-src_row_offset,jj);
             }
           }
         }
