@@ -103,7 +103,7 @@ namespace panzer {
                           const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv);
 
     //! Method to apply orientations to a basis values container.
-    void applyOrientations(const PHX::MDField<Scalar,Cell,BASIS> & orientations);
+    void applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations);
 
 #if defined(__KK__)
     void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations);

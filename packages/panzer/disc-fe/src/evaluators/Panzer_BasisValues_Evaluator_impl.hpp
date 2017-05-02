@@ -103,10 +103,13 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   pointValues.setupArrays(pointRule,af_pv);
 
   // the field manager will allocate all of these field
-  this->addDependentField(pointValues.coords_ref);
-  this->addDependentField(pointValues.jac);
-  this->addDependentField(pointValues.jac_inv);
-  this->addDependentField(pointValues.jac_det);
+  {
+    constPointValues = pointValues;
+    this->addDependentField(constPointValues.coords_ref);
+    this->addDependentField(constPointValues.jac);
+    this->addDependentField(constPointValues.jac_inv);
+    this->addDependentField(constPointValues.jac_det);
+  }
 
   // setup all fields to be evaluated and constructed
   Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*pointRule));
@@ -153,8 +156,8 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   if(   basis->getElementSpace()==panzer::PureBasis::HCURL
      || basis->getElementSpace()==panzer::PureBasis::HDIV) {
     std::string orientationFieldName = basis->name()+" Orientation";
-    orientation = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
-                                        basis->functional);
+    orientation = PHX::MDField<const ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
+                                                                         basis->functional);
     this->addDependentField(orientation);
   }
 
@@ -222,9 +225,9 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
 { 
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,
-                             pointValues.jac,
-                             pointValues.jac_det,
-                             pointValues.jac_inv);
+                              pointValues.jac,
+                              pointValues.jac_det,
+                              pointValues.jac_inv);
 
   if(   basis->getElementSpace()==panzer::PureBasis::HCURL
      || basis->getElementSpace()==panzer::PureBasis::HDIV) {

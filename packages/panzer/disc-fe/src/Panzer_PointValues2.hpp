@@ -61,6 +61,10 @@ namespace panzer {
                typename Tag6, typename Tag7> class Array >
   struct PointValues2 {
     typedef typename ArrayTraits<Scalar, Array<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
+
+    template<typename SourceScalar>
+    PointValues2<Scalar,Array>&
+    operator=(const PointValues2<SourceScalar,Array>& source);
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
