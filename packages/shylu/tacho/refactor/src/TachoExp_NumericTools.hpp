@@ -190,60 +190,51 @@ namespace Tacho {
         
         printf("entering : sid = %d, m = %d, n = %d \n", sid, ABR.dimension_0(), ABR.dimension_1());
 
-        for (size_type i=0;i<ABR.dimension_0();++i)
-          for (size_type j=0;j<ABR.dimension_0();++j)
-            ABR(i,j) = i*1000+j;
-        
         const size_type sbeg = _sid_super_panel_ptr(sid)+1, send = _sid_super_panel_ptr(sid+1)-1;
         const ordinal_type 
           src_col_beg = _blk_super_panel_colidx(sbeg),
           src_col_end = _blk_super_panel_colidx(send), 
           src_col_size = src_col_end - src_col_beg;
 
+        ordinal_type_array_host map("map", src_col_size);
+        const ordinal_type smapoff = _gid_super_panel_ptr(sid);
+        auto src_map = Kokkos::subview(_gid_super_panel_colidx, 
+                                       range_type(smapoff + src_col_beg,smapoff + src_col_end));
+        
+        printf("src map = ");
+        for (size_type ii=0;ii<src_map.dimension_0();++ii)
+          printf("%d  ", src_map(ii));
+        printf("\n");
+
         // walk through source rows
         const ordinal_type src_row_offset = _blk_super_panel_colidx(sbeg);
         for (size_type i=sbeg;i<send;++i) {        
+          /// ** soruce rows
           const ordinal_type 
             src_row_beg = _blk_super_panel_colidx(i),
             src_row_end = _blk_super_panel_colidx(i+1);
-          
+
+          /// ** target rows
+          const ordinal_type row = _sid_super_panel_colidx(i);          
+          ordinal_type m, n;
+          getSuperPanelSize(row, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
+          Kokkos::View<value_type**,Kokkos::LayoutLeft,
+            typename value_type_array_host::execution_space,
+            Kokkos::MemoryUnmanaged> A(&_super_panel_buf(_super_panel_ptr(row)), m, n);          
+
           printf("souce block to update super row %d \n", _sid_super_panel_colidx(i));
           for (ordinal_type jj=0;jj<src_col_size;++jj)          
             for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii)
               printf("ABR(%d,%d) = %f\n", 
                      ii-src_row_offset, jj,
                      ABR(ii-src_row_offset, jj));
-        }
-        
-        // walk throught target rows
-        for (size_type i=sbeg;i<send;++i) {        
-          const ordinal_type row = _sid_super_panel_colidx(i);
-          
-          ordinal_type m, n;
-          getSuperPanelSize(row, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
-          Kokkos::View<value_type**,Kokkos::LayoutLeft,
-            typename value_type_array_host::execution_space,
-            Kokkos::MemoryUnmanaged> A(&_super_panel_buf(_super_panel_ptr(row)), m, n);          
-        
+
           printf("target block to update super row %d, dim = (%d,%d) \n", row, m, n);
           for (ordinal_type jj=0;jj<n;++jj)          
             for (ordinal_type ii=0;ii<m;++ii)
               printf("A(%d,%d) = %f\n", row, ii, jj, A(ii,jj));
-        }        
 
-        // map between source and target
-        ordinal_type_array_host map("map", src_col_size);
-        const ordinal_type smapoff = _gid_super_panel_ptr(sid);
-        auto src_map = Kokkos::subview(_gid_super_panel_colidx, 
-                                       range_type(smapoff + src_col_beg,smapoff + src_col_end));
-
-        printf("src map = ");
-        for (size_type ii=0;ii<src_map.dimension_0();++ii)
-          printf("%d  ", src_map(ii));
-        printf("\n");
-
-        for (size_type i=sbeg;i<send;++i) {        
-          const ordinal_type row = _sid_super_panel_colidx(i);
+          /// ** map
           const size_type rbeg = _sid_super_panel_ptr(row), rend = _sid_super_panel_ptr(row+1)-1;
           const ordinal_type 
             tgt_col_beg = _blk_super_panel_colidx(rbeg),
@@ -270,79 +261,24 @@ namespace Tacho {
           
           for (ordinal_type ii=0;ii<src_col_size;++ii) 
             printf("map (%d) = %d\n", ii, map(ii));
+
+          ordinal_type mbeg = 0; for (;map(mbeg) == -1; ++mbeg) ;
+          printf("mbeg = %d, %d %d \n", mbeg, A.dimension_0(), A.dimension_1());
+
+
+          for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
+            const ordinal_type mj = map(jj);
+            for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
+              const ordinal_type mi = ii+map(mbeg)-src_row_beg;
+              printf(" src %d %d --> tgt %d %d\n",
+                     ii-src_row_offset,jj,
+                     mi, mj);
+              ///ii-src_row_beg is wrong
+              A(ii-src_row_beg, mj) += ABR(ii-src_row_offset,jj);
+            }
+          }
         }
       }
-
-        //   // 
-        //   const ordinal_type src_row_offset = _blk_super_panel_colidx(rbeg);
-        //   for (ordinal_type ii=rbeg;ii<rend;++ii) {
-        //     const ordinal_type 
-        //       src_row_beg = _blk_super_panel_colidx(ii),
-        //       src_row_end = _blk_super_panel_colidx(ii+1),
-        //       src_row_size = src_row_end - src_row_beg;
-            
-        //     // row update
-        //     for (ordinal_type k1=src_row_beg;k1<src_row_end;++k1) {
-        //       for (ordinal_type k2=0;k2<src_col_size;++k2) {
-        //         col = map(k2);
-        //         if (col != -1)
-        //           tgt(row, col) += ABR(k1-src_row_offset, k2);
-        //     }
-              
-        //   }
-        
-
-        // for (size_type i=sbeg;i<send;++i) {
-        // const ordinal_type 
-        //   src_col_beg = _blk_super_panel_colidx(i),
-        //     src_col_end = _blk_super_panel_colidx(send), 
-        //     src_col_offset = src_col_beg,
-        //     src_col_size = src_col_end - src_col_beg;
-        
-
-        //   const ordinal_type row = _sid_super_panel_colidx(i);
-        //   const ordinal_type 
-        //     src_row_beg = _supernodes(row),
-        //     src_row_end = _supernodes(row+1),
-        //     src_row_offset = src_row_beg,
-        //     src_row_size = src_row_end - src_row_beg;
-
-        //            const size_type_array_host &gid_super_panel_ptr,
-        //            const ordinal_type_array_host &gid_super_panel_colidx,
-        //            const size_type_array_host &sid_super_panel_ptr,
-        //            const ordinal_type_array_host &sid_super_panel_colidx,
-        //            const ordinal_type_array_host &blk_super_panel_colidx,
-
-
-        //   for (ordinal_type jj=0;jj<src_col_size;++jj) {
-        //     _gid_super_panel_colidx
-        //     src_col_offset
-        //     for (ordinal_type ii=0;ii<src_row_size;++ii) {
-              
-        //       ABR(ii,jj);
-        //     }
-        //   }
-          
-        //   //const size_type tbeg = _sid_super_panel_ptr(row), tend = _sid_super_panel_ptr(row+1);          
-        //   for (size_type j=i;j<send;++j) {
-        //     const ordinal_type src = _sid_super_panel_colidx(j);
-
-        //     for (size_type k=tbeg;k<tend;++k) {
-        //       const ordinal_type tgt = _sid_super_panel_colidx(k);
-              
-        //       if (src == tgt) {
-        //         printf(" -- block update %d %d --> %d %d\n", sid, src, row, tgt);
-        //         // src range
-                
-        //         auto srcblk = Kokkos::subview(A, range_type(
-                
-
-        //         _super_panel_buf(&_super_panel_ptr(row));
-        //       }
-        //     }
-        //   }
-        // }
-      //}
 
       KOKKOS_INLINE_FUNCTION
       void
@@ -371,7 +307,8 @@ namespace Tacho {
         // Chol<Uplo::Upper>::invoke(dummy, dummy, ATL); 
         printf("chol ATL\n");
         //Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose>::invoke(dummy, dummy, 1.0, ATL, ATR);
-        printf("trsm ATL, ATR\n");
+        if (n)
+          printf("trsm ATL, ATR\n");
 
         // if this is not root, there is something to update
         if (sidpar != -1) {
