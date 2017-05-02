@@ -92,7 +92,7 @@ namespace Tacho {
                               const ordinal_type_array_host &work) {
         ordinal_type m, n;
 
-        Kokkos::deep_copy(Kokkos::subview(work, range_type(0,m)), -1);        
+        Kokkos::deep_copy(work, -1);        
         
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
           // get panel for this sid (column major order to use blas and lapack)
@@ -225,13 +225,10 @@ namespace Tacho {
             typename value_type_array_host::execution_space,
             Kokkos::MemoryUnmanaged> A(&_super_panel_buf(_super_panel_ptr(row)), m, n);          
         
-          for (ordinal_type ii=0;ii<m;++ii) 
-            for (ordinal_type jj=0;jj<n;++jj)
-              A(ii,jj) = ii*1000+jj;
-  
+          printf("target block to update super row %d, dim = (%d,%d) \n", row, m, n);
           for (ordinal_type jj=0;jj<n;++jj)          
             for (ordinal_type ii=0;ii<m;++ii)
-              printf("tgt srow = %d, A(%d,%d) = %f\n", row, ii, jj, A(ii,jj));
+              printf("A(%d,%d) = %f\n", row, ii, jj, A(ii,jj));
         }        
 
         // map between source and target
