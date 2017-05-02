@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_GRAPH_TOOLS_CAMD_HPP__
 #define __TACHOEXP_GRAPH_TOOLS_CAMD_HPP__
 
-/// \file Tacho_GraphTools_CAMD.hpp
+/// \file TachoExp_GraphTools_CAMD.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"

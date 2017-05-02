@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_GRAPH_TOOLS_SCOTCH_HPP__
 #define __TACHOEXP_GRAPH_TOOLS_SCOTCH_HPP__
 
-/// \file Tacho_GraphTools_Scotch.hpp
+/// \file TachoExp_GraphTools_Scotch.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #if defined(HAVE_SHYLUTACHO_SCOTCH)

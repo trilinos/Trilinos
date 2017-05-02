@@ -21,7 +21,7 @@
 
 #include <limits>
 
-/// \file Tacho_Util.hpp
+/// \file TachoExp_Util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -35,6 +35,7 @@ namespace Tacho {
 // #define MSG_NOT_YET_IMPLEMENTED(what) "Not yet implemented: " #what
 // #define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
 // #define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
+#define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
     
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
     if ((ierr) != 0) {                                                  \

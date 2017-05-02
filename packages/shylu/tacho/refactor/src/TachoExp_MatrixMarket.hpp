@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_MATRIX_MARKET_HPP__
 #define __TACHOEXP_MATRIX_MARKET_HPP__
 
-/// \file Tacho_MatrixMarket.hpp
+/// \file TachoExp_MatrixMarket.hpp
 /// \brief IO utilities for matrix market format
 /// \author Kyungjoo Kim (kyukim@sandia.gov)  
 

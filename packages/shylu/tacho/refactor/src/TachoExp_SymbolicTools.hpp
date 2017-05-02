@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_SYMBOLIC_TOOLS_HPP__
 #define __TACHOEXP_SYMBOLIC_TOOLS_HPP__
 
-/// \file Tacho_CrsMatrixTools.hpp
+/// \file TachoExp_SymbolicTools.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"

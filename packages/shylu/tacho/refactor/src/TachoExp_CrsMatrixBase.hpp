@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_CRS_MATRIX_BASE_HPP__
 #define __TACHOEXP_CRS_MATRIX_BASE_HPP__
 
-/// \file Tacho_CrsMatrixBase.hpp
+/// \file TachoExp_CrsMatrixBase.hpp
 /// \brief CRS matrix base object interfaces to user provided input matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
