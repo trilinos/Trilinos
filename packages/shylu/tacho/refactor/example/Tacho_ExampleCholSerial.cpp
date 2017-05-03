@@ -141,7 +141,15 @@ int main (int argc, char *argv[]) {
     
     N.CholeskyFactorize();
     t = timer.seconds();
+
+    // {
+    //   std::ofstream out("U.mtx");
+    //   auto U = N.Factors<Uplo::Upper>();
+    //   MatrixMarket<value_type>::write(out, U);
+    // }
     std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
+
+    
   }
 
   Kokkos::finalize();

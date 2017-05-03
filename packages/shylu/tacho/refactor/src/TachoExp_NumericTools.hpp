@@ -242,12 +242,12 @@ namespace Tacho {
                 break;
               }
           }
-          
+
           ordinal_type mbeg = 0; for (;map(mbeg) == -1; ++mbeg) ;
           for (ordinal_type jj=mbeg;jj<src_col_size;++jj) {
             const ordinal_type mj = map(jj);
             for (ordinal_type ii=src_row_beg;ii<src_row_end;++ii) {
-              const ordinal_type mi = ii+map(mbeg)-src_row_beg;
+              const ordinal_type mi = map(ii-src_row_beg+mbeg);
               A(mi, mj) += ABR(ii-src_row_offset,jj);
             }
           }
@@ -283,11 +283,10 @@ namespace Tacho {
         Chol<Uplo::Upper,Algo::External>
           ::invoke(policy, member, ATL); 
 
-        Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-          ::invoke(policy, member, Diag::Unit(), 1.0, ATL, ATR);
-
-        // if this is not root, it needs to update its parent
         if (sidpar != -1) {
+          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            ::invoke(policy, member, Diag::NonUnit(), 1.0, ATL, ATR);
+          
           // temporary workspace ; replaced with memory pool
           Kokkos::View<value_type**,Kokkos::LayoutLeft,
             typename value_type_array_host::execution_space> ABR("ABR", n, n);
@@ -366,6 +365,29 @@ namespace Tacho {
         const ordinal_type numRoots = _stree_roots.dimension_0();
         for (ordinal_type i=0;i<numRoots;++i) 
           recursiveSerialChol(_stree_roots(i), -1);
+
+        // // check copy
+        // for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+        //   ordinal_type m, n;
+        //   // get panel for this sid (column major order to use blas and lapack)
+        //   getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
+        //   Kokkos::View<value_type**,Kokkos::LayoutLeft,
+        //     typename value_type_array_host::execution_space,
+        //     Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
+
+        //   const ordinal_type soffset = _supernodes(sid);
+        //   const ordinal_type goffset = _gid_super_panel_ptr(sid);
+        //   for (ordinal_type i=0;i<m;++i) {
+        //     for (ordinal_type j=i;j<n;++j) { 
+        //       printf("%d %d %f\n", 
+        //              (i+soffset), 
+        //              (_gid_super_panel_colidx(j+goffset)),
+        //              tgt(i,j));
+        //     }
+        //   }
+        // }
+        // printf("\n\n\n");
+
       }
       
       // matrix values are only changed (keep workspace)
@@ -385,6 +407,73 @@ namespace Tacho {
         
 
       }
+
+      template<typename ArgUplo>
+      inline
+      CrsMatrixBase<value_type,host_exec_space> 
+      Factors() {
+        CrsMatrixBase<value_type,host_exec_space> r_val;
+        
+        // for (ordinal_type i=0;i<_m;++i)
+        //   std::cout << _perm(i) << "  ";
+        // std::cout << "\n";
+
+        const value_type eps = std::numeric_limits<value_type>::epsilon() * 100;
+        if (std::is_same<ArgUplo,Uplo::Upper>::value) {
+          size_type_array_host count("count", _m);
+          for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+            ordinal_type m, n;
+            getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
+            Kokkos::View<value_type**,Kokkos::LayoutLeft,
+              typename value_type_array_host::execution_space,
+              Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
+            
+            const ordinal_type soffset = _supernodes(sid);            
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type ii = i+soffset;
+              for (ordinal_type j=i;j<n;++j) 
+                if (std::abs(tgt(i,j)) > eps)
+                  ++count(ii);
+            }
+          }
+          
+          size_type_array_host ap("ap", _m+1);          
+          for (ordinal_type i=0;i<_m;++i) 
+            ap(i+1) = ap(i) + count(i);
+
+          ordinal_type_array_host aj("aj", ap(_m));
+          value_type_array_host ax("ax", ap(_m));
+
+          Kokkos::deep_copy(count, 0);
+          
+          for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+            ordinal_type m, n;
+            getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
+            Kokkos::View<value_type**,Kokkos::LayoutLeft,
+              typename value_type_array_host::execution_space,
+              Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
+            
+            const ordinal_type soffset = _supernodes(sid);
+            const ordinal_type goffset = _gid_super_panel_ptr(sid);
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type ii = (i+soffset);
+              for (ordinal_type j=i;j<n;++j) { 
+                if (std::abs(tgt(i,j)) > eps) {
+                  aj(ap(ii) + count(ii)) = (_gid_super_panel_colidx(j+goffset));
+                  ax(ap(ii) + count(ii)) = tgt(i,j);
+                  ++count(ii);
+                }
+              }
+            }
+          }
+          r_val.setExternalMatrix(_m, _m, ap(_m), ap, aj, ax);
+        } 
+        else if (std::is_same<ArgUplo,Uplo::Lower>::value) {
+        }
+
+        return r_val;
+      }
+      
     };
 
   }
