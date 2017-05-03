@@ -328,7 +328,21 @@ bool IDs<id_t>::ZoltanDDTest()
 
   // Build a Zoltan directory for the IDs; don't care about local IDs
 
+#ifdef HAVE_MPI
   MPI_Comm mpicomm = Teuchos::getRawMpiComm(*comm);
+#else
+  {  // Use siMPI from Zoltan here; make sure it is initialized
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      int narg = 0;
+      char **argv = NULL;
+      MPI_Init(&narg, &argv);
+    }
+  }
+  MPI_Comm mpicomm = MPI_COMM_WORLD;
+#endif
+
   int nIdEnt = Zoltan2::TPL_Traits<ZOLTAN_ID_PTR, id_t>::NUM_ID;
 
   Zoltan_DD zz(mpicomm, nIdEnt, 0, sizeof(scalar_t), inIds, 0);
