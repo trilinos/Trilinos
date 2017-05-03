@@ -13,9 +13,7 @@ namespace Tacho {
              typename ArgUplo, 
              typename ArgTrans, 
              typename ArgAlgo>
-    class Trsm {
-    public:
-      
+    struct Trsm {
       template<typename PolicyType,
                typename MemberType,
                typename DiagType,

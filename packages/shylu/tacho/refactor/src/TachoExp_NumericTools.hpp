@@ -7,13 +7,13 @@
 #include "TachoExp_Util.hpp"
 
 #include "TachoExp_Chol.hpp"
-#include "TachoExp_Chol_Upper_External.hpp"
+#include "TachoExp_Chol_External.hpp"
 
 #include "TachoExp_Trsm.hpp"
-#include "TachoExp_Trsm_Left_Upper_ConjTrans_External.hpp"
+#include "TachoExp_Trsm_External.hpp"
 
 #include "TachoExp_Herk.hpp"
-#include "TachoExp_Herk_Upper_ConjTrans_External.hpp"
+#include "TachoExp_Herk_External.hpp"
 
 namespace Tacho {
 

@@ -13,9 +13,7 @@ namespace Tacho {
 
     template<typename ArgUplo, 
              typename ArgAlgo>
-    class Chol {
-    public:
-
+    struct Chol {
       template<typename PolicyType,
                typename MemberType,
                typename ViewTypeA>

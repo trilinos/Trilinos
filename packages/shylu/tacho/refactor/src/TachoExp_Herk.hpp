@@ -12,9 +12,7 @@ namespace Tacho {
   namespace Experimental {
     
     template<typename ArgUplo, typename ArgTrans, typename ArgAlgo>
-    class Herk {
-    public:
-      
+    struct Herk {
       template<typename PolicyType,
                typename MemberType,
                typename ScalarType,
