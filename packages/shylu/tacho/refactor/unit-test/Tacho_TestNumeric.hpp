@@ -82,39 +82,39 @@ TEST( Numeric, Cholesky ) {
   S.symbolicFactorize();
 
 
-  const auto m = A.NumRows();
-  const auto ap = A.RowPtr();
-  const auto aj = A.Cols();
-  const auto ax = A.Values();
+  // const auto m = A.NumRows();
+  // const auto ap = A.RowPtr();
+  // const auto aj = A.Cols();
+  // const auto ax = A.Values();
   
-  const auto perm = T.PermVector();
-  const auto peri = T.InvPermVector();
+  // const auto perm = T.PermVector();
+  // const auto peri = T.InvPermVector();
   
-  const size_type ns = S.NumSuperNodes();
-  const auto supernodes = S.SuperNodes();
-  const auto gid_super_panel_ptr =  S.gidSuperPanelPtr();
-  const auto gid_super_panel_colidx = S.gidSuperPanelColIdx();
-  const auto sid_super_panel_ptr = S.sidSuperPanelPtr();
-  const auto sid_super_panel_colidx = S.sidSuperPanelColIdx();
-  const auto blk_super_panel_colidx = S.blkSuperPanelColIdx();
+  // const size_type ns = S.NumSuperNodes();
+  // const auto supernodes = S.SuperNodes();
+  // const auto gid_super_panel_ptr =  S.gidSuperPanelPtr();
+  // const auto gid_super_panel_colidx = S.gidSuperPanelColIdx();
+  // const auto sid_super_panel_ptr = S.sidSuperPanelPtr();
+  // const auto sid_super_panel_colidx = S.sidSuperPanelColIdx();
+  // const auto blk_super_panel_colidx = S.blkSuperPanelColIdx();
 
-  printf("supernodes = %d\n", ns);
-  for (size_type i=0;i<ns;++i) {
-    printf("sid=  %d\n", supernodes(i));
-    printf("-- gid = ");
-    for (size_type j=gid_super_panel_ptr(i);j<gid_super_panel_ptr(i+1);++j)
-      printf("  %d", gid_super_panel_colidx(j));
-    printf("\n");
+  // printf("supernodes = %d\n", ns);
+  // for (size_type i=0;i<ns;++i) {
+  //   printf("sid=  %d\n", supernodes(i));
+  //   printf("-- gid = ");
+  //   for (size_type j=gid_super_panel_ptr(i);j<gid_super_panel_ptr(i+1);++j)
+  //     printf("  %d", gid_super_panel_colidx(j));
+  //   printf("\n");
 
-    printf("-- supernodes id connected = ");
-    for (size_type j=sid_super_panel_ptr(i);j<(sid_super_panel_ptr(i+1)-1);++j)
-      printf("  %d", sid_super_panel_colidx(j));
-    printf("\n");
-    printf("-- supernodes blocks connected = ");
-    for (size_type j=sid_super_panel_ptr(i);j<sid_super_panel_ptr(i+1);++j)
-      printf("  %d", blk_super_panel_colidx(j));
-    printf("\n");
-  }
+  //   printf("-- supernodes id connected = ");
+  //   for (size_type j=sid_super_panel_ptr(i);j<(sid_super_panel_ptr(i+1)-1);++j)
+  //     printf("  %d", sid_super_panel_colidx(j));
+  //   printf("\n");
+  //   printf("-- supernodes blocks connected = ");
+  //   for (size_type j=sid_super_panel_ptr(i);j<sid_super_panel_ptr(i+1);++j)
+  //     printf("  %d", blk_super_panel_colidx(j));
+  //   printf("\n");
+  // }
 
   NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
                                             T.PermVector(), T.InvPermVector(),

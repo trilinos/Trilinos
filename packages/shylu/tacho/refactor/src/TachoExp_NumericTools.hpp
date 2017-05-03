@@ -6,6 +6,15 @@
 
 #include "TachoExp_Util.hpp"
 
+#include "TachoExp_Chol.hpp"
+#include "TachoExp_Chol_Upper_External.hpp"
+
+#include "TachoExp_Trsm.hpp"
+#include "TachoExp_Trsm_Left_Upper_ConjTrans_External.hpp"
+
+#include "TachoExp_Herk.hpp"
+#include "TachoExp_Herk_Upper_ConjTrans_External.hpp"
+
 namespace Tacho {
 
   namespace Experimental {
@@ -256,6 +265,9 @@ namespace Tacho {
         ///
         /// body ( panel factorization and herk update
         ///
+
+        // dummy policy and member
+        const ordinal_type policy = 0, member = 0;
         
         // chol
         ordinal_type mm, nn;
@@ -268,27 +280,24 @@ namespace Tacho {
           typename value_type_array_host::execution_space,
           Kokkos::MemoryUnmanaged> ATL(ptr, m, m), ATR(ptr+m*m, m, n);
         
-        // chol(ATL),  trsm(ATL, ATR);
-        // Chol<Uplo::Upper>::invoke(dummy, dummy, ATL); 
-        printf("chol ATL\n");
-        //Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose>::invoke(dummy, dummy, 1.0, ATL, ATR);
-        if (n)
-          printf("trsm ATL, ATR\n");
+        Chol<Uplo::Upper,Algo::External>
+          ::invoke(policy, member, ATL); 
 
-        // if this is not root, there is something to update
+        Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+          ::invoke(policy, member, Diag::Unit(), 1.0, ATL, ATR);
+
+        // if this is not root, it needs to update its parent
         if (sidpar != -1) {
           // temporary workspace ; replaced with memory pool
           Kokkos::View<value_type**,Kokkos::LayoutLeft,
             typename value_type_array_host::execution_space> ABR("ABR", n, n);
           
-          // herk(ATR, ABR)
-          //Herk<Uplo::Upper,Trans::ConjTranspose>::invoke(dummy, dummy, -1.0, ATR, 1.0, ABR);
-          printf("herk ATR, ABR\n");
+          Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            ::invoke(policy, member, -1.0, ATR, 1.0, ABR);
 
           // copy back to its parent
           update(sid, ABR);          
         }
-        
       }
 
     public:

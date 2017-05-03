@@ -8,6 +8,17 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
+IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
+  IF(TPL_ENABLE_MKL)
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleCholPardiso
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleCholPardiso.cpp
+      COMM serial mpi
+    )
+  ENDIF()
+ENDIF()
+
 # IF(Kokkos_ENABLE_OpenMP)
 #   TRIBITS_ADD_EXECUTABLE(
 #     Tacho_ExampleNPT_OpenMP

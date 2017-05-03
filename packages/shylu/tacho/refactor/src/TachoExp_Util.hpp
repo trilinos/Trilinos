@@ -34,7 +34,7 @@ namespace Tacho {
     ///
 // #define MSG_NOT_YET_IMPLEMENTED(what) "Not yet implemented: " #what
 // #define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
-// #define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
+#define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " #what
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
     
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
@@ -184,7 +184,7 @@ namespace Tacho {
     };
 
     struct Side {
-      struct Left         { enum : int { tag = 501 }; };
+      struct Left         { enum : int { tag = 501 }; }; 
       struct Right        { enum : int { tag = 502 }; };
     };
     template<typename T> 
@@ -217,6 +217,25 @@ namespace Tacho {
                              std::is_same<T,Trans::NoTranspose>::value)
       };
     };
+    
+
+    struct Algo {
+      struct External { enum : int { tag = 1001 }; };
+    };
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<!std::is_integral<T>::value,ordinal_type>::type
+    get_team_rank(const T& member) {
+      return member.team_rank();
+    }
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<std::is_integral<T>::value,ordinal_type>::type
+    get_team_rank(const T& member) {
+      return 0;
+    }
     
   }
 }
