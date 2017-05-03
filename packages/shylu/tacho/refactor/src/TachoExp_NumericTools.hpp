@@ -84,12 +84,17 @@ namespace Tacho {
       allocateWorkspaceSerialChol(const ordinal_type nsupernodes,
                                   const ordinal_type_array_host &supernodes,
                                   const size_type_array_host &sid_super_panel_ptr,
+                                  const ordinal_type_array_host &sid_super_panel_colidx,
                                   const ordinal_type_array_host &blk_super_panel_colidx,
                                   /* */ value_type_array_host &spanel_serial_work) {
         ordinal_type m, n, worksize = 0;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-          getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
-          worksize = max(worksize, (n-m)*(n-m));
+          // supernodes are myself, parent, empty one (range is used for blocks it requires end point)
+          const bool is_direct_update = (sid_super_panel_ptr(sid+1) - sid_super_panel_ptr(sid)) == 3;
+          if (!is_direct_update) {
+            getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
+            worksize = max(worksize, (n-m)*(n-m));
+          }
         }
         spanel_serial_work = value_type_array_host("spanel_serial_work", worksize);
       }
@@ -221,7 +226,8 @@ namespace Tacho {
           src_col_end = _blk_super_panel_colidx(send), 
           src_col_size = src_col_end - src_col_beg;
 
-        ordinal_type_array_host map("map", src_col_size);
+        //ordinal_type_array_host map("map", src_col_size);
+        Kokkos::View<ordinal_type*,host_exec_space,Kokkos::MemoryUnmanaged> map(_work);
         const ordinal_type smapoff = _gid_super_panel_ptr(sid);
         auto src_map = Kokkos::subview(_gid_super_panel_colidx, 
                                        range_type(smapoff + src_col_beg,smapoff + src_col_end));
@@ -281,10 +287,6 @@ namespace Tacho {
         for (ordinal_type i=ibeg;i<iend;++i)
           recursiveSerialChol(_stree_children(i), sid);
         
-        ///
-        /// body ( panel factorization and herk update
-        ///
-
         // dummy policy and member
         const ordinal_type policy = 0, member = 0;
         
@@ -305,17 +307,30 @@ namespace Tacho {
         if (sidpar != -1) {
           Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
             ::invoke(policy, member, Diag::NonUnit(), 1.0, ATL, ATR);
-          
-          // temporary workspace ; replaced with memory pool
-          Kokkos::View<value_type**,Kokkos::LayoutLeft,
-            typename value_type_array_host::execution_space,
-            Kokkos::MemoryUnmanaged> ABR(_super_panel_work.data(), n, n);
-          
-          Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-            ::invoke(policy, member, -1.0, ATR, 0.0, ABR);
 
-          // copy back to its parent
-          update(sid, ABR);          
+          const ordinal_type update_supernode_beg = _sid_super_panel_ptr(sid);
+          const ordinal_type update_supernode_end = _sid_super_panel_ptr(sid+1);
+
+          // diag, parent, empty one (range is constructed for block which needs end point)
+          const bool is_direct_update = ((update_supernode_end - update_supernode_beg) == 3 &&
+                                         _sid_super_panel_colidx(update_supernode_beg) == sidpar);
+          if (is_direct_update) {
+            Kokkos::View<value_type**,Kokkos::LayoutLeft,
+              typename value_type_array_host::execution_space,
+              Kokkos::MemoryUnmanaged> ABR(&_super_panel_buf(_super_panel_ptr(update_supernode_beg)), n, n);
+            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(policy, member, -1.0, ATR, 1.0, ABR);
+          } else {
+            Kokkos::View<value_type**,Kokkos::LayoutLeft,
+              typename value_type_array_host::execution_space,
+              Kokkos::MemoryUnmanaged> ABR(_super_panel_work.data(), n, n);
+            
+            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(policy, member, -1.0, ATR, 0.0, ABR);
+            
+            // copy back to its parent
+            update(sid, ABR);
+          }
         }
       }
 
@@ -383,7 +398,7 @@ namespace Tacho {
                                 _work);
 
         allocateWorkspaceSerialChol(_nsupernodes, _supernodes,
-                                    _sid_super_panel_ptr, _blk_super_panel_colidx,
+                                    _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
                                     _super_panel_work);
         
         const ordinal_type numRoots = _stree_roots.dimension_0();
