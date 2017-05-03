@@ -156,14 +156,29 @@ public:
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const;
 
-   /** Get set of indices owned by this processor
+   /** Get the set of indices owned by this processor.
      */
    virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-   /** Get set of indices owned and ghosted by this processor.
-     * This can be thought of as the ``ghosted'' indices.
+   /** Get the set of indices ghosted for this processor.
+     */
+   virtual void getGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
+
+   /** Get the set of owned and ghosted indices for this processor.
      */
    virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
+
+   /** Get the number of indices owned by this processor.
+    */
+   virtual int getNumOwned() const;
+
+   /** Get the number of indices ghosted for this processor.
+    */
+   virtual int getNumGhosted() const;
+
+   /** Get the number of owned and ghosted indices for this processor.
+    */
+   virtual int getNumOwnedAndGhosted() const;
 
    /** Get a yes/no on ownership for each index in a vector
      */

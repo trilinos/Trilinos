@@ -164,12 +164,14 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // first try refactored ReadOnly container
   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
-  if(d.gedc.containsDataObject(globalDataKey_+post)) {
-    ged = d.gedc.getDataObject(globalDataKey_+post);
-    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
-
-    x_ = ro_ged->getGhostedVector_Epetra();
-
+  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  {
+    ged = d.gedc.getDataObject(globalDataKey_ + post);
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
+      rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
+    ownedMap_ = ro_ged->getOwnedMap();
+    xOwned_   = ro_ged->getOwnedVector();
+    xGhosted_ = ro_ged->getGhostedVector_Epetra();
     return;
   }
 
@@ -178,30 +180,33 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // try to extract linear object container
   {
-    RCP<EpetraLinearObjContainer> epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
-    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
-
-    if(loc_pair!=Teuchos::null) {
+    RCP<EpetraLinearObjContainer>     epetraContainer =
+      rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair        =
+      rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+    if (loc_pair != Teuchos::null)
+    {
       Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
       // extract linear object container
       epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     }
-
-    if(epetraContainer!=Teuchos::null) {
+    if (epetraContainer != Teuchos::null)
+    {
       if (useTimeDerivativeSolutionVector_)
         x_ = epetraContainer->get_dxdt();
       else
         x_ = epetraContainer->get_x();
-
       return; // epetraContainer was found
     }
   }
 
   // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
   {
-    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
-
-    x_ = ro_ged->getGhostedVector_Epetra();
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
+      rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
+    ownedMap_ = ro_ged->getOwnedMap();
+    xOwned_   = ro_ged->getOwnedVector();
+    xGhosted_ = ro_ged->getGhostedVector_Epetra();
   }
 }
 
@@ -210,38 +215,58 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   std::vector<int> LIDs;
+  std::vector<int> LIDs;
 
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  // For convenience, pull out some objects from the workset.
+  std::string blockId = this->wda(workset).block_id;
+  const std::vector<std::size_t>& localCellIds =
+    this->wda(workset).cell_local_ids;
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+  // NOTE: A reordering of these loops will likely improve performance
+  //       The "getGIDFieldOffsets may be expensive.  However the
+  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
+  //       may be more expensive!
 
-   Epetra_Vector & x = *x_;
+  // Gather operation for each cell in the workset.
+  int numOwnedIndices = globalIndexer_->getNumOwned();
+  for (std::size_t worksetCellIndex = 0;
+    worksetCellIndex < localCellIds.size(); ++worksetCellIndex)
+  {
+    std::size_t cellLocalId = localCellIds[worksetCellIndex];
+    LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+    // Loop over the fields to be gathered.
+    for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size();
+      ++fieldIndex)
+    {
+      int fieldNum = fieldIds_[fieldIndex];
+      const std::vector<int>& elmtOffset =
+        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-      // loop over the fields to be gathered
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
-         }
+      // Loop over the basis functions and fill the fields.
+      for (std::size_t basis = 0; basis < elmtOffset.size(); ++basis)
+      {
+        int offset = elmtOffset[basis];
+        int lid    = LIDs[offset];
+        if (x_.is_null())
+        {
+          if (lid < numOwnedIndices)
+          {
+            Teuchos::RCP<const Epetra_Vector> xOwned =
+              Thyra::get_Epetra_Vector(*ownedMap_, xOwned_);
+            (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+              (*xOwned)[lid];
+          }
+          else
+            (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+              (*xGhosted_)[lid - numOwnedIndices];
+        }
+        else
+          (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+            (*x_)[lid];
       }
-   }
+    }
+  }
 }
 
 // **********************************************************************

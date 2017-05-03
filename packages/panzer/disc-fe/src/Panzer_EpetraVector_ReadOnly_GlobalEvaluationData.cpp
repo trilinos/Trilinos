@@ -131,6 +131,18 @@ setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
 */
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+Teuchos::RCP<const Epetra_Map> EpetraVector_ReadOnly_GlobalEvaluationData::
+getOwnedMap() const
+{
+  TEUCHOS_ASSERT(isInitialized_);
+  return ownedMap_;
+} // end of getOwnedMap()
+
 Teuchos::RCP<const Thyra::VectorBase<double> > 
 EpetraVector_ReadOnly_GlobalEvaluationData::
 getOwnedVector() const

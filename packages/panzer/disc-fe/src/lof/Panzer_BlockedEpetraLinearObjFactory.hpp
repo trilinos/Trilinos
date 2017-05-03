@@ -241,6 +241,7 @@ public:
 
    //! Get the domain vector space (x and dxdt)
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraDomainSpace() const;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraDomainSpace2() const;
 
    //! Get the range vector space (f)
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraRangeSpace() const;
@@ -264,9 +265,11 @@ public:
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedMap2(int i) const;
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap2(int i) const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph(int i,int j) const;
@@ -276,9 +279,11 @@ public:
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int i) const;
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedImport2(int i) const;
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport(int i) const;
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport2(int i) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport(int j) const;
@@ -461,10 +466,12 @@ protected:
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap(int i) const;
    virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap2(int i) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildColMap(int i) const;
    virtual const Teuchos::RCP<Epetra_Map> buildColGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildColGhostedMap2(int i) const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph(int i,int j) const;

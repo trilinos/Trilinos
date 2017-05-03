@@ -129,6 +129,9 @@ public:
    void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
       ownedVector);
 
+   //! Get the owned map.
+   Teuchos::RCP<const Epetra_Map> getOwnedMap() const;
+
    //! Get the owned vector (Thyra version)
    Teuchos::RCP<const Thyra::VectorBase<double> > getOwnedVector() const;
 
