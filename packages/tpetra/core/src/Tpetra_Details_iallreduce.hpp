@@ -68,6 +68,7 @@
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
+#include <functional>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
