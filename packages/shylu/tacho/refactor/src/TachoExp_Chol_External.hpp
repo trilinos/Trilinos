@@ -36,14 +36,14 @@ namespace Tacho {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
             Teuchos::LAPACK<ordinal_type,value_type> lapack;
-            
+
             lapack.POTRF(ArgUplo::param,
                          m, 
                          A.data(), A.stride_1(),
                          &r_val);
-            
-            // TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
-            //                          "LAPACK (potrf) returns non-zero error code.");
+
+            TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
+                                     "LAPACK (potrf) returns non-zero error code.");
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
 #endif
