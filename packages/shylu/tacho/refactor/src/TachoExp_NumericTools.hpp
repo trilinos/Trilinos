@@ -77,6 +77,24 @@ namespace Tacho {
       }
 
       ///
+      /// allocate work space
+      ///
+      inline
+      static void
+      allocateWorkspaceSerialChol(const ordinal_type nsupernodes,
+                                  const ordinal_type_array_host &supernodes,
+                                  const size_type_array_host &sid_super_panel_ptr,
+                                  const ordinal_type_array_host &blk_super_panel_colidx,
+                                  /* */ value_type_array_host &spanel_serial_work) {
+        ordinal_type m, n, worksize = 0;
+        for (ordinal_type sid=0;sid<nsupernodes;++sid) {
+          getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
+          worksize = max(worksize, (n-m)*(n-m));
+        }
+        spanel_serial_work = value_type_array_host("spanel_serial_work", worksize);
+      }
+
+      ///
       /// copy sparse matrix to super panels
       ///
       inline
@@ -188,6 +206,7 @@ namespace Tacho {
       size_type_array_host _super_panel_ptr;
       value_type_array_host _super_panel_buf;
 
+      value_type_array_host _super_panel_work;
       ordinal_type_array_host _work;
 
     private:
@@ -289,10 +308,11 @@ namespace Tacho {
           
           // temporary workspace ; replaced with memory pool
           Kokkos::View<value_type**,Kokkos::LayoutLeft,
-            typename value_type_array_host::execution_space> ABR("ABR", n, n);
+            typename value_type_array_host::execution_space,
+            Kokkos::MemoryUnmanaged> ABR(_super_panel_work.data(), n, n);
           
           Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-            ::invoke(policy, member, -1.0, ATR, 1.0, ABR);
+            ::invoke(policy, member, -1.0, ATR, 0.0, ABR);
 
           // copy back to its parent
           update(sid, ABR);          
@@ -361,33 +381,16 @@ namespace Tacho {
                                 _sid_super_panel_ptr, _blk_super_panel_colidx,
                                 _super_panel_ptr, _super_panel_buf,
                                 _work);
+
+        allocateWorkspaceSerialChol(_nsupernodes, _supernodes,
+                                    _sid_super_panel_ptr, _blk_super_panel_colidx,
+                                    _super_panel_work);
         
         const ordinal_type numRoots = _stree_roots.dimension_0();
         for (ordinal_type i=0;i<numRoots;++i) 
           recursiveSerialChol(_stree_roots(i), -1);
 
-        // // check copy
-        // for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-        //   ordinal_type m, n;
-        //   // get panel for this sid (column major order to use blas and lapack)
-        //   getSuperPanelSize(sid, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx, m, n);
-        //   Kokkos::View<value_type**,Kokkos::LayoutLeft,
-        //     typename value_type_array_host::execution_space,
-        //     Kokkos::MemoryUnmanaged> tgt(&_super_panel_buf(_super_panel_ptr(sid)), m, n);          
-
-        //   const ordinal_type soffset = _supernodes(sid);
-        //   const ordinal_type goffset = _gid_super_panel_ptr(sid);
-        //   for (ordinal_type i=0;i<m;++i) {
-        //     for (ordinal_type j=i;j<n;++j) { 
-        //       printf("%d %d %f\n", 
-        //              (i+soffset), 
-        //              (_gid_super_panel_colidx(j+goffset)),
-        //              tgt(i,j));
-        //     }
-        //   }
-        // }
-        // printf("\n\n\n");
-
+        _super_panel_work = value_type_array_host();
       }
       
       // matrix values are only changed (keep workspace)
