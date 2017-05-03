@@ -21,8 +21,8 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
 
-  int nthreads = 0;
-  clp.setOption("nthreads", &nthreads, "Number of threads");
+  int nthreads = 1;
+  clp.setOption("kokkos-threads", &nthreads, "Number of threads");
 
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
@@ -39,7 +39,7 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
 
   if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-  if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+  //if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
   const bool skip_factorize = false, skip_solve = false;
   
