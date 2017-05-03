@@ -331,9 +331,10 @@ namespace PHX {
     static const std::string m_field_data_error_msg;
 #endif
 
-    template<typename T0 = void, typename T1 = void, typename T2 = void, 
-             typename T3 = void, typename T4 = void, typename T5 = void,
-             typename T6 = void, typename T7 = void>
+    template<typename ScalarT,
+             typename T0, typename T1, typename T2, 
+             typename T3, typename T4, typename T5,
+             typename T6, typename T7>
     friend class PHX::MDField;
     
   };
