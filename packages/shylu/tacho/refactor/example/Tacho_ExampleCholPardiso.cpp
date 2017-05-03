@@ -153,13 +153,6 @@ int main (int argc, char *argv[]) {
                        nrhs,
                        (double*)BB.data(),
                        (double*)XX.data());
-
-
-    for (ordinal_type i=0;i<A.NumRows();++i) {
-      std::cout << " i = " << i << "  rowptr = " << A.RowPtrBegin(i) << "  " << A.RowPtrEnd(i) << "\n";
-      for (ordinal_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
-        std::cout << "   j = " << A.Col(j) << "\n";
-    }
     
     std::cout << "PardisoChol:: analyze matrix" << std::endl;
     {
