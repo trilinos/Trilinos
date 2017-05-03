@@ -67,6 +67,7 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
+#include "Panzer_CheckBCConsistency.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -302,6 +303,17 @@ int main(int argc,char * argv[])
       }
 
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+   }
+
+
+   // check that the bcs exist in the mesh
+   /////////////////////////////////////////////////////////////
+   {
+     std::vector<std::string> eBlockNames;
+     mesh->getElementBlockNames(eBlockNames);
+     std::vector<std::string> sidesetNames;
+     mesh->getSidesetNames(sidesetNames);
+     panzer::checkBCConsistency(eBlockNames,sidesetNames,bcs);
    }
 
    // build DOF Manager and linear object factory
