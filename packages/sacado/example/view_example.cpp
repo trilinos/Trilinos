@@ -71,6 +71,7 @@ public:
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
   }
 
+  KOKKOS_INLINE_FUNCTION
   void operator() (const size_t i) const {
     typedef typename ViewTypeC::value_type scalar_type;
 
@@ -107,6 +108,7 @@ public:
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
   }
 
+  KOKKOS_INLINE_FUNCTION
   void operator() (const size_t i) const {
     typedef typename ViewTypeC::value_type scalar_type;
 
