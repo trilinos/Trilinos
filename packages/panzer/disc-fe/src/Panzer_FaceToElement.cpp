@@ -46,4 +46,6 @@
 #include "PanzerCore_config.hpp"
 
 template class panzer::FaceToElement<int,int>;
-//template class panzer::FaceToElement<int,std::size_t>;
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::FaceToElement<int,panzer::Ordinal64>;
+#endif

@@ -687,7 +687,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   const LO num_dims = mesh_info.cell_vertices.dimension_2();
 
   sideset_info.global_cells = Kokkos::View<GO*>("global_cells", num_total_cells);
-  sideset_info.local_cells = Kokkos::View<GO*>("local_cells", num_total_cells);
+  sideset_info.local_cells = Kokkos::View<LO*>("local_cells", num_total_cells);
   sideset_info.cell_vertices = Kokkos::View<double***,PHX::Device>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
   Kokkos::deep_copy(sideset_info.cell_vertices,0.);
 
@@ -746,11 +746,11 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Tpetra::CrsMatrix<int,LO,GO> crs_type;
+  //typedef Tpetra::CrsMatrix<int,LO,GO> crs_type;
   typedef Tpetra::Map<LO,GO> map_type;
   typedef Tpetra::Import<LO,GO> import_type;
-  typedef Tpetra::MultiVector<double,LO,GO> mvec_type;
-  typedef Tpetra::MultiVector<GO,LO,GO> ordmvec_type;
+  //typedef Tpetra::MultiVector<double,LO,GO> mvec_type;
+  //typedef Tpetra::MultiVector<GO,LO,GO> ordmvec_type;
 
   // This is required by some of the STK stuff
   TEUCHOS_ASSERT(typeid(LO) == typeid(int));
