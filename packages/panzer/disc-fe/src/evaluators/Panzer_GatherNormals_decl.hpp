@@ -88,7 +88,7 @@ private:
 
   GatherNormals();
 
-  PHX::MDField<ScalarT,Cell,NODE> dof_orientation; // will scale residual
+  PHX::MDField<const ScalarT,Cell,NODE> dof_orientation; // will scale residual
                                                    // by orientation to ensure
                                                    // parallel consistency
 

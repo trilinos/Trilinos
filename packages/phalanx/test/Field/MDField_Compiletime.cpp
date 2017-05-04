@@ -181,6 +181,45 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       // Create a const field from a const field tag
       MDField<const double,Cell,Point> c_field2(const_tag);
     }
+
+    // Copy constructor from const/non-const MDFields
+    {
+      RCP<DataLayout> ctor_dl_p  = rcp(new MDALayout<Cell,Point>(10,4));
+      MDField<double,Cell,Point> ctor_nonconst_p("ctor_nonconst_p",ctor_dl_p);
+      MDField<const double,Cell,Point> ctor_const_p("ctor_const_p",ctor_dl_p);
+
+      MDField<double,Cell,Point> cc1(ctor_nonconst_p);       // non-const from non-const
+      MDField<const double,Cell,Point> cc2(ctor_nonconst_p); // const from non-const
+      MDField<const double,Cell,Point> cc3(ctor_const_p);    // const from const
+
+      // NOTE: we allow the tag template types to be DIFFERENT as long
+      // as the rank is the same! A field might use the "Point" DimTag
+      // but another evaluator might reference the same field using
+      // QuadraturePoint DimTag.
+      RCP<DataLayout> ctor_dl_qp = rcp(new MDALayout<Cell,Quadrature>(10,4));
+      MDField<double,Cell,Quadrature> ctor_nonconst_qp("ctor_nonconst",ctor_dl_qp);
+      MDField<const double,Cell,Quadrature> ctor_const_qp("ctor_const_qp",ctor_dl_qp); 
+
+      // Repeat test above but with different tags for Quadrature --> Point
+      MDField<double,Cell,Point> cc4(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double,Cell,Point> cc5(ctor_nonconst_qp); // const from non-const
+      MDField<const double,Cell,Point> cc6(ctor_const_qp);    // const from const
+
+      // While we have these objects, lets test the assignment operator as well
+      MDField<double,Cell,Point> cc7(ctor_nonconst_p);         // non-const from non-const
+      MDField<const double,Cell,Point> cc8(ctor_nonconst_p);   // const from non-const
+      MDField<const double,Cell,Point> cc9(ctor_const_p);      // const from const
+      MDField<double,Cell,Point> cc10(ctor_nonconst_qp);       // non-const from non-const
+      MDField<const double,Cell,Point> cc11(ctor_nonconst_qp); // const from non-const
+      MDField<const double,Cell,Point> cc12(ctor_const_qp);    // const from const
+
+      cc7 = ctor_nonconst_p;
+      cc8 = ctor_nonconst_p;
+      cc9 = ctor_const_p;
+      cc10 = ctor_nonconst_qp;
+      cc11 = ctor_nonconst_qp;
+      cc12 = ctor_const_qp;
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // FieldTag accessor
@@ -359,7 +398,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
-    // PHX::any.  the field manager always sotres the non-const
+    // PHX::any.  the field manager always stores the non-const
     // version.
     {
       MDField<const double,Cell> c_f1("CONST Test1",d1);

@@ -49,31 +49,31 @@ namespace minitensor {
 //
 // Length of a segment
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-length(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1)
+length(Vector<T, N> const & p0, Vector<T, N> const & p1)
 {
-  Vector<T, N, ES> const v = p1 - p0;
+  Vector<T, N> const v = p1 - p0;
   return norm(v);
 }
 
 //
 // Area of a triangle
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2)
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
 {
-  Vector<T, N, ES> const u = p1 - p0;
-  Vector<T, N, ES> const v = p2 - p0;
+  Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
 
   T const base = norm(u);
 
-  Vector<T, N, ES> const i = u / base;
-  Vector<T, N, ES> const n = v - dot(v, i) * i;
+  Vector<T, N> const i = u / base;
+  Vector<T, N> const n = v - dot(v, i) * i;
 
   T const height = norm(n);
   T const area = 0.5 * base * height;
@@ -85,11 +85,11 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 // Area of a quadrilateral, assumed planar. If not planar, returns
 // the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3)
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
   return area(p0, p1, p2) + area(p0, p2, p3);
 }
@@ -97,25 +97,25 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 //
 // Volume of tetrahedron
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
   // Area of base triangle
   T const
   base = area(p0, p1, p2);
 
   // Height
-  Vector<T, N, ES> const u = p1 - p0;
-  Vector<T, N, ES> const v = p2 - p0;
-  Vector<T, N, ES> const w = p3 - p0;
+  Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
+  Vector<T, N> const w = p3 - p0;
 
-  Vector<T, N, ES> const i = u / norm(u);
-  Vector<T, N, ES> const j = v / norm(v);
+  Vector<T, N> const i = u / norm(u);
+  Vector<T, N> const j = v / norm(v);
 
-  Vector<T, N, ES> const n = w - dot(w, i) * i - dot(w, j) * j;
+  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
 
   T const height = norm(n);
 
@@ -131,26 +131,26 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 // Base is p0,p1,p2,p3
 // Apex is p4
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3,
-    Vector<T, N, ES> const & p4)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3,
+    Vector<T, N> const & p4)
 {
   // Area of base quadrilateral
   T const
   base = area(p0, p1, p2, p3);
 
   // Height
-  Vector<T, N, ES> const u = p1 - p0;
-  Vector<T, N, ES> const v = p2 - p0;
-  Vector<T, N, ES> const w = p4 - p0;
+  Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
+  Vector<T, N> const w = p4 - p0;
 
-  Vector<T, N, ES> const i = u / norm(u);
-  Vector<T, N, ES> const j = v / norm(v);
+  Vector<T, N> const i = u / norm(u);
+  Vector<T, N> const j = v / norm(v);
 
-  Vector<T, N, ES> const n = w - dot(w, i) * i - dot(w, j) * j;
+  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
 
   T const height = norm(n);
 
@@ -165,13 +165,13 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 // Assumption: all faces are planar
 // Decompose into 3 pyramids
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3,
-    Vector<T, N, ES> const & p4, Vector<T, N, ES> const & p5,
-    Vector<T, N, ES> const & p6, Vector<T, N, ES> const & p7)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3,
+    Vector<T, N> const & p4, Vector<T, N> const & p5,
+    Vector<T, N> const & p6, Vector<T, N> const & p7)
 {
   // 1st pyramid
   T const V1 = volume(p4, p7, p6, p5, p0);
@@ -191,13 +191,13 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 // For these we can just take the average of the vertices.
 // WARNING: This is not the center of mass.
 //
-template<typename T, Index N, typename ES>
-Vector<T, N, ES>
-centroid(std::vector<Vector<T, N, ES>> const & points)
+template<typename T, Index N>
+Vector<T, N>
+centroid(std::vector<Vector<T, N>> const & points)
 {
-  Vector<T, N, ES> C(points[0].get_dimension());
+  Vector<T, N> C(points[0].get_dimension());
   C.clear();
-  typedef typename std::vector<Vector<T, N, ES>>::size_type sizeT;
+  typedef typename std::vector<Vector<T, N>>::size_type sizeT;
   sizeT const n = points.size();
 
   for (sizeT i = 0; i < n; ++i) {
@@ -211,18 +211,18 @@ centroid(std::vector<Vector<T, N, ES>> const & points)
 // Input: 3 independent nodes on the face
 // Output: unit normal vector
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-normal(Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2)
+Vector<T, N>
+normal(Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
 {
   // Construct 2 independent vectors
-  Vector<T, N, ES> const v0 = p1 - p0;
-  Vector<T, N, ES> const v1 = p2 - p0;
+  Vector<T, N> const v0 = p1 - p0;
+  Vector<T, N> const v1 = p2 - p0;
 
-  Vector<T, N, ES> const n = unit(cross(v0, v1));
+  Vector<T, N> const n = unit(cross(v0, v1));
 
   return n;
 }
@@ -232,21 +232,21 @@ normal(Vector<T, N, ES> const & p0,
 // determine if point p is in the same side of the normal
 // to the plane as defined by the right hand rule.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
 in_normal_side(
-    Vector<T, N, ES> const & p,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
     T const tolerance)
 {
-  Vector<T, N, ES> const v0 = p1 - p0;
-  Vector<T, N, ES> const v1 = p2 - p0;
+  Vector<T, N> const v0 = p1 - p0;
+  Vector<T, N> const v1 = p2 - p0;
   T const h = std::min(norm(v0), norm(v1));
-  Vector<T, N, ES> const n = unit(cross(v0, v1));
-  Vector<T, N, ES> const v = p - p0;
+  Vector<T, N> const n = unit(cross(v0, v1));
+  Vector<T, N> const v = p - p0;
 
   T const s = dot(v, n);
 
@@ -261,18 +261,18 @@ in_normal_side(
 // \param start, end: define sequence of points
 // \return vectors that define the bounding box
 //
-template<typename T, typename I, Index N, typename ES>
+template<typename T, typename I, Index N>
 KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, N, ES>, Vector<T, N, ES>>
+std::pair<Vector<T, N>, Vector<T, N>>
 bounding_box(I start, I end)
 {
   I
   it = start;
 
-  Vector<T, N, ES>
+  Vector<T, N>
   min = (*it);
 
-  Vector<T, N, ES>
+  Vector<T, N>
   max = min;
 
   Index const
@@ -282,7 +282,7 @@ bounding_box(I start, I end)
 
   for (; it != end; ++it) {
 
-    Vector<T, N, ES> const &
+    Vector<T, N> const &
     point = (*it);
 
     for (Index i = 0; i < dimension; ++i) {
@@ -296,12 +296,12 @@ bounding_box(I start, I end)
   return std::make_pair(min, max);
 }
 
-template<typename T, typename I, typename ES>
+template<typename T, typename I>
 KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
+std::pair<Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
 bounding_box(I start, I end)
 {
-  return bounding_box<T, I, DYNAMIC, ES>(start, end);
+  return bounding_box<T, I, DYNAMIC>(start, end);
 }
 
 //
@@ -310,13 +310,13 @@ bounding_box(I start, I end)
 // \param min, max points defining the box
 // \return whether the point is inside
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
 in_box(
-    Vector<T, N, ES> const & p,
-    Vector<T, N, ES> const & min,
-    Vector<T, N, ES> const & max)
+    Vector<T, N> const & p,
+    Vector<T, N> const & min,
+    Vector<T, N> const & max)
 {
   Index const
   dimension = p.get_dimension();
@@ -338,17 +338,17 @@ in_box(
 // \param min, max the bounding box
 // \return p point inside box
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-random_in_box(Vector<T, N, ES> const & min, Vector<T, N, ES> const & max)
+Vector<T, N>
+random_in_box(Vector<T, N> const & min, Vector<T, N> const & max)
 {
   Index const
   dimension = min.get_dimension();
 
   assert(max.get_dimension() == dimension);
 
-  Vector<T, N, ES> p(dimension);
+  Vector<T, N> p(dimension);
 
   for (Index i = 0; i < dimension; ++i) {
     p(i) = (max(i) - min(i)) * T(std::rand())/T(RAND_MAX) + min(i);
@@ -361,15 +361,15 @@ random_in_box(Vector<T, N, ES> const & min, Vector<T, N, ES> const & max)
 // Given 4 points p0, p1, p2, p3 that define a tetrahedron
 // determine if point p is inside it.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
 in_tetrahedron(
-    Vector<T, N, ES> const & p,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
-    Vector<T, N, ES> const & p3,
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
     T const tolerance)
 {
   if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
@@ -398,19 +398,19 @@ in_tetrahedron(
 // determine if point p is inside it.
 // Assumption: faces are planar
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
 in_hexahedron(
-    Vector<T, N, ES> const & p,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
-    Vector<T, N, ES> const & p3,
-    Vector<T, N, ES> const & p4,
-    Vector<T, N, ES> const & p5,
-    Vector<T, N, ES> const & p6,
-    Vector<T, N, ES> const & p7,
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7,
     T const tolerance)
 {
   if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
@@ -448,27 +448,27 @@ in_hexahedron(
 // \param n vector of points to test
 // \return index to closest point
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-typename std::vector<Vector<T, N, ES>>::size_type
-closest_point(Vector<T, N, ES> const & p, std::vector<Vector<T, N, ES>> const & n)
+typename std::vector<Vector<T, N>>::size_type
+closest_point(Vector<T, N> const & p, std::vector<Vector<T, N>> const & n)
 {
   assert(n.size() > 0);
 
-  typename std::vector<Vector<T, N, ES>>::size_type
+  typename std::vector<Vector<T, N>>::size_type
   index = 0;
 
-  Vector<T, N, ES> const
+  Vector<T, N> const
   v0 = p - n[0];
 
   T
   min = norm_square(v0);
 
-  for (typename std::vector<Vector<T, N, ES>>::size_type i = 1;
+  for (typename std::vector<Vector<T, N>>::size_type i = 1;
       i < n.size();
       ++i) {
 
-    Vector<T, N, ES> const
+    Vector<T, N> const
     vi = p - n[i];
 
     T const
@@ -543,15 +543,15 @@ median(Iterator begin, Iterator end)
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
+Vector<T, N>
 interpolate_quadrilateral(
-    Vector<T, dimension_const<N, 2>::value, ES> & xi,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
-    Vector<T, N, ES> const & p3)
+    Vector<T, dimension_const<N, 2>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3)
 {
 
   T const
@@ -566,7 +566,7 @@ interpolate_quadrilateral(
   T const
   N3 = 0.25 * (1 - xi(0)) * (1 + xi(1));
 
-  Vector<T, N, ES> const
+  Vector<T, N> const
   p = N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3;
 
   return p;
@@ -579,18 +579,18 @@ interpolate_quadrilateral(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
+Vector<T, N>
 interpolate_triangle(
-    Vector<T, dimension_const<N, 3>::value, ES> & xi,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2)
+    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
 {
   xi(2) = 1.0 - xi(0) - xi(1);
 
-  Vector<T, N, ES> const
+  Vector<T, N> const
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2;
 
   return p;
@@ -603,19 +603,19 @@ interpolate_triangle(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
+Vector<T, N>
 interpolate_hexahedron(
-    Vector<T, dimension_const<N, 3>::value, ES> & xi,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
-    Vector<T, N, ES> const & p3,
-    Vector<T, N, ES> const & p4,
-    Vector<T, N, ES> const & p5,
-    Vector<T, N, ES> const & p6,
-    Vector<T, N, ES> const & p7)
+    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7)
 {
 
   T const
@@ -642,7 +642,7 @@ interpolate_hexahedron(
   T const
   N7 = 0.125 * (1 - xi(0)) * (1 + xi(1)) * (1 + xi(2));
 
-  Vector<T, N, ES> const
+  Vector<T, N> const
   p =
       N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3 +
       N4 * p4 + N5 * p5 + N6 * p6 + N7 * p7;
@@ -657,41 +657,41 @@ interpolate_hexahedron(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
+Vector<T, N>
 interpolate_tetrahedron(
-    Vector<T, dimension_const<N, 4>::value, ES> & xi,
-    Vector<T, N, ES> const & p0,
-    Vector<T, N, ES> const & p1,
-    Vector<T, N, ES> const & p2,
-    Vector<T, N, ES> const & p3)
+    Vector<T, dimension_const<N, 4>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3)
 {
   xi(3) = 1.0 - xi(0) - xi(1) - xi(2);
 
-  Vector<T, N, ES> const
+  Vector<T, N> const
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2 + xi(3) * p3;
 
   return p;
 }
 
-///
-/// Given element type and nodes and a position
-/// in parametric coordinates, interpolate.
-/// \param type element type
-/// \param xi position in parametric coordinates
-/// \param v ... corner nodes
-/// \return interpolated position
-///
-template<typename T, Index M, Index N, typename ES>
+//
+// Given element type and nodes and a position
+// in parametric coordinates, interpolate.
+// \param type element type
+// \param xi position in parametric coordinates
+// \param v ... corner nodes
+// \return interpolated position
+//
+template<typename T, Index M, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
+Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T, M, ES> &xi,
-    std::vector<Vector<T, N, ES>> const &v)
+    Vector<T, M> &xi,
+    std::vector<Vector<T, N>> const &v)
 {
-  Vector<T, N, ES> p;
+  Vector<T, N> p;
 
   switch (element_type) {
 
@@ -727,9 +727,9 @@ interpolate_element(
 // \param vector of points
 // \return distance matrix
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 std::vector< std::vector<T>>
-distance_matrix(std::vector<Vector<T, N, ES>> const & points)
+distance_matrix(std::vector<Vector<T, N>> const & points)
 {
   Index const
   number_points = points.size();

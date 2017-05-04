@@ -96,7 +96,7 @@ namespace MueLu {
     maxLocalIndex_ = domainMap_->getMaxLocalIndex();
 
     MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", graph_.numRows(), maxNumRowEntriesFunctor, maxNumRowEntries_);
+    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
   }
 
 }

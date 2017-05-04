@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_HGRAD_TRI_CN_FEM_DEF_HPP__
 #define __INTREPID2_HGRAD_TRI_CN_FEM_DEF_HPP__
 
+#include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
+
 namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
@@ -66,18 +68,17 @@ namespace Intrepid2 {
     getValues(       outputViewType output,
                const inputViewType  input,
                      workViewType   work,
-               const vinvViewType   vinv,
-               const ordinal_type   operatorDn ) {
-      ordinal_type opDn = operatorDn;
+               const vinvViewType   vinv ) {
 
+      constexpr ordinal_type spaceDim = 2;
       const ordinal_type 
         card = vinv.dimension(0),
         npts = input.dimension(0);
 
       // compute order
       ordinal_type order = 0;
-      for (ordinal_type p=0;p<Parameters::MaxOrder;++p) {
-        if (card == (p+1)*(p+2)/2) { 
+      for (ordinal_type p=0;p<=Parameters::MaxOrder;++p) {
+        if (card == Intrepid2::getPnCardinality<spaceDim>(p) ) {
           order = p; 
           break;
         }
@@ -109,16 +110,14 @@ namespace Intrepid2 {
       case OPERATOR_D7:
       case OPERATOR_D8:
       case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(opType);
-      case OPERATOR_Dn: {
-        const ordinal_type dkcard = opDn + 1;
+      case OPERATOR_D10: {
+        const ordinal_type dkcard = getDkCardinality(opType,spaceDim); //(orDn + 1);
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, order, opDn);
-        
+          Serial<opType>::getValues(phis, input, order);
+
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type k=0;k<dkcard;++k) {
@@ -129,12 +128,12 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_CURL: { // only works in 2d. first component is -d/dy, second is d/dx
-        const ordinal_type d2card = 2;
+        const ordinal_type dkcard = getDkCardinality(OPERATOR_D1,spaceDim);
         Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> phis(work.data(), card, npts, d2card);
+            typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, order, 1);
+          Serial<OPERATOR_D1>::getValues(phis, input, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
@@ -163,7 +162,7 @@ namespace Intrepid2 {
     getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-               const EOperator operatorType ) {
+               const EOperator operatorType) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
@@ -182,27 +181,29 @@ namespace Intrepid2 {
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
       break;
       }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: { 
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_D1,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        break;
+      }
       case OPERATOR_CURL: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_CURL,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
         break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10: {
+      case OPERATOR_D2: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
-            OPERATOR_Dn,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv,
-                                                  getOperatorOrder(operatorType)) );
+            OPERATOR_D2,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        break;
+      }
+      case OPERATOR_D3: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_D3,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
         break;
       }
       default: {
@@ -220,7 +221,9 @@ namespace Intrepid2 {
   Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
                           const EPointType   pointType ) {
 
-    this->basisCardinality_  = (order+1)*(order+2)/2; // bigN
+    constexpr ordinal_type spaceDim = 2;
+
+    this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
     this->basisDegree_       = order; // small n
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
     this->basisType_         = BASIS_FEM_FIAT;
@@ -229,12 +232,12 @@ namespace Intrepid2 {
     const ordinal_type card = this->basisCardinality_;
 
     // points are computed in the host and will be copied
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("Hgrad::Tri::Cn::dofCoords", card, 2);
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("Hgrad::Tri::Cn::dofCoords", card, spaceDim);
     
     // construct lattice
     const ordinal_type offset = 0;
-    PointTools::getLattice( odfCoords, 
+    PointTools::getLattice( dofCoords,
                             this->basisCellTopology_,
                             order, offset,
                             pointType );
@@ -245,17 +248,15 @@ namespace Intrepid2 {
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
     const ordinal_type lwork = card*card;
-    Kokkos::DynRankView<PT,Kokkos::LayoutLeft,Kokkos::HostSpace>
-      vmat("Hgrad::Tri::Cn::vmat", card, card), 
-      work("Hgrad::Tri::Cn::work", lwork), 
-      ipiv("Hgrad::Tri::Cn::ipiv", card);
+    Kokkos::DynRankView<scalarType,Kokkos::LayoutLeft,Kokkos::HostSpace>
+      vmat("Hgrad::Tet::Cn::vmat", card, card),
+      work("Hgrad::Tet::Cn::work", lwork),
+      ipiv("Hgrad::Tet::Cn::ipiv", card);
   
-    Impl::Basis_HGRAD_TRI_Cn_ORTH::
-      getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>
-      (vmat, dofCoords, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
 
     ordinal_type info = 0;
-    Teuchos::LAPACK<ordinal_type,PT> lapack;
+    Teuchos::LAPACK<ordinal_type,scalarType> lapack;
     
     lapack.GETRF(card, card,
                  vmat.data(), vmat.stride_1(),
@@ -264,7 +265,7 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
                                   std::runtime_error ,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRF returns nonzero info." );
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM) lapack.GETRF returns nonzero info." );
 
     lapack.GETRI(card,
                  vmat.data(), vmat.stride_1(),
@@ -274,10 +275,10 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
                                   std::runtime_error ,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM) lapack.GETRI returns nonzero info." );
 
     // create host mirror
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
     for (ordinal_type i=0;i<card;++i)
@@ -290,81 +291,76 @@ namespace Intrepid2 {
     // initialize tags
     {
       // Basis-dependent initializations
-      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
       const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
-      constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)/2; 
-      ordinal_type tags[maxCard][4];
+      constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
+      ordinal_type tags[maxCard][tagSize];
 
       const ordinal_type 
-        edgeDof = (order - 1),
-        intrDof = (order > 2 ? (order-2)*(order-1)/2 : 0);
-      
-      // compute bicentric coordinates (whatever it is called)
-      auto bicentric = [](const double x, 
-                          const double y,
-                          double &xi0, double &xi1, double &xi2) {
-        xi0 = 1.0 - x - y;
-        xi1 = x;
-        xi2 = y;
-      } 
+        numEdgeDof = Intrepid2::getPnCardinality<1>(order-2),
+        numElemDof = (order > 2 ? Intrepid2::getPnCardinality<2>(order-3) : 0);
 
-      double xi0, xi1, xi2;
-      const double eps = threshold();
+      scalarType xi0, xi1, xi2;
+      const scalarType eps = threshold();
 
-      ordinal_type eid[3] = {}, iid = 0;
+      ordinal_type edgeId[3] = {}, elemId = 0;
       for (ordinal_type i=0;i<card;++i) {
-        const double x = dofCoords(i,0), y = dofCoords(i,1);
-        bicentric(x, y,  xi0, xi1, xi2);
+
+        // compute barycentric coordinates
+        const auto x = dofCoords(i,0), y = dofCoords(i,1);
+        xi0 = 1.0 - x - y;
+        xi1= x;
+        xi2= y;
         
         // vertex
-             if ((std::abs(xi0) - 1.0) < eps) { // vert 0
+        if ((1.0 - xi0) < eps) { // vert 0
           tags[i][0] = 0; // vertex dof
           tags[i][1] = 0; // vertex id 
           tags[i][2] = 0; // local dof id
           tags[i][3] = 1; // total vert dof
         } 
-        else if ((std::abs(xi1) - 1.0) < eps) { // vert 1
+        else if ((1.0 - xi1) < eps) { // vert 1
           tags[i][0] = 0; // vertex dof
           tags[i][1] = 1; // vertex id 
           tags[i][2] = 0; // local dof id
           tags[i][3] = 1; // total vert dof
         } 
-        else if ((std::abs(xi2) - 1.0) < eps) { // vert 2
+        else if ((1.0 - xi2) < eps) { // vert 2
           tags[i][0] = 0; // vertex dof
           tags[i][1] = 2; // vertex id 
           tags[i][2] = 0; // local dof id
           tags[i][3] = 1; // total vert dof
         } 
-        else if (std::abs(xi2) < eps) { // edge 0
+        else if (xi2 < eps) { // edge 0
           tags[i][0] = 1; // edge dof
           tags[i][1] = 0; // edge id 
-          tags[i][2] = eid[0]++; // local dof id
-          tags[i][3] = edgeDof; // total vert dof
+          tags[i][2] = edgeId[0]++; // local dof id
+          tags[i][3] = numEdgeDof; // total vert dof
         } 
-        else if (std::abs(xi0) < eps) { // edge 1
+        else if (xi0 < eps) { // edge 1
           tags[i][0] = 1; // edge dof
           tags[i][1] = 1; // edge id 
-          tags[i][2] = eid[1]++; // local dof id
-          tags[i][3] = edgeDof; // total vert dof
+          tags[i][2] = edgeId[1]++; // local dof id
+          tags[i][3] = numEdgeDof; // total vert dof
         } 
-        else if (std::abs(xi1) < eps) { // edge 2
+        else if (xi1 < eps) { // edge 2
           tags[i][0] = 1; // edge dof
           tags[i][1] = 2; // edge id 
-          tags[i][2] = eid[2]++; // local dof id
-          tags[i][3] = edgeDof; // total vert dof
+          tags[i][2] = edgeId[2]++; // local dof id
+          tags[i][3] = numEdgeDof; // total vert dof
         }
-        else if (std::abs(xi1) < eps) { // intr
+        else { // elem
           tags[i][0] = 2; // intr dof
           tags[i][1] = 0; // intr id 
-          tags[i][2] = iid++; // local dof id
-          tags[i][3] = edgeDof; // total vert dof
+          tags[i][2] = elemId++; // local dof id
+          tags[i][3] = numElemDof; // total vert dof
         }
       }
 
-      ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
+      ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
       
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
@@ -378,6 +374,5 @@ namespace Intrepid2 {
                               posDfOrd);
     }
   }
-
-}// namespace Intrepid2
+} // namespace Intrepid2
 #endif

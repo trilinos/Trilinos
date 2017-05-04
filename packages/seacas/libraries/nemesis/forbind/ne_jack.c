@@ -61,7 +61,6 @@
 /* LINTLIBRARY */
 #include "exodusII.h"
 #include "exodusII_int.h"
-#include "netcdf.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -103,6 +103,7 @@ install install-user-lib
     stk_util_registry
     stk_util_diag
     stk_util_util
+    stk_util_command_line
     stk_util_unit_test_support
     stk_util_use_case
   : <location>$(install-root)/stk/stk_util/lib
@@ -138,6 +139,7 @@ exe stk_util_utest
     [ glob $(stk_util-root)/unit_tests/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/util/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/environment/*.cpp ]
+    [ glob $(stk_util-root)/unit_tests/command_line/*.cpp ]
     [ glob $(stk_util-root)/unit_tests/diag/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_util_parallel
@@ -316,6 +318,24 @@ lib stk_util_util
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_util.a
+    ]
+  ;
+
+lib stk_util_command_line
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/command_line/*.cpp ]
+    ]
+    stk_util_util
+    stk_util_environment
+    stk_util_registry
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_command_line.a
     ]
   ;
 

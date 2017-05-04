@@ -125,7 +125,7 @@ namespace MueLuTests {
   public:
     DummyFactory() { }
     virtual ~DummyFactory() { }
-    RCP<const ParameterList> GetValidParameterList() const { return Teuchos::null; };
+    RCP<const Teuchos::ParameterList> GetValidParameterList() const { return Teuchos::null; };
     void DeclareInput(MueLu::Level& currentLevel) const {};
     void Build(MueLu::Level& currentLevel) const {};
   }; //class DummyFactory

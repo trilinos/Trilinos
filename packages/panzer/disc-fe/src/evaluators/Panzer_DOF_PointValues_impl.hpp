@@ -78,7 +78,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
       evalName = fieldName;
   }
 
-  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+  dof_basis = PHX::MDField<const ScalarT,Cell,Point>(fieldName, basis->functional);
 
   this->addDependentField(dof_basis);
 
@@ -197,7 +197,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
       evalName = fieldName;
   }
 
-  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+  dof_basis = PHX::MDField<const ScalarT,Cell,Point>(fieldName, basis->functional);
 
   this->addDependentField(dof_basis);
 

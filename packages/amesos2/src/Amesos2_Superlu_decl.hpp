@@ -297,6 +297,7 @@ private:
   bool same_symbolic_;
   bool ILU_Flag_;
 
+  bool is_contiguous_;
 };                              // End class Superlu
 
 

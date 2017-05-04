@@ -52,6 +52,13 @@ TEST_F(MathFunctionWithOneDoubleArg, Log_ScalarAndSimdMatch)
                      Range{0, largeVal});
 }
 
+TEST_F(MathFunctionWithOneDoubleArg, Log10_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::log10(x); },
+                     [](stk::simd::Double x) { return stk::math::log10(x); },
+                     Range{0, mediumVal});
+}
+
 TEST_F(MathFunctionWithOneDoubleArg, Sin_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::sin(x); },
@@ -70,6 +77,27 @@ TEST_F(MathFunctionWithOneDoubleArg, Tan_ScalarAndSimdMatch)
 {
   test_simd_operator([](double x) { return std::tan(x); },
                      [](stk::simd::Double x) { return stk::math::tan(x); },
+                     fullRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Sinh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::sinh(x); },
+                     [](stk::simd::Double x) { return stk::math::sinh(x); },
+                     fullRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Cosh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::cosh(x); },
+                     [](stk::simd::Double x) { return stk::math::cosh(x); },
+                     fullRange);
+}
+
+TEST_F(MathFunctionWithOneDoubleArg, Tanh_ScalarAndSimdMatch)
+{
+  test_simd_operator([](double x) { return std::tanh(x); },
+                     [](stk::simd::Double x) { return stk::math::tanh(x); },
                      fullRange);
 }
 

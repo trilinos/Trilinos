@@ -5,9 +5,7 @@ namespace simd {
 
 struct Float {
 
-  STK_MATH_FORCE_INLINE Float() 
-    : _data(_mm256_setzero_ps()) {
-  }
+  STK_MATH_FORCE_INLINE Float() {}
 
   STK_MATH_FORCE_INLINE Float(const float* x) 
     : _data(_mm256_loadu_ps(x)) {

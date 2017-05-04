@@ -166,6 +166,12 @@ void ML_Epetra::RefMaxwellPreconditioner::Print(int whichHierarchy){
 
 
 // ================================================ ====== ==== ==== == =
+int ML_Epetra::RefMaxwellPreconditioner::ReComputePreconditioner() {
+  // Hope for the best...
+  return ComputePreconditioner();
+}
+
+// ================================================ ====== ==== ==== == =
 // Computes the preconditioner
 int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {

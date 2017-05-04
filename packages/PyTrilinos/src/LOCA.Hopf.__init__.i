@@ -85,37 +85,12 @@ and classes:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialSymDenseMatrix.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_Time.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
@@ -164,6 +139,9 @@ import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
+if "delete_ComplexMultiVector" not in dir(___init__):
+    del ___init__
+    from . import ___init__
 %}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"

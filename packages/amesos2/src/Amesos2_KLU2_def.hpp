@@ -72,6 +72,7 @@ KLU2<Matrix,Vector>::KLU2(
   , rowind_()
   , colptr_()
   , transFlag_(0)
+  , is_contiguous_(true)
 {
   ::KLU2::klu_defaults<slu_type, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -215,10 +216,18 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             slu_type>::do_get(B, bValues(),
-                                               as<size_t>(ld_rhs),
-                                               ROOTED);
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
 
@@ -275,10 +284,18 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED);
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
+            as<size_t>(ld_rhs),
+            ROOTED);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED);
+    }
   }
 
 
@@ -315,6 +332,12 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
 
     transFlag_ = getIntegralValue<int>(*parameterList, "Trans");
   }
+
+  if( parameterList->isParameter("IsContiguous") ){
+//    RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IsContiguous").validator();
+//    parameterList->getEntry("IsContiguous").setValidator(trans_validator);
+    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  }
 }
 
 
@@ -334,6 +357,7 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
     setStringToIntegralParameter<int>("Trans", "NOTRANS",
                                       "Solve for the transpose system or not",
@@ -375,10 +399,18 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-    ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-             nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
+    }
+    else {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
+        ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+            nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+    }
   }
 
 

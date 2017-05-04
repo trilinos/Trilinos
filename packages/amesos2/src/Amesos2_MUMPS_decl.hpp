@@ -340,6 +340,7 @@ private:
   MPI_Comm MUMPSComm;
 #endif
 
+    bool is_contiguous_;
 
 };
 

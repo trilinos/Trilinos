@@ -245,7 +245,7 @@ namespace panzer
     using Teuchos::rcp;
 
     // Create a ParameterList with all the valid keys we support.
-    auto p = rcp(new ParameterList);
+    RCP<ParameterList> p = rcp(new ParameterList);
     p->set<string>("Residual Name", "?");
     p->set<string>("Value Name", "?");
     RCP<BasisIRLayout> basis;

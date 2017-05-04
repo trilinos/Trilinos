@@ -42,7 +42,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     BoxVectorWithStkId& faceBoxes);
 
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
 
 const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName);
 

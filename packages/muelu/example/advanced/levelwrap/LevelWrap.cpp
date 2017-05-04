@@ -242,7 +242,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    ParameterList galeriList = galeriParameters.GetParameterList();
+    Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
     out << thickSeparator << std::endl << xpetraParameters << galeriParameters;
 
     // =========================================================================

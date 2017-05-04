@@ -137,7 +137,7 @@ namespace MueLu {
 
       ComputeAggregateSizesFunctor<decltype(procWinner), decltype(vertex2AggId), decltype(aggregateSizesAtomic), LO>
         computeAggSizesFunctor(procWinner, vertex2AggId, myPID, aggregateSizesAtomic);
-      Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", procWinner.size(), computeAggSizesFunctor);
+      Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()), computeAggSizesFunctor);
 
       if (cacheSizes)
         aggregateSizes_ = aggregateSizes;

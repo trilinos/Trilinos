@@ -234,7 +234,7 @@ int EnsembleVPS::pick_MD_points(size_t numIn, double** x, double* g, size_t numO
   double v_window;
   for (size_t iw = 1; iw < (numIn - numOut + 1); iw++)
   {
-    gwindow = new double[numOut];
+    //gwindow = new double[numOut];
     for (size_t ig = 0; ig < numOut; ig++)
       gwindow[ig] = g[index[iw + ig]];
 
@@ -537,5 +537,9 @@ double EnsembleVPS::g_test(const double* x)
   }
   //fval = exp((-1) * fval);
   fval *= 100.0;
+
+  delete [] a;
+  delete [] u;
+
   return fval;
 }

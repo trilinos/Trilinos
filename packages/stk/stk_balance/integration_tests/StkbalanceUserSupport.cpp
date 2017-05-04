@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/getOption.h>
 #include <string>
+#include <memory>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
@@ -20,6 +21,8 @@
 #include <stk_balance/balance.hpp>
 #include "../stk_balance/internal/LastStepFieldWriter.hpp"
 
+#include "stk_balance/search_tolerance/SecondShortestEdgeFaceSearchTolerance.hpp"
+
 namespace
 {
 
@@ -33,13 +36,11 @@ TEST(Stkbalance, DISABLED_Ticket15830)
     EXPECT_NO_THROW(stk::io::fill_mesh_with_auto_decomp(filename, bulk));
 }
 
-void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord)
+void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord, const stk::mesh::FieldBase & coordField)
 {
-    const stk::mesh::FieldBase * coordField = bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "Coordinates");
-
     for(stk::mesh::Entity node : nodes)
     {
-        double *coord = static_cast<double*>(stk::mesh::field_data(*coordField, node));
+        double *coord = static_cast<double*>(stk::mesh::field_data(coordField, node));
         for(unsigned j=0;j<bulk.mesh_meta_data().spatial_dimension();++j)
         {
             minCoord[j] = std::min(minCoord[j], coord[j]);
@@ -62,6 +63,7 @@ stk::balance::internal::BoxVectorWithStkId fill_bounding_boxes(const std::vector
                       double searchTol)
 {
     stk::balance::internal::BoxVectorWithStkId local_domain;
+    const stk::mesh::FieldBase * coordField = bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "Coordinates" );
 
     int boxCounter = 0;
     for(stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
@@ -72,7 +74,7 @@ stk::balance::internal::BoxVectorWithStkId fill_bounding_boxes(const std::vector
         stk::mesh::get_subcell_nodes(bulk, sidesetElement, bulk.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
         std::vector<double> minCoord(3, std::numeric_limits<double>::max());
         std::vector<double> maxCoord(3, std::numeric_limits<double>::lowest());
-        getMaxMinForNodes(bulk, sideNodes, minCoord, maxCoord);
+        getMaxMinForNodes(bulk, sideNodes, minCoord, maxCoord, *coordField);
         for(size_t i = 0; i < minCoord.size(); ++i)
         {
             coordMinOnProc[i] = std::min(coordMinOnProc[i], minCoord[i]);
@@ -315,10 +317,13 @@ void adjust_bounding_box(std::vector<double>& minCoord, std::vector<double>& max
     }
 }
 
-
-void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weight, double searchTol, stk::mesh::BulkData& bulk)
+template <typename Functor>
+void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weight, const stk::balance::BalanceSettings & balanceSettings, stk::mesh::BulkData& bulk, Functor elemWeightFunctor)
 {
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const stk::mesh::FieldBase * coordField = bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, balanceSettings.getCoordinateFieldName() );
+
+    stk::mesh::EntityVector sideNodes;
 
     std::vector<stk::mesh::SideSetEntry> skinnedSideSet = get_skinned_sideset(bulk);
     stk::balance::internal::BoxVectorWithStkId local_domain;
@@ -327,14 +332,13 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
     {
         stk::mesh::Entity sidesetElement = sidesetEntry.element;
         stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-        stk::mesh::EntityVector sideNodes;
         stk::mesh::get_subcell_nodes(bulk, sidesetElement, meta.side_rank(), sidesetSide, sideNodes);
 
         std::vector<double> minCoord(3, std::numeric_limits<double>::max());
         std::vector<double> maxCoord(3, std::numeric_limits<double>::lowest());
+        getMaxMinForNodes(bulk, sideNodes, minCoord, maxCoord, *coordField);
 
-        getMaxMinForNodes(bulk, sideNodes, minCoord, maxCoord);
-
+        const double searchTol = balanceSettings.getToleranceForFaceSearch(bulk, *coordField, sideNodes);
         adjust_bounding_box(minCoord, maxCoord, searchTol);
 
         stk::balance::internal::StkBox box(minCoord[0], minCoord[1], minCoord[2],
@@ -375,11 +379,11 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
                 if (anyIntersections == 0) {
                     if (bulk.is_valid(elem1)) {
                         double* data = stk::mesh::field_data(contactCriteria, elem1);
-                        data[0] = weight;
+                        data[0] = elemWeightFunctor(bulk, elem1, weight);
                     }
                     if (bulk.is_valid(elem2)) {
                         double* data = stk::mesh::field_data(contactCriteria, elem2);
-                        data[0] = weight;
+                        data[0] = elemWeightFunctor(bulk, elem2, weight);
                     }
                 }
             }
@@ -387,11 +391,64 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
     }
 }
 
+int contactWeightForElementTopology(stk::topology type)
+{
+    switch(type)
+    {
+    case stk::topology::PARTICLE:
+        return 20;
+        break;
+    case stk::topology::LINE_2:
+    case stk::topology::BEAM_2:
+        return 32;
+        break;
+    case stk::topology::SHELL_TRIANGLE_3:
+        return 14;
+        break;
+    case stk::topology::SHELL_TRIANGLE_6:
+        return 56;
+        break;
+    case stk::topology::SHELL_QUADRILATERAL_4:
+        return 24;
+        break;
+    case stk::topology::SHELL_QUADRILATERAL_8:
+        return 96;
+        break;
+    case stk::topology::HEXAHEDRON_8:
+        return 4;
+        break;
+    case stk::topology::HEXAHEDRON_20:
+        return 8;
+        break;
+    case stk::topology::TETRAHEDRON_4:
+        return 1;
+        break;
+    case stk::topology::TETRAHEDRON_10:
+        return 4;  //
+        break;
+    case stk::topology::WEDGE_6:
+        return 4;
+        break;
+    case stk::topology::WEDGE_15:
+        return 8;
+        break;
+    default:
+        if ( type.is_superelement( ))
+        {
+            return 10;
+        }
+        throw("Invalid Element Type In WeightsOfElement");
+        break;
+    }
+    return 0;
+}
+
 TEST(Stkbalance, changeOptions)
 {
     std::string filename = stk::unit_test_util::get_option("-i", "ARefLA.e");
     std::string subdir = stk::unit_test_util::get_option("-s", ".");
 
+    bool useAutoFaceTolerance = stk::unit_test_util::get_command_line_option<bool>("-useAutoFaceTolerance", false);
     double toleranceForFaceSearch = stk::unit_test_util::get_command_line_option<double>("-fs", 0.0001);
     double toleranceForParticleSearch  =  stk::unit_test_util::get_command_line_option<double>("-ps",3);
     double edgeWeightForSearch = stk::unit_test_util::get_command_line_option<double>("-ew",15);
@@ -399,6 +456,7 @@ TEST(Stkbalance, changeOptions)
     double vertexWeightMultiplierForVertexInSearch = stk::unit_test_util::get_command_line_option<double>("-vwm",5.0);
     bool multiCriteriaFlag = stk::unit_test_util::get_command_line_option<bool>("-mc", false);
     bool doRebalance = stk::unit_test_util::get_command_line_option<bool>("-dorebal", true);
+    bool setContactWeightFromTopology = stk::unit_test_util::get_command_line_option<bool>("-setContactWeightFromTopology", false);
     double contactWeight = stk::unit_test_util::get_command_line_option<double>("-contactWeight", 1.0);
     double nonContactWeight = stk::unit_test_util::get_command_line_option<double>("-nonContactWeight", 1.0);
     bool includeSearchResults = stk::unit_test_util::get_command_line_option<bool>("-useSearch", true);
@@ -427,12 +485,25 @@ TEST(Stkbalance, changeOptions)
         balanceOptions = new stk::balance::GraphCreationSettings(toleranceForFaceSearch, toleranceForParticleSearch, edgeWeightForSearch, decompMethod, vertexWeightMultiplierForVertexInSearch);
     }
 
+    if (useAutoFaceTolerance) {
+        balanceOptions->setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
+    }
+
     if(bulk.parallel_rank()==0)
         std::cerr << os.str();
 
     stk::balance::internal::AllStepFieldWriterAutoDecomp fieldWriter(bulk, filename);
 
-    set_contact_weights(contactCriteria, contactWeight, toleranceForFaceSearch, bulk);
+    if (setContactWeightFromTopology) {
+        set_contact_weights(contactCriteria, contactWeight, *balanceOptions, bulk,
+                            [] (const stk::mesh::BulkData & bulk, stk::mesh::Entity elem, double weight )
+                               { return contactWeightForElementTopology(bulk.bucket(elem).topology()); } );
+    }
+    else {
+        set_contact_weights(contactCriteria, contactWeight, *balanceOptions, bulk,
+                            [] (const stk::mesh::BulkData & bulk, stk::mesh::Entity elem, double weight )
+                               { return weight; } );
+    }
 
     if (doRebalance) stk::balance::balanceStkMesh(*balanceOptions, bulk);
 

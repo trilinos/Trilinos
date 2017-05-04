@@ -56,7 +56,6 @@ main (int argc, char* argv[])
   typedef Tpetra::Operator<> OP;
   typedef Tpetra::RowMatrix<> row_matrix_type;
   typedef MV::scalar_type scalar_type;
-  typedef MV::node_type node_type;
   typedef Ifpack2::Preconditioner<> prec_type;
   typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
   typedef Belos::SolverManager<scalar_type, MV, OP> solver_type;
@@ -98,9 +97,8 @@ main (int argc, char* argv[])
   }
 
   // Read sparse matrix A from Matrix Market file.
-  RCP<node_type> node (new node_type ());
   RCP<crs_matrix_type> A =
-    reader_type::readSparseFile (args.matrixFilename, comm, node);
+    reader_type::readSparseFile (args.matrixFilename, comm);
   if (A.is_null ()) {
     if (comm->getRank () == 0) {
       cerr << "Failed to load sparse matrix A from file "
@@ -111,7 +109,7 @@ main (int argc, char* argv[])
 
   // Read right-hand side vector(s) B from Matrix Market file.
   RCP<const map_type> map = A->getRangeMap ();
-  RCP<MV> B = reader_type::readDenseFile (args.rhsFilename, comm, node, map);
+  RCP<MV> B = reader_type::readDenseFile (args.rhsFilename, comm, map);
   if (B.is_null ()) {
     if (comm->getRank () == 0) {
       cerr << "Failed to load right-hand side vector(s) from file \""
@@ -173,6 +171,9 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;
     }
   }
+
+  // Report timings.
+  Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
 
   return EXIT_SUCCESS;
 }

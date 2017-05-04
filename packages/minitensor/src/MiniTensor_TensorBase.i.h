@@ -56,7 +56,7 @@ TensorBase<T, ST>::TensorBase()
   static_size = ST::static_size();
 
   set_number_components(static_size);
-  fill(NANS);
+  fill(Filler::NANS);
 
   return;
 }
@@ -69,7 +69,7 @@ KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(Index const dimension, Index const order)
 {
   set_dimension(dimension, order);
-  fill(NANS);
+  fill(Filler::NANS);
   return;
 }
 
@@ -81,7 +81,7 @@ KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    ComponentValue const value)
+    Filler const value)
 {
   set_dimension(dimension, order);
   fill(value);
@@ -107,13 +107,13 @@ TensorBase<T, ST>::TensorBase(
 // Construction from array
 //Kokkos data Types:
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1)
+    Index index1)
 {
   set_dimension(dimension, order);
   fill(data, index1);
@@ -121,14 +121,14 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1,
-    iType index2)
+    Index index1,
+    Index index2)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2);
@@ -136,15 +136,15 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3)
+    Index index1,
+    Index index2,
+    Index index3)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3);
@@ -152,16 +152,16 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4);
@@ -169,17 +169,17 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5);
@@ -187,18 +187,18 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5,
-    iType index6)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5,
+    Index index6)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5, index6);
@@ -222,8 +222,7 @@ TensorBase<T, ST>::TensorBase(
 //
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
-    dimension_(X.dimension_)
+TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X)
 {
   Index const
   number_components = X.get_number_components();
@@ -247,8 +246,6 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 {
   if (this == &X) return *this;
 
-  dimension_ = X.dimension_;
-
   Index const
   number_components = X.get_number_components();
 
@@ -262,24 +259,20 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 }
 
 //
-// Simple destructor
-//
-template<typename T, typename ST>
-KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::~TensorBase()
-{
-  return;
-}
-
-//
 // Get dimension
 //
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
 Index
-TensorBase<T, ST>::get_dimension() const
+TensorBase<T, ST>::get_dimension(Index const order) const
 {
-  return dimension_;
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dimension = integer_root(number_components, order);
+
+  return dimension;
 }
 
 //
@@ -290,8 +283,6 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  dimension_ = dimension == DYNAMIC ? DYNAMIC : dimension;
-
   Index const
   number_components = integer_power(dimension, order);
 
@@ -376,7 +367,7 @@ TensorBase<T, ST>::set_number_components(Index const number_components)
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ComponentValue const value)
+TensorBase<T, ST>::fill(Filler const value)
 {
   using S = typename Sacado::ScalarType<T>::type;
 
@@ -385,7 +376,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   switch (value) {
 
-  case ZEROS:
+  case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -393,7 +384,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case ONES:
+  case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -401,7 +392,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case SEQUENCE:
+  case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -409,7 +400,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM:
+  case Filler::RANDOM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -417,7 +408,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM_UNIFORM:
+  case Filler::RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -425,7 +416,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case RANDOM_NORMAL:
+  case Filler::RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
@@ -433,7 +424,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
-  case NANS:
+  case Filler::NANS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, not_a_number<S>());
@@ -475,10 +466,12 @@ TensorBase<T, ST>::fill(T const & s)
 // Fill components from array defined by pointer.
 //
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, iType index1)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1)
 {
   assert(index1 == 0);
 
@@ -505,10 +498,13 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1,
+    Index index2)
 {
   assert(index2 == 0);
 
@@ -558,10 +554,14 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
-TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    Index index1,
+    Index index2,
+    Index index3)
 {
   assert(index3 == 0);
 
@@ -621,15 +621,15 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4)
 {
   assert(index4 == 0);
 
@@ -702,16 +702,16 @@ TensorBase<T, ST>::fill(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5)
 {
   assert(index5 == 0);
 
@@ -799,17 +799,17 @@ TensorBase<T, ST>::fill(
 }
 
 template<typename T, typename ST>
-template<class ArrayT, typename iType>
+template<class ArrayT>
 KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
-    iType index1,
-    iType index2,
-    iType index3,
-    iType index4,
-    iType index5,
-    iType index6)
+    Index index1,
+    Index index2,
+    Index index3,
+    Index index4,
+    Index index5,
+    Index index6)
 {
   assert(index6 == 0);
 
@@ -931,6 +931,81 @@ TensorBase<T, ST>::fill(T const * data_ptr)
 }
 
 //
+// Fill components from array defined by pointer.
+//
+template<typename T, typename ST>
+KOKKOS_INLINE_FUNCTION
+void
+TensorBase<T, ST>::fill(
+    T const * data_ptr,
+    ComponentOrder const component_order)
+{
+  assert(data_ptr != NULL);
+
+  TensorBase<T, ST> &
+  self = (*this);
+
+  Index const
+  number_components = self.get_number_components();
+
+  switch (number_components) {
+
+  default:
+    self.fill(data_ptr);
+    break;
+
+  case 9:
+
+    switch (component_order) {
+
+    case ComponentOrder::CANONICAL:
+      self.fill(data_ptr);
+      break;
+
+    case ComponentOrder::SIERRA_FULL:
+      //  0  1  2  3  4  5  6  7  8
+      // XX YY ZZ XY YZ ZX YX ZY XZ
+      //  0  4  8  1  5  6  3  7  2
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
+
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
+
+      self[3] = data_ptr[6];
+      self[7] = data_ptr[7];
+      self[2] = data_ptr[8];
+      break;
+
+    case ComponentOrder::SIERRA_SYMMETRIC:
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
+
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
+
+      self[3] = data_ptr[3];
+      self[7] = data_ptr[4];
+      self[2] = data_ptr[5];
+      break;
+
+    default:
+      MT_ERROR_EXIT("Unknown component order.");
+      break;
+
+    }
+
+    break;
+  }
+
+  return;
+}
+
+//
 // Component increment
 //
 template<typename T, typename ST>
@@ -1016,7 +1091,7 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::clear()
 {
-  fill(ZEROS);
+  fill(Filler::ZEROS);
   return;
 }
 

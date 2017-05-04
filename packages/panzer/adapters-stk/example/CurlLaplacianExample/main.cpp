@@ -67,6 +67,7 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
+#include "Panzer_CheckBCConsistency.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -94,6 +95,8 @@
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "AztecOO.h"
+
+#include <sstream>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -302,6 +305,17 @@ int main(int argc,char * argv[])
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
+
+   // check that the bcs exist in the mesh
+   /////////////////////////////////////////////////////////////
+   {
+     std::vector<std::string> eBlockNames;
+     mesh->getElementBlockNames(eBlockNames);
+     std::vector<std::string> sidesetNames;
+     mesh->getSidesetNames(sidesetNames);
+     panzer::checkBCConsistency(eBlockNames,sidesetNames,bcs);
+   }
+
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
  
@@ -505,8 +519,16 @@ int main(int argc,char * argv[])
       stkIOResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
-      // write to exodus
-      mesh->writeToExodus("output.exo");
+      // write to exodus 
+      // ---------------
+      // Due to multiple instances of this test being run at the same
+      // time (one for each order), we need to differentiate output to
+      // prevent race conditions on output file. Multiple runs for the
+      // same order are ok as they are staged one after another in the
+      // ADD_ADVANCED_TEST cmake macro.
+      std::ostringstream filename;
+      filename << "output_" << basis_order << ".exo";
+      mesh->writeToExodus(filename.str());
    }
 
    // compute error norm

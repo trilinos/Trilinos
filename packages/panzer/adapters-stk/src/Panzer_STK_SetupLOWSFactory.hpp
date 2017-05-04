@@ -78,7 +78,8 @@ buildLOWSFactory(bool blockedAssembly,
                  #endif 
                  bool writeCoordinates=false,
                  bool writeTopo=false,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
 
 /** Build LOWS factory.
@@ -96,7 +97,8 @@ buildLOWSFactory(bool blockedAssembly,
                  #endif 
                  bool writeCoordinates=false,
                  bool writeTopo=false,
-                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null
+                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
+                 bool useCoordinates=true
                  );
 
 }

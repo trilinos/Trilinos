@@ -111,6 +111,14 @@ STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
 // #endif
 }
 
+STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
+  simd::Double tmp;
+  for (int n=0; n < simd::ndoubles; ++n) {
+    tmp[n] = std::log10(x[n]);
+  }
+  return tmp;
+}
+
 STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Double(_mm256_exp_pd(x._data));
@@ -179,6 +187,30 @@ STK_MATH_FORCE_INLINE simd::Double tan(const simd::Double& a) {
   simd::Double tmp;
   for (int i=0; i < simd::ndoubles; ++i) {
     tmp[i] = std::tan(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double sinh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::sinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double cosh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::cosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Double tanh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::tanh(a[i]);
   }
   return tmp;
 }

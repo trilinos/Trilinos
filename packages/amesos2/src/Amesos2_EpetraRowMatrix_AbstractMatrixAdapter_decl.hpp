@@ -151,6 +151,11 @@ namespace Amesos2 {
     const RCP<const Tpetra::Map<local_ordinal_t,
 				global_ordinal_t,
 				node_t> >
+    getMap_impl() const;
+
+    const RCP<const Tpetra::Map<local_ordinal_t,
+				global_ordinal_t,
+				node_t> >
     getRowMap_impl() const;
 
     const RCP<const Tpetra::Map<local_ordinal_t,
@@ -167,7 +172,7 @@ namespace Amesos2 {
     // Because instantiation of the subclasses could be wildly
     // different (cf subclasses of Epetra_RowMatrix), this method
     // hands off implementation to the adapter for the subclass
-    RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
+    RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
 
     typename super_t::spmtx_ptr_t  getSparseRowPtr() const;
 

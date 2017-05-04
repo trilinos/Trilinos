@@ -39,6 +39,14 @@ STK_MATH_FORCE_INLINE simd::Float log(const simd::Float& x) {
 #endif
 }
 
+STK_MATH_FORCE_INLINE simd::Float log10(const simd::Float& x) {
+  simd::Float tmp;
+  for (int n=0; n < simd::nfloats; ++n) {
+    tmp[n] = std::log10(x[n]);
+  }
+  return tmp;
+}
+
 STK_MATH_FORCE_INLINE simd::Float exp(const simd::Float& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Float(_mm256_exp_ps(x._data));
@@ -87,6 +95,30 @@ STK_MATH_FORCE_INLINE simd::Float tan(const simd::Float& a) {
   simd::Float tmp;
   for (int i=0; i < simd::nfloats; ++i) {
     tmp[i] = std::tan(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float sinh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::sinh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float cosh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::cosh(a[i]);
+  }
+  return tmp;
+}
+
+STK_MATH_FORCE_INLINE simd::Float tanh(const simd::Float& a) {
+  simd::Float tmp;
+  for (int i=0; i < simd::nfloats; ++i) {
+    tmp[i] = std::tanh(a[i]);
   }
   return tmp;
 }

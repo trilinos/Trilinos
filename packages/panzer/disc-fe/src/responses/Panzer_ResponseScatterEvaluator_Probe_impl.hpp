@@ -188,7 +188,7 @@ computeBasisValues(typename Traits::EvalData d)
   Kokkos::DynRankView<double,PHX::Device> physical_points(
     "physical_points", 1, 1, num_dim); // Cell, Point, Dim
   for (size_t i=0; i<num_dim; ++i)
-    physical_points(0,0,i) = physical_points_cell(0,i);
+    physical_points(0,0,i) = physical_points_cell(0,0,i);
   Kokkos::DynRankView<double,PHX::Device> reference_points(
      "reference_points", 1, 1, num_dim); // Cell, Point, Dim
   CTD::mapToReferenceFrame(reference_points, physical_points, cell_coords,

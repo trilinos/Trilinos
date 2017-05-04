@@ -204,7 +204,8 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
                       MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
-                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map ) const
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map,
+                      EDistribution distribution) const
 {
   using Teuchos::rcpFromPtr;
   using Teuchos::as;
@@ -307,7 +308,8 @@ MultiVecAdapter<Epetra_MultiVector>::put1dData(
   Teuchos::Ptr<
     const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
                       MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
-                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map)
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map,
+                      EDistribution distribution )
 {
   using Teuchos::rcpFromPtr;
   using Teuchos::as;

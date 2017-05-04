@@ -134,7 +134,7 @@ begin sierra TOSDTWD Bridge
               
         end 
       end
-      termination time = 2.0
+      termination time = 3.0
     end time control
 
     begin solid mechanics region presto1
@@ -162,7 +162,6 @@ begin sierra TOSDTWD Bridge
         variable type = node
         magnitude = 50 0 0 
       end
-
 
       begin results output output_adagio
         database name = bridgeFalls.exo
@@ -204,7 +203,7 @@ begin sierra TOSDTWD Bridge
  
       begin element death death1
         block = block_1 block_3 block_4
-        criterion is element value of von_mises > 3e7
+        criterion is element value of von_mises > 2e7
       end
     end
   end

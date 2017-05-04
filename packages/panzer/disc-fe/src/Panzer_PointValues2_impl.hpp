@@ -50,7 +50,33 @@
 // ***********************************************************
 
 namespace panzer {
-  
+
+  template <typename Scalar,
+            template <typename DataT,
+               typename Tag0, typename Tag1, typename Tag2,
+               typename Tag3, typename Tag4, typename Tag5,
+               typename Tag6, typename Tag7> class Array >
+  template<typename SourceScalar>
+  PointValues2<Scalar,Array>&
+  PointValues2<Scalar,Array>::operator=(const PointValues2<SourceScalar,Array>& source)
+  {
+    // The separate template parameter for SourceScalar allows for
+    // assignment to a "const Scalar" from a non-const "Scalar", but
+    // we still need to enforce that the underlying scalar type is the
+    // same.
+    static_assert(std::is_same<typename std::decay<Scalar>::type,typename std::decay<SourceScalar>::type>::value,
+                  "ERROR: PointValues assignment requires consistent scalar types!");
+
+    coords_ref = source.coords_ref;
+    node_coordinates = source.node_coordinates;
+    jac = source.jac;
+    jac_inv = source.jac_inv;
+    jac_det = source.jac_det;
+    point_coords = source.point_coords;
+    point_rule = source.point_rule;
+    return *this;
+  }
+
   template <typename Scalar,
             template <typename DataT,
                typename Tag0, typename Tag1, typename Tag2,

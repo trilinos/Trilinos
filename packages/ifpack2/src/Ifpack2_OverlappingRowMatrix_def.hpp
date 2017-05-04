@@ -43,6 +43,8 @@
 #ifndef IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 #define IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 
+#include <sstream>
+
 #include <Ifpack2_OverlappingRowMatrix_decl.hpp>
 #include <Ifpack2_Details_OverlappingRowGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -527,7 +529,31 @@ void
 OverlappingRowMatrix<MatrixType>::
 getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getLocalDiagCopy not supported.");
+  using Teuchos::Array;
+
+  //extract diagonal of original matrix
+  vector_type baseDiag(A_->getRowMap());         // diagonal of original matrix A_
+  A_->getLocalDiagCopy(baseDiag);
+  Array<scalar_type> baseDiagVals(baseDiag.getLocalLength());
+  baseDiag.get1dCopy(baseDiagVals());
+  //extra diagonal of ghost matrix
+  vector_type extDiag(ExtMatrix_->getRowMap());
+  ExtMatrix_->getLocalDiagCopy(extDiag);
+  Array<scalar_type> extDiagVals(extDiag.getLocalLength());
+  extDiag.get1dCopy(extDiagVals());
+
+  Teuchos::ArrayRCP<scalar_type> allDiagVals = diag.getDataNonConst();
+  if (allDiagVals.size() != baseDiagVals.size() + extDiagVals.size()) {
+    std::ostringstream errStr;
+    errStr << "Ifpack2::OverlappingRowMatrix::getLocalDiagCopy : Mismatch in diagonal lengths, "
+           << allDiagVals.size() << " != " << baseDiagVals.size() << "+" << extDiagVals.size();
+    throw std::runtime_error(errStr.str());
+  }
+  for (Teuchos::Ordinal i=0; i<baseDiagVals.size(); ++i)
+    allDiagVals[i] = baseDiagVals[i];
+  Teuchos_Ordinal offset=baseDiagVals.size();
+  for (Teuchos::Ordinal i=0; i<extDiagVals.size(); ++i)
+    allDiagVals[i+offset] = extDiagVals[i];
 }
 
 

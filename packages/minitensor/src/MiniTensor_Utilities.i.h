@@ -353,6 +353,38 @@ integer_power(T const & X, Index const exponent)
 }
 
 //
+// Integer nth root
+//
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+integer_root(T const & x, Index const root)
+{
+  assert(root > 0);
+  assert(x >= 0);
+
+  if (root == 1 || x == 0 || x == 1) return x;
+
+  T hi = 1;
+
+  while (integer_power(hi, root) < x) hi *= 2;
+
+  T lo = hi / 2;
+
+  while (hi - lo > 1) {
+    T mid = (lo + hi) / 2;
+    T t = integer_power(mid, root);
+    if (t < x) lo = mid;
+    else if (x < t) hi = mid;
+    else return mid;
+  }
+
+  if (integer_power(hi, root) == x) return hi;
+
+  return lo;
+}
+
+//
 // Utility for Kronecker delta in 2D
 //
 template<typename T>

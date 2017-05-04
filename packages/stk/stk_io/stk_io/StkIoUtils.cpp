@@ -117,22 +117,22 @@ void fill_sideset(const stk::mesh::EntityVector& sides, stk::mesh::BulkData& bul
 
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
 {
-    const auto& surfaceToBlock = bulkData.mesh_meta_data().get_surface_to_block_mapping();
-    for(auto iter = surfaceToBlock.begin(); iter != surfaceToBlock.end(); ++iter)
+    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+    for(size_t i=0;i<surfacesInMap.size();++i)
     {
-        stk::mesh::Selector elementSelector = stk::mesh::selectUnion(iter->second);
-        stk::mesh::EntityVector sides = get_sides(bulkData, *iter->first);
-        fill_sideset(sides, bulkData, elementSelector, iter->first->id());
+        std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
+
+        stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
+        stk::mesh::EntityVector sides = get_sides(bulkData, *surfacesInMap[i]);
+        fill_sideset(sides, bulkData, elementSelector, surfacesInMap[i]->id());
     }
 }
 
 void clear_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
 {
-    const auto& surfaceToBlock = bulkData.mesh_meta_data().get_surface_to_block_mapping();
-    for(auto iter = surfaceToBlock.begin(); iter != surfaceToBlock.end(); ++iter)
-    {
-        bulkData.clear_sideset(iter->first->id());
-    }
+    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+    for(size_t i=0;i<surfacesInMap.size();++i)
+        bulkData.clear_sideset(surfacesInMap[i]->id());
 }
 
 const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)

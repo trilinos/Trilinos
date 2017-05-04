@@ -279,7 +279,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     //Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-    ParameterList galeriList = galeriParameters.GetParameterList();
+    Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
 
     if(lib!=Xpetra::UseTpetra)
       throw std::runtime_error("This test only works with Tpetra linear algebra");

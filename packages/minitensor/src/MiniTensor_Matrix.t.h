@@ -47,9 +47,9 @@ namespace minitensor {
 //
 // Matrix input
 //
-template<typename T, Index M, Index N, typename ES>
+template<typename T, Index M, Index N>
 std::istream &
-operator>>(std::istream & is, Matrix<T, M, N, ES> & A)
+operator>>(std::istream & is, Matrix<T, M, N> & A)
 {
   Index const
   num_rows = A.get_num_rows();
@@ -69,9 +69,9 @@ operator>>(std::istream & is, Matrix<T, M, N, ES> & A)
 //
 // Matrix output
 //
-template<typename T, Index M, Index N, typename ES>
+template<typename T, Index M, Index N>
 std::ostream &
-operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
+operator<<(std::ostream & os, Matrix<T, M, N> const & A)
 {
   Index const
   num_rows = A.get_num_rows();
@@ -86,7 +86,7 @@ operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   for (Index i = 0; i < num_rows; ++i) {
 

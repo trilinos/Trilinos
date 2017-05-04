@@ -60,6 +60,8 @@
 #include <Teuchos_FancyOStream.hpp>
 
 #include <Tpetra_Map.hpp>
+#include <Tpetra_DistObject_decl.hpp>
+#include <Tpetra_ComputeGatherMap.hpp> // added for gather map... where is the best place??
 
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
@@ -102,12 +104,19 @@ namespace Amesos2 {
      *
      * \ingroup amesos2_utils
      */
+
+    template <typename LO, typename GO, typename GS, typename Node>
+    const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+    getGatherMap( const Teuchos::RCP< const Tpetra::Map<LO,GO,Node> > &map );
+
+
     template <typename LO, typename GO, typename GS, typename Node>
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
     getDistributionMap(EDistribution distribution,
                        GS num_global_elements,
                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                       GO indexBase = 0);
+                       GO indexBase = 0,
+                       const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >& map = Teuchos::null);
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT
@@ -245,9 +254,10 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
-        Op::apply(mat, nzvals, indices, pointers, nnz, map, ordering);
+        Op::apply(mat, nzvals, indices, pointers, nnz, map, distribution, ordering);
       }
     };
 
@@ -263,6 +273,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_size_t mat_gs_t;
@@ -270,7 +281,7 @@ namespace Amesos2 {
         Teuchos::Array<mat_gs_t> pointers_tmp(size);
         mat_gs_t nnz_tmp = 0;
 
-        Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, map, ordering);
+        Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, map, distribution, ordering);
 
         for (i = 0; i < size; ++i){
           pointers[i] = Teuchos::as<GS>(pointers_tmp[i]);
@@ -291,6 +302,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_size_t mat_gs_t;
@@ -298,7 +310,7 @@ namespace Amesos2 {
           same_gs_helper<M,S,GO,GS,Op>,
           diff_gs_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices,
                                                        pointers, nnz, map,
-                                                       ordering);
+                                                       distribution, ordering);
       }
     };
 
@@ -314,6 +326,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_ordinal_t mat_go_t;
@@ -325,7 +338,7 @@ namespace Amesos2 {
           same_gs_helper<M,S,GO,GS,Op>,
           diff_gs_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
                                                        pointers, nnz, map,
-                                                       ordering);
+                                                       distribution, ordering);
 
         for (i = 0; i < size; ++i){
           indices[i] = Teuchos::as<GO>(indices_tmp[i]);
@@ -345,6 +358,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_ordinal_t mat_go_t;
@@ -352,7 +366,7 @@ namespace Amesos2 {
           same_go_helper<M,S,GO,GS,Op>,
           diff_go_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices,
                                                        pointers, nnz, map,
-                                                       ordering);
+                                                       distribution, ordering);
       }
     };
 
@@ -368,6 +382,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename M::local_ordinal_t,
                                              typename M::global_ordinal_t,
                                              typename M::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering)
       {
         typedef typename M::scalar_t mat_scalar_t;
@@ -379,7 +394,7 @@ namespace Amesos2 {
           same_go_helper<M,S,GO,GS,Op>,
           diff_go_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals_tmp, indices,
                                                        pointers, nnz, map,
-                                                       ordering);
+                                                       distribution, ordering);
 
         for (i = 0; i < size; ++i){
           nzvals[i] = Teuchos::as<S>(nzvals_tmp[i]);
@@ -407,7 +422,8 @@ namespace Amesos2 {
                          const ArrayView<S> nzvals,
                          const ArrayView<GO> indices,
                          const ArrayView<GS> pointers,
-                         GS& nnz, EDistribution distribution,
+                         GS& nnz, 
+                         EDistribution distribution,
                          EStorage_Ordering ordering=ARBITRARY,
                          GO indexBase = 0)
       {
@@ -416,11 +432,15 @@ namespace Amesos2 {
         typedef typename Matrix::global_size_t gs_t;
         typedef typename Matrix::node_t node_t;
 
-        const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+          const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
           = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
                                                       Op::get_dimension(mat),
-                                                      mat->getComm(), indexBase);
-        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
+                                                      mat->getComm(), 
+                                                      indexBase, 
+                                                      Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap 
+                                                      );
+
+          do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
       }
 
       /**
@@ -431,13 +451,15 @@ namespace Amesos2 {
                          const ArrayView<S> nzvals,
                          const ArrayView<GO> indices,
                          const ArrayView<GS> pointers,
-                         GS& nnz, EStorage_Ordering ordering=ARBITRARY)
+                         GS& nnz, 
+                         EDistribution distribution, // Does this one need a distribution argument??
+                         EStorage_Ordering ordering=ARBITRARY)
       {
         const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
                                              typename Matrix::global_ordinal_t,
                                              typename Matrix::node_t> > map
           = Op::getMap(mat);
-        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
+        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
       }
 
       /**
@@ -453,6 +475,7 @@ namespace Amesos2 {
                            const Tpetra::Map<typename Matrix::local_ordinal_t,
                                              typename Matrix::global_ordinal_t,
                                              typename Matrix::node_t> > map,
+                         EDistribution distribution,
                          EStorage_Ordering ordering=ARBITRARY)
       {
         typedef typename Matrix::scalar_t mat_scalar;
@@ -461,7 +484,8 @@ namespace Amesos2 {
           diff_scalar_helper<Matrix,S,GO,GS,Op> >::type::do_get(mat,
                                                                 nzvals, indices,
                                                                 pointers, nnz,
-                                                                map, ordering);
+                                                                map, 
+                                                                distribution, ordering);
       }
     };
 
@@ -482,9 +506,20 @@ namespace Amesos2 {
                           const Tpetra::Map<typename Matrix::local_ordinal_t,
                                             typename Matrix::global_ordinal_t,
                                             typename Matrix::node_t> > map,
+                        EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
+        mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering, distribution);
+        //mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
+      }
+
+      static
+      const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                           typename Matrix::global_ordinal_t,
+                                           typename Matrix::node_t> >
+      getMapFromMatrix(const Teuchos::Ptr<const Matrix> mat)
+      {
+        return mat->getMap(); // returns Teuchos::null if mat is Epetra_CrsMatrix
       }
 
       static
@@ -516,9 +551,20 @@ namespace Amesos2 {
                           const Tpetra::Map<typename Matrix::local_ordinal_t,
                                             typename Matrix::global_ordinal_t,
                                             typename Matrix::node_t> > map,
+                        EDistribution distribution,
                         EStorage_Ordering ordering)
       {
-        mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
+        mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
+        //mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
+      }
+
+      static
+      const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                           typename Matrix::global_ordinal_t,
+                                           typename Matrix::node_t> >
+      getMapFromMatrix(const Teuchos::Ptr<const Matrix> mat)
+      {
+        return mat->getMap(); // returns Teuchos::null if mat is Epetra_CrsMatrix
       }
 
       static
@@ -598,12 +644,24 @@ namespace Amesos2 {
     //           Definitions              //
     ////////////////////////////////////////
 
+
+    template <typename LO, typename GO, typename GS, typename Node>
+    const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+    getGatherMap( const Teuchos::RCP< const Tpetra::Map<LO,GO,Node> > &map )
+    {
+      //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream( Teuchos::null ); // may need to pass an osstream to computeGatherMap for debugging cases...
+      Teuchos::RCP< const Tpetra::Map<LO,GO,Node> > gather_map = Tpetra::Details::computeGatherMap(map, Teuchos::null);
+      return gather_map;
+    }
+
+
     template <typename LO, typename GO, typename GS, typename Node>
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
     getDistributionMap(EDistribution distribution,
                        GS num_global_elements,
                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                       GO indexBase)
+                       GO indexBase,
+                       const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >& map)
     {
         // TODO: Need to add indexBase to cases other than ROOTED
         //  We do not support these maps in any solver now.
@@ -617,9 +675,16 @@ namespace Amesos2 {
         {
           int rank = Teuchos::rank(*comm);
           size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
-          if( rank == 0 ) my_num_elems = num_global_elements;
+          if( rank == 0 ) { my_num_elems = num_global_elements; }
+
           return rcp(new Tpetra::Map<LO,GO, Node>(num_global_elements,
-                                                my_num_elems, indexBase, comm));
+                                                  my_num_elems, indexBase, comm));
+        }
+      case CONTIGUOUS_AND_ROOTED:
+        {
+          const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > gathermap
+          = getGatherMap<LO,GO,GS,Node>( map );  //getMap must be the map returned, NOT rowmap or colmap 
+          return gathermap;
         }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true,
@@ -713,14 +778,12 @@ namespace Amesos2 {
 #else
       typename Teuchos::ArrayView<GlobalOrdinal>::iterator ind_it, ind_end;
 #endif
-
       // Count the number of entries in each column
       Teuchos::Array<GlobalSizeT> count(trans_ptr.size(), 0);
       ind_end = indices.end();
       for( ind_it = indices.begin(); ind_it != ind_end; ++ind_it ){
         ++(count[(*ind_it) + 1]);
       }
-
       // Accumulate
       typename Teuchos::Array<GlobalSizeT>::iterator cnt_it, cnt_end;
       cnt_end = count.end();

@@ -227,52 +227,61 @@ namespace Intrepid2 {
   }
 
 
+  template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration(const ordinal_type xMult,
+  ordinal_type getDkEnumeration(const ordinal_type /*xMult*/,
                                 const ordinal_type yMult,
                                 const ordinal_type zMult) {
+    switch(spaceDim) {
 
-    if (yMult < 0 && zMult < 0) {
+      case 1:
+        return 0;
+        break;
 
-#ifdef HAVE_INTREPID2_DEBUG
-      // We are in 1D: verify input - xMult is non-negative  and total order <= 10:
-      INTREPID2_TEST_FOR_ABORT( !( (0 <= xMult) && (xMult <= (ordinal_type)Parameters::MaxDerivative) ),
-                                ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
-#endif
-
-      // there's only one derivative of order xMult
-      return 0;
-    } else {
-      if (zMult < 0) {
-
-#ifdef HAVE_INTREPID2_DEBUG
-        // We are in 2D: verify input - xMult and yMult are non-negative and total order <= 10:
-        INTREPID2_TEST_FOR_ABORT( !(0 <= xMult && 0 <= yMult && (xMult + yMult) <= (ordinal_type)Parameters::MaxDerivative),
-                                  ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
-#endif
-
-        // enumeration is the value of yMult
+      case 2:
         return yMult;
-      }
+        break;
 
-      // We are in 3D: verify input - xMult, yMult and zMult are non-negative and total order <= 10:
-      else {
-        const auto order = xMult + yMult + zMult;
-#ifdef HAVE_INTREPID2_DEBUG
-        // Verify input:  total order cannot exceed 10:
-        INTREPID2_TEST_FOR_ABORT(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) &&
-                                      (order <= (ordinal_type)Parameters::MaxDerivative) ),
-                                   ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
-#endif
-        ordinal_type enumeration = zMult;
-        const ordinal_type iend = order-xMult+1;
-        for(ordinal_type i=0;i<iend;++i) {
-          enumeration += i;
-        }
-        return enumeration;
+      case 3:
+        return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
+        break;
+
+      default: {
+        INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+              ">>> ERROR (Intrepid2::getDkEnumeration): Invalid space dimension");
+        return 0;
       }
     }
   }
+
+  template<ordinal_type spaceDim>
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getPnEnumeration(const ordinal_type p,
+                                const ordinal_type q /* = 0*/,
+                                const ordinal_type r /* = 0*/) {
+    return (spaceDim==1) ? p :
+           (spaceDim==2) ? (p+q)*(p+q+1)/2+q :
+                           (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
+
+  }
+
+  template<typename value_type>
+  KOKKOS_INLINE_FUNCTION
+  void getJacobyRecurrenceCoeffs (
+            value_type  &an,
+            value_type  &bn,
+            value_type  &cn,
+      const ordinal_type alpha,
+      const ordinal_type beta ,
+      const ordinal_type n) {
+    an = ( (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) /
+        value_type(2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) ) );
+    bn = ( (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) /
+        value_type(2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) ) );
+    cn = ( (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) /
+        value_type( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) ) );
+  }
+
 
 //   template<typename OrdinalArrayType>
 //   KOKKOS_INLINE_FUNCTION
@@ -387,50 +396,59 @@ namespace Intrepid2 {
   ordinal_type getDkCardinality(const EOperator    operatorType,
                                 const ordinal_type spaceDim) {
 
-    // This should only be called for Dk operators
-    ordinal_type derivativeOrder = -1;
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+                                    ">>> ERROR (Intrepid2::getDkcardinality): Invalid space dimension");
     switch (operatorType) {
-    case OPERATOR_GRAD:
-    case OPERATOR_D1:
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10:
-      derivativeOrder = Intrepid2::getOperatorOrder(operatorType);
-      break;
-    default:
-      break;
-    }
-    INTREPID2_TEST_FOR_ABORT( derivativeOrder < 0,
-                              ">>> ERROR (Intrepid2::getDkCardinality): derivative order is not determined ");
+        case OPERATOR_GRAD:
+        case OPERATOR_D1:
+        case OPERATOR_D2:
+        case OPERATOR_D3:
+        case OPERATOR_D4:
+        case OPERATOR_D5:
+        case OPERATOR_D6:
+        case OPERATOR_D7:
+        case OPERATOR_D8:
+        case OPERATOR_D9:
+        case OPERATOR_D10:
+          break;
+        default:
+          INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR (Intrepid2::getDkCardinality): Cannot be used for this operator ");
+          break;
+        }
+#endif
     
-    ordinal_type cardinality = -999;
-    switch(spaceDim) {
-
-    case 1:
-      cardinality = 1;
-      break;
-
-    case 2:
-      cardinality = derivativeOrder + 1;
-      break;
-
-    case 3:
-      cardinality = (derivativeOrder + 1)*(derivativeOrder + 2)/2;
-      break;
-
-    default:
-      INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
-                                ">>> ERROR (Intrepid2::getDkcardinality): Invalid space dimension");
-    }
-
-    return cardinality;
+    ordinal_type n = Intrepid2::getOperatorOrder(operatorType);
+    return (spaceDim==1) ? 1 :
+           (spaceDim==2) ? n+1 :
+           (n + 1) * (n + 2) / 2;
   }
+
+  template<ordinal_type spaceDim>
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getPnCardinality (ordinal_type n) {
+
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+                                        ">>> ERROR (Intrepid2::getPnCardinality): Invalid space dimension");
+#endif
+
+    return (spaceDim==1) ? n+1 :
+           (spaceDim==2) ? (n + 1) * (n + 2) / 2 :
+           (n + 1) * (n + 2) * (n + 3) / 6;
+  }
+
+
+  template<ordinal_type spaceDim, ordinal_type n>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ordinal_type getPnCardinality () {
+
+    return (spaceDim==1) ? n+1 :
+           (spaceDim==2) ? (n + 1) * (n + 2) / 2 :
+           (n + 1) * (n + 2) * (n + 3) / 6;
+
+  }
+
 
 
 

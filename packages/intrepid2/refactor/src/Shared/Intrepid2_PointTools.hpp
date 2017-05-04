@@ -430,143 +430,152 @@ private:
 
 
 
-  // /** \brief Computes an equispaced lattice of a given
-  //     order on the reference triangle.  The output array is
-  //     (P,2), where
-  //     \code
-  //     P - number of points, which is
-  //     \endcode
+   /** \brief Computes an equispaced lattice of a given
+       order on the reference triangle.  The output array is
+       (P,2), where
+       \code
+       P - number of points, which is
+       \endcode
 
-  //     \param  points      [out] - Output array of point coords
-  //     \param  order       [in]  - The lattice has order + 1 points,
-  //     minus any skipped by offset
-  //     \param  offset      [in]  - Number of points on boundary to skip coming
-  //     in from boundary
+       \param  points      [out] - Output Kokkos::DynRankView of point coords
+       \param  order       [in]  - The lattice has order + 1 points,
+       minus any skipped by offset
+       \param  offset      [in]  - Number of points on boundary to skip coming
+       in from boundary
 
-  // */
+   */
   template<typename pointValueType, class ...pointProperties>
   static void
   getEquispacedLatticeTriangle(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const ordinal_type order,
       const ordinal_type offset = 0 );
 
-  // /** \brief Computes an equispaced lattice of a given
-  //     order on the reference tetrahedron.  The output array is
-  //     (P,3), where
-  //     \code
-  //     P - number of points, which is
-  //     \endcode
+   /** \brief Computes an equispaced lattice of a given
+       order on the reference tetrahedron.  The output array is
+       (P,3), where
+       \code
+       P - number of points, which is
+       \endcode
 
-  //     \param  points      [out] - Output array of point coords
-  //     \param  order       [in]  - The lattice has order + 1 points,
-  //     minus any skipped by offset
-  //     \param  offset      [in]  - Number of points on boundary to skip coming
-  //     in from boundary
-
-  // */
-  // template<class Scalar, class ArrayType>
-  // static void getEquispacedLatticeTetrahedron( ArrayType &points ,
-  //                                              const ordinal_type order ,
-  //                                              const ordinal_type offset = 0 );
-
-
-  // /** \brief interpolates Warburton's warp function on the line
-  //     \param  order       [in]  - The polynomial order
-  //     \param  xnodes      [in]  - vector of node locations to interpolate
-  //     \param  xout        [in]  - warpfunction at xout, +/- 1 roots deflated
-  //     \param  warp        [out] - the amount to warp each point
-  // */
-  // template<class Scalar, class ArrayType>
-  // static void warpFactor( const ordinal_type order ,
-  //                         const ArrayType &xnodes ,
-  //                         const ArrayType &xout ,
-  //                         ArrayType &warp );
-
-  // /** \brief Returns Warburton's warp-blend points of a given
-  //     order on the reference triangle.  The output array is
-  //     (P,2), where
-  //     \code
-  //     P - number of points
-  //     \endcode
-
-  //     \param  points      [out] - Output array of point coords
-  //     \param  order       [in]  - The lattice has order + 1 points,
-  //     minus any skipped by offset
-  //     \param  offset      [in]  - Number of points on boundary to skip coming
-  //     in per boundary
-
-  // */
-  // template<class Scalar, class ArrayType>
-  // static void getWarpBlendLatticeTriangle(ArrayType &points ,
-  //                                         const ordinal_type order ,
-  //                                         const ordinal_type offset = 0 );
-
-  // /** \brief Returns Warburton's warp-blend points of a given
-  //     order on the reference tetrahedron.  The output array is
-  //     (P,3), where
-  //     \code
-  //     P - number of points
-  //     \endcode
-
-  //     \param  points      [out] - Output array of point coords
-  //     \param  order       [in]  - The lattice has order + 1 points,
-  //     minus any skipped by offset
-  //     \param  offset      [in]  - Number of points on boundary to skip coming
-  //     in per boundary
-  // */
-  // template<class Scalar, class ArrayType>
-  // static void getWarpBlendLatticeTetrahedron( ArrayType &points ,
-  //                                             const ordinal_type order ,
-  //                                             const ordinal_type offset = 0 );
+       \param  points      [out] - Output Kokkos::DynRankView of point coords
+       \param  order       [in]  - The lattice has order + 1 points,
+       minus any skipped by offset
+       \param  offset      [in]  - Number of points on boundary to skip coming
+       in from boundary
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getEquispacedLatticeTetrahedron( Kokkos::DynRankView<pointValueType,pointProperties...> points,
+                                   const ordinal_type order ,
+                                   const ordinal_type offset = 0 );
 
 
-  // /** \brief This is used internally to compute the tetrahedral warp-blend points one each face
-  //     \param order   [in] - the order of lattice
-  //     \param pval    [in] - the "alpha" term in the warping function
-  //     \param L1      [in] - the first barycentric coordinate of the input points
-  //     \param L2      [in] - the second barycentric coordinate of the input points
-  //     \param L3      [in] - the third barycentric coordinate of the input points
-  //     \param L4      [in] - the fourth barycentric coordinate of the input points
-  //     \param dxy     [out] - contains the amount to shift each point in the x and y direction
-  // */
+   /** \brief interpolates Warburton's warp function on the line
+       \param  warp        [out] - Kokkos::DynRankView of the amount to warp each point
+       \param  order       [in]  - The polynomial order
+       \param  xnodes      [in]  - Kokkos::DynRankView of node locations to interpolate
+       \param  xout        [in]  - Kokkos::DynRankView of the warpfunction at xout, +/- 1 roots deflated
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  warpFactor( Kokkos::DynRankView<pointValueType,pointProperties...>  warp ,
+              const ordinal_type order ,
+              const Kokkos::DynRankView<pointValueType,pointProperties...> xnodes ,
+              const Kokkos::DynRankView<pointValueType,pointProperties...> xout
+              );
 
-  // template<class Scalar, class ArrayType>
-  // static void warpShiftFace3D( const ordinal_type order ,
-  //                              const Scalar pval ,
-  //                              const ArrayType &L1,
-  //                              const ArrayType &L2,
-  //                              const ArrayType &L3,
-  //                              const ArrayType &L4,
-  //                              ArrayType &dxy);
+   /** \brief Returns Warburton's warp-blend points of a given
+       order on the reference triangle.  The output array is
+       (P,2), where
+       \code
+       P - number of points
+       \endcode
 
-  // /** \brief Used internally to evaluate the point shift for warp-blend points on faces of tets
-  //     \param order   [in] - the order of lattice
-  //     \param pval    [in] - the "alpha" term in the warping function
-  //     \param L1      [in] - the first barycentric coordinate of the input points
-  //     \param L2      [in] - the second barycentric coordinate of the input points
-  //     \param L3      [in] - the third barycentric coordinate of the input points
-  //     \param dxy     [out] - contains the amount to shift each point in the x and y direction
-  // */
+       \param  points      [out] - Kokkos::DynRankView of point coords
+       \param  order       [in]  - The lattice has order + 1 points,
+       minus any skipped by offset
+       \param  offset      [in]  - Number of points on boundary to skip coming
+       in per boundary
 
-  // template<class Scalar, class ArrayType>
-  // static void evalshift( const ordinal_type order ,
-  //                        const Scalar pval ,
-  //                        const ArrayType &L1 ,
-  //                        const ArrayType &L2 ,
-  //                        const ArrayType &L3 ,
-  //                        ArrayType &dxy );
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getWarpBlendLatticeTriangle( Kokkos::DynRankView<pointValueType,pointProperties...> points,
+                               const ordinal_type order ,
+                               const ordinal_type offset = 0 );
 
-  // /** \brief Used internally to compute the warp on edges of a triangle in warp-blend points
-  //     \param warp      [out] - a 1d array containing the amount to move each point
-  //     \param order     [in]  - the order of the lattice
-  //     \param xnodes    [in]  - the points to warp to, typically the Gauss-Lobatto points
-  //     \param xout      [in]  - the equispaced points on the edge
-  // */
-  // template<class Scalar, class ArrayType>
-  // static void evalwarp( ArrayType &warp ,
-  //                       const ordinal_type order ,
-  //                       const ArrayType &xnodes ,
-  //                       const ArrayType &xout );
+   /** \brief Returns Warburton's warp-blend points of a given
+       order on the reference tetrahedron.  The output array is
+       (P,3), where
+       \code
+       P - number of points
+       \endcode
+
+       \param  points      [out] - Kokkos::DynRankView of point coords
+       \param  order       [in]  - The lattice has order + 1 points,
+       minus any skipped by offset
+       \param  offset      [in]  - Number of points on boundary to skip coming
+       in per boundary
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getWarpBlendLatticeTetrahedron( Kokkos::DynRankView<pointValueType,pointProperties...> points,
+                                  const ordinal_type order ,
+                                  const ordinal_type offset = 0 );
+
+
+   /** \brief This is used internally to compute the tetrahedral warp-blend points one each face
+       \param dxy     [out] - Kokkos::DynRankView containing the amount to shift each point in the x and y direction
+       \param order   [in] - the order of lattice
+       \param pval    [in] - the "alpha" term in the warping function
+       \param L1      [in] - Kokkos::DynRankView of the first barycentric coordinate of the input points
+       \param L2      [in] - Kokkos::DynRankView of the second barycentric coordinate of the input points
+       \param L3      [in] - Kokkos::DynRankView of the third barycentric coordinate of the input points
+       \param L4      [in] - Kokkos::DynRankView of the fourth barycentric coordinate of the input points
+   */
+
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  warpShiftFace3D( Kokkos::DynRankView<pointValueType,pointProperties...> dxy,
+                   const ordinal_type order ,
+                   const pointValueType pval ,
+                   const Kokkos::DynRankView<pointValueType,pointProperties...> L1,
+                   const Kokkos::DynRankView<pointValueType,pointProperties...> L2,
+                   const Kokkos::DynRankView<pointValueType,pointProperties...> L3,
+                   const Kokkos::DynRankView<pointValueType,pointProperties...> L4
+                   );
+
+   /** \brief Used internally to evaluate the point shift for warp-blend points on faces of tets
+       \param dxy     [out] - Kokkos::DynRankView containing the amount to shift each point in the x and y direction
+       \param order   [in] - the order of lattice
+       \param pval    [in] - the "alpha" term in the warping function
+       \param L1      [in] - Kokkos::DynRankView of the first barycentric coordinate of the input points
+       \param L2      [in] - Kokkos::DynRankView of the second barycentric coordinate of the input points
+       \param L3      [in] - Kokkos::DynRankView of the third barycentric coordinate of the input points
+   */
+
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  evalshift( Kokkos::DynRankView<pointValueType,pointProperties...> dxy ,
+             const ordinal_type order ,
+             const pointValueType pval ,
+             const Kokkos::DynRankView<pointValueType,pointProperties...> L1 ,
+             const Kokkos::DynRankView<pointValueType,pointProperties...> L2 ,
+             const Kokkos::DynRankView<pointValueType,pointProperties...> L3
+             );
+
+   /** \brief Used internally to compute the warp on edges of a triangle in warp-blend points
+       \param warp      [out] - a 1d Kokkos::DynRankView containing the amount to move each point
+       \param order     [in]  - the order of the lattice
+       \param xnodes    [in]  - Kokkos::DynRankView of the points to warp to, typically the Gauss-Lobatto points
+       \param xout      [in]  - Kokkos::DynRankView of the equispaced points on the edge
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  evalwarp( Kokkos::DynRankView<pointValueType,pointProperties...> warp ,
+            const ordinal_type order ,
+            const Kokkos::DynRankView<pointValueType,pointProperties...> xnodes ,
+            const Kokkos::DynRankView<pointValueType,pointProperties...> xout );
 };
 
 } 

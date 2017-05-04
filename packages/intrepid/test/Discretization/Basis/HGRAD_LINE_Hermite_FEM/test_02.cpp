@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
     *outStream << "|w-w_exact|   = " << error0 << std::endl;
     *outStream << "|w'-w'_exact| = " << error1 << std::endl;
 
-    double tolerance = 1e-10;
+    double tolerance = 2e-10;
 
     if( error0 > tolerance ) {
       *outStream << "Solution failed to converge within tolerance" << std::endl;

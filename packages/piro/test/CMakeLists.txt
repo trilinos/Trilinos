@@ -56,18 +56,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (Piro_ENABLE_NOX)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    EpetraSolver
-    SOURCES
-    Main_EpetraSolver.cpp
-    MockModelEval_A.cpp
-    MockModelEval_A.hpp
-    SaveEigenData_Epetra.cpp
-    SaveEigenData_Epetra.hpp
-    NUM_MPI_PROCS 1-4
-    ARGS -v
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
-  )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    EpetraSolver
+#    SOURCES
+#    Main_EpetraSolver.cpp
+#    MockModelEval_A.cpp
+#    MockModelEval_A.hpp
+#    SaveEigenData_Epetra.cpp
+#    SaveEigenData_Epetra.hpp
+#    NUM_MPI_PROCS 1-4
+#    ARGS -v
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ThyraSolver
@@ -153,7 +153,8 @@ IF (Piro_ENABLE_NOX)
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
+    #EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
+    EXEDEPS ThyraSolver AnalysisDriver UnitTests NOXSolver_UnitTests
   )
 
 ENDIF()
