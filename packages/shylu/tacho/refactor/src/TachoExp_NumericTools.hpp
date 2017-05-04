@@ -158,27 +158,6 @@ namespace Tacho {
             work(col) = -1;
           }
         }
-
-        // // check copy
-        // for (ordinal_type sid=0;sid<nsupernodes;++sid) {
-        //   // get panel for this sid (column major order to use blas and lapack)
-        //   getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
-        //   Kokkos::View<value_type**,Kokkos::LayoutLeft,
-        //     typename value_type_array_host::execution_space,
-        //     Kokkos::MemoryUnmanaged> tgt(&super_panel_buf(super_panel_ptr(sid)), m, n);          
-
-        //   const ordinal_type soffset = supernodes(sid);
-        //   const ordinal_type goffset = gid_super_panel_ptr(sid);
-        //   for (ordinal_type i=0;i<m;++i) {
-        //     for (ordinal_type j=i;j<n;++j) { 
-        //       printf("%d %d %f\n", 
-        //              (i+soffset), 
-        //              (gid_super_panel_colidx(j+goffset)),
-        //              tgt(i,j));
-        //     }
-        //   }
-        // }
-        // printf("\n\n\n");
       }
 
     private:
