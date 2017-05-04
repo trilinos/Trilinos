@@ -655,7 +655,7 @@ namespace Basker{
         (*col_ptr)[i] = L->col_ptr[i];
       }
 
-    for(i = 0; i < L->nnz; i++)
+    for(i = 0; i < actual_lnnz; i++)
       {
         (*row_idx)[i] = pinv[L->row_idx[i]];
         (*val)[i]     = L->val[i];
@@ -687,7 +687,7 @@ namespace Basker{
       {
         (*col_ptr)[i] = U->col_ptr[i];
       }
-    for(i = 0; i < U->nnz; i++)
+    for(i = 0; i < actual_unnz; i++)
       {
         (*row_idx)[i] = U->row_idx[i];
         (*val)[i]     = U->val[i];
