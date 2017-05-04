@@ -21,7 +21,7 @@ namespace Tacho {
 
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
 
-      typedef Kokkos::Future<int> future_type;
+      typedef Kokkos::Future<int,exec_space> future_type;
       typedef Kokkos::View<future_type*,exec_space> future_type_array;      
 
       // supernodes input
@@ -46,7 +46,8 @@ namespace Tacho {
 
       // parallel version; fugure list corresponding to each supernode 
       // temporal memory allocation depends on kokkos memory pool
-      //UnmanagedViewType<future_type_array> _supernodes_future;
+      //UnmanagedViewType<future_type_array> supernodes_future;
+      future_type_array supernodes_future;
 
       // static work space for serial execution (not sure if this is necessary)
       UnmanagedViewType<value_type_array> super_panel_serial_work;

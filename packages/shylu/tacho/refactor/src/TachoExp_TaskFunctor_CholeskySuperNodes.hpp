@@ -59,9 +59,9 @@ namespace Tacho {
           src_col_size = src_col_end - src_col_beg;
 
         const size_type alloc_size = src_col_size*sizeof(ordinal_type);
-        ordinal_type *ptr_alloced = (ordinal_type*)_pool.allocate(alloc_size);
+        ordinal_type *map_buf = (ordinal_type*)_pool.allocate(alloc_size);
 
-        ordinal_type_array map(ptr_alloced, src_col_size);
+        ordinal_type_array map(map_buf, src_col_size);
         const ordinal_type smapoff = _info.gid_super_panel_ptr(_sid);
         auto src_map = Kokkos::subview(_info.gid_super_panel_colidx,
                                        range_type(smapoff + src_col_beg,smapoff + src_col_end));
@@ -115,7 +115,7 @@ namespace Tacho {
             }
           }
         }
-        _pool.deallocate((void*)ptr_alloced, alloc_size);
+        _pool.deallocate((void*)map_buf, alloc_size);
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -152,16 +152,16 @@ namespace Tacho {
               ::invoke(_sched, member, -1.0, ATR, 1.0, ABR);
           } else {
             const size_type alloc_size = n*n*sizeof(value_type);
-            value_type *ptr_alloced = (value_type*)_pool.allocate(alloc_size);
+            value_type *abr_buf = (value_type*)_pool.allocate(alloc_size);
 
-            UnmanagedViewType<value_type_matrix> ABR(ptr_alloced, n, n);
+            UnmanagedViewType<value_type_matrix> ABR(abr_buf, n, n);
             Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(_sched, member, -1.0, ATR, 0.0, ABR);
 
             // copy back to its parent
             update(member, ABR);
             
-            _pool.deallocate((void*)ptr_alloced, alloc_size);
+            _pool.deallocate((void*)abr_buf, alloc_size);
           }
         }
       }
@@ -186,9 +186,10 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
-          TACHO_TEST_FOR_ABORT(_state > 1, "deadlock : state is bigger than 1");
-          bool is_execute = _state;
-          if (_state == 0) {
+          //TACHO_TEST_FOR_ABORT(_state > 2, "deadlock : state is bigger than 1");
+          bool is_execute = (_state == 2);
+          switch (_state) {
+          case 0: {
             const ordinal_type 
               ibeg = _info.stree_ptr(_sid), 
               iend = _info.stree_ptr(_sid+1),
@@ -215,11 +216,22 @@ namespace Tacho {
             } else {
               is_execute = true;
             }
+            break;
+          } 
+          case 1: {
+            ++_state;
+            Kokkos::respawn(this, _info.supernodes_future(_sid), Kokkos::TaskPriority::High);            
+            break;
           }
+          default: 
+            break;
+          }
+          
           // task can execute its body when 1) sid is leaf, 2) respawned after dependences are satisfied.
           // this one only executed by team_rank_0(). is_execute should be shared for all team members
-          if (is_execute) 
-            factorize(member);          
+          if (is_execute) {
+            factorize(member);
+          }          
         }
       }
     };

@@ -434,6 +434,10 @@ namespace Tacho {
           info.stree_children = _stree_children;
           info.super_panel_ptr = _super_panel_ptr;
           info.super_panel_buf = _super_panel_buf;
+
+          Kokkos::View<future_type*,host_exec_space> supernodes_future("supernodes_future", _nsupernodes);
+          info.supernodes_future = supernodes_future;
+          
           //info.super_panel_serial_work;
 
           // estimate of task queue size
@@ -442,7 +446,7 @@ namespace Tacho {
                                                sizeof(memory_pool_type) + 128 );
           const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
           const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size,
-                                                    2048*100);
+                                                    2048*400);
 
           const ordinal_type 
             min_block_alloc_size = 32,
@@ -462,7 +466,7 @@ namespace Tacho {
           
           // workspace estimate
           const size_type min_total_alloc_size = max(100*_work.dimension_0()*sizeof(value_type),
-                                                     2048*100);
+                                                     4096*400);
 #if defined (__KK__)          
           memory_pool_type pool(memory_space(), 
                                 min_total_alloc_size,
