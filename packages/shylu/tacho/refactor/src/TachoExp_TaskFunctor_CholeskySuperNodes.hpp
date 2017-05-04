@@ -15,13 +15,17 @@ namespace Tacho {
       typedef ExecSpace exec_space;
 
       // task scheduler/future
+
       typedef Kokkos::TaskScheduler<exec_space> sched_type;
       typedef typename sched_type::member_type member_type;
       typedef Kokkos::Future<int,exec_space> future_type;
 
       // memory pool
+#if defined(__KK__)
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
-
+#else
+      typedef Kokkos::Experimental::MemoryPool<exec_space> memory_pool_type;
+#endif      
       // value types
       typedef int value_type; // functor return type
       typedef MatValueType mat_value_type; // matrix value type

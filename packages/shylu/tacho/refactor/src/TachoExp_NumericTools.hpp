@@ -447,23 +447,32 @@ namespace Tacho {
             min_block_alloc_size = 32,
             max_block_alloc_size = 512,
             min_superblock_size = 1024;
-          
+
+#if defined (__KK__)          
           sched_type sched(memory_space(),
                            task_queue_capacity,
                            min_block_alloc_size,
                            max_block_alloc_size,
                            min_superblock_size);
-
+#else
+          sched_type sched(memory_space(),
+                           task_queue_capacity);
+#endif
+          
           // workspace estimate
           // const size_type memory_pool_capacity = max(_work.dimension_0()*1000*sizeof(value_type),
           //                                            2048*100);
           const size_type min_total_alloc_size = 100*_work.dimension_0()*sizeof(value_type);
+#if defined (__KK__)          
           memory_pool_type pool(memory_space(), 
                                 min_total_alloc_size,
                                 min_block_alloc_size,
                                 max_block_alloc_size,
                                 min_superblock_size);
- 
+#else
+          memory_pool_type pool(memory_space(), 
+                                min_total_alloc_size);
+#endif 
           // host task generation for roots
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i) 
