@@ -36,7 +36,15 @@ IF(Kokkos_ENABLE_Serial)
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
-
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestOpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_TestOpenMP.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "PASSED"
+    TESTONLYLIBS kokkos_gtest
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
