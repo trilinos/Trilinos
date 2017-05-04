@@ -141,8 +141,12 @@ int main (int argc, char *argv[]) {
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
-    
-    N.factorizeCholesky_Serial();
+
+    if (nthreads > 1) {
+      N.factorizeCholesky_Parallel();
+    } else {
+      N.factorizeCholesky_Serial();
+    }
     t = timer.seconds();
     std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
   }

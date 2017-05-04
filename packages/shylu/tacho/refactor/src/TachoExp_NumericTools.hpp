@@ -443,11 +443,26 @@ namespace Tacho {
           const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
           const size_type task_queue_capacity = estimate_max_numtasks*max_functor_size;
 
-          sched_type sched(memory_space(), task_queue_capacity);
+          const ordinal_type 
+            min_block_alloc_size = 32,
+            max_block_alloc_size = 512,
+            min_superblock_size = 1024;
+          
+          sched_type sched(memory_space(),
+                           task_queue_capacity,
+                           min_block_alloc_size,
+                           max_block_alloc_size,
+                           min_superblock_size);
 
           // workspace estimate
-          const size_type memory_pool_capacity = _work.dimension_0()*10*sizeof(value_type);
-          memory_pool_type pool(memory_space(), memory_pool_capacity);
+          // const size_type memory_pool_capacity = max(_work.dimension_0()*1000*sizeof(value_type),
+          //                                            2048*100);
+          const size_type min_total_alloc_size = 100*_work.dimension_0()*sizeof(value_type);
+          memory_pool_type pool(memory_space(), 
+                                min_total_alloc_size,
+                                min_block_alloc_size,
+                                max_block_alloc_size,
+                                min_superblock_size);
  
           // host task generation for roots
           const ordinal_type nroots = _stree_roots.dimension_0();

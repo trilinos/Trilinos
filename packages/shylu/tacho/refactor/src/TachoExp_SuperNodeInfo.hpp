@@ -71,8 +71,8 @@ namespace Tacho {
       getSuperPanel(const ordinal_type sid, 
                     const ordinal_type m, 
                     const ordinal_type n, 
-                    /* */ UnmanagedViewType<value_type_array> &A) {
-        A = supernode_info_type::value_type_matrix(&super_panel_buf(super_panel_ptr(sid)), m, n);  
+                    /* */ UnmanagedViewType<value_type_matrix> &A) {
+        A = value_type_matrix(&super_panel_buf(super_panel_ptr(sid)), m, n);  
       }
 
       KOKKOS_INLINE_FUNCTION
