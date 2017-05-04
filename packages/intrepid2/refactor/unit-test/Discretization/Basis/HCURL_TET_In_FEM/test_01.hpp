@@ -177,8 +177,8 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
 
 
-          for (ordinal_type j=0;j<dim;j++)
-                edgeTan(j) *= 2.0;
+          for (ordinal_type jj=0;jj<dim;jj++)
+                edgeTan(jj) *= 2.0;
           for (ordinal_type k=0;k<dim; k++)
             dofValue += h_basisAtDofCoords(i,j,k)*edgeTan(k);
         }

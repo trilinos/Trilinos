@@ -322,7 +322,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,n>::generate(
 
   // use stack buffer
   fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
-           outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
+           outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n*(n+1)/2];
 
   typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
   typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
@@ -363,6 +363,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,n>::generate(
           }
         }
     }
+
 }
 
 
@@ -390,11 +391,11 @@ getValues( outputViewType output,
     OrthPolynomialTet<outputViewType,inputViewType,true,2>::generate( output, input, order );
     break;
   }
+  /*
   case OPERATOR_D3: {
     OrthPolynomialTet<outputViewType,inputViewType,true,3>::generate( output, input, order );
     break;
   }
-  /*
   case OPERATOR_D4: {
     OrthPolynomialTet<outputViewType,inputViewType,true,4>::generate( output, input, order );
     break;
@@ -469,12 +470,13 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
+/*
+  // Commented out - Cuda takes FOREVER to compile 
   case OPERATOR_D3: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D3,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
     break;
   }
-/*
   case OPERATOR_D4: {
     typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D4,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );

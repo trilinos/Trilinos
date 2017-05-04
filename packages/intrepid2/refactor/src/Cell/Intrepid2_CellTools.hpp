@@ -108,7 +108,7 @@ namespace Intrepid2 {
         \param  cell              [in]  - cell topology
         \return true if the cell topology has reference cell, false otherwise
     */
-    KOKKOS_FORCEINLINE_FUNCTION
+    inline
     static bool
     hasReferenceCell( const shards::CellTopology cellTopo ) {
       bool r_val = false;

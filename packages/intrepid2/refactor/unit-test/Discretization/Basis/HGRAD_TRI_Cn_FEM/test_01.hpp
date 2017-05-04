@@ -136,7 +136,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 10;
+        const ordinal_type order = Parameters::MaxOrder;
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
         shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());

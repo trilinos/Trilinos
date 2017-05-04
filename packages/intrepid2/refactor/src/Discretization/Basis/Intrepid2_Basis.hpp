@@ -637,7 +637,7 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   ordinal_type getDkEnumeration(const ordinal_type xMult,
                                 const ordinal_type yMult = -1,
-                                const ordinal_type zMult = -1);  template<ordinal_type spaceDim>
+                                const ordinal_type zMult = -1);  
 
 
   /** \brief  Returns the index of the term x^p y^q z^r of a polynomial of degree n  (p+q+r <= n).
@@ -650,7 +650,7 @@ namespace Intrepid2 {
       \param  r            [in]    - exponent of z in the polynomial term x^p y^q z^r (default = 0)
       \return the index of the term x^p y^q z^r of a polynomial of degree k  (p+q+r <= n)
   */
-
+  template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
   ordinal_type getPnEnumeration(const ordinal_type p,
                                 const ordinal_type q = 0,

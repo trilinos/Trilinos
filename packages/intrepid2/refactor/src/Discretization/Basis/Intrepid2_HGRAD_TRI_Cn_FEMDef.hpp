@@ -310,7 +310,8 @@ namespace Intrepid2 {
       for (ordinal_type i=0;i<card;++i) {
 
         // compute barycentric coordinates
-        const auto x = dofCoords(i,0), y = dofCoords(i,1);
+        const auto x = dofCoords(i,0); 
+        const auto y = dofCoords(i,1);
         xi0 = 1.0 - x - y;
         xi1= x;
         xi2= y;
