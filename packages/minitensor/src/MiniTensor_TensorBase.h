@@ -395,7 +395,7 @@ protected:
   ///
   KOKKOS_INLINE_FUNCTION
   Index
-  get_dimension() const;
+  get_dimension(Index const order) const;
 
   ///
   /// \param dimension
@@ -410,12 +410,6 @@ protected:
   ///
   ST
   components_;
-
-  ///
-  /// dimension
-  ///
-  Index
-  dimension_{0};
 };
 
 ///
