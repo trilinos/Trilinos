@@ -441,7 +441,8 @@ namespace Tacho {
                                                sizeof(sched_type) + 
                                                sizeof(memory_pool_type) + 128 );
           const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-          const size_type task_queue_capacity = estimate_max_numtasks*max_functor_size;
+          const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size,
+                                                    2048*100);
 
           const ordinal_type 
             min_block_alloc_size = 32,
@@ -460,9 +461,8 @@ namespace Tacho {
 #endif
           
           // workspace estimate
-          // const size_type memory_pool_capacity = max(_work.dimension_0()*1000*sizeof(value_type),
-          //                                            2048*100);
-          const size_type min_total_alloc_size = 100*_work.dimension_0()*sizeof(value_type);
+          const size_type min_total_alloc_size = max(100*_work.dimension_0()*sizeof(value_type),
+                                                     2048*100);
 #if defined (__KK__)          
           memory_pool_type pool(memory_space(), 
                                 min_total_alloc_size,
