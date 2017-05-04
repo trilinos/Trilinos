@@ -41,8 +41,8 @@ int main (int argc, char *argv[]) {
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
-  std::string file_input = "test.mtx";
-  clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
+  std::string file = "test.mtx";
+  clp.setOption("file", &file, "Input file (MatrixMarket SPD matrix)");
 
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
@@ -56,10 +56,13 @@ int main (int argc, char *argv[]) {
   //if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
   Kokkos::initialize(argc, argv);
-  Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
-
+  if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value) 
+    std::cout << "Kokkos::Serial\n";
+  else
+    Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+  
   int r_val = 0;
-
+  
   {
     typedef double value_type;
     typedef CrsMatrixBase<value_type> CrsMatrixBaseType;
@@ -68,19 +71,19 @@ int main (int argc, char *argv[]) {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    std::cout << "CholSerial:: import input file = " << file_input << std::endl;
+    std::cout << "CholSerial:: import input file = " << file << std::endl;
     CrsMatrixBaseType A("A");
     timer.reset();
     {
       {
         std::ifstream in;
-        in.open(file_input);
+        in.open(file);
         if (!in.good()) {
-          std::cout << "Failed in open the file: " << file_input << std::endl;
+          std::cout << "Failed in open the file: " << file << std::endl;
           return -1;
         }
       }
-      A = MatrixMarket<value_type>::read(file_input);
+      A = MatrixMarket<value_type>::read(file);
     }
     Graph G(A);
     t = timer.seconds();
@@ -139,20 +142,10 @@ int main (int argc, char *argv[]) {
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
         S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
     
-    N.CholeskyFactorize();
+    N.factorizeCholesky_Serial();
     t = timer.seconds();
-
-    {
-      auto U = N.Factors<Uplo::Upper>();
-      std::cout << "U nnz = " << U.NumNonZeros() << std::endl;
-      //std::ofstream out("U.mtx");
-      //MatrixMarket<value_type>::write(out, U);
-    }
     std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
-
-    
   }
-
   Kokkos::finalize();
 
   return r_val;

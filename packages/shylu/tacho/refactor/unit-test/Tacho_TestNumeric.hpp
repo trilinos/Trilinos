@@ -63,7 +63,7 @@ TEST( Numeric, constructor ) {
                                             S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
 }
 
-TEST( Numeric, Cholesky ) {
+TEST( Numeric, factorizeCholesky_Serial ) {
   CrsMatrixBaseHostType A("A");
   A = MatrixMarket<ValueType>::read("test.mtx");
 
@@ -81,6 +81,49 @@ TEST( Numeric, Cholesky ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
 
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+                                            T.PermVector(), T.InvPermVector(),
+                                            S.NumSuperNodes(), S.SuperNodes(),
+                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
+                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
+                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+
+  N.factorizeCholesky_Serial();
+}
+
+TEST( Numeric, factorizeCholesky_Parallel ) {
+  CrsMatrixBaseHostType A("A");
+  A = MatrixMarket<ValueType>::read("test.mtx");
+
+  Graph G(A);
+
+#if   defined(HAVE_SHYLUTACHO_METIS)
+  GraphTools_Metis T(G);
+#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+  GraphTools_Scotch T(G);
+#else
+  GraphTools_CAMD T(G);
+#endif
+  T.reorder();
+
+  SymbolicTools S(A, T);
+  S.symbolicFactorize();
+
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+                                            T.PermVector(), T.InvPermVector(),
+                                            S.NumSuperNodes(), S.SuperNodes(),
+                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
+                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
+                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+
+  N.factorizeCholesky_Parallel();
+}
+
+#endif
+
+
+
+// debug print
 
   // const auto m = A.NumRows();
   // const auto ap = A.RowPtr();
@@ -116,15 +159,3 @@ TEST( Numeric, Cholesky ) {
   //   printf("\n");
   // }
 
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
-                                            T.PermVector(), T.InvPermVector(),
-                                            S.NumSuperNodes(), S.SuperNodes(),
-                                            S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
-                                            S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-                                            S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
-
-  N.CholeskyFactorize();
-
-}
-
-#endif

@@ -361,7 +361,41 @@ namespace Tacho {
       ///
       inline
       void
-      CholeskyFactorize() {
+      factorizeCholesky_Serial() {
+        _work = ordinal_type_array_host("work", _m+1);
+        
+        /// allocate for supernode panels
+        allocateSuperPanels(_nsupernodes, _supernodes, _sid_super_panel_ptr, _blk_super_panel_colidx,
+                            _super_panel_ptr, _super_panel_buf, _work);
+
+        /// copy the input matrix into spanel_buf;
+        copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri,
+                                _nsupernodes, _supernodes,
+                                _gid_super_panel_ptr, _gid_super_panel_colidx,
+                                _sid_super_panel_ptr, _blk_super_panel_colidx,
+                                _super_panel_ptr, _super_panel_buf,
+                                _work);
+
+        {
+          allocateWorkspaceSerialChol(_nsupernodes, _supernodes,
+                                      _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
+                                      _super_panel_work);
+          
+          const ordinal_type numRoots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<numRoots;++i) 
+            recursiveSerialChol(_stree_roots(i), -1);
+          
+          _super_panel_work = value_type_array_host();
+        }
+      }
+      
+      ///
+      /// host only input (value array can be rewritten in the same sparse structure)
+      ///
+      inline
+      void
+      factorizeCholesky_Parallel() {
+        // setup
         _work = ordinal_type_array_host("work", _m+1);
 
         /// allocate for supernode panels
@@ -376,35 +410,38 @@ namespace Tacho {
                                 _super_panel_ptr, _super_panel_buf,
                                 _work);
 
-        allocateWorkspaceSerialChol(_nsupernodes, _supernodes,
-                                    _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
-                                    _super_panel_work);
-        
-        const ordinal_type numRoots = _stree_roots.dimension_0();
-        for (ordinal_type i=0;i<numRoots;++i) 
-          recursiveSerialChol(_stree_roots(i), -1);
+        // {
+        //   typedef Kokkos::TaskScheduler<host_exec_space > sched_type;
+        //   typedef Kokkos::Future<int,host_exec_space> future_type;
+        //   typedef Kokkos::Experimental::MemoryPool<host_exec_space> memory_pool_type;
+          
+        //   typedef typename sched_type::memory_space memory_space;
+        //   size_type max_functor_size = sizeof(supernode_info_type) + sizeof(sched_type) + sizeof(memory_pool_type) + 128;
+          
+        //   size_type task_queue_capacity = _blk_super_panel_colidx.dimension_0()*max_functor_size;
+        //   sched_type sched(memory_space(), task_queue_capacity);
 
-        _super_panel_work = value_type_array_host();
+        //   size_type memory_pool_capacity = 100000;
+        //   memory_pool_type pool(memory_space(), memory_pool_capacity);
+ 
+        //   const ordinal_type nroots = _stree_roots.dimension_0();
+        //   for (ordinal_type i=0;i<nroots;++i) 
+        //     future_type f = Kokkos::host_spawn(Kokkos::TaskSingle(root_sched),
+        //                                        CholeskySuperNodes::TaskFunctor(sched, pool, 
+        //                                                                        _stree_roots(i), -1, 
+        //                                                                        info));
+        //   Kokkos::wait(sched);          
+        // }
       }
+
+      // // matrix values are only changed (keep workspace)
+      // inline
+      // void
+      // CholeskyFactorize(const value_type_array_host &ax) {
+      //   // allocate supernodes and copy matrix again to supernodal structure
+      // }
+
       
-      // matrix values are only changed (keep workspace)
-      inline
-      void
-      CholeskyFactorize(const value_type_array_host &ax) {
-        _ax = ax;
-
-        //Kokkos::deep_copy(_work, 0);
-        Kokkos::deep_copy(_super_panel_buf, 0);
-        copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri,
-                                _nsupernodes, _supernodes,
-                                _gid_super_panel_ptr, _gid_super_panel_colidx,
-                                _sid_super_panel_ptr, _blk_super_panel_colidx,
-                                _super_panel_ptr, _super_panel_buf,
-                                _work);
-        
-
-      }
-
       template<typename ArgUplo>
       inline
       CrsMatrixBase<value_type,host_exec_space> 
