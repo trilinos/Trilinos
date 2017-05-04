@@ -151,6 +151,17 @@ namespace MueLu {
 
   private:
 
+    void GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
+                          const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
+                          Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
+                          Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
+                          Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes) const;
+
+    void sh_sort_permute(
+                const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
+                const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
+                const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
+                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
 
   }; //class BlackBoxPFactory
 
