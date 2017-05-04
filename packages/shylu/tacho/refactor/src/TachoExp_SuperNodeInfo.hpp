@@ -25,31 +25,31 @@ namespace Tacho {
       typedef Kokkos::View<future_type*,exec_space> future_type_array;      
 
       // supernodes input
-      ConstUnmanagedViewType<ordinal_type_array> _supernodes;
+      ConstUnmanagedViewType<ordinal_type_array> supernodes;
 
       // dof mapping to sparse matrix
-      ConstUnmanagedViewType<size_type_array> _gid_super_panel_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> _gid_super_panel_colidx;
+      ConstUnmanagedViewType<size_type_array> gid_super_panel_ptr;
+      ConstUnmanagedViewType<ordinal_type_array> gid_super_panel_colidx;
 
       // supernode map and panel size configuration
-      ConstUnmanagedViewType<size_type_array> _sid_super_panel_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> _sid_super_panel_colidx, _blk_super_panel_colidx;
+      ConstUnmanagedViewType<size_type_array> sid_super_panel_ptr;
+      ConstUnmanagedViewType<ordinal_type_array> sid_super_panel_colidx, blk_super_panel_colidx;
 
       // supernode tree
-      ConstUnmanagedViewType<size_type_array> _stree_ptr;
-      ConstUnmanagedViewType<ordinal_type_array> _stree_children;
+      ConstUnmanagedViewType<size_type_array> stree_ptr;
+      ConstUnmanagedViewType<ordinal_type_array> stree_children;
 
       // output : factors
-      ConstUnmanagedViewType<size_type_array> _super_panel_ptr;
-      UnmanagedViewType<value_type_array> _super_panel_buf;
+      ConstUnmanagedViewType<size_type_array> super_panel_ptr;
+      UnmanagedViewType<value_type_array> super_panel_buf;
 
 
       // parallel version; fugure list corresponding to each supernode 
       // temporal memory allocation depends on kokkos memory pool
-      UnmanagedViewType<future_type_array> _supernodes_future;
+      //UnmanagedViewType<future_type_array> _supernodes_future;
 
       // static work space for serial execution (not sure if this is necessary)
-      UnmanagedViewType<value_type_array> _super_panel_serial_work;
+      UnmanagedViewType<value_type_array> super_panel_serial_work;
 
       KOKKOS_INLINE_FUNCTION
       SuperNodeInfo() = default;
@@ -62,8 +62,8 @@ namespace Tacho {
       getSuperPanelSize(const ordinal_type sid,
                         /* */ ordinal_type &m,
                         /* */ ordinal_type &n) {
-        m = _supernodes(sid+1) - _supernodes(sid);
-        n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
+        m = supernodes(sid+1) - supernodes(sid);
+        n = blk_super_panel_colidx(sid_super_panel_ptr(sid+1)-1);
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -72,13 +72,13 @@ namespace Tacho {
                     const ordinal_type m, 
                     const ordinal_type n, 
                     /* */ UnmanagedViewType<value_type_array> &A) {
-        A = supernode_info_type::value_type_matrix(&_super_panel_buf(_super_panel_ptr(sid)), m, n);  
+        A = supernode_info_type::value_type_matrix(&super_panel_buf(super_panel_ptr(sid)), m, n);  
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type*
       getSuperPanelPtr(const ordinal_type sid) {
-        return &_super_panel_buf(_super_panel_ptr(sid));
+        return &super_panel_buf(super_panel_ptr(sid));
       }
     };
 

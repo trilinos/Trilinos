@@ -15,6 +15,9 @@
 #include "TachoExp_Herk.hpp"
 #include "TachoExp_Herk_External.hpp"
 
+#include "TachoExp_SuperNodeInfo.hpp"
+#include "TachoExp_TaskFunctor_CholeskySuperNodes.hpp"
+
 namespace Tacho {
 
   namespace Experimental {
@@ -410,28 +413,49 @@ namespace Tacho {
                                 _super_panel_ptr, _super_panel_buf,
                                 _work);
 
-        // {
-        //   typedef Kokkos::TaskScheduler<host_exec_space > sched_type;
-        //   typedef Kokkos::Future<int,host_exec_space> future_type;
-        //   typedef Kokkos::Experimental::MemoryPool<host_exec_space> memory_pool_type;
-          
-        //   typedef typename sched_type::memory_space memory_space;
-        //   size_type max_functor_size = sizeof(supernode_info_type) + sizeof(sched_type) + sizeof(memory_pool_type) + 128;
-          
-        //   size_type task_queue_capacity = _blk_super_panel_colidx.dimension_0()*max_functor_size;
-        //   sched_type sched(memory_space(), task_queue_capacity);
+        {
+          typedef TaskFunctor_CholeskySuperNodes<value_type,host_exec_space> functor_type;
+          typedef typename functor_type::sched_type sched_type;
+          typedef typename functor_type::future_type future_type;
+          typedef typename functor_type::memory_pool_type memory_pool_type;
+          typedef typename sched_type::memory_space memory_space;
+          typedef SuperNodeInfo<value_type,host_exec_space> supernode_info_type;
 
-        //   size_type memory_pool_capacity = 100000;
-        //   memory_pool_type pool(memory_space(), memory_pool_capacity);
+          // supernode info 
+          supernode_info_type info;
+
+          info.supernodes = _supernodes;
+          info.gid_super_panel_ptr = _gid_super_panel_ptr;
+          info.gid_super_panel_colidx = _gid_super_panel_colidx;
+          info.sid_super_panel_ptr = _sid_super_panel_ptr;
+          info.sid_super_panel_colidx = _sid_super_panel_colidx;
+          info.blk_super_panel_colidx = _blk_super_panel_colidx;
+          info.stree_ptr = _stree_ptr;
+          info.stree_children = _stree_children;
+          info.super_panel_ptr = _super_panel_ptr;
+          info.super_panel_buf = _super_panel_buf;
+          //info.super_panel_serial_work;
+
+          // estimate of task queue size
+          const size_type max_functor_size = ( sizeof(supernode_info_type) + 
+                                               sizeof(sched_type) + 
+                                               sizeof(memory_pool_type) + 128 );
+          const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+          const size_type task_queue_capacity = estimate_max_numtasks*max_functor_size;
+
+          sched_type sched(memory_space(), task_queue_capacity);
+
+          // workspace estimate
+          const size_type memory_pool_capacity = _work.dimension_0()*10*sizeof(value_type);
+          memory_pool_type pool(memory_space(), memory_pool_capacity);
  
-        //   const ordinal_type nroots = _stree_roots.dimension_0();
-        //   for (ordinal_type i=0;i<nroots;++i) 
-        //     future_type f = Kokkos::host_spawn(Kokkos::TaskSingle(root_sched),
-        //                                        CholeskySuperNodes::TaskFunctor(sched, pool, 
-        //                                                                        _stree_roots(i), -1, 
-        //                                                                        info));
-        //   Kokkos::wait(sched);          
-        // }
+          // host task generation for roots
+          const ordinal_type nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i) 
+            future_type f = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                                               functor_type(sched, pool, info, /**/  _stree_roots(i), -1));
+          Kokkos::wait(sched);          
+        }
       }
 
       // // matrix values are only changed (keep workspace)
