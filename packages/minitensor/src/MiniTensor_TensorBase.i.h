@@ -259,16 +259,6 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 }
 
 //
-// Simple destructor
-//
-template<typename T, typename ST>
-KOKKOS_INLINE_FUNCTION
-TensorBase<T, ST>::~TensorBase()
-{
-  return;
-}
-
-//
 // Get dimension
 //
 template<typename T, typename ST>

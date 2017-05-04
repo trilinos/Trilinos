@@ -219,13 +219,6 @@ public:
   operator=(TensorBase<T, ST> const & X);
 
   ///
-  /// Simple destructor
-  ///
-  virtual
-  KOKKOS_INLINE_FUNCTION
-  ~TensorBase() = 0;
-
-  ///
   /// Linear access to components
   /// \param i the index
   ///
