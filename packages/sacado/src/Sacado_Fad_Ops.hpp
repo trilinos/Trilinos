@@ -226,17 +226,13 @@ FAD_UNARYOP_MACRO(atanh,
 FAD_UNARYOP_MACRO(abs,
                   AbsOp,
                   std::abs(expr.val()),
-                  expr.val() >= 0 ? value_type(+expr.dx(i)) :
-                    value_type(-expr.dx(i)),
-                  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
-                    value_type(-expr.fastAccessDx(i)))
+                  if_then( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
+                  if_then( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
                   std::fabs(expr.val()),
-                  expr.val() >= 0 ? value_type(+expr.dx(i)) :
-                    value_type(-expr.dx(i)),
-                  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
-                    value_type(-expr.fastAccessDx(i)))
+                  if_then( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
+                  if_then( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 #ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
@@ -605,38 +601,36 @@ FAD_BINARYOP_MACRO(atan2,
 FAD_BINARYOP_MACRO(pow,
                    PowerOp,
                    std::pow(expr1.val(), expr2.val()),
-                   expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
+                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())) ),
+                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())) ),
                    std::pow(c.val(), expr2.val()),
                    std::pow(expr1.val(), c.val()),
-                   c.val() == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c.val())),
-                   c.val() == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c.val())))
+                   if_then( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())) ),
+                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c.val())) ),
+                   if_then( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())) ),
+                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c.val()))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
-                   expr1.val() >= expr2.val() ? expr1.val() : expr2.val(),
-                   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-                   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) :
-                                                expr2.fastAccessDx(i),
-                   c.val() >= expr2.val() ? c.val() : expr2.val(),
-                   expr1.val() >= c.val() ? expr1.val() : c.val(),
-                   c.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
-                   expr1.val() >= c.val() ? expr1.dx(i) : value_type(0),
-                   c.val() >= expr2.val() ? value_type(0) : expr2.fastAccessDx(i),
-                   expr1.val() >= c.val() ? expr1.fastAccessDx(i) : value_type(0))
+                   if_then( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
+                   if_then( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then( expr1.val() >= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
+                   if_then( c.val() >= expr2.val(), c.val(),  expr2.val() ),
+                   if_then( expr1.val() >= c.val(), expr1.val(), c.val() ),
+                   if_then( c.val() >= expr2.val(), value_type(0.0),  expr2.dx(i) ),
+                   if_then( expr1.val() >= c.val(), expr1.dx(i), value_type(0.0) ),
+                   if_then( c.val() >= expr2.val(), value_type(0.0), expr2.fastAccessDx(i) ),
+                   if_then( expr1.val() >= c.val(), expr1.fastAccessDx(i), value_type(0.0) ) )
 FAD_BINARYOP_MACRO(min,
                    MinOp,
-                   expr1.val() <= expr2.val() ? expr1.val() : expr2.val(),
-                   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-                   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) :
-                                                expr2.fastAccessDx(i),
-                   c.val() <= expr2.val() ? c.val() : expr2.val(),
-                   expr1.val() <= c.val() ? expr1.val() : c.val(),
-                   c.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
-                   expr1.val() <= c.val() ? expr1.dx(i) : value_type(0),
-                   c.val() <= expr2.val() ? value_type(0) : expr2.fastAccessDx(i),
-                   expr1.val() <= c.val() ? expr1.fastAccessDx(i) : value_type(0))
+                   if_then( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
+                   if_then( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then( expr1.val() <= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
+                   if_then( c.val() <= expr2.val(), c.val(), expr2.val() ),
+                   if_then( expr1.val() <= c.val(), expr1.val(), c.val() ),
+                   if_then( c.val() <= expr2.val(), value_type(0), expr2.dx(i) ),
+                   if_then( expr1.val() <= c.val(), expr1.dx(i), value_type(0) ),
+                   if_then( c.val() <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
+                   if_then( expr1.val() <= c.val(), expr1.fastAccessDx(i), value_type(0) ) )
 
 
 #undef FAD_BINARYOP_MACRO
