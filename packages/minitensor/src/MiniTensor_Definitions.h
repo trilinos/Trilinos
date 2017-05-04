@@ -76,13 +76,13 @@
 namespace minitensor {
 
 /// Indexing type
-using Index = unsigned int;
+using Index = uint32_t;
 
 constexpr Index
 INDEX_SIZE{32};
 
 /// High count type
-using LongIndex = unsigned long int;
+using LongIndex = uint64_t;
 
 constexpr Index
 LONG_INDEX_SIZE{64};

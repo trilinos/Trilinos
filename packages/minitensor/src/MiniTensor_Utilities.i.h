@@ -45,6 +45,8 @@
 #include <cfloat>
 #include <cmath>
 #include <limits>
+#include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace minitensor {
 
@@ -122,11 +124,8 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 not_a_number()
 {
-#if defined(KOKKOS_HAVE_CUDA)
-  return NAN;
-#else
-  return std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
-#endif
+  using S = typename Sacado::ScalarType<T>::type;
+  return Kokkos::Details::ArithTraits<S>::nan();
 }
 
 //
@@ -140,12 +139,8 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
-#if defined(KOKKOS_HAVE_CUDA)
-  return DBL_EPSILON;
-#else
-  return
-      std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
-#endif
+  using S = typename Sacado::ScalarType<T>::type;
+  return Kokkos::Details::ArithTraits<S>::epsilon();
 }
 
 //
@@ -183,7 +178,7 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 tau()
 {
-  typedef typename Sacado::ScalarType<T>::type S;
+  using S = typename Sacado::ScalarType<T>::type;
   return static_cast<S>(
       6.283185307179586476925286766559005768394338798750211641949889185
   );
@@ -197,7 +192,7 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 random()
 {
-  typedef typename Sacado::ScalarType<T>::type S;
+  using S = typename Sacado::ScalarType<T>::type;
   return Teuchos::ScalarTraits<S>().random();
 }
 
@@ -209,7 +204,7 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 random_uniform()
 {
-  typedef typename Sacado::ScalarType<T>::type S;
+  using S = typename Sacado::ScalarType<T>::type;
   return static_cast<S>(0.5 * random<S>() + 0.5);
 }
 
@@ -221,7 +216,7 @@ KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 random_normal()
 {
-  typedef typename Sacado::ScalarType<T>::type S;
+  using S = typename Sacado::ScalarType<T>::type;
 
   S const
   R = random_uniform<S>();

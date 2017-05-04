@@ -379,48 +379,48 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = Teuchos::ScalarTraits<T>::zero();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = Kokkos::Details::ArithTraits<S>::zero();
     }
     break;
 
   case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = Teuchos::ScalarTraits<T>::one();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = Kokkos::Details::ArithTraits<S>::one();
     }
     break;
 
   case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = static_cast<T>(i);
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = static_cast<S>(i);
     }
     break;
 
   case Filler::RANDOM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random<S>();
     }
     break;
 
   case Filler::RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random_uniform<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random_uniform<S>();
     }
     break;
 
   case Filler::RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
-      entry = random_normal<T>();
+      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      entry = random_normal<S>();
     }
     break;
 
@@ -428,7 +428,7 @@ TensorBase<T, ST>::fill(Filler const value)
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, not_a_number<S>());
-      entry = not_a_number<T>();
+      entry = not_a_number<S>();
     }
     break;
 
@@ -455,7 +455,7 @@ TensorBase<T, ST>::fill(T const & s)
 
   for (Index i = 0; i < number_components; ++i) {
     auto & entry = (*this)[i];
-    fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+    fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
     entry = s;
   }
 
