@@ -5632,6 +5632,7 @@ namespace Tpetra {
                   const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                   const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
@@ -5639,11 +5640,12 @@ namespace Tpetra {
     typedef node_type NT;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermute: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(),
-      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size()
-      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (permuteToLIDs.size () != permuteFromLIDs.size (),
+      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size ()
+      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
@@ -5786,12 +5788,14 @@ namespace Tpetra {
                   size_t& constantNumPackets,
                   Distributor& distor)
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepare");
 
     // Attempt to cast the source object to RowMatrix.  If the cast
     // succeeds, use the source object's pack method to pack its data
@@ -6270,6 +6274,9 @@ namespace Tpetra {
                     Distributor& distor,
                     CombineMode combineMode)
   {
+    using Tpetra::Details::ProfilingRegion;
+    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
+
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombine: ";
     const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
@@ -6308,20 +6315,12 @@ namespace Tpetra {
                            lclBad, Teuchos::outArg (gblBad));
       if (gblBad != 0) {
         const int myRank = comm.getRank ();
-        const int numProcs = comm.getSize ();
-        for (int r = 0; r < numProcs; ++r) {
-          if (r == myRank && lclBad != 0) {
-            std::ostringstream os;
-            os << "Proc " << myRank << ": " << msg.str () << std::endl;
-            std::cerr << os.str ();
-          }
-          comm.barrier ();
-          comm.barrier ();
-          comm.barrier ();
-        }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          true, std::logic_error, "unpackAndCombineImpl() threw an "
-          "exception on one or more participating processes.");
+        std::ostringstream os;
+        os << "Proc " << myRank << ": " << msg.str () << std::endl;
+        ::Tpetra::Details::gathervPrint (std::cerr, os.str (), comm);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::logic_error, "unpackAndCombineImpl() threw an "
+           "exception on one or more participating processes.");
       }
     }
 #else
