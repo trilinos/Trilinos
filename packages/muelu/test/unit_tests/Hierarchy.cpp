@@ -42,8 +42,16 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <set>
+#include <time.h>
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+
+#include <Teuchos_XMLParameterListWriter.hpp>
+#include <Teuchos_XMLParameterListReader.hpp>
+#include <Teuchos_StringInputSource.hpp>
+#include <Teuchos_XMLParser.hpp>
 
 #include <MueLu_config.hpp>
 
@@ -71,6 +79,7 @@
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_DirectSolver.hpp>
+#include "MueLu_CreateXpetraPreconditioner.hpp"
 
 #ifdef HAVE_MUELU_KOKKOSCORE
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
@@ -830,6 +839,153 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0]<1e-15, true);
   }
 
+  // Helper class for testing export frequency options.
+  // The class checks that matrix files specified in allowableFiles exist and contain matrices of the correct size.
+  // The class checks that matrix files that are not in allowableFiles do not exist.
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TestForMatrixFile(const int base, const int i, std::set<std::string> &allowableFiles, const std::string &suffix, Teuchos::FancyOStream &out) {
+#   include "MueLu_UseShortNames.hpp"
+    bool success;
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    std::stringstream sstm;
+    sstm << "A0_" << i << "_" << suffix << ".m";
+    std::string matFile = sstm.str();
+    if (allowableFiles.find(matFile) != allowableFiles.end()) {
+      //Matrix file should exist and contain matrix of global size base+i.
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+      RCP<Matrix> Ain = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matFile, lib, comm);
+      TEUCHOS_TEST_EQUALITY(Ain->getGlobalNumRows(), Teuchos::as<size_t>(base+i), out, success);
+
+      //remove matrix files
+      remove(matFile.c_str());
+      std::string tmpfile;
+      tmpfile = "colmap_" + matFile;    remove(tmpfile.c_str());
+      tmpfile = "domainmap_" + matFile; remove(tmpfile.c_str());
+      tmpfile = "rangemap_" + matFile;  remove(tmpfile.c_str());
+      tmpfile = "rowmap_" + matFile;    remove(tmpfile.c_str());
+    } else {
+      //Read should throw an exception, as matrix file should not exist.
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+      TEUCHOS_TEST_THROW((Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matFile, lib, comm)),
+                 std::invalid_argument, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, WriteFrequency, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    Teuchos::ParameterList mueluOptions;
+    mueluOptions.set("verbosity","none");
+    mueluOptions.set("max levels",1);
+    Teuchos::ParameterList &exportList = mueluOptions.sublist("export data");
+    exportList.set("A","{0}");
+    exportList.set("frequency",Teuchos::as<int>(2));
+    exportList.set("total",Teuchos::as<int>(2));
+
+    std::srand(std::time(NULL));
+    std::string fileSuffix(std::to_string(std::rand()));
+    exportList.set("filename suffix",fileSuffix);
+
+    RCP<Hierarchy> H;
+    RCP<Matrix> A;
+
+    //Global matrix sizes will start at base and increase by 1.
+    const int base=30;
+
+    ////////////////////////////////////////////////////////////
+    // Test that the frequency and total options work correctly.
+    out << "Testing frequency and total options." << std::endl;
+
+    std::set<std::string> matrixFiles;
+    matrixFiles.insert("A0_1.m");
+    matrixFiles.insert("A0_3.m");
+
+    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
+    //Build the Hierarchy five times.  The fine level matrix should be written on the 2nd and 4th build.
+    for (int i=0; i<5; ++i) {
+      A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
+      H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,mueluOptions);
+
+      TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,fileSuffix,out);
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Test that resetting static export counters works properly.
+    out << "Testing reset of export counters." << std::endl;
+    MueLu::ResetExportCounters<SC,LO,GO,NO>();
+    fileSuffix = std::to_string(std::rand());
+    exportList.set("filename suffix",fileSuffix);
+
+    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
+    //Build the Hierarchy five times.  The fine level matrix should be written on the 2nd and 4th build.
+    for (int i=0; i<5; ++i) {
+      A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
+      H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,mueluOptions);
+
+      //TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,out);
+      TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,fileSuffix,out);
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Test that the ExportFirstSystem option works correctly.
+    out << "Testing exportFirstSystem option." << std::endl;
+
+    MueLu::ResetExportCounters<SC,LO,GO,NO>();
+    exportList.set("export first system",true);
+    //fileSuffix = std::tmpnam(NULL);
+    fileSuffix = std::to_string(std::rand());
+    exportList.set("filename suffix",fileSuffix);
+    matrixFiles.clear();
+    matrixFiles.insert("A0_0.m");
+    matrixFiles.insert("A0_2.m");
+
+    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
+    //Build the Hierarchy five times.  Since the first system is written, in combination with
+    // the frequency and total options that have already been set, the fine level matrix should
+    // be written on the 1st and 3rd builds.
+    for (int i=0; i<5; ++i) {
+      A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
+      H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,mueluOptions);
+
+      //TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,out);
+      TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,fileSuffix,out);
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Test that without frequency or total set, matrices are printed every time
+    // the hierarchy is constructed.
+    out << "Testing default matrix writing." << std::endl;
+
+    MueLu::ResetExportCounters<SC,LO,GO,NO>();
+    exportList.remove("frequency");
+    exportList.remove("total");
+    exportList.remove("export first system");
+    fileSuffix = std::to_string(std::rand());
+    exportList.set("filename suffix",fileSuffix);
+    matrixFiles.clear();
+    for (int i=0; i<5; ++i) {
+      std::stringstream sstm;
+      sstm << "A0_" << i << ".m";
+      matrixFiles.insert(sstm.str());
+    }
+
+    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
+    for (int i=0; i<5; ++i) {
+      A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
+      H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,mueluOptions);
+
+      //TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,out);
+      TestForMatrixFile<SC,LO,GO,NO>(base,i,matrixFiles,fileSuffix,out);
+    }
+    
+  } //WriteFrequency Test
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -951,6 +1107,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, WriteFrequency, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
