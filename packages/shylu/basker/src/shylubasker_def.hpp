@@ -685,7 +685,6 @@ namespace BaskerNS
     //end sfactor_copy2 replacement stuff
 
 
-#define BASKER_DEBUG_DIAG
     #ifdef BASKER_DEBUG_DIAG
     // Look for zeros on the diagonal - an Option / parameter list option should be used to enable this
     // col_ptr has ncol+1 entries - final entry = nnz
