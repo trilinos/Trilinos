@@ -66,6 +66,7 @@ SET(BUILD_DIR_NAME OPENMPI_1.6.4_RELEASE_DEV_MueLu)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TYPE Experimental)
+SET(Trilinos_TRACK  Specialized)     # Set the Trilinos Track
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 )
