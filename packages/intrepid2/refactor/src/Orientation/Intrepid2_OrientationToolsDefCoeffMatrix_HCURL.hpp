@@ -292,7 +292,7 @@ namespace Intrepid2 {
       }
       case shards::Triangle<>::key: {
         subcellBasis.getValues(outValues, ortPtsSubcell);
-        const ordinal_type c[8][2][2] = { { {  1,  0 },
+        const ordinal_type c[6][2][2] = { { {  1,  0 },
                                             {  0,  1 } }, // 0
                                           { {  0,  1 },
                                             { -1, -1 } }, // 1

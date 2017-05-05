@@ -146,6 +146,16 @@ namespace Intrepid2 {
 
       init_HCURL_HEX_In_FEM(matData, order);
     } 
+    else if (name == "Intrepid2_HCURL_TRI_In_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HCURL_TRI_In_FEM",
+                                        numEdges,
+                                        numOrts,
+                                        matDim, 
+                                        matDim);
+
+      init_HCURL_TRI_In_FEM(matData, order);
+    } 
 
     //
     // High order HDIV Elements
@@ -170,6 +180,16 @@ namespace Intrepid2 {
                                         matDim);
 
       init_HDIV_HEX_In_FEM(matData, order);
+    } 
+    else if (name == "Intrepid2_HDIV_TRI_In_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_TRI_In_FEM",
+                                        numEdges,
+                                        numOrts,
+                                        matDim, 
+                                        matDim);
+      
+      init_HDIV_TRI_In_FEM(matData, order);
     } 
 
     //

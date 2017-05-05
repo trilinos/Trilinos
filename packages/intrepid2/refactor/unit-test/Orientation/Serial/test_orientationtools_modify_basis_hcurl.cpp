@@ -52,6 +52,8 @@
 #include "test_orientationtools_modify_basis_quad_hcurl.hpp"
 #include "test_orientationtools_modify_basis_hex_hcurl.hpp"
 
+//#include "test_orientationtools_modify_basis_tri_hcurl.hpp"
+
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
@@ -61,7 +63,9 @@ int main(int argc, char *argv[]) {
 
   r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Serial>, Kokkos::Serial>(verbose);
   r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<Kokkos::Serial>(verbose);
-  
+
+  //r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HCURL<Intrepid2::Basis_HCURL_TRI_In_FEM<Kokkos::Serial>, Kokkos::Serial>(verbose);  
+
   Kokkos::finalize();
   return r_val;
 }
