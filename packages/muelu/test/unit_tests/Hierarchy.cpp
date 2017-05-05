@@ -43,7 +43,8 @@
 //
 // @HEADER
 #include <set>
-#include <time.h>
+#include <ctime>
+#include <cstdlib>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -867,7 +868,7 @@ namespace MueLuTests {
       //Read should throw an exception, as matrix file should not exist.
       Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
       TEUCHOS_TEST_THROW((Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(matFile, lib, comm)),
-                 std::invalid_argument, out, success);
+                 std::exception, out, success);
     }
   }
 
@@ -903,10 +904,9 @@ namespace MueLuTests {
     out << "Testing frequency and total options." << std::endl;
 
     std::set<std::string> matrixFiles;
-    matrixFiles.insert("A0_1.m");
-    matrixFiles.insert("A0_3.m");
+    matrixFiles.insert("A0_1_" + fileSuffix + ".m");
+    matrixFiles.insert("A0_3_" + fileSuffix + ".m");
 
-    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
     //Build the Hierarchy five times.  The fine level matrix should be written on the 2nd and 4th build.
     for (int i=0; i<5; ++i) {
       A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
@@ -919,10 +919,7 @@ namespace MueLuTests {
     // Test that resetting static export counters works properly.
     out << "Testing reset of export counters." << std::endl;
     MueLu::ResetExportCounters<SC,LO,GO,NO>();
-    fileSuffix = std::to_string(std::rand());
-    exportList.set("filename suffix",fileSuffix);
 
-    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
     //Build the Hierarchy five times.  The fine level matrix should be written on the 2nd and 4th build.
     for (int i=0; i<5; ++i) {
       A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
@@ -938,14 +935,10 @@ namespace MueLuTests {
 
     MueLu::ResetExportCounters<SC,LO,GO,NO>();
     exportList.set("export first system",true);
-    //fileSuffix = std::tmpnam(NULL);
-    fileSuffix = std::to_string(std::rand());
-    exportList.set("filename suffix",fileSuffix);
     matrixFiles.clear();
-    matrixFiles.insert("A0_0.m");
-    matrixFiles.insert("A0_2.m");
+    matrixFiles.insert("A0_0_" + fileSuffix + ".m");
+    matrixFiles.insert("A0_2_" + fileSuffix + ".m");
 
-    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
     //Build the Hierarchy five times.  Since the first system is written, in combination with
     // the frequency and total options that have already been set, the fine level matrix should
     // be written on the 1st and 3rd builds.
@@ -966,16 +959,14 @@ namespace MueLuTests {
     exportList.remove("frequency");
     exportList.remove("total");
     exportList.remove("export first system");
-    fileSuffix = std::to_string(std::rand());
-    exportList.set("filename suffix",fileSuffix);
+
     matrixFiles.clear();
     for (int i=0; i<5; ++i) {
       std::stringstream sstm;
-      sstm << "A0_" << i << ".m";
+      sstm << "A0_" << i << "_" << fileSuffix << ".m";
       matrixFiles.insert(sstm.str());
     }
 
-    out << "filename suffix = \"" << fileSuffix << "\"" << std::endl; //FIXME
     for (int i=0; i<5; ++i) {
       A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30+i);
       H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,mueluOptions);

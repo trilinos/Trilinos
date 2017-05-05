@@ -338,7 +338,8 @@ namespace MueLu {
     void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const GO &iteration, const std::string& name, const std::string &suffix) const {
       for (int i = 0; i < data.size(); ++i) {
         // example:  A0_3.m, which means A from level 0, 3rd export iteration
-        std::string fileName = name + Teuchos::toString(data[i]) + "_" + Teuchos::toString(iteration) + "_" + suffix + ".m";
+        std::string fileName = name + Teuchos::toString(data[i]) + "_" + Teuchos::toString(iteration) +
+                               (suffix.empty() ? ".m" : "_" + suffix + ".m");
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
