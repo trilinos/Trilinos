@@ -64,6 +64,8 @@
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
+#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
+
 // -- HCURL family
 //#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
