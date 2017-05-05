@@ -6,4 +6,8 @@
 #include "Tacho_TestSymbolic.hpp"
 #include "Tacho_TestNumeric.hpp"
 
+#if defined (__TACHO_TEST_SERIAL__)
+#include "Tacho_TestTaskFunctor.hpp"
+#endif
+
 #endif

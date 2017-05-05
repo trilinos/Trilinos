@@ -7,6 +7,7 @@ typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::OpenMP DeviceSpaceType;
 typedef double ValueType;
 
+#define __TACHO_TEST_OPENMP__
 #include "ShyLUTacho_config.h"
 #include "Tacho_Test.hpp"
 
