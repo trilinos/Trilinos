@@ -310,9 +310,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Pack
+  CrsMatrix_PackUnpack
   SOURCES
-    CrsMatrix_Pack
+    CrsMatrix_PackUnpack
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
     COMM mpi
