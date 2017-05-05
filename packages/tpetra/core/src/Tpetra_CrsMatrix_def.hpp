@@ -57,6 +57,7 @@
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
@@ -4211,6 +4212,7 @@ namespace Tpetra {
                      Scalar alpha,
                      Scalar beta) const
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4284,7 +4286,9 @@ namespace Tpetra {
         X_colMap = rcpFromRef (X_in);
       }
     }
-    else {
+    else { // need to Import source (multi)vector
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply: Import");
+
       // We're doing an Import anyway, which will copy the relevant
       // elements of the domain Map MV X_in into a separate column Map
       // MV.  Thus, we don't have to worry whether X_in is constant
@@ -4296,8 +4300,10 @@ namespace Tpetra {
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
-    // Temporary MV for Export operation, or for copying a nonconstant
-    // stride output MV into a constant stride MV.
+    // Temporary MV for doExport (if needed), or for copying a
+    // nonconstant stride output MV into a constant stride MV.  This
+    // is null if we don't need the temporary MV, that is, if the
+    // Export is trivial (null).
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
     // If we have a nontrivial Export object, we must perform an
@@ -4306,23 +4312,25 @@ namespace Tpetra {
     // constant-stride version of Y_in in this case, because we had to
     // make a constant stride Y_rowMap MV and do an Export anyway.
     if (! exporter.is_null ()) {
-      this->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
-                                                    Teuchos::NO_TRANS,
-                                                    alpha, ZERO);
-      // If we're overwriting the output MV Y_in completely (beta ==
-      // 0), then make sure that it is filled with zeros before we do
-      // the Export.  Otherwise, the ADD combine mode will use data in
-      // Y_in, which is supposed to be zero.
-      if (Y_is_overwritten) {
-        Y_in.putScalar (ZERO);
+      this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
+      {
+        ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply: Export");
+
+        // If we're overwriting the output MV Y_in completely (beta ==
+        // 0), then make sure that it is filled with zeros before we
+        // do the Export.  Otherwise, the ADD combine mode will use
+        // data in Y_in, which is supposed to be zero.
+        if (Y_is_overwritten) {
+          Y_in.putScalar (ZERO);
+        }
+        else {
+          // Scale output MV by beta, so that doExport sums in the
+          // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
+          Y_in.scale (beta);
+        }
+        // Do the Export operation.
+        Y_in.doExport (*Y_rowMap, *exporter, ADD);
       }
-      else {
-        // Scale the output MV by beta, so that the Export sums in the
-        // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
-        Y_in.scale (beta);
-      }
-      // Do the Export operation.
-      Y_in.doExport (*Y_rowMap, *exporter, ADD);
     }
     else { // Don't do an Export: row Map and range Map are the same.
       //
@@ -4345,16 +4353,11 @@ namespace Tpetra {
         if (beta != ZERO) {
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
-        this->template localMultiply<Scalar, Scalar> (*X_colMap,
-                                                      *Y_rowMap,
-                                                      Teuchos::NO_TRANS,
-                                                      alpha, beta);
+        this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       }
       else {
-        this->template localMultiply<Scalar, Scalar> (*X_colMap, Y_in,
-                                                      Teuchos::NO_TRANS,
-                                                      alpha, beta);
+        this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
 
@@ -4363,6 +4366,7 @@ namespace Tpetra {
     // processes but Proc 0 initially, so this will handle the scaling
     // factor beta correctly.
     if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply: Reduce Y");
       Y_in.reduce ();
     }
   }
@@ -4376,6 +4380,7 @@ namespace Tpetra {
                   Scalar alpha,
                   Scalar beta) const
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4447,6 +4452,7 @@ namespace Tpetra {
     // If we have a non-trivial exporter, we must import elements that
     // are permuted or are on other processors.
     if (! exporter.is_null ()) {
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply (transpose): Import");
       exportMV_->doImport (X_in, *exporter, INSERT);
       X = exportMV_; // multiply out of exportMV_
     }
@@ -4455,6 +4461,8 @@ namespace Tpetra {
     // are permuted or belong to other processors.  We will compute
     // solution into the to-be-exported MV; get a view.
     if (importer != Teuchos::null) {
+      ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply (transpose): Export");
+
       // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
       // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
       // back and figure out why this helps.  importMV_ SHOULD be
@@ -4462,8 +4470,7 @@ namespace Tpetra {
       // because beta == ZERO there.
       importMV_->putScalar (ZERO);
       // Do the local computation.
-      this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode,
-                                                    alpha, ZERO);
+      this->localApply (*X, *importMV_, mode, alpha, ZERO);
       if (Y_is_overwritten) {
         Y_in.putScalar (ZERO);
       } else {
@@ -4482,10 +4489,10 @@ namespace Tpetra {
       if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
         // Make a deep copy of Y_in, into which to write the multiply result.
         MV Y (Y_in, Teuchos::Copy);
-        this->template localMultiply<Scalar, Scalar> (*X, Y, mode, alpha, beta);
+        this->localApply (*X, Y, mode, alpha, beta);
         Tpetra::deep_copy (Y_in, Y);
       } else {
-        this->template localMultiply<Scalar, Scalar> (*X, Y_in, mode, alpha, beta);
+        this->localApply (*X, Y_in, mode, alpha, beta);
       }
     }
 
@@ -4493,8 +4500,23 @@ namespace Tpetra {
     // contributions from each process.  (That's why we set beta=0
     // above for all processes but Proc 0.)
     if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply (transpose): Reduce Y");
       Y_in.reduce ();
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
+              const Teuchos::ETransp mode,
+              const Scalar& alpha,
+              const Scalar& beta) const
+  {
+    using Tpetra::Details::ProfilingRegion;
+    ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
+    this->template localMultiply<Scalar, Scalar> (X, Y, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -4506,23 +4528,31 @@ namespace Tpetra {
          Scalar alpha,
          Scalar beta) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! isFillComplete (), std::runtime_error,
-      "Tpetra::CrsMatrix::apply(): Cannot call apply() until fillComplete() "
-      "has been called.");
+    using Tpetra::Details::ProfilingRegion;
+    const char fnName[] = "Tpetra::CrsMatrix::apply";
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! isFillComplete (), std::runtime_error,
+       fnName << ": Cannot call apply() until fillComplete() "
+       "has been called.");
 
     if (mode == Teuchos::NO_TRANS) {
-      applyNonTranspose (X, Y, alpha, beta);
-    } else {
+      ProfilingRegion regionNonTranspose (fnName);
+      this->applyNonTranspose (X, Y, alpha, beta);
+    }
+    else {
+      ProfilingRegion regionTranspose ("Tpetra::CrsMatrix::apply (transpose)");
+
       //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
       //when bets==0. This was not the case with transpose in a multithreaded
       //environment where a multiplication with subsequent atomic_adds is used
       //since 0 is effectively not special cased. Doing the explicit set to zero here
       //This catches cases where Y is nan or inf.
       const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-      if(beta == ZERO)
+      if (beta == ZERO) {
         Y.putScalar (ZERO);
-      applyTranspose (X, Y, mode, alpha, beta);
+      }
+      this->applyTranspose (X, Y, mode, alpha, beta);
     }
   }
 
