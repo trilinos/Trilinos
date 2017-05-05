@@ -207,10 +207,8 @@ namespace Tacho {
                                                                                   child, _sid));
                 dep[i] = f;
               }
-              future_type dep_all;// = Kokkos::when_all(dep, isize);
               ++_state;
-
-              Kokkos::respawn(this, dep_all, Kokkos::TaskPriority::High);
+              Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::High);
               
               if (isize > MaxDependenceSize) _pool.deallocate((void*)dep, alloc_size);
             } else {
