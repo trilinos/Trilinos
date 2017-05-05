@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int OrientationToolsModifyBasis_QUAD_HGRAD(const bool verbose) {
+    int OrientationToolsModifyBasis_TRI_HGRAD(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -99,7 +99,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|           Unit Test (OrientationTools, Quad, getModifiedHgradBasis)          |\n"
+        << "|           Unit Test (OrientationTools, Tri, getModifiedHgradBasis)          |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
@@ -110,30 +110,29 @@ namespace Intrepid2 {
       try {
 
         {
-          *outStream << "\n -- Testing Quadrilateral \n\n";
+          *outStream << "\n -- Testing Triangle \n\n";
 
           const ordinal_type order = 4;
 
-          Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
+          Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType> cellBasis(order);
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();
 
           
           // 
-          // 9 12 13 16
-          // 4  3 11 15
-          // 5  2  8 14
-          // 1  6  7 10
-          ordinal_type refMesh[9][4] = { { 1, 6, 2, 5 },
-                                         { 6, 7, 8, 2 },
-                                         { 7,10,14, 8 },
-                                         { 5, 2, 3, 4 },
-                                         { 2, 8,11, 3 },
-                                         { 8,14,15,11 },
-                                         { 4, 3,12, 9 },
-                                         { 3,11,13,12 },
-                                         {11,15,16,13 } };
-          const ordinal_type numCells = 9, numVerts = 4, numEdges = 4;
+          // 4  3  9
+          // 5  2  8
+          // 1  6  7
+          ordinal_type refMesh[8][3] = { { 1, 6, 5 },
+                                         { 6, 2, 5 },
+                                         { 6, 7, 2 },
+                                         { 7, 8, 2 },
+                                         { 5, 2, 4 },
+                                         { 2, 3, 4 },
+                                         { 2, 8, 3 },
+                                         { 8, 9, 3 } };
+
+          const ordinal_type numCells = 8, numVerts = 3, numEdges = 3;
 
           // view to import refMesh from host          
           Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,HostSpaceType> 
@@ -182,13 +181,12 @@ namespace Intrepid2 {
 
             const ordinal_type reverse[numEdges][2] = { { 0,1 },
                                                         { 0,1 },
-                                                        { 1,0 },
                                                         { 1,0 } };
             ordinal_type orts[numEdges];
             elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
 
-            s1 << " :: edge(0000) = " ;
-            s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
+            s1 << " :: edge(000) = " ;
+            s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << ") = ";
             for (auto edgeId=0;edgeId<numEdges;++edgeId) {
               const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
               for (auto i=0;i<ndof;++i) {
