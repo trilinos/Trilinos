@@ -54,6 +54,35 @@ namespace Amesos2{
 
   namespace Util {
 
+    ///////////////////////////////
+    // Pointer-getting utilities //
+    ///////////////////////////////
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( const Teuchos::Ptr< MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( Teuchos::Ptr< MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( const Teuchos::Ptr< const MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+    template <typename MV, typename V>
+    typename vector_pointer_helper<MV, V>::ptr_return_type *
+    vector_pointer_helper<MV, V>::get_pointer_to_vector ( Teuchos::Ptr< const MV > &mv ) {
+      return mv->getMVPointer_impl();
+    }
+
+
     ////////////////////////////
     // Copy-getting utilities //
     ////////////////////////////
