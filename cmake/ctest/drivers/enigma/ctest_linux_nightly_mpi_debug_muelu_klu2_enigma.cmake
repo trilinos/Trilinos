@@ -65,6 +65,7 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME OPENMPI_1.6.4_DEBUG_DEV_MueLu_KLU2)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK  Specialized)     # Set the CDash track.
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 
 #SET(Trilinos_PACKAGES MueLu Kokkos Tpetra Xpetra Belos Amesos2 Ifpack2 Zoltan2)
