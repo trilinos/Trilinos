@@ -817,6 +817,7 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
     using Tpetra::Details::getDualViewCopyFromArrayView;
+    using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
@@ -824,12 +825,13 @@ namespace Tpetra {
     typedef typename dual_view_type::t_host::memory_space HMS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
+    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
-      std::runtime_error, "permuteToLIDs.dimension_0() = "
-      << permuteToLIDs.dimension_0 () << " != permuteFromLIDs.dimension_0() = "
-      << permuteFromLIDs.dimension_0 () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
+       std::runtime_error, "permuteToLIDs.dimension_0() = "
+       << permuteToLIDs.dimension_0 () << " != permuteFromLIDs.dimension_0() = "
+       << permuteFromLIDs.dimension_0 () << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -1058,6 +1060,7 @@ namespace Tpetra {
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
@@ -1070,6 +1073,7 @@ namespace Tpetra {
       host_execution_space;
     typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
       dev_execution_space;
+    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
 
     // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
     // the option to check indices.  We do so in a debug build.  At
@@ -1303,6 +1307,7 @@ namespace Tpetra {
                        Distributor& /* distor */,
                        const CombineMode CM)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::unpack_array_multi_column;
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -1313,6 +1318,7 @@ namespace Tpetra {
       dev_memory_space;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
+    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
 
     // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
     // the option to check indices.  We do so in a debug build.  At
