@@ -913,11 +913,13 @@ namespace BaskerNS
       if ( permi < poffset )
       {
       // ND blocks
-        x[i] = xconv(p(i)); 
+        //x[i] = xconv(p(i)); 
+        x[i] = xconv(permi); 
       } 
       else {
       // btf blocks
-        x[i] = yconv(p(i)); 
+        //x[i] = yconv(p(i)); 
+        x[i] = yconv(permi); 
       }
     }
 

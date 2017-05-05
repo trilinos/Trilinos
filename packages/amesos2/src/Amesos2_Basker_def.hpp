@@ -324,76 +324,126 @@ Basker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
+  int ierr = 0; // returned error code
+
   using Teuchos::as;
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
+  bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && (nrhs == 1 ) && is_contiguous_ ) ;
+  if ( case_check ) {
 
-  xvals_.resize(val_store_size);
-  bvals_.resize(val_store_size);
-
-  {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
-  }
+    auto sp_rowptr = this->matrixA_->returnRowPtr();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
+    auto sp_colind = this->matrixA_->returnColInd();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+    auto sp_values = this->matrixA_->returnValues();
+    TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
-  int ierr = 0; // returned error code
+    auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
+    TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
+    TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
 
-  if ( this->root_ ) {
-    {                           // Do solve!
+    if ( this->root_ ) {
+      {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
 #ifdef SHYLUBASKER
-      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
-			   xvals_.getRawPtr());
+        ierr = basker->Solve(nrhs, b_vector, x_vector);
 #else
-    ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+        ierr = basker.solveMultiple(nrhs, b_vector, x_vector);
 #endif
-    }
+      }
 
+      /* All processes should have the same error code */
+      Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
+          std::runtime_error,
+          "Encountered zero diag element at: " << ierr);
+      TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
+          std::runtime_error,
+          "Could not alloc needed working memory for solve" );
+    }
   }
+  else {
+    const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
 
-  /* All processes should have the same error code */
-  Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+    xvals_.resize(val_store_size);
+    bvals_.resize(val_store_size);
 
-  TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
-                      std::runtime_error,
-                      "Encountered zero diag element at: " << ierr);
-  TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
-                      std::runtime_error,
-                      "Could not alloc needed working memory for solve" );
-
-  {
+    {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+      Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
-            as<size_t>(ld_rhs),
-            ROOTED);
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
     }
-    else {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED);
+
+    if ( this->root_ ) {
+      {                           // Do solve!
+#ifdef HAVE_AMESOS2_TIMERS
+        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
+#ifdef SHYLUBASKER
+        ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
+            xvals_.getRawPtr());
+#else
+        ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+#endif
+      }
+
+    }
+
+    /* All processes should have the same error code */
+    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
+        std::runtime_error,
+        "Encountered zero diag element at: " << ierr);
+    TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
+        std::runtime_error,
+        "Could not alloc needed working memory for solve" );
+
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+
+      if ( is_contiguous_ == true ) {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
+              as<size_t>(ld_rhs),
+              ROOTED);
+      }
+      else {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED);
+      }
     }
   }
 
