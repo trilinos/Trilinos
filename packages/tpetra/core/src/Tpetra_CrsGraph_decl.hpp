@@ -2698,18 +2698,10 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Merge duplicate column indices in all of the rows.
+    /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
-    ///
-    /// \pre The graph has not already been merged: <tt>isMerged()
-    ///   == false</tt>.  That is, this function would normally only
-    ///   be called after calling sortIndices().
-    void mergeAllIndices ();
-
-    /// \brief Merge duplicate column indices in the given row.
-    ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
     ///
