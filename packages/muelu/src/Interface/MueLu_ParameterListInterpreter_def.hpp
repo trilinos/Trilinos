@@ -481,8 +481,9 @@ namespace MueLu {
     UpdateFactoryManager_Aggregation_TentativeP(paramList,defaultList,manager,levelID,keeps);
     
     // === Nullspace ===
-    UpdateFactoryManager_Nullspace(paramList,defaultList,manager,levelID,keeps);
- 
+    RCP<Factory> nullSpaceFactory; // Need to cache this guy for the combination of semi-coarsening & repartitioning
+    UpdateFactoryManager_Nullspace(paramList,defaultList,manager,levelID,keeps,nullSpaceFactory);
+
     // === Prolongation ===
     // NOTE: None of the UpdateFactoryManager routines called here check the multigridAlgo.  This is intentional, to allow for
     // reuse of components underneath.  Thus, the multigridAlgo must be checked here.
@@ -544,7 +545,7 @@ namespace MueLu {
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
  
     // === Repartitioning ===
-    UpdateFactoryManager_Repartition(paramList,defaultList,manager,levelID,keeps);
+    UpdateFactoryManager_Repartition(paramList,defaultList,manager,levelID,keeps,nullSpaceFactory);
 
     // === Final Keeps for Reuse ===
     if ((reuseType == "RAP" || reuseType == "full") && levelID) {
@@ -1053,7 +1054,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
   // ========================================= Repartition ==============================================
   // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Repartition(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Repartition(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const {
   // === Repartitioning ===
   MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
   MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
@@ -1202,15 +1203,16 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
     // repartitioning, that factory is "TentativePFactory"; if we do, it is
     // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
     // the "Nullspace" of the manager
-    Teuchos::rcp_dynamic_cast<Factory>(manager.GetFactoryNonConst("Nullspace"))->SetFactory("Nullspace", newP);    
-#else
-    throw Exceptions::RuntimeError("No repartitioning available for a serial run");
-#endif
+    // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
+    nullSpaceFactory->SetFactory("Nullspace", newP);  
   }
+#else
+      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
+#endif
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Nullspace(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager_Nullspace(ParameterList& paramList,const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps,RCP<Factory> & nullSpaceFactory) const {
   // Nullspace
   MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
   bool have_userNS = false;
@@ -1219,6 +1221,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
     nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
     manager.SetFactory("Nullspace", nullSpace);
   }
+  nullSpaceFactory = nullSpace;
 }
  
 
