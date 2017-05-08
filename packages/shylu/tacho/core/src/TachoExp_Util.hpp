@@ -1,6 +1,6 @@
 #ifndef __TACHOEXP_UTIL_HPP__
 #define __TACHOEXP_UTIL_HPP__
-//#define __KK__ 1
+#define __KK__ 1
 
 // standard C includes
 #include <stdio.h>
