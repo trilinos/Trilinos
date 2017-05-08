@@ -47,18 +47,18 @@ namespace minitensor {
 //
 // 3rd-order tensor constructor with NaNs
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3() :
+Tensor3<T, N>::Tensor3() :
 TensorBase<T, Store>::TensorBase()
 {
   set_dimension(N);
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(Index const dimension) :
+Tensor3<T, N>::Tensor3(Index const dimension) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
@@ -67,17 +67,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 // 3rd-order tensor constructor with a specified value
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(ComponentValue const value) :
+Tensor3<T, N>::Tensor3(Filler const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(Index const dimension, ComponentValue const value) :
+Tensor3<T, N>::Tensor3(Index const dimension, Filler const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -86,17 +86,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create 3rd-order tensor from array
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(T const * data_ptr) :
+Tensor3<T, N>::Tensor3(T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(Index const dimension, T const * data_ptr) :
+Tensor3<T, N>::Tensor3(Index const dimension, T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
@@ -105,9 +105,9 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 //
 // Copy constructor
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::Tensor3(Tensor3<T, N, ES> const & A) :
+Tensor3<T, N>::Tensor3(Tensor3<T, N> const & A) :
 TensorBase<T, Store>::TensorBase(A)
 {
   return;
@@ -116,9 +116,9 @@ TensorBase<T, Store>::TensorBase(A)
 //
 // 3rd-order tensor simple destructor
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>::~Tensor3()
+Tensor3<T, N>::~Tensor3()
 {
   return;
 }
@@ -126,21 +126,21 @@ Tensor3<T, N, ES>::~Tensor3()
 //
 // Get dimension
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Index
-Tensor3<T, N, ES>::get_dimension() const
+Tensor3<T, N>::get_dimension() const
 {
-  return TensorBase<T, Store>::get_dimension();
+  return TensorBase<T, Store>::get_dimension(ORDER);
 }
 
 //
 // Set dimension
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 void
-Tensor3<T, N, ES>::set_dimension(Index const dimension)
+Tensor3<T, N>::set_dimension(Index const dimension)
 {
   TensorBase<T, Store>::set_dimension(dimension, ORDER);
   return;
@@ -149,12 +149,12 @@ Tensor3<T, N, ES>::set_dimension(Index const dimension)
 //
 // 3rd-order tensor addition
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<typename Promote<S, T>::type, N,  ES>
-operator+(Tensor3<S, N, ES>const & A, Tensor3<T, N, ES> const & B)
+Tensor3<typename Promote<S, T>::type, N>
+operator+(Tensor3<S, N>const & A, Tensor3<T, N> const & B)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   C(A.get_dimension());
 
   add(A, B, C);
@@ -165,12 +165,12 @@ operator+(Tensor3<S, N, ES>const & A, Tensor3<T, N, ES> const & B)
 //
 // 3rd-order tensor subtraction
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<typename Promote<S, T>::type, N, ES>
-operator-(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
+Tensor3<typename Promote<S, T>::type, N>
+operator-(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   C(A.get_dimension());
 
   subtract(A, B, C);
@@ -181,12 +181,12 @@ operator-(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 //
 // 3rd-order tensor minus
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES>
-operator-(Tensor3<T, N, ES> const & A)
+Tensor3<T, N>
+operator-(Tensor3<T, N> const & A)
 {
-  Tensor3<T, N, ES>
+  Tensor3<T, N>
   B(A.get_dimension());
 
   minus(A, B);
@@ -197,10 +197,10 @@ operator-(Tensor3<T, N, ES> const & A)
 //
 // 3rd-order tensor equality
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
-operator==(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
+operator==(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 {
   return equal(A, B);
 }
@@ -208,10 +208,10 @@ operator==(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
 //
 // 3rd-order tensor inequality
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
-operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
+operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 {
   return not_equal(A, B);
 }
@@ -219,12 +219,12 @@ operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
 //
 // Scalar 3rd-order tensor product
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES>>::type
-operator*(S const & s, Tensor3<T, N, ES> const & A)
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N>>::type
+operator*(S const & s, Tensor3<T, N> const & A)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -235,12 +235,12 @@ operator*(S const & s, Tensor3<T, N, ES> const & A)
 //
 // 3rd-order tensor scalar product
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES>>::type
-operator*(Tensor3<T, N, ES> const & A, S const & s)
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N>>::type
+operator*(Tensor3<T, N> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -251,12 +251,12 @@ operator*(Tensor3<T, N, ES> const & A, S const & s)
 //
 // 3rd-order tensor scalar division
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<typename Promote<S, T>::type, N, ES>
-operator/(Tensor3<T, N, ES> const & A, S const & s)
+Tensor3<typename Promote<S, T>::type, N>
+operator/(Tensor3<T, N> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   divide(A, s, B);
@@ -267,12 +267,12 @@ operator/(Tensor3<T, N, ES> const & A, S const & s)
 //
 // 3rd-order scalar tensor division
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<typename Promote<S, T>::type, N, ES>
-operator/(S const & s, Tensor3<T, N, ES> const & A)
+Tensor3<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor3<T, N> const & A)
 {
-  Tensor3<typename Promote<S, T>::type, N, ES>
+  Tensor3<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   split(A, s, B);
@@ -283,12 +283,12 @@ operator/(S const & s, Tensor3<T, N, ES> const & A)
 //
 // Indexing for constant 3rd order tensor
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T const &
-Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k) const
+Tensor3<T, N>::operator()(Index const i, Index const j, Index const k) const
 {
-  Tensor3<T, N, ES> const &
+  Tensor3<T, N> const &
   self = (*this);
 
   Index const
@@ -300,12 +300,12 @@ Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k) const
 //
 // 3rd-order tensor indexing
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T &
-Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k)
+Tensor3<T, N>::operator()(Index const i, Index const j, Index const k)
 {
-  Tensor3<T, N, ES> &
+  Tensor3<T, N> &
   self = (*this);
 
   Index const
@@ -317,9 +317,9 @@ Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k)
 // Local utility functions
 namespace {
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-void ones_in_diagonal(Tensor3<T, N, ES> & A)
+void ones_in_diagonal(Tensor3<T, N> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -348,9 +348,9 @@ void ones_in_diagonal(Tensor3<T, N, ES> & A)
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-void fill_levi_civita(Tensor3<T, N, ES> & A)
+void fill_levi_civita(Tensor3<T, N> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -371,41 +371,41 @@ void fill_levi_civita(Tensor3<T, N, ES> & A)
 //
 // Levi-Civita symbol
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 levi_civita_3()
 {
-  Tensor3<T, N, ES>
-  A(N, ZEROS);
+  Tensor3<T, N>
+  A(N, Filler::ZEROS);
 
   fill_levi_civita(A);
 
   return A;
 }
 
-template<typename T, typename ES>
+template<typename T>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC, ES> const
+Tensor3<T, DYNAMIC> const
 levi_civita_3(Index const dimension)
 {
-  Tensor3<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  Tensor3<T, DYNAMIC>
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 
   return A;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 levi_civita_3(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor3<T, DYNAMIC, ES>
-  A(dimension, ZEROS);
+  Tensor3<T, DYNAMIC>
+  A(dimension, Filler::ZEROS);
 
   fill_levi_civita(A);
 
@@ -413,55 +413,55 @@ levi_civita_3(Index const dimension)
 }
 // Permutation symbol
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 permutation_3()
 {
-  return levi_civita_3<T, N, ES>();
+  return levi_civita_3<T, N>();
 }
 
-template<typename T, typename ES>
+template<typename T>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC, ES> const
+Tensor3<T, DYNAMIC> const
 permutation_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 permutation_3(Index const dimension)
 {
-  return levi_civita_3<T, N, ES>(dimension);
+  return levi_civita_3<T, N>(dimension);
 }
 
 //
 // Alternating symbol
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 alternator_3()
 {
-  return levi_civita_3<T, N, ES>();
+  return levi_civita_3<T, N>();
 }
 
-template<typename T, typename ES>
+template<typename T>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC, ES> const
+Tensor3<T, DYNAMIC> const
 alternator_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, N, ES> const
+Tensor3<T, N> const
 alternator_3(Index const dimension)
 {
-  return levi_civita_3<T, N, ES>(dimension);
+  return levi_civita_3<T, N>(dimension);
 }
 
 } // namespace minitensor

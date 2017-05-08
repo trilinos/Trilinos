@@ -94,7 +94,7 @@ int main(int narg, char *arg[]) {
   cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
-  ParameterList inputMeshList;
+  Teuchos::ParameterList inputMeshList;
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {

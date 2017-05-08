@@ -74,8 +74,6 @@ GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIn
                              const Teuchos::ParameterList& p)
   : indexers_(indexers)
 {
-  typedef std::vector< std::vector<std::string> > vvstring;
-
   GatherSolution_Input input;
   input.setParameterList(p);
 

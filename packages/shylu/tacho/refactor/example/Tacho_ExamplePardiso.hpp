@@ -4,7 +4,7 @@
 #ifdef HAVE_SHYLUTACHO_MKL
 using namespace std;
 
-#include "Tacho_Util.hpp"
+#include "TachoExp_Util.hpp"
 #include "mkl_pardiso.h"
 
 namespace Tacho {
@@ -50,7 +50,7 @@ namespace Tacho {
     //  6 - complex and sym
     // 11 - real and nonsym
     // 13 - complex and nonsym
-    template<typename ValueType, int Algo>
+    template<typename ValueType, int Algo = 2>
     void setMatrixType();
 
   public:
@@ -207,16 +207,16 @@ namespace Tacho {
   // pardiso does not like 2 4; for not we use 1 and 3 or 11 and 13.
 
   template<>
-  void Pardiso::setMatrixType<float, AlgoChol::ExternalPardiso>() { _mtype = 2; setParameter(28, 1); } // SPD
+  void Pardiso::setMatrixType<float, 2>() { _mtype = 2; setParameter(28, 1); } // SPD
 
   template<>
-  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 2; setParameter(28, 0); } // SPD
+  void Pardiso::setMatrixType<double, 2>() { _mtype = 2; setParameter(28, 0); } // SPD
   
   template<>
-  void Pardiso::setMatrixType<complex<float>, AlgoChol::ExternalPardiso>() { _mtype = 3; setParameter(28, 1); } // HPD
+  void Pardiso::setMatrixType<complex<float>, 2>() { _mtype = 3; setParameter(28, 1); } // HPD
 
   template<>
-  void Pardiso::setMatrixType<complex<double>, AlgoChol::ExternalPardiso>() { _mtype = 3; setParameter(28, 0); } // HPD
+  void Pardiso::setMatrixType<complex<double>, 2>() { _mtype = 3; setParameter(28, 0); } // HPD
 }
 
 #endif

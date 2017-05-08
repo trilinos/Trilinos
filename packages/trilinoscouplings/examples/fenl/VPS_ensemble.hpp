@@ -221,11 +221,11 @@ public:
           if (conflict)
           {
             // point has higher error
-            for (size_t ip = 0; ip < num_points; ip++)
+            for (size_t ip = 0; ip < num_points-1; ip++)
             {
               double dstsq = 0.0;
               for (size_t idim = 0; idim < _num_dim; idim++)
-                dstsq += (p_facet[idim] - yMC[ip][idim])*(p_facet[idim] - yMC[ip][idim]);
+                dstsq += (yMC[num_points-1][idim] - yMC[ip][idim])*(yMC[num_points-1][idim] - yMC[ip][idim]);
 
               if ((dstsq - (rsphere * rsphere)) > 1E-10)
                 continue;
@@ -277,6 +277,9 @@ public:
       }
       //populates yMD
       pick_MD_points(_numMC, yMC, g_estimMC, _ensemble_size, yMD);
+
+      delete [] gsMC;
+      delete [] g_estimMC;
 
 
       // ----------------------
@@ -408,10 +411,10 @@ public:
     // ---------------------
     // Clear metrics memory
     // ---------------------
-    delete _ei_sur;
-    delete _ef_max;
-    delete _di;
-    delete _Ri;
+    delete [] _ei_sur;
+    delete [] _ef_max;
+    delete [] _di;
+    delete [] _Ri;
   }
 
   int generate_MC_points(size_t num_dim, size_t Npoints, double** &x);

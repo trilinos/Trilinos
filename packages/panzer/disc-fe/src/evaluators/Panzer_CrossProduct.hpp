@@ -62,7 +62,7 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(CrossProduct)
   
   PHX::MDField<ScalarT> vec_a_cross_vec_b;
-  PHX::MDField<ScalarT> vec_a, vec_b;
+  PHX::MDField<const ScalarT> vec_a, vec_b;
 
   bool useScalarField;
 

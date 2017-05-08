@@ -85,9 +85,6 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 //
   enum GeminiSCIVersion {
     GEMINI_SCI_UNKNOWN = 0,
-    GEMINI_SCI_1 = 1,
-    GEMINI_SCI_2 = 2,
-    GEMINI_SCI_2_1 = 21,
     NEMO_1 = 101
   };
 

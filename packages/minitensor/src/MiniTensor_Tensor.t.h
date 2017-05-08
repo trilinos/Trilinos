@@ -47,9 +47,9 @@ namespace minitensor {
 //
 // tensor input
 //
-template<typename T, Index N, class  ES>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Tensor<T, N, ES> & A)
+operator>>(std::istream & is, Tensor<T, N> & A)
 {
 
   Index const
@@ -67,9 +67,9 @@ operator>>(std::istream & is, Tensor<T, N, ES> & A)
 //
 // tensor output
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Tensor<T, N, ES> const & A)
+operator<<(std::ostream & os, Tensor<T, N> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -78,7 +78,7 @@ operator<<(std::ostream & os, Tensor<T, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   for (Index i = 0; i < dimension; ++i) {
 

@@ -376,6 +376,170 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Superlu, NonContgGID, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+
+    using Tpetra::global_size_t;
+    using Teuchos::tuple;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Scalar = SCALAR;
+
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
+
+    size_t myRank = comm->getRank();
+    const global_size_t numProcs = comm->getSize();
+
+    // Unit test created for 2 processes
+    if ( numProcs == 2 ) {
+
+      const global_size_t numVectors = 1;
+      const global_size_t nrows = 6;
+
+      const GO numGlobalEntries = nrows;
+      const LO numLocalEntries = nrows / numProcs;
+
+      // Create non-contiguous Map
+      // This example: np 2 leads to GIDS: proc0 - 0,2,4  proc 1 - 1,3,5
+      Teuchos::Array<GO> elementList(numLocalEntries);
+      for ( LO k = 0; k < numLocalEntries; ++k ) {
+        elementList[k] = myRank + k*numProcs + 4*myRank;
+      }
+
+      typedef Tpetra::Map<LO,GO>  map_type;
+      RCP< const map_type > map = rcp( new map_type(numGlobalEntries, elementList, 0, comm) );
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && map->isContiguous (),
+          std::logic_error,
+          "SuperLU NonContigGID Test: The non-contiguous map claims to be contiguous.");
+
+      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
+      RCP<MAT> A = rcp( new MAT(map,0) );
+      A->setObjectLabel("A");
+
+      /*
+       * We will solve a system with a known solution, for which we will be using
+       * the following matrix:
+       *
+       *  GID  0   2   4   5   7   9
+       * [ 0 [ 7,  0, -3,  0, -1,  0 ]
+       *   2 [ 2,  8,  0,  0,  0,  0 ]
+       *   4 [ 0,  0,  1,  0,  0,  0 ]
+       *   5 [-3,  0,  0,  5,  0,  0 ]
+       *   7 [ 0, -1,  0,  0,  4,  0 ]
+       *   9 [ 0,  0,  0, -2,  0,  6 ] ]
+       *
+       */
+
+      // Construct matrix
+      if( myRank == 0 ){
+        A->insertGlobalValues(0,tuple<GO>(0,4,7),tuple<Scalar>(7,-3,-1));
+        A->insertGlobalValues(2,tuple<GO>(0,2),tuple<Scalar>(2,8));
+        A->insertGlobalValues(4,tuple<GO>(4),tuple<Scalar>(1));
+        A->insertGlobalValues(5,tuple<GO>(0,5),tuple<Scalar>(-3,5));
+        A->insertGlobalValues(7,tuple<GO>(2,7),tuple<Scalar>(-1,4));
+        A->insertGlobalValues(9,tuple<GO>(5,9),tuple<Scalar>(-2,6));
+      }
+
+      A->fillComplete();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && A->getMap()->isContiguous (),
+          std::logic_error,
+          "SuperLU NonContigGID Test: The non-contiguous map of A claims to be contiguous.");
+
+
+      // Create X with random values
+      RCP<MV> X = rcp(new MV(map,numVectors));
+      X->setObjectLabel("X");
+      X->randomize();
+
+      /* Create B, use same GIDs
+       *
+       * Use RHS:
+       *
+       *  [[-7]
+       *   [18]
+       *   [ 3]
+       *   [17]
+       *   [18]
+       *   [28]]
+       */
+      RCP<MV> B = rcp(new MV(map,numVectors));
+      B->setObjectLabel("B");
+      GO rowids[nrows] = {0,2,4,5,7,9};
+      Scalar data[nrows] = {-7,18,3,17,18,28};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( B->getMap()->isNodeGlobalElement(rowids[i]) ){
+          B->replaceGlobalValue(rowids[i],0,data[i]);
+        }
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          comm->getSize () > 1 && X->getMap()->isContiguous () && B->getMap()->isContiguous (),
+          std::logic_error,
+          "SuperLU NonContigGID Test: The non-contiguous maps of X or B claims to be contiguous.");
+
+
+      // Create solver interface with Amesos2 factory method
+      RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("SuperLU", A, X, B);
+
+      // Create a Teuchos::ParameterList to hold solver parameters
+      Teuchos::ParameterList amesos2_params("Amesos2");
+      amesos2_params.sublist("SuperLU").set("IsContiguous", false, "Are GIDs Contiguous");
+
+      solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+
+      solver->symbolicFactorization().numericFactorization().solve();
+
+
+      /* Check the solution
+       *
+       * Should be:
+       *
+       *  [[1]
+       *   [2]
+       *   [3]
+       *   [4]
+       *   [5]
+       *   [6]]
+       */
+      // Solution Vector for later comparison
+      RCP<MV> Xhat = rcp(new MV(map,numVectors));
+      Xhat->setObjectLabel("Xhat");
+      GO rowids_soln[nrows] = {0,2,4,5,7,9};
+      Scalar data_soln[nrows] = {1,2,3,4,5,6};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( Xhat->getMap()->isNodeGlobalElement(rowids_soln[i]) ){
+          Xhat->replaceGlobalValue(rowids_soln[i],0,data_soln[i]);
+        }
+      }
+
+      A->describe(out, Teuchos::VERB_EXTREME);
+      B->describe(out, Teuchos::VERB_EXTREME);
+      Xhat->describe(out, Teuchos::VERB_EXTREME);
+      X->describe(out, Teuchos::VERB_EXTREME);
+
+      //A->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+      // Check result of solve
+      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
+      Xhat->norm2(xhatnorms());
+      X->norm2(xnorms());
+      TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+    } // end if numProcs = 2
+  }
+
+
   /*
    * Unit Tests for Complex data types
    */
@@ -601,7 +765,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, Solve, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, SolveTrans, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, SolveTrans, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, NonContgGID, SCALAR, LO, GO )
 
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \

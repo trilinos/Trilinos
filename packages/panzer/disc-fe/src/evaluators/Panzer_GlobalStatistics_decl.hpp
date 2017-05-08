@@ -65,7 +65,7 @@ PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
 
   PHX::MDField<ScalarT,Cell,IP> ones;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_values;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_values;
 
   ScalarT total_volume;
   std::vector<ScalarT> averages;

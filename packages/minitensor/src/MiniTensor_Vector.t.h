@@ -50,9 +50,9 @@ namespace minitensor {
 // \param is input stream
 // \return is input stream
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Vector<T, N, ES> & u)
+operator>>(std::istream & is, Vector<T, N> & u)
 {
   Index const
   dimension = u.get_dimension();
@@ -70,9 +70,9 @@ operator>>(std::istream & is, Vector<T, N, ES> & u)
 // \param os output stream
 // \return os output stream
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Vector<T, N, ES> const & u)
+operator<<(std::ostream & os, Vector<T, N> const & u)
 {
   Index const
   dimension = u.get_dimension();
@@ -81,7 +81,7 @@ operator<<(std::ostream & os, Vector<T, N, ES> const & u)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   os << std::setw(24) << u(0);
 

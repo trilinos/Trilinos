@@ -112,7 +112,7 @@ public:
   void
   set_failure_message(char const * const msg = nullptr);
 
-  char const * const
+  char const *
   get_failure_message();
 
 protected:
@@ -441,7 +441,7 @@ struct StepBase
   }
 
   virtual
-  char const * const
+  char const *
   name() = 0;
 
   virtual
@@ -493,7 +493,7 @@ struct NewtonStep final : public StepBase<FN, T, N>
   NAME{"Newton"};
 
   virtual
-  char const * const
+  char const *
   name()
   {
     return NAME;
@@ -523,7 +523,7 @@ struct NewtonWithLineSearchStep final : public StepBase<FN, T, N>
   NAME{"Newton with Line Search"};
 
   virtual
-  char const * const
+  char const *
   name()
   {
     return NAME;
@@ -552,7 +552,7 @@ struct TrustRegionStep final : public StepBase<FN, T, N>
   NAME{"Trust Region"};
 
   virtual
-  char const * const
+  char const *
   name()
   {
     return NAME;
@@ -594,7 +594,7 @@ struct ConjugateGradientStep final : public StepBase<FN, T, N>
   NAME{"Preconditioned Conjugate Gradient"};
 
   virtual
-  char const * const
+  char const *
   name()
   {
     return NAME;
@@ -639,7 +639,7 @@ struct LineSearchRegularizedStep final : public StepBase<FN, T, N>
   NAME{"Line Search Regularized"};
 
   virtual
-  char const * const
+  char const *
   name()
   {
     return NAME;

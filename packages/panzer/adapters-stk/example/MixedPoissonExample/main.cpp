@@ -95,6 +95,8 @@
 
 #include "AztecOO.h"
 
+#include <sstream>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -424,7 +426,15 @@ int main(int argc,char * argv[])
         stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
   
         // write to exodus
-        mesh->writeToExodus("output.exo");
+        // ---------------
+        // Due to multiple instances of this test being run at the
+        // same time (one for each order), we need to differentiate
+        // output to prevent race conditions on output file. Multiple
+        // runs for the same order are ok as they are staged one after
+        // another in the ADD_ADVANCED_TEST cmake macro.
+        std::ostringstream filename;
+        filename << "output_" << hgrad_basis_order << "_" << hdiv_basis_order << ".exo";
+        mesh->writeToExodus(filename.str());
      }
   
      // compute error norm

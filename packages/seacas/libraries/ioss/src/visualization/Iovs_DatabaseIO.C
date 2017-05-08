@@ -46,6 +46,7 @@ const char* CATALYST_FILE_SUFFIX = ".dummy.pv.catalyst.e";
 const char* CATALYST_OUTPUT_DIRECTORY = "CatalystOutput";
 
 namespace { // Internal helper functions
+  enum class entity_type {NODAL, ELEM_BLOCK, NODE_SET, SIDE_SET};
   bool file_exists(const std::string &filepath)
   {
     struct stat buffer;
@@ -53,10 +54,8 @@ namespace { // Internal helper functions
   }
 
   int64_t get_id(const Ioss::GroupingEntity *entity,
-                  ex_entity_type type,
                Iovs::EntityIdSet *idset);
   bool set_id(const Ioss::GroupingEntity *entity,
-              ex_entity_type type,
               Iovs::EntityIdSet *idset);
   int64_t extract_id(const std::string &name_id);
 
@@ -256,6 +255,9 @@ namespace Iovs {
 
       typedef ParaViewCatalystIossAdapterBase * (*PvCatSrrAdapterMakerFuncType)();
 
+#ifdef __GNUC__
+__extension__
+#endif
       PvCatSrrAdapterMakerFuncType mkr =
         reinterpret_cast<PvCatSrrAdapterMakerFuncType>(
           dlsym(globalCatalystIossDlHandle,
@@ -311,7 +313,7 @@ namespace Iovs {
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(unsigned int i = 0;i<ebc.size();i++)
         {
-        element_block_id_list.push_back(get_id(ebc[i], EX_ELEM_BLOCK, &ids_));
+	  element_block_id_list.push_back(get_id(ebc[i], &ids_));
         }
       if(this->pvcsa)
         this->pvcsa->InitializeElementBlocks(element_block_id_list,
@@ -434,7 +436,7 @@ namespace Iovs {
   component_names.push_back("GlobalElementId");
   for (I=element_blocks.begin(); I != element_blocks.end(); ++I)
     {
-    int bid = get_id((*I), EX_ELEM_BLOCK, &ids_);
+    int bid = get_id((*I), &ids_);
     int64_t eb_offset = (*I)->get_offset();
     if(this->pvcsa)
       this->pvcsa->CreateElementVariable(component_names,
@@ -603,7 +605,7 @@ namespace Iovs {
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
-          // write_global_field(EX_NODAL, field, nb, data);
+          // write_global_field(entity_type::NODAL, field, nb, data);
         }
       }
       return num_to_get;
@@ -635,7 +637,7 @@ namespace Iovs {
               nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
               Ioss::Field::BasicType ioss_type = field.get_type();
               int64_t eb_offset = eb->get_offset();
-              int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
+              int id = get_id(eb, &ids_);
 
               if (ioss_type == Ioss::Field::INTEGER) {
                 if(this->pvcsa)
@@ -683,7 +685,7 @@ namespace Iovs {
           std::vector<double> temp(num_to_get);
           ssize_t eb_offset = eb->get_offset();
           int comp_count = var_type->component_count();
-          int bid = get_id(eb, EX_ELEM_BLOCK, &ids_);
+          int bid = get_id(eb, &ids_);
 
           int re_im = 1;
           if (ioss_type == Ioss::Field::COMPLEX)
@@ -724,7 +726,7 @@ namespace Iovs {
             }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
-          // write_global_field(EX_ELEM_BLOCK, field, eb, data);
+          // write_global_field(entity_type::ELEM_BLOCK, field, eb, data);
         }
       }
       return num_to_get;
@@ -751,7 +753,7 @@ namespace Iovs {
        Ioss::NodeSetContainer nodesets = region->get_nodesets();
        Ioss::NodeSetContainer::const_iterator I;
        for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-         set_id(*I, EX_NODE_SET, &ids_);
+         set_id(*I, &ids_);
        }
     }
 
@@ -761,7 +763,7 @@ namespace Iovs {
       Ioss::SideSetContainer::const_iterator I;
 
       for (I=ssets.begin(); I != ssets.end(); ++I) {
-        set_id(*I, EX_SIDE_SET, &ids_);
+        set_id(*I, &ids_);
       }
     }
 
@@ -771,7 +773,7 @@ namespace Iovs {
         Ioss::ElementBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
         for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-          set_id(*I, EX_ELEM_BLOCK, &ids_);
+          set_id(*I, &ids_);
         }
 
       elementBlockCount = 0;
@@ -859,7 +861,6 @@ namespace Iovs {
   }
 
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
-                  ex_entity_type map_type,
                   Ioss::State db_state,
                   Ioss::Map &entity_map,
                   void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
@@ -954,7 +955,7 @@ namespace Iovs {
         elemMap.map[0] = -1;
       }
       //std::cerr << "DatabaseIO::handle_element_ids elementMap size: " << elementMap.size() << "\n";
-      return handle_block_ids(eb, EX_ELEM_MAP, dbState, elemMap,
+      return handle_block_ids(eb, dbState, elemMap,
                               ids, int_byte_size_api(), num_to_get, /*get_file_pointer(),*/ myProcessor);
   }
 
@@ -1017,7 +1018,7 @@ namespace Iovs {
         field.get_name() == "ids_raw") )
       {
 
-      int id = get_id(ns, EX_NODE_SET, &this->ids_);
+      int id = get_id(ns, &this->ids_);
 
       if(this->createNodeSets == 0)
         {
@@ -1078,7 +1079,7 @@ namespace Iovs {
       {
       size_t side_offset = Ioss::Utils::get_side_offset(eb);
 
-      int id = get_id(eb, EX_SIDE_SET, &this->ids_);
+      int id = get_id(eb, &this->ids_);
 
       size_t index = 0;
 
@@ -1219,7 +1220,7 @@ namespace Iovs {
 
 namespace {
 
-  int64_t get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Iovs::EntityIdSet *idset)
+  int64_t get_id(const Ioss::GroupingEntity *entity, Iovs::EntityIdSet *idset)
    {
      // Sierra uses names to refer to grouping entities; however,
      // exodusII requires integer ids.  When reading an exodusII file,
@@ -1266,18 +1267,19 @@ namespace {
      // At this point, we either have an id equal to '1' or we have an id
      // extracted from the entities name. Increment it until it is
      // unique...
-     while (idset->find(std::make_pair(int(type), id)) != idset->end()) {
+     int type = static_cast<int>(entity->type());
+     while (idset->find(std::make_pair(type, id)) != idset->end()) {
        ++id;
      }
 
      // 'id' is a unique id for this entity type...
-     idset->insert(std::make_pair((int)type,id));
+     idset->insert(std::make_pair(type,id));
      Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity*>(entity);
      new_entity->property_add(Ioss::Property(id_prop, id));
      return id;
    }
 
-  bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Iovs::EntityIdSet *idset)
+  bool set_id(const Ioss::GroupingEntity *entity, Iovs::EntityIdSet *idset)
   {
     // See description of 'get_id' function.  This function just primes
     // the idset with existing ids so that when we start generating ids,
@@ -1292,7 +1294,8 @@ namespace {
       int64_t id = entity->get_property(id_prop).get_int();
 
       // See whether it already exists...
-      succeed = idset->insert(std::make_pair((int)type,id)).second;
+      int type = static_cast<int>(entity->type());
+      succeed = idset->insert(std::make_pair(type,id)).second;
       if (!succeed) {
         // Need to remove the property so it doesn't cause problems
         // later...

@@ -66,6 +66,13 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ddirectoryTest
+  SOURCES ddirectoryTest.cpp
+  ARGS
+  COMM mpi serial
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   teuchosCommTest
   SOURCES teuchosCommTest.cpp
   ARGS

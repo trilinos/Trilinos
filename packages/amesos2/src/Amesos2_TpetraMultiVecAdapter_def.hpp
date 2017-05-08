@@ -81,7 +81,8 @@ namespace Amesos2 {
                                    Teuchos::Ptr<
                                      const Tpetra::Map<LocalOrdinal,
                                                        GlobalOrdinal,
-                                                       Node> > distribution_map ) const
+                                                       Node> > distribution_map,
+                                                       EDistribution distribution) const
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -143,8 +144,53 @@ namespace Amesos2 {
     // Redistribute the input (multi)vector.
     redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
 
+    if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+    // Do this if GIDs contiguous - existing functionality
     // Copy the imported (multi)vector's data into the ArrayView.
-    redist_mv.get1dCopy (av, lda);
+      redist_mv.get1dCopy (av, lda);
+    }
+    else {
+    // Do this if GIDs not contiguous...
+      // sync is needed for example if mv was updated on device, but will be passed through Amesos2 to solver running on host
+      typedef typename multivec_t::dual_view_type dual_view_type;
+      typedef typename dual_view_type::host_mirror_space host_execution_space;
+      redist_mv.template sync < host_execution_space > ();
+
+      auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+      if ( redist_mv.isConstantStride() ) {
+        for ( size_t j = 0; j < num_vecs; ++j) {
+          auto av_j = av(lda*j, lda);
+          for ( size_t i = 0; i < lda; ++i ) {
+            av_j[i] = contig_local_view_2d(i,j); //lda may not be correct if redist_mv is not constant stride...
+          }
+        }
+      }
+      else {
+        // ... lda should come from Teuchos::Array* allocation,
+        // not the MultiVector, since the MultiVector does NOT
+        // have constant stride in this case.
+        // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+        const size_t lclNumRows = redist_mv.getLocalLength();
+        for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+          auto av_j = av(lda*j, lclNumRows);
+          auto X_j = redist_mv.getVector(j);
+          auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+          auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+          for ( size_t i = 0; i < lclNumRows; ++i ) {
+            av_j[i] = X_lcl_j_1d(i);
+          }
+        }
+      }
+
+      auto global_contiguous_size = distMap->getGlobalNumElements(); //maybe use getGlobalLength() from the mv
+      auto local_contiguous_size = (distMap->getComm()->getRank() == 0) ? global_contiguous_size : 0;
+      RCP<const map_type> contigMap = rcp( new map_type(global_contiguous_size, local_contiguous_size, 0, distMap->getComm() ));
+
+      typedef Tpetra::Export<local_ordinal_t, global_ordinal_t, node_t> contiguous_export_t;
+      RCP<contiguous_export_t> contig_exporter = rcp( new contiguous_export_t(redist_mv.getMap(), contigMap) );
+      multivec_t contig_mv( contigMap, num_vecs);
+      contig_mv.doExport(redist_mv, *contig_exporter, Tpetra::INSERT);
+    }
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
@@ -225,7 +271,8 @@ namespace Amesos2 {
                                    Teuchos::Ptr<
                                      const Tpetra::Map<LocalOrdinal,
                                                        GlobalOrdinal,
-                                                       Node> > source_map)
+                                                       Node> > source_map,
+                                                       EDistribution distribution )
   {
     using Teuchos::RCP;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -265,10 +312,51 @@ namespace Amesos2 {
       srcMap = importer_->getSourceMap ();
     }
 
-    const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
+    multivec_t redist_mv (srcMap, num_vecs);
 
-    // Redistribute the output (multi)vector.
-    mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
+    if ( distribution != CONTIGUOUS_AND_ROOTED ) {
+      // Do this if GIDs contiguous - existing functionality
+      // Redistribute the output (multi)vector.
+      const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
+      mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
+    }
+    else {
+      typedef typename multivec_t::dual_view_type dual_view_type;
+      typedef typename dual_view_type::host_mirror_space host_execution_space;
+      redist_mv.template modify< host_execution_space > ();
+
+      if ( redist_mv.isConstantStride() ) {
+        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+        for ( size_t j = 0; j < num_vecs; ++j) {
+          auto av_j = new_data(lda*j, lda);
+          for ( size_t i = 0; i < lda; ++i ) {
+            contig_local_view_2d(i,j) = av_j[i];
+          }
+        }
+      }
+      else {
+        // ... lda should come from Teuchos::Array* allocation,
+        // not the MultiVector, since the MultiVector does NOT
+        // have constant stride in this case.
+        // TODO lda comes from X->getGlobalLength() in solve_impl - should this be changed???
+        const size_t lclNumRows = redist_mv.getLocalLength();
+        for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
+          auto av_j = new_data(lda*j, lclNumRows);
+          auto X_j = redist_mv.getVector(j);
+          auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+          auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
+          for ( size_t i = 0; i < lclNumRows; ++i ) {
+            X_lcl_j_1d(i) = av_j[i];
+          }
+        }
+      }
+
+      typedef typename multivec_t::node_type::memory_space memory_space;
+      redist_mv.template sync <memory_space> ();
+
+      mv_->doImport (redist_mv, *importer_, Tpetra::REPLACE);
+    }
+
   }
 
 

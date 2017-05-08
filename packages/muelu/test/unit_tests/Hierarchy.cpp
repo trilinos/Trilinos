@@ -293,7 +293,7 @@ namespace MueLuTests {
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
     RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
     RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-    ParameterList Aclist = *(Acfact->GetValidParameterList());
+    Teuchos::ParameterList Aclist = *(Acfact->GetValidParameterList());
     Aclist.set("transpose: use implicit", true);
     Acfact->SetParameterList(Aclist);
 
@@ -880,7 +880,7 @@ namespace MueLuTests {
 
     // Build block SGS smoother
     std::string ifpack2Type;
-    ParameterList ifpack2List;
+    Teuchos::ParameterList ifpack2List;
     ifpack2Type = "RBILUK";
     out << ifpack2Type << std::endl;
     RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type) );

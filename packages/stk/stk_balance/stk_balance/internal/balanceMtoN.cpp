@@ -15,9 +15,10 @@ namespace stk {
 namespace balance {
 namespace internal {
 
-void rebalanceMtoN(stk::mesh::BulkData& bulkData, int num_target_procs, const std::string& outputFilename, int numSteps, double timeStep)
+void rebalanceMtoN(stk::mesh::BulkData& bulkData, stk::mesh::Field<double> &targetDecompField, int num_target_procs, const std::string& outputFilename, int numSteps, double timeStep)
 {
-    MtoNRebalancer m2nRebalancer(bulkData, num_target_procs);
+    stk::balance::GraphCreationSettings graphSettings;
+    MtoNRebalancer m2nRebalancer(bulkData, targetDecompField, graphSettings, num_target_procs);
 
     std::vector<unsigned> targetSubdomainsToProc = stk::balance::internal::assign_target_subdomains_roundrobin_to_procs(bulkData.parallel_size(), num_target_procs);
 

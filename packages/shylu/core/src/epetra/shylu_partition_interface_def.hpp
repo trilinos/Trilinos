@@ -120,7 +120,7 @@ template <class Matrix, class Vector>
 int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 {
  
-  ParameterList subList = pList->sublist("Zoltan2 Input");
+  Teuchos::ParameterList subList = pList->sublist("Zoltan2 Input");
   Teuchos::RCP<Matrix> rA(A, false);
   zadapter = new Zoltan2::XpetraCrsMatrixAdapter<Matrix, Vector>(rA);
   zproblem = new Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter <Matrix, Vector> >(zadapter, &subList);

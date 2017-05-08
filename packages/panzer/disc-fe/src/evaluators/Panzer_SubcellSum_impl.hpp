@@ -65,7 +65,7 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
   if(p.isType<bool>("Evaluate On Closure"))
     evaluateOnClosure_ = p.get<bool>("Evaluate On Closure");
 
-  inField = PHX::MDField<ScalarT,Cell,BASIS>( inName, basis->functional);
+  inField = PHX::MDField<const ScalarT,Cell,BASIS>( inName, basis->functional);
   outField = PHX::MDField<ScalarT,Cell>( outName, basis->cell_data);
 
   this->addDependentField(inField);

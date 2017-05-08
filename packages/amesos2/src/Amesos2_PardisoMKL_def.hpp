@@ -81,6 +81,7 @@ namespace Amesos2 {
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
+    , is_contiguous_(true)
   {
     // set the default matrix type
     set_pardiso_mkl_matrix_type();
@@ -222,11 +223,21 @@ namespace Amesos2 {
       Teuchos::TimeMonitor mvConvTimer( this->timers_.vecConvTime_ );
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-      Util::get_1d_copy_helper<
-        MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_get(B, bvals_(),
-                                    as<size_t>(ld_rhs),
-                                    ROOTED);
+
+      if ( is_contiguous_ == true ) {
+        Util::get_1d_copy_helper<
+          MultiVecAdapter<Vector>,
+          solver_scalar_type>::do_get(B, bvals_(),
+              as<size_t>(ld_rhs),
+              ROOTED, this->rowIndexBase_);
+      }
+      else {
+        Util::get_1d_copy_helper<
+          MultiVecAdapter<Vector>,
+          solver_scalar_type>::do_get(B, bvals_(),
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+      }
     }
 
     if( this->root_ ){
@@ -261,11 +272,20 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
+    if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,
         solver_scalar_type>::do_put(X, xvals_(),
                                     as<size_t>(ld_rhs),
                                     ROOTED);
+    }
+    else {
+      Util::put_1d_data_helper<
+      MultiVecAdapter<Vector>,
+        solver_scalar_type>::do_put(X, xvals_(),
+                                    as<size_t>(ld_rhs),
+                                    CONTIGUOUS_AND_ROOTED);
+    }
   }
 
     return( 0 );
@@ -357,6 +377,10 @@ namespace Amesos2 {
       parameterList->getEntry("IPARM(60)").setValidator(ooc_validator);
       iparm_[59] = getIntegralValue<int>(*parameterList, "IPARM(60)");
     } 
+    
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
   }
 
 
@@ -472,6 +496,8 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
     valid_params = pl;
   }
 
@@ -503,12 +529,22 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-    Util::get_crs_helper<
-    MatrixAdapter<Matrix>,
-      solver_scalar_type,
-      int_t,int_t>::do_get(this->matrixA_.ptr(),
-                           nzvals_(), colind_(), rowptr_(),
-                           nnz_ret, ROOTED, SORTED_INDICES);
+    if ( is_contiguous_ == true ) {
+      Util::get_crs_helper<
+        MatrixAdapter<Matrix>,
+        solver_scalar_type,
+        int_t,int_t>::do_get(this->matrixA_.ptr(),
+            nzvals_(), colind_(), rowptr_(),
+            nnz_ret, ROOTED, SORTED_INDICES, this->rowIndexBase_);
+    }
+    else {
+      Util::get_crs_helper<
+        MatrixAdapter<Matrix>,
+        solver_scalar_type,
+        int_t,int_t>::do_get(this->matrixA_.ptr(),
+            nzvals_(), colind_(), rowptr_(),
+            nnz_ret, CONTIGUOUS_AND_ROOTED, SORTED_INDICES, this->rowIndexBase_);
+    }
 }
 
   return( true );

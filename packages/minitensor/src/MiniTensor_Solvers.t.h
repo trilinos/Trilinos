@@ -197,7 +197,7 @@ set_failure_message(char const * const msg)
 //
 //
 template<typename FunctionDerived, typename S, Index M>
-char const * const
+char const *
 Function_Base<FunctionDerived, S, M>::
 get_failure_message()
 {
@@ -363,7 +363,7 @@ printReport(std::ostream & os)
   os << "Max Iters    : " << max_num_iter << '\n';
   os << "Iters Taken  : " << num_iter << '\n';
 
-  os << std::scientific << std::setprecision(16);
+  os << std::scientific << std::setprecision(17);
 
   os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
   os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
@@ -533,7 +533,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     K = Hessian + lambda * I;
 
     Tensor<T, N>
-    L(ZEROS);
+    L(Filler::ZEROS);
 
     bool
     is_posdef{false};
@@ -604,7 +604,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     K = HTH + lambda * I;
 
     Tensor<T, N>
-    L(ZEROS);
+    L(Filler::ZEROS);
 
     bool
     is_posdef{false};
@@ -656,7 +656,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
   }
 
-  if (normg_H == 0.0) return Vector<T, N>(gradient.get_dimension(), ZEROS);
+  if (normg_H == 0.0) return Vector<T, N>(gradient.get_dimension(), Filler::ZEROS);
 
   T const
   normg_squared = dot(gradient, gradient);
@@ -709,7 +709,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
   }
 
-  if (normHTr_HTH == 0.0) return Vector<T, N>(gradient.get_dimension(), ZEROS);
+  if (normHTr_HTH == 0.0) return Vector<T, N>(gradient.get_dimension(), Filler::ZEROS);
 
   T const
   normHTr_cubed = norm(HTr) * normHTr_squared;
@@ -746,7 +746,7 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
   dimension = soln.get_dimension();
 
   Vector<T, N>
-  step(dimension, ZEROS);
+  step(dimension, Filler::ZEROS);
 
   T const
   projection_direction = dot(direction, direction);
@@ -803,7 +803,7 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
   step = direction;
 
   Vector<T, N>
-  step_line_search(dimension, ZEROS);
+  step_line_search(dimension, Filler::ZEROS);
 
   Vector<T, N> const
   resid = fn.gradient(soln);
@@ -1019,7 +1019,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   }
 
   if (reduction <= min_reduction) {
-    step.fill(ZEROS);
+    step.fill(Filler::ZEROS);
   }
 
   return step;

@@ -168,7 +168,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       const std::string& dirName = dirList[k];
       std::string problemFile = dirName + "problem_" + typeid(GlobalOrdinal).name() + ".xml";
 
-      ParameterList galeriParameters;
+      Teuchos::ParameterList galeriParameters;
       Teuchos::updateParametersFromXmlFileAndBroadcast(problemFile, Teuchos::Ptr<Teuchos::ParameterList>(&galeriParameters), *comm);
       if (!galeriParameters.isParameter("mz"))
         galeriParameters.set<GlobalOrdinal>("mz", -1);
@@ -261,12 +261,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         std::string xmlFile = dirName + fileList[i];
 
-        ParameterList paramList;
+        Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
         std::string    solveType = paramList.get<std::string>   ("solver", "standalone");
         double         goldRate  = paramList.get<double>        ("convergence rate");
-        ParameterList& mueluList = paramList.sublist            ("MueLu");
+        Teuchos::ParameterList& mueluList = paramList.sublist            ("MueLu");
 
         TEUCHOS_TEST_FOR_EXCEPTION(solveType != "standalone" && solveType != "cg" && solveType != "gmres", MueLu::Exceptions::RuntimeError,
                                    "Unknown solver type \"" << solveType << "\"");
@@ -374,7 +374,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           }
 
           // Belos parameter list
-          ParameterList belosList;
+          Teuchos::ParameterList belosList;
           belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
           belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
 #if 1

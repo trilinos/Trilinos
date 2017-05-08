@@ -72,6 +72,7 @@ Superlu<Matrix,Vector>::Superlu(
   , nzvals_()                   // initialize to empty arrays
   , rowind_()
   , colptr_()
+  , is_contiguous_(true)
 {
   // ilu_set_default_options is called later in set parameter list if required.
   // This is not the ideal way, but the other option to always call
@@ -379,10 +380,18 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                             slu_type>::do_get(B, bValues(),
-                                               as<size_t>(ld_rhs),
-                                               ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        slu_type>::do_get(B, bValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
   int ierr = 0; // returned error code
@@ -460,10 +469,18 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED, this->rowIndexBase_);
+    if ( is_contiguous_ == true ) {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,slu_type>::do_put(X, xValues(),
+            as<size_t>(ld_rhs),
+            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
   }
 
 
@@ -561,6 +578,9 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 
   data_.options.ILU_FillTol = parameterList->get<double>("ILU_FillTol", 0.01);
 
+  if( parameterList->isParameter("IsContiguous") ){
+    is_contiguous_ = parameterList->get<bool>("IsContiguous");
+  }
 }
 
 
@@ -681,6 +701,8 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("ILU_Flag", false, "ILU flag: if true, run ILU routines");
 
+    pl->set("IsContiguous", true, "Whether GIDs contiguous");
+
     valid_params = pl;
   }
 
@@ -723,12 +745,23 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
-    Util::get_ccs_helper<
-    MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                    nzvals_(), rowind_(),
-                                                    colptr_(), nnz_ret, ROOTED,
-                                                    ARBITRARY,
-                                                    this->rowIndexBase_);
+
+    if ( is_contiguous_ == true ) {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
+    else {
+      Util::get_ccs_helper<
+        MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+            nzvals_(), rowind_(),
+            colptr_(), nnz_ret, CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+    }
   }
 
   // Get the SLU data type for this type of matrix

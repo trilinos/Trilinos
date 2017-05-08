@@ -48,18 +48,18 @@ namespace minitensor
 //
 // 4th-order tensor constructor with NaNs
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4() :
+Tensor4<T, N>::Tensor4() :
 TensorBase<T, Store>::TensorBase()
 {
   set_dimension(N);
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Index const dimension) :
+Tensor4<T, N>::Tensor4(Index const dimension) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
@@ -68,17 +68,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 // 4th-order tensor constructor with a specified value
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(ComponentValue const value) :
+Tensor4<T, N>::Tensor4(Filler const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Index const dimension, ComponentValue const value) :
+Tensor4<T, N>::Tensor4(Index const dimension, Filler const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -87,17 +87,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create 4th-order tensor from array
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(T const * data_ptr) :
+Tensor4<T, N>::Tensor4(T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Index const dimension, T const * data_ptr) :
+Tensor4<T, N>::Tensor4(Index const dimension, T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
@@ -106,9 +106,9 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 //
 // Copy constructor
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Tensor4<T, N, ES> const & A) :
+Tensor4<T, N>::Tensor4(Tensor4<T, N> const & A) :
 TensorBase<T, Store>::TensorBase(A)
 {
   return;
@@ -156,9 +156,9 @@ second_to_fourth_dimension(Index const dimension_2nd)
 
 } //anonymous namespace
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::Tensor4(Tensor<T, dimension_square<N>::value, ES> const & A)
+Tensor4<T, N>::Tensor4(Tensor<T, dimension_square<N>::value> const & A)
 {
   Index const
   dimension_2nd = A.get_dimension();
@@ -166,7 +166,7 @@ Tensor4<T, N, ES>::Tensor4(Tensor<T, dimension_square<N>::value, ES> const & A)
   Index const
   dimension_4th = second_to_fourth_dimension(dimension_2nd);
 
-  Tensor4<T, N, ES> &
+  Tensor4<T, N> &
   self = (*this);
 
   self.set_dimension(dimension_4th);
@@ -183,9 +183,9 @@ Tensor4<T, N, ES>::Tensor4(Tensor<T, dimension_square<N>::value, ES> const & A)
 //
 // 4th-order tensor simple destructor
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>::~Tensor4()
+Tensor4<T, N>::~Tensor4()
 {
   return;
 }
@@ -193,21 +193,21 @@ Tensor4<T, N, ES>::~Tensor4()
 //
 // Get dimension
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Index
-Tensor4<T, N, ES>::get_dimension() const
+Tensor4<T, N>::get_dimension() const
 {
-  return TensorBase<T, Store>::get_dimension();
+  return TensorBase<T, Store>::get_dimension(ORDER);
 }
 
 //
 // Set dimension
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 void
-Tensor4<T, N, ES>::set_dimension(Index const dimension)
+Tensor4<T, N>::set_dimension(Index const dimension)
 {
   TensorBase<T, Store>::set_dimension(dimension, ORDER);
   return;
@@ -216,12 +216,12 @@ Tensor4<T, N, ES>::set_dimension(Index const dimension)
 //
 // 4th-order tensor addition
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<typename Promote<S, T>::type, N, ES>
-operator+(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
+Tensor4<typename Promote<S, T>::type, N>
+operator+(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   C(A.get_dimension());
 
   add(A, B, C);
@@ -232,12 +232,12 @@ operator+(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
 //
 // 4th-order tensor subtraction
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<typename Promote<S, T>::type, N, ES>
-operator-(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
+Tensor4<typename Promote<S, T>::type, N>
+operator-(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   C(A.get_dimension());
 
   subtract(A, B, C);
@@ -248,12 +248,12 @@ operator-(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
 //
 // 4th-order tensor minus
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>
-operator-(Tensor4<T, N, ES> const & A)
+Tensor4<T, N>
+operator-(Tensor4<T, N> const & A)
 {
-  Tensor4<T, N, ES>
+  Tensor4<T, N>
   B(A.get_dimension());
 
   minus(A, B);
@@ -264,10 +264,10 @@ operator-(Tensor4<T, N, ES> const & A)
 //
 // 4th-order equality
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
-operator==(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
+operator==(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
 {
   return equal(A, B);
 }
@@ -275,10 +275,10 @@ operator==(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
 //
 // 4th-order inequality
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
-operator!=(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
+operator!=(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
 {
   return not_equal(A, B);
 }
@@ -286,12 +286,12 @@ operator!=(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
 //
 // Scalar 4th-order tensor product
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES>>::type
-operator*(S const & s, Tensor4<T, N, ES> const & A)
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N>>::type
+operator*(S const & s, Tensor4<T, N> const & A)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -302,12 +302,12 @@ operator*(S const & s, Tensor4<T, N, ES> const & A)
 //
 // 4th-order tensor scalar product
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES>>::type
-operator*(Tensor4<T, N, ES> const & A, S const & s)
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N>>::type
+operator*(Tensor4<T, N> const & A, S const & s)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -318,12 +318,12 @@ operator*(Tensor4<T, N, ES> const & A, S const & s)
 //
 // 4th-order tensor scalar division
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<typename Promote<S, T>::type, N, ES>
-operator/(Tensor4<T, N, ES> const & A, S const & s)
+Tensor4<typename Promote<S, T>::type, N>
+operator/(Tensor4<T, N> const & A, S const & s)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   divide(A, s, B);
@@ -334,12 +334,12 @@ operator/(Tensor4<T, N, ES> const & A, S const & s)
 //
 // 4th-order scalar tensor division
 //
-template<typename S, typename T, Index N, typename ES>
+template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<typename Promote<S, T>::type, N, ES>
-operator/(S const & s, Tensor4<T, N, ES> const & A)
+Tensor4<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor4<T, N> const & A)
 {
-  Tensor4<typename Promote<S, T>::type, N, ES>
+  Tensor4<typename Promote<S, T>::type, N>
   B(A.get_dimension());
 
   split(A, s, B);
@@ -354,13 +354,13 @@ operator/(S const & s, Tensor4<T, N, ES> const & A)
 // \param k index
 // \param l index
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T const &
-Tensor4<T, N, ES>::operator()(
+Tensor4<T, N>::operator()(
     Index const i, Index const j, Index const k, Index const l) const
 {
-  Tensor4<T, N, ES> const &
+  Tensor4<T, N> const &
   self = (*this);
 
   Index const
@@ -376,13 +376,13 @@ Tensor4<T, N, ES>::operator()(
 // \param k index
 // \param l index
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T &
-Tensor4<T, N, ES>::operator()(
+Tensor4<T, N>::operator()(
     Index const i, Index const j, Index const k, Index const l)
 {
-  Tensor4<T, N, ES> &
+  Tensor4<T, N> &
   self = (*this);
 
   Index const
@@ -391,15 +391,15 @@ Tensor4<T, N, ES>::operator()(
   return self[((i * dimension + j) * dimension + k) * dimension + l];
 }
 
-///
-/// 4th-order inverse
-///
-template<typename T, Index N, typename ES>
+//
+// 4th-order inverse
+//
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor4<T, N, ES>
-inverse(Tensor4<T, N, ES> const & A)
+Tensor4<T, N>
+inverse(Tensor4<T, N> const & A)
 {
-  return Tensor4<T, N, ES>(inverse(Tensor<T, dimension_square<N>::value, ES>(A)));
+  return Tensor4<T, N>(inverse(Tensor<T, dimension_square<N>::value>(A)));
 }
 
 } // namespace minitensor

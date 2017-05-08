@@ -135,7 +135,7 @@ namespace ML_Epetra
     int ComputePreconditioner(const bool CheckFiltering = false);
 
     //! Recomputes the preconditioner
-    int ReComputePreconditioner(){return(-1);}
+    int ReComputePreconditioner();
 
     //! Print the individual operators in the multigrid hierarchy.
     void Print(int whichHierarchy = 11);

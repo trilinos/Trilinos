@@ -673,13 +673,6 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
         }
       }
 
-      stk::mesh::Field<double> *df_field =
-          meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
-
-      if (df_field != NULL) {
-        stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
-      }
-
       std::string distributionFactorsPerNodesetFieldName = "distribution_factors_" + part->name();
 
       stk::mesh::Field<double> *df_field_per_nodeset =

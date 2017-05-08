@@ -72,7 +72,7 @@ private:
 
   typedef typename EvalT::ScalarT ScalarT;
   
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<const ScalarT,Cell,Point> dof_basis;
 
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;
@@ -106,7 +106,7 @@ private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
   
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<const ScalarT,Cell,Point> dof_basis;
 
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;

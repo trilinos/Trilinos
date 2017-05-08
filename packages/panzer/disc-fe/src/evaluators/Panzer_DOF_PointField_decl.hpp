@@ -130,8 +130,8 @@ private:
                   const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                   const std::string & postfixFieldName);
 
-  PHX::MDField<ScalarT,Point,Dim> coordinates; // reference coordinates
-  PHX::MDField<ScalarT> dof_coeff;  // coefficient values   
+  PHX::MDField<const ScalarT,Point,Dim> coordinates; // reference coordinates
+  PHX::MDField<const ScalarT> dof_coeff;  // coefficient values   
   PHX::MDField<ScalarT> dof_field;  // evaluate field
 
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis;

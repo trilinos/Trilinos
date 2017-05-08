@@ -40,6 +40,14 @@ inline simd::Double log(const simd::Double& x) {
 #endif
 }
 
+inline simd::Double log10(const simd::Double& x) {
+  simd::Double tmp;
+  for (int n=0; n < simd::ndoubles; ++n) {
+    tmp[n] = std::log10(x[n]);
+  }
+  return tmp;
+}
+
 inline simd::Double exp(const simd::Double& x) {
 #if defined(__INTEL_COMPILER)
   return simd::Double(_mm512_exp_pd(x._data));
@@ -104,6 +112,30 @@ inline simd::Double tan(const simd::Double& a) {
   simd::Double tmp;
   for (int i=0; i < simd::ndoubles; ++i) {
     tmp[i] = std::tan(a[i]);
+  }
+  return tmp;
+}
+
+inline simd::Double sinh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::sinh(a[i]);
+  }
+  return tmp;
+}
+
+inline simd::Double cosh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::cosh(a[i]);
+  }
+  return tmp;
+}
+
+inline simd::Double tanh(const simd::Double& a) {
+  simd::Double tmp;
+  for (int i=0; i < simd::ndoubles; ++i) {
+    tmp[i] = std::tanh(a[i]);
   }
   return tmp;
 }

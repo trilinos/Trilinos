@@ -136,6 +136,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  check_bc_consistency
+  SOURCES check_bc_consistency.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  epetra_test
 #  SOURCES epetra_test.cpp ${UNIT_TEST_DRIVER}

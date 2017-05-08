@@ -55,7 +55,7 @@ namespace minitensor {
 ///
 /// Type for setting components all at once
 ///
-enum ComponentValue {
+enum class Filler {
   ZEROS,
   ONES,
   SEQUENCE,
@@ -63,6 +63,22 @@ enum ComponentValue {
   RANDOM_UNIFORM,
   RANDOM_NORMAL,
   NANS
+};
+
+///
+/// Component ordering convention
+///
+enum class ComponentOrder {
+  CANONICAL,
+  SIERRA_FULL,
+  SIERRA_SYMMETRIC
+};
+
+///
+/// Initialization sources
+///
+enum class Source {
+  ARRAY
 };
 
 ///
@@ -105,8 +121,7 @@ public:
   /// \param value all components are set equal to this
   ///
   KOKKOS_INLINE_FUNCTION
-  TensorBase(Index const dimension, Index const order,
-      ComponentValue const value);
+  TensorBase(Index const dimension, Index const order, Filler const value);
 
   ///
   /// Create from a scalar
@@ -122,68 +137,68 @@ public:
   /// \param data_ptr pointer into the array
   ///
   // TensorBase for Kokkos Data Types (we can 't use pointers with Kokkos::View)
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1);
+      Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
       Index const dimension,
       Index const order,
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
   //TensorBase for Shards and other data Types
   KOKKOS_INLINE_FUNCTION
@@ -202,13 +217,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   TensorBase<T, ST> &
   operator=(TensorBase<T, ST> const & X);
-
-  ///
-  /// Simple destructor
-  ///
-  virtual
-  KOKKOS_INLINE_FUNCTION
-  ~TensorBase() = 0;
 
   ///
   /// Linear access to components
@@ -239,7 +247,7 @@ public:
   ///
   KOKKOS_INLINE_FUNCTION
   void
-  fill(ComponentValue const value);
+  fill(Filler const value);
 
   ///
   /// Fill components with value
@@ -253,59 +261,75 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1);
+      Index index1);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1,
-      iType index2);
+      Index index1,
+      Index index2);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3);
+      Index index1,
+      Index index2,
+      Index index3);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
 
-  template<class ArrayT, typename iType>
+  template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
-  void fill(
+  void
+  fill(
       ArrayT & data,
-      iType index1,
-      iType index2,
-      iType index3,
-      iType index4,
-      iType index5,
-      iType index6);
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
 
   KOKKOS_INLINE_FUNCTION
   void fill(T const * data_ptr);
+
+
+  ///
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  /// \param component_order component convention (3D only)
+  ///
+  KOKKOS_INLINE_FUNCTION
+  void
+  fill(T const * data_ptr, ComponentOrder const component_order);
 
   ///
   /// Component increment
@@ -364,7 +388,7 @@ protected:
   ///
   KOKKOS_INLINE_FUNCTION
   Index
-  get_dimension() const;
+  get_dimension(Index const order) const;
 
   ///
   /// \param dimension
@@ -379,12 +403,6 @@ protected:
   ///
   ST
   components_;
-
-  ///
-  /// dimension
-  ///
-  Index
-  dimension_{0};
 };
 
 ///

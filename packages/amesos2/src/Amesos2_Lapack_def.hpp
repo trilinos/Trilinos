@@ -69,6 +69,7 @@ namespace Amesos2 {
     , nzvals_()
     , rowind_()
     , colptr_()
+    , is_contiguous_(true)
   {
     // Set default parameters
     Teuchos::RCP<Teuchos::ParameterList> default_params
@@ -152,7 +153,12 @@ namespace Amesos2 {
 #endif
       typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
                                        scalar_type> copy_helper;
-      copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED);
+      if ( is_contiguous_ == true ) {
+        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED, 0);
+      }
+      else {
+        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, 0);
+      }
     }
 
     int solve_ierr         = 0;
@@ -190,10 +196,18 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-                                                   as<size_t>(ld_rhs),
-                                                   ROOTED);
+      if ( is_contiguous_ == true ) {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
+              as<size_t>(ld_rhs),
+              ROOTED);
+      }
+      else {
+        Util::put_1d_data_helper<
+          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
+              as<size_t>(ld_rhs),
+              CONTIGUOUS_AND_ROOTED);
+      }
     }
 
     return( 0 );
@@ -220,6 +234,10 @@ namespace Amesos2 {
 
     solver_.factorWithEquilibration( parameterList->get<bool>("Equilibrate", true) );
 
+    if( parameterList->isParameter("IsContiguous") ){
+      is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
+
     // solver_.solveToRefinedSolution( parameterList->get<bool>("Refine", false) );
   }
 
@@ -235,6 +253,8 @@ namespace Amesos2 {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
       pl->set("Equilibrate", true, "Whether to equilibrate the input matrix");
+
+      pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
       // TODO: Refinement does not seem to be working with the SerialDenseSolver.  Not sure why.
       // pl->set("Refine", false, "Whether to apply iterative refinement");
@@ -273,9 +293,16 @@ namespace Amesos2 {
       //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
       typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
         scalar_type, int, int> ccs_helper;
+    if ( is_contiguous_ == true ) {
       ccs_helper::do_get(this->matrixA_.ptr(),
                          nzvals_(), rowind_(), colptr_(),
-                         nnz_ret, ROOTED, SORTED_INDICES);
+                         nnz_ret, ROOTED, SORTED_INDICES, 0);
+    }
+    else {
+      ccs_helper::do_get(this->matrixA_.ptr(),
+                         nzvals_(), rowind_(), colptr_(),
+                         nnz_ret, CONTIGUOUS_AND_ROOTED, SORTED_INDICES, 0);
+    }
   }
 
     if( this->root_ ){

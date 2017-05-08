@@ -136,7 +136,7 @@ invHessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
   H = minisolver_fn_.hessian(xval);
 
   minitensor::Vector<S, M> const
-  hvval = minitensor::inverse(H) * vval;
+  hvval = minitensor::solve(H, vval);
 
   MTtoROL<S, M>(hvval, hv);
 }

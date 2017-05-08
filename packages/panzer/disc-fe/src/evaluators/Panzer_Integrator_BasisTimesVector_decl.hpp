@@ -57,7 +57,7 @@ PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
-  PHX::MDField<ScalarT,Cell,IP,Dim> vectorField;
+  PHX::MDField<const ScalarT,Cell,IP,Dim> vectorField;
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 

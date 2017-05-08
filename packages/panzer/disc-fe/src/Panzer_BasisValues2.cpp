@@ -1141,7 +1141,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
 // method for applying orientations
 template <typename Scalar>
 void BasisValues2<Scalar>::
-applyOrientations(const PHX::MDField<Scalar,Cell,BASIS> & orientations)
+applyOrientations(const PHX::MDField<const Scalar,Cell,BASIS> & orientations)
 {
   int num_cell  = orientations.dimension(0);
   int num_basis = orientations.dimension(1);

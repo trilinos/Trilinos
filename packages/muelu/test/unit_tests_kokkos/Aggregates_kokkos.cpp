@@ -51,14 +51,15 @@
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
+#include "MueLu_Level.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
+//#include "MueLu_UseDefaultTypes.hpp"
 
 namespace MueLuTests {
 
@@ -71,6 +72,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
 
     Level level;
+
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
@@ -100,13 +102,10 @@ namespace MueLuTests {
 
     auto aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates", aggFact.get());
     amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact.get());
-
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates",         aggFact.get());
-
     return aggregates;
   }
-
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -126,8 +125,7 @@ namespace MueLuTests {
 
   ///////////////////////////////////////////////////////////////////////////
 
-#if 0
-  TEUCHOS_UNIT_TEST(Aggregates, GetNumUncoupledAggregates)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GetNumUncoupledAggregates, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -135,21 +133,16 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = gimmeUncoupledAggregates(A, amalgInfo);
+    RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates(A, amalgInfo);
     GO numAggs = aggregates->GetNumAggregates();
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
-    ArrayRCP<LO> aggStart;
-    ArrayRCP<GO> aggToRowMap;
-    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
-    for (LO i = 0; i < numAggs; ++i)
-      aggSizes[i] = aggStart[i+1] - aggStart[i];
+    auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize3=false;
     for (int i=0; i<aggSizes.size(); ++i)
@@ -186,46 +179,25 @@ namespace MueLuTests {
         out << msg << std::endl;
         break;
     }
-
-    //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    int root = out.getOutputToRootOnly();
-    out.setOutputToRootOnly(-1);
-    for (int j=0; j<comm->getSize(); ++j) {
-      if (comm->getRank() == j) {
-        out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
-        for (int i=0; i< numAggs; ++i) {
-          out << "   aggregate " << i << ": ";
-          for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
-            out << aggToRowMap[k] << " ";
-          out << std::endl;
-        }
-      }
-      comm->barrier();
-    }
-    out.setOutputToRootOnly(root);
-
   } //GetNumAggregates
 
-  TEUCHOS_UNIT_TEST(Aggregates, UncoupledPhase1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, UncoupledPhase1, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = gimmeUncoupledAggregates(A, amalgInfo,true,false,false,false);
+    RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates(A, amalgInfo,true,false,false,false);
     GO numAggs = aggregates->GetNumAggregates();
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
-    ArrayRCP<LO> aggStart;
-    ArrayRCP<GO> aggToRowMap;
-    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
-    for (LO i = 0; i < numAggs; ++i)
-      aggSizes[i] = aggStart[i+1] - aggStart[i];
+    auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize3=false;
     for (int i=0; i<aggSizes.size(); ++i)
@@ -262,32 +234,16 @@ namespace MueLuTests {
         out << msg << std::endl;
         break;
     }
-
-    //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    int root = out.getOutputToRootOnly();
-    out.setOutputToRootOnly(-1);
-    for (int j=0; j<comm->getSize(); ++j) {
-      if (comm->getRank() == j) {
-        out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
-        for (int i=0; i< numAggs; ++i) {
-          out << "   aggregate " << i << ": ";
-          for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
-            out << aggToRowMap[k] << " ";
-          out << std::endl;
-        }
-      }
-      comm->barrier();
-    }
-    out.setOutputToRootOnly(root);
-
   } //UncoupledPhase1
 
-  TEUCHOS_UNIT_TEST(Aggregates, UncoupledPhase2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, UncoupledPhase2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
     bool bSuccess = true;
@@ -296,25 +252,23 @@ namespace MueLuTests {
     TEST_EQUALITY(bSuccess, true);
   } //UncoupledPhase2
 
-  TEUCHOS_UNIT_TEST(Aggregates, UncoupledPhase3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, UncoupledPhase3, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
     RCP<AmalgamationInfo> amalgInfo;
-    RCP<Aggregates> aggregates = gimmeUncoupledAggregates(A, amalgInfo,false,false,false,true);
+    RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates(A, amalgInfo,false,false,false,true);
     GO numAggs = aggregates->GetNumAggregates();
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
 
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
-    ArrayRCP<LO> aggStart;
-    ArrayRCP<GO> aggToRowMap;
-    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
-    for (LO i = 0; i < numAggs; ++i)
-      aggSizes[i] = aggStart[i+1] - aggStart[i];
+    auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize2=false;
     for (int i=0; i<aggSizes.size(); ++i)
@@ -351,30 +305,14 @@ namespace MueLuTests {
         out << msg << std::endl;
         break;
     }
-
-    //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-    int root = out.getOutputToRootOnly();
-    out.setOutputToRootOnly(-1);
-    for (int j=0; j<comm->getSize(); ++j) {
-      if (comm->getRank() == j) {
-        out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
-        for (int i=0; i< numAggs; ++i) {
-          out << "   aggregate " << i << ": ";
-          for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
-            out << aggToRowMap[k] << " ";
-          out << std::endl;
-        }
-      }
-      comm->barrier();
-    }
-    out.setOutputToRootOnly(root);
-
   } //UncoupledPhase3
-#endif
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GetNumUncoupledAggregates, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase1, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase3, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

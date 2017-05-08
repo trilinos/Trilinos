@@ -579,6 +579,15 @@ namespace panzer_stk {
 
     m_wkstContainer = wkstContainer;
 
+    // find max number of worksets
+    std::size_t max_wksets = 0;
+    for(std::size_t p=0;p<physicsBlocks.size();p++) {
+      Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getVolumeWorksets(physicsBlocks[p]->elementBlockID());
+      max_wksets = std::max(max_wksets,works->size());
+    }
+    user_data_params.set<std::size_t>("Max Worksets",max_wksets);
+    wkstContainer->clear(); 
+
     // set the global indexer so the orientations are evaluated
     wkstContainer->setGlobalIndexer(globalIndexer);
 

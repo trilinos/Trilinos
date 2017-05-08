@@ -237,7 +237,7 @@ test_filling(Index const dimension)
 
   // Test construct with zeros
   Tensor
-  A(dimension, ZEROS);
+  A(dimension, Filler::ZEROS);
 
   Real
   error = norm_f_square(A);
@@ -248,7 +248,7 @@ test_filling(Index const dimension)
 
   // Test construct with ones
   Tensor
-  B(dimension, ONES);
+  B(dimension, Filler::ONES);
 
   error = norm_f_square(B) - number_components;
 
@@ -258,7 +258,7 @@ test_filling(Index const dimension)
 
   // Test construct with random entries
   Tensor
-  C(dimension, RANDOM_UNIFORM);
+  C(dimension, Filler::RANDOM_UNIFORM);
 
   error = norm_f(C);
 
@@ -267,7 +267,7 @@ test_filling(Index const dimension)
   passed = passed && random_constructed;
 
   // Test fill with random components
-  A.fill(RANDOM_UNIFORM);
+  A.fill(Filler::RANDOM_UNIFORM);
 
   error = norm_f(A);
 
@@ -276,7 +276,7 @@ test_filling(Index const dimension)
   passed = passed && random_filled;
 
   // Test fill with zeros
-  B.fill(ZEROS);
+  B.fill(Filler::ZEROS);
 
   error = norm_f_square(B);
 
@@ -285,7 +285,7 @@ test_filling(Index const dimension)
   passed = passed && zeros_filled;
 
   // Test fill with ones
-  C.fill(ZEROS);
+  C.fill(Filler::ZEROS);
 
   error = norm_f_square(C) - number_components;
 
@@ -456,7 +456,7 @@ test_filling(Index const rows, Index const cols)
 
   // Test construct with zeros
   Matrix
-  A(rows, cols, ZEROS);
+  A(rows, cols, Filler::ZEROS);
 
   Real
   error = norm_f_square(A);
@@ -467,7 +467,7 @@ test_filling(Index const rows, Index const cols)
 
   // Test construct with ones
   Matrix
-  B(rows, cols, ONES);
+  B(rows, cols, Filler::ONES);
 
   error = norm_f_square(B) - number_components;
 
@@ -477,7 +477,7 @@ test_filling(Index const rows, Index const cols)
 
   // Test construct with random entries
   Matrix
-  C(rows, cols, RANDOM_UNIFORM);
+  C(rows, cols, Filler::RANDOM_UNIFORM);
 
   error = norm_f(C);
 
@@ -486,7 +486,7 @@ test_filling(Index const rows, Index const cols)
   passed = passed && random_constructed;
 
   // Test fill with random components
-  A.fill(RANDOM_UNIFORM);
+  A.fill(Filler::RANDOM_UNIFORM);
 
   error = norm_f(A);
 
@@ -495,7 +495,7 @@ test_filling(Index const rows, Index const cols)
   passed = passed && random_filled;
 
   // Test fill with zeros
-  B.fill(ZEROS);
+  B.fill(Filler::ZEROS);
 
   error = norm_f_square(B);
 
@@ -504,7 +504,7 @@ test_filling(Index const rows, Index const cols)
   passed = passed && zeros_filled;
 
   // Test fill with ones
-  C.fill(ZEROS);
+  C.fill(Filler::ZEROS);
 
   error = norm_f_square(C) - number_components;
 
@@ -757,7 +757,7 @@ TEST(MiniTensor, Inverse2x2)
   N = 2;
 
   Tensor<Real, N> const
-  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(RANDOM_UNIFORM);
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
 
   Tensor<Real, N> const
   B = inverse(A);
@@ -781,7 +781,7 @@ TEST(MiniTensor, Inverse3x3)
   N = 3;
 
   Tensor<Real, N> const
-  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(RANDOM_UNIFORM);
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
 
   Tensor<Real, N> const
   B = inverse(A);
@@ -805,7 +805,7 @@ TEST(MiniTensor, InverseNxN)
   N = 11;
 
   Tensor<Real, N> const
-  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(RANDOM_UNIFORM);
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
 
   Tensor<Real, N> const
   B = inverse(A);
@@ -829,7 +829,7 @@ TEST(MiniTensor, Inverse_4th_NxN)
   N = 4;
 
   Tensor4<Real, N> const
-  A = 2.0 * identity_1<Real, N>() + Tensor4<Real, N>(RANDOM_UNIFORM);
+  A = 2.0 * identity_1<Real, N>() + Tensor4<Real, N>(Filler::RANDOM_UNIFORM);
 
   Tensor4<Real, N> const
   B = inverse(A);
@@ -879,7 +879,7 @@ TEST(MiniTensor, TensorManipulation)
 
 TEST(MiniTensor, Exponential)
 {
-  Tensor<Real> const A = eye<Real>(3) + Tensor<Real>(3, ONES);
+  Tensor<Real> const A = eye<Real>(3) + Tensor<Real>(3, Filler::ONES);
 
   Tensor<Real> const B = exp_pade(A);
 
@@ -1132,10 +1132,10 @@ TEST(MiniTensor, MixedTypes)
   A(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
 
   Tensor<Sacado::Fad::DFad<Real>> const
-  B(3, ONES);
+  B(3, Filler::ONES);
 
   Tensor<Real> const
-  C(3, ONES);
+  C(3, Filler::ONES);
 
   Real const
   b = 1.0;
@@ -1318,10 +1318,10 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
   {
     Vector<Real>
-    A(3, ZEROS);
+    A(3, Filler::ZEROS);
 
     Vector<Sacado::Fad::DFad<Real>>
-    B(3, ZEROS);
+    B(3, Filler::ZEROS);
 
     Vector<Real>
     C = Sacado::ScalarValue<Vector<Real>>::eval(A);
@@ -1341,10 +1341,10 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
   {
     Tensor<Real>
-    A(3, ZEROS);
+    A(3, Filler::ZEROS);
 
     Tensor<Sacado::Fad::DFad<Real>>
-    B(3, ZEROS);
+    B(3, Filler::ZEROS);
 
     Tensor<Real>
     C = Sacado::ScalarValue<Tensor<Real>>::eval(A);
@@ -1364,10 +1364,10 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
   {
     Tensor3<Real>
-    A(3, ZEROS);
+    A(3, Filler::ZEROS);
 
     Tensor3<Sacado::Fad::DFad<Real>>
-    B(3, ZEROS);
+    B(3, Filler::ZEROS);
 
     Tensor3<Real>
     C = Sacado::ScalarValue<Tensor3<Real>>::eval(A);
@@ -1387,10 +1387,10 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
   {
     Tensor4<Real>
-    A(3, ZEROS);
+    A(3, Filler::ZEROS);
 
     Tensor4<Sacado::Fad::DFad<Real>>
-    B(3, ZEROS);
+    B(3, Filler::ZEROS);
 
     Tensor4<Real>
     C = Sacado::ScalarValue<Tensor4<Real>>::eval(A);

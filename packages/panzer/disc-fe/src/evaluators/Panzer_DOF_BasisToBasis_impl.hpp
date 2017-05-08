@@ -64,7 +64,7 @@ DOF_BasisToBasis(const std::string & fieldName,
   // **************
   // Declare fields
   // **************
-  dof_source_coeff = PHX::MDField<ScalarT>(fieldName,sourceBasis.functional);
+  dof_source_coeff = PHX::MDField<const ScalarT>(fieldName,sourceBasis.functional);
   dof_target_coeff = PHX::MDField<ScalarT>(fieldName,targetBasis.functional);
 
   this->addDependentField(dof_source_coeff);

@@ -379,8 +379,10 @@ namespace MueLu {
 
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
 
+    typedef Kokkos::RangePolicy<LO, typename NO::execution_space> range_type;
+
     DetectDirichletFunctor<decltype(localMatrix), decltype(boundaryNodes)> functor(localMatrix, boundaryNodes, tol);
-    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", numRows, functor);
+    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", range_type(0,numRows), functor);
 
     return boundaryNodes;
   }

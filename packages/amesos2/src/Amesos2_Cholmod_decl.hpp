@@ -248,6 +248,7 @@ private:
 
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > map;
 
+  bool is_contiguous_;
 };                              // End class Cholmod
 
 

@@ -49,15 +49,15 @@ namespace minitensor {
 // \param \f$ F, u \f$
 // \return \f$ F^{-T} u \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+push_forward_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   T const
@@ -104,15 +104,15 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, v \f$
 // \return \f$ F^T v \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+pull_back_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   switch (dimension) {
@@ -144,15 +144,15 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, u \f$
 // \return \f$ F u \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+push_forward_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   switch (dimension) {
@@ -184,15 +184,15 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & 
 // \param \f$ F, u \f$
 // \return \f$ F^{-1} u \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+pull_back_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   T const
@@ -239,15 +239,15 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, A \f$
 // \return \f$ F^{-T} A F^{-1} \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
+Tensor<T, N>
+push_forward_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   Index const
   dimension = F.get_dimension();
 
-  Tensor<T, N, ES>
+  Tensor<T, N>
   G(dimension);
 
   T const
@@ -293,10 +293,10 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F^T A F\f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
+Tensor<T, N>
+pull_back_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   return t_dot(F, dot(A, F));
 }
@@ -306,10 +306,10 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F A F^T \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
+Tensor<T, N>
+push_forward_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   return dot_t(dot(F, A), F);
 }
@@ -319,15 +319,15 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & 
 // \param \f$ F, A \f$
 // \return \f$ F^{-1} A F^{-T} \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
+Tensor<T, N>
+pull_back_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   Index const
   dimension = F.get_dimension();
 
-  Tensor<T, N, ES>
+  Tensor<T, N>
   G(dimension);
 
   T const
@@ -373,15 +373,15 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, u \f$
 // \return \f$ \det F F^{-1} u \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+piola(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   switch (dimension) {
@@ -423,15 +423,15 @@ piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, u \f$
 // \return \f$ (\det F)^{-1} F u \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
+Vector<T, N>
+piola_inverse(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
   dimension = F.get_dimension();
 
-  Vector<T, N, ES>
+  Vector<T, N>
   v(dimension);
 
   T const
@@ -469,15 +469,15 @@ piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, \sigma \f$
 // \return \f$ \det F \sigma F^{-T} \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
+Tensor<T, N>
+piola(Tensor<T, N> const & F, Tensor<T, N> const & sigma)
 {
   Index const
   dimension = F.get_dimension();
 
-  Tensor<T, N, ES>
+  Tensor<T, N>
   G(dimension);
 
   switch (dimension) {
@@ -519,10 +519,10 @@ piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
 // \param \f$ F, P \f$
 // \return \f$ (\det F)^{-1} P F^T \f$
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P)
+Tensor<T, N>
+piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P)
 {
   T const
   J = det(F);
@@ -535,12 +535,12 @@ piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P)
 //
 // Smallest eigenvalue by inverse iteration.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 T
-smallest_eigenvalue(Tensor<T, N, ES> const & A)
+smallest_eigenvalue(Tensor<T, N> const & A)
 {
-  Tensor<T, N, ES>
+  Tensor<T, N>
   B = inverse(A);
 
   T const
@@ -549,8 +549,8 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N, ES>
-  v(dimension, ONES);
+  Vector<T, N>
+  v(dimension, Filler::ONES);
 
   Index const
   maximum_iterations = 128;
@@ -563,7 +563,7 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A)
 
   while (relative_error > tolerance && k < maximum_iterations) {
 
-    Vector<T, N, ES> const
+    Vector<T, N> const
     w = v;
 
     v = unit(B * w);
@@ -580,13 +580,13 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A)
 // Check strict ellipticity condition for 4th-order tensor.
 // Assume A has major symmetries.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 bool
-check_strict_ellipticity(Tensor4<T, N, ES> const & A)
+check_strict_ellipticity(Tensor4<T, N> const & A)
 {
   // Convert to 2nd-order tensor
-  Tensor<T, dimension_square<N>::value, ES > const
+  Tensor<T, dimension_square<N>::value> const
   B(A);
 
   // Check bounds for eigenvalues
@@ -612,10 +612,10 @@ check_strict_ellipticity(Tensor4<T, N, ES> const & A)
 // Check strong ellipticity condition for 4th-order tensor.
 // Assume A has major and minor symmetries.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
-std::pair<bool, Vector<T, N, ES>>
-check_strong_ellipticity(Tensor4<T, N, ES> const & A)
+std::pair<bool, Vector<T, N>>
+check_strong_ellipticity(Tensor4<T, N> const & A)
 {
   bool
   is_elliptic = true;
@@ -623,8 +623,8 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N, ES>
-  eigenvector(dimension, ONES);
+  Vector<T, N>
+  eigenvector(dimension, Filler::ONES);
 
   eigenvector /= dimension;
 
@@ -655,13 +655,13 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
 
   while (error > tolerance && iteration < maximum_iterarions) {
 
-    Tensor<T, N, ES>
+    Tensor<T, N>
     Q = dot2(eigenvector, dot(A, eigenvector));
 
-    Tensor<T, N, ES>
+    Tensor<T, N>
     V;
 
-    Tensor<T, N, ES>
+    Tensor<T, N>
     D;
 
     boost::tie(V, D) = eig_sym(Q);

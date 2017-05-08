@@ -275,7 +275,7 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
-        ordinal_type k0, k1, k2;
+        ordinal_type k0(0), k1(0), k2(0);
         const auto rankDiff = _output.rank() - _input.rank();
         switch (rankDiff) {
         case 3:

@@ -60,7 +60,8 @@ namespace panzer_stk {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer,
+                   bool useCoordinates
                    );
 
 #ifndef PANZER_ORDINAL64_IS_INT
@@ -77,7 +78,8 @@ namespace panzer_stk {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer,
+                   bool useCoordinates
                    );
 #endif
 
@@ -93,7 +95,8 @@ namespace panzer_stk {
                    #endif
                    bool writeCoordinates,
                    bool writeTopo,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer,
+                   bool useCoordinates
                    )
   {
     #ifdef PANZER_HAVE_TEKO
@@ -111,7 +114,8 @@ namespace panzer_stk {
                               #endif
                               writeCoordinates,
                               writeTopo,
-                              auxGlobalIndexer
+                              auxGlobalIndexer,
+                              useCoordinates
                               );
 #endif
 
@@ -123,7 +127,8 @@ namespace panzer_stk {
                               #endif
                               writeCoordinates,
                               writeTopo,
-                              auxGlobalIndexer
+                              auxGlobalIndexer,
+                              useCoordinates
                               );
 
     // should never reach this

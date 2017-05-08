@@ -50,6 +50,7 @@
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_Details_packCrsMatrix.hpp>
 #include <Tpetra_Distributor.hpp>
+#include "Tpetra_Details_gathervPrint.hpp"
 
 namespace { // anonymous
 
@@ -144,10 +145,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Pack1, SC, LO, GO, NT)
 
   LocalMatrixType A_lcl = A.getLocalMatrix();
 
-  packCrsMatrix<SC,LO,GO,NT,false>(exportLIDs, exports, numPacketsPerLID,
-                  constantNumPackets, distor, *col_map, A_lcl);
+  std::unique_ptr<std::string> errStr;
+  const bool lclOK =
+    packCrsMatrix (errStr, exports, numPacketsPerLID,
+                   constantNumPackets, exportLIDs, A_lcl,
+                   col_map->getLocalMap (), world_rank, distor);
+  TEST_ASSERT( lclOK );
+  int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0; // output argument
 
-  out << "Proc " << world_rank << ": Done with test" << endl;
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  reduceAll<int, int> (* (col_map->getComm ()), REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+  if (gblSuccess != 1) {
+    if (world_rank == 0) {
+      out << "Error in packCrsMatrix!" << endl;
+    }
+    using ::Tpetra::Details::gathervPrint;
+    const std::string errStr2 =
+      errStr.get () == NULL ? std::string ("") : *errStr;
+    gathervPrint (out, errStr2, * (col_map->getComm ()));
+  }
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT ) \

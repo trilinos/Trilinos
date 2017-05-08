@@ -79,7 +79,7 @@ namespace Intrepid {
     // basis for the space is 
     // { (phi_i,0) }_{i=0}^{scalarLittleN-1} ,
     // { (0,phi_i) }_{i=0}^{scalarLittleN-1} ,
-    // { (x,y) . phi_i}_{i=scalarLittleN}^{scalarBigN-1}
+    // { (x,y) . phi_i}_{i=scalarSmallestN}^{scalarLittleN-1}
     // columns of V1 are expansion of this basis in terms of the basis
     // for P_{n}^2
 

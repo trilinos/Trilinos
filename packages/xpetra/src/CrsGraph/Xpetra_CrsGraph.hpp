@@ -58,9 +58,9 @@
 
 #include "Xpetra_Map.hpp"
 
-using Teuchos::ParameterList;
-
 namespace Xpetra {
+
+  using Teuchos::ParameterList;
 
   struct RowInfo {
     size_t localRow;

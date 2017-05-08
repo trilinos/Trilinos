@@ -1063,12 +1063,12 @@ int VPS::get_normal_component(size_t num_dim, size_t num_basis, double** basis, 
   norm = 0.0;
   for (size_t idim = 0; idim < num_dim; idim++) norm += vect[idim] * vect[idim];
 
+  delete[] comp;
+
   if (fabs(norm) < 1E-10) return 1;
 
   norm = 1.0 / sqrt(norm);
   for (size_t idim = 0; idim < num_dim; idim++) vect[idim] *= norm;
-
-  delete[] comp;
 
   return 0;
 //#pragma endregion
@@ -3768,7 +3768,7 @@ int VPS::retrieve_weights_regression(size_t cell_index)
       }
     }
 
-    LS_QR_Solver(num_data_points, _num_basis, A, b, _basis_coef[cell_index][ifunc]);
+    LS_QR_Solver(num_data_points, num_basis, A, b, _basis_coef[cell_index][ifunc]);
 
 
     delete[] data_points;

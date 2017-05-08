@@ -4,6 +4,10 @@ The files in this directory solve the following problem:
     (x,y) \in \Omega = (0,1) \times (0,1),
   u(x, y) = 0, (x,y) \in \partial\Omega.
 
+This example was originally presented at SIAM CSE 2017.  The corresponding
+presentation can be found through a link at
+https://trilinos.org/packages/panzer.
+
 The following is an explanation of all the files in this directory.
 
 CMakeLists.txt:
@@ -27,10 +31,6 @@ myClosureModelFactory*, mySourceTerm*:
 myEquationSet*:
   All the files needed to construct our equation set, or rather, the residual
   corresponding to our partial differential equation above.
-
-presentation/*:
-  The files needed to build the presentation I gave on Panzer at SIAM CSE 2017.
-  Run ./make in this directory to build the PDF.
 
 README.txt:
   This file, obviously.
