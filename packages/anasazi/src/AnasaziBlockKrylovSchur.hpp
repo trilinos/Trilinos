@@ -1705,8 +1705,10 @@ namespace Anasazi {
     int ldh = H.stride(), ldq = Q.stride();
     int info = 0;
     for (i=nevtemp-1; i>=0; i--) {
-      lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, order2[i]+1+offset2[i], 
-                    1, &work[0], &info );
+      int ifst = order2[i]+1+offset2[i];
+      int ilst = 1;
+      lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, &ifst,
+                    &ilst, &work[0], &info );
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                          "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC(n==" << curDim_ << ") returned info " << info << " != 0.");
     }
