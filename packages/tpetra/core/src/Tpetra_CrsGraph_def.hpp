@@ -4741,10 +4741,12 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "mergeAllIndices: ";
 
-    // this should be called only after makeIndicesLocal()
-    TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed () );
-    if (! isSorted ()) {
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isGloballyIndexed (), std::logic_error,
+       "This method may only be called after makeIndicesLocal." );
+    if (! this->isSorted ()) {
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       Kokkos::parallel_for (range_type (0, lclNumRows), [this] (const LO& lclRow) {
           this->sortRowIndices (this->getRowInfo (lclRow));
@@ -4819,7 +4821,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   mergeAllIndices ()
   {
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
     const char tfecfFuncName[] = "mergeAllIndices: ";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->isGloballyIndexed (), std::logic_error,
        "This method may only be called after makeIndicesLocal." );
@@ -4832,14 +4839,15 @@ namespace Tpetra {
        "indices.  Please report this bug to the Tpetra developers.");
 
     if (! this->isMerged ()) {
-      const LocalOrdinal lclNumRows =
-        static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const size_t numDups = this->mergeRowIndices (this->getRowInfo (lclRow));
-        this->nodeNumEntries_ -= numDups;
-      }
-      // we just merged every row
-      noRedundancies_ = true;
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      size_t totalNumDups = 0;
+      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_reduce (range_type (0, lclNumRows),
+        [this] (const LO& lclRow, size_t& numDups) {
+          numDups += this->mergeRowIndices (this->getRowInfo (lclRow));
+        }, totalNumDups);
+      this->nodeNumEntries_ -= totalNumDups;
+      this->noRedundancies_ = true; // we just merged every row
     }
   }
 
