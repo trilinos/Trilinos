@@ -2131,31 +2131,21 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  mergeRowIndices (RowInfo rowinfo)
+  mergeRowIndices (const RowInfo& rowInfo)
   {
-    using Teuchos::ArrayView;
-    const char tfecfFuncName[] = "mergeRowIndices: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized (), std::logic_error, "The graph is already storage "
-      "optimized, so we shouldn't be merging any indices.  "
-      "Please report this bug to the Tpetra developers.");
+    auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
 
-    ArrayView<LocalOrdinal> inds_view = this->getLocalViewNonConst (rowinfo);
-    typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
-    beg = inds_view.begin();
-    end = inds_view.begin() + rowinfo.numEntries;
-    newend = std::unique(beg,end);
+    // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+    LocalOrdinal* const beg = lclColInds.ptr_on_device ();
+    LocalOrdinal* const end = beg + rowInfo.numEntries;
+    LocalOrdinal* const newend = std::unique (beg, end);
     const size_t mergedEntries = newend - beg;
-#ifdef HAVE_TPETRA_DEBUG
-    // merge should not have eliminated any entries; if so, the
-    // assignment below will destroy the packed structure
-    TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized () && mergedEntries != rowinfo.numEntries );
-#endif // HAVE_TPETRA_DEBUG
 
-    k_numRowEntries_(rowinfo.localRow) = mergedEntries;
-    nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
+    // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
+    this->k_numRowEntries_(rowInfo.localRow) = mergedEntries;
+    return rowInfo.numEntries - mergedEntries;
   }
 
 
@@ -4829,14 +4819,24 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   mergeAllIndices ()
   {
-    TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed() ); // call only after makeIndicesLocal()
-    TEUCHOS_TEST_FOR_EXCEPT( ! isSorted() ); // call only after sortIndices()
-    if (! isMerged ()) {
+    const char tfecfFuncName[] = "mergeAllIndices: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isGloballyIndexed (), std::logic_error,
+       "This method may only be called after makeIndicesLocal." );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->isSorted (), std::logic_error,
+       "This method may only be called after sortIndices." );
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStorageOptimized (), std::logic_error,
+       "The graph is already storage optimized, so we shouldn't be merging any "
+       "indices.  Please report this bug to the Tpetra developers.");
+
+    if (! this->isMerged ()) {
       const LocalOrdinal lclNumRows =
         static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
-        const RowInfo rowInfo = this->getRowInfo (row);
-        mergeRowIndices(rowInfo);
+      for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        const size_t numDups = this->mergeRowIndices (this->getRowInfo (lclRow));
+        this->nodeNumEntries_ -= numDups;
       }
       // we just merged every row
       noRedundancies_ = true;

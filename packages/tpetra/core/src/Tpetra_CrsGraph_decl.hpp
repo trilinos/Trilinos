@@ -2690,7 +2690,7 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Merge duplicate row indices in all of the rows.
+    /// \brief Merge duplicate column indices in all of the rows.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
@@ -2700,11 +2700,13 @@ namespace Tpetra {
     ///   be called after calling sortIndices().
     void mergeAllIndices ();
 
-    /// \brief Merge duplicate row indices in the given row.
+    /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    void mergeRowIndices (RowInfo rowinfo);
+    ///
+    /// \return The number of duplicate column indices eliminated from the row.
+    size_t mergeRowIndices (const RowInfo& rowInfo);
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
