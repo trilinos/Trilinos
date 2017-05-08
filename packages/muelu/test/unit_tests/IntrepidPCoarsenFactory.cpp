@@ -87,14 +87,14 @@ namespace MueLuTests {
 
   /**** some helper methods and classes by Nate ****/
 #ifndef TEST_MORE_COMBINATIONS
-  static const int MAX_LINE_DEGREE = 10;
-  static const int MAX_QUAD_DEGREE = 10;
-  static const int MAX_HEX_DEGREE = 4;
+  static const int MAX_LINE_DEGREE = Intrepid2::Parameters::MaxOrder;
+  static const int MAX_QUAD_DEGREE = Intrepid2::Parameters::MaxOrder;
+  static const int MAX_HEX_DEGREE = (Intrepid2::Parameters::MaxOrder < 4 ) ? 4 : Intrepid2::Parameters::MaxOrder;
   static const int MAX_RANK_COUNT = 4;
 #else
-  static const int MAX_LINE_DEGREE = 10;
-  static const int MAX_QUAD_DEGREE = 10;
-  static const int MAX_HEX_DEGREE = 8;
+  static const int MAX_LINE_DEGREE = Intrepid2::Parameters::MaxOrder;
+  static const int MAX_QUAD_DEGREE = Intrepid2::Parameters::MaxOrder;
+  static const int MAX_HEX_DEGREE = Intrepid2::Parameters::MaxOrder;
   static const int MAX_RANK_COUNT = 16;
 #endif
 
@@ -1239,7 +1239,7 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
 
-    int max_degree=5;
+    int max_degree = (Intrepid2::Parameters::MaxOrder < 5 ) ? Intrepid2::Parameters::MaxOrder : 5;
 
     {
       // QUAD
@@ -1319,7 +1319,7 @@ namespace MueLuTests {
 #endif
 
     out << "version: " << MueLu::Version() << std::endl;
-    int max_degree=5;
+    int max_degree = (Intrepid2::Parameters::MaxOrder < 5 ) ? Intrepid2::Parameters::MaxOrder : 5;
 
 
     {
@@ -1394,7 +1394,7 @@ namespace MueLuTests {
 #endif
 
     out << "version: " << MueLu::Version() << std::endl;
-    int max_degree=5;
+    int max_degree = (Intrepid2::Parameters::MaxOrder < 5 ) ? Intrepid2::Parameters::MaxOrder : 5;
 
 
     {
@@ -2537,7 +2537,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    int max_degree=10;
+    int max_degree=Intrepid2::Parameters::MaxOrder;
 
     {
       //QUAD
