@@ -6348,9 +6348,7 @@ namespace Tpetra {
       bool locallyCorrect = unpackCrsMatrixAndCombine (
           this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
           numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
-      if (!locallyCorrect) {
-        throw errStr->c_str();
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
     }
     else {
       this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,
