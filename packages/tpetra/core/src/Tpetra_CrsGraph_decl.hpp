@@ -2661,7 +2661,7 @@ namespace Tpetra {
     void sortAllIndices ();
 
     //! Sort the column indices in the given row.
-    void sortRowIndices (const RowInfo rowinfo);
+    void sortRowIndices (const RowInfo& rowinfo);
 
     /// \brief Sort the column indices and their values in the given row.
     ///

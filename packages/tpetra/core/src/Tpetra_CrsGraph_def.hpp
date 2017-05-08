@@ -2119,12 +2119,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortRowIndices (const RowInfo rowinfo)
+  sortRowIndices (const RowInfo& rowInfo)
   {
-    if (rowinfo.numEntries > 0) {
-      Teuchos::ArrayView<LocalOrdinal> inds_view =
-        this->getLocalViewNonConst (rowinfo);
-      std::sort (inds_view.begin (), inds_view.begin () + rowinfo.numEntries);
+    if (rowInfo.numEntries > 0) {
+      auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
+      // FIXME (mfh 08 May 2017) This assumes CUDA UVM.
+      LocalOrdinal* const lclColIndsRaw = lclColInds.ptr_on_device ();
+      std::sort (lclColIndsRaw, lclColIndsRaw + rowInfo.numEntries);
     }
   }
 
@@ -4748,17 +4749,16 @@ namespace Tpetra {
   sortAllIndices ()
   {
     typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
 
     // this should be called only after makeIndicesLocal()
     TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed () );
-    if (isSorted () == false) {
-      // FIXME (mfh 06 Mar 2014) This would be a good place for a
-      // thread-parallel kernel.
+    if (! isSorted ()) {
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const RowInfo rowInfo = this->getRowInfo (lclRow);
-        this->sortRowIndices (rowInfo);
-      }
+      Kokkos::parallel_for (range_type (0, lclNumRows), [this] (const LO& lclRow) {
+          this->sortRowIndices (this->getRowInfo (lclRow));
+        });
     }
     indicesAreSorted_ = true; // we just sorted every row
   }
