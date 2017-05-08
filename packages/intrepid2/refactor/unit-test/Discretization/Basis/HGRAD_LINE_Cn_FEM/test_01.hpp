@@ -134,6 +134,8 @@ namespace Intrepid2 {
       //typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
       //typedef FunctionSpaceTools<DeviceSpaceType> fst;
 
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+
       *outStream
         << "\n"
         << "===============================================================================\n"
@@ -144,7 +146,8 @@ namespace Intrepid2 {
 
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        const ordinal_type order = 5;
+        constexpr ordinal_type order = 5;
+        if(order <= maxOrder) {
 
         LineBasisType lineBasis(order);
 
@@ -225,6 +228,7 @@ namespace Intrepid2 {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+        }
         }
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";

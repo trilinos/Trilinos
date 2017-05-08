@@ -133,9 +133,10 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
       << "===============================================================================\n";
 
 
-  const ordinal_type dim = 3;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+  constexpr ordinal_type dim = 3;
   try {
-    const ordinal_type order = 3;
+    const ordinal_type order = std::min(3, maxOrder);
     tetBasisType tetBasis(order);
 
     const ordinal_type polydim = tetBasis.getCardinality();
@@ -177,7 +178,8 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
 
 
   try {
-    const ordinal_type order = 3;
+    constexpr ordinal_type order = 3;
+    if(order <= maxOrder) {
     tetBasisType tetBasis(order);
     shards::CellTopology tet_4(
         shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -612,6 +614,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
           fiat_index_cur++;
         }
       }
+    }
     }
   }  catch ( std::exception err) {
     *outStream << err.what() << "\n\n";

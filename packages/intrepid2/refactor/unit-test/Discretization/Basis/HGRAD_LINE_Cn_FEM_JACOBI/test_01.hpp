@@ -130,6 +130,8 @@ namespace Intrepid2 {
 
       typedef Basis_HGRAD_LINE_Cn_FEM_JACOBI<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
       typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder;
       
       typedef FunctionSpaceTools<DeviceSpaceType> fst;
       
@@ -143,7 +145,8 @@ namespace Intrepid2 {
 
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        const ordinal_type order = 5;
+        constexpr ordinal_type order = 5;
+        if(order <= maxOrder) {
         const double alpha = 0.0, beta = 0.0;
         
         LineBasisType lineBasis(order, alpha, beta);
@@ -225,6 +228,7 @@ namespace Intrepid2 {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+        }
         }
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -337,7 +341,8 @@ namespace Intrepid2 {
          15.00000000000000, 15.00000000000000, 15.00000000000000};
 
       try {
-        const ordinal_type order = 3;
+        constexpr ordinal_type order = 3;
+        if(order <= maxOrder) {
         const double alpha = 0.0, beta = 0.0;
 
         LineBasisType lineBasis(order, alpha, beta);
@@ -473,7 +478,7 @@ namespace Intrepid2 {
               }
             }
         }
-
+        }
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';

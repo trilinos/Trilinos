@@ -125,6 +125,7 @@ namespace Intrepid2 {
 
       typedef Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
 
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
       const ordinal_type dim = 3;
 
       try {
@@ -136,7 +137,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
+        const ordinal_type order = std::min(2,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -170,7 +171,6 @@ namespace Intrepid2 {
             }
           }
         }
-        
       } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
@@ -187,7 +187,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 4;
+        const ordinal_type order = std::min(4,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
         auto dofData = tetBasis.getAllDofOrdinal();
         
@@ -222,7 +222,7 @@ namespace Intrepid2 {
           << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
+        const ordinal_type order = std::min(2,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
 
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());

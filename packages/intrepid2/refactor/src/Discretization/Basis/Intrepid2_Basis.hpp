@@ -246,7 +246,7 @@ namespace Intrepid2 {
       auto maxDfOrd = 0;  // third dimension of tagToOrdinal
       for (ordinal_type i=0;i<basisCard;++i)
         if (maxDfOrd < tags(i*tagSize + posDfOrd))
-          maxDfOrd = tags[i*tagSize + posDfOrd];
+          maxDfOrd = tags(i*tagSize + posDfOrd);
       ++maxDfOrd;
 
       // Create tagToOrdinal
@@ -610,6 +610,10 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   ordinal_type getOperatorOrder(const EOperator operatorType);
 
+  template<EOperator operatorType>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ordinal_type getOperatorOrder();
+
   /** \brief  Returns the ordinal of a partial derivative of order k based on the multiplicities of
       the partials dx, dy, and dz.
 
@@ -726,6 +730,10 @@ void getJacobyRecurrenceCoeffs (
   KOKKOS_INLINE_FUNCTION
   ordinal_type getDkCardinality(const EOperator    operatorType,
                                 const ordinal_type spaceDim);
+
+  template<EOperator operatorType, ordinal_type spaceDim>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ordinal_type getDkCardinality();
 
 
 

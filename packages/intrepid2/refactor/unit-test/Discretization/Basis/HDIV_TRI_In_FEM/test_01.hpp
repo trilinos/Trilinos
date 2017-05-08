@@ -43,7 +43,7 @@
 /** \file test_01.cpp
     \brief  Unit tests for the Intrepid2::HDIV_TRI_In_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
-*/
+ */
 
 
 #include "Intrepid2_config.h"
@@ -64,7 +64,7 @@
 
 namespace Intrepid2 {
 
-  namespace Test {
+namespace Test {
 
 #define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
     try {                                                               \
@@ -79,345 +79,346 @@ namespace Intrepid2 {
     }
 
 
-    template<typename ValueType, typename DeviceSpaceType>
-    int HDIV_TRI_In_FEM_Test01(const bool verbose) {
+template<typename ValueType, typename DeviceSpaceType>
+int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+  if (verbose)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs,       false);
 
-      Teuchos::oblackholestream oldFormatState;
-      oldFormatState.copyfmt(std::cout);
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+  typedef typename
+      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
-      *outStream
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|                 Unit Test HDIV_TRI_In_FEM                                |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-        << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
-        << "|                      Mauro Perego  (mperego@sandia.gov).                     |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
+  *outStream
+  << "===============================================================================\n"
+  << "|                                                                             |\n"
+  << "|                 Unit Test HDIV_TRI_In_FEM                                |\n"
+  << "|                                                                             |\n"
+  << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
+  << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
+  << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
+  << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
+  << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
+  << "|                      Mauro Perego  (mperego@sandia.gov).                     |\n"
+  << "|                                                                             |\n"
+  << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
+  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      const ValueType tol = tolerence();
-      int errorFlag = 0;
+  const ValueType tol = tolerence();
+  int errorFlag = 0;
 
-      // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
+  // for virtual function, value and point types are declared in the class
+  typedef ValueType outputValueType;
+  typedef ValueType pointValueType;
 
-      typedef Basis_HDIV_TRI_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
+  typedef Basis_HDIV_TRI_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
 
-      constexpr ordinal_type dim = 2;
-
-      try {
-
-             *outStream
-               << "\n"
-               << "===============================================================================\n"
-               << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
-               << "===============================================================================\n";
+  constexpr ordinal_type dim = 2;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
 
-             const ordinal_type order = 4;
-             TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
+  try {
 
-             shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
-             const ordinal_type polydim = triBasis.getCardinality();
-             DynRankView ConstructWithLabel(dofCoords, polydim , dim);
-             triBasis.getDofCoords(dofCoords);
-
-             DynRankView ConstructWithLabel(basisAtDofCoords, polydim , polydim, dim);
-             triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
-
-             auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
-             Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
-
-                 // Dimensions for the output arrays:
-             const ordinal_type numFields = triBasis.getCardinality();
-
-             //Normals at each edge
-             DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
-             normals(0,0)  =  0.0; normals(0,1)  = -1.0;
-             normals(1,0)  =  1.0; normals(1,1)  =  1.0;
-             normals(2,0)  = -1.0; normals(2,1)  =  0.0;
-
-             const auto allTags = triBasis.getAllDofTags();
-
-             // test for Kronecker property
-             for (int i=0;i<numFields;i++) {
-               for (int j=0;j<numFields;j++) {
-                 outputValueType dofValue = 0;
-                 if(allTags(j,0) == dim-1) { //edge
-                   auto edgeId = allTags(j,1);
-                   for (ordinal_type k=0;k<dim; k++)
-                     dofValue += h_basisAtDofCoords(i,j,k)*normals(edgeId,k);
-                 }
-                 else { //elem
-                   auto elemDofId =  allTags(j,2);
-                   dofValue = h_basisAtDofCoords(i,j,elemDofId%dim);
-                 }
-
-                 if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
-                     errorFlag++;
-                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                     *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
-                   }
-                   if ( i!=j && std::abs( dofValue ) > tol ) {
-                     errorFlag++;
-                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                     *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
-                   }
-
-               }
-             }
-
-           } catch (std::exception err) {
-             *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-             *outStream << err.what() << '\n';
-             *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-             errorFlag = -1000;
-           };
-
-      try {
-
-        *outStream
-          << "\n"
-          << "===============================================================================\n"
-          << "| TEST 2: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
-          << "===============================================================================\n";
+    *outStream
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
+    << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
-        TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
+    const ordinal_type order = std::min(4, maxOrder);
+    TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
 
-        shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
-        const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
-        const ordinal_type polydim = triBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
+    shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+    const ordinal_type polydim = triBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, polydim , dim);
+    triBasis.getDofCoords(dofCoords);
 
-        DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice, dim);
-        triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+    DynRankView ConstructWithLabel(basisAtDofCoords, polydim , polydim, dim);
+    triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
-        auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
-        Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
-            // Dimensions for the output arrays:
-        const ordinal_type numFields = triBasis.getCardinality();
-        
-        const double fiat_vals[] = {
-      0.000000000000000e+00, -2.000000000000000e+00,
-      2.500000000000000e-01, -5.000000000000000e-01,
-      -1.000000000000000e+00, 1.000000000000000e+00,
-      0.000000000000000e+00, -2.500000000000000e-01,
-      -5.000000000000000e-01, 5.000000000000000e-01,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 1.000000000000000e+00,
-      2.500000000000000e-01, -5.000000000000000e-01,
-      2.000000000000000e+00, -2.000000000000000e+00,
-      0.000000000000000e+00, 5.000000000000000e-01,
-      2.500000000000000e-01, -2.500000000000000e-01,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      2.500000000000000e-01, 0.000000000000000e+00,
-      2.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, -5.000000000000000e-01,
-      2.500000000000000e-01, 2.500000000000000e-01,
-      0.000000000000000e+00, -1.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      -5.000000000000000e-01, 0.000000000000000e+00,
-      -1.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 2.500000000000000e-01,
-      2.500000000000000e-01, 2.500000000000000e-01,
-      0.000000000000000e+00, 2.000000000000000e+00,
-      1.000000000000000e+00, 0.000000000000000e+00,
-      5.000000000000000e-01, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      -5.000000000000000e-01, 2.500000000000000e-01,
-      -2.500000000000000e-01, 2.500000000000000e-01,
-      -2.000000000000000e+00, 2.000000000000000e+00,
-      -2.000000000000000e+00, 0.000000000000000e+00,
-      -2.500000000000000e-01, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      -5.000000000000000e-01, 2.500000000000000e-01,
-      5.000000000000000e-01, -5.000000000000000e-01,
-      1.000000000000000e+00, -1.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      1.500000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 7.500000000000000e-01,
-      7.500000000000000e-01, -7.500000000000000e-01,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      7.500000000000000e-01, 0.000000000000000e+00,
-      0.000000000000000e+00, 0.000000000000000e+00,
-      0.000000000000000e+00, 1.500000000000000e+00,
-      -7.500000000000000e-01, 7.500000000000000e-01,
-      0.000000000000000e+00, 0.000000000000000e+00
-    };
-    
-        ordinal_type cur=0;
-        for (ordinal_type i=0;i<numFields;i++) {
-          for (ordinal_type j=0;j<np_lattice;j++) {
-            for (ordinal_type k=0;k<dim; k++) {
-             if (std::fabs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
-            errorFlag++;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
-            // Output the multi-index of the value where the error is:
-            *outStream << " At multi-index { ";
-            *outStream << i << " " << j << " " << k;
-            *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                      << " but correct value: " << fiat_vals[cur] << "\n";
-            *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
-          }
-          cur++;
-            }
-          }
+    // Dimensions for the output arrays:
+    const ordinal_type numFields = triBasis.getCardinality();
+
+    //Normals at each edge
+    DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
+    normals(0,0)  =  0.0; normals(0,1)  = -1.0;
+    normals(1,0)  =  1.0; normals(1,1)  =  1.0;
+    normals(2,0)  = -1.0; normals(2,1)  =  0.0;
+
+    const auto allTags = triBasis.getAllDofTags();
+
+    // test for Kronecker property
+    for (int i=0;i<numFields;i++) {
+      for (int j=0;j<numFields;j++) {
+        outputValueType dofValue = 0;
+        if(allTags(j,0) == dim-1) { //edge
+          auto edgeId = allTags(j,1);
+          for (ordinal_type k=0;k<dim; k++)
+            dofValue += h_basisAtDofCoords(i,j,k)*normals(edgeId,k);
         }
-        
-      } catch (std::exception err) {
-        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-        *outStream << err.what() << '\n';
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-        errorFlag = -1000;
+        else { //elem
+          auto elemDofId =  allTags(j,2);
+          dofValue = h_basisAtDofCoords(i,j,elemDofId%dim);
+        }
+
+        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
+        }
+        if ( i!=j && std::abs( dofValue ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+        }
+
+      }
+    }
+
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  try {
+
+    *outStream
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 2: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
+    << "===============================================================================\n";
+
+    constexpr ordinal_type order = 2;
+    if(order <= maxOrder) {
+      TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
+
+      shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+      const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
+      const ordinal_type polydim = triBasis.getCardinality();
+      DynRankView ConstructWithLabel(lattice, np_lattice , dim);
+      PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
+
+      DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice, dim);
+      triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+
+      auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
+      Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
+
+      // Dimensions for the output arrays:
+      const ordinal_type numFields = triBasis.getCardinality();
+
+      const double fiat_vals[] = {
+          0.000000000000000e+00, -2.000000000000000e+00,
+          2.500000000000000e-01, -5.000000000000000e-01,
+          -1.000000000000000e+00, 1.000000000000000e+00,
+          0.000000000000000e+00, -2.500000000000000e-01,
+          -5.000000000000000e-01, 5.000000000000000e-01,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 1.000000000000000e+00,
+          2.500000000000000e-01, -5.000000000000000e-01,
+          2.000000000000000e+00, -2.000000000000000e+00,
+          0.000000000000000e+00, 5.000000000000000e-01,
+          2.500000000000000e-01, -2.500000000000000e-01,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          2.500000000000000e-01, 0.000000000000000e+00,
+          2.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, -5.000000000000000e-01,
+          2.500000000000000e-01, 2.500000000000000e-01,
+          0.000000000000000e+00, -1.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          -5.000000000000000e-01, 0.000000000000000e+00,
+          -1.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 2.500000000000000e-01,
+          2.500000000000000e-01, 2.500000000000000e-01,
+          0.000000000000000e+00, 2.000000000000000e+00,
+          1.000000000000000e+00, 0.000000000000000e+00,
+          5.000000000000000e-01, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          -5.000000000000000e-01, 2.500000000000000e-01,
+          -2.500000000000000e-01, 2.500000000000000e-01,
+          -2.000000000000000e+00, 2.000000000000000e+00,
+          -2.000000000000000e+00, 0.000000000000000e+00,
+          -2.500000000000000e-01, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          -5.000000000000000e-01, 2.500000000000000e-01,
+          5.000000000000000e-01, -5.000000000000000e-01,
+          1.000000000000000e+00, -1.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          1.500000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 7.500000000000000e-01,
+          7.500000000000000e-01, -7.500000000000000e-01,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          7.500000000000000e-01, 0.000000000000000e+00,
+          0.000000000000000e+00, 0.000000000000000e+00,
+          0.000000000000000e+00, 1.500000000000000e+00,
+          -7.500000000000000e-01, 7.500000000000000e-01,
+          0.000000000000000e+00, 0.000000000000000e+00
       };
 
-      try {
+      ordinal_type cur=0;
+      for (ordinal_type i=0;i<numFields;i++) {
+        for (ordinal_type j=0;j<np_lattice;j++) {
+          for (ordinal_type k=0;k<dim; k++) {
+            if (std::fabs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
-        *outStream
-          << "\n"
-          << "===============================================================================\n"
-          << "| TEST 3: Testing Operator DIV                                              |\n"
-          << "===============================================================================\n";
+              // Output the multi-index of the value where the error is:
+              *outStream << " At multi-index { ";
+              *outStream << i << " " << j << " " << k;
+              *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
+                              << " but correct value: " << fiat_vals[cur] << "\n";
+              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+            }
+            cur++;
+          }
+        }
+      }
+    }
+
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  try {
+
+    *outStream
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 3: Testing Operator DIV                                              |\n"
+    << "===============================================================================\n";
 
 
-        const ordinal_type order = 2;
-        TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
+    constexpr ordinal_type order = 2;
+    if(order <= maxOrder) {
+      TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
 
-        shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
-        const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
-        const ordinal_type polydim = triBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
+      shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+      const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
+      const ordinal_type polydim = triBasis.getCardinality();
+      DynRankView ConstructWithLabel(lattice, np_lattice , dim);
+      PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-        DynRankView ConstructWithLabel(basisDivAtLattice, polydim , np_lattice);
-        triBasis.getValues(basisDivAtLattice, lattice, OPERATOR_DIV);
+      DynRankView ConstructWithLabel(basisDivAtLattice, polydim , np_lattice);
+      triBasis.getValues(basisDivAtLattice, lattice, OPERATOR_DIV);
 
-        auto h_basisDivAtLattice = Kokkos::create_mirror_view(basisDivAtLattice);
-        Kokkos::deep_copy(h_basisDivAtLattice, basisDivAtLattice);
+      auto h_basisDivAtLattice = Kokkos::create_mirror_view(basisDivAtLattice);
+      Kokkos::deep_copy(h_basisDivAtLattice, basisDivAtLattice);
 
-            // Dimensions for the output arrays:
-        const ordinal_type numFields = triBasis.getCardinality();
-        
-           const double fiat_divs[] = {
-      7.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      7.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      7.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      2.500000000000000e+00,
-      7.000000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      2.500000000000000e+00,
-      7.000000000000000e+00,
-      7.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      2.500000000000000e+00,
-      -2.000000000000000e+00,
-      -2.000000000000000e+00,
-      9.000000000000000e+00,
-      0.000000000000000e+00,
-      -9.000000000000000e+00,
-      4.500000000000000e+00,
-      -4.500000000000000e+00,
-      0.000000000000000e+00,
-      9.000000000000000e+00,
-      4.500000000000000e+00,
-      0.000000000000000e+00,
-      0.000000000000000e+00,
-      -4.500000000000000e+00,
-      -9.000000000000000e+00
-    };
-    
-    
-        ordinal_type cur=0;
-        for (ordinal_type i=0;i<numFields;i++) {
-          for (ordinal_type j=0;j<np_lattice;j++) {
-             if (std::fabs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+      // Dimensions for the output arrays:
+      const ordinal_type numFields = triBasis.getCardinality();
+
+      const double fiat_divs[] = {
+          7.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          7.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          7.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          2.500000000000000e+00,
+          7.000000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          2.500000000000000e+00,
+          7.000000000000000e+00,
+          7.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          2.500000000000000e+00,
+          -2.000000000000000e+00,
+          -2.000000000000000e+00,
+          9.000000000000000e+00,
+          0.000000000000000e+00,
+          -9.000000000000000e+00,
+          4.500000000000000e+00,
+          -4.500000000000000e+00,
+          0.000000000000000e+00,
+          9.000000000000000e+00,
+          4.500000000000000e+00,
+          0.000000000000000e+00,
+          0.000000000000000e+00,
+          -4.500000000000000e+00,
+          -9.000000000000000e+00
+      };
+
+
+      ordinal_type cur=0;
+      for (ordinal_type i=0;i<numFields;i++) {
+        for (ordinal_type j=0;j<np_lattice;j++) {
+          if (std::fabs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
+
             // Output the multi-index of the value where the error is:
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                      << " but correct value: " << fiat_divs[cur] << "\n";
+                              << " but correct value: " << fiat_divs[cur] << "\n";
             *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
           }
           cur++;
-          }
         }
-        
-        
-      
-
-      } catch (std::exception err) {
-        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-        *outStream << err.what() << '\n';
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-        errorFlag = -1000;
-      };
-
-      if (errorFlag != 0)
-        std::cout << "End Result: TEST FAILED\n";
-      else
-        std::cout << "End Result: TEST PASSED\n";
-
-      // reset format state of std::cout
-      std::cout.copyfmt(oldFormatState);
-
-      return errorFlag;
+      }
     }
-  }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+
+  return errorFlag;
+}
+}
 }

@@ -105,14 +105,16 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       const double tol = tolerence();
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
-
+        constexpr ordinal_type order = 4;
+        if(order <= maxOrder)
         {
           *outStream << "\n -- Testing Triangle \n\n";
 
-          const ordinal_type order = 4;
+
 
           Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType> cellBasis(order);
           const auto cellTopo = cellBasis.getBaseCellTopology();

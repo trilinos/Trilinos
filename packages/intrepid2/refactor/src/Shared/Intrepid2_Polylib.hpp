@@ -205,8 +205,10 @@ namespace Intrepid2 {
   public:
 
     static constexpr ordinal_type  MaxPolylibIteration = 50;
-    static constexpr ordinal_type  MaxPolylibOrder = Parameters::MaxOrder;
-    static constexpr ordinal_type  MaxPolylibPoint = Parameters::MaxOrder*2;
+    static constexpr ordinal_type  MaxPolylibOrder =
+        (Parameters::MaxOrder > Parameters::MaxCubatureDegreeEdge) ? Parameters::MaxOrder :
+                                                                     Parameters::MaxCubatureDegreeEdge;
+    static constexpr ordinal_type  MaxPolylibPoint = MaxPolylibOrder/2+2;
 
     struct Serial {
 

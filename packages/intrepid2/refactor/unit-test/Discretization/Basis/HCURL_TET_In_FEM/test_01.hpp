@@ -127,6 +127,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
   typedef Basis_HCURL_TET_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
 
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
   constexpr ordinal_type dim = 3;
 
   try {
@@ -138,7 +139,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     << "===============================================================================\n";
 
 
-    const ordinal_type order = 3;
+    const ordinal_type order = std::min(3, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
@@ -229,7 +230,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 3: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
+    << "| TEST 2: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
     << "===============================================================================\n";
 
 
@@ -310,7 +311,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 4: Testing Operator CURL                                               |\n"
+    << "| TEST 3: Testing Operator CURL                                               |\n"
     << "===============================================================================\n";
 
 
