@@ -96,6 +96,7 @@ TopSmootherFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother
+UnsmooshFactory
 UserPFactory
 Utilities
 UtilitiesBase

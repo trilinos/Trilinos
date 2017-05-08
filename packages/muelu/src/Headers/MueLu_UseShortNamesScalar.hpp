@@ -296,6 +296,9 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TransPFacto
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TrilinosSmoother;
 #endif
+#ifdef MUELU_UNSMOOSHFACTORY_SHORT
+typedef MueLu::UnsmooshFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UnsmooshFactory;
+#endif
 #ifdef MUELU_USERPFACTORY_SHORT
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UserPFactory;
 #endif
