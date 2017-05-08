@@ -3548,16 +3548,13 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     makeIndicesLocal ();
 
-    if (! isSorted ()) {
+    if (! this->isSorted () || ! this->isMerged ()) {
       // If this process has no indices, then CrsGraph considers it
-      // already trivially sorted.  Thus, this method need not be
-      // called on all processes in the row Map's communicator.
-      sortAllIndices ();
+      // already trivially sorted and merged.  Thus, this method need
+      // not be called on all processes in the row Map's communicator.
+      this->sortAndMergeAllIndices ();
     }
 
-    if (! isMerged()) {
-      mergeAllIndices ();
-    }
     makeImportExport (); // Make Import and Export objects, if necessary
     computeGlobalConstants ();
     fillLocalGraph (params);
@@ -3614,7 +3611,7 @@ namespace Tpetra {
       (getNodeNumRows () + 1) << ".");
 
     // Note: We don't need to do the following things which are normally done in fillComplete:
-    // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAllIndices, mergeAllIndices
+    // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAndMergeAllIndices
 
     // Note: Need to do this so computeGlobalConstants & fillLocalGraph work
     //
@@ -4741,7 +4738,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
-    const char tfecfFuncName[] = "mergeAllIndices: ";
+    const char tfecfFuncName[] = "sortAllIndices: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->isGloballyIndexed (), std::logic_error,
@@ -4847,6 +4844,49 @@ namespace Tpetra {
           numDups += this->mergeRowIndices (this->getRowInfo (lclRow));
         }, totalNumDups);
       this->nodeNumEntries_ -= totalNumDups;
+      this->noRedundancies_ = true; // we just merged every row
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  sortAndMergeAllIndices ()
+  {
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "sortAndMergeAllIndices: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isGloballyIndexed (), std::logic_error,
+       "This method may only be called after makeIndicesLocal." );
+
+    const bool sorted = this->isSorted ();
+    const bool merged = this->isMerged ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! merged && this->isStorageOptimized (), std::logic_error,
+       "The graph is already storage optimized, so we shouldn't be merging any "
+       "indices.  Please report this bug to the Tpetra developers.");
+
+    if (! sorted || ! merged) {
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      size_t totalNumDups = 0;
+      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_reduce (range_type (0, lclNumRows),
+        [this, sorted, merged] (const LO& lclRow, size_t& numDups) {
+          const RowInfo rowInfo = this->getRowInfo (lclRow);
+          if (! sorted) {
+            this->sortRowIndices (rowInfo);
+          }
+          if (! merged) {
+            numDups += this->mergeRowIndices (rowInfo);
+          }
+        }, totalNumDups);
+      this->nodeNumEntries_ -= totalNumDups;
+      this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row
     }
   }

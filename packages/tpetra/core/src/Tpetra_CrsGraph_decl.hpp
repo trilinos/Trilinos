@@ -2660,6 +2660,14 @@ namespace Tpetra {
     //! Sort the column indices in all the rows.
     void sortAllIndices ();
 
+  private:
+    //! Sort and merge the column indices in all the rows.
+    void sortAndMergeAllIndices ();
+
+    // mfh 08 May 2017: I don't like that the scope it was protected,
+    // but I'm leaving it for backwards compatibility.
+  protected:
+
     //! Sort the column indices in the given row.
     void sortRowIndices (const RowInfo& rowinfo);
 
