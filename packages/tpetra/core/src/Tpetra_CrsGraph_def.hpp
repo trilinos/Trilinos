@@ -916,7 +916,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getGlobalNumEntries()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
-					  ": The matrix does not have globalConstants computed, but the user has requested them.");
+                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
 #endif
     return globalNumEntries_;
   }
@@ -1348,19 +1348,19 @@ namespace Tpetra {
                typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalKokkosRowView (const RowInfo& rowinfo) const
+  getLocalKokkosRowView (const RowInfo& rowInfo) const
   {
     typedef LocalOrdinal LO;
     typedef Kokkos::View<const LO*, execution_space,
       Kokkos::MemoryUnmanaged> row_view_type;
 
-    if (rowinfo.allocSize == 0) {
+    if (rowInfo.allocSize == 0) {
       return row_view_type ();
     }
     else { // nothing in the row to view
       if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
-        const size_t start = rowinfo.offset1D;
-        const size_t len = rowinfo.allocSize;
+        const size_t start = rowInfo.offset1D;
+        const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         // mfh 23 Nov 2015: Don't just create a subview of
         // k_lclInds1D_ directly, because that first creates a
@@ -1369,15 +1369,14 @@ namespace Tpetra {
         // performance in a measurable way.
         return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        // Use a reference, to avoid doing the array lookup twice.
+      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
         //
-        // NOTE (mfh 18 Jul 2016) Don't create a Teuchos::ArrayView,
-        // because this is not thread safe in a debug build.
-        Teuchos::Array<LocalOrdinal>& lclInds = lclInds2D_[rowinfo.localRow];
-        const LO* rowPtr = lclInds.getRawPtr ();
-        const auto rowSize = lclInds.size ();
-        return row_view_type (rowPtr, rowSize);
+        // lclInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<LO>& lclInds = this->lclInds2D_[rowInfo.localRow];
+        return row_view_type (lclInds.getRawPtr (), lclInds.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1391,30 +1390,36 @@ namespace Tpetra {
                typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalKokkosRowViewNonConst (const RowInfo& rowinfo)
+  getLocalKokkosRowViewNonConst (const RowInfo& rowInfo)
   {
     typedef LocalOrdinal LO;
     typedef Kokkos::View<LO*, execution_space,
       Kokkos::MemoryUnmanaged> row_view_type;
 
-    if (rowinfo.allocSize == 0) {
+    if (rowInfo.allocSize == 0) {
       return row_view_type ();
     }
     else { // nothing in the row to view
       if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
-        const size_t start = rowinfo.offset1D;
-        const size_t len = rowinfo.allocSize;
+        const size_t start = rowInfo.offset1D;
+        const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         // mfh 23 Nov 2015: Don't just create a subview of
         // k_lclInds1D_ directly, because that first creates a
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
-        return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
+        return Kokkos::subview (row_view_type (this->k_lclInds1D_), rng);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        Teuchos::ArrayView<LO> rowAv = lclInds2D_[rowinfo.localRow] ();
-        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
+        //
+        // lclInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<LO>& cols = this->lclInds2D_[rowInfo.localRow];
+        LO* const colsRaw = cols.getRawPtr ();
+        return row_view_type (colsRaw, cols.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1450,11 +1455,13 @@ namespace Tpetra {
         return Kokkos::subview (row_view_type (this->k_gblInds1D_), rng);
       }
       else if (! this->gblInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        Teuchos::ArrayView<const GO> rowAv = this->gblInds2D_[rowinfo.localRow] ();
-        // FIXME (mfh 26 Nov 2015) This assumes UVM, because it
-        // assumes that host code can access device memory through
-        // Teuchos::ArrayView.
-        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
+        //
+        // gblInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<GO>& cols = this->gblInds2D_[rowinfo.localRow];
+        return row_view_type (cols.getRawPtr (), cols.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1466,7 +1473,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getGlobalView (const RowInfo rowinfo) const
+  getGlobalView (const RowInfo& rowinfo) const
   {
     Teuchos::ArrayView<const GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
@@ -1531,7 +1538,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getGlobalViewNonConst (const RowInfo rowinfo)
+  getGlobalViewNonConst (const RowInfo& rowinfo)
   {
     Teuchos::ArrayView<GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {

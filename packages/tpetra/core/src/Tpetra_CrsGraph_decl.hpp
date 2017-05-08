@@ -2861,28 +2861,28 @@ namespace Tpetra {
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+    getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+    getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
     ///   of row rowinfo.localRow (only works if the matrix is
     ///   globally indexed).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const GlobalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getGlobalKokkosRowView (const RowInfo& rowinfo) const;
+    getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
 
@@ -2890,13 +2890,13 @@ namespace Tpetra {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const GlobalOrdinal>
-    getGlobalView (const RowInfo rowinfo) const;
+    getGlobalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<GlobalOrdinal>
-    getGlobalViewNonConst (const RowInfo rowinfo);
+    getGlobalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the global column indices of a locally
     ///   owned row, using the result of getRowInfoFromGlobalRowIndex.
