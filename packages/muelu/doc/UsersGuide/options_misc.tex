@@ -1,20 +1,13 @@
 
-\cba{export data}{\parameterlist}{Writes a subset of the hierarchy data to files.
-      Valid \texttt{string} parameters are 
-      ``A'', ``P'', ``R'', ``Nullspace'', and ``Coordinates''.
-      The string values are comma separated nonnegative integers within curly braces, e.g.,
-      ``\{0,1,3\}''.  Valid \texttt{int} options are \texttt{frequency} and \texttt{total}.
-      Setting \texttt{frequency} to a positive integer value \texttt{n} means data is written
-      to file on every \texttt{n}th Hierarchy construction.  If \texttt{total} is nonnegative,
-      the data will be written at most \texttt{total} times.  If \texttt{total} is negative,
-      there is no limit to the number of times the data is written.
-      The only valid \texttt{bool} option is \texttt{export first system}.  If true, then writing
-      will begin with the first linear system.
-      A matrix/multivector with a name ``X'' on level ``L'' is saved in two or three
+\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
+      file. Currently, the list can contain any of the following parameter
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      and value ``\{levels separated by commas\}''. A
+      matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in
-      \textit{X\_L.mm}; b) its row map is saved in
-      \textit{rowmap\_X\_L.mm}; c) its column map (for matrices) is saved in
-      \textit{colmap\_X\_L.mm}.}
+      \textit{X\_level.mm}; b) its row map is saved in
+      \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
+      \textit{colmap\_X\_level.mm}.}
           
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
           

@@ -267,49 +267,6 @@ the no reuse to the full reuse ("full").
 \input{options_reuse}
 
 % ==================== MISCELLANEOUS ====================
-
 \section{Miscellaneous options}
 
 \input{options_misc}
-
-\noindent
-Some examples on how to write hierarchy data are as follows, with explanations.
-
-\begin{lstlisting}[language=XML]
-<ParameterList name="MueLu">
-
-  <ParameterList name="export data">
-    <Parameter name="A"  type="string" value="{0,1,2}"/>
-    <Parameter name="R"  type="string" value="{1}"/>
-    <Parameter name="export frequency"  type="int" value="2"/>
-    <Parameter name="total"  type="int" value="3"/>
-  </ParameterList>
-
-</ParameterList>
-\end{lstlisting}
-
-The matrices $A_0$, $A_1$, $A_2$ will be output, along with the grid transfer $R_1$.
-Writing will occur at every second hierarchy construction, for at most three hierarchy constructions.
-
-
-\begin{lstlisting}[language=XML]
-<ParameterList name="MueLu">
-
-  <ParameterList name="export data">
-    <Parameter name="A"  type="string" value="{0,1,2}"/>
-    <Parameter name="R"  type="string" value="{1}"/>
-    <Parameter name="export frequency"  type="int" value="2"/>
-    <Parameter name="export first system" type="bool" value="true"/>
-  </ParameterList>
-
-</ParameterList>
-\end{lstlisting}
-
-The matrices $A_0$, $A_1$, $A_2$ will be output, along with the grid transfer $R_1$.
-Writing will start with the first hierarchy construction, and every second one thereafter without limit, i.e.,
-construction $0, 2, 4, \dots$.
-
-It is possible to reset the internal hierarchy export counters via the call
-\begin{lstlisting}[language=C++]
-MueLu::ResetExportCounters<SC,LO,GO,NO>();
-\end{lstlisting}
