@@ -51,6 +51,22 @@
 
 namespace Thyra {
 
+// Mock Extended InArgs and OutArgs Objects. In practice, these
+// objects will be defined by a solver that needs to extend the
+// InArgs/OutArgs for specialized data without cluttering the core
+// model evaluator interface.
+template<class Scalar>
+struct MockExtendedInArgs
+{
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> a;
+};
+
+template<class Scalar>
+struct MockExtendedOutArgs
+{
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> b;
+};
+
 
 template<class Scalar> class DummyTestModelEvaluator;
 
@@ -66,7 +82,9 @@ dummyTestModelEvaluator(
   const ArrayView<const Ordinal> &p_sizes = Teuchos::null,
   const ArrayView<const Ordinal> &g_sizes = Teuchos::null,
   const bool supports_x_dot = false,
-  const bool supports_x_dot_dot = false
+  const bool supports_x_dot_dot = false,
+  const bool supports_extended_inargs = true,
+  const bool supports_extended_outargs = true
   );
 
 
@@ -89,7 +107,9 @@ public:
     const ArrayView<const Ordinal> &p_sizes,
     const ArrayView<const Ordinal> &g_sizes,
     const bool supports_x_dot = false,
-    const bool supports_x_dot_dot = false
+    const bool supports_x_dot_dot = false,
+    const bool supports_extended_inargs = true,
+    const bool supports_extended_outargs = true
     );
 
   //@}
