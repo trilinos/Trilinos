@@ -31,6 +31,7 @@
 #define SACADO_FAD_SIMPLEFAD_HPP
 
 #include "Sacado_Fad_SimpleFadTraits.hpp"
+#include "Sacado_Fad_GeneralFad.hpp"
 #include "Sacado_Fad_DynamicStorage.hpp"
 
 namespace Sacado {
@@ -48,7 +49,7 @@ namespace Sacado {
      * interface is provided by Sacado::Fad::GeneralFad.
      */
     template <typename ValueT>
-    class SimpleFad : public GeneralFad<ValueT,DynamicStorage<ValueT> >  {
+    class SimpleFad : public GeneralFad<ValueT,DynamicStorage<ValueT> > {
 
     public:
 

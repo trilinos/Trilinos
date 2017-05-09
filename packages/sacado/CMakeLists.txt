@@ -25,6 +25,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
+  SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  "Make the new Fad design the default, replacing the old one."
+  FALSE
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_HIERARCHICAL
   SACADO_VIEW_CUDA_HIERARCHICAL
   "Enable hierarchical parallelism (currently only for CUDA)."
@@ -122,6 +129,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable C++11 support in Sacado."
   "${Trilinos_ENABLE_CXX11}"
   )
+
+IF(Sacado_NEW_FAD_DESIGN_IS_DEFAULT AND NOT Sacado_ENABLE_CXX11)
+  message(FATAL_ERROR "New Fad design requires C++11 enabled.  Please reconfigure with Trilinos_ENABLE_CXX11=ON.")
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples

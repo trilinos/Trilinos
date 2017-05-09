@@ -30,9 +30,6 @@
 // @HEADER
 
 #include "FadUnitTests2.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_CacheFad_SFad.hpp"
-#include "Sacado_CacheFad_SLFad.hpp"
 
 #ifdef HAVE_SACADO_COMPLEX
 typedef FadOpsUnitTest2<Sacado::CacheFad::DFad<std::complex<double> >,

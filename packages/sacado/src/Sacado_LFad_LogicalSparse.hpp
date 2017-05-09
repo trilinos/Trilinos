@@ -118,7 +118,8 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      LogicalSparseImp(const int sz, const value_type & x) : Storage(sz, x) {}
+      LogicalSparseImp(const int sz, const value_type & x) :
+        Storage(sz, x, InitDerivArray) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -127,7 +128,7 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       LogicalSparseImp(const int sz, const int i, const value_type & x) :
-        Storage(sz, x) {
+        Storage(sz, x, InitDerivArray) {
         this->fastAccessDx(i)=logical_type(1);
       }
 
