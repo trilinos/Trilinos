@@ -4181,24 +4181,38 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sortEntries ()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::sortEntries: "
-      "Cannot sort with static graph.");
-    if (! myGraph_->isSorted ()) {
-      const LocalOrdinal lclNumRows =
-        static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
-        const RowInfo rowInfo = myGraph_->getRowInfo (row);
-        auto lclColInds = myGraph_->getLocalKokkosRowViewNonConst (rowInfo);
-        auto vals = this->getRowViewNonConst (rowInfo);
-        // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least for
-        // lclColInds, if not also for values.
-        sort2 (lclColInds.ptr_on_device (),
-               lclColInds.ptr_on_device () + rowInfo.numEntries,
-               vals.ptr_on_device ());
-      }
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "sortEntries: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStaticGraph (), std::runtime_error, "Cannot sort with static graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
+       "matrix claims ! isStaticGraph().  Please report this bug to the "
+       "Tpetra developers.");
+
+    crs_graph_type& graph = * (this->myGraph_);
+    const bool sorted = graph.isSorted ();
+
+    if (! sorted) {
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_for (range_type (0, lclNumRows),
+        [this, &graph] (const LO& lclRow) {
+          const RowInfo rowInfo = graph.getRowInfo (lclRow);
+          auto lclColInds = graph.getLocalKokkosRowViewNonConst (rowInfo);
+          auto vals = this->getRowViewNonConst (rowInfo);
+          // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least
+          // for lclColInds, if not also for values.
+          sort2 (lclColInds.ptr_on_device (),
+                 lclColInds.ptr_on_device () + rowInfo.numEntries,
+                 vals.ptr_on_device ());
+        });
       // we just sorted every row
-      myGraph_->indicesAreSorted_ = true;
+      graph.indicesAreSorted_ = true;
     }
   }
 
