@@ -910,6 +910,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     ParameterList ptentParams;
     if(paramList.isSublist("matrixmatrix: kernel params"))   ptentParams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
     if(defaultList.isSublist("matrixmatrix: kernel params")) ptentParams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, ptentParams);
     Ptent->SetParameterList(ptentParams);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
