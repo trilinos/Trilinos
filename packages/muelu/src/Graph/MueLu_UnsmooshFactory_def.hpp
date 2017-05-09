@@ -61,7 +61,10 @@ namespace MueLu {
   RCP<const ParameterList> UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
-    //validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
+    validParamList->set< RCP<const FactoryBase> >("DofStatus",          Teuchos::null, "Generating factory for dofStatus array (usually the VariableDofLaplacdianFactory)");
+
+    validParamList->set< int  >                  ("maxDofPerNode", 1,     "Maximum number of DOFs per node");
+    validParamList->set< bool >                  ("fineIsPadded" , false, "true if finest level input matrix is padded");
 
     return validParamList;
   }
@@ -70,6 +73,7 @@ namespace MueLu {
   void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     //const ParameterList& pL = GetParameterList();
     Input(currentLevel, "A");
+    Input(currentLevel, "DofStatus");
     //Input(currentLevel, "Coordinates");
 
     /*if (currentLevel.IsAvailable("DofPresent", NoFactory::get())) {
@@ -89,7 +93,10 @@ namespace MueLu {
     Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
     Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
+    Teuchos::Array<char> dofStatus = Get<Teuchos::Array<char> >(currentLevel, "DofStatus");
 
+    int maxDofPerNode = pL.get<int> ("maxDofPerNode");
+    bool fineIsPadded = pL.get<bool>("fineIsPadded");
 
     //Set(currentLevel,"A",lapMat);
   }
