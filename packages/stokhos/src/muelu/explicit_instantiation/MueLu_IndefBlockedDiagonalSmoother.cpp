@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+
+
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -62,4 +62,4 @@ template class MueLu::IndefBlockedDiagonalSmoother<pce_type, int, int>;
 
 #endif
 
-#endif
+

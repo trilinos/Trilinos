@@ -46,8 +46,6 @@
 #ifndef MUELU_SCHURCOMPLEMENTFACTORY_DEF_HPP_
 #define MUELU_SCHURCOMPLEMENTFACTORY_DEF_HPP_
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -204,5 +202,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_SCHURCOMPLEMENTFACTORY_DEF_HPP_ */
