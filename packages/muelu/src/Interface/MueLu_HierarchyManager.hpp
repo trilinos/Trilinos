@@ -78,10 +78,6 @@ namespace MueLu {
   //
   // See also: FactoryManager
   //
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ResetExportCounters();
-
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
@@ -97,9 +93,7 @@ namespace MueLu {
         verbosity_              (Medium),
         doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),
         implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
-        graphOutputLevel_(-1),
-        exportFrequency_(Teuchos::as<int>(1)),
-        exportTotal_(-1) { }
+        graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -244,24 +238,20 @@ namespace MueLu {
       // here.
       numDesiredLevel_ = levelID;
 
-      if ( (exportTotal_ < 0) ||
-           (exportTotal_ > 0 && exportCount_ < exportTotal_ && ((ctorCount_+1)%exportFrequency_==0)) ) {
-        WriteData<Matrix>(H, matricesToPrint_, ctorCount_,     "A");
-        WriteData<Matrix>(H, prolongatorsToPrint_, ctorCount_, "P");
-        WriteData<Matrix>(H, restrictorsToPrint_, ctorCount_,  "R");
-        WriteData<MultiVector>(H, nullspaceToPrint_, ctorCount_,  "Nullspace");
-        WriteData<MultiVector>(H, coordinatesToPrint_, ctorCount_,  "Coordinates");
+      WriteData<Matrix>(H, matricesToPrint_,     "A");
+      WriteData<Matrix>(H, prolongatorsToPrint_, "P");
+      WriteData<Matrix>(H, restrictorsToPrint_,  "R");
+      WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
+      WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
 #ifdef HAVE_MUELU_INTREPID2
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-        typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+      typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
 #else
-        typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
+      typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
 #endif
-        WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
-#endif
-        exportCount_++;
-      }
-      ctorCount_++;
+      WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
+#endif    
+
 
     } //SetupHierarchy
 
@@ -311,28 +301,15 @@ namespace MueLu {
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
     Teuchos::Array<int>   elementToNodeMapsToPrint_;
-    /// How often the requested data should be written.
-    int  exportFrequency_;
-    /// The maximum number of times the data can be written.
-    int  exportTotal_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 
   private:
 
-    /// Number of times data has been written.
-    static int  exportCount_;
-    /// Number of times Hierarchy has been constructed.
-    static int  ctorCount_;
-
-    /// Nonmember function to reset static export counters.
-    friend void ResetExportCounters<SC,LO,GO,NO>();
-
     template<class T>
     void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, bool isFieldContainer=false) const {
       for (int i = 0; i < data.size(); ++i) {
-        // example:  A0_3.m, which means A from level 0, 3rd export iteration
-        std::string fileName = name + Teuchos::toString(data[i]) + "_" + Teuchos::toString(iteration) + ".m";
+        std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
@@ -340,10 +317,10 @@ namespace MueLu {
           if (L->IsAvailable(name)) {
             RCP<T> M = L->template Get< RCP<T> >(name);
             if (!M.is_null()) {
-              Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
-            }
-          }
-        }
+	      Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);              		
+	    }
+	  }
+	}
       }
     }
 
@@ -359,53 +336,47 @@ namespace MueLu {
           if (L->IsAvailable(name)) {
             RCP<T> M = L->template Get< RCP<T> >(name);
             if (!M.is_null()) {
-              RCP<Matrix> A = L->template Get<RCP<Matrix> >("A");
-              RCP<const CrsGraph> AG = A->getCrsGraph();
-              WriteFieldContainer<T>(fileName,*M,*AG->getColMap());
-            }
-          }
-        }
+	      RCP<Matrix> A = L->template Get<RCP<Matrix> >("A");
+	      RCP<const CrsGraph> AG = A->getCrsGraph();
+	      WriteFieldContainer<T>(fileName,*M,*AG->getColMap());
+	    }
+	  }
+	}
       }
     }
 
-    // For dumping an IntrepidPCoarsening element-to-node map to disk
+    // For dumping an IntrepidPCoarsening element-to-node map to disk     
     template<class T>
     void WriteFieldContainer(const std::string& fileName, T & fcont,const Map &colMap) const {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       typedef Node NO;
-      typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;
+      typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;  
 
       size_t num_els = (size_t) fcont.dimension(0);
       size_t num_vecs =(size_t) fcont.dimension(1);
-
+      
       // Generate rowMap
       Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.dimension(0),colMap.getIndexBase(),colMap.getComm());
-
+            
       // Fill multivector to use *petra dump routines
       RCP<GOMultiVector> vec = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(rowMap,num_vecs);
-
+      
       for(size_t j=0; j<num_vecs; j++)  {
-        Teuchos::ArrayRCP<GO> v = vec->getDataNonConst(j);
-        for(size_t i=0; i<num_els; i++)
-          v[i] = colMap.getGlobalElement(fcont(i,j));
+	Teuchos::ArrayRCP<GO> v = vec->getDataNonConst(j);
+	for(size_t i=0; i<num_els; i++) 
+	  v[i] = colMap.getGlobalElement(fcont(i,j));
       }
-
+      
       Xpetra::IO<GO,LO,GO,NO>::Write(fileName,*vec);
     }
 
-
+    
 
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level (the last levelManager is used for all the remaining levels)
 
   }; // class HierarchyManager
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ResetExportCounters() {
-    HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::exportCount_ = 0;
-    HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ctorCount_ = 0;
-  }
 
 } // namespace MueLu
 
