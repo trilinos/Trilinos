@@ -2692,31 +2692,29 @@ namespace Tpetra {
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    template<class Scalar>
+    template<class ValuesViewType>
     void
-    mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues)
+    mergeRowIndicesAndValues (const RowInfo& rowInfo,
+                              const ValuesViewType& rowValues)
     {
-      using Teuchos::ArrayView;
       const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (isStorageOptimized(), std::logic_error, "It is invalid to call this "
          "method if the graph's storage has already been optimized.  Please "
          "report this bug to the Tpetra developers.");
+      typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
 
-      typedef typename ArrayView<Scalar>::iterator Iter;
-      Iter rowValueIter = rowValues.begin ();
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
-      typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
+      value_type* rowValueIter = rowValues.data ();
+      auto inds_view = this->getLocalKokkosRowViewNonConst (rowInfo);
 
       // beg,end define a half-exclusive interval over which to iterate.
-      beg = inds_view.begin();
-      end = inds_view.begin() + rowinfo.numEntries;
-      newend = beg;
+      LocalOrdinal* beg = inds_view.data ();
+      LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
+      LocalOrdinal* newend = beg;
       if (beg != end) {
-        typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
-        Iter vcur = rowValueIter + 1;
-        Iter vend = rowValueIter;
+        LocalOrdinal* cur = beg + 1;
+        value_type* vcur = rowValueIter + 1;
+        value_type* vend = rowValueIter;
         cur = beg+1;
         while (cur != end) {
           if (*cur != *newend) {
@@ -2741,14 +2739,14 @@ namespace Tpetra {
       // merge should not have eliminated any entries; if so, the
       // assignment below will destroy the packed structure
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized() && mergedEntries != rowinfo.numEntries,
+        (isStorageOptimized() && mergedEntries != rowInfo.numEntries,
          std::logic_error,
          "Merge was incorrect; it eliminated entries from the graph.  "
          << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
-      nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
+      k_numRowEntries_(rowInfo.localRow) = mergedEntries;
+      nodeNumEntries_ -= (rowInfo.numEntries - mergedEntries);
     }
 
     //@}

@@ -4215,8 +4215,8 @@ namespace Tpetra {
         static_cast<LocalOrdinal> (this->getNodeNumRows ());
       for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
         const RowInfo rowInfo = myGraph_->getRowInfo (row);
-        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
-        myGraph_->template mergeRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
+        auto rv = this->getRowViewNonConst (rowInfo);
+        myGraph_->template mergeRowIndicesAndValues<decltype (rv) > (rowInfo, rv);
       }
       myGraph_->noRedundancies_ = true; // we just merged every row
     }
