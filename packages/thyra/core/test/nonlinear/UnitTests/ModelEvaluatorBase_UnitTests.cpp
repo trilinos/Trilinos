@@ -276,4 +276,87 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( InArgs, setSolutionArgs )
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, extendedInArgs, Scalar )
+{
+  const RCP<const ModelEvaluator<Scalar> > model = 
+    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), false, false);
+
+  // Create the extended inarg data
+  RCP<Thyra::MockExtendedInArgs<Scalar>> my_data =
+    Teuchos::rcp(new Thyra::MockExtendedInArgs<Scalar>);
+  my_data->a = createMember(model->get_x_space());
+
+  auto inArgs = model->createInArgs();
+
+  // Check that the ME supports the extended type
+  TEST_ASSERT(inArgs.template supports<Thyra::MockExtendedInArgs<Scalar>>());
+  TEST_ASSERT(!inArgs.template supports<double>()); // unsupported type
+
+  // Check set
+  RCP<const Thyra::MockExtendedInArgs<Scalar>> const_my_data = my_data;
+  inArgs.set(const_my_data);
+  
+  // Check copy operation
+  auto inArgs2 = model->createInArgs();
+  inArgs2.setArgs(inArgs);
+
+  // Check get
+  auto my_data_2 = inArgs2.template get<const Thyra::MockExtendedInArgs<Scalar>>();
+  TEST_EQUALITY(my_data->a, my_data_2->a);
+
+  // Make sure get() throws for unsupported type
+  TEST_THROW(inArgs.template get<const double>(),std::runtime_error);
+  TEST_THROW(inArgs2.template get<const double>(),std::runtime_error);
+
+  // Disable extended support (tests setting supports to false)
+  const RCP<const ModelEvaluator<Scalar> > unsupported_model = 
+    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), false, false,false,false);
+  auto inArgs3 = unsupported_model->createInArgs();
+  TEST_ASSERT(!inArgs3.template supports<Thyra::MockExtendedInArgs<Scalar>>());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( InArgs, extendedInArgs )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, extendedOutArgs, Scalar )
+{
+  const RCP<const ModelEvaluator<Scalar> > model = 
+    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), false, false);
+
+  // Create the extended inarg data
+  RCP<Thyra::MockExtendedOutArgs<Scalar>> my_data = 
+    Teuchos::rcp(new Thyra::MockExtendedOutArgs<Scalar>);
+  my_data->b = createMember(model->get_x_space());
+
+  auto outArgs = model->createOutArgs();
+
+  // Check that the ME supports the extended type
+  TEST_ASSERT(outArgs.template supports<Thyra::MockExtendedOutArgs<Scalar>>());
+  TEST_ASSERT(!outArgs.template supports<double>()); // unsupported type
+
+  // Check set
+  RCP<const Thyra::MockExtendedOutArgs<Scalar>> const_my_data = my_data;
+  outArgs.set(const_my_data);
+  
+  // Check copy operation
+  auto outArgs2 = model->createOutArgs();
+  outArgs2.setArgs(outArgs);
+
+  // Check get
+  auto my_data_2 = outArgs2.template get<const Thyra::MockExtendedOutArgs<Scalar>>();
+  TEST_EQUALITY(my_data->b, my_data_2->b);
+
+  // Make sure get() throws for unsupported type
+  TEST_THROW(outArgs.template get<const double>(),std::runtime_error);
+  TEST_THROW(outArgs2.template get<const double>(),std::runtime_error);
+
+  // Disable extended support (tests setting supports to false)
+  const RCP<const ModelEvaluator<Scalar> > unsupported_model = 
+    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), false, false,false,false);
+  auto outArgs3 = unsupported_model->createOutArgs();
+  TEST_ASSERT(!outArgs3.template supports<Thyra::MockExtendedOutArgs<Scalar>>());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, extendedOutArgs )
+
 } // namespace Thyra

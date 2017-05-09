@@ -59,7 +59,6 @@
 
 namespace Thyra {
 
-
 // Nonmember constuctors
 
 
@@ -70,10 +69,12 @@ dummyTestModelEvaluator(
   const ArrayView<const Ordinal> &p_sizes,
   const ArrayView<const Ordinal> &g_sizes,
   const bool supports_x_dot,
-  const bool supports_x_dot_dot
+  const bool supports_x_dot_dot,
+  const bool supports_extended_inargs,
+  const bool supports_extended_outargs
   )
 {
-  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes, supports_x_dot, supports_x_dot_dot));
+  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes, supports_x_dot, supports_x_dot_dot,supports_extended_inargs,supports_extended_outargs));
 }
 
 
@@ -86,7 +87,9 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   const ArrayView<const Ordinal> &p_sizes,
   const ArrayView<const Ordinal> &g_sizes,
   const bool supports_x_dot,
-  const bool supports_x_dot_dot
+  const bool supports_x_dot_dot,
+  const bool supports_extended_inargs,
+  const bool supports_extended_outargs
   )
 {
   
@@ -119,6 +122,10 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
     inArgs.setSupports(MEB::IN_ARG_x_dot_dot);
   inArgs.setSupports(MEB::IN_ARG_step_size);
   inArgs.setSupports(MEB::IN_ARG_stage_number);
+  inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar>>(true);
+  // test the removal of support
+  if (!supports_extended_inargs)
+    inArgs.template setSupports<Thyra::MockExtendedInArgs<Scalar>>(false);
   prototypeInArgs_ = inArgs;
   
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -127,6 +134,10 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
+  outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar>>(true);
+  // test the removal of support
+  if (!supports_extended_outargs)
+    outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar>>(false);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
@@ -300,7 +311,9 @@ void DummyTestModelEvaluator<Scalar>::evalModelImpl(
     const ArrayView<const Ordinal> &p_sizes, \
     const ArrayView<const Ordinal> &g_sizes, \
     const bool supports_x_dot, \
-    const bool supports_x_dot_dot \
+    const bool supports_x_dot_dot,              \
+    const bool supports_extended_inargs,        \
+    const bool supports_extended_outargs        \
     ); \
 
 
