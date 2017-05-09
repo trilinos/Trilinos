@@ -1372,7 +1372,8 @@ namespace Tpetra {
       else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
         // Use a reference, so that I don't touch the
         // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)
+        // has no reference count in a release build.)  This ensures
+        // thread safety.
         //
         // lclInds2D_ lives on host, so this code does not assume UVM.
         Teuchos::Array<LO>& lclInds = this->lclInds2D_[rowInfo.localRow];
@@ -1414,7 +1415,8 @@ namespace Tpetra {
       else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
         // Use a reference, so that I don't touch the
         // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)
+        // has no reference count in a release build.)  This ensures
+        // thread safety.
         //
         // lclInds2D_ lives on host, so this code does not assume UVM.
         Teuchos::Array<LO>& cols = this->lclInds2D_[rowInfo.localRow];
@@ -1457,7 +1459,8 @@ namespace Tpetra {
       else if (! this->gblInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
         // Use a reference, so that I don't touch the
         // Teuchos::ArrayView reference count in a debug build.  (It
-        // has no reference count in a release build.)
+        // has no reference count in a release build.)  This ensures
+        // thread safety.
         //
         // gblInds2D_ lives on host, so this code does not assume UVM.
         Teuchos::Array<GO>& cols = this->gblInds2D_[rowinfo.localRow];

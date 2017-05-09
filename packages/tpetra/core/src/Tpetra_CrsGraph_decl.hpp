@@ -2672,33 +2672,6 @@ namespace Tpetra {
     //! Sort the column indices in the given row.
     void sortRowIndices (const RowInfo& rowinfo);
 
-    /// \brief Sort the column indices and their values in the given row.
-    ///
-    /// \tparam Scalar The type of the values.  When calling this
-    ///   method from CrsMatrix, this should be the same as the
-    ///   <tt>Scalar</tt> template parameter of CrsMatrix.
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the row.
-    ///
-    /// \param values [in/out] On input: values for the given row.  If
-    ///   indices is an array of the column indices in the row, then
-    ///   values and indices should have the same number of entries,
-    ///   and indices[k] should be the column index corresponding to
-    ///   values[k].  On output: the same values, but sorted in the
-    ///   same order as the (now sorted) column indices in the row.
-    template <class Scalar>
-    void
-    sortRowIndicesAndValues (const RowInfo rowinfo,
-                             const Teuchos::ArrayView<Scalar>& values)
-    {
-      if (rowinfo.numEntries > 0) {
-        Teuchos::ArrayView<LocalOrdinal> inds_view =
-          this->getLocalViewNonConst (rowinfo);
-        sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
-               values.begin ());
-      }
-    }
-
     /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
