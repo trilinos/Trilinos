@@ -28,11 +28,6 @@ configuration = {
             # We want to see tracing of added tests to help in debugging
             # problems.
             '-DTrilinos_TRACE_ADD_TEST=ON',
-            # Disable longer filing MueLu tests (#1290, #1299)
-            '-DMueLu_UnitTestsEpetra_MPI_1_DISABLE=ON',
-            '-DMueLu_UnitTestsEpetra_MPI_4_DISABLE=ON',
-            '-DMueLu_UnitTestsTpetra_MPI_1_DISABLE=ON',
-            '-DMueLu_UnitTestsTpetra_MPI_4_DISABLE=ON',
             ],
 
         # Setup for the builds that should be run by default for a
