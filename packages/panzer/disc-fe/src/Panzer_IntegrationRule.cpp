@@ -72,12 +72,25 @@ IntegrationRule(const panzer::CellData& cell_data, const std::string & in_cv_typ
 {
   // Cubature orders are only used for indexing so we make them large enough not to interfere with other rules.
   // TODO: This requirement (on arbitrary cubature order) will be dropped with the new Workset design (using descriptors to find integration rules)
+  // TODO: These isSide conditions shouldn't be required... I'm missing something...
   if(in_cv_type == "volume"){
+    if(cell_data.isSide()){
+      IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME,cell_data.side());
+    } else {
       IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME);
+    }
   } else if(in_cv_type == "side"){
-    IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE);
+    if(cell_data.isSide()){
+      IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE,cell_data.side());
+    } else {
+      IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE);
+    }
   } else if(in_cv_type == "boundary"){
+    if(cell_data.isSide()){
       IntegrationDescriptor::setup(95, IntegrationDescriptor::CV_BOUNDARY, cell_data.side());
+    } else {
+      IntegrationDescriptor::setup(95, IntegrationDescriptor::CV_BOUNDARY);
+    }
   } else {
     TEUCHOS_ASSERT(false);
   }
@@ -97,36 +110,26 @@ IntegrationRule(const panzer::IntegrationDescriptor& description,
   cubature_degree = description.getOrder();
   cv_type = "none";
 
+  panzer::CellData cell_data;
+  if(isSide()){
+    cell_data = panzer::CellData(num_cells, getSide(), cell_topology);
+  } else {
+    cell_data = panzer::CellData(num_cells, cell_topology);
+  }
+
   if(getType() == panzer::IntegrationDescriptor::VOLUME){
-
-    panzer::CellData cell_data(num_cells, cell_topology);
     setup(getOrder(), cell_data);
-
   } else if(description.getType() == panzer::IntegrationDescriptor::SIDE){
-
-    panzer::CellData cell_data(num_cells, getSide(), cell_topology);
     setup(getOrder(), cell_data);
-
   } else if(description.getType() == panzer::IntegrationDescriptor::SURFACE){
-
     TEUCHOS_ASSERT(num_faces!=-1);
     setup_surface(cell_topology, num_cells, num_faces);
-
   } else if(description.getType() == panzer::IntegrationDescriptor::CV_VOLUME){
-
-    panzer::CellData cell_data(num_cells, cell_topology);
     setup_cv(cell_data, "volume");
-
   } else if(description.getType() == panzer::IntegrationDescriptor::CV_SIDE){
-
-    panzer::CellData cell_data(num_cells, cell_topology);
     setup_cv(cell_data, "side");
-
   } else if(description.getType() == panzer::IntegrationDescriptor::CV_BOUNDARY){
-
-    panzer::CellData cell_data(num_cells, description.getSide(), cell_topology);
     setup_cv(cell_data, "boundary");
-
   } else {
     TEUCHOS_ASSERT(false);
   }

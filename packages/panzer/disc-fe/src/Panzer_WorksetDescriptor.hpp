@@ -79,6 +79,7 @@ public:
                     const bool apply_orientations=true)
   : elementBlock_(element_block),
     worksetSize_(workset_size),
+    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
     applyOrientations_(apply_orientations)
   {
@@ -103,12 +104,44 @@ public:
    */
   WorksetDescriptor(const std::string & element_block,
                     const std::string & sideset,
+                    const bool sideAssembly)
+  : elementBlock_(element_block),
+    sideset_(sideset),
+    worksetSize_(EMPTY),
+    sideAssembly_(sideAssembly),
+    requiresPartitioning_(false),
+    applyOrientations_(true)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(elementBlock_=="",std::runtime_error,
+                               "WorksetDescriptor constr: Element block name must be non-empty!");
+    TEUCHOS_TEST_FOR_EXCEPTION(sideset_=="",std::runtime_error,
+                               "WorksetDescriptor constr: Side set name must be non-empty!");
+  }
+
+  /** Constructor that defines a side set. Note that the
+   * specified sideset must be a non-empty string.
+   *
+   * Options for workset_size: EMPTY, FULL, SPECIAL, >0
+   *   EMPTY -> workset size is set by cellData in WorksetNeeds
+   *   FULL -> workset size is set to largest possible value
+   *   SPECIAL  -> Special case
+   *   >0 -> workset size is set to this value (overwrites WorksetNeeds)
+   *
+   * \param[in] element_block Element block that includes the side
+   * \param[in] sideset Side set that is being used
+   * \param[in] workset_size Approximate size of workset
+   * \param[in] requires_partitioning Should the local mesh be partitioned - used for discontinuous discretizations
+   * \param[in] apply_orientations Should we apply orientations to the mesh
+   */
+  WorksetDescriptor(const std::string & element_block,
+                    const std::string & sideset,
                     const int workset_size=EMPTY,
                     const bool requires_partitioning=false,
                     const bool apply_orientations=true)
   : elementBlock_(element_block),
     sideset_(sideset),
     worksetSize_(workset_size),
+    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
     applyOrientations_(apply_orientations)
   {
@@ -147,6 +180,7 @@ public:
     sideset_(sideset_0),
     sideset_2_(sideset_1),
     worksetSize_(workset_size),
+    sideAssembly_(false),
     requiresPartitioning_(requires_partitioning),
     applyOrientations_(apply_orientations)
   {
@@ -186,8 +220,8 @@ public:
   //! Expects side set assembly on volume
   //TEUCHOS_DEPRECATED
   bool sideAssembly() const
-  //{ return sideAssembly_; }
-  { return useSideset(); }
+  { return sideAssembly_; }
+//  { return useSideset(); }
 
   /** \brief Identifies this workset as an interface between two element blocks
    *
@@ -253,7 +287,7 @@ private:
    * or volume rules are constructued. Ignored if useSideset_
    * is false.
    */
-//  bool sideAssembly_;
+  bool sideAssembly_;
 };
 
 //! Equality operation for use with hash tables and maps
