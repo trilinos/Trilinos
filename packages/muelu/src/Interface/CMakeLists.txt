@@ -103,15 +103,14 @@ ELSE()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_HierarchyManager.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 
 ENDIF() # split cpp files

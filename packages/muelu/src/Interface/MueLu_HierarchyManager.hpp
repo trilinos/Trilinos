@@ -99,8 +99,7 @@ namespace MueLu {
         implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
         graphOutputLevel_(-1),
         exportFrequency_(Teuchos::as<int>(1)),
-        exportTotal_(-1),
-        exportFirstSystem_(false) { }
+        exportTotal_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -245,21 +244,20 @@ namespace MueLu {
       // here.
       numDesiredLevel_ = levelID;
 
-      const int offset = (exportFirstSystem_ ? 0 : 1);
       if ( (exportTotal_ < 0) ||
-           (exportTotal_ > 0 && exportCount_ < exportTotal_ && ((ctorCount_+offset)%exportFrequency_==0)) ) {
-        WriteData<Matrix>(H, matricesToPrint_, ctorCount_,     "A", exportSuffix_);
-        WriteData<Matrix>(H, prolongatorsToPrint_, ctorCount_, "P", exportSuffix_);
-        WriteData<Matrix>(H, restrictorsToPrint_, ctorCount_,  "R", exportSuffix_);
-        WriteData<MultiVector>(H, nullspaceToPrint_, ctorCount_,  "Nullspace", exportSuffix_);
-        WriteData<MultiVector>(H, coordinatesToPrint_, ctorCount_,  "Coordinates", exportSuffix_);
+           (exportTotal_ > 0 && exportCount_ < exportTotal_ && ((ctorCount_+1)%exportFrequency_==0)) ) {
+        WriteData<Matrix>(H, matricesToPrint_, ctorCount_,     "A");
+        WriteData<Matrix>(H, prolongatorsToPrint_, ctorCount_, "P");
+        WriteData<Matrix>(H, restrictorsToPrint_, ctorCount_,  "R");
+        WriteData<MultiVector>(H, nullspaceToPrint_, ctorCount_,  "Nullspace");
+        WriteData<MultiVector>(H, coordinatesToPrint_, ctorCount_,  "Coordinates");
 #ifdef HAVE_MUELU_INTREPID2
 #ifdef HAVE_MUELU_INTREPID2_REFACTOR
         typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
 #else
         typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
 #endif
-        WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node", exportSuffix_);
+        WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
 #endif
         exportCount_++;
       }
@@ -317,10 +315,6 @@ namespace MueLu {
     int  exportFrequency_;
     /// The maximum number of times the data can be written.
     int  exportTotal_;
-    /// Whether the first system should be written.
-    bool exportFirstSystem_;
-    /// Suffix to append to all output file.  (Most useful for unit testing.)
-    std::string exportSuffix_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 
@@ -335,10 +329,10 @@ namespace MueLu {
     friend void ResetExportCounters<SC,LO,GO,NO>();
 
     template<class T>
-    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const GO &iteration, const std::string& name, const std::string &suffix) const {
+    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, bool isFieldContainer=false) const {
       for (int i = 0; i < data.size(); ++i) {
         // example:  A0_3.m, which means A from level 0, 3rd export iteration
-        std::string fileName = name + Teuchos::toString(data[i]) + "_" + Teuchos::toString(iteration) + "_" + suffix + ".m";
+        std::string fileName = name + Teuchos::toString(data[i]) + "_" + Teuchos::toString(iteration) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
@@ -355,9 +349,9 @@ namespace MueLu {
 
 
     template<class T>
-    void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname, const std::string &suffix) const {
+    void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname, bool isFieldContainer=false) const {
       for (int i = 0; i < data.size(); ++i) {
-        const std::string fileName = ofname + "_" + Teuchos::toString(data[i]) + "_" + suffix + ".m";
+        const std::string fileName = ofname + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);

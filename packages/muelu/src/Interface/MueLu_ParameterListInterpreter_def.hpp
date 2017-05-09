@@ -286,10 +286,6 @@ namespace MueLu {
         this->exportFrequency_  = printList.get<int>("frequency");
       if (printList.isParameter("total"))
         this->exportTotal_  = printList.get<int>("total");
-      if (printList.isParameter("export first system"))
-        this->exportFirstSystem_ = printList.get<bool>("export first system");
-      if (printList.isParameter("filename suffix"))
-        this->exportSuffix_ = printList.get<std::string>("filename suffix");
     }
 
     // Set verbosity parameter
