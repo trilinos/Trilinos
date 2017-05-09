@@ -3548,12 +3548,10 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     makeIndicesLocal ();
 
-    if (! this->isSorted () || ! this->isMerged ()) {
-      // If this process has no indices, then CrsGraph considers it
-      // already trivially sorted and merged.  Thus, this method need
-      // not be called on all processes in the row Map's communicator.
-      this->sortAndMergeAllIndices ();
-    }
+    // If this process has no indices, then CrsGraph considers it
+    // already trivially sorted and merged.  Thus, this method need
+    // not be called on all processes in the row Map's communicator.
+    this->sortAndMergeAllIndices (this->isSorted (), this->isMerged ());
 
     makeImportExport (); // Make Import and Export objects, if necessary
     computeGlobalConstants ();
@@ -4336,7 +4334,9 @@ namespace Tpetra {
         // FIXME (mfh 17 Sep 2014) This violates the strong exception
         // guarantee.  It would be better to sort the new index arrays
         // before committing them.
-        sortAllIndices ();
+        const bool sorted = false; // need to resort
+        const bool merged = true; // no need to merge, since no dups
+        this->sortAndMergeAllIndices (sorted, merged);
       }
     }
     colMap_ = newColMap;
@@ -4733,29 +4733,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortAllIndices ()
-  {
-    typedef LocalOrdinal LO;
-    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space host_execution_space;
-    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
-    const char tfecfFuncName[] = "sortAllIndices: ";
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isGloballyIndexed (), std::logic_error,
-       "This method may only be called after makeIndicesLocal." );
-    if (! this->isSorted ()) {
-      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      Kokkos::parallel_for (range_type (0, lclNumRows), [this] (const LO& lclRow) {
-          this->sortRowIndices (this->getRowInfo (lclRow));
-        });
-    }
-    indicesAreSorted_ = true; // we just sorted every row
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeColMap ()
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -4816,7 +4793,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortAndMergeAllIndices ()
+  sortAndMergeAllIndices (const bool sorted, const bool merged)
   {
     typedef LocalOrdinal LO;
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
@@ -4828,8 +4805,6 @@ namespace Tpetra {
       (this->isGloballyIndexed (), std::logic_error,
        "This method may only be called after makeIndicesLocal." );
 
-    const bool sorted = this->isSorted ();
-    const bool merged = this->isMerged ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! merged && this->isStorageOptimized (), std::logic_error,
        "The graph is already storage optimized, so we shouldn't be merging any "

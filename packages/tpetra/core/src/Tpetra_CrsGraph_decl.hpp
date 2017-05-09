@@ -2657,15 +2657,16 @@ namespace Tpetra {
     /// sorted" and "is merged" states.
     void setLocallyModified ();
 
-    //! Sort the column indices in all the rows.
-    void sortAllIndices ();
-
   private:
-    //! Sort and merge the column indices in all the rows.
-    void sortAndMergeAllIndices ();
+    /// \brief Sort and merge the column indices in all the rows.
+    ///
+    /// \param sorted [in] Whether the indices are already sorted.
+    /// \param merged [in] Whether the indices are already merged.
+    void
+    sortAndMergeAllIndices (const bool sorted, const bool merged);
 
-    // mfh 08 May 2017: I don't like that the scope it was protected,
-    // but I'm leaving it for backwards compatibility.
+    // mfh 08 May 2017: I only restore "protected" here for backwards
+    // compatibility.
   protected:
 
     //! Sort the column indices in the given row.
