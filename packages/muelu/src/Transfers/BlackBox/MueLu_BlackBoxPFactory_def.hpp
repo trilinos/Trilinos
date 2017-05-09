@@ -216,10 +216,28 @@ namespace MueLu {
     Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
     Array<LO> myOffset(3), lCoarseNodesPerDir(3), endRate(3);
     Array<bool> ghostInterface(6);
+    ArrayRCP<Array<double> > coarseNodes(numDimensions);
+    Array<ArrayView<const double> > fineNodes(numDimensions);
+    for(LO dim = 0; dim < numDimensions; ++dim) {
+      fineNodes[dim] = coordinates->getData(dim)();
+    }
     GetGeometricData(coordinates, coarseRate, gFineNodesPerDir, lFineNodesPerDir, BlkSize,   // inputs (const)
                      gIndices, myOffset, ghostInterface, endRate, gCoarseNodesPerDir,        // outputs
                      lCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs, colGIDs,
-                     gNumCoarseNodes, lNumCoarseNodes);
+                     gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
+
+    // Create the MultiVector of coarse coordinates
+    Xpetra::UnderlyingLib lib = coordinates->getMap()->lib();
+    RCP<const Map> coarseCoordsMap = MapFactory::Build (lib,
+                                                        gNumCoarseNodes,
+                                                        coarseNodesGIDs.view(0, lNumCoarseNodes),
+                                                        coordinates->getMap()->getIndexBase(),
+                                                        coordinates->getMap()->getComm());
+    Array<ArrayView<const double> > coarseCoords(numDimensions);
+    for(LO dim = 0; dim < numDimensions; ++dim) {
+      coarseCoords[dim] = coarseNodes[dim]();
+    }
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coarseCoordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsMap, coarseCoords(), numDimensions);
 
     GO nTerms = gNumCoarseNodes                                                                               // Coarse nodes
       + (coarseRate[0] - 1)*(gCoarseNodesPerDir[0] - 1)*gCoarseNodesPerDir[1]*2                               // Edge nodes along direction 0
@@ -235,7 +253,8 @@ namespace MueLu {
                         const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
                         Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
                         Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
-                        Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes) const {
+                        Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
+                        ArrayRCP<Array<double> > coarseNodes) const {
 
     RCP<const Map> coordinatesMap = coordinates->getMap();
     LO numDimensions  = coordinates->getNumVectors();
@@ -580,6 +599,7 @@ namespace MueLu {
     // and the corresponding dofs that will need to be added to colMapP.
     colGIDs.resize(BlkSize*(lNumCoarseNodes+lNumGhostNodes));
     coarseNodesGIDs.resize(lNumCoarseNodes);
+    for(LO i = 0; i < numDimensions; ++i) {coarseNodes[i].resize(lNumCoarseNodes);}
     GO fineNodesPerCoarseSlab    = coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
     GO fineNodesEndCoarseSlab    = endRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
     GO fineNodesPerCoarsePlane   = coarseRate[1]*gFineNodesPerDir[0];
@@ -600,40 +620,80 @@ namespace MueLu {
       // Loop over the coarse nodes of the partition and add them to colGIDs
       // that will be used to construct the column and domain maps of P as well
       // as to construct the coarse coordinates map.
-      for(LO col = 0; col < lNumCoarseNodes; ++col) {
-        if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
-          tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
-          tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+      // for(LO col = 0; col < lNumCoarseNodes; ++col) { // This should most likely be replaced by loops of lCoarseNodesPerDir[] to simplify arithmetics
+      LO col = 0;
+      LO firstCoarseNodeInds[3], currentCoarseNode;
+      for(LO dim = 0; dim < 3; ++dim) {
+        if(myOffset[dim] == 0) {
+          firstCoarseNodeInds[dim] = 0;
         } else {
-          tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
-          tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
+          firstCoarseNodeInds[dim] = coarseRate[dim] - myOffset[dim];
         }
-        if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
-          tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
-          tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
-        } else {
-          tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
-          tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
-        }
-        if(tmpVars[1] == gFineNodesPerDir[0] - 1) {
-          tmpInds[0] = gCoarseNodesPerDir[0] - 1;
-        } else {
-          tmpInds[0] = tmpVars[1] / coarseRate[0];
-        }
-        gInd[2] = col / (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
-        tmp     = col % (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
-        gInd[1] = tmp / lCoarseNodesPerDir[0];
-        gInd[0] = tmp % lCoarseNodesPerDir[0];
-        lCol = gInd[2]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]) + gInd[1]*lCoarseNodesPerDir[0] + gInd[0];
-        gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
-        coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
-        for(LO dof = 0; dof < BlkSize; ++dof) {
-          colGIDs[BlkSize*lCol + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
+      }
+      Array<ArrayRCP<const double> > fineNodes(numDimensions);
+      for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim);}
+      for(LO k = 0; k < lCoarseNodesPerDir[2]; ++k) {
+        for(LO j = 0; j < lCoarseNodesPerDir[1]; ++j) {
+          for(LO i = 0; i < lCoarseNodesPerDir[0]; ++i) {
+            col = k*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0] + j*lCoarseNodesPerDir[0] + i;
+
+            // Check for endRate
+            currentCoarseNode = 0;
+            if(firstCoarseNodeInds[0] + i*coarseRate[0] > lFineNodesPerDir[0] - 1) {
+              currentCoarseNode += firstCoarseNodeInds[0] + (i-1)*coarseRate[0] + endRate[0];
+            } else {
+              currentCoarseNode += firstCoarseNodeInds[0] + i*coarseRate[0];
+            }
+            if(firstCoarseNodeInds[1] + j*coarseRate[1] > lFineNodesPerDir[1] - 1) {
+              currentCoarseNode += (firstCoarseNodeInds[1] + (j-1)*coarseRate[1] + endRate[1])*lFineNodesPerDir[0];
+            } else {
+              currentCoarseNode += (firstCoarseNodeInds[1] + j*coarseRate[1])*lFineNodesPerDir[0];
+            }
+            if(firstCoarseNodeInds[2] + k*coarseRate[2] > lFineNodesPerDir[2] - 1) {
+              currentCoarseNode += (firstCoarseNodeInds[2] + (k-1)*coarseRate[2] + endRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+            } else {
+              currentCoarseNode += (firstCoarseNodeInds[2] + k*coarseRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+            }
+            // Load coordinates
+            for(LO dim = 0; dim < numDimensions; ++dim) {
+              coarseNodes[dim][col] = fineNodes[dim][currentCoarseNode];
+            }
+
+            if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+              tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
+              tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+            } else {
+              tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
+              tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
+            }
+            if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+              tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
+              tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+            } else {
+              tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
+              tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
+            }
+            if(tmpVars[1] == gFineNodesPerDir[0] - 1) {
+              tmpInds[0] = gCoarseNodesPerDir[0] - 1;
+            } else {
+              tmpInds[0] = tmpVars[1] / coarseRate[0];
+            }
+            gInd[2] = col / (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
+            tmp     = col % (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
+            gInd[1] = tmp / lCoarseNodesPerDir[0];
+            gInd[0] = tmp % lCoarseNodesPerDir[0];
+            lCol = gInd[2]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]) + gInd[1]*lCoarseNodesPerDir[0] + gInd[0];
+            gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+            coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
+            for(LO dof = 0; dof < BlkSize; ++dof) {
+              colGIDs[BlkSize*lCol + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
+            }
+          }
         }
       }
       // Now loop over the ghost nodes of the partition to add them to colGIDs
       // since they will need to be included in the column map of P
-      for(LO col = lNumCoarseNodes; col < lNumCoarseNodes + lNumGhostNodes; ++col) {
+      for(col = lNumCoarseNodes; col < lNumCoarseNodes + lNumGhostNodes; ++col) {
         if((endRate[2] != coarseRate[2]) && (ghostGIDs[ghostPermut[col - lNumCoarseNodes]] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
           tmpInds[2] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab + 1;
           tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;

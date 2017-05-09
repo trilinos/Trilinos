@@ -87,13 +87,13 @@ namespace MueLuTests {
     void TestGetGeometricData(Teuchos::RCP<Xpetra::MultiVector<double, LO, GO, NO> >& coordinates, Array<LO> coarseRate, Array<GO> gNodesPerDim, Array<LO> lNodesPerDim, LO BlkSize,
                               Array<GO>& gIndices, Array<GO>& gCoarseNodesPerDir, Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
                               Array<LO>& myOffset, Array<LO>& lCoarseNodesPerDir, Array<LO>& endRate, LO& lNumCoarseNodes,
-                              Array<bool>& ghostInterface) const{
+                              Array<bool>& ghostInterface, ArrayRCP<Array<double> > coarseNodes) const{
       // Call the method to be tested.
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
       mybbmgPFactory.GetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, BlkSize,
                                       gIndices, myOffset, ghostInterface, endRate, gCoarseNodesPerDir,
                                       lCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs, colGIDs,
-                                      gNumCoarseNodes, lNumCoarseNodes);
+                                      gNumCoarseNodes, lNumCoarseNodes, coarseNodes);
     };
 
   };
@@ -173,14 +173,15 @@ namespace MueLuTests {
       }
     }
 
-    GO myZoffset;
-    GO myYoffset;
+    GO myZoffset, myYoffset, myXoffset;
     if(numDimensions == 2) {
       myZoffset = 0;
       myYoffset = myOffset / gNodesPerDim[0];
+      myXoffset = myOffset % gNodesPerDim[0];
     } else if(numDimensions == 3) {
       myZoffset = myOffset / (gNodesPerDim[1]*gNodesPerDim[0]);
       myYoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) / gNodesPerDim[0];
+      myXoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) % gNodesPerDim[0];
     }
     LO lNumPoints = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
 
@@ -193,7 +194,7 @@ namespace MueLuTests {
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
-          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = i / Teuchos::as<double>(gNodesPerDim[0] - 1);
+          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
           myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
           myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
         }
@@ -213,7 +214,7 @@ namespace MueLuTests {
     }
 
     // Create the map and store coordinates using the above array views
-    map          = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
+    map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
     Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(), numDimensions);
 
     // small parameter list for Galeri
@@ -263,11 +264,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    out << "version: " << MueLu::Version() << std::endl;
-
     RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
     fancy->setShowAllFrontMatter(false).setShowProcRank(true);
     Teuchos::FancyOStream& out2 = *fancy;
+
+    out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -297,18 +298,17 @@ namespace MueLuTests {
     Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
     Array<LO> myOffset(3), lCoarseNodesPerDir(3), endRate(3);
     Array<bool> ghostInterface(6);
+    Array<ArrayView<const double> > fineNodes(numDimensions);
+    ArrayRCP<Array<double> > coarseNodes(numDimensions);
     GO gNumCoarseNodes = 0;
     LO lNumCoarseNodes = 0;
+    for(LO dim = 0; dim < numDimensions; ++dim) {
+      fineNodes[dim] = coordinates->getData(dim)();
+    }
     factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
                                     gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
-                                    endRate, lNumCoarseNodes, ghostInterface);
-
-    out2 << "colGIDs=(";
-    for(LO i = 0; i < colGIDs.size() - 1; ++i) {
-      out2 << colGIDs[i] << ", ";
-    }
-    out2 << colGIDs[colGIDs.size() - 1] << ")" << std::endl;
+                                    endRate, lNumCoarseNodes, ghostInterface, coarseNodes);
 
     Array<GO> ghostGIDs_check, coarseNodesGIDs_check, colGIDs_check;
     if(map->getComm()->getSize() == 1) {
@@ -386,6 +386,10 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
+    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    Teuchos::FancyOStream& out2 = *fancy;
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -401,6 +405,9 @@ namespace MueLuTests {
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
     GetProblemData(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
+
+    Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Desktop/fineMap.m", *map);
+    Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Desktop/fineCoords.m", *coordinates);
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
