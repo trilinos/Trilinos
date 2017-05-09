@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === CCOLAMD/ccolamd.h ==================================================== */
+/* === CCOLAMD/trilinos_ccolamd.h ==================================================== */
 /* ========================================================================== */
 
 /* ----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
  * -------------------------------------------------------------------------- */
 
 /*
- *  You must include this file (ccolamd.h) in any routine that uses ccolamd,
+ *  You must include this file (trilinos_ccolamd.h) in any routine that uses trilinos_ccolamd,
  *  csymamd, or the related macros and definitions.
  */
 
@@ -32,82 +32,82 @@ extern "C" {
 /* All versions of CCOLAMD will include the following definitions.
  * As an example, to test if the version you are using is 1.3 or later:
  *
- *	if (CCOLAMD_VERSION >= CCOLAMD_VERSION_CODE (1,3)) ...
+ *	if (TRILINOS_CCOLAMD_VERSION >= TRILINOS_CCOLAMD_VERSION_CODE (1,3)) ...
  *
  * This also works during compile-time:
  *
- *	#if CCOLAMD_VERSION >= CCOLAMD_VERSION_CODE (1,3)
+ *	#if TRILINOS_CCOLAMD_VERSION >= TRILINOS_CCOLAMD_VERSION_CODE (1,3)
  *	    printf ("This is version 1.3 or later\n") ;
  *	#else
  *	    printf ("This is an early version\n") ;
  *	#endif
  */
 
-#define CCOLAMD_DATE "May 31, 2007"
-#define CCOLAMD_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
-#define CCOLAMD_MAIN_VERSION 2
-#define CCOLAMD_SUB_VERSION 7
-#define CCOLAMD_SUBSUB_VERSION 0
-#define CCOLAMD_VERSION \
-	CCOLAMD_VERSION_CODE(CCOLAMD_MAIN_VERSION,CCOLAMD_SUB_VERSION)
+#define TRILINOS_CCOLAMD_DATE "May 31, 2007"
+#define TRILINOS_CCOLAMD_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
+#define TRILINOS_CCOLAMD_MAIN_VERSION 2
+#define TRILINOS_CCOLAMD_SUB_VERSION 7
+#define TRILINOS_CCOLAMD_SUBSUB_VERSION 0
+#define TRILINOS_CCOLAMD_VERSION \
+	TRILINOS_CCOLAMD_VERSION_CODE(TRILINOS_CCOLAMD_MAIN_VERSION,TRILINOS_CCOLAMD_SUB_VERSION)
 
 /* ========================================================================== */
 /* === Knob and statistics definitions ====================================== */
 /* ========================================================================== */
 
 /* size of the knobs [ ] array.  Only knobs [0..3] are currently used. */
-#define CCOLAMD_KNOBS 20
+#define TRILINOS_CCOLAMD_KNOBS 20
 
 /* number of output statistics.  Only stats [0..10] are currently used. */
-#define CCOLAMD_STATS 20
+#define TRILINOS_CCOLAMD_STATS 20
 
 /* knobs [0] and stats [0]: dense row knob and output statistic. */
-#define CCOLAMD_DENSE_ROW 0
+#define TRILINOS_CCOLAMD_DENSE_ROW 0
 
 /* knobs [1] and stats [1]: dense column knob and output statistic. */
-#define CCOLAMD_DENSE_COL 1
+#define TRILINOS_CCOLAMD_DENSE_COL 1
 
 /* knobs [2]: aggressive absorption option */
-#define CCOLAMD_AGGRESSIVE 2
+#define TRILINOS_CCOLAMD_AGGRESSIVE 2
 
 /* knobs [3]: LU or Cholesky factorization option */
-#define CCOLAMD_LU 3
+#define TRILINOS_CCOLAMD_LU 3
 
 /* stats [2]: memory defragmentation count output statistic */
-#define CCOLAMD_DEFRAG_COUNT 2
+#define TRILINOS_CCOLAMD_DEFRAG_COUNT 2
 
-/* stats [3]: ccolamd status:  zero OK, > 0 warning or notice, < 0 error */
-#define CCOLAMD_STATUS 3
+/* stats [3]: trilinos_ccolamd status:  zero OK, > 0 warning or notice, < 0 error */
+#define TRILINOS_CCOLAMD_STATUS 3
 
 /* stats [4..6]: error info, or info on jumbled columns */ 
-#define CCOLAMD_INFO1 4
-#define CCOLAMD_INFO2 5
-#define CCOLAMD_INFO3 6
+#define TRILINOS_CCOLAMD_INFO1 4
+#define TRILINOS_CCOLAMD_INFO2 5
+#define TRILINOS_CCOLAMD_INFO3 6
 
 /* stats [7]: number of originally empty rows */
-#define CCOLAMD_EMPTY_ROW 7
+#define TRILINOS_CCOLAMD_EMPTY_ROW 7
 /* stats [8]: number of originally empty cols */
-#define CCOLAMD_EMPTY_COL 8
+#define TRILINOS_CCOLAMD_EMPTY_COL 8
 /* stats [9]: number of rows with entries only in dense cols */
-#define CCOLAMD_NEWLY_EMPTY_ROW 9
+#define TRILINOS_CCOLAMD_NEWLY_EMPTY_ROW 9
 /* stats [10]: number of cols with entries only in dense rows */
-#define CCOLAMD_NEWLY_EMPTY_COL 10
+#define TRILINOS_CCOLAMD_NEWLY_EMPTY_COL 10
 
 /* error codes returned in stats [3]: */
-#define CCOLAMD_OK				(0)
-#define CCOLAMD_OK_BUT_JUMBLED			(1)
-#define CCOLAMD_ERROR_A_not_present		(-1)
-#define CCOLAMD_ERROR_p_not_present		(-2)
-#define CCOLAMD_ERROR_nrow_negative		(-3)
-#define CCOLAMD_ERROR_ncol_negative		(-4)
-#define CCOLAMD_ERROR_nnz_negative		(-5)
-#define CCOLAMD_ERROR_p0_nonzero		(-6)
-#define CCOLAMD_ERROR_A_too_small		(-7)
-#define CCOLAMD_ERROR_col_length_negative	(-8)
-#define CCOLAMD_ERROR_row_index_out_of_bounds	(-9)
-#define CCOLAMD_ERROR_out_of_memory		(-10)
-#define CCOLAMD_ERROR_invalid_cmember		(-11)
-#define CCOLAMD_ERROR_internal_error		(-999)
+#define TRILINOS_CCOLAMD_OK				(0)
+#define TRILINOS_CCOLAMD_OK_BUT_JUMBLED			(1)
+#define TRILINOS_CCOLAMD_ERROR_A_not_present		(-1)
+#define TRILINOS_CCOLAMD_ERROR_p_not_present		(-2)
+#define TRILINOS_CCOLAMD_ERROR_nrow_negative		(-3)
+#define TRILINOS_CCOLAMD_ERROR_ncol_negative		(-4)
+#define TRILINOS_CCOLAMD_ERROR_nnz_negative		(-5)
+#define TRILINOS_CCOLAMD_ERROR_p0_nonzero		(-6)
+#define TRILINOS_CCOLAMD_ERROR_A_too_small		(-7)
+#define TRILINOS_CCOLAMD_ERROR_col_length_negative	(-8)
+#define TRILINOS_CCOLAMD_ERROR_row_index_out_of_bounds	(-9)
+#define TRILINOS_CCOLAMD_ERROR_out_of_memory		(-10)
+#define TRILINOS_CCOLAMD_ERROR_invalid_cmember		(-11)
+#define TRILINOS_CCOLAMD_ERROR_internal_error		(-999)
 
 /* ========================================================================== */
 /* === Prototypes of user-callable routines ================================= */
@@ -134,12 +134,12 @@ size_t trilinos_ccolamd_l_recommended	/* returns recommended value of Alen, */
 
 void trilinos_ccolamd_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
-    double knobs [CCOLAMD_KNOBS]	/* parameter settings for ccolamd */
+    double knobs [TRILINOS_CCOLAMD_KNOBS]	/* parameter settings for trilinos_ccolamd */
 ) ;
 
 void trilinos_ccolamd_l_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
-    double knobs [CCOLAMD_KNOBS]	/* parameter settings for ccolamd */
+    double knobs [TRILINOS_CCOLAMD_KNOBS]	/* parameter settings for trilinos_ccolamd */
 ) ;
 
 int trilinos_ccolamd		/* returns (1) if successful, (0) otherwise*/
@@ -149,20 +149,20 @@ int trilinos_ccolamd		/* returns (1) if successful, (0) otherwise*/
     int Alen,			/* size of the array A */
     int A [ ],			/* row indices of A, of size Alen */
     int p [ ],			/* column pointers of A, of size n_col+1 */
-    double knobs [CCOLAMD_KNOBS],/* parameter settings for ccolamd */
-    int stats [CCOLAMD_STATS],	/* ccolamd output statistics and error codes */
+    double knobs [TRILINOS_CCOLAMD_KNOBS],/* parameter settings for trilinos_ccolamd */
+    int stats [TRILINOS_CCOLAMD_STATS],	/* trilinos_ccolamd output statistics and error codes */
     int cmember [ ]		/* Constraint set of A, of size n_col */
 ) ;
 
-UF_long trilinos_ccolamd_l	/* same as ccolamd, but with UF_long integers */
+UF_long trilinos_ccolamd_l	/* same as trilinos_ccolamd, but with UF_long integers */
 (
     UF_long n_row,
     UF_long n_col,
     UF_long Alen,
     UF_long A [ ],
     UF_long p [ ],
-    double knobs [CCOLAMD_KNOBS],
-    UF_long stats [CCOLAMD_STATS],
+    double knobs [TRILINOS_CCOLAMD_KNOBS],
+    UF_long stats [TRILINOS_CCOLAMD_STATS],
     UF_long cmember [ ]
 ) ;
 
@@ -172,8 +172,8 @@ int trilinos_csymamd		/* return (1) if OK, (0) otherwise */
     int A [ ],			/* row indices of A */
     int p [ ],			/* column pointers of A */
     int perm [ ],		/* output permutation, size n_col+1 */
-    double knobs [CCOLAMD_KNOBS],/* parameters (uses defaults if NULL) */
-    int stats [CCOLAMD_STATS],	/* output statistics and error codes */
+    double knobs [TRILINOS_CCOLAMD_KNOBS],/* parameters (uses defaults if NULL) */
+    int stats [TRILINOS_CCOLAMD_STATS],	/* output statistics and error codes */
     void * (*allocate) (size_t, size_t), /* pointer to calloc (ANSI C) or */
 				/* mxCalloc (for MATLAB mexFunction) */
     void (*release) (void *),	/* pointer to free (ANSI C) or */
@@ -188,8 +188,8 @@ UF_long trilinos_csymamd_l		/* same as csymamd, but with UF_long integers */
     UF_long A [ ],
     UF_long p [ ],
     UF_long perm [ ],
-    double knobs [CCOLAMD_KNOBS],
-    UF_long stats [CCOLAMD_STATS],
+    double knobs [TRILINOS_CCOLAMD_KNOBS],
+    UF_long stats [TRILINOS_CCOLAMD_STATS],
     void * (*allocate) (size_t, size_t),
     void (*release) (void *),
     UF_long cmember [ ],
@@ -198,22 +198,22 @@ UF_long trilinos_csymamd_l		/* same as csymamd, but with UF_long integers */
 
 void trilinos_ccolamd_report
 (
-    int stats [CCOLAMD_STATS]
+    int stats [TRILINOS_CCOLAMD_STATS]
 ) ;
 
 void trilinos_ccolamd_l_report
 (
-    UF_long stats [CCOLAMD_STATS]
+    UF_long stats [TRILINOS_CCOLAMD_STATS]
 ) ;
 
 void trilinos_csymamd_report
 (
-    int stats [CCOLAMD_STATS]
+    int stats [TRILINOS_CCOLAMD_STATS]
 ) ;
 
 void trilinos_csymamd_l_report
 (
-    UF_long stats [CCOLAMD_STATS]
+    UF_long stats [TRILINOS_CCOLAMD_STATS]
 ) ;
 
 
@@ -233,8 +233,8 @@ int trilinos_ccolamd2
     int Alen,			/* size of the array A */
     int A [ ],			/* row indices of A, of size Alen */
     int p [ ],			/* column pointers of A, of size n_col+1 */
-    double knobs [CCOLAMD_KNOBS],/* parameter settings for ccolamd */
-    int stats [CCOLAMD_STATS],	/* ccolamd output statistics and error codes */
+    double knobs [TRILINOS_CCOLAMD_KNOBS],/* parameter settings for trilinos_ccolamd */
+    int stats [TRILINOS_CCOLAMD_STATS],	/* trilinos_ccolamd output statistics and error codes */
     /* each Front_ array is of size n_col+1: */
     int Front_npivcol [ ],	/* # pivot cols in each front */
     int Front_nrows [ ],	/* # of rows in each front (incl. pivot rows) */
@@ -253,8 +253,8 @@ UF_long trilinos_ccolamd2_l	    /* same as ccolamd2, but with UF_long integers *
     UF_long Alen,
     UF_long A [ ],
     UF_long p [ ],
-    double knobs [CCOLAMD_KNOBS],
-    UF_long stats [CCOLAMD_STATS],
+    double knobs [TRILINOS_CCOLAMD_KNOBS],
+    UF_long stats [TRILINOS_CCOLAMD_STATS],
     UF_long Front_npivcol [ ],
     UF_long Front_nrows [ ],
     UF_long Front_ncols [ ],

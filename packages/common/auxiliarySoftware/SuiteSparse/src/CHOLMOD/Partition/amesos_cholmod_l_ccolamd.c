@@ -13,7 +13,7 @@
 
 /* CHOLMOD interface to the CCOLAMD ordering routine.  Finds a permutation
  * p such that the Cholesky factorization of PAA'P' is sparser than AA'.
- * The column etree is found and postordered, and the ccolamd ordering is then
+ * The column etree is found and postordered, and the trilinos_ccolamd ordering is then
  * combined with its postordering.  A must be unsymmetric.
  *
  * workspace: Iwork (MAX (nrow,ncol))
@@ -32,7 +32,7 @@
 #include "trilinos_ccolamd.h"
 #include "amesos_cholmod_partition.h"
 
-#if (CCOLAMD_VERSION < CCOLAMD_VERSION_CODE (2,5))
+#if (TRILINOS_CCOLAMD_VERSION < TRILINOS_CCOLAMD_VERSION_CODE (2,5))
 #error "CCOLAMD v2.0 or later is required"
 #endif
 
@@ -40,7 +40,7 @@
 /* === ccolamd_interface ==================================================== */
 /* ========================================================================== */
 
-/* Order with ccolamd */
+/* Order with trilinos_ccolamd */
 
 static int ccolamd_interface
 (
@@ -54,15 +54,15 @@ static int ccolamd_interface
     cholmod_common *Common
 )
 {
-    double knobs [CCOLAMD_KNOBS] ;
+    double knobs [TRILINOS_CCOLAMD_KNOBS] ;
     Int *Cp = NULL ;
-    Int ok, k, nrow, ncol, stats [CCOLAMD_STATS] ;
+    Int ok, k, nrow, ncol, stats [TRILINOS_CCOLAMD_STATS] ;
 
     nrow = A->nrow ;
     ncol = A->ncol ;
 
     /* ---------------------------------------------------------------------- */
-    /* copy (and transpose) the input matrix A into the ccolamd workspace */
+    /* copy (and transpose) the input matrix A into the trilinos_ccolamd workspace */
     /* ---------------------------------------------------------------------- */
 
     /* C = A (:,f)', which also packs A if needed. */
@@ -83,15 +83,15 @@ static int ccolamd_interface
     if (Common->current < 0 || Common->current >= CHOLMOD_MAXMETHODS)
     {
 	/* this is the CHOLMOD default, not the CCOLAMD default */
-	knobs [CCOLAMD_DENSE_ROW] = -1 ;
+	knobs [TRILINOS_CCOLAMD_DENSE_ROW] = -1 ;
     }
     else
     {
 	/* get the knobs from the Common parameters */
-	knobs [CCOLAMD_DENSE_COL] =Common->method[Common->current].prune_dense ;
-	knobs [CCOLAMD_DENSE_ROW] =Common->method[Common->current].prune_dense2;
-	knobs [CCOLAMD_AGGRESSIVE]=Common->method[Common->current].aggressive ;
-	knobs [CCOLAMD_LU]        =Common->method[Common->current].order_for_lu;
+	knobs [TRILINOS_CCOLAMD_DENSE_COL] =Common->method[Common->current].prune_dense ;
+	knobs [TRILINOS_CCOLAMD_DENSE_ROW] =Common->method[Common->current].prune_dense2;
+	knobs [TRILINOS_CCOLAMD_AGGRESSIVE]=Common->method[Common->current].aggressive ;
+	knobs [TRILINOS_CCOLAMD_LU]        =Common->method[Common->current].order_for_lu;
     }
 
     if (ok)
@@ -103,9 +103,9 @@ static int ccolamd_interface
 	trilinos_ccolamd (ncol, nrow, alen, C->i, C->p, knobs, stats, Cmember) ;
 #endif
 
-	ok = stats [CCOLAMD_STATUS] ;
+	ok = stats [TRILINOS_CCOLAMD_STATUS] ;
 
-	ok = (ok == CCOLAMD_OK || ok == CCOLAMD_OK_BUT_JUMBLED) ;
+	ok = (ok == TRILINOS_CCOLAMD_OK || ok == TRILINOS_CCOLAMD_OK_BUT_JUMBLED) ;
 	/* permutation returned in C->p, if the ordering succeeded */
 	Cp = C->p ;
 	for (k = 0 ; k < nrow ; k++)
@@ -124,7 +124,7 @@ static int ccolamd_interface
 
 /* Order AA' or A(:,f)*A(:,f)' using CCOLAMD. */
 
-int CHOLMOD(ccolamd)
+int CHOLMOD(trilinos_ccolamd)
 (
     /* ---- input ---- */
     cholmod_sparse *A,	/* matrix to order */
@@ -193,7 +193,7 @@ int CHOLMOD(ccolamd)
 	    CHOLMOD_PATTERN, Common) ;
 
     /* ---------------------------------------------------------------------- */
-    /* order with ccolamd */
+    /* order with trilinos_ccolamd */
     /* ---------------------------------------------------------------------- */
 
     ok = ccolamd_interface (A, alen, Perm, Cmember, fset, fsize, C, Common) ;

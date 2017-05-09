@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_1 =============================================================== */
+/* === TRILINOS_AMD_1 =============================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -9,7 +9,7 @@
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
 /* ------------------------------------------------------------------------- */
 
-/* AMD_1: Construct A+A' for a sparse matrix A and perform the AMD ordering.
+/* TRILINOS_AMD_1: Construct A+A' for a sparse matrix A and perform the AMD ordering.
  *
  * The n-by-n sparse matrix A can be unsymmetric.  It is stored in MATLAB-style
  * compressed-column form, with sorted row indices in each column, and no
@@ -18,11 +18,11 @@
  * Ap [0] must be zero, and nz = Ap [n] is the number of entries in A.  The
  * size of the matrix, n, must be greater than or equal to zero.
  *
- * This routine must be preceded by a call to AMD_aat, which computes the
+ * This routine must be preceded by a call to TRILINOS_AMD_aat, which computes the
  * number of entries in each row/column in A+A', excluding the diagonal.
  * Len [j], on input, is the number of entries in row/column j of A+A'.  This
- * routine constructs the matrix A+A' and then calls AMD_2.  No error checking
- * is performed (this was done in AMD_valid).
+ * routine constructs the matrix A+A' and then calls TRILINOS_AMD_2.  No error checking
+ * is performed (this was done in TRILINOS_AMD_valid).
  */
 
 /* This file should make the long int version of AMD */
@@ -30,7 +30,7 @@
 
 #include "trilinos_amd_internal.h"
 
-GLOBAL void AMD_1
+GLOBAL void TRILINOS_AMD_1
 (
     Int n,		/* n > 0 */
     const Int Ap [ ],	/* input of size n+1, not modified */
@@ -41,15 +41,15 @@ GLOBAL void AMD_1
     Int slen,		/* slen >= sum (Len [0..n-1]) + 7n,
 			 * ideally slen = 1.2 * sum (Len) + 8n */
     Int S [ ],		/* size slen workspace */
-    double Control [ ],	/* input array of size AMD_CONTROL */
-    double Info [ ]	/* output array of size AMD_INFO */
+    double Control [ ],	/* input array of size TRILINOS_AMD_CONTROL */
+    double Info [ ]	/* output array of size TRILINOS_AMD_INFO */
 )
 {
     Int i, j, k, p, pfree, iwlen, pj, p1, p2, pj2, *Iw, *Pe, *Nv, *Head,
 	*Elen, *Degree, *s, *W, *Sp, *Tp ;
 
     /* --------------------------------------------------------------------- */
-    /* construct the matrix for AMD_2 */
+    /* construct the matrix for TRILINOS_AMD_2 */
     /* --------------------------------------------------------------------- */
 
     ASSERT (n > 0) ;
@@ -64,7 +64,7 @@ GLOBAL void AMD_1
     W = s ;	    s += n ;
     Iw = s ;	    s += iwlen ;
 
-    ASSERT (AMD_valid (n, n, Ap, Ai) == AMD_OK) ;
+    ASSERT (TRILINOS_AMD_valid (n, n, Ap, Ai) == TRILINOS_AMD_OK) ;
 
     /* construct the pointers for A+A' */
     Sp = Nv ;			/* use Nv and W as workspace for Sp and Tp [ */
@@ -78,7 +78,7 @@ GLOBAL void AMD_1
     }
 
     /* Note that this restriction on iwlen is slightly more restrictive than
-     * what is strictly required in AMD_2.  AMD_2 can operate with no elbow
+     * what is strictly required in TRILINOS_AMD_2.  TRILINOS_AMD_2 can operate with no elbow
      * room at all, but it will be very slow.  For better performance, at
      * least size-n elbow room is enforced. */
     ASSERT (iwlen >= pfree + n) ;
@@ -89,7 +89,7 @@ GLOBAL void AMD_1
 
     for (k = 0 ; k < n ; k++)
     {
-	AMD_DEBUG1 (("Construct row/column k= "ID" of A+A'\n", k))  ;
+	TRILINOS_AMD_DEBUG1 (("Construct row/column k= "ID" of A+A'\n", k))  ;
 	p1 = Ap [k] ;
 	p2 = Ap [k+1] ;
 
@@ -179,6 +179,6 @@ GLOBAL void AMD_1
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    AMD_2 (n, Pe, Iw, Len, iwlen, pfree,
+    TRILINOS_AMD_2 (n, Pe, Iw, Len, iwlen, pfree,
 	Nv, Pinv, P, Head, Elen, Degree, W, Control, Info) ;
 }

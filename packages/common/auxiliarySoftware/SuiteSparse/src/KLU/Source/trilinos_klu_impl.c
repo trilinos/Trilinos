@@ -6,7 +6,7 @@
  * optional symmetric pruning by Eisenstat and Liu [2].  The code is by Tim
  * Davis.  This algorithm is what appears as the default sparse LU routine in
  * MATLAB version 6.0, and still appears in MATLAB 6.5 as [L,U,P] = lu (A).
- * Note that no column ordering is provided (see COLAMD or AMD for suitable
+ * Note that no column ordering is provided (see TRILINOS_COLAMD or AMD for suitable
  * orderings).  SuperLU is based on this algorithm, except that it adds the
  * use of dense matrix operations on "supernodes" (adjacent columns with
  * identical).  This code doesn't use supernodes, thus its name ("Kent" LU,
@@ -17,7 +17,7 @@
  * SuperLU and UMFPACK, since in this case there is little chance to exploit
  * dense matrix kernels (the BLAS).
  *
- * Only one block of A is factorized, in the BTF form.  The input n is the
+ * Only one block of A is factorized, in the TRILINOS_BTF form.  The input n is the
  * size of the block; k1 is the first row and column in the block.
  *
  * NOTE: no error checking is done on the inputs.  This version is not meant to
@@ -60,7 +60,7 @@
 
 #include "trilinos_klu_internal.h"
 
-size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
+size_t TRILINOS_KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 (
     /* inputs, not modified */
     Int n,	    /* A is n-by-n. n must be > 0. */
@@ -95,7 +95,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
     Int Offi [ ],
     Entry Offx [ ],
     /* --------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     double maxlnz, dunits ;
@@ -155,11 +155,11 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
              DUNITS (Int, usize) + DUNITS (Entry, usize) ;
     lusize = (size_t) dunits ;
     ok = !INT_OVERFLOW (dunits) ; 
-    LU = ok ? (Unit*) KLU_malloc (lusize, sizeof (Unit), Common) : NULL ;
+    LU = ok ? (Unit*) TRILINOS_KLU_malloc (lusize, sizeof (Unit), Common) : NULL ;
     if (LU == NULL)
     {
 	/* out of memory, or problem too large */
-	Common->status = KLU_OUT_OF_MEMORY ;
+	Common->status = TRILINOS_KLU_OUT_OF_MEMORY ;
 	lusize = 0 ;
 	return (lusize) ;
     }
@@ -169,7 +169,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
     /* ---------------------------------------------------------------------- */
 
     /* with pruning, and non-recursive depth-first-search */
-    lusize = KLU_kernel (n, Ap, Ai, Ax, Q, lusize,
+    lusize = TRILINOS_KLU_kernel (n, Ap, Ai, Ax, Q, lusize,
 	    Pinv, P, &LU, Udiag, Llen, Ulen, Lip, Uip, lnz, unz,
 	    X, Stack, Flag, Ap_pos, Lpend,
 	    k1, PSinv, Rs, Offp, Offi, Offx, Common) ;
@@ -178,9 +178,9 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
     /* return LU factors, or return nothing if an error occurred */
     /* ---------------------------------------------------------------------- */
 
-    if (Common->status < KLU_OK)
+    if (Common->status < TRILINOS_KLU_OK)
     {
-	LU = (Unit*) KLU_free (LU, lusize, sizeof (Unit), Common) ;
+	LU = (Unit*) TRILINOS_KLU_free (LU, lusize, sizeof (Unit), Common) ;
 	lusize = 0 ;
     }
     *p_LU = LU ;
@@ -190,7 +190,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 
 
 /* ========================================================================== */
-/* === KLU_lsolve =========================================================== */
+/* === TRILINOS_KLU_lsolve =========================================================== */
 /* ========================================================================== */
 
 /* Solve Lx=b.  Assumes L is unit lower triangular and where the unit diagonal
@@ -198,7 +198,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
  * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
  * range 1 to 4. */
 
-void KLU_lsolve
+void TRILINOS_KLU_lsolve
 (
     /* inputs, not modified: */
     Int n,
@@ -297,7 +297,7 @@ void KLU_lsolve
 }
 
 /* ========================================================================== */
-/* === KLU_usolve =========================================================== */
+/* === TRILINOS_KLU_usolve =========================================================== */
 /* ========================================================================== */
 
 /* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
@@ -305,7 +305,7 @@ void KLU_lsolve
  * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
  * range 1 to 4. */
 
-void KLU_usolve
+void TRILINOS_KLU_usolve
 (
     /* inputs, not modified: */
     Int n,
@@ -435,7 +435,7 @@ void KLU_usolve
 
 
 /* ========================================================================== */
-/* === KLU_ltsolve ========================================================== */
+/* === TRILINOS_KLU_ltsolve ========================================================== */
 /* ========================================================================== */
 
 /* Solve L'x=b.  Assumes L is unit lower triangular and where the unit diagonal
@@ -443,7 +443,7 @@ void KLU_usolve
  * and is stored in ROW form with row dimension nrhs.  nrhs must in the
  * range 1 to 4. */
 
-void KLU_ltsolve
+void TRILINOS_KLU_ltsolve
 (
     /* inputs, not modified: */
     Int n,
@@ -592,7 +592,7 @@ void KLU_ltsolve
 
 
 /* ========================================================================== */
-/* === KLU_utsolve ========================================================== */
+/* === TRILINOS_KLU_utsolve ========================================================== */
 /* ========================================================================== */
 
 /* Solve U'x=b.  Assumes U is non-unit upper triangular and where the diagonal
@@ -600,7 +600,7 @@ void KLU_ltsolve
  * with the solution X.  B is n-by-nrhs and is stored in ROW form with row
  * dimension nrhs.  nrhs must be in the range 1 to 4. */
 
-void KLU_utsolve
+void TRILINOS_KLU_utsolve
 (
     /* inputs, not modified: */
     Int n,

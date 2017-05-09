@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === KLU_kernel =========================================================== */
+/* === TRILINOS_KLU_kernel =========================================================== */
 /* ========================================================================== */
 
 /* Sparse left-looking LU factorization, with partial pivoting.  Based on
@@ -150,7 +150,7 @@ static Int lsolve_symbolic
     Int Llen [ ],	/* size n, Llen [k] = # nonzeros in column k of L */
     Int Lip [ ],	/* size n, Lip [k] is position in LU of column k of L */
 
-    /* ---- the following are only used in the BTF case --- */
+    /* ---- the following are only used in the TRILINOS_BTF case --- */
 
     Int k1,		/* the block of A is from k1 to k2-1 */
     Int PSinv [ ]	/* inverse of P from symbolic factorization */
@@ -164,11 +164,11 @@ static Int lsolve_symbolic
     Lik = (Int *) (LU + lup);
 
     /* ---------------------------------------------------------------------- */
-    /* BTF factorization of A (k1:k2-1, k1:k2-1) */
+    /* TRILINOS_BTF factorization of A (k1:k2-1, k1:k2-1) */
     /* ---------------------------------------------------------------------- */
 
     kglobal = k + k1 ;	/* column k of the block is col kglobal of A */
-    oldcol = Q [kglobal] ;	/* Q must be present for BTF case */
+    oldcol = Q [kglobal] ;	/* Q must be present for TRILINOS_BTF case */
     pend = Ap [oldcol+1] ;
     for (p = Ap [oldcol] ; p < pend ; p++)
     {
@@ -220,7 +220,7 @@ static void construct_column
     /* zero on input, modified on output */
     Entry X [ ],
 
-    /* ---- the following are only used in the BTF case --- */
+    /* ---- the following are only used in the TRILINOS_BTF case --- */
 
     /* inputs, not modified on output */
     Int k1,	    /* the block of A is from k1 to k2-1 */
@@ -372,7 +372,7 @@ static Int lpivot
 			 * row i is not yet pivotal.  */
 
     Int *p_firstrow,
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Entry x, pivot, *Lx ;
@@ -623,10 +623,10 @@ static void prune
 
 
 /* ========================================================================== */
-/* === KLU_kernel =========================================================== */
+/* === TRILINOS_KLU_kernel =========================================================== */
 /* ========================================================================== */
 
-size_t KLU_kernel   /* final size of LU on output */
+size_t TRILINOS_KLU_kernel   /* final size of LU on output */
 (
     /* input, not modified */
     Int n,	    /* A is n-by-n */
@@ -670,7 +670,7 @@ size_t KLU_kernel   /* final size of LU on output */
     Int Offi [ ],
     Entry Offx [ ],
     /* --------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     Entry pivot ;
@@ -768,15 +768,15 @@ size_t KLU_kernel   /* final size of LU on output */
             if (INT_OVERFLOW (xsize))
             {
                 PRINTF (("Matrix is too large (Int overflow)\n")) ;
-		Common->status = KLU_TOO_LARGE ;
+		Common->status = TRILINOS_KLU_TOO_LARGE ;
                 return (lusize) ;
             }
             newlusize = memgrow * lusize + 2*n + 1 ;
 	    /* Future work: retry mechanism in case of malloc failure */
-	    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+	    LU = (Unit*) TRILINOS_KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
 	    Common->nrealloc++ ;
             *p_LU = LU ;
-            if (Common->status == KLU_OUT_OF_MEMORY)
+            if (Common->status == TRILINOS_KLU_OUT_OF_MEMORY)
             {
                 PRINTF (("Matrix is too large (LU)\n")) ;
                 return (lusize) ;
@@ -872,7 +872,7 @@ size_t KLU_kernel   /* final size of LU on output */
 		    Llen, k, n, Pinv, &firstrow, Common))
 	{
 	    /* matrix is structurally or numerically singular */
-	    Common->status = KLU_SINGULAR ;
+	    Common->status = TRILINOS_KLU_SINGULAR ;
 	    if (Common->numerical_rank == EMPTY)
 	    {
 		Common->numerical_rank = k+k1 ;
@@ -1005,7 +1005,7 @@ size_t KLU_kernel   /* final size of LU on output */
     ASSERT ((size_t) newlusize <= lusize) ;
 
     /* this cannot fail, since the block is descreasing in size */
-    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+    LU = (Unit*) TRILINOS_KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
     *p_LU = LU ;
     return (newlusize) ;
 }

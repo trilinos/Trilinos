@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_order ========================================================== */
+/* === TRILINOS_CAMD_order ========================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -16,10 +16,10 @@
 #include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
-/* === CAMD_order ========================================================== */
+/* === TRILINOS_CAMD_order ========================================================== */
 /* ========================================================================= */
 
-GLOBAL Int CAMD_order
+GLOBAL Int TRILINOS_CAMD_order
 (
     Int n,
     const Int Ap [ ],
@@ -35,59 +35,59 @@ GLOBAL Int CAMD_order
     double mem = 0 ;
 
 #ifndef NDEBUG
-    CAMD_debug_init ("camd") ;
+    TRILINOS_CAMD_debug_init ("camd") ;
 #endif
 
     /* clear the Info array, if it exists */
     info = Info != (double *) NULL ;
     if (info)
     {
-	for (i = 0 ; i < CAMD_INFO ; i++)
+	for (i = 0 ; i < TRILINOS_CAMD_INFO ; i++)
 	{
 	    Info [i] = EMPTY ;
 	}
-	Info [CAMD_N] = n ;
-	Info [CAMD_STATUS] = CAMD_OK ;
+	Info [TRILINOS_CAMD_N] = n ;
+	Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OK ;
     }
 
     /* make sure inputs exist and n is >= 0 */
     if (Ai == (Int *) NULL || Ap == (Int *) NULL || P == (Int *) NULL || n < 0)
     {
-	if (info) Info [CAMD_STATUS] = CAMD_INVALID ;
-	return (CAMD_INVALID) ;	    /* arguments are invalid */
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_INVALID ;
+	return (TRILINOS_CAMD_INVALID) ;	    /* arguments are invalid */
     }
 
     if (n == 0)
     {
-	return (CAMD_OK) ;	    /* n is 0 so there's nothing to do */
+	return (TRILINOS_CAMD_OK) ;	    /* n is 0 so there's nothing to do */
     }
 
     nz = Ap [n] ;
     if (info)
     {
-	Info [CAMD_NZ] = nz ;
+	Info [TRILINOS_CAMD_NZ] = nz ;
     }
     if (nz < 0)
     {
-	if (info) Info [CAMD_STATUS] = CAMD_INVALID ;
-	return (CAMD_INVALID) ;
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_INVALID ;
+	return (TRILINOS_CAMD_INVALID) ;
     }
 
     /* check if n or nz will cause size_t overflow */
     if ((size_t) n >= SIZE_T_MAX / sizeof (Int)
      || (size_t) nz >= SIZE_T_MAX / sizeof (Int))
     {
-	if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
-	return (CAMD_OUT_OF_MEMORY) ;	    /* problem too large */
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OUT_OF_MEMORY ;
+	return (TRILINOS_CAMD_OUT_OF_MEMORY) ;	    /* problem too large */
     }
 
-    /* check the input matrix:	CAMD_OK, CAMD_INVALID, or CAMD_OK_BUT_JUMBLED */
-    status = CAMD_valid (n, n, Ap, Ai) ;
+    /* check the input matrix:	TRILINOS_CAMD_OK, TRILINOS_CAMD_INVALID, or TRILINOS_CAMD_OK_BUT_JUMBLED */
+    status = TRILINOS_CAMD_valid (n, n, Ap, Ai) ;
 
-    if (status == CAMD_INVALID)
+    if (status == TRILINOS_CAMD_INVALID)
     {
-	if (info) Info [CAMD_STATUS] = CAMD_INVALID ;
-	return (CAMD_INVALID) ;	    /* matrix is invalid */
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_INVALID ;
+	return (TRILINOS_CAMD_INVALID) ;	    /* matrix is invalid */
     }
 
     /* allocate two size-n integer workspaces */
@@ -100,14 +100,14 @@ GLOBAL Int CAMD_order
 	/* :: out of memory :: */
 	trilinos_camd_free (Len) ;
 	trilinos_camd_free (Pinv) ;
-	if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
-	return (CAMD_OUT_OF_MEMORY) ;
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OUT_OF_MEMORY ;
+	return (TRILINOS_CAMD_OUT_OF_MEMORY) ;
     }
 
-    if (status == CAMD_OK_BUT_JUMBLED)
+    if (status == TRILINOS_CAMD_OK_BUT_JUMBLED)
     {
 	/* sort the input matrix and remove duplicate entries */
-	CAMD_DEBUG1 (("Matrix is jumbled\n")) ;
+	TRILINOS_CAMD_DEBUG1 (("Matrix is jumbled\n")) ;
 	Rp = (Int*) trilinos_camd_malloc ((n+1) * sizeof (Int)) ;
 	Ri = (Int*) trilinos_camd_malloc (MAX (nz,1) * sizeof (Int)) ;
 	mem += (n+1) ;
@@ -119,11 +119,11 @@ GLOBAL Int CAMD_order
 	    trilinos_camd_free (Ri) ;
 	    trilinos_camd_free (Len) ;
 	    trilinos_camd_free (Pinv) ;
-	    if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
-	    return (CAMD_OUT_OF_MEMORY) ;
+	    if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OUT_OF_MEMORY ;
+	    return (TRILINOS_CAMD_OUT_OF_MEMORY) ;
 	}
 	/* use Len and Pinv as workspace to create R = A' */
-	CAMD_preprocess (n, Ap, Ai, Rp, Ri, Len, Pinv) ;
+	TRILINOS_CAMD_preprocess (n, Ap, Ai, Rp, Ri, Len, Pinv) ;
 	Cp = Rp ;
 	Ci = Ri ;
     }
@@ -140,8 +140,8 @@ GLOBAL Int CAMD_order
     /* determine the symmetry and count off-diagonal nonzeros in A+A' */
     /* --------------------------------------------------------------------- */
 
-    nzaat = CAMD_aat (n, Cp, Ci, Len, P, Info) ;
-    CAMD_DEBUG1 (("nzaat: %g\n", (double) nzaat)) ;
+    nzaat = TRILINOS_CAMD_aat (n, Cp, Ci, Len, P, Info) ;
+    TRILINOS_CAMD_DEBUG1 (("nzaat: %g\n", (double) nzaat)) ;
     ASSERT ((MAX (nz-n, 0) <= nzaat) && (nzaat <= 2 * (size_t) nz)) ;
 
     /* --------------------------------------------------------------------- */
@@ -164,7 +164,7 @@ GLOBAL Int CAMD_order
     {
 	S = (Int*) trilinos_camd_malloc (slen * sizeof (Int)) ;
     }
-    CAMD_DEBUG1 (("slen %g\n", (double) slen)) ;
+    TRILINOS_CAMD_DEBUG1 (("slen %g\n", (double) slen)) ;
     if (!S)
     {
 	/* :: out of memory :: (or problem too large) */
@@ -172,20 +172,20 @@ GLOBAL Int CAMD_order
 	trilinos_camd_free (Ri) ;
 	trilinos_camd_free (Len) ;
 	trilinos_camd_free (Pinv) ;
-	if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
-	return (CAMD_OUT_OF_MEMORY) ;
+	if (info) Info [TRILINOS_CAMD_STATUS] = TRILINOS_CAMD_OUT_OF_MEMORY ;
+	return (TRILINOS_CAMD_OUT_OF_MEMORY) ;
     }
     if (info)
     {
 	/* memory usage, in bytes. */
-	Info [CAMD_MEMORY] = mem * sizeof (Int) ;
+	Info [TRILINOS_CAMD_MEMORY] = mem * sizeof (Int) ;
     }
 
     /* --------------------------------------------------------------------- */
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    CAMD_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info, C) ;
+    TRILINOS_CAMD_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info, C) ;
 
     /* --------------------------------------------------------------------- */
     /* free the workspace */
@@ -196,6 +196,6 @@ GLOBAL Int CAMD_order
     trilinos_camd_free (Len) ;
     trilinos_camd_free (Pinv) ;
     trilinos_camd_free (S) ;
-    if (info) Info [CAMD_STATUS] = status ;
+    if (info) Info [TRILINOS_CAMD_STATUS] = status ;
     return (status) ;	    /* successful ordering */
 }

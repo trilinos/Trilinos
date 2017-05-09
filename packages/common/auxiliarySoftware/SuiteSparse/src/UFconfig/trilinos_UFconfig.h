@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* Configuration file for SuiteSparse: a Suite of Sparse matrix packages
- * (AMD, COLAMD, CCOLAMD, CAMD, CHOLMOD, UMFPACK, CXSparse, and others).
+ * (AMD, TRILINOS_COLAMD, CCOLAMD, CAMD, CHOLMOD, UMFPACK, CXSparse, and others).
  *
  * UFconfig.h provides the definition of the long integer.  On most systems,
  * a C program can be compiled in LP64 mode, in which long's and pointers are
@@ -70,7 +70,7 @@ extern "C" {
 
 /* SuiteSparse is not a package itself, but a collection of packages, some of
  * which must be used together (UMFPACK requires AMD, CHOLMOD requires AMD,
- * COLAMD, CAMD, and CCOLAMD, etc).  A version number is provided here for the
+ * TRILINOS_COLAMD, CAMD, and CCOLAMD, etc).  A version number is provided here for the
  * collection itself.  The versions of packages within each version of
  * SuiteSparse are meant to work together.  Combining one packge from one
  * version of SuiteSparse, with another package from another version of
@@ -80,13 +80,13 @@ extern "C" {
  *
  *  AMD		    version 2.2.0
  *  CAMD	    version 2.2.0
- *  COLAMD	    version 2.7.0
+ *  TRILINOS_COLAMD	    version 2.7.0
  *  CCOLAMD	    version 2.7.0
  *  CHOLMOD	    version 1.5.0
  *  CSparse	    version 2.2.0
  *  CXSparse	    version 2.2.0
  *  KLU		    version 1.0.0
- *  BTF		    version 1.0.0
+ *  TRILINOS_BTF		    version 1.0.0
  *  LDL		    version 2.0.0
  *  UFconfig	    version number is the same as SuiteSparse
  *  UMFPACK	    version 5.1.0
@@ -99,13 +99,13 @@ extern "C" {
  *  METIS 4.0.1	    required by CHOLMOD (optional) and KLU (optional)
  */
 
-#define SUITESPARSE_DATE "May 31, 2007"
-#define SUITESPARSE_VER_CODE(main,sub) ((main) * 1000 + (sub))
-#define SUITESPARSE_MAIN_VERSION 3
-#define SUITESPARSE_SUB_VERSION 0
-#define SUITESPARSE_SUBSUB_VERSION 0
-#define SUITESPARSE_VERSION \
-    SUITESPARSE_VER_CODE(SUITESPARSE_MAIN_VERSION,SUITESPARSE_SUB_VERSION)
+#define TRILINOS_SUITESPARSE_DATE "May 31, 2007"
+#define TRILINOS_SUITESPARSE_VER_CODE(main,sub) ((main) * 1000 + (sub))
+#define TRILINOS_SUITESPARSE_MAIN_VERSION 3
+#define TRILINOS_SUITESPARSE_SUB_VERSION 0
+#define TRILINOS_SUITESPARSE_SUBSUB_VERSION 0
+#define TRILINOS_SUITESPARSE_VERSION \
+    TRILINOS_SUITESPARSE_VER_CODE(TRILINOS_SUITESPARSE_MAIN_VERSION,TRILINOS_SUITESPARSE_SUB_VERSION)
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_preprocess ====================================================== */
+/* === TRILINOS_AMD_preprocess ====================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -11,8 +11,8 @@
 
 /* Sorts, removes duplicate entries, and transposes from the nonzero pattern of
  * a column-form matrix A, to obtain the matrix R.  The input matrix can have
- * duplicate entries and/or unsorted columns (AMD_valid (n,Ap,Ai) must not be
- * AMD_INVALID).
+ * duplicate entries and/or unsorted columns (TRILINOS_AMD_valid (n,Ap,Ai) must not be
+ * TRILINOS_AMD_INVALID).
  *
  * This input condition is NOT checked.  This routine is not user-callable.
  */
@@ -20,14 +20,14 @@
 #include "trilinos_amd_internal.h"
 
 /* ========================================================================= */
-/* === AMD_preprocess ====================================================== */
+/* === TRILINOS_AMD_preprocess ====================================================== */
 /* ========================================================================= */
 
-/* AMD_preprocess does not check its input for errors or allocate workspace.
- * On input, the condition (AMD_valid (n,n,Ap,Ai) != AMD_INVALID) must hold.
+/* TRILINOS_AMD_preprocess does not check its input for errors or allocate workspace.
+ * On input, the condition (TRILINOS_AMD_valid (n,n,Ap,Ai) != TRILINOS_AMD_INVALID) must hold.
  */
 
-GLOBAL void AMD_preprocess
+GLOBAL void TRILINOS_AMD_preprocess
 (
     Int n,		/* input matrix: A is n-by-n */
     const Int Ap [ ],	/* size n+1 */
@@ -48,7 +48,7 @@ GLOBAL void AMD_preprocess
 
     Int i, j, p, p2 ;
 
-    ASSERT (AMD_valid (n, n, Ap, Ai) != AMD_INVALID) ;
+    ASSERT (TRILINOS_AMD_valid (n, n, Ap, Ai) != TRILINOS_AMD_INVALID) ;
 
     /* --------------------------------------------------------------------- */
     /* count the entries in each row of A (excluding duplicates) */
@@ -110,7 +110,7 @@ GLOBAL void AMD_preprocess
     }
 
 #ifndef NDEBUG
-    ASSERT (AMD_valid (n, n, Rp, Ri) == AMD_OK) ;
+    ASSERT (TRILINOS_AMD_valid (n, n, Rp, Ri) == TRILINOS_AMD_OK) ;
     for (j = 0 ; j < n ; j++)
     {
 	ASSERT (W [j] == Rp [j+1]) ;

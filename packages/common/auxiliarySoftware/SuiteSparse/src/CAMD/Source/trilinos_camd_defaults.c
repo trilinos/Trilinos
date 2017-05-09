@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_defaults ======================================================= */
+/* === TRILINOS_CAMD_defaults ======================================================= */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -19,7 +19,7 @@
 /* === CAMD defaults ======================================================= */
 /* ========================================================================= */
 
-GLOBAL void CAMD_defaults
+GLOBAL void TRILINOS_CAMD_defaults
 (
     double Control [ ]
 )
@@ -27,11 +27,11 @@ GLOBAL void CAMD_defaults
     Int i ;
     if (Control != (double *) NULL)
     {
-	for (i = 0 ; i < CAMD_CONTROL ; i++)
+	for (i = 0 ; i < TRILINOS_CAMD_CONTROL ; i++)
 	{
 	    Control [i] = 0 ;
 	}
-	Control [CAMD_DENSE] = CAMD_DEFAULT_DENSE ;
-	Control [CAMD_AGGRESSIVE] = CAMD_DEFAULT_AGGRESSIVE ;
+	Control [TRILINOS_CAMD_DENSE] = TRILINOS_CAMD_DEFAULT_DENSE ;
+	Control [TRILINOS_CAMD_AGGRESSIVE] = TRILINOS_CAMD_DEFAULT_AGGRESSIVE ;
     }
 }

@@ -79,14 +79,14 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
     KLU_common<Entry, Int> *Common
 )
 {
-    double amd_Info [AMD_INFO], lnz, lnz1, flops, flops1 ;
+    double amd_Info [TRILINOS_AMD_INFO], lnz, lnz1, flops, flops1 ;
     Int k1, k2, nk, k, block, oldcol, pend, newcol, result, pc, p, newrow,
-        maxnz, nzoff, cstats [COLAMD_STATS], ok, err = KLU_INVALID ;
+        maxnz, nzoff, cstats [TRILINOS_COLAMD_STATS], ok, err = KLU_INVALID ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
     /* ---------------------------------------------------------------------- */
-    for (k = 0 ; k < AMD_INFO ; k++)
+    for (k = 0 ; k < TRILINOS_AMD_INFO ; k++)
     {
         amd_Info[k] = 0;
     }
@@ -192,23 +192,23 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
             /*result = AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;*/
             result = KLU_OrdinalTraits<Int>::amd_order (nk, Cp, Ci, Pblk, 
                         NULL, amd_Info) ;
-            ok = (result >= AMD_OK) ;
-            if (result == AMD_OUT_OF_MEMORY)
+            ok = (result >= TRILINOS_AMD_OK) ;
+            if (result == TRILINOS_AMD_OUT_OF_MEMORY)
             {
                 err = KLU_OUT_OF_MEMORY ;
             }
 
             /* account for memory usage in AMD */
             Common->mempeak = ( size_t) (MAX (Common->mempeak,
-                Common->memusage + amd_Info [AMD_MEMORY])) ;
+                Common->memusage + amd_Info [TRILINOS_AMD_MEMORY])) ;
 
             /* get the ordering statistics from AMD */
-            lnz1 = (Int) (amd_Info [AMD_LNZ]) + nk ;
-            flops1 = 2 * amd_Info [AMD_NMULTSUBS_LU] + amd_Info [AMD_NDIV] ;
+            lnz1 = (Int) (amd_Info [TRILINOS_AMD_LNZ]) + nk ;
+            flops1 = 2 * amd_Info [TRILINOS_AMD_NMULTSUBS_LU] + amd_Info [TRILINOS_AMD_NDIV] ;
             if (pc == maxnz)
             {
                 /* get the symmetry of the biggest block */
-                Symbolic->symmetry = amd_Info [AMD_SYMMETRY] ;
+                Symbolic->symmetry = amd_Info [TRILINOS_AMD_SYMMETRY] ;
             }
 
         }
@@ -420,7 +420,7 @@ static KLU_symbolic<Entry, Int> *order_and_analyze  /* returns NULL if error, or
         {
             for (k = 0 ; k < n ; k++)
             {
-                Qbtf [k] = BTF_UNFLIP (Qbtf [k]) ;
+                Qbtf [k] = TRILINOS_BTF_UNFLIP (Qbtf [k]) ;
             }
         }
 

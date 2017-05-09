@@ -10,7 +10,7 @@
  * with support from Sandia National Laboratories.  All Rights Reserved.
  */
 
-/* This file should make the long int version of BTF */
+/* This file should make the long int version of TRILINOS_BTF */
 #define DLONG 1
 
 #include "trilinos_btf_decl.h"
@@ -115,7 +115,7 @@ static void trilinos_dfs
 	j = Jstack [jhead] ;	    /* grab the node j from the top of Jstack */
 
 	/* determine which column jj of the A is column j of A*Q */
-	jj = (Q == (Int *) NULL) ? (j) : (BTF_UNFLIP (Q [j])) ;
+	jj = (Q == (Int *) NULL) ? (j) : (TRILINOS_BTF_UNFLIP (Q [j])) ;
 	pend = Ap [jj+1] ;	    /* j's row index list ends at Ai [pend-1] */
 
 	if (Flag [j] == UNVISITED)
@@ -269,7 +269,7 @@ static void trilinos_dfs
     /* ---------------------------------------------------------------------- */
 
     /* determine which column jj of the A is column j of A*Q */
-    jj = (Q == (Int *) NULL) ? (j) : (BTF_UNFLIP (Q [j])) ;
+    jj = (Q == (Int *) NULL) ? (j) : (TRILINOS_BTF_UNFLIP (Q [j])) ;
     for (p = Ap [jj] ; p < Ap [jj+1] ; p++)
     {
 	i = Ai [p] ;    /* examine the edge from node j to node i */
@@ -323,7 +323,7 @@ static void trilinos_dfs
 
 #ifndef RECURSIVE
 
-Int BTF(strongcomp) /* return # of strongly connected components */
+Int TRILINOS_BTF(strongcomp) /* return # of strongly connected components */
 (
     /* input, not modified: */
     Int n,	    /* A is n-by-n in compressed column form */
@@ -333,7 +333,7 @@ Int BTF(strongcomp) /* return # of strongly connected components */
     /* optional input, modified (if present) on output: */
     Int Q [ ],	    /* size n, input column permutation.  The permutation Q can
 		     * include a flag which indicates an unmatched row.
-		     * jold = BTF_UNFLIP (Q [jnew]) is the permutation;
+		     * jold = TRILINOS_BTF_UNFLIP (Q [jnew]) is the permutation;
 		     * this function ingnores these flags.  On output, it is
 		     * modified according to the permutation P. */
 
@@ -349,7 +349,7 @@ Int BTF(strongcomp) /* return # of strongly connected components */
 
 #else
 
-Int BTF(strongcomp) /* recursive version - same as above except for Work size */
+Int TRILINOS_BTF(strongcomp) /* recursive version - same as above except for Work size */
 (
     Int n_in,
     Int Ap_in [ ],
@@ -581,7 +581,7 @@ Int BTF(strongcomp) /* recursive version - same as above except for Work size */
      * with
      *		jold = Q [jnew] ;
      * or
-     *		jold = BTF_UNFLIP (Q [jnew]) ;
+     *		jold = TRILINOS_BTF_UNFLIP (Q [jnew]) ;
      *
      * then entry A (iold,jold) in the old (unpermuted) matrix is at (inew,jnew)
      * in the permuted matrix P*A*Q.  Everything else remains the same as the
