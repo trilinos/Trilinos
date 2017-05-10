@@ -324,6 +324,16 @@ namespace MueLu {
 
     typedef Xpetra::MultiVectorFactory<double,LO,GO,NO> dxMVf;
     RCP<dxMV> ghostedCoords = dxMVf::Build(amalgColMap,Coords->getNumVectors());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(amalgRowMap->getNodeNumElements() != Coords->getMap()->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "MueLu::VariableDofLaplacianFactory: the number of Coordinates and amalgamated nodes is inconsistent.");
+
+    // Coords might live on a special nodeMap with consecutive ids (the natural numbering)
+    // The amalgRowMap might have the same number of entries, but with holes in the ids.
+    // e.g. 0,3,6,9,... as GIDs.
+    // We need the ghosted Coordinates in the buildLaplacian routine. But we access the data
+    // through getData only, i.e., the global ids are not interesting as long as we do not change
+    // the ordering of the entries
+    Coords->replaceMap(amalgRowMap);
     ghostedCoords->doImport(*Coords, *nodeImporter, Xpetra::INSERT);
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
