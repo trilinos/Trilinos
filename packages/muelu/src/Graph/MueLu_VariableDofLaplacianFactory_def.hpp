@@ -327,7 +327,9 @@ namespace MueLu {
     ghostedCoords->doImport(*Coords, *nodeImporter, Xpetra::INSERT);
     Teuchos::ArrayRCP< const double > ghostedXXX = ghostedCoords->getData(0);
     Teuchos::ArrayRCP< const double > ghostedYYY = ghostedCoords->getData(1);
-    Teuchos::ArrayRCP< const double > ghostedZZZ = ghostedCoords->getData(2);
+    Teuchos::ArrayRCP< const double > ghostedZZZ;
+    if(Coords->getNumVectors() == 3)
+      ghostedZZZ = ghostedCoords->getData(2);
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
     this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedXXX, ghostedYYY, ghostedZZZ);
