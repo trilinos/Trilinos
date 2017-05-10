@@ -60,7 +60,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("P",                  Teuchos::null, "Generating factory of the prolongator P");
     validParamList->set< RCP<const FactoryBase> >("DofStatus",          Teuchos::null, "Generating factory for dofStatus array (usually the VariableDofLaplacdianFactory)");
 
     validParamList->set< int  >                  ("maxDofPerNode", 1,     "Maximum number of DOFs per node");
@@ -72,13 +72,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     //const ParameterList& pL = GetParameterList();
-    Input(currentLevel, "A");
+    Input(currentLevel, "P");
     Input(currentLevel, "DofStatus");
     //Input(currentLevel, "Coordinates");
 
-    /*if (currentLevel.IsAvailable("DofPresent", NoFactory::get())) {
-      currentLevel.DeclareInput("DofPresent", NoFactory::get(), this);
-    }*/
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -88,17 +85,102 @@ namespace MueLu {
 
     const ParameterList  & pL = GetParameterList();
 
-    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> amalgP = Get< RCP<Matrix> >(currentLevel, "P");
 
-    Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
-    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
+    //Teuchos::RCP< const Teuchos::Comm< int > > comm = amalgP->getRowMap()->getComm();
+    //Xpetra::UnderlyingLib lib = amalgP->getRowMap()->lib();
 
     Teuchos::Array<char> dofStatus = Get<Teuchos::Array<char> >(currentLevel, "DofStatus");
+
+    /*for (size_t i = 0; i < dofStatus.size(); i++) {
+      std::cout << i << " " << dofStatus[i] << std::endl;
+    }*/
 
     int maxDofPerNode = pL.get<int> ("maxDofPerNode");
     bool fineIsPadded = pL.get<bool>("fineIsPadded");
 
-    //Set(currentLevel,"A",lapMat);
+    // extract CRS information from amalgamated prolongation operator
+    Teuchos::ArrayRCP<const size_t> amalgRowPtr(amalgP->getNodeNumRows());
+    Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(amalgP->getNodeNumEntries());
+    Teuchos::ArrayRCP<const Scalar> amalgVals(amalgP->getNodeNumEntries());
+    Teuchos::RCP<CrsMatrixWrap> amalgPwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(amalgP);
+    Teuchos::RCP<CrsMatrix> amalgPcrs = amalgPwrap->getCrsMatrix();
+    amalgPcrs->getAllValues(amalgRowPtr, amalgCols, amalgVals);
+
+    // calculate number of dof rows for new prolongator
+    size_t paddedNrows = amalgP->getRowMap()->getNodeNumElements() * Teuchos::as<size_t>(maxDofPerNode);
+
+    // reserve CSR arrays for new prolongation operator
+    Teuchos::ArrayRCP<size_t> newPRowPtr(paddedNrows+1);
+    Teuchos::ArrayRCP<LocalOrdinal> newPCols(amalgP->getNodeNumEntries() * maxDofPerNode);
+    Teuchos::ArrayRCP<Scalar> newPVals(amalgP->getNodeNumEntries() * maxDofPerNode);
+
+    size_t rowCount = 0; // actual number of (local) in unamalgamated prolongator
+    if(fineIsPadded == true) {
+      // build prolongation operator for padded fine level matrices.
+      // Note: padded fine level dofs are transfered by injection.
+      // That is, these interpolation stencils do not take averages of
+      // coarse level variables. Further, fine level Dirichlet points
+      // also use injection.
+
+      size_t cnt = 0; // local id counter
+      for (size_t i = 0; i < amalgRowPtr.size() - 1; i++) {
+        // determine number of entries in amalgamated dof row i
+        size_t rowLength = amalgRowPtr[i+1] - amalgRowPtr[i];
+
+        // loop over dofs per node (unamalgamation)
+        for(int j = 0; j < maxDofPerNode; j++) {
+          newPRowPtr[i*maxDofPerNode+j] = cnt;
+          if (dofStatus[i*maxDofPerNode+j] == 's') { // add only "standard" dofs to unamalgamated prolongator
+            // loop over column entries in amalgamated P
+            for (size_t k = 0; k < rowLength; k++) {
+              newPCols[cnt  ] = amalgCols[k+amalgRowPtr[i]] * maxDofPerNode + j;
+              newPVals[cnt++] = amalgVals[k+amalgRowPtr[i]];
+            }
+
+          }
+        }
+      }
+
+      newPRowPtr[paddedNrows] = cnt; // close row CSR array
+      rowCount = paddedNrows;
+    } else {
+      // Build prolongation operator for non-padded fine level matrices.
+      // Need to map from non-padded dofs to padded dofs. For this, look
+      // at the status array and skip padded dofs.
+
+      size_t cnt = 0; // local id counter
+      for (size_t i = 0; i < amalgRowPtr.size() - 1; i++) {
+        // determine number of entries in amalgamated dof row i
+        size_t rowLength = amalgRowPtr[i+1] - amalgRowPtr[i];
+
+        // loop over dofs per node (unamalgamation)
+        for(int j = 0; j < maxDofPerNode; j++) {
+          // no interpolation for padded fine dofs as they do not exist
+
+          if (dofStatus[i*maxDofPerNode+j] == 's') { // add only "standard" dofs to unamalgamated prolongator
+            newPRowPtr[rowCount++] = cnt;
+            // loop over column entries in amalgamated P
+            for (size_t k = 0; k < rowLength; k++) {
+              newPCols[cnt  ] = amalgCols[k+amalgRowPtr[i]] * maxDofPerNode + j;
+              newPVals[cnt++] = amalgVals[k+amalgRowPtr[i]];
+            }
+
+          }
+          if (dofStatus[i*maxDofPerNode+j] == 'd') { // Dirichlet handling
+            newPRowPtr[rowCount++] = cnt;
+          }
+        }
+      }
+
+      newPRowPtr[rowCount] = cnt; // close row CSR array
+    } // fineIsPadded == false
+
+    // TODO assemble new P
+
+
+
+    Set(currentLevel,"P",amalgP);
   }
 
 
