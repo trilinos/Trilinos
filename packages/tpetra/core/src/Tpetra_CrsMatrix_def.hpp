@@ -4222,11 +4222,9 @@ namespace Tpetra {
   mergeRowIndicesAndValues (crs_graph_type& graph,
                             const RowInfo& rowInfo)
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (isStorageOptimized(), std::logic_error, "It is invalid to call this "
-       "method if the graph's storage has already been optimized.  Please "
-       "report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
 
     auto rowValues = this->getRowViewNonConst (rowInfo);
     typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
@@ -4236,6 +4234,17 @@ namespace Tpetra {
     // beg,end define a half-exclusive interval over which to iterate.
     LocalOrdinal* beg = inds_view.data ();
     LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowInfo.allocSize != static_cast<size_t> (inds_view.dimension_0 ()) ||
+       rowInfo.allocSize != static_cast<size_t> (rowValues.dimension_0 ()),
+       std::runtime_error, "rowInfo.allocSize = " << rowInfo.allocSize
+       << " != inds_view.dimension_0() = " << inds_view.dimension_0 ()
+       << " || rowInfo.allocSize = " << rowInfo.allocSize
+       << " != rowValues.dimension_0() = " << rowValues.dimension_0 () << ".");
+#endif // HAVE_TPETRA_DEBUG
+
     LocalOrdinal* newend = beg;
     if (beg != end) {
       LocalOrdinal* cur = beg + 1;
@@ -4272,9 +4281,10 @@ namespace Tpetra {
   mergeRedundantEntries ()
   {
     typedef LocalOrdinal LO;
-    // typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
-    //   host_execution_space;
-    // typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    //typedef Kokkos::RangePolicy<Kokkos::Serial, LO> range_type;
     const char tfecfFuncName[] = "mergeRedundantEntries: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4283,17 +4293,24 @@ namespace Tpetra {
       (this->myGraph_.is_null (), std::logic_error, "myGraph_ is null, but this "
        "matrix claims ! isStaticGraph().  Please report this bug to the "
        "Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isStorageOptimized (), std::logic_error, "It is invalid to call "
+       "this method if the graph's storage has already been optimized.  "
+       "Please report this bug to the Tpetra developers.");
 
     crs_graph_type& graph = * (this->myGraph_);
     const bool merged = graph.isMerged ();
 
     if (! merged) {
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const RowInfo rowInfo = graph.getRowInfo (lclRow);
-        const size_t numDups = this->mergeRowIndicesAndValues (graph, rowInfo);
-        graph.nodeNumEntries_ -= numDups;
-      }
+      size_t totalNumDups = 0;
+      // FIXME (mfh 10 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_reduce (range_type (0, lclNumRows),
+        [this, &graph] (const LO& lclRow, size_t& numDups) {
+          const RowInfo rowInfo = graph.getRowInfo (lclRow);
+          numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
+        }, totalNumDups);
+      graph.nodeNumEntries_ -= totalNumDups;
       graph.noRedundancies_ = true; // we just merged every row
     }
   }
