@@ -133,7 +133,7 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();
     bool activeProc = true;
     int numProc = origComm->getSize();
-    int numActiveProcs = 1;
+    int numActiveProcs = 0;
 #ifdef HAVE_MPI
     RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
     MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
@@ -155,7 +155,15 @@ namespace MueLu {
 
     if(numMyRows == 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
 #else
-    if(numMyRows == 0) {activeProc = false; numMyNnz = 0;} // Reset numMyNnz to avoid adding it up in reduceAll
+    if(numMyRows == 0) {
+      //FIXME JJH 10-May-2017 Is there any case in serial where numMyRows would be zero?
+      // Reset numMyNnz to avoid adding it up in reduceAll
+      numActiveProcs = 0;
+      activeProc = false;
+      numMyNnz = 0;
+    } else {
+      numActiveProcs = 1;
+    }
 #endif
 
     std::string outstr;
