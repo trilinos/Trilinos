@@ -52,9 +52,10 @@
 
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_getGraphDiagOffsets.hpp"
 #include "Tpetra_Details_makeColMap.hpp"
-#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
@@ -4739,9 +4740,11 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeColMap ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "makeColMap: ";
 #endif // HAVE_TPETRA_DEBUG
+    ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::makeColMap");
 
     // this->colMap_ should be null at this point, but we accept the
     // future possibility that it might not be (esp. if we decide
@@ -4788,6 +4791,9 @@ namespace Tpetra {
     (void) Details::makeColMap (colMap, this->getDomainMap (), *this,
                                 sortEachProcsGids, NULL);
 #endif // HAVE_TPETRA_DEBUG
+    // See above.  We want to admit the possibility of makeColMap
+    // actually revising an existing column Map, even though that
+    // doesn't currently (as of 10 May 2017) happen.
     this->colMap_ = colMap;
 
     checkInternalState ();
@@ -4799,11 +4805,13 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   sortAndMergeAllIndices (const bool sorted, const bool merged)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     typedef LocalOrdinal LO;
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
       host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
     const char tfecfFuncName[] = "sortAndMergeAllIndices: ";
+    ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->isGloballyIndexed (), std::logic_error,
@@ -4840,13 +4848,16 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeImportExport ()
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    const char tfecfFuncName[] = "makeImportExport: ";
+    ProfilingRegion regionMIE ("Tpetra::CrsGraph::makeImportExport");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
-      "CrsGraph::makeImportExport: This method may not be called unless the "
-      "graph has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->hasColMap (), std::logic_error,
+       "This method may not be called unless the graph has a column Map.");
     RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
 
     // Don't do any checks to see if we need to create the Import, if
