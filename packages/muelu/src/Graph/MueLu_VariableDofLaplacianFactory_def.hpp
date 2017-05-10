@@ -325,14 +325,9 @@ namespace MueLu {
     typedef Xpetra::MultiVectorFactory<double,LO,GO,NO> dxMVf;
     RCP<dxMV> ghostedCoords = dxMVf::Build(amalgColMap,Coords->getNumVectors());
     ghostedCoords->doImport(*Coords, *nodeImporter, Xpetra::INSERT);
-    Teuchos::ArrayRCP< const double > ghostedXXX = ghostedCoords->getData(0);
-    Teuchos::ArrayRCP< const double > ghostedYYY = ghostedCoords->getData(1);
-    Teuchos::ArrayRCP< const double > ghostedZZZ;
-    if(Coords->getNumVectors() == 3)
-      ghostedZZZ = ghostedCoords->getData(2);
 
     Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
-    this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedXXX, ghostedYYY, ghostedZZZ);
+    this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedCoords);
 
     // sort column GIDs
     for(size_t i = 0; i < amalgRowPtr.size()-1; i++) {
@@ -355,10 +350,13 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const Teuchos::ArrayRCP< const double >& x, const Teuchos::ArrayRCP< const double >& y, const Teuchos::ArrayRCP< const double >& z) const {
+  void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildLaplacian(const Teuchos::ArrayRCP<size_t>& rowPtr, const Teuchos::ArrayRCP<LocalOrdinal>& cols, Teuchos::ArrayRCP<Scalar>& vals,const size_t& numdim, const RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > & ghostedCoords) const {
     TEUCHOS_TEST_FOR_EXCEPTION(numdim != 2 && numdim !=3, MueLu::Exceptions::RuntimeError,"buildLaplacian only works for 2d or 3d examples. numdim = " << numdim);
 
     if(numdim == 2) { // 2d
+      Teuchos::ArrayRCP< const double > x = ghostedCoords->getData(0);
+      Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
+
       for(size_t i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
         LocalOrdinal diag = -1;
@@ -378,6 +376,10 @@ namespace MueLu {
         vals[diag] = sum;
       }
     } else { // 3d
+      Teuchos::ArrayRCP< const double > x = ghostedCoords->getData(0);
+      Teuchos::ArrayRCP< const double > y = ghostedCoords->getData(1);
+      Teuchos::ArrayRCP< const double > z = ghostedCoords->getData(2);
+
       for(size_t i = 0; i < rowPtr.size() - 1; i++) {
         Scalar sum = Teuchos::ScalarTraits<Scalar>::zero();
         LocalOrdinal diag = -1;
