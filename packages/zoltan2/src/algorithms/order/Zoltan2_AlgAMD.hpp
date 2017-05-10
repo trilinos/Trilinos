@@ -149,41 +149,6 @@ class AlgAMD : public Algorithm<Adapter>
       // wgts are ignored in AMD
       model->getEdgeList(edgeIds, offsets, wgts);
 
-#if AMD_WITH_LNO_T
-    {
-
-      // SR: We will always call AMD with lno_t
-      AMDTraits<lno_t> AMDobj;
-      double Control[AMD_CONTROL];
-      double Info[AMD_INFO];
-
-      amd_defaults(Control);
-      amd_control(Control);
-
-      lno_t *perm;
-      perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-
-      lno_t *amd_edgeIds;
-      // SR: This conversion might throw as we are going from gno_t to
-      // lno_t. Another option is to change local ordering to use gno_t
-      // everywhere and upgrade and use the AMD with gno_t.
-      TPL_Traits<lno_t, const gno_t>::ASSIGN_ARRAY(&amd_edgeIds, edgeIds);
-
-      lno_t amd_nVtx=0;
-      TPL_Traits<lno_t, size_t>::ASSIGN(amd_nVtx, nVtx);
-
-      lno_t result = AMDobj.order(amd_nVtx, offsets.getRawPtr(),
-                             amd_edgeIds, perm, Control, Info);
-
-      if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
-          ierr = -1;
-
-      // Delete copies
-      TPL_Traits<lno_t, const gno_t>::DELETE_ARRAY(&amd_edgeIds);
-    }
-#else // AMD_WITH_GNO_T
-    {
-
       // We will always call AMD with SuiteSparse_long
       AMDTraits<SuiteSparse_long> AMDobj;
       double Control[AMD_CONTROL];
@@ -226,8 +191,6 @@ class AlgAMD : public Algorithm<Adapter>
       TPL_Traits<SuiteSparse_long, const lno_t>::DELETE_ARRAY(&amd_offsets);
       TPL_Traits<SuiteSparse_long, const gno_t>::DELETE_ARRAY(&amd_edgeIds);
       delete [] amd_perm;
-     }
-#endif
 
       solution->setHavePerm(true);
       return ierr;
