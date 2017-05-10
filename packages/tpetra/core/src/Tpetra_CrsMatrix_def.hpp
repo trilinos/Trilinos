@@ -4222,9 +4222,9 @@ namespace Tpetra {
   mergeRedundantEntries ()
   {
     typedef LocalOrdinal LO;
-    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
-      host_execution_space;
-    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    // typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+    //   host_execution_space;
+    // typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
     const char tfecfFuncName[] = "mergeRedundantEntries: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4234,18 +4234,19 @@ namespace Tpetra {
        "matrix claims ! isStaticGraph().  Please report this bug to the "
        "Tpetra developers.");
 
-    const bool merged = myGraph_->isMerged ();
+    crs_graph_type& graph = * (this->myGraph_);
+    const bool merged = graph.isMerged ();
 
     if (! merged) {
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const RowInfo rowInfo = myGraph_->getRowInfo (lclRow);
+        const RowInfo rowInfo = graph.getRowInfo (lclRow);
         auto rv = this->getRowViewNonConst (rowInfo);
         const size_t numDups =
-          myGraph_->template mergeRowIndicesAndValues<decltype (rv) > (rowInfo, rv);
-        myGraph_->nodeNumEntries_ -= numDups;
+          this->template mergeRowIndicesAndValues<decltype (rv) > (graph, rowInfo, rv);
+        graph.nodeNumEntries_ -= numDups;
       }
-      myGraph_->noRedundancies_ = true; // we just merged every row
+      graph.noRedundancies_ = true; // we just merged every row
     }
   }
 
