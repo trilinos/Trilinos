@@ -4217,6 +4217,56 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  mergeRowIndicesAndValues (crs_graph_type& graph,
+                            const RowInfo& rowInfo)
+  {
+    const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isStorageOptimized(), std::logic_error, "It is invalid to call this "
+       "method if the graph's storage has already been optimized.  Please "
+       "report this bug to the Tpetra developers.");
+
+    auto rowValues = this->getRowViewNonConst (rowInfo);
+    typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
+    value_type* rowValueIter = rowValues.data ();
+    auto inds_view = graph.getLocalKokkosRowViewNonConst (rowInfo);
+
+    // beg,end define a half-exclusive interval over which to iterate.
+    LocalOrdinal* beg = inds_view.data ();
+    LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
+    LocalOrdinal* newend = beg;
+    if (beg != end) {
+      LocalOrdinal* cur = beg + 1;
+      value_type* vcur = rowValueIter + 1;
+      value_type* vend = rowValueIter;
+      cur = beg+1;
+      while (cur != end) {
+        if (*cur != *newend) {
+          // new entry; save it
+          ++newend;
+          ++vend;
+          (*newend) = (*cur);
+          (*vend) = (*vcur);
+        }
+        else {
+          // old entry; merge it
+          //(*vend) = f (*vend, *vcur);
+          (*vend) += *vcur;
+        }
+        ++cur;
+        ++vcur;
+      }
+      ++newend; // one past the last entry, per typical [beg,end) semantics
+    }
+    const size_t mergedEntries = newend - beg;
+    graph.k_numRowEntries_(rowInfo.localRow) = mergedEntries;
+    const size_t numDups = rowInfo.numEntries - mergedEntries;
+    return numDups;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   mergeRedundantEntries ()
@@ -4241,9 +4291,7 @@ namespace Tpetra {
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const RowInfo rowInfo = graph.getRowInfo (lclRow);
-        auto rv = this->getRowViewNonConst (rowInfo);
-        const size_t numDups =
-          this->template mergeRowIndicesAndValues<decltype (rv) > (graph, rowInfo, rv);
+        const size_t numDups = this->mergeRowIndicesAndValues (graph, rowInfo);
         graph.nodeNumEntries_ -= numDups;
       }
       graph.noRedundancies_ = true; // we just merged every row

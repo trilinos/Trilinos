@@ -3915,71 +3915,15 @@ namespace Tpetra {
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
     ///
-    /// This method is only called by CrsMatrix, for a CrsMatrix whose
-    /// graph is this CrsGraph instance.  It is only called when the
-    /// matrix owns the graph, not when the matrix was constructed
-    /// with a const graph.
+    /// This method is only called by mergeRedundantEntries(), and
+    /// only when the matrix owns the graph, not when the matrix was
+    /// constructed with a const graph.
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    template<class ValuesViewType>
     size_t
     mergeRowIndicesAndValues (crs_graph_type& graph,
-                              const RowInfo& rowInfo,
-                              const ValuesViewType& rowValues)
-    {
-      const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized(), std::logic_error, "It is invalid to call this "
-         "method if the graph's storage has already been optimized.  Please "
-         "report this bug to the Tpetra developers.");
-      typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
-
-      value_type* rowValueIter = rowValues.data ();
-      auto inds_view = graph.getLocalKokkosRowViewNonConst (rowInfo);
-
-      // beg,end define a half-exclusive interval over which to iterate.
-      LocalOrdinal* beg = inds_view.data ();
-      LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
-      LocalOrdinal* newend = beg;
-      if (beg != end) {
-        LocalOrdinal* cur = beg + 1;
-        value_type* vcur = rowValueIter + 1;
-        value_type* vend = rowValueIter;
-        cur = beg+1;
-        while (cur != end) {
-          if (*cur != *newend) {
-            // new entry; save it
-            ++newend;
-            ++vend;
-            (*newend) = (*cur);
-            (*vend) = (*vcur);
-          }
-          else {
-            // old entry; merge it
-            //(*vend) = f (*vend, *vcur);
-            (*vend) += *vcur;
-          }
-          ++cur;
-          ++vcur;
-        }
-        ++newend; // one past the last entry, per typical [beg,end) semantics
-      }
-      const size_t mergedEntries = newend - beg;
-#ifdef HAVE_TPETRA_DEBUG
-      // merge should not have eliminated any entries; if so, the
-      // assignment below will destroy the packed structure
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (graph.isStorageOptimized () && mergedEntries != rowInfo.numEntries,
-         std::logic_error,
-         "Merge was incorrect; it eliminated entries from the graph.  "
-         << "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
-      graph.k_numRowEntries_(rowInfo.localRow) = mergedEntries;
-      const size_t numDups = rowInfo.numEntries - mergedEntries;
-      return numDups;
-    }
+                              const RowInfo& rowInfo);
 
     /// \brief Merge entries in each row with the same column indices.
     ///
