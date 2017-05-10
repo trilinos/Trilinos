@@ -454,16 +454,11 @@ namespace Tacho {
             max_block_alloc_size = 512,
             min_superblock_size = 1024;
 
-#if defined (__KK__)          
           sched_type sched(memory_space(),
                            task_queue_capacity,
                            min_block_alloc_size,
                            max_block_alloc_size,
                            min_superblock_size);
-#else
-          sched_type sched(memory_space(),
-                           task_queue_capacity);
-#endif
           
           // workspace estimate
           const size_type workspace = computeWorkspaceSerialChol(_nsupernodes, _supernodes,
@@ -474,16 +469,12 @@ namespace Tacho {
           const size_type min_total_alloc_size = max((workspace + _m)*sizeof(value_type)*8, 
                                                      4096*10000);
           std::cout << "workspace = " << min_total_alloc_size << "\n";
-#if defined (__KK__)          
           memory_pool_type pool(memory_space(), 
                                 min_total_alloc_size,
                                 min_block_alloc_size,
                                 max_block_alloc_size,
                                 min_superblock_size);
-#else
-          memory_pool_type pool(memory_space(), 
-                                min_total_alloc_size);
-#endif 
+
           // host task generation for roots
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i) 

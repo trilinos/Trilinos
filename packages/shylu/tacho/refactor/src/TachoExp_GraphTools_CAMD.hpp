@@ -75,7 +75,7 @@ namespace Tacho {
       // CAMD output
       ordinal_type_array _pe, _nv, _el, _next, _perm, _peri; // perm = last, peri = next
       
-      double _control[CAMD_CONTROL], _info[CAMD_INFO];
+      double _control[TRILINOS_CAMD_CONTROL], _info[TRILINOS_CAMD_INFO];
       
       bool _is_ordered;
 
@@ -161,7 +161,7 @@ namespace Tacho {
                                 nv_ptr, next, perm, hd_ptr, el_ptr, dg_ptr, wk_ptr, 
                                 _control, _info, cnst, bk_ptr);
         
-        TACHO_TEST_FOR_EXCEPTION(_info[CAMD_STATUS] != CAMD_OK, 
+        TACHO_TEST_FOR_EXCEPTION(_info[TRILINOS_CAMD_STATUS] != TRILINOS_CAMD_OK, 
                                  std::runtime_error,
                                  "CAMD fails");
 
