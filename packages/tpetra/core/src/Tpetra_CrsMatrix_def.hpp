@@ -4241,7 +4241,9 @@ namespace Tpetra {
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const RowInfo rowInfo = myGraph_->getRowInfo (lclRow);
         auto rv = this->getRowViewNonConst (rowInfo);
-        myGraph_->template mergeRowIndicesAndValues<decltype (rv) > (rowInfo, rv);
+        const size_t numDups =
+          myGraph_->template mergeRowIndicesAndValues<decltype (rv) > (rowInfo, rv);
+        myGraph_->nodeNumEntries_ -= numDups;
       }
       myGraph_->noRedundancies_ = true; // we just merged every row
     }

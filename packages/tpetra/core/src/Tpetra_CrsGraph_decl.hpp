@@ -2693,7 +2693,7 @@ namespace Tpetra {
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
     template<class ValuesViewType>
-    void
+    size_t
     mergeRowIndicesAndValues (const RowInfo& rowInfo,
                               const ValuesViewType& rowValues)
     {
@@ -2746,7 +2746,8 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       k_numRowEntries_(rowInfo.localRow) = mergedEntries;
-      nodeNumEntries_ -= (rowInfo.numEntries - mergedEntries);
+      const size_t numDups = rowInfo.numEntries - mergedEntries;
+      return numDups;
     }
 
     //@}
