@@ -34,7 +34,7 @@ void amesos_paraklete_start (Int nproc, Int myid, paraklete_common *Common)
     Common->tol_offdiag = 1.0 ;
     Common->growth = 2. ;
     Common->dump = 0 ;
-    KLU_defaults (&(Common->km)) ;
+    TRILINOS_KLU_defaults (&(Common->km)) ;
     Common->km.btf = 0 ;
 }
 

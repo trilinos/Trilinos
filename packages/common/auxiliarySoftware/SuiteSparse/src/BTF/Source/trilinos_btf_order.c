@@ -8,7 +8,7 @@
  * A(P,Q) will be maximized, and will equal the structural rank of A.
  *
  * Q[k] will be "flipped" if a zero-free diagonal was not found.  Q[k] will be
- * negative, and j = BTF_UNFLIP (Q [k]) gives the corresponding permutation.
+ * negative, and j = TRILINOS_BTF_UNFLIP (Q [k]) gives the corresponding permutation.
  *
  * R defines the block boundaries of A(P,Q).  The kth block consists of rows
  * and columns R[k] to R[k+1]-1.
@@ -32,7 +32,7 @@
 /* This function only operates on square matrices (either structurally full-
  * rank, or structurally rank deficient). */
 
-Int BTF(order)	    /* returns number of blocks found */
+Int TRILINOS_BTF(order)	    /* returns number of blocks found */
 (
     /* input, not modified: */
     Int n,	    /* A is n-by-n in compressed column form */
@@ -61,13 +61,13 @@ Int BTF(order)	    /* returns number of blocks found */
 
     /* if maxwork > 0, then a maximum matching might not be found */
 
-    *nmatch = BTF(maxtrans) (n, n, Ap, Ai, maxwork, work, Q, Work) ;
+    *nmatch = TRILINOS_BTF(maxtrans) (n, n, Ap, Ai, maxwork, work, Q, Work) ;
 
     /* ---------------------------------------------------------------------- */
     /* complete permutation if the matrix is structurally singular */
     /* ---------------------------------------------------------------------- */
 
-    /* Since the matrix is square, ensure BTF_UNFLIP(Q[0..n-1]) is a
+    /* Since the matrix is square, ensure TRILINOS_BTF_UNFLIP(Q[0..n-1]) is a
      * permutation of the columns of A so that A has as many nonzeros on the
      * diagonal as possible.
      */
@@ -112,21 +112,21 @@ Int BTF(order)	    /* returns number of blocks found */
 		/* get an unmatched column j */
 		j = Work [--nbadcol] ;
 		/* assign j to row i and flag the entry by "flipping" it */
-		Q [i] = BTF_FLIP (j) ;
+		Q [i] = TRILINOS_BTF_FLIP (j) ;
 	    }
 	}
     }
 
     /* The permutation of a square matrix can be recovered as follows: Row i is
-     * matched with column j, where j = BTF_UNFLIP (Q [i]) and where j
+     * matched with column j, where j = TRILINOS_BTF_UNFLIP (Q [i]) and where j
      * will always be in the valid range 0 to n-1.  The entry A(i,j) is zero
-     * if BTF_ISFLIPPED (Q [i]) is true, and nonzero otherwise.  nmatch
+     * if TRILINOS_BTF_ISFLIPPED (Q [i]) is true, and nonzero otherwise.  nmatch
      * is the number of entries in the Q array that are non-negative. */
 
     /* ---------------------------------------------------------------------- */
     /* find the strongly connected components */
     /* ---------------------------------------------------------------------- */
 
-    nblocks = BTF(strongcomp) (n, Ap, Ai, Q, P, R, Work) ;
+    nblocks = TRILINOS_BTF(strongcomp) (n, Ap, Ai, Q, P, R, Work) ;
     return (nblocks) ;
 }

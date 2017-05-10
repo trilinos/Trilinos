@@ -45,7 +45,7 @@
  * with support from Sandia National Laboratories.  All Rights Reserved.
  */ 
 
-/* This file should make the long int version of BTF */
+/* This file should make the long int version of TRILINOS_BTF */
 #define DLONG 1
 
 #include "trilinos_btf_decl.h"
@@ -295,7 +295,7 @@ static Int trilinos_augment
 /* === maxtrans ============================================================= */
 /* ========================================================================== */
 
-Int BTF(maxtrans)   /* returns # of columns in the matching */
+Int TRILINOS_BTF(maxtrans)   /* returns # of columns in the matching */
 (
     /* --- input --- */
     Int nrow,	    /* A is nrow-by-ncol in compressed column form */

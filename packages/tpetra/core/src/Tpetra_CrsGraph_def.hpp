@@ -916,7 +916,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getGlobalNumEntries()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
-					  ": The matrix does not have globalConstants computed, but the user has requested them.");
+                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
 #endif
     return globalNumEntries_;
   }
@@ -1348,19 +1348,19 @@ namespace Tpetra {
                typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalKokkosRowView (const RowInfo& rowinfo) const
+  getLocalKokkosRowView (const RowInfo& rowInfo) const
   {
     typedef LocalOrdinal LO;
     typedef Kokkos::View<const LO*, execution_space,
       Kokkos::MemoryUnmanaged> row_view_type;
 
-    if (rowinfo.allocSize == 0) {
+    if (rowInfo.allocSize == 0) {
       return row_view_type ();
     }
     else { // nothing in the row to view
       if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
-        const size_t start = rowinfo.offset1D;
-        const size_t len = rowinfo.allocSize;
+        const size_t start = rowInfo.offset1D;
+        const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         // mfh 23 Nov 2015: Don't just create a subview of
         // k_lclInds1D_ directly, because that first creates a
@@ -1369,15 +1369,14 @@ namespace Tpetra {
         // performance in a measurable way.
         return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        // Use a reference, to avoid doing the array lookup twice.
+      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
         //
-        // NOTE (mfh 18 Jul 2016) Don't create a Teuchos::ArrayView,
-        // because this is not thread safe in a debug build.
-        Teuchos::Array<LocalOrdinal>& lclInds = lclInds2D_[rowinfo.localRow];
-        const LO* rowPtr = lclInds.getRawPtr ();
-        const auto rowSize = lclInds.size ();
-        return row_view_type (rowPtr, rowSize);
+        // lclInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<LO>& lclInds = this->lclInds2D_[rowInfo.localRow];
+        return row_view_type (lclInds.getRawPtr (), lclInds.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1391,30 +1390,36 @@ namespace Tpetra {
                typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalKokkosRowViewNonConst (const RowInfo& rowinfo)
+  getLocalKokkosRowViewNonConst (const RowInfo& rowInfo)
   {
     typedef LocalOrdinal LO;
     typedef Kokkos::View<LO*, execution_space,
       Kokkos::MemoryUnmanaged> row_view_type;
 
-    if (rowinfo.allocSize == 0) {
+    if (rowInfo.allocSize == 0) {
       return row_view_type ();
     }
     else { // nothing in the row to view
       if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
-        const size_t start = rowinfo.offset1D;
-        const size_t len = rowinfo.allocSize;
+        const size_t start = rowInfo.offset1D;
+        const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         // mfh 23 Nov 2015: Don't just create a subview of
         // k_lclInds1D_ directly, because that first creates a
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
-        return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
+        return Kokkos::subview (row_view_type (this->k_lclInds1D_), rng);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        Teuchos::ArrayView<LO> rowAv = lclInds2D_[rowinfo.localRow] ();
-        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+      else if (! this->lclInds2D_[rowInfo.localRow].empty ()) { // 2-D storage
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
+        //
+        // lclInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<LO>& cols = this->lclInds2D_[rowInfo.localRow];
+        LO* const colsRaw = cols.getRawPtr ();
+        return row_view_type (colsRaw, cols.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1450,11 +1455,13 @@ namespace Tpetra {
         return Kokkos::subview (row_view_type (this->k_gblInds1D_), rng);
       }
       else if (! this->gblInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        Teuchos::ArrayView<const GO> rowAv = this->gblInds2D_[rowinfo.localRow] ();
-        // FIXME (mfh 26 Nov 2015) This assumes UVM, because it
-        // assumes that host code can access device memory through
-        // Teuchos::ArrayView.
-        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+        // Use a reference, so that I don't touch the
+        // Teuchos::ArrayView reference count in a debug build.  (It
+        // has no reference count in a release build.)
+        //
+        // gblInds2D_ lives on host, so this code does not assume UVM.
+        Teuchos::Array<GO>& cols = this->gblInds2D_[rowinfo.localRow];
+        return row_view_type (cols.getRawPtr (), cols.size ());
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1466,7 +1473,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getGlobalView (const RowInfo rowinfo) const
+  getGlobalView (const RowInfo& rowinfo) const
   {
     Teuchos::ArrayView<const GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
@@ -1531,7 +1538,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getGlobalViewNonConst (const RowInfo rowinfo)
+  getGlobalViewNonConst (const RowInfo& rowinfo)
   {
     Teuchos::ArrayView<GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
@@ -2112,42 +2119,33 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortRowIndices (const RowInfo rowinfo)
+  sortRowIndices (const RowInfo& rowInfo)
   {
-    if (rowinfo.numEntries > 0) {
-      Teuchos::ArrayView<LocalOrdinal> inds_view =
-        this->getLocalViewNonConst (rowinfo);
-      std::sort (inds_view.begin (), inds_view.begin () + rowinfo.numEntries);
+    if (rowInfo.numEntries > 0) {
+      auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
+      // FIXME (mfh 08 May 2017) This assumes CUDA UVM.
+      LocalOrdinal* const lclColIndsRaw = lclColInds.ptr_on_device ();
+      std::sort (lclColIndsRaw, lclColIndsRaw + rowInfo.numEntries);
     }
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  mergeRowIndices (RowInfo rowinfo)
+  mergeRowIndices (const RowInfo& rowInfo)
   {
-    using Teuchos::ArrayView;
-    const char tfecfFuncName[] = "mergeRowIndices: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized (), std::logic_error, "The graph is already storage "
-      "optimized, so we shouldn't be merging any indices.  "
-      "Please report this bug to the Tpetra developers.");
+    auto lclColInds = this->getLocalKokkosRowViewNonConst (rowInfo);
 
-    ArrayView<LocalOrdinal> inds_view = this->getLocalViewNonConst (rowinfo);
-    typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
-    beg = inds_view.begin();
-    end = inds_view.begin() + rowinfo.numEntries;
-    newend = std::unique(beg,end);
+    // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+    LocalOrdinal* const beg = lclColInds.ptr_on_device ();
+    LocalOrdinal* const end = beg + rowInfo.numEntries;
+    LocalOrdinal* const newend = std::unique (beg, end);
     const size_t mergedEntries = newend - beg;
-#ifdef HAVE_TPETRA_DEBUG
-    // merge should not have eliminated any entries; if so, the
-    // assignment below will destroy the packed structure
-    TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized () && mergedEntries != rowinfo.numEntries );
-#endif // HAVE_TPETRA_DEBUG
 
-    k_numRowEntries_(rowinfo.localRow) = mergedEntries;
-    nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
+    // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
+    this->k_numRowEntries_(rowInfo.localRow) = mergedEntries;
+    return rowInfo.numEntries - mergedEntries;
   }
 
 
@@ -3550,16 +3548,11 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     makeIndicesLocal ();
 
-    if (! isSorted ()) {
-      // If this process has no indices, then CrsGraph considers it
-      // already trivially sorted.  Thus, this method need not be
-      // called on all processes in the row Map's communicator.
-      sortAllIndices ();
-    }
+    // If this process has no indices, then CrsGraph considers it
+    // already trivially sorted and merged.  Thus, this method need
+    // not be called on all processes in the row Map's communicator.
+    this->sortAndMergeAllIndices (this->isSorted (), this->isMerged ());
 
-    if (! isMerged()) {
-      mergeAllIndices ();
-    }
     makeImportExport (); // Make Import and Export objects, if necessary
     computeGlobalConstants ();
     fillLocalGraph (params);
@@ -3616,7 +3609,7 @@ namespace Tpetra {
       (getNodeNumRows () + 1) << ".");
 
     // Note: We don't need to do the following things which are normally done in fillComplete:
-    // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAllIndices, mergeAllIndices
+    // allocateIndices, globalAssemble, makeColMap, makeIndicesLocal, sortAndMergeAllIndices
 
     // Note: Need to do this so computeGlobalConstants & fillLocalGraph work
     //
@@ -4341,7 +4334,9 @@ namespace Tpetra {
         // FIXME (mfh 17 Sep 2014) This violates the strong exception
         // guarantee.  It would be better to sort the new index arrays
         // before committing them.
-        sortAllIndices ();
+        const bool sorted = false; // need to resort
+        const bool merged = true; // no need to merge, since no dups
+        this->sortAndMergeAllIndices (sorted, merged);
       }
     }
     colMap_ = newColMap;
@@ -4738,28 +4733,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sortAllIndices ()
-  {
-    typedef LocalOrdinal LO;
-
-    // this should be called only after makeIndicesLocal()
-    TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed () );
-    if (isSorted () == false) {
-      // FIXME (mfh 06 Mar 2014) This would be a good place for a
-      // thread-parallel kernel.
-      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const RowInfo rowInfo = this->getRowInfo (lclRow);
-        this->sortRowIndices (rowInfo);
-      }
-    }
-    indicesAreSorted_ = true; // we just sorted every row
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   makeColMap ()
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -4820,19 +4793,40 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  mergeAllIndices ()
+  sortAndMergeAllIndices (const bool sorted, const bool merged)
   {
-    TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed() ); // call only after makeIndicesLocal()
-    TEUCHOS_TEST_FOR_EXCEPT( ! isSorted() ); // call only after sortIndices()
-    if (! isMerged ()) {
-      const LocalOrdinal lclNumRows =
-        static_cast<LocalOrdinal> (this->getNodeNumRows ());
-      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
-        const RowInfo rowInfo = this->getRowInfo (row);
-        mergeRowIndices(rowInfo);
-      }
-      // we just merged every row
-      noRedundancies_ = true;
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+      host_execution_space;
+    typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+    const char tfecfFuncName[] = "sortAndMergeAllIndices: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isGloballyIndexed (), std::logic_error,
+       "This method may only be called after makeIndicesLocal." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! merged && this->isStorageOptimized (), std::logic_error,
+       "The graph is already storage optimized, so we shouldn't be merging any "
+       "indices.  Please report this bug to the Tpetra developers.");
+
+    if (! sorted || ! merged) {
+      const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+      size_t totalNumDups = 0;
+      // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+      Kokkos::parallel_reduce (range_type (0, lclNumRows),
+        [this, sorted, merged] (const LO& lclRow, size_t& numDups) {
+          const RowInfo rowInfo = this->getRowInfo (lclRow);
+          if (! sorted) {
+            this->sortRowIndices (rowInfo);
+          }
+          if (! merged) {
+            numDups += this->mergeRowIndices (rowInfo);
+          }
+        }, totalNumDups);
+      this->nodeNumEntries_ -= totalNumDups;
+      this->indicesAreSorted_ = true; // we just sorted every row
+      this->noRedundancies_ = true; // we just merged every row
     }
   }
 

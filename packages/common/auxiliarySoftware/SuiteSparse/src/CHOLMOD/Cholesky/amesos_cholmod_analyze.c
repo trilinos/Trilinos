@@ -32,7 +32,7 @@
  *	natural:    A is not permuted to reduce fill-in
  *	given:	    a permutation can be provided to this routine (UserPerm)
  *	AMD:	    approximate minumum degree (AMD for the symmetric case,
- *		    COLAMD for the AA' case).
+ *		    TRILINOS_COLAMD for the AA' case).
  *	METIS:	    nested dissection with METIS_NodeND
  *	NESDIS:	    nested dissection using METIS_NodeComputeSeparator,
  *		    typically followed by a constrained minimum degree
@@ -47,7 +47,7 @@
  * methods available are:
  *
  *	1) given permutation (skipped if UserPerm is NULL)
- *	2) AMD (symmetric case) or COLAMD (unsymmetric case)
+ *	2) AMD (symmetric case) or TRILINOS_COLAMD (unsymmetric case)
  *	3) METIS with default parameters
  *	4) NESDIS with default parameters (stopping the partitioning when
  *	    the graph is of size nd_small = 200 or less, remove nodes with
@@ -58,7 +58,7 @@
  *	6) NESDIS, nd_small = 20000, prune_dense = 10
  *	7) NESDIS, nd_small =     4, prune_dense = 10, no min degree
  *	8) NESDIS, nd_small =   200, prune_dense = 0
- *	9) COLAMD for A*A' or AMD for A
+ *	9) TRILINOS_COLAMD for A*A' or AMD for A
  *
  * By default, the first two are tried, and METIS is tried if AMD reports a high
  * flop count and fill-in.  Let fl denote the flop count for the AMD, ordering,
@@ -66,7 +66,7 @@
  * fl/nnz(L) >= 500 and nnz(L)/nnz(tril(A)) >= 5, then METIS is attempted.  The
  * best ordering is used (UserPerm if given, AMD, and METIS if attempted).  If
  * you do not have METIS, only the first two will be tried (user permutation,
- * if provided, and AMD/COLAMD).  This default behavior is obtained when
+ * if provided, and AMD/TRILINOS_COLAMD).  This default behavior is obtained when
  * Common->nmethods is zero.  In this case, methods 0, 1, and 2 in
  * Common->method [..] are reset to User-provided, AMD, and METIS (or NESDIS
  * if Common->default_nesdis is set to the non-default value of TRUE),
@@ -80,7 +80,7 @@
  *
  * Note that it is possible for METIS to terminate your program if it runs out
  * of memory.  This is not the case for any CHOLMOD or minimum degree ordering
- * routine (AMD, COLAMD, CAMD, CCOLAMD, or CSYMAMD).  Since NESDIS relies on
+ * routine (AMD, TRILINOS_COLAMD, CAMD, CCOLAMD, or CSYMAMD).  Since NESDIS relies on
  * METIS, it too can terminate your program.
  *
  * The factor L is returned as simplicial symbolic (L->is_super FALSE) if
@@ -430,7 +430,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     default_strategy = (nmethods == 0) ;
     if (default_strategy)
     {
-	/* default strategy: try UserPerm, if given.  Try AMD for A, or COLAMD
+	/* default strategy: try UserPerm, if given.  Try AMD for A, or TRILINOS_COLAMD
 	 * to order A*A'.  Try METIS for the symmetric case only if AMD reports
 	 * a high degree of fill-in and flop count.  Always try METIS for the
 	 * unsymmetric case.  METIS is not tried if the Partition Module
@@ -608,7 +608,7 @@ cholmod_factor *CHOLMOD(analyze_p)
 	{
 
 	    /* -------------------------------------------------------------- */
-	    /* AMD for symmetric case, COLAMD for A*A' or A(:,f)*A(:,f)' */
+	    /* AMD for symmetric case, TRILINOS_COLAMD for A*A' or A(:,f)*A(:,f)' */
 	    /* -------------------------------------------------------------- */
 
 	    if (A->stype)
@@ -619,11 +619,11 @@ cholmod_factor *CHOLMOD(analyze_p)
 	    else
 	    {
 		/* Alternative:
-		CHOLMOD(ccolamd) (A, fset, fsize, NULL, Perm, Common) ;
+		CHOLMOD(trilinos_ccolamd) (A, fset, fsize, NULL, Perm, Common) ;
 		*/
 		/* do not postorder, it is done later, below */
 		/* workspace: Iwork (4*nrow+uncol), Flag (nrow), Head (nrow+1)*/
-		CHOLMOD(colamd) (A, fset, fsize, FALSE, Perm, Common) ;
+		CHOLMOD(trilinos_colamd) (A, fset, fsize, FALSE, Perm, Common) ;
 	    }
 
 	}

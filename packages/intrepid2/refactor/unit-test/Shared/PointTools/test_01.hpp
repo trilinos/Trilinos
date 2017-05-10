@@ -106,7 +106,6 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
       typedef PointTools pts;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       
       int errorFlag = 0;     
@@ -168,6 +167,7 @@ namespace Intrepid2 {
         << "| TEST 2: malformed point arrays                                               \n" 
         << "===============================================================================\n";
 #ifdef HAVE_INTREPID2_DEBUG
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       try {
         const shards::CellTopology line( shards::getCellTopologyData< shards::Line<2> >() );      
         ordinal_type nthrow = 0, ncatch = 0;

@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* === KLU_defaults ========================================================= */
+/* === TRILINOS_KLU_defaults ========================================================= */
 /* ========================================================================== */
 
 /* Sets default parameters for KLU */
@@ -9,9 +9,9 @@
 
 #include "trilinos_klu_internal.h"
 
-Int KLU_defaults
+Int TRILINOS_KLU_defaults
 (
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     if (Common == NULL)
@@ -24,12 +24,12 @@ Int KLU_defaults
     Common->memgrow = 1.2;	/* realloc size ratio increase for LU factors */
     Common->initmem_amd = 1.2 ;	/* init. mem with AMD:  c*nnz(L) + n */
     Common->initmem = 10 ;	/* init. mem otherwise: c*nnz(A) + n */
-    Common->btf = TRUE ;	/* use BTF pre-ordering, or not */
+    Common->btf = TRUE ;	/* use TRILINOS_BTF pre-ordering, or not */
     Common->maxwork = 0 ;	/* no limit to work done by btf_order */
-    Common->ordering = 0 ;	/* 0: AMD, 1: COLAMD, 2: user-provided P and Q,
+    Common->ordering = 0 ;	/* 0: AMD, 1: TRILINOS_COLAMD, 2: user-provided P and Q,
 				 * 3: user-provided function */
     Common->scale = 2 ;		/* scale: -1: none, and do not check for errors
-				 * in the input matrix in KLU_refactor.
+				 * in the input matrix in TRILINOS_KLU_refactor.
 				 * 0: none, but check for errors,
 				 * 1: sum, 2: max */
     Common->halt_if_singular = TRUE ;	/* quick halt if matrix is singular */
@@ -45,7 +45,7 @@ Int KLU_defaults
     Common->user_data = NULL ;
 
     /* statistics */
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
     Common->nrealloc = 0 ;
     Common->structural_rank = EMPTY ;
     Common->numerical_rank = EMPTY ;

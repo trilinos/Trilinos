@@ -21,11 +21,7 @@ namespace Tacho {
       typedef Kokkos::Future<int,exec_space> future_type;
 
       // memory pool
-#if defined(__KK__)
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
-#else
-      typedef Kokkos::Experimental::MemoryPool<exec_space> memory_pool_type;
-#endif      
       // value types
       typedef int value_type; // functor return type
       typedef MatValueType mat_value_type; // matrix value type
@@ -60,6 +56,7 @@ namespace Tacho {
 
         const size_type alloc_size = src_col_size*sizeof(ordinal_type);
         ordinal_type *map_buf = (ordinal_type*)_pool.allocate(alloc_size);
+        TACHO_TEST_FOR_ABORT(map_buf == NULL, "pool allocation fails");
 
         ordinal_type_array map(map_buf, src_col_size);
         const ordinal_type smapoff = _info.gid_super_panel_ptr(_sid);
@@ -153,6 +150,7 @@ namespace Tacho {
           } else {
             const size_type alloc_size = n*n*sizeof(value_type);
             value_type *abr_buf = (value_type*)_pool.allocate(alloc_size);
+            TACHO_TEST_FOR_ABORT(abr_buf == NULL, "pool allocation fails");
 
             UnmanagedViewType<value_type_matrix> ABR(abr_buf, n, n);
             Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
@@ -198,19 +196,21 @@ namespace Tacho {
             if (isize > 0) {
               const size_type alloc_size = isize*sizeof(future_type);
               future_type depbuf[MaxDependenceSize], *dep = &depbuf[0];
-              if (isize > MaxDependenceSize) dep = (future_type*)_pool.allocate(alloc_size);
+              if (isize > MaxDependenceSize) { 
+                dep = (future_type*)_pool.allocate(alloc_size);
+                TACHO_TEST_FOR_ABORT(dep == NULL, "pool allocation fails");
+              }
               
               for (ordinal_type i=0;i<isize;++i) {
                 const ordinal_type child = _info.stree_children(i+ibeg);
                 future_type f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, i ? Kokkos::TaskPriority::Low : Kokkos::TaskPriority::High),
                                                    TaskFunctor_CholeskySuperNodes(_sched, _pool, _info, 
                                                                                   child, _sid));
+                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
-              future_type dep_all;// = Kokkos::when_all(dep, isize);
               ++_state;
-
-              Kokkos::respawn(this, dep_all, Kokkos::TaskPriority::High);
+              Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::High);
               
               if (isize > MaxDependenceSize) _pool.deallocate((void*)dep, alloc_size);
             } else {
@@ -220,7 +220,8 @@ namespace Tacho {
           } 
           case 1: {
             ++_state;
-            Kokkos::respawn(this, _info.supernodes_future(_sid), Kokkos::TaskPriority::High);            
+            is_execute = true;
+            //Kokkos::respawn(this, _info.supernodes_future(_sid), Kokkos::TaskPriority::High);            
             break;
           }
           default: 

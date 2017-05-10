@@ -226,6 +226,14 @@ namespace Intrepid2 {
     return opOrder;
   }
 
+  template<EOperator operatorType>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ordinal_type getOperatorOrder() {
+    return (operatorType == OPERATOR_VALUE) ? 0 :
+           ((operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || (operatorType == OPERATOR_D1)) ? 1 :
+           (ordinal_type)operatorType - (ordinal_type)OPERATOR_D1 + 1;
+  }
+
 
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
@@ -421,7 +429,13 @@ namespace Intrepid2 {
     ordinal_type n = Intrepid2::getOperatorOrder(operatorType);
     return (spaceDim==1) ? 1 :
            (spaceDim==2) ? n+1 :
-           (n + 1) * (n + 2) / 2;
+                          (n + 1) * (n + 2) / 2;
+  }
+
+  template<EOperator operatorType, ordinal_type spaceDim>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ordinal_type getDkCardinality() {
+    return getPnCardinality<spaceDim-1,Intrepid2::getOperatorOrder<operatorType>()>();
   }
 
   template<ordinal_type spaceDim>
@@ -429,11 +443,12 @@ namespace Intrepid2 {
   ordinal_type getPnCardinality (ordinal_type n) {
 
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+    INTREPID2_TEST_FOR_ABORT( !( (0 <= spaceDim ) && (spaceDim < 4) ),
                                         ">>> ERROR (Intrepid2::getPnCardinality): Invalid space dimension");
 #endif
 
-    return (spaceDim==1) ? n+1 :
+    return (spaceDim==0) ? 1 :
+           (spaceDim==1) ? n+1 :
            (spaceDim==2) ? (n + 1) * (n + 2) / 2 :
            (n + 1) * (n + 2) * (n + 3) / 6;
   }
@@ -443,7 +458,8 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   constexpr ordinal_type getPnCardinality () {
 
-    return (spaceDim==1) ? n+1 :
+    return (spaceDim==0) ? 1 :
+           (spaceDim==1) ? n+1 :
            (spaceDim==2) ? (n + 1) * (n + 2) / 2 :
            (n + 1) * (n + 2) * (n + 3) / 6;
 

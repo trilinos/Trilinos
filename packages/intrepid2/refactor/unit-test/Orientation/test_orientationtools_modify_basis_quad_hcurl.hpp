@@ -105,14 +105,16 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
       const double tol = tolerence();
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
-
+        constexpr ordinal_type order = 3;
+        if(order <= maxOrder)
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
-          const ordinal_type order = 3;
+
           QuadBasisType cellBasis(order);
 
           *outStream << "\n --- " << cellBasis.getName() << "\n";

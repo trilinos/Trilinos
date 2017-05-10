@@ -1,9 +1,9 @@
 /* ========================================================================== */
-/* === KLU_scale ============================================================ */
+/* === TRILINOS_KLU_scale ============================================================ */
 /* ========================================================================== */
 
 /* Scale a matrix and check to see if it is valid.  Can be called by the user.
- * This is called by KLU_factor and KLU_refactor.  Returns TRUE if the input
+ * This is called by TRILINOS_KLU_factor and TRILINOS_KLU_refactor.  Returns TRUE if the input
  * matrix is valid, FALSE otherwise.  If the W input argument is non-NULL,
  * then the input matrix is checked for duplicate entries.
  *
@@ -16,7 +16,7 @@
 
 #include "trilinos_klu_internal.h"
 
-Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
+Int TRILINOS_KLU_scale		/* return TRUE if successful, FALSE otherwise */
 (
     /* inputs, not modified */
     Int scale,		/* 0: none, 1: sum, 2: max */
@@ -29,7 +29,7 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
     /* workspace, not defined on input or output */
     Int W [ ],		/* size n, can be NULL */
     /* --------------- */
-    KLU_common *Common
+    TRILINOS_KLU_common *Common
 )
 {
     double a ;
@@ -44,7 +44,7 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
     {
 	return (FALSE) ;
     }
-    Common->status = KLU_OK ;
+    Common->status = TRILINOS_KLU_OK ;
 
     if (scale < 0)
     {
@@ -59,13 +59,13 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
 	(scale > 0 && Rs == NULL))
     {
 	/* Ap, Ai, Ax and Rs must be present, and n must be > 0 */
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
     if (Ap [0] != 0 || Ap [n] < 0)
     {
 	/* nz = Ap [n] must be >= 0 and Ap [0] must equal zero */
-	Common->status = KLU_INVALID ;
+	Common->status = TRILINOS_KLU_INVALID ;
 	return (FALSE) ;
     }
     for (col = 0 ; col < n ; col++)
@@ -73,7 +73,7 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
 	if (Ap [col] > Ap [col+1])
 	{
 	    /* column pointers must be non-decreasing */
-	    Common->status = KLU_INVALID ;
+	    Common->status = TRILINOS_KLU_INVALID ;
 	    return (FALSE) ;
 	}
     }
@@ -110,7 +110,7 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
 	    if (row < 0 || row >= n)
 	    {
 		/* row index out of range, or duplicate entry */
-		Common->status = KLU_INVALID ;
+		Common->status = TRILINOS_KLU_INVALID ;
 		return (FALSE) ;
 	    }
 	    if (check_duplicates)
@@ -118,7 +118,7 @@ Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
 		if (W [row] == col)
 		{
 		    /* duplicate entry */
-		    Common->status = KLU_INVALID ;
+		    Common->status = TRILINOS_KLU_INVALID ;
 		    return (FALSE) ;
 		}
 		/* flag row i as appearing in column col */

@@ -1,10 +1,10 @@
 /* ========================================================================== */
-/* === colamd/symamd - a sparse matrix column ordering algorithm ============ */
+/* === trilinos_colamd/symamd - a sparse matrix column ordering algorithm ============ */
 /* ========================================================================== */
 
-/* COLAMD / SYMAMD
+/* TRILINOS_COLAMD / SYMAMD
 
-    colamd:  an approximate minimum degree column ordering algorithm,
+    trilinos_colamd:  an approximate minimum degree column ordering algorithm,
     	for LU factorization of symmetric or unsymmetric matrices,
 	QR factorization, least squares, interior point methods for
 	linear programming problems, and other related problems.
@@ -47,7 +47,7 @@
     Copyright and License:
 
 	Copyright (c) 1998-2007, Timothy A. Davis, All Rights Reserved.
-	COLAMD is also available under alternate licenses, contact T. Davis
+	TRILINOS_COLAMD is also available under alternate licenses, contact T. Davis
 	for details.
 
 	This library is free software; you can redistribute it and/or
@@ -77,13 +77,13 @@
 
     Availability:
 
-	The colamd/symamd library is available at
+	The trilinos_colamd/symamd library is available at
 
-	    http://www.cise.ufl.edu/research/sparse/colamd/
+	    http://www.cise.ufl.edu/research/sparse/trilinos_colamd/
 
-	This is the http://www.cise.ufl.edu/research/sparse/colamd/colamd.c
-	file.  It requires the colamd.h file.  It is required by the colamdmex.c
-	and symamdmex.c files, for the MATLAB interface to colamd and symamd.
+	This is the http://www.cise.ufl.edu/research/sparse/trilinos_colamd/colamd.c
+	file.  It requires the trilinos_colamd.h file.  It is required by the colamdmex.c
+	and symamdmex.c files, for the MATLAB interface to trilinos_colamd and symamd.
 	Appears as ACM Algorithm 836.
 
     See the ChangeLog file for changes since Version 1.0.
@@ -94,7 +94,7 @@
 	minimum degree ordering algorithm, ACM Transactions on Mathematical
 	Software, vol. 30, no. 3., pp. 353-376, 2004.
 
-	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836: COLAMD,
+	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836: TRILINOS_COLAMD,
 	an approximate column minimum degree ordering algorithm, ACM
 	Transactions on Mathematical Software, vol. 30, no. 3., pp. 377-380,
 	2004.
@@ -105,24 +105,24 @@
 /* === Description of user-callable routines ================================ */
 /* ========================================================================== */
 
-/* COLAMD includes both int and UF_long versions of all its routines.  The
+/* TRILINOS_COLAMD includes both int and UF_long versions of all its routines.  The
  * description below is for the int version.  For UF_long, all int arguments
  * become UF_long.  UF_long is normally defined as long, except for WIN64.
 
     ----------------------------------------------------------------------------
-    colamd_recommended:
+    trilinos_colamd_recommended:
     ----------------------------------------------------------------------------
 
 	C syntax:
 
-	    #include "colamd.h"
-	    size_t colamd_recommended (int nnz, int n_row, int n_col) ;
-	    size_t colamd_l_recommended (UF_long nnz, UF_long n_row,
+	    #include "trilinos_colamd.h"
+	    size_t trilinos_colamd_recommended (int nnz, int n_row, int n_col) ;
+	    size_t trilinos_colamd_l_recommended (UF_long nnz, UF_long n_row,
 		UF_long n_col) ;
 
 	Purpose:
 
-	    Returns recommended value of Alen for use by colamd.  Returns 0
+	    Returns recommended value of Alen for use by trilinos_colamd.  Returns 0
 	    if any input argument is negative.  The use of this routine
 	    is optional.  Not needed for symamd, which dynamically allocates
 	    its own memory.
@@ -134,7 +134,7 @@
 
 	    int nnz ;		Number of nonzeros in the matrix A.  This must
 				be the same value as p [n_col] in the call to
-				colamd - otherwise you will get a wrong value
+				trilinos_colamd - otherwise you will get a wrong value
 				of the recommended memory to use.
 
 	    int n_row ;		Number of rows in the matrix A.
@@ -142,14 +142,14 @@
 	    int n_col ;		Number of columns in the matrix A.
 
     ----------------------------------------------------------------------------
-    colamd_set_defaults:
+    trilinos_colamd_set_defaults:
     ----------------------------------------------------------------------------
 
 	C syntax:
 
-	    #include "colamd.h"
-	    colamd_set_defaults (double knobs [COLAMD_KNOBS]) ;
-	    colamd_l_set_defaults (double knobs [COLAMD_KNOBS]) ;
+	    #include "trilinos_colamd.h"
+	    trilinos_colamd_set_defaults (double knobs [TRILINOS_COLAMD_KNOBS]) ;
+	    trilinos_colamd_l_set_defaults (double knobs [TRILINOS_COLAMD_KNOBS]) ;
 
 	Purpose:
 
@@ -157,53 +157,53 @@
 
 	Arguments:
 
-	    double knobs [COLAMD_KNOBS] ;	Output only.
+	    double knobs [TRILINOS_COLAMD_KNOBS] ;	Output only.
 
 		NOTE: the meaning of the dense row/col knobs has changed in v2.4
 
 		knobs [0] and knobs [1] control dense row and col detection:
 
 		Colamd: rows with more than
-		max (16, knobs [COLAMD_DENSE_ROW] * sqrt (n_col))
+		max (16, knobs [TRILINOS_COLAMD_DENSE_ROW] * sqrt (n_col))
 		entries are removed prior to ordering.  Columns with more than
-		max (16, knobs [COLAMD_DENSE_COL] * sqrt (MIN (n_row,n_col)))
+		max (16, knobs [TRILINOS_COLAMD_DENSE_COL] * sqrt (MIN (n_row,n_col)))
 		entries are removed prior to
 		ordering, and placed last in the output column ordering. 
 
-		Symamd: uses only knobs [COLAMD_DENSE_ROW], which is knobs [0].
+		Symamd: uses only knobs [TRILINOS_COLAMD_DENSE_ROW], which is knobs [0].
 		Rows and columns with more than
-		max (16, knobs [COLAMD_DENSE_ROW] * sqrt (n))
+		max (16, knobs [TRILINOS_COLAMD_DENSE_ROW] * sqrt (n))
 		entries are removed prior to ordering, and placed last in the
 		output ordering.
 
-		COLAMD_DENSE_ROW and COLAMD_DENSE_COL are defined as 0 and 1,
-		respectively, in colamd.h.  Default values of these two knobs
+		TRILINOS_COLAMD_DENSE_ROW and TRILINOS_COLAMD_DENSE_COL are defined as 0 and 1,
+		respectively, in trilinos_colamd.h.  Default values of these two knobs
 		are both 10.  Currently, only knobs [0] and knobs [1] are
 		used, but future versions may use more knobs.  If so, they will
 		be properly set to their defaults by the future version of
-		colamd_set_defaults, so that the code that calls colamd will
+		trilinos_colamd_set_defaults, so that the code that calls trilinos_colamd will
 		not need to change, assuming that you either use
-		colamd_set_defaults, or pass a (double *) NULL pointer as the
-		knobs array to colamd or symamd.
+		trilinos_colamd_set_defaults, or pass a (double *) NULL pointer as the
+		knobs array to trilinos_colamd or symamd.
 
 	    knobs [2]: aggressive absorption
 
-	        knobs [COLAMD_AGGRESSIVE] controls whether or not to do
+	        knobs [TRILINOS_COLAMD_AGGRESSIVE] controls whether or not to do
 	        aggressive absorption during the ordering.  Default is TRUE.
 
 
     ----------------------------------------------------------------------------
-    colamd:
+    trilinos_colamd:
     ----------------------------------------------------------------------------
 
 	C syntax:
 
-	    #include "colamd.h"
-	    int colamd (int n_row, int n_col, int Alen, int *A, int *p,
-	    	double knobs [COLAMD_KNOBS], int stats [COLAMD_STATS]) ;
-	    UF_long colamd_l (UF_long n_row, UF_long n_col, UF_long Alen,
-		UF_long *A, UF_long *p, double knobs [COLAMD_KNOBS],
-		UF_long stats [COLAMD_STATS]) ;
+	    #include "trilinos_colamd.h"
+	    int trilinos_colamd (int n_row, int n_col, int Alen, int *A, int *p,
+	    	double knobs [TRILINOS_COLAMD_KNOBS], int stats [TRILINOS_COLAMD_STATS]) ;
+	    UF_long trilinos_colamd_l (UF_long n_row, UF_long n_col, UF_long Alen,
+		UF_long *A, UF_long *p, double knobs [TRILINOS_COLAMD_KNOBS],
+		UF_long stats [TRILINOS_COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -237,14 +237,14 @@
 		Colamd returns FALSE if these conditions are not met.
 
 		Note:  this restriction makes an modest assumption regarding
-		the size of the two typedef's structures in colamd.h.
+		the size of the two typedef's structures in trilinos_colamd.h.
 		We do, however, guarantee that
 
-			Alen >= colamd_recommended (nnz, n_row, n_col)
+			Alen >= trilinos_colamd_recommended (nnz, n_row, n_col)
 
 		will be sufficient.  Note: the macro version does not check
 		for integer overflow, and thus is not recommended.  Use
-		the colamd_recommended routine instead.
+		the trilinos_colamd_recommended routine instead.
 
 	    int A [Alen] ;	Input argument, undefined on output.
 
@@ -252,13 +252,13 @@
 		large as the bare minimum value given above, but this is very
 		low, and can result in excessive run time.  For best
 		performance, we recommend that Alen be greater than or equal to
-		colamd_recommended (nnz, n_row, n_col), which adds
+		trilinos_colamd_recommended (nnz, n_row, n_col), which adds
 		nnz/5 to the bare minimum value given above.
 
 		On input, the row indices of the entries in column c of the
 		matrix are held in A [(p [c]) ... (p [c+1]-1)].  The row indices
 		in a given column c need not be in ascending order, and
-		duplicate row indices may be be present.  However, colamd will
+		duplicate row indices may be be present.  However, trilinos_colamd will
 		work a little faster if both of these conditions are met
 		(Colamd puts the matrix into this format, if it finds that the
 		the conditions are not met).
@@ -280,24 +280,24 @@
 		thus the total number of entries in the pattern of the matrix A.
 		Colamd returns FALSE if these conditions are not met.
 
-		On output, if colamd returns TRUE, the array p holds the column
+		On output, if trilinos_colamd returns TRUE, the array p holds the column
 		permutation (Q, for P(AQ)=LU or (AQ)'(AQ)=LL'), where p [0] is
 		the first column index in the new ordering, and p [n_col-1] is
 		the last.  That is, p [k] = j means that column j of A is the
 		kth pivot column, in AQ, where k is in the range 0 to n_col-1
 		(p [0] = j means that column j of A is the first column in AQ).
 
-		If colamd returns FALSE, then no permutation is returned, and
+		If trilinos_colamd returns FALSE, then no permutation is returned, and
 		p is undefined on output.
 
-	    double knobs [COLAMD_KNOBS] ;	Input argument.
+	    double knobs [TRILINOS_COLAMD_KNOBS] ;	Input argument.
 
-		See colamd_set_defaults for a description.
+		See trilinos_colamd_set_defaults for a description.
 
-	    int stats [COLAMD_STATS] ;		Output argument.
+	    int stats [TRILINOS_COLAMD_STATS] ;		Output argument.
 
 		Statistics on the ordering, and error status.
-		See colamd.h for related definitions.
+		See trilinos_colamd.h for related definitions.
 		Colamd returns FALSE if stats is not present.
 
 		stats [0]:  number of dense or empty rows ignored.
@@ -325,7 +325,7 @@
 				had to do some extra work to sort the matrix
 				first and remove duplicate entries, but it
 				still was able to return a valid permutation
-				(return value of colamd was TRUE).
+				(return value of trilinos_colamd was TRUE).
 
 					stats [4]: highest numbered column that
 						is unsorted or has duplicate
@@ -379,7 +379,7 @@
 
 	Example:
 	
-	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c
+	    See http://www.cise.ufl.edu/research/sparse/trilinos_colamd/example.c
 	    for a complete example.
 
 	    To order the columns of a 5-by-4 matrix with 11 nonzero entries in
@@ -393,12 +393,12 @@
 
 	    with default knobs and no output statistics, do the following:
 
-		#include "colamd.h"
+		#include "trilinos_colamd.h"
 		#define ALEN 100
 		int A [ALEN] = {0, 1, 4, 2, 4, 0, 1, 2, 3, 1, 3} ;
 		int p [ ] = {0, 3, 5, 9, 11} ;
-		int stats [COLAMD_STATS] ;
-		colamd (5, 4, ALEN, A, p, (double *) NULL, stats) ;
+		int stats [TRILINOS_COLAMD_STATS] ;
+		trilinos_colamd (5, 4, ALEN, A, p, (double *) NULL, stats) ;
 
 	    The permutation is returned in the array p, and A is destroyed.
 
@@ -408,12 +408,12 @@
 
 	C syntax:
 
-	    #include "colamd.h"
+	    #include "trilinos_colamd.h"
 	    int symamd (int n, int *A, int *p, int *perm,
-	    	double knobs [COLAMD_KNOBS], int stats [COLAMD_STATS],
+	    	double knobs [TRILINOS_COLAMD_KNOBS], int stats [TRILINOS_COLAMD_STATS],
 		void (*allocate) (size_t, size_t), void (*release) (void *)) ;
 	    UF_long symamd_l (UF_long n, UF_long *A, UF_long *p, UF_long *perm,
-	    	double knobs [COLAMD_KNOBS], UF_long stats [COLAMD_STATS],
+	    	double knobs [TRILINOS_COLAMD_KNOBS], UF_long stats [TRILINOS_COLAMD_STATS],
 		void (*allocate) (size_t, size_t), void (*release) (void *)) ;
 
 	Purpose:
@@ -478,14 +478,14 @@
 		PAP').  The array is used as a workspace during the ordering,
 		which is why it must be of length n+1, not just n.
 
-	    double knobs [COLAMD_KNOBS] ;	Input argument.
+	    double knobs [TRILINOS_COLAMD_KNOBS] ;	Input argument.
 
-		See colamd_set_defaults for a description.
+		See trilinos_colamd_set_defaults for a description.
 
-	    int stats [COLAMD_STATS] ;		Output argument.
+	    int stats [TRILINOS_COLAMD_STATS] ;		Output argument.
 
 		Statistics on the ordering, and error status.
-		See colamd.h for related definitions.
+		See trilinos_colamd.h for related definitions.
 		Symamd returns FALSE if stats is not present.
 
 		stats [0]:  number of dense or empty row and columns ignored
@@ -524,7 +524,7 @@
 
 			-2	p is a null pointer
 
-			-3	(unused, see colamd.c)
+			-3	(unused, see trilinos_colamd.c)
 
 			-4 	n is negative
 
@@ -574,14 +574,14 @@
 
 
     ----------------------------------------------------------------------------
-    colamd_report:
+    trilinos_colamd_report:
     ----------------------------------------------------------------------------
 
 	C syntax:
 
-	    #include "colamd.h"
-	    colamd_report (int stats [COLAMD_STATS]) ;
-	    colamd_l_report (UF_long stats [COLAMD_STATS]) ;
+	    #include "trilinos_colamd.h"
+	    trilinos_colamd_report (int stats [TRILINOS_COLAMD_STATS]) ;
+	    trilinos_colamd_l_report (UF_long stats [TRILINOS_COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -591,7 +591,7 @@
 
 	Arguments:
 
-	    int stats [COLAMD_STATS] ;	Input only.  Statistics from colamd.
+	    int stats [TRILINOS_COLAMD_STATS] ;	Input only.  Statistics from trilinos_colamd.
 
 
     ----------------------------------------------------------------------------
@@ -600,9 +600,9 @@
 
 	C syntax:
 
-	    #include "colamd.h"
-	    symamd_report (int stats [COLAMD_STATS]) ;
-	    symamd_l_report (UF_long stats [COLAMD_STATS]) ;
+	    #include "trilinos_colamd.h"
+	    symamd_report (int stats [TRILINOS_COLAMD_STATS]) ;
+	    symamd_l_report (UF_long stats [TRILINOS_COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -612,7 +612,7 @@
 
 	Arguments:
 
-	    int stats [COLAMD_STATS] ;	Input only.  Statistics from symamd.
+	    int stats [TRILINOS_COLAMD_STATS] ;	Input only.  Statistics from symamd.
 
 
 */
@@ -652,7 +652,7 @@
     variable D to 0 (little), 1 (some), 2, 3, or 4 (lots).  When debugging,
     you should see the following message on the standard output:
 
-    	colamd: debug version, D = 1 (THIS WILL BE SLOW!)
+    	trilinos_colamd: debug version, D = 1 (THIS WILL BE SLOW!)
 
     or a similar message for symamd.  If you don't, then debugging has not
     been enabled.
@@ -693,11 +693,11 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define COLAMD_recommended trilinos_colamd_l_recommended
-#define COLAMD_set_defaults trilinos_colamd_l_set_defaults
-#define COLAMD_MAIN trilinos_colamd_l
+#define TRILINOS_COLAMD_recommended trilinos_colamd_l_recommended
+#define TRILINOS_COLAMD_set_defaults trilinos_colamd_l_set_defaults
+#define TRILINOS_COLAMD_MAIN trilinos_colamd_l
 #define SYMAMD_MAIN trilinos_symamd_l
-#define COLAMD_report trilinos_colamd_l_report
+#define TRILINOS_COLAMD_report trilinos_colamd_l_report
 #define SYMAMD_report trilinos_symamd_l_report
 
 #else
@@ -706,11 +706,11 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define COLAMD_recommended trilinos_colamd_recommended
-#define COLAMD_set_defaults trilinos_colamd_set_defaults
-#define COLAMD_MAIN trilinos_colamd
+#define TRILINOS_COLAMD_recommended trilinos_colamd_recommended
+#define TRILINOS_COLAMD_set_defaults trilinos_colamd_set_defaults
+#define TRILINOS_COLAMD_MAIN trilinos_colamd
 #define SYMAMD_MAIN trilinos_symamd
-#define COLAMD_report trilinos_colamd_report
+#define TRILINOS_COLAMD_report trilinos_colamd_report
 #define SYMAMD_report trilinos_symamd_report
 
 #endif
@@ -719,10 +719,10 @@
 /* === Row and Column structures ============================================ */
 /* ========================================================================== */
 
-/* User code that makes use of the colamd/symamd routines need not directly */
-/* reference these structures.  They are used only for colamd_recommended. */
+/* User code that makes use of the trilinos_colamd/symamd routines need not directly */
+/* reference these structures.  They are used only for trilinos_colamd_recommended. */
 
-typedef struct Colamd_Col_struct
+typedef struct Trilinos_Colamd_Col_struct
 {
     Int start ;		/* index for A of first row in this column, or DEAD */
 			/* if column is dead */
@@ -753,9 +753,9 @@ typedef struct Colamd_Col_struct
 	Int hash_next ;		/* next column, if col is in a hash list */
     } shared4 ;
 
-} Colamd_Col ;
+} Trilinos_Colamd_Col ;
 
-typedef struct Colamd_Row_struct
+typedef struct Trilinos_Colamd_Row_struct
 {
     Int start ;		/* index for A of first col in this row */
     Int length ;	/* number of principal columns in this row */
@@ -770,7 +770,7 @@ typedef struct Colamd_Row_struct
 	Int first_column ;/* first column in row (used in garbage collection) */
     } shared2 ;
 
-} Colamd_Row ;
+} Trilinos_Colamd_Row ;
 
 /* ========================================================================== */
 /* === Definitions ========================================================== */
@@ -846,22 +846,22 @@ PRIVATE Int init_rows_cols
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int p [],
-    Int stats [COLAMD_STATS]
+    Int stats [TRILINOS_COLAMD_STATS]
 ) ;
 
 PRIVATE void init_scoring
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int head [],
-    double knobs [COLAMD_KNOBS],
+    double knobs [TRILINOS_COLAMD_KNOBS],
     Int *p_n_row2,
     Int *p_n_col2,
     Int *p_max_deg
@@ -872,8 +872,8 @@ PRIVATE Int find_ordering
     Int n_row,
     Int n_col,
     Int Alen,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int head [],
     Int n_col2,
@@ -885,7 +885,7 @@ PRIVATE Int find_ordering
 PRIVATE void order_children
 (
     Int n_col,
-    Colamd_Col Col [],
+    Trilinos_Colamd_Col Col [],
     Int p []
 ) ;
 
@@ -894,10 +894,10 @@ PRIVATE void detect_super_cols
 
 #ifndef NDEBUG
     Int n_col,
-    Colamd_Row Row [],
+    Trilinos_Colamd_Row Row [],
 #endif /* NDEBUG */
 
-    Colamd_Col Col [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int head [],
     Int row_start,
@@ -908,8 +908,8 @@ PRIVATE Int garbage_collection
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int *pfree
 ) ;
@@ -919,13 +919,13 @@ PRIVATE Int clear_mark
     Int tag_mark,
     Int max_mark,
     Int n_row,
-    Colamd_Row Row []
+    Trilinos_Colamd_Row Row []
 ) ;
 
 PRIVATE void print_report
 (
     char *method,
-    Int stats [COLAMD_STATS]
+    Int stats [TRILINOS_COLAMD_STATS]
 ) ;
 
 /* ========================================================================== */
@@ -936,16 +936,16 @@ PRIVATE void print_report
 
 #include <assert.h>
 
-/* colamd_debug is the *ONLY* global variable, and is only */
+/* trilinos_colamd_debug is the *ONLY* global variable, and is only */
 /* present when debugging */
 
-PRIVATE Int colamd_debug = 0 ;	/* debug print level */
+PRIVATE Int trilinos_colamd_debug = 0 ;	/* debug print level */
 
 #define DEBUG0(params) { PRINTF (params) ; }
-#define DEBUG1(params) { if (colamd_debug >= 1) PRINTF (params) ; }
-#define DEBUG2(params) { if (colamd_debug >= 2) PRINTF (params) ; }
-#define DEBUG3(params) { if (colamd_debug >= 3) PRINTF (params) ; }
-#define DEBUG4(params) { if (colamd_debug >= 4) PRINTF (params) ; }
+#define DEBUG1(params) { if (trilinos_colamd_debug >= 1) PRINTF (params) ; }
+#define DEBUG2(params) { if (trilinos_colamd_debug >= 2) PRINTF (params) ; }
+#define DEBUG3(params) { if (trilinos_colamd_debug >= 3) PRINTF (params) ; }
+#define DEBUG4(params) { if (trilinos_colamd_debug >= 4) PRINTF (params) ; }
 
 #ifdef MATLAB_MEX_FILE
 #define ASSERT(expression) (mxAssert ((expression), ""))
@@ -953,7 +953,7 @@ PRIVATE Int colamd_debug = 0 ;	/* debug print level */
 #define ASSERT(expression) (assert (expression))
 #endif /* MATLAB_MEX_FILE */
 
-PRIVATE void colamd_get_debug	/* gets the debug print level from getenv */
+PRIVATE void trilinos_colamd_get_debug	/* gets the debug print level from getenv */
 (
     char *method
 ) ;
@@ -962,8 +962,8 @@ PRIVATE void debug_deg_lists
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int head [],
     Int min_score,
     Int should,
@@ -973,7 +973,7 @@ PRIVATE void debug_deg_lists
 PRIVATE void debug_mark
 (
     Int n_row,
-    Colamd_Row Row [],
+    Trilinos_Colamd_Row Row [],
     Int tag_mark,
     Int max_mark
 ) ;
@@ -982,8 +982,8 @@ PRIVATE void debug_matrix
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A []
 ) ;
 
@@ -991,8 +991,8 @@ PRIVATE void debug_structures
 (
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int n_col2
 ) ;
@@ -1016,18 +1016,18 @@ PRIVATE void debug_structures
 /* ========================================================================== */
 
 /* ========================================================================== */
-/* === colamd_recommended =================================================== */
+/* === trilinos_colamd_recommended =================================================== */
 /* ========================================================================== */
 
 /*
-    The colamd_recommended routine returns the suggested size for Alen.  This
+    The trilinos_colamd_recommended routine returns the suggested size for Alen.  This
     value has been determined to provide good balance between the number of
-    garbage collections and the memory requirements for colamd.  If any
+    garbage collections and the memory requirements for trilinos_colamd.  If any
     argument is negative, or if integer overflow occurs, a 0 is returned as an
     error condition.  2*nnz space is required for the row and column
-    indices of the matrix. COLAMD_C (n_col) + COLAMD_R (n_row) space is
+    indices of the matrix. TRILINOS_COLAMD_C (n_col) + TRILINOS_COLAMD_R (n_row) space is
     required for the Col and Row arrays, respectively, which are internal to
-    colamd (roughly 6*n_col + 4*n_row).  An additional n_col space is the
+    trilinos_colamd (roughly 6*n_col + 4*n_row).  An additional n_col space is the
     minimal amount of "elbow room", and nnz/5 more space is recommended for
     run time efficiency.
 
@@ -1055,14 +1055,14 @@ static size_t t_mult (size_t a, size_t k, int *ok)
 }
 
 /* size of the Col and Row structures */
-#define COLAMD_C(n_col,ok) \
-    ((t_mult (t_add (n_col, 1, ok), sizeof (Colamd_Col), ok) / sizeof (Int)))
+#define TRILINOS_COLAMD_C(n_col,ok) \
+    ((t_mult (t_add (n_col, 1, ok), sizeof (Trilinos_Colamd_Col), ok) / sizeof (Int)))
 
-#define COLAMD_R(n_row,ok) \
-    ((t_mult (t_add (n_row, 1, ok), sizeof (Colamd_Row), ok) / sizeof (Int)))
+#define TRILINOS_COLAMD_R(n_row,ok) \
+    ((t_mult (t_add (n_row, 1, ok), sizeof (Trilinos_Colamd_Row), ok) / sizeof (Int)))
 
 
-PUBLIC size_t COLAMD_recommended	/* returns recommended value of Alen. */
+PUBLIC size_t TRILINOS_COLAMD_recommended	/* returns recommended value of Alen. */
 (
     /* === Parameters ======================================================= */
 
@@ -1078,8 +1078,8 @@ PUBLIC size_t COLAMD_recommended	/* returns recommended value of Alen. */
 	return (0) ;
     }
     s = t_mult (nnz, 2, &ok) ;	    /* 2*nnz */
-    c = COLAMD_C (n_col, &ok) ;	    /* size of column structures */
-    r = COLAMD_R (n_row, &ok) ;	    /* size of row structures */
+    c = TRILINOS_COLAMD_C (n_col, &ok) ;	    /* size of column structures */
+    r = TRILINOS_COLAMD_R (n_row, &ok) ;	    /* size of row structures */
     s = t_add (s, c, &ok) ;
     s = t_add (s, r, &ok) ;
     s = t_add (s, n_col, &ok) ;	    /* elbow room */
@@ -1090,12 +1090,12 @@ PUBLIC size_t COLAMD_recommended	/* returns recommended value of Alen. */
 
 
 /* ========================================================================== */
-/* === colamd_set_defaults ================================================== */
+/* === trilinos_colamd_set_defaults ================================================== */
 /* ========================================================================== */
 
 /*
-    The colamd_set_defaults routine sets the default values of the user-
-    controllable parameters for colamd and symamd:
+    The trilinos_colamd_set_defaults routine sets the default values of the user-
+    controllable parameters for trilinos_colamd and symamd:
 
 	Colamd: rows with more than max (16, knobs [0] * sqrt (n_col))
 	entries are removed prior to ordering.  Columns with more than
@@ -1116,11 +1116,11 @@ PUBLIC size_t COLAMD_recommended	/* returns recommended value of Alen. */
 
 */
 
-PUBLIC void COLAMD_set_defaults
+PUBLIC void TRILINOS_COLAMD_set_defaults
 (
     /* === Parameters ======================================================= */
 
-    double knobs [COLAMD_KNOBS]		/* knob array */
+    double knobs [TRILINOS_COLAMD_KNOBS]		/* knob array */
 )
 {
     /* === Local variables ================================================== */
@@ -1131,13 +1131,13 @@ PUBLIC void COLAMD_set_defaults
     {
 	return ;			/* no knobs to initialize */
     }
-    for (i = 0 ; i < COLAMD_KNOBS ; i++)
+    for (i = 0 ; i < TRILINOS_COLAMD_KNOBS ; i++)
     {
 	knobs [i] = 0 ;
     }
-    knobs [COLAMD_DENSE_ROW] = 10 ;
-    knobs [COLAMD_DENSE_COL] = 10 ;
-    knobs [COLAMD_AGGRESSIVE] = TRUE ;	/* default: do aggressive absorption*/
+    knobs [TRILINOS_COLAMD_DENSE_ROW] = 10 ;
+    knobs [TRILINOS_COLAMD_DENSE_COL] = 10 ;
+    knobs [TRILINOS_COLAMD_AGGRESSIVE] = TRUE ;	/* default: do aggressive absorption*/
 }
 
 
@@ -1153,8 +1153,8 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
     Int A [],				/* row indices of A */
     Int p [],				/* column pointers of A */
     Int perm [],			/* output permutation, size n+1 */
-    double knobs [COLAMD_KNOBS],	/* parameters (uses defaults if NULL) */
-    Int stats [COLAMD_STATS],		/* output statistics and error codes */
+    double knobs [TRILINOS_COLAMD_KNOBS],	/* parameters (uses defaults if NULL) */
+    Int stats [TRILINOS_COLAMD_STATS],		/* output statistics and error codes */
     void * (*allocate) (size_t, size_t),
     					/* pointer to calloc (ANSI C) or */
 					/* mxCalloc (for MATLAB mexFunction) */
@@ -1179,11 +1179,11 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
     Int last_row ;		/* last row seen in the current column */
     Int length ;		/* number of nonzeros in a column */
 
-    double cknobs [COLAMD_KNOBS] ;		/* knobs for colamd */
-    double default_knobs [COLAMD_KNOBS] ;	/* default knobs for colamd */
+    double cknobs [TRILINOS_COLAMD_KNOBS] ;		/* knobs for trilinos_colamd */
+    double default_knobs [TRILINOS_COLAMD_KNOBS] ;	/* default knobs for trilinos_colamd */
 
 #ifndef NDEBUG
-    colamd_get_debug ("symamd") ;
+    trilinos_colamd_get_debug ("symamd") ;
 #endif /* NDEBUG */
 
     /* === Check the input arguments ======================================== */
@@ -1193,32 +1193,32 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 	DEBUG0 (("symamd: stats not present\n")) ;
 	return (FALSE) ;
     }
-    for (i = 0 ; i < COLAMD_STATS ; i++)
+    for (i = 0 ; i < TRILINOS_COLAMD_STATS ; i++)
     {
 	stats [i] = 0 ;
     }
-    stats [COLAMD_STATUS] = COLAMD_OK ;
-    stats [COLAMD_INFO1] = -1 ;
-    stats [COLAMD_INFO2] = -1 ;
+    stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_OK ;
+    stats [TRILINOS_COLAMD_INFO1] = -1 ;
+    stats [TRILINOS_COLAMD_INFO2] = -1 ;
 
     if (!A)
     {
-    	stats [COLAMD_STATUS] = COLAMD_ERROR_A_not_present ;
+    	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_A_not_present ;
 	DEBUG0 (("symamd: A not present\n")) ;
 	return (FALSE) ;
     }
 
     if (!p)		/* p is not present */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_p_not_present ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_p_not_present ;
 	DEBUG0 (("symamd: p not present\n")) ;
     	return (FALSE) ;
     }
 
     if (n < 0)		/* n must be >= 0 */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_ncol_negative ;
-	stats [COLAMD_INFO1] = n ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_ncol_negative ;
+	stats [TRILINOS_COLAMD_INFO1] = n ;
 	DEBUG0 (("symamd: n negative %d\n", n)) ;
     	return (FALSE) ;
     }
@@ -1226,16 +1226,16 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
     nnz = p [n] ;
     if (nnz < 0)	/* nnz must be >= 0 */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_nnz_negative ;
-	stats [COLAMD_INFO1] = nnz ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_nnz_negative ;
+	stats [TRILINOS_COLAMD_INFO1] = nnz ;
 	DEBUG0 (("symamd: number of entries negative %d\n", nnz)) ;
 	return (FALSE) ;
     }
 
     if (p [0] != 0)
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_p0_nonzero ;
-	stats [COLAMD_INFO1] = p [0] ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_p0_nonzero ;
+	stats [TRILINOS_COLAMD_INFO1] = p [0] ;
 	DEBUG0 (("symamd: p[0] not zero %d\n", p [0])) ;
 	return (FALSE) ;
     }
@@ -1244,7 +1244,7 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 
     if (!knobs)
     {
-	COLAMD_set_defaults (default_knobs) ;
+	TRILINOS_COLAMD_set_defaults (default_knobs) ;
 	knobs = default_knobs ;
     }
 
@@ -1253,7 +1253,7 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
     count = (Int *) ((*allocate) (n+1, sizeof (Int))) ;
     if (!count)
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_out_of_memory ;
 	DEBUG0 (("symamd: allocate count (size %d) failed\n", n+1)) ;
 	return (FALSE) ;
     }
@@ -1261,7 +1261,7 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
     mark = (Int *) ((*allocate) (n+1, sizeof (Int))) ;
     if (!mark)
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_out_of_memory ;
 	(*release) ((void *) count) ;
 	DEBUG0 (("symamd: allocate mark (size %d) failed\n", n+1)) ;
 	return (FALSE) ;
@@ -1269,7 +1269,7 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 
     /* === Compute column counts of M, check if A is valid ================== */
 
-    stats [COLAMD_INFO3] = 0 ;  /* number of duplicate or unsorted row indices*/
+    stats [TRILINOS_COLAMD_INFO3] = 0 ;  /* number of duplicate or unsorted row indices*/
 
     for (i = 0 ; i < n ; i++)
     {
@@ -1284,9 +1284,9 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 	if (length < 0)
 	{
 	    /* column pointers must be non-decreasing */
-	    stats [COLAMD_STATUS] = COLAMD_ERROR_col_length_negative ;
-	    stats [COLAMD_INFO1] = j ;
-	    stats [COLAMD_INFO2] = length ;
+	    stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_col_length_negative ;
+	    stats [TRILINOS_COLAMD_INFO1] = j ;
+	    stats [TRILINOS_COLAMD_INFO2] = length ;
 	    (*release) ((void *) count) ;
 	    (*release) ((void *) mark) ;
 	    DEBUG0 (("symamd: col %d negative length %d\n", j, length)) ;
@@ -1299,10 +1299,10 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 	    if (i < 0 || i >= n)
 	    {
 		/* row index i, in column j, is out of bounds */
-		stats [COLAMD_STATUS] = COLAMD_ERROR_row_index_out_of_bounds ;
-		stats [COLAMD_INFO1] = j ;
-		stats [COLAMD_INFO2] = i ;
-		stats [COLAMD_INFO3] = n ;
+		stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_row_index_out_of_bounds ;
+		stats [TRILINOS_COLAMD_INFO1] = j ;
+		stats [TRILINOS_COLAMD_INFO2] = i ;
+		stats [TRILINOS_COLAMD_INFO3] = n ;
 		(*release) ((void *) count) ;
 		(*release) ((void *) mark) ;
 		DEBUG0 (("symamd: row %d col %d out of bounds\n", i, j)) ;
@@ -1313,10 +1313,10 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 	    {
 		/* row index is unsorted or repeated (or both), thus col */
 		/* is jumbled.  This is a notice, not an error condition. */
-		stats [COLAMD_STATUS] = COLAMD_OK_BUT_JUMBLED ;
-		stats [COLAMD_INFO1] = j ;
-		stats [COLAMD_INFO2] = i ;
-		(stats [COLAMD_INFO3]) ++ ;
+		stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_OK_BUT_JUMBLED ;
+		stats [TRILINOS_COLAMD_INFO1] = j ;
+		stats [TRILINOS_COLAMD_INFO2] = i ;
+		(stats [TRILINOS_COLAMD_INFO3]) ++ ;
 		DEBUG1 (("symamd: row %d col %d unsorted/duplicate\n", i, j)) ;
 	    }
 
@@ -1353,14 +1353,14 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 
     mnz = perm [n] ;
     n_row = mnz / 2 ;
-    Mlen = COLAMD_recommended (mnz, n_row, n) ;
+    Mlen = TRILINOS_COLAMD_recommended (mnz, n_row, n) ;
     M = (Int *) ((*allocate) (Mlen, sizeof (Int))) ;
     DEBUG0 (("symamd: M is %d-by-%d with %d entries, Mlen = %g\n",
     	n_row, n, mnz, (double) Mlen)) ;
 
     if (!M)
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_out_of_memory ;
 	(*release) ((void *) count) ;
 	(*release) ((void *) mark) ;
 	DEBUG0 (("symamd: allocate M (size %g) failed\n", (double) Mlen)) ;
@@ -1369,7 +1369,7 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 
     k = 0 ;
 
-    if (stats [COLAMD_STATUS] == COLAMD_OK)
+    if (stats [TRILINOS_COLAMD_STATUS] == TRILINOS_COLAMD_OK)
     {
 	/* Matrix is OK */
 	for (j = 0 ; j < n ; j++)
@@ -1424,26 +1424,26 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 
     /* === Adjust the knobs for M =========================================== */
 
-    for (i = 0 ; i < COLAMD_KNOBS ; i++)
+    for (i = 0 ; i < TRILINOS_COLAMD_KNOBS ; i++)
     {
 	cknobs [i] = knobs [i] ;
     }
 
     /* there are no dense rows in M */
-    cknobs [COLAMD_DENSE_ROW] = -1 ;
-    cknobs [COLAMD_DENSE_COL] = knobs [COLAMD_DENSE_ROW] ;
+    cknobs [TRILINOS_COLAMD_DENSE_ROW] = -1 ;
+    cknobs [TRILINOS_COLAMD_DENSE_COL] = knobs [TRILINOS_COLAMD_DENSE_ROW] ;
 
     /* === Order the columns of M =========================================== */
 
-    /* v2.4: colamd cannot fail here, so the error check is removed */
-    (void) COLAMD_MAIN (n_row, n, (Int) Mlen, M, perm, cknobs, stats) ;
+    /* v2.4: trilinos_colamd cannot fail here, so the error check is removed */
+    (void) TRILINOS_COLAMD_MAIN (n_row, n, (Int) Mlen, M, perm, cknobs, stats) ;
 
     /* Note that the output permutation is now in perm */
 
-    /* === get the statistics for symamd from colamd ======================== */
+    /* === get the statistics for symamd from trilinos_colamd ======================== */
 
-    /* a dense column in colamd means a dense row and col in symamd */
-    stats [COLAMD_DENSE_ROW] = stats [COLAMD_DENSE_COL] ;
+    /* a dense column in trilinos_colamd means a dense row and col in symamd */
+    stats [TRILINOS_COLAMD_DENSE_ROW] = stats [TRILINOS_COLAMD_DENSE_COL] ;
 
     /* === Free M =========================================================== */
 
@@ -1454,18 +1454,18 @@ PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 }
 
 /* ========================================================================== */
-/* === colamd =============================================================== */
+/* === trilinos_colamd =============================================================== */
 /* ========================================================================== */
 
 /*
-    The colamd routine computes a column ordering Q of a sparse matrix
+    The trilinos_colamd routine computes a column ordering Q of a sparse matrix
     A such that the LU factorization P(AQ) = LU remains sparse, where P is
     selected via partial pivoting.   The routine can also be viewed as
     providing a permutation Q such that the Cholesky factorization
     (AQ)'(AQ) = LL' remains sparse.
 */
 
-PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
+PUBLIC Int TRILINOS_COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
 (
     /* === Parameters ======================================================= */
 
@@ -1474,8 +1474,8 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
     Int Alen,			/* length of A */
     Int A [],			/* row indices of A */
     Int p [],			/* pointers to columns in A */
-    double knobs [COLAMD_KNOBS],/* parameters (uses defaults if NULL) */
-    Int stats [COLAMD_STATS]	/* output statistics and error codes */
+    double knobs [TRILINOS_COLAMD_KNOBS],/* parameters (uses defaults if NULL) */
+    Int stats [TRILINOS_COLAMD_STATS]	/* output statistics and error codes */
 )
 {
     /* === Local variables ================================================== */
@@ -1485,79 +1485,79 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
     size_t Row_size ;		/* size of Row [], in integers */
     size_t Col_size ;		/* size of Col [], in integers */
     size_t need ;		/* minimum required length of A */
-    Colamd_Row *Row ;		/* pointer into A of Row [0..n_row] array */
-    Colamd_Col *Col ;		/* pointer into A of Col [0..n_col] array */
+    Trilinos_Colamd_Row *Row ;		/* pointer into A of Row [0..n_row] array */
+    Trilinos_Colamd_Col *Col ;		/* pointer into A of Col [0..n_col] array */
     Int n_col2 ;		/* number of non-dense, non-empty columns */
     Int n_row2 ;		/* number of non-dense, non-empty rows */
     Int ngarbage ;		/* number of garbage collections performed */
     Int max_deg ;		/* maximum row degree */
-    double default_knobs [COLAMD_KNOBS] ;	/* default knobs array */
+    double default_knobs [TRILINOS_COLAMD_KNOBS] ;	/* default knobs array */
     Int aggressive ;		/* do aggressive absorption */
     int ok ;
 
 #ifndef NDEBUG
-    colamd_get_debug ("colamd") ;
+    trilinos_colamd_get_debug ("trilinos_colamd") ;
 #endif /* NDEBUG */
 
     /* === Check the input arguments ======================================== */
 
     if (!stats)
     {
-	DEBUG0 (("colamd: stats not present\n")) ;
+	DEBUG0 (("trilinos_colamd: stats not present\n")) ;
 	return (FALSE) ;
     }
-    for (i = 0 ; i < COLAMD_STATS ; i++)
+    for (i = 0 ; i < TRILINOS_COLAMD_STATS ; i++)
     {
 	stats [i] = 0 ;
     }
-    stats [COLAMD_STATUS] = COLAMD_OK ;
-    stats [COLAMD_INFO1] = -1 ;
-    stats [COLAMD_INFO2] = -1 ;
+    stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_OK ;
+    stats [TRILINOS_COLAMD_INFO1] = -1 ;
+    stats [TRILINOS_COLAMD_INFO2] = -1 ;
 
     if (!A)		/* A is not present */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_A_not_present ;
-	DEBUG0 (("colamd: A not present\n")) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_A_not_present ;
+	DEBUG0 (("trilinos_colamd: A not present\n")) ;
 	return (FALSE) ;
     }
 
     if (!p)		/* p is not present */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_p_not_present ;
-	DEBUG0 (("colamd: p not present\n")) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_p_not_present ;
+	DEBUG0 (("trilinos_colamd: p not present\n")) ;
     	return (FALSE) ;
     }
 
     if (n_row < 0)	/* n_row must be >= 0 */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_nrow_negative ;
-	stats [COLAMD_INFO1] = n_row ;
-	DEBUG0 (("colamd: nrow negative %d\n", n_row)) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_nrow_negative ;
+	stats [TRILINOS_COLAMD_INFO1] = n_row ;
+	DEBUG0 (("trilinos_colamd: nrow negative %d\n", n_row)) ;
     	return (FALSE) ;
     }
 
     if (n_col < 0)	/* n_col must be >= 0 */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_ncol_negative ;
-	stats [COLAMD_INFO1] = n_col ;
-	DEBUG0 (("colamd: ncol negative %d\n", n_col)) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_ncol_negative ;
+	stats [TRILINOS_COLAMD_INFO1] = n_col ;
+	DEBUG0 (("trilinos_colamd: ncol negative %d\n", n_col)) ;
     	return (FALSE) ;
     }
 
     nnz = p [n_col] ;
     if (nnz < 0)	/* nnz must be >= 0 */
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_nnz_negative ;
-	stats [COLAMD_INFO1] = nnz ;
-	DEBUG0 (("colamd: number of entries negative %d\n", nnz)) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_nnz_negative ;
+	stats [TRILINOS_COLAMD_INFO1] = nnz ;
+	DEBUG0 (("trilinos_colamd: number of entries negative %d\n", nnz)) ;
 	return (FALSE) ;
     }
 
     if (p [0] != 0)
     {
-	stats [COLAMD_STATUS] = COLAMD_ERROR_p0_nonzero	;
-	stats [COLAMD_INFO1] = p [0] ;
-	DEBUG0 (("colamd: p[0] not zero %d\n", p [0])) ;
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_p0_nonzero	;
+	stats [TRILINOS_COLAMD_INFO1] = p [0] ;
+	DEBUG0 (("trilinos_colamd: p[0] not zero %d\n", p [0])) ;
 	return (FALSE) ;
     }
 
@@ -1565,17 +1565,17 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
 
     if (!knobs)
     {
-	COLAMD_set_defaults (default_knobs) ;
+	TRILINOS_COLAMD_set_defaults (default_knobs) ;
 	knobs = default_knobs ;
     }
 
-    aggressive = (knobs [COLAMD_AGGRESSIVE] != FALSE) ;
+    aggressive = (knobs [TRILINOS_COLAMD_AGGRESSIVE] != FALSE) ;
 
     /* === Allocate the Row and Col arrays from array A ===================== */
 
     ok = TRUE ;
-    Col_size = COLAMD_C (n_col, &ok) ;	    /* size of Col array of structs */
-    Row_size = COLAMD_R (n_row, &ok) ;	    /* size of Row array of structs */
+    Col_size = TRILINOS_COLAMD_C (n_col, &ok) ;	    /* size of Col array of structs */
+    Row_size = TRILINOS_COLAMD_R (n_row, &ok) ;	    /* size of Row array of structs */
 
     /* need = 2*nnz + n_col + Col_size + Row_size ; */
     need = t_mult (nnz, 2, &ok) ;
@@ -1586,23 +1586,23 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
     if (!ok || need > (size_t) Alen || need > Int_MAX)
     {
 	/* not enough space in array A to perform the ordering */
-	stats [COLAMD_STATUS] = COLAMD_ERROR_A_too_small ;
-	stats [COLAMD_INFO1] = need ;
-	stats [COLAMD_INFO2] = Alen ;
-	DEBUG0 (("colamd: Need Alen >= %d, given only Alen = %d\n", need,Alen));
+	stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_A_too_small ;
+	stats [TRILINOS_COLAMD_INFO1] = need ;
+	stats [TRILINOS_COLAMD_INFO2] = Alen ;
+	DEBUG0 (("trilinos_colamd: Need Alen >= %d, given only Alen = %d\n", need,Alen));
 	return (FALSE) ;
     }
 
     Alen -= Col_size + Row_size ;
-    Col = (Colamd_Col *) &A [Alen] ;
-    Row = (Colamd_Row *) &A [Alen + Col_size] ;
+    Col = (Trilinos_Colamd_Col *) &A [Alen] ;
+    Row = (Trilinos_Colamd_Row *) &A [Alen + Col_size] ;
 
     /* === Construct the row and column data structures ===================== */
 
     if (!init_rows_cols (n_row, n_col, Row, Col, A, p, stats))
     {
 	/* input matrix is invalid */
-	DEBUG0 (("colamd: Matrix invalid\n")) ;
+	DEBUG0 (("trilinos_colamd: Matrix invalid\n")) ;
 	return (FALSE) ;
     }
 
@@ -1622,24 +1622,24 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
 
     /* === Return statistics in stats ======================================= */
 
-    stats [COLAMD_DENSE_ROW] = n_row - n_row2 ;
-    stats [COLAMD_DENSE_COL] = n_col - n_col2 ;
-    stats [COLAMD_DEFRAG_COUNT] = ngarbage ;
-    DEBUG0 (("colamd: done.\n")) ; 
+    stats [TRILINOS_COLAMD_DENSE_ROW] = n_row - n_row2 ;
+    stats [TRILINOS_COLAMD_DENSE_COL] = n_col - n_col2 ;
+    stats [TRILINOS_COLAMD_DEFRAG_COUNT] = ngarbage ;
+    DEBUG0 (("trilinos_colamd: done.\n")) ; 
     return (TRUE) ;
 }
 
 
 /* ========================================================================== */
-/* === colamd_report ======================================================== */
+/* === trilinos_colamd_report ======================================================== */
 /* ========================================================================== */
 
-PUBLIC void COLAMD_report
+PUBLIC void TRILINOS_COLAMD_report
 (
-    Int stats [COLAMD_STATS]
+    Int stats [TRILINOS_COLAMD_STATS]
 )
 {
-    print_report ("colamd", stats) ;
+    print_report ("trilinos_colamd", stats) ;
 }
 
 
@@ -1649,7 +1649,7 @@ PUBLIC void COLAMD_report
 
 PUBLIC void SYMAMD_report
 (
-    Int stats [COLAMD_STATS]
+    Int stats [TRILINOS_COLAMD_STATS]
 )
 {
     print_report ("symamd", stats) ;
@@ -1683,11 +1683,11 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 
     Int n_row,			/* number of rows of A */
     Int n_col,			/* number of columns of A */
-    Colamd_Row Row [],		/* of size n_row+1 */
-    Colamd_Col Col [],		/* of size n_col+1 */
+    Trilinos_Colamd_Row Row [],		/* of size n_row+1 */
+    Trilinos_Colamd_Col Col [],		/* of size n_col+1 */
     Int A [],			/* row indices of A, of size Alen */
     Int p [],			/* pointers to columns in A, of size n_col+1 */
-    Int stats [COLAMD_STATS]	/* colamd statistics */ 
+    Int stats [TRILINOS_COLAMD_STATS]	/* trilinos_colamd statistics */ 
 )
 {
     /* === Local variables ================================================== */
@@ -1710,10 +1710,10 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 	if (Col [col].length < 0)
 	{
 	    /* column pointers must be non-decreasing */
-	    stats [COLAMD_STATUS] = COLAMD_ERROR_col_length_negative ;
-	    stats [COLAMD_INFO1] = col ;
-	    stats [COLAMD_INFO2] = Col [col].length ;
-	    DEBUG0 (("colamd: col %d length %d < 0\n", col, Col [col].length)) ;
+	    stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_col_length_negative ;
+	    stats [TRILINOS_COLAMD_INFO1] = col ;
+	    stats [TRILINOS_COLAMD_INFO2] = Col [col].length ;
+	    DEBUG0 (("trilinos_colamd: col %d length %d < 0\n", col, Col [col].length)) ;
 	    return (FALSE) ;
 	}
 
@@ -1727,7 +1727,7 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 
     /* === Scan columns, compute row degrees, and check row indices ========= */
 
-    stats [COLAMD_INFO3] = 0 ;	/* number of duplicate or unsorted row indices*/
+    stats [TRILINOS_COLAMD_INFO3] = 0 ;	/* number of duplicate or unsorted row indices*/
 
     for (row = 0 ; row < n_row ; row++)
     {
@@ -1749,11 +1749,11 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 	    /* make sure row indices within range */
 	    if (row < 0 || row >= n_row)
 	    {
-		stats [COLAMD_STATUS] = COLAMD_ERROR_row_index_out_of_bounds ;
-		stats [COLAMD_INFO1] = col ;
-		stats [COLAMD_INFO2] = row ;
-		stats [COLAMD_INFO3] = n_row ;
-		DEBUG0 (("colamd: row %d col %d out of bounds\n", row, col)) ;
+		stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_ERROR_row_index_out_of_bounds ;
+		stats [TRILINOS_COLAMD_INFO1] = col ;
+		stats [TRILINOS_COLAMD_INFO2] = row ;
+		stats [TRILINOS_COLAMD_INFO3] = n_row ;
+		DEBUG0 (("trilinos_colamd: row %d col %d out of bounds\n", row, col)) ;
 		return (FALSE) ;
 	    }
 
@@ -1761,11 +1761,11 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 	    {
 		/* row index are unsorted or repeated (or both), thus col */
 		/* is jumbled.  This is a notice, not an error condition. */
-		stats [COLAMD_STATUS] = COLAMD_OK_BUT_JUMBLED ;
-		stats [COLAMD_INFO1] = col ;
-		stats [COLAMD_INFO2] = row ;
-		(stats [COLAMD_INFO3]) ++ ;
-		DEBUG1 (("colamd: row %d col %d unsorted/duplicate\n",row,col));
+		stats [TRILINOS_COLAMD_STATUS] = TRILINOS_COLAMD_OK_BUT_JUMBLED ;
+		stats [TRILINOS_COLAMD_INFO1] = col ;
+		stats [TRILINOS_COLAMD_INFO2] = row ;
+		(stats [TRILINOS_COLAMD_INFO3]) ++ ;
+		DEBUG1 (("trilinos_colamd: row %d col %d unsorted/duplicate\n",row,col));
 	    }
 
 	    if (Row [row].shared2.mark != col)
@@ -1802,7 +1802,7 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 
     /* === Create row form ================================================== */
 
-    if (stats [COLAMD_STATUS] == COLAMD_OK_BUT_JUMBLED)
+    if (stats [TRILINOS_COLAMD_STATUS] == TRILINOS_COLAMD_OK_BUT_JUMBLED)
     {
 	/* if cols jumbled, watch for repeated row indices */
 	for (col = 0 ; col < n_col ; col++)
@@ -1844,9 +1844,9 @@ PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 
     /* === See if we need to re-create columns ============================== */
 
-    if (stats [COLAMD_STATUS] == COLAMD_OK_BUT_JUMBLED)
+    if (stats [TRILINOS_COLAMD_STATUS] == TRILINOS_COLAMD_OK_BUT_JUMBLED)
     {
-    	DEBUG0 (("colamd: reconstructing column form, matrix jumbled\n")) ;
+    	DEBUG0 (("trilinos_colamd: reconstructing column form, matrix jumbled\n")) ;
 
 #ifndef NDEBUG
 	/* make sure column lengths are correct */
@@ -1920,11 +1920,11 @@ PRIVATE void init_scoring
 
     Int n_row,			/* number of rows of A */
     Int n_col,			/* number of columns of A */
-    Colamd_Row Row [],		/* of size n_row+1 */
-    Colamd_Col Col [],		/* of size n_col+1 */
+    Trilinos_Colamd_Row Row [],		/* of size n_row+1 */
+    Trilinos_Colamd_Col Col [],		/* of size n_col+1 */
     Int A [],			/* column form and row form of A */
     Int head [],		/* of size n_col+1 */
-    double knobs [COLAMD_KNOBS],/* parameters */
+    double knobs [TRILINOS_COLAMD_KNOBS],/* parameters */
     Int *p_n_row2,		/* number of non-dense, non-empty rows */
     Int *p_n_col2,		/* number of non-dense, non-empty columns */
     Int *p_max_deg		/* maximum row degree */
@@ -1955,16 +1955,16 @@ PRIVATE void init_scoring
     /* === Extract knobs ==================================================== */
 
     /* Note: if knobs contains a NaN, this is undefined: */
-    if (knobs [COLAMD_DENSE_ROW] < 0)
+    if (knobs [TRILINOS_COLAMD_DENSE_ROW] < 0)
     {
 	/* only remove completely dense rows */
 	dense_row_count = n_col-1 ;
     }
     else
     {
-	dense_row_count = DENSE_DEGREE (knobs [COLAMD_DENSE_ROW], n_col) ;
+	dense_row_count = DENSE_DEGREE (knobs [TRILINOS_COLAMD_DENSE_ROW], n_col) ;
     }
-    if (knobs [COLAMD_DENSE_COL] < 0)
+    if (knobs [TRILINOS_COLAMD_DENSE_COL] < 0)
     {
 	/* only remove completely dense columns */
 	dense_col_count = n_row-1 ;
@@ -1972,10 +1972,10 @@ PRIVATE void init_scoring
     else
     {
 	dense_col_count =
-	    DENSE_DEGREE (knobs [COLAMD_DENSE_COL], MIN (n_row, n_col)) ;
+	    DENSE_DEGREE (knobs [TRILINOS_COLAMD_DENSE_COL], MIN (n_row, n_col)) ;
     }
 
-    DEBUG1 (("colamd: densecount: %d %d\n", dense_row_count, dense_col_count)) ;
+    DEBUG1 (("trilinos_colamd: densecount: %d %d\n", dense_row_count, dense_col_count)) ;
     max_deg = 0 ;
     n_col2 = n_col ;
     n_row2 = n_row ;
@@ -1994,7 +1994,7 @@ PRIVATE void init_scoring
 	    KILL_PRINCIPAL_COL (c) ;
 	}
     }
-    DEBUG1 (("colamd: null columns killed: %d\n", n_col - n_col2)) ;
+    DEBUG1 (("trilinos_colamd: null columns killed: %d\n", n_col - n_col2)) ;
 
     /* === Kill dense columns =============================================== */
 
@@ -2021,7 +2021,7 @@ PRIVATE void init_scoring
 	    KILL_PRINCIPAL_COL (c) ;
 	}
     }
-    DEBUG1 (("colamd: Dense and null columns killed: %d\n", n_col - n_col2)) ;
+    DEBUG1 (("trilinos_colamd: Dense and null columns killed: %d\n", n_col - n_col2)) ;
 
     /* === Kill dense and empty rows ======================================== */
 
@@ -2041,7 +2041,7 @@ PRIVATE void init_scoring
 	    max_deg = MAX (max_deg, deg) ;
 	}
     }
-    DEBUG1 (("colamd: Dense and null rows killed: %d\n", n_row - n_row2)) ;
+    DEBUG1 (("trilinos_colamd: Dense and null rows killed: %d\n", n_row - n_row2)) ;
 
     /* === Compute initial column scores ==================================== */
 
@@ -2097,7 +2097,7 @@ PRIVATE void init_scoring
 	    Col [c].shared2.score = score ;
 	}
     }
-    DEBUG1 (("colamd: Dense, null, and newly-null columns killed: %d\n",
+    DEBUG1 (("trilinos_colamd: Dense, null, and newly-null columns killed: %d\n",
     	n_col-n_col2)) ;
 
     /* At this point, all empty rows and columns are dead.  All live columns */
@@ -2165,7 +2165,7 @@ PRIVATE void init_scoring
     }
 
 #ifndef NDEBUG
-    DEBUG1 (("colamd: Live cols %d out of %d, non-princ: %d\n",
+    DEBUG1 (("trilinos_colamd: Live cols %d out of %d, non-princ: %d\n",
 	debug_count, n_col, n_col-debug_count)) ;
     ASSERT (debug_count == n_col2) ;
     debug_deg_lists (n_row, n_col, Row, Col, head, min_score, n_col2, max_deg) ;
@@ -2196,8 +2196,8 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
     Int n_row,			/* number of rows of A */
     Int n_col,			/* number of columns of A */
     Int Alen,			/* size of A, 2*nnz + n_col or larger */
-    Colamd_Row Row [],		/* of size n_row+1 */
-    Colamd_Col Col [],		/* of size n_col+1 */
+    Trilinos_Colamd_Row Row [],		/* of size n_row+1 */
+    Trilinos_Colamd_Col Col [],		/* of size n_col+1 */
     Int A [],			/* column form and row form of A */
     Int head [],		/* of size n_col+1 */
     Int n_col2,			/* Remaining columns to order */
@@ -2251,7 +2251,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
     tag_mark = clear_mark (0, max_mark, n_row, Row) ;
     min_score = 0 ;
     ngarbage = 0 ;
-    DEBUG1 (("colamd: Ordering, n_col2=%d\n", n_col2)) ;
+    DEBUG1 (("trilinos_colamd: Ordering, n_col2=%d\n", n_col2)) ;
 
     /* === Order the columns ================================================ */
 
@@ -2432,7 +2432,7 @@ PRIVATE Int find_ordering	/* return the number of garbage collections */
 	/* context, is the column "length", or the number of row indices */
 	/* in that column).  The number of row indices in a column is */
 	/* monotonically non-decreasing, from the length of the original */
-	/* column on input to colamd. */
+	/* column on input to trilinos_colamd. */
 
 	/* === Compute set differences ====================================== */
 
@@ -2759,7 +2759,7 @@ PRIVATE void order_children
     /* === Parameters ======================================================= */
 
     Int n_col,			/* number of columns of A */
-    Colamd_Col Col [],		/* of size n_col+1 */
+    Trilinos_Colamd_Col Col [],		/* of size n_col+1 */
     Int p []			/* p [0 ... n_col-1] is the column permutation*/
 )
 {
@@ -2862,10 +2862,10 @@ PRIVATE void detect_super_cols
 #ifndef NDEBUG
     /* these two parameters are only needed when debugging is enabled: */
     Int n_col,			/* number of columns of A */
-    Colamd_Row Row [],		/* of size n_row+1 */
+    Trilinos_Colamd_Row Row [],		/* of size n_row+1 */
 #endif /* NDEBUG */
 
-    Colamd_Col Col [],		/* of size n_col+1 */
+    Trilinos_Colamd_Col Col [],		/* of size n_col+1 */
     Int A [],			/* row indices of A */
     Int head [],		/* head of degree lists and hash buckets */
     Int row_start,		/* pointer to set of columns to check */
@@ -3018,8 +3018,8 @@ PRIVATE Int garbage_collection  /* returns the new value of pfree */
 
     Int n_row,			/* number of rows */
     Int n_col,			/* number of columns */
-    Colamd_Row Row [],		/* row info */
-    Colamd_Col Col [],		/* column info */
+    Trilinos_Colamd_Row Row [],		/* row info */
+    Trilinos_Colamd_Col Col [],		/* column info */
     Int A [],			/* A [0 ... Alen-1] holds the matrix */
     Int *pfree			/* &A [0] ... pfree is in use */
 )
@@ -3152,7 +3152,7 @@ PRIVATE Int clear_mark	/* return the new value for tag_mark */
     Int max_mark,	/* max allowed value of tag_mark */
 
     Int n_row,		/* number of rows in A */
-    Colamd_Row Row []	/* Row [0 ... n_row-1].shared2.mark is set to zero */
+    Trilinos_Colamd_Row Row []	/* Row [0 ... n_row-1].shared2.mark is set to zero */
 )
 {
     /* === Local variables ================================================== */
@@ -3182,14 +3182,14 @@ PRIVATE Int clear_mark	/* return the new value for tag_mark */
 PRIVATE void print_report
 (
     char *method,
-    Int stats [COLAMD_STATS]
+    Int stats [TRILINOS_COLAMD_STATS]
 )
 {
 
     Int i1, i2, i3 ;
 
     PRINTF (("\n%s version %d.%d, %s: ", method,
-	    COLAMD_MAIN_VERSION, COLAMD_SUB_VERSION, COLAMD_DATE)) ;
+	    TRILINOS_COLAMD_MAIN_VERSION, TRILINOS_COLAMD_SUB_VERSION, TRILINOS_COLAMD_DATE)) ;
 
     if (!stats)
     {
@@ -3197,11 +3197,11 @@ PRIVATE void print_report
 	return ;
     }
 
-    i1 = stats [COLAMD_INFO1] ;
-    i2 = stats [COLAMD_INFO2] ;
-    i3 = stats [COLAMD_INFO3] ;
+    i1 = stats [TRILINOS_COLAMD_INFO1] ;
+    i2 = stats [TRILINOS_COLAMD_INFO2] ;
+    i3 = stats [TRILINOS_COLAMD_INFO3] ;
 
-    if (stats [COLAMD_STATUS] >= 0)
+    if (stats [TRILINOS_COLAMD_STATUS] >= 0)
     {
     	PRINTF (("OK.  ")) ;
     }
@@ -3210,10 +3210,10 @@ PRIVATE void print_report
     	PRINTF (("ERROR.  ")) ;
     }
 
-    switch (stats [COLAMD_STATUS])
+    switch (stats [TRILINOS_COLAMD_STATUS])
     {
 
-	case COLAMD_OK_BUT_JUMBLED:
+	case TRILINOS_COLAMD_OK_BUT_JUMBLED:
 
 	    PRINTF(("Matrix has unsorted or duplicate row indices.\n")) ;
 
@@ -3228,72 +3228,72 @@ PRIVATE void print_report
 
 	    /* no break - fall through to next case instead */
 
-	case COLAMD_OK:
+	case TRILINOS_COLAMD_OK:
 
 	    PRINTF(("\n")) ;
 
  	    PRINTF(("%s: number of dense or empty rows ignored:           %d\n",
-	    method, stats [COLAMD_DENSE_ROW])) ;
+	    method, stats [TRILINOS_COLAMD_DENSE_ROW])) ;
 
 	    PRINTF(("%s: number of dense or empty columns ignored:        %d\n",
-	    method, stats [COLAMD_DENSE_COL])) ;
+	    method, stats [TRILINOS_COLAMD_DENSE_COL])) ;
 
 	    PRINTF(("%s: number of garbage collections performed:         %d\n",
-	    method, stats [COLAMD_DEFRAG_COUNT])) ;
+	    method, stats [TRILINOS_COLAMD_DEFRAG_COUNT])) ;
 	    break ;
 
-	case COLAMD_ERROR_A_not_present:
+	case TRILINOS_COLAMD_ERROR_A_not_present:
 
 	    PRINTF(("Array A (row indices of matrix) not present.\n")) ;
 	    break ;
 
-	case COLAMD_ERROR_p_not_present:
+	case TRILINOS_COLAMD_ERROR_p_not_present:
 
 	    PRINTF(("Array p (column pointers for matrix) not present.\n")) ;
 	    break ;
 
-	case COLAMD_ERROR_nrow_negative:
+	case TRILINOS_COLAMD_ERROR_nrow_negative:
 
 	    PRINTF(("Invalid number of rows (%d).\n", i1)) ;
 	    break ;
 
-	case COLAMD_ERROR_ncol_negative:
+	case TRILINOS_COLAMD_ERROR_ncol_negative:
 
 	    PRINTF(("Invalid number of columns (%d).\n", i1)) ;
 	    break ;
 
-	case COLAMD_ERROR_nnz_negative:
+	case TRILINOS_COLAMD_ERROR_nnz_negative:
 
 	    PRINTF(("Invalid number of nonzero entries (%d).\n", i1)) ;
 	    break ;
 
-	case COLAMD_ERROR_p0_nonzero:
+	case TRILINOS_COLAMD_ERROR_p0_nonzero:
 
 	    PRINTF(("Invalid column pointer, p [0] = %d, must be zero.\n", i1));
 	    break ;
 
-	case COLAMD_ERROR_A_too_small:
+	case TRILINOS_COLAMD_ERROR_A_too_small:
 
 	    PRINTF(("Array A too small.\n")) ;
 	    PRINTF(("        Need Alen >= %d, but given only Alen = %d.\n",
 	    i1, i2)) ;
 	    break ;
 
-	case COLAMD_ERROR_col_length_negative:
+	case TRILINOS_COLAMD_ERROR_col_length_negative:
 
 	    PRINTF
 	    (("Column %d has a negative number of nonzero entries (%d).\n",
 	    INDEX (i1), i2)) ;
 	    break ;
 
-	case COLAMD_ERROR_row_index_out_of_bounds:
+	case TRILINOS_COLAMD_ERROR_row_index_out_of_bounds:
 
 	    PRINTF
 	    (("Row index (row %d) out of bounds (%d to %d) in column %d.\n",
 	    INDEX (i2), INDEX (0), INDEX (i3-1), INDEX (i1))) ;
 	    break ;
 
-	case COLAMD_ERROR_out_of_memory:
+	case TRILINOS_COLAMD_ERROR_out_of_memory:
 
 	    PRINTF(("Out of memory.\n")) ;
 	    break ;
@@ -3306,7 +3306,7 @@ PRIVATE void print_report
 
 
 /* ========================================================================== */
-/* === colamd debugging routines ============================================ */
+/* === trilinos_colamd debugging routines ============================================ */
 /* ========================================================================== */
 
 /* When debugging is disabled, the remainder of this file is ignored. */
@@ -3331,8 +3331,8 @@ PRIVATE void debug_structures
 
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A [],
     Int n_col2
 )
@@ -3418,8 +3418,8 @@ PRIVATE void debug_deg_lists
 
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int head [],
     Int min_score,
     Int should,
@@ -3435,7 +3435,7 @@ PRIVATE void debug_deg_lists
 
     /* === Check the degree lists =========================================== */
 
-    if (n_col > 10000 && colamd_debug <= 0)
+    if (n_col > 10000 && trilinos_colamd_debug <= 0)
     {
 	return ;
     }
@@ -3463,7 +3463,7 @@ PRIVATE void debug_deg_lists
 
     /* === Check the row degrees ============================================ */
 
-    if (n_row > 10000 && colamd_debug <= 0)
+    if (n_row > 10000 && trilinos_colamd_debug <= 0)
     {
 	return ;
     }
@@ -3491,7 +3491,7 @@ PRIVATE void debug_mark
     /* === Parameters ======================================================= */
 
     Int n_row,
-    Colamd_Row Row [],
+    Trilinos_Colamd_Row Row [],
     Int tag_mark,
     Int max_mark
 )
@@ -3503,7 +3503,7 @@ PRIVATE void debug_mark
     /* === Check the Row marks ============================================== */
 
     ASSERT (tag_mark > 0 && tag_mark <= max_mark) ;
-    if (n_row > 10000 && colamd_debug <= 0)
+    if (n_row > 10000 && trilinos_colamd_debug <= 0)
     {
 	return ;
     }
@@ -3528,8 +3528,8 @@ PRIVATE void debug_matrix
 
     Int n_row,
     Int n_col,
-    Colamd_Row Row [],
-    Colamd_Col Col [],
+    Trilinos_Colamd_Row Row [],
+    Trilinos_Colamd_Col Col [],
     Int A []
 )
 {
@@ -3544,7 +3544,7 @@ PRIVATE void debug_matrix
 
     /* === Dump the rows and columns of the matrix ========================== */
 
-    if (colamd_debug < 3)
+    if (trilinos_colamd_debug < 3)
     {
 	return ;
     }
@@ -3587,25 +3587,25 @@ PRIVATE void debug_matrix
     }
 }
 
-PRIVATE void colamd_get_debug
+PRIVATE void trilinos_colamd_get_debug
 (
     char *method
 )
 {
     FILE *f ;
-    colamd_debug = 0 ;		/* no debug printing */
+    trilinos_colamd_debug = 0 ;		/* no debug printing */
     f = fopen ("debug", "r") ;
     if (f == (FILE *) NULL)
     {
-	colamd_debug = 0 ;
+	trilinos_colamd_debug = 0 ;
     }
     else
     {
-	fscanf (f, "%d", &colamd_debug) ;
+	fscanf (f, "%d", &trilinos_colamd_debug) ;
 	fclose (f) ;
     }
     DEBUG0 (("%s: debug version, D = %d (THIS WILL BE SLOW!)\n",
-    	method, colamd_debug)) ;
+    	method, trilinos_colamd_debug)) ;
 }
 
 #endif /* NDEBUG */

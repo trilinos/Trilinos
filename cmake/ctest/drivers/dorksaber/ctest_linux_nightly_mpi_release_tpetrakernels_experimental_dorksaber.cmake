@@ -65,6 +65,7 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME RELEASE_DEV_TpetraKernels_Experimental)
 SET(CTEST_PARALLEL_LEVEL 3)
 SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK  Specialized)      # Set the CDash track
 SET(CTEST_TEST_TIMEOUT 1800)
 
 SET(Trilinos_PACKAGES Amesos2 Ifpack2 Teuchos Tpetra MueLu Zoltan2)

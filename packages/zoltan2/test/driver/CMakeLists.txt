@@ -165,6 +165,20 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+IF (${PROJECT_NAME}_ENABLE_Pamgen)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME simplePamgenTest
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "./driverinputs/simplePamgen.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
+
 # Command that copies files to the executable directory.
 # KDD: I am using this for Zoltan data files.  When Zoltan tests are not built,
 # KDD: we can't point driver to files in build directory (as they won't be 

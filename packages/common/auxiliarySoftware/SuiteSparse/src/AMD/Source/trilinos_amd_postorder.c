@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_postorder ======================================================= */
+/* === TRILINOS_AMD_postorder ======================================================= */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -13,7 +13,7 @@
 
 #include "trilinos_amd_internal.h"
 
-GLOBAL void AMD_postorder
+GLOBAL void TRILINOS_AMD_postorder
 (
     /* inputs, not modified on output: */
     Int nn,		/* nodes are in the range 0..nn-1 */
@@ -62,27 +62,27 @@ GLOBAL void AMD_postorder
 #ifndef NDEBUG
     {
 	Int nels, ff, nchild ;
-	AMD_DEBUG1 (("\n\n================================ AMD_postorder:\n"));
+	TRILINOS_AMD_DEBUG1 (("\n\n================================ TRILINOS_AMD_postorder:\n"));
 	nels = 0 ;
 	for (j = 0 ; j < nn ; j++)
 	{
 	    if (Nv [j] > 0)
 	    {
-		AMD_DEBUG1 (( ""ID" :  nels "ID" npiv "ID" size "ID
+		TRILINOS_AMD_DEBUG1 (( ""ID" :  nels "ID" npiv "ID" size "ID
 		    " parent "ID" maxfr "ID"\n", j, nels,
 		    Nv [j], Fsize [j], Parent [j], Fsize [j])) ;
 		/* this is an element */
 		/* dump the link list of children */
 		nchild = 0 ;
-		AMD_DEBUG1 (("    Children: ")) ;
+		TRILINOS_AMD_DEBUG1 (("    Children: ")) ;
 		for (ff = Child [j] ; ff != EMPTY ; ff = Sibling [ff])
 		{
-		    AMD_DEBUG1 ((ID" ", ff)) ;
+		    TRILINOS_AMD_DEBUG1 ((ID" ", ff)) ;
 		    ASSERT (Parent [ff] == j) ;
 		    nchild++ ;
 		    ASSERT (nchild < nn) ;
 		}
-		AMD_DEBUG1 (("\n")) ;
+		TRILINOS_AMD_DEBUG1 (("\n")) ;
 		parent = Parent [j] ;
 		if (parent != EMPTY)
 		{
@@ -92,7 +92,7 @@ GLOBAL void AMD_postorder
 	    }
 	}
     }
-    AMD_DEBUG1 (("\n\nGo through the children of each node, and put\n"
+    TRILINOS_AMD_DEBUG1 (("\n\nGo through the children of each node, and put\n"
 		 "the biggest child last in each list:\n")) ;
 #endif
 
@@ -107,12 +107,12 @@ GLOBAL void AMD_postorder
 
 #ifndef NDEBUG
 	    Int nchild ;
-	    AMD_DEBUG1 (("Before partial sort, element "ID"\n", i)) ;
+	    TRILINOS_AMD_DEBUG1 (("Before partial sort, element "ID"\n", i)) ;
 	    nchild = 0 ;
 	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (f >= 0 && f < nn) ;
-		AMD_DEBUG1 (("      f: "ID"  size: "ID"\n", f, Fsize [f])) ;
+		TRILINOS_AMD_DEBUG1 (("      f: "ID"  size: "ID"\n", f, Fsize [f])) ;
 		nchild++ ;
 		ASSERT (nchild <= nn) ;
 	    }
@@ -140,7 +140,7 @@ GLOBAL void AMD_postorder
 
 	    fnext = Sibling [bigf] ;
 
-	    AMD_DEBUG1 (("bigf "ID" maxfrsize "ID" bigfprev "ID" fnext "ID
+	    TRILINOS_AMD_DEBUG1 (("bigf "ID" maxfrsize "ID" bigfprev "ID" fnext "ID
 		" fprev " ID"\n", bigf, maxfrsize, bigfprev, fnext, fprev)) ;
 
 	    if (fnext != EMPTY)
@@ -167,11 +167,11 @@ GLOBAL void AMD_postorder
 	    }
 
 #ifndef NDEBUG
-	    AMD_DEBUG1 (("After partial sort, element "ID"\n", i)) ;
+	    TRILINOS_AMD_DEBUG1 (("After partial sort, element "ID"\n", i)) ;
 	    for (f = Child [i] ; f != EMPTY ; f = Sibling [f])
 	    {
 		ASSERT (f >= 0 && f < nn) ;
-		AMD_DEBUG1 (("        "ID"  "ID"\n", f, Fsize [f])) ;
+		TRILINOS_AMD_DEBUG1 (("        "ID"  "ID"\n", f, Fsize [f])) ;
 		ASSERT (Nv [f] > 0) ;
 		nchild-- ;
 	    }
@@ -196,8 +196,8 @@ GLOBAL void AMD_postorder
     {
 	if (Parent [i] == EMPTY && Nv [i] > 0)
 	{
-	    AMD_DEBUG1 (("Root of assembly tree "ID"\n", i)) ;
-	    k = AMD_post_tree (i, k, Child, Sibling, Order, Stack
+	    TRILINOS_AMD_DEBUG1 (("Root of assembly tree "ID"\n", i)) ;
+	    k = TRILINOS_AMD_post_tree (i, k, Child, Sibling, Order, Stack
 #ifndef NDEBUG
 		, nn
 #endif

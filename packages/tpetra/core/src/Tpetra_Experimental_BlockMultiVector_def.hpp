@@ -355,7 +355,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
   auto X_dst = getLocalBlock (localRowIndex, colIndex);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
-  AXPY (STS::one (), X_src, X_dst);
+  AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -627,7 +627,7 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
       if (CM == INSERT || CM == REPLACE) {
         deep_copy (X_dst, X_src);
       } else if (CM == ADD) {
-        AXPY (STS::one (), X_src, X_dst);
+        AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
       } else if (CM == ABSMAX) {
         Impl::absMax (X_dst, X_src);
       }

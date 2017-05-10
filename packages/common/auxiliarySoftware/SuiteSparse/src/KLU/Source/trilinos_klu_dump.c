@@ -11,7 +11,7 @@
 #ifndef NDEBUG
 
 /* ========================================================================== */
-/* === KLU_valid ============================================================ */
+/* === TRILINOS_KLU_valid ============================================================ */
 /* ========================================================================== */
 
 /* Check if a column-form matrix is valid or not.  The matrix A is
@@ -29,7 +29,7 @@
  * Not user-callable.  Only used when debugging.
  */
 
-Int KLU_valid (Int n, Int Ap [ ], Int Ai [ ], Entry Ax [ ])
+Int TRILINOS_KLU_valid (Int n, Int Ap [ ], Int Ai [ ], Entry Ax [ ])
 {
     Int nz, j, p1, p2, i, p ;
     PRINTF (("\ncolumn oriented matrix, n = %d\n", n)) ;
@@ -78,16 +78,16 @@ Int KLU_valid (Int n, Int Ap [ ], Int Ai [ ], Entry Ax [ ])
 
 
 /* ========================================================================== */
-/* === KLU_valid_LU ========================================================= */
+/* === TRILINOS_KLU_valid_LU ========================================================= */
 /* ========================================================================== */
 
-/* This function does the same validity tests as KLU_valid but for the
+/* This function does the same validity tests as TRILINOS_KLU_valid but for the
  * LU factor storage format. The flag flag_test_start_ptr is used to
  * test if Xip [0] = 0. This is not applicable for U. So when calling this
  * function for U, the flag should be set to false.  Only used when debugging.
  */
 
-Int KLU_valid_LU (Int n, Int flag_test_start_ptr, Int Xip [ ],
+Int TRILINOS_KLU_valid_LU (Int n, Int flag_test_start_ptr, Int Xip [ ],
 		   Int Xlen [ ],  Unit LU [ ])
 {
     Int *Xi ;

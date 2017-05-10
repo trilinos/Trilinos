@@ -143,7 +143,11 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
-      constexpr ordinal_type bufSize = CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval;
+      constexpr ordinal_type spaceDim = 3;
+      constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
+                                       spaceDim * CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval :
+                                       CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval;
+
       outputValueType buf[bufSize];
 
       Kokkos::DynRankView<outputValueType,

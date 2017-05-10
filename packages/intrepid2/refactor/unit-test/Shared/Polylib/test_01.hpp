@@ -233,7 +233,7 @@ namespace Intrepid2 {
       outStream->precision(5);
 
       // this test upto order 30 - offset (1,2,3)
-      const ordinal_type npLower = 5, npUpper = 15;
+      const ordinal_type npLower = 5, npUpper = Polylib::MaxPolylibPoint;
       const ValueType tol = 1000.0 * tolerence();
 
       try {

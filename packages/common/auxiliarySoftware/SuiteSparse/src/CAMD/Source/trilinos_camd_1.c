@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_1 ============================================================== */
+/* === TRILINOS_CAMD_1 ============================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -9,7 +9,7 @@
 /* web: http://www.cise.ufl.edu/research/sparse/camd                         */
 /* ------------------------------------------------------------------------- */
 
-/* CAMD_1: Construct A+A' for a sparse matrix A and perform the CAMD ordering.
+/* TRILINOS_CAMD_1: Construct A+A' for a sparse matrix A and perform the CAMD ordering.
  *
  * The n-by-n sparse matrix A can be unsymmetric.  It is stored in MATLAB-style
  * compressed-column form, with sorted row indices in each column, and no
@@ -18,16 +18,16 @@
  * Ap [0] must be zero, and nz = Ap [n] is the number of entries in A.  The
  * size of the matrix, n, must be greater than or equal to zero.
  *
- * This routine must be preceded by a call to CAMD_aat, which computes the
+ * This routine must be preceded by a call to TRILINOS_CAMD_aat, which computes the
  * number of entries in each row/column in A+A', excluding the diagonal.
  * Len [j], on input, is the number of entries in row/column j of A+A'.  This
- * routine constructs the matrix A+A' and then calls CAMD_2.  No error checking
- * is performed (this was done in CAMD_valid).
+ * routine constructs the matrix A+A' and then calls TRILINOS_CAMD_2.  No error checking
+ * is performed (this was done in TRILINOS_CAMD_valid).
  */
 
 #include "trilinos_camd_internal.h"
 
-GLOBAL void CAMD_1
+GLOBAL void TRILINOS_CAMD_1
 (
     Int n,		/* n > 0 */
     const Int Ap [ ],	/* input of size n+1, not modified */
@@ -38,8 +38,8 @@ GLOBAL void CAMD_1
     Int slen,		/* slen >= sum (Len [0..n-1]) + 7n+2,
 			 * ideally slen = 1.2 * sum (Len) + 8n+2 */
     Int S [ ],		/* size slen workspace */
-    double Control [ ],	/* input array of size CAMD_CONTROL */
-    double Info [ ],	/* output array of size CAMD_INFO */
+    double Control [ ],	/* input array of size TRILINOS_CAMD_CONTROL */
+    double Info [ ],	/* output array of size TRILINOS_CAMD_INFO */
     const Int C [ ]	/* Constraint set of size n */
 )
 {
@@ -47,7 +47,7 @@ GLOBAL void CAMD_1
 	*Elen, *Degree, *s, *W, *Sp, *Tp, *BucketSet ;
 
     /* --------------------------------------------------------------------- */
-    /* construct the matrix for CAMD_2 */
+    /* construct the matrix for TRILINOS_CAMD_2 */
     /* --------------------------------------------------------------------- */
 
     ASSERT (n > 0) ;
@@ -63,8 +63,8 @@ GLOBAL void CAMD_1
     BucketSet = s ; s += n ;
     Iw = s ;	    s += iwlen ;
 
-    ASSERT (CAMD_valid (n, n, Ap, Ai) == CAMD_OK) ;
-    ASSERT (CAMD_cvalid (n, C)) ;
+    ASSERT (TRILINOS_CAMD_valid (n, n, Ap, Ai) == TRILINOS_CAMD_OK) ;
+    ASSERT (TRILINOS_CAMD_cvalid (n, C)) ;
 
     /* construct the pointers for A+A' */
     Sp = Nv ;			/* use Nv and W as workspace for Sp and Tp [ */
@@ -78,7 +78,7 @@ GLOBAL void CAMD_1
     }
 
     /* Note that this restriction on iwlen is slightly more restrictive than
-     * what is strictly required in CAMD_2.  CAMD_2 can operate with no elbow
+     * what is strictly required in TRILINOS_CAMD_2.  TRILINOS_CAMD_2 can operate with no elbow
      * room at all, but it will be very slow.  For better performance, at
      * least size-n elbow room is enforced. */
     ASSERT (iwlen >= pfree + n) ;
@@ -89,7 +89,7 @@ GLOBAL void CAMD_1
 
     for (k = 0 ; k < n ; k++)
     {
-	CAMD_DEBUG1 (("Construct row/column k= "ID" of A+A'\n", k))  ;
+	TRILINOS_CAMD_DEBUG1 (("Construct row/column k= "ID" of A+A'\n", k))  ;
 	p1 = Ap [k] ;
 	p2 = Ap [k+1] ;
 
@@ -179,6 +179,6 @@ GLOBAL void CAMD_1
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    CAMD_2 (n, Pe, Iw, Len, iwlen, pfree,
+    TRILINOS_CAMD_2 (n, Pe, Iw, Len, iwlen, pfree,
 	Nv, Pinv, P, Head, Elen, Degree, W, Control, Info, C, BucketSet) ;
 }

@@ -117,10 +117,6 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-
       int errorFlag  = 0;
 
       // Allocate storage and extract all standard cells with base topologies
@@ -143,6 +139,8 @@ namespace Intrepid2 {
       try {
         
 #ifdef HAVE_INTREPID2_DEBUG
+        typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+        typedef CellTools<DeviceSpaceType> ct;
 
         std::vector<shards::CellTopology> standardBaseTopologies;
         shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);

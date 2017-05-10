@@ -57,10 +57,13 @@
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_Environment.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -4209,6 +4212,7 @@ namespace Tpetra {
                      Scalar alpha,
                      Scalar beta) const
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4282,7 +4286,9 @@ namespace Tpetra {
         X_colMap = rcpFromRef (X_in);
       }
     }
-    else {
+    else { // need to Import source (multi)vector
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply: Import");
+
       // We're doing an Import anyway, which will copy the relevant
       // elements of the domain Map MV X_in into a separate column Map
       // MV.  Thus, we don't have to worry whether X_in is constant
@@ -4294,8 +4300,10 @@ namespace Tpetra {
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
-    // Temporary MV for Export operation, or for copying a nonconstant
-    // stride output MV into a constant stride MV.
+    // Temporary MV for doExport (if needed), or for copying a
+    // nonconstant stride output MV into a constant stride MV.  This
+    // is null if we don't need the temporary MV, that is, if the
+    // Export is trivial (null).
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
     // If we have a nontrivial Export object, we must perform an
@@ -4304,23 +4312,25 @@ namespace Tpetra {
     // constant-stride version of Y_in in this case, because we had to
     // make a constant stride Y_rowMap MV and do an Export anyway.
     if (! exporter.is_null ()) {
-      this->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
-                                                    Teuchos::NO_TRANS,
-                                                    alpha, ZERO);
-      // If we're overwriting the output MV Y_in completely (beta ==
-      // 0), then make sure that it is filled with zeros before we do
-      // the Export.  Otherwise, the ADD combine mode will use data in
-      // Y_in, which is supposed to be zero.
-      if (Y_is_overwritten) {
-        Y_in.putScalar (ZERO);
+      this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
+      {
+        ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply: Export");
+
+        // If we're overwriting the output MV Y_in completely (beta ==
+        // 0), then make sure that it is filled with zeros before we
+        // do the Export.  Otherwise, the ADD combine mode will use
+        // data in Y_in, which is supposed to be zero.
+        if (Y_is_overwritten) {
+          Y_in.putScalar (ZERO);
+        }
+        else {
+          // Scale output MV by beta, so that doExport sums in the
+          // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
+          Y_in.scale (beta);
+        }
+        // Do the Export operation.
+        Y_in.doExport (*Y_rowMap, *exporter, ADD);
       }
-      else {
-        // Scale the output MV by beta, so that the Export sums in the
-        // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
-        Y_in.scale (beta);
-      }
-      // Do the Export operation.
-      Y_in.doExport (*Y_rowMap, *exporter, ADD);
     }
     else { // Don't do an Export: row Map and range Map are the same.
       //
@@ -4343,16 +4353,11 @@ namespace Tpetra {
         if (beta != ZERO) {
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
-        this->template localMultiply<Scalar, Scalar> (*X_colMap,
-                                                      *Y_rowMap,
-                                                      Teuchos::NO_TRANS,
-                                                      alpha, beta);
+        this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       }
       else {
-        this->template localMultiply<Scalar, Scalar> (*X_colMap, Y_in,
-                                                      Teuchos::NO_TRANS,
-                                                      alpha, beta);
+        this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
 
@@ -4361,6 +4366,7 @@ namespace Tpetra {
     // processes but Proc 0 initially, so this will handle the scaling
     // factor beta correctly.
     if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply: Reduce Y");
       Y_in.reduce ();
     }
   }
@@ -4374,6 +4380,7 @@ namespace Tpetra {
                   Scalar alpha,
                   Scalar beta) const
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4445,6 +4452,7 @@ namespace Tpetra {
     // If we have a non-trivial exporter, we must import elements that
     // are permuted or are on other processors.
     if (! exporter.is_null ()) {
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply (transpose): Import");
       exportMV_->doImport (X_in, *exporter, INSERT);
       X = exportMV_; // multiply out of exportMV_
     }
@@ -4453,6 +4461,8 @@ namespace Tpetra {
     // are permuted or belong to other processors.  We will compute
     // solution into the to-be-exported MV; get a view.
     if (importer != Teuchos::null) {
+      ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply (transpose): Export");
+
       // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
       // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
       // back and figure out why this helps.  importMV_ SHOULD be
@@ -4460,8 +4470,7 @@ namespace Tpetra {
       // because beta == ZERO there.
       importMV_->putScalar (ZERO);
       // Do the local computation.
-      this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode,
-                                                    alpha, ZERO);
+      this->localApply (*X, *importMV_, mode, alpha, ZERO);
       if (Y_is_overwritten) {
         Y_in.putScalar (ZERO);
       } else {
@@ -4480,10 +4489,10 @@ namespace Tpetra {
       if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
         // Make a deep copy of Y_in, into which to write the multiply result.
         MV Y (Y_in, Teuchos::Copy);
-        this->template localMultiply<Scalar, Scalar> (*X, Y, mode, alpha, beta);
+        this->localApply (*X, Y, mode, alpha, beta);
         Tpetra::deep_copy (Y_in, Y);
       } else {
-        this->template localMultiply<Scalar, Scalar> (*X, Y_in, mode, alpha, beta);
+        this->localApply (*X, Y_in, mode, alpha, beta);
       }
     }
 
@@ -4491,8 +4500,23 @@ namespace Tpetra {
     // contributions from each process.  (That's why we set beta=0
     // above for all processes but Proc 0.)
     if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply (transpose): Reduce Y");
       Y_in.reduce ();
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
+              const Teuchos::ETransp mode,
+              const Scalar& alpha,
+              const Scalar& beta) const
+  {
+    using Tpetra::Details::ProfilingRegion;
+    ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
+    this->template localMultiply<Scalar, Scalar> (X, Y, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -4504,23 +4528,31 @@ namespace Tpetra {
          Scalar alpha,
          Scalar beta) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! isFillComplete (), std::runtime_error,
-      "Tpetra::CrsMatrix::apply(): Cannot call apply() until fillComplete() "
-      "has been called.");
+    using Tpetra::Details::ProfilingRegion;
+    const char fnName[] = "Tpetra::CrsMatrix::apply";
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! isFillComplete (), std::runtime_error,
+       fnName << ": Cannot call apply() until fillComplete() "
+       "has been called.");
 
     if (mode == Teuchos::NO_TRANS) {
-      applyNonTranspose (X, Y, alpha, beta);
-    } else {
+      ProfilingRegion regionNonTranspose (fnName);
+      this->applyNonTranspose (X, Y, alpha, beta);
+    }
+    else {
+      ProfilingRegion regionTranspose ("Tpetra::CrsMatrix::apply (transpose)");
+
       //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
       //when bets==0. This was not the case with transpose in a multithreaded
       //environment where a multiplication with subsequent atomic_adds is used
       //since 0 is effectively not special cased. Doing the explicit set to zero here
       //This catches cases where Y is nan or inf.
       const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-      if(beta == ZERO)
+      if (beta == ZERO) {
         Y.putScalar (ZERO);
-      applyTranspose (X, Y, mode, alpha, beta);
+      }
+      this->applyTranspose (X, Y, mode, alpha, beta);
     }
   }
 
@@ -5600,6 +5632,7 @@ namespace Tpetra {
                   const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                   const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
@@ -5607,11 +5640,12 @@ namespace Tpetra {
     typedef node_type NT;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermute: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(),
-      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size()
-      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (permuteToLIDs.size () != permuteFromLIDs.size (),
+      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size ()
+      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
@@ -5754,12 +5788,14 @@ namespace Tpetra {
                   size_t& constantNumPackets,
                   Distributor& distor)
   {
+    using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepare");
 
     // Attempt to cast the source object to RowMatrix.  If the cast
     // succeeds, use the source object's pack method to pack its data
@@ -5985,9 +6021,9 @@ namespace Tpetra {
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
       const bool locallyCorrect =
-        packCrsMatrix (errStr, exports, numPacketsPerLID,
-                       constantNumPackets, exportLIDs, this->lclMatrix_,
-                       lclColMap, myRank, dist);
+        packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                       exports, numPacketsPerLID, constantNumPackets,
+                       exportLIDs, myRank, dist);
       const int lclOK = locallyCorrect ? 1 : 0;
       int gblOK = 1; // output argument
       if (! colMap.getComm ().is_null ()) {
@@ -6006,10 +6042,9 @@ namespace Tpetra {
         }
       }
 #else // NOT HAVE_TPETRA_DEBUG
-      (void) packCrsMatrix (errStr, exports, numPacketsPerLID,
-                            constantNumPackets, exportLIDs,
-                            this->lclMatrix_, lclColMap, myRank,
-                            dist);
+      (void) packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
+                            exports, numPacketsPerLID, constantNumPackets,
+                            exportLIDs, myRank, dist);
 #endif // HAVE_TPETRA_DEBUG
     }
     else {
@@ -6132,83 +6167,20 @@ namespace Tpetra {
                           const GlobalOrdinal cols[],
                           const Tpetra::CombineMode combineMode)
   {
-    using Kokkos::MemoryUnmanaged;
-    using Kokkos::View;
-    typedef impl_scalar_type IST;
-    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef device_type DD;
-    typedef Kokkos::Device<typename View<LO*, DD>::HostMirror::execution_space, Kokkos::HostSpace> HD;
     //const char tfecfFuncName[] = "combineGlobalValuesRaw: ";
 
-    if (this->isStaticGraph ()) {
-      // INSERT doesn't make sense for a static graph, since you
-      // aren't allowed to change the structure of the graph.
-      // However, all the other combine modes work.
+    // mfh 23 Mar 2017: This branch is not thread safe in a debug
+    // build, due to use of Teuchos::ArrayView; see #229.
+    const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
+    Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
+    Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
 
-      const RowInfo rowInfo = this->staticGraph_->getRowInfo (lclRow);
-      if (static_cast<LO> (rowInfo.localRow) != lclRow) {
-        return static_cast<LO> (0); // invalid local row
-      }
-      auto curVals = this->getRowViewNonConst (rowInfo);
-
-      if (combineMode == ADD) {
-        View<const IST*, HD, MemoryUnmanaged> valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        View<const GO*, HD, MemoryUnmanaged> indsIn (numEnt == 0 ? NULL : cols, numEnt);
-        // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // unpack different rows, so we don't need atomic updates.  If
-        // we change that in the future, we'll need to change this.
-        constexpr bool atomic = false;
-        return this->staticGraph_->template sumIntoGlobalValues<IST, HD, DD> (rowInfo,
-                                                                              curVals,
-                                                                              indsIn,
-                                                                              valsIn,
-                                                                              atomic);
-      }
-      else if (combineMode == REPLACE) {
-        typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
-        typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
-        typedef typename std::decay<decltype (curVals) >::type OSVT; // output scalar view type
-        ISVT valsIn (numEnt == 0 ? NULL : vals, numEnt);
-        GIVT indsIn (numEnt == 0 ? NULL : cols, numEnt);
-
-        // // NOTE (mfh 23 Mar 2017): For now, different threads will
-        // // unpack different rows, so we don't need atomic updates.  If
-        // // we change that in the future, we'll need to change this.
-        // constexpr bool atomic = false;
-        return this->staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
-                                                                                   curVals,
-                                                                                   indsIn,
-                                                                                   valsIn);
-      }
-      else {
-        // mfh 23 Mar 2017: This branch is not thread safe in a debug
-        // build, due to use of Teuchos::ArrayView; see #229.
-        const GO gblRow = this->staticGraph_->rowMap_->getGlobalElement (lclRow);
-        Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-        Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-        // FIXME (mfh 23 Mar 2017) This is a work-around for less
-        // common combine modes.  combineGlobalValues throws on error;
-        // it does not return an error code.  Thus, if it returns, it
-        // succeeded.
-        this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-        return numEnt;
-      }
-    }
-    else { // no static graph
-      // mfh 23 Mar 2017: This branch is not thread safe in a debug
-      // build, due to use of Teuchos::ArrayView; see #229.
-      const GO gblRow = this->myGraph_->rowMap_->getGlobalElement (lclRow);
-      Teuchos::ArrayView<const GO> cols_av (numEnt == 0 ? NULL : cols, numEnt);
-      Teuchos::ArrayView<const Scalar> vals_av (numEnt == 0 ? NULL : reinterpret_cast<const Scalar*> (vals), numEnt);
-
-      // FIXME (mfh 23 Mar 2017) This is a work-around for less common
-      // combine modes.  combineGlobalValues throws on error; it does
-      // not return an error code.  Thus, if it returns, it succeeded.
-      this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
-      return numEnt;
-    }
+    // FIXME (mfh 23 Mar 2017) This is a work-around for less common
+    // combine modes.  combineGlobalValues throws on error; it does
+    // not return an error code.  Thus, if it returns, it succeeded.
+    this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
+    return numEnt;
   }
 
 
@@ -6302,6 +6274,9 @@ namespace Tpetra {
                     Distributor& distor,
                     CombineMode combineMode)
   {
+    using Tpetra::Details::ProfilingRegion;
+    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
+
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombine: ";
     const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
@@ -6340,20 +6315,12 @@ namespace Tpetra {
                            lclBad, Teuchos::outArg (gblBad));
       if (gblBad != 0) {
         const int myRank = comm.getRank ();
-        const int numProcs = comm.getSize ();
-        for (int r = 0; r < numProcs; ++r) {
-          if (r == myRank && lclBad != 0) {
-            std::ostringstream os;
-            os << "Proc " << myRank << ": " << msg.str () << std::endl;
-            std::cerr << os.str ();
-          }
-          comm.barrier ();
-          comm.barrier ();
-          comm.barrier ();
-        }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          true, std::logic_error, "unpackAndCombineImpl() threw an "
-          "exception on one or more participating processes.");
+        std::ostringstream os;
+        os << "Proc " << myRank << ": " << msg.str () << std::endl;
+        ::Tpetra::Details::gathervPrint (std::cerr, os.str (), comm);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::logic_error, "unpackAndCombineImpl() threw an "
+           "exception on one or more participating processes.");
       }
     }
 #else
@@ -6369,8 +6336,36 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const char>& imports,
                         const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                         size_t constantNumPackets,
-                        Distributor & /* distor */,
-                        CombineMode combineMode)
+                        Distributor & distor,
+                        CombineMode combineMode,
+                        const bool atomic)
+  {
+    if (this->isStaticGraph()) {
+      using Details::unpackCrsMatrixAndCombine;
+      const map_type& colMap = * (this->staticGraph_->colMap_);
+      const auto lclColMap = colMap.getLocalMap ();
+      std::unique_ptr<std::string> errStr;
+      bool locallyCorrect = unpackCrsMatrixAndCombine (
+          this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
+          numPacketsPerLID, constantNumPackets, distor, combineMode, atomic);
+      TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
+    }
+    else {
+      this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,
+                                           constantNumPackets, distor, combineMode);
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  unpackAndCombineImplNonStatic (
+      const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+      const Teuchos::ArrayView<const char>& imports,
+      const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor & /* distor */,
+      CombineMode combineMode)
   {
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;

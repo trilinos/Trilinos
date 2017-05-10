@@ -107,7 +107,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   # wcm: 2017-04-16: Adding -Wno-unused-function (EXPERIMENTAL).  Trying this out because the GCC 4.9.3 -Werror
   #      build seems to fail on some unit tests in Thyra on unused functions.  Curious that GCC 4.7.2 is supposed
   #      to enable -Werror=unused-functions when -Wall is enabled but it doesn't fail on Thyra.
-  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor -Wno-unused-local-typedefs -Wno-unused-function"
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor -Wno-unused-local-typedefs"
   )
 
 #

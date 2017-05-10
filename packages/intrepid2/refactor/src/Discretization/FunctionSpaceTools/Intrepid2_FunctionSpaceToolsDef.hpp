@@ -92,9 +92,9 @@ namespace Intrepid2 {
         const auto x = Kokkos::subview(_input,      bf,     pt, Kokkos::ALL());
         
         if (spaceDim == 2) {
-          Kernels::matvec_trans_product_d2( y, A, x );
+          Kernels::Serial::matvec_trans_product_d2( y, A, x );
         } else {
-          Kernels::matvec_trans_product_d3( y, A, x );
+          Kernels::Serial::matvec_trans_product_d3( y, A, x );
         }
       }
     };

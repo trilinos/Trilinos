@@ -2629,6 +2629,47 @@ namespace Tpetra {
       }
     }
 
+  private:
+
+    /// \brief Compute the local part of a sparse matrix-(Multi)Vector
+    ///   multiply.
+    ///
+    /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+    /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
+    /// transpose), or \f$A^H\f$ (the conjugate transpose).
+    ///
+    /// The Map of X and \c mode must satisfy the following:
+    /// \code
+    /// mode == Teuchos::NO_TRANS &&
+    ///   X.getMap ()->isSameAs(* (this->getColMap ())) ||
+    /// mode != Teuchos::NO_TRANS &&
+    ///   X.getMap ()->isSameAs(* (this->getRowMap ()));
+    /// \endcode
+    ///
+    /// The Map of Y and \c mode must satisfy the following:
+    /// \code
+    /// mode == Teuchos::NO_TRANS &&
+    ///   Y.getMap ()->isSameAs(* (this->getRowMap ())) ||
+    /// mode != Teuchos::NO_TRANS &&
+    ///   Y.getMap ()->isSameAs(* (this->getColMap ()));
+    /// \endcode
+    ///
+    /// If <tt>beta == 0</tt>, this operation will enjoy overwrite
+    /// semantics: Y's entries will be ignored, and Y will be
+    /// overwritten with the result of the multiplication, even if it
+    /// contains <tt>Inf</tt> or <tt>NaN</tt> floating-point entries.
+    /// Likewise, if <tt>alpha == 0</tt>, this operation will ignore A
+    /// and X, even if they contain <tt>Inf</tt> or <tt>NaN</tt>
+    /// floating-point entries.
+    void
+    localApply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
+                const Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
+                const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
+
+  public:
+
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
     /// Apply a forward or backward sweep of Gauss-Seidel or
@@ -3242,7 +3283,16 @@ namespace Tpetra {
                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                           size_t constantNumPackets,
                           Distributor& distor,
-                          CombineMode combineMode);
+                          CombineMode combineMode,
+                          const bool atomic = useAtomicUpdatesByDefault);
+    void
+    unpackAndCombineImplNonStatic (
+        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+        const Teuchos::ArrayView<const char>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        size_t constantNumPackets,
+        Distributor& distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and combine into matrix.

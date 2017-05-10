@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === CAMD_dump =========================================================== */
+/* === TRILINOS_CAMD_dump =========================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -19,42 +19,42 @@
 #ifndef NDEBUG
 
 /* This global variable is present only when debugging */
-GLOBAL Int CAMD_debug = -999 ;		/* default is no debug printing */
+GLOBAL Int TRILINOS_CAMD_debug = -999 ;		/* default is no debug printing */
 
 /* ========================================================================= */
-/* === CAMD_debug_init ===================================================== */
+/* === TRILINOS_CAMD_debug_init ===================================================== */
 /* ========================================================================= */
 
 /* Sets the debug print level, by reading the file debug.camd (if it exists) */
 
-GLOBAL void CAMD_debug_init ( char *s )
+GLOBAL void TRILINOS_CAMD_debug_init ( char *s )
 {
     FILE *f ;
     f = fopen ("debug.camd", "r") ;
     if (f == (FILE *) NULL)
     {
-	CAMD_debug = -999 ;
+	TRILINOS_CAMD_debug = -999 ;
     }
     else
     {
-	fscanf (f, ID, &CAMD_debug) ;
+	fscanf (f, ID, &TRILINOS_CAMD_debug) ;
 	fclose (f) ;
     }
-    if (CAMD_debug >= 0)
+    if (TRILINOS_CAMD_debug >= 0)
     {
-	printf ("%s: CAMD_debug_init, D= "ID"\n", s, CAMD_debug) ;
+	printf ("%s: TRILINOS_CAMD_debug_init, D= "ID"\n", s, TRILINOS_CAMD_debug) ;
     }
 }
 
 /* ========================================================================= */
-/* === CAMD_dump =========================================================== */
+/* === TRILINOS_CAMD_dump =========================================================== */
 /* ========================================================================= */
 
 /* Dump CAMD's data structure, except for the hash buckets.  This routine
  * cannot be called when the hash buckets are non-empty.
  */
 
-GLOBAL void CAMD_dump (
+GLOBAL void TRILINOS_CAMD_dump (
     Int n,	    /* A is n-by-n */
     Int Pe [ ],	    /* pe [0..n-1]: index in iw of start of row i */
     Int Iw [ ],	    /* workspace of size iwlen, iwlen [0..pfree-1]
@@ -77,9 +77,9 @@ GLOBAL void CAMD_dump (
 {
     Int i, pe, elen, nv, len, e, p, k, j, deg, w, cnt, ilast ;
 
-    if (CAMD_debug < 0) return ;
+    if (TRILINOS_CAMD_debug < 0) return ;
     ASSERT (pfree <= iwlen) ;
-    CAMD_DEBUG3 (("\nCAMD dump, pfree: "ID"\n", pfree)) ;
+    TRILINOS_CAMD_DEBUG3 (("\nCAMD dump, pfree: "ID"\n", pfree)) ;
     for (i = 0 ; i < n ; i++)
     {
 	pe = Pe [i] ;
@@ -92,38 +92,38 @@ GLOBAL void CAMD_dump (
 	{
 	    if (nv == 0)
 	    {
-		CAMD_DEBUG4 (("\nI "ID": nonprincipal:    ", i)) ;
+		TRILINOS_CAMD_DEBUG4 (("\nI "ID": nonprincipal:    ", i)) ;
 		ASSERT (elen == EMPTY) ;
 		if (pe == FLIP(n))
 		{
-		    CAMD_DEBUG4 ((" dense node\n")) ;
+		    TRILINOS_CAMD_DEBUG4 ((" dense node\n")) ;
 		    ASSERT (w == 1) ;
 		}
 		else
 		{
 		    ASSERT (pe < EMPTY) ;
-		    CAMD_DEBUG4 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
+		    TRILINOS_CAMD_DEBUG4 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
 		}
 	    }
 	    else
 	    {
-		CAMD_DEBUG4 (("\nI "ID": active principal supervariable:\n",i));
-		CAMD_DEBUG4 (("   nv(i): "ID"  Flag: %d\n", nv, (nv < 0))) ;
+		TRILINOS_CAMD_DEBUG4 (("\nI "ID": active principal supervariable:\n",i));
+		TRILINOS_CAMD_DEBUG4 (("   nv(i): "ID"  Flag: %d\n", nv, (nv < 0))) ;
 		ASSERT (elen >= 0) ;
 		ASSERT (nv > 0 && pe >= 0) ;
 		p = pe ;
-		CAMD_DEBUG4 (("   e/s: ")) ;
-		if (elen == 0) CAMD_DEBUG4 ((" : ")) ;
+		TRILINOS_CAMD_DEBUG4 (("   e/s: ")) ;
+		if (elen == 0) TRILINOS_CAMD_DEBUG4 ((" : ")) ;
 		ASSERT (pe + len <= pfree) ;
 		for (k = 0 ; k < len ; k++)
 		{
 		    j = Iw [p] ;
-		    CAMD_DEBUG4 (("  "ID"", j)) ;
+		    TRILINOS_CAMD_DEBUG4 (("  "ID"", j)) ;
 		    ASSERT (j >= 0 && j < n) ;
-		    if (k == elen-1) CAMD_DEBUG4 ((" : ")) ;
+		    if (k == elen-1) TRILINOS_CAMD_DEBUG4 ((" : ")) ;
 		    p++ ;
 		}
-		CAMD_DEBUG4 (("\n")) ;
+		TRILINOS_CAMD_DEBUG4 (("\n")) ;
 	    }
 	}
 	else
@@ -131,32 +131,32 @@ GLOBAL void CAMD_dump (
 	    e = i ;
 	    if (w == 0)
 	    {
-		CAMD_DEBUG4 (("\nE "ID": absorbed element: w "ID"\n", e, w)) ;
+		TRILINOS_CAMD_DEBUG4 (("\nE "ID": absorbed element: w "ID"\n", e, w)) ;
 		ASSERT (nv > 0 && pe < 0) ;
-		CAMD_DEBUG4 ((" e "ID" -> parent "ID"\n", e, FLIP (Pe [e]))) ;
+		TRILINOS_CAMD_DEBUG4 ((" e "ID" -> parent "ID"\n", e, FLIP (Pe [e]))) ;
 	    }
 	    else
 	    {
-		CAMD_DEBUG4 (("\nE "ID": unabsorbed element: w "ID"\n", e, w)) ;
+		TRILINOS_CAMD_DEBUG4 (("\nE "ID": unabsorbed element: w "ID"\n", e, w)) ;
 		ASSERT (nv > 0 && pe >= 0) ;
 		p = pe ;
-		CAMD_DEBUG4 ((" : ")) ;
+		TRILINOS_CAMD_DEBUG4 ((" : ")) ;
 		ASSERT (pe + len <= pfree) ;
 		for (k = 0 ; k < len ; k++)
 		{
 		    j = Iw [p] ;
-		    CAMD_DEBUG4 (("  "ID"", j)) ;
+		    TRILINOS_CAMD_DEBUG4 (("  "ID"", j)) ;
 		    ASSERT (j >= 0 && j < n) ;
 		    p++ ;
 		}
-		CAMD_DEBUG4 (("\n")) ;
+		TRILINOS_CAMD_DEBUG4 (("\n")) ;
 	    }
 	}
-	CAMD_DEBUG4 (("C[i] is :"ID"\n", (C == NULL) ? 0 : C [i]));
+	TRILINOS_CAMD_DEBUG4 (("C[i] is :"ID"\n", (C == NULL) ? 0 : C [i]));
     }
 
     /* this routine cannot be called when the hash buckets are non-empty */
-    CAMD_DEBUG4 (("\nDegree lists:\n")) ;
+    TRILINOS_CAMD_DEBUG4 (("\nDegree lists:\n")) ;
     if (nel >= 0)
     {
 	cnt = 0 ;
@@ -164,27 +164,27 @@ GLOBAL void CAMD_dump (
 	{
 	    if (Head [deg] == EMPTY) continue ;
 	    ilast = EMPTY ;
-	    CAMD_DEBUG4 ((ID": \n", deg)) ;
+	    TRILINOS_CAMD_DEBUG4 ((ID": \n", deg)) ;
 	    for (i = Head [deg] ; i != EMPTY ; i = Next [i])
 	    {
-		CAMD_DEBUG4 (("   "ID" : next "ID" last "ID" deg "ID"\n",
+		TRILINOS_CAMD_DEBUG4 (("   "ID" : next "ID" last "ID" deg "ID"\n",
 		    i, Next [i], Last [i], Degree [i])) ;
 		ASSERT (i >= 0 && i < n && ilast == Last [i] &&
 		    deg == Degree [i]) ;
 		cnt += Nv [i] ;
 		ilast = i ;
 	    }
-	    CAMD_DEBUG4 (("\n")) ;
+	    TRILINOS_CAMD_DEBUG4 (("\n")) ;
 	}
     }
     
-    CAMD_DEBUG4(("\nCurrent C[i] is "ID". current Buckets are:\n", CurC)) ;
+    TRILINOS_CAMD_DEBUG4(("\nCurrent C[i] is "ID". current Buckets are:\n", CurC)) ;
     for (i = 0 ; i < n ; i++)
     {
 	if ((C == NULL) ? 1 : (C [BucketSet [i]] <= CurC))
-            CAMD_DEBUG4((ID",",BucketSet [i]));
+            TRILINOS_CAMD_DEBUG4((ID",",BucketSet [i]));
     }
-    CAMD_DEBUG4 (("\n")) ;
+    TRILINOS_CAMD_DEBUG4 (("\n")) ;
 }
 
 #endif

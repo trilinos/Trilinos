@@ -26,11 +26,12 @@
       <Parameter name="algorithm" type="string" value="multijagged"/>
       <!--<Parameter name="compute_metrics" type="bool" value="true"/>-->
     </ParameterList>
-    
+
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -51,9 +52,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -73,9 +75,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -95,9 +98,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -121,9 +125,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -147,9 +152,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+      <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="lower" type="double" value="1."/>
+         <Parameter name="upper" type="double" value="1.14"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -83,23 +83,23 @@ namespace Tacho {
       /// allocate work space
       ///
       inline
-      static void
-      allocateWorkspaceSerialChol(const ordinal_type nsupernodes,
-                                  const ordinal_type_array_host &supernodes,
-                                  const size_type_array_host &sid_super_panel_ptr,
-                                  const ordinal_type_array_host &sid_super_panel_colidx,
-                                  const ordinal_type_array_host &blk_super_panel_colidx,
-                                  /* */ value_type_array_host &spanel_serial_work) {
-        ordinal_type m, n, worksize = 0;
+      static size_type
+      computeWorkspaceSerialChol(const ordinal_type nsupernodes,
+                                 const ordinal_type_array_host &supernodes,
+                                 const size_type_array_host &sid_super_panel_ptr,
+                                 const ordinal_type_array_host &sid_super_panel_colidx,
+                                 const ordinal_type_array_host &blk_super_panel_colidx) {
+        size_type workspace = 0;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) {
           // supernodes are myself, parent, empty one (range is used for blocks it requires end point)
           const bool is_direct_update = (sid_super_panel_ptr(sid+1) - sid_super_panel_ptr(sid)) == 3;
           if (!is_direct_update) {
+            ordinal_type m, n;
             getSuperPanelSize(sid, supernodes, sid_super_panel_ptr, blk_super_panel_colidx, m, n);
-            worksize = max(worksize, (n-m)*(n-m));
+            workspace = max(workspace, (n-m)*(n-m));
           }
         }
-        spanel_serial_work = value_type_array_host("spanel_serial_work", worksize);
+        return workspace;
       }
 
       ///
@@ -380,9 +380,10 @@ namespace Tacho {
                                 _work);
 
         {
-          allocateWorkspaceSerialChol(_nsupernodes, _supernodes,
-                                      _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
-                                      _super_panel_work);
+          const size_type workspace = computeWorkspaceSerialChol(_nsupernodes, _supernodes,
+                                                                 _sid_super_panel_ptr, 
+                                                                 _sid_super_panel_colidx, _blk_super_panel_colidx);
+          _super_panel_work = value_type_array_host("spanel_serial_work", workspace);
           
           const ordinal_type numRoots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<numRoots;++i) 
@@ -453,35 +454,32 @@ namespace Tacho {
             max_block_alloc_size = 512,
             min_superblock_size = 1024;
 
-#if defined (__KK__)          
           sched_type sched(memory_space(),
                            task_queue_capacity,
                            min_block_alloc_size,
                            max_block_alloc_size,
                            min_superblock_size);
-#else
-          sched_type sched(memory_space(),
-                           task_queue_capacity);
-#endif
           
           // workspace estimate
-          const size_type min_total_alloc_size = max(100*_work.dimension_0()*sizeof(value_type),
-                                                     4096*400);
-#if defined (__KK__)          
+          const size_type workspace = computeWorkspaceSerialChol(_nsupernodes, _supernodes,
+                                                                 _sid_super_panel_ptr, 
+                                                                 _sid_super_panel_colidx, _blk_super_panel_colidx);
+          
+          // serial workspace*nthreads + aux
+          const size_type min_total_alloc_size = max((workspace + _m)*sizeof(value_type)*8, 
+                                                     4096*10000);
+          std::cout << "workspace = " << min_total_alloc_size << "\n";
           memory_pool_type pool(memory_space(), 
                                 min_total_alloc_size,
                                 min_block_alloc_size,
                                 max_block_alloc_size,
                                 min_superblock_size);
-#else
-          memory_pool_type pool(memory_space(), 
-                                min_total_alloc_size);
-#endif 
+
           // host task generation for roots
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i) 
             future_type f = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                                               functor_type(sched, pool, info, /**/  _stree_roots(i), -1));
+                                               functor_type(sched, pool, info, _stree_roots(i), -1));
           Kokkos::wait(sched);          
         }
       }
@@ -500,9 +498,9 @@ namespace Tacho {
       Factors() {
         CrsMatrixBase<value_type,host_exec_space> r_val;
         
-        // for (ordinal_type i=0;i<_m;++i)
-        //   std::cout << _perm(i) << "  ";
-        // std::cout << "\n";
+        for (ordinal_type i=0;i<_m;++i)
+          std::cout << _perm(i) << "  ";
+        std::cout << "\n";
 
         const value_type eps = std::numeric_limits<value_type>::epsilon() * 100;
         if (std::is_same<ArgUplo,Uplo::Upper>::value) {

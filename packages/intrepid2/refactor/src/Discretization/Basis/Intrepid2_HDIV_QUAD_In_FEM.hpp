@@ -179,7 +179,7 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
-      constexpr ordinal_type numPtsPerEval = 1;
+      constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HDIV_QUAD_In_FEM::
         getValues<ExecSpaceType,numPtsPerEval>( outputValues,
                                                 inputPoints,

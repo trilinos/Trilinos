@@ -37,7 +37,7 @@
 #include "trilinos_amd.h"
 #include "amesos_cholmod_cholesky.h"
 
-#if (!defined (AMD_VERSION) || (AMD_VERSION < AMD_VERSION_CODE (2,0)))
+#if (!defined (TRILINOS_AMD_VERSION) || (AMD_VERSION < TRILINOS_AMD_VERSION_CODE (2,0)))
 #error "AMD v2.0 or later is required"
 #endif
 
@@ -57,7 +57,7 @@ int CHOLMOD(amd)
     cholmod_common *Common
 )
 {
-    double Info [AMD_INFO], Control2 [AMD_CONTROL], *Control ;
+    double Info [TRILINOS_AMD_INFO], Control2 [TRILINOS_AMD_CONTROL], *Control ;
     Int *Cp, *Len, *Nv, *Head, *Elen, *Degree, *Wi, *Iwork, *Next ;
     cholmod_sparse *C ;
     Int j, n, cnz ;
@@ -165,18 +165,18 @@ int CHOLMOD(amd)
     else
     {
 	Control = Control2 ;
-	Control [AMD_DENSE] = Common->method [Common->current].prune_dense ;
-	Control [AMD_AGGRESSIVE] = Common->method [Common->current].aggressive ;
+	Control [TRILINOS_AMD_DENSE] = Common->method [Common->current].prune_dense ;
+	Control [TRILINOS_AMD_AGGRESSIVE] = Common->method [Common->current].aggressive ;
     }
 
-    /* AMD_2 does not use amd_malloc and amd_free, but set these pointers just
+    /* TRILINOS_AMD_2 does not use amd_malloc and amd_free, but set these pointers just
      * be safe. */
     trilinos_amd_malloc = Common->malloc_memory ;
     trilinos_amd_free = Common->free_memory ;
     trilinos_amd_calloc = Common->calloc_memory ;
     trilinos_amd_realloc = Common->realloc_memory ;
 
-    /* AMD_2 doesn't print anything either, but future versions might,
+    /* TRILINOS_AMD_2 doesn't print anything either, but future versions might,
      * so set the amd_printf pointer too. */
     trilinos_amd_printf = Common->print_function ;
 
@@ -191,10 +191,10 @@ int CHOLMOD(amd)
     /* LL' flop count.  Need to subtract n for LL' flop count.  Note that this
      * is a slight upper bound which is often exact (see AMD/Source/amd_2.c for
      * details).  cholmod_analyze computes an exact flop count and fill-in. */
-    Common->fl = Info [AMD_NDIV] + 2 * Info [AMD_NMULTSUBS_LDL] + n ;
+    Common->fl = Info [TRILINOS_AMD_NDIV] + 2 * Info [TRILINOS_AMD_NMULTSUBS_LDL] + n ;
 
-    /* Info [AMD_LNZ] excludes the diagonal */
-    Common->lnz = n + Info [AMD_LNZ] ;
+    /* Info [TRILINOS_AMD_LNZ] excludes the diagonal */
+    Common->lnz = n + Info [TRILINOS_AMD_LNZ] ;
 
     /* ---------------------------------------------------------------------- */
     /* free the AMD workspace and clear the persistent workspace in Common */

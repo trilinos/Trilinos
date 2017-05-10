@@ -8,421 +8,346 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
-# Dense Matrix Objects
-# ====================
-
-IF(Kokkos_ENABLE_Pthread)
+IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseMatrixBase_Pthreads
+    Tacho_ExampleCholSuperNodes
     NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseMatrixBase_Pthreads.cpp
+    SOURCES Tacho_ExampleCholSuperNodes.cpp
     COMM serial mpi
   )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseMatrixView_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseMatrixView_Pthreads.cpp
-    COMM serial mpi
-  )
+  IF(TPL_ENABLE_MKL)
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleCholPardiso
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleCholPardiso.cpp
+      COMM serial mpi
+    )
+  ENDIF()
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseMatrixBase_Cuda
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseMatrixBase_Cuda.cpp
-    COMM serial mpi
-  )
-ENDIF()
-
-# Dense Linear Algebra
-# ====================
-
-IF(Kokkos_ENABLE_OpenMP)
-IF(TPL_ENABLE_MKL)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseGemmMKL_OpenMP
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseGemmMKL_OpenMP.cpp
-    COMM serial mpi
-  )
-ENDIF()
-ENDIF()
-
-IF(Kokkos_ENABLE_Pthread)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseGemmByBlocks_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseCholByBlocks_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
-    COMM serial mpi
-  )
-ENDIF()
-
-# Crs Matrix Objects
-# ==================
-
-IF(Kokkos_ENABLE_Pthread)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCrsMatrixBase_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCrsMatrixBase_Pthreads.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCrsMatrixView_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCrsMatrixView_Pthreads.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleMatrixMarket_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleMatrixMarket_Pthreads.cpp
-    COMM serial mpi
-  )
-ENDIF()
-
-# Graph Tools
-# ===========
-
-IF(Kokkos_ENABLE_Pthread)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleGraphTools_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleGraphTools_Pthreads.cpp
-    COMM serial mpi
-  )
-ENDIF()
-
-
-# # Do not compile if Scotch is not enabled
-# IF(TPL_ENABLE_Scotch)
-
-# IF(Kokkos_ENABLE_Pthread)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_performance_device_cuda
-#     NOEXEPREFIX
-#     SOURCES example_chol_performance_device_cuda.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Trilinos_ENABLE_Teuchos)
-
-# # symbolic factorization is guarded with Cholmod
-# IF(TPL_ENABLE_Cholmod)
-
-# # Symbolic Factorization
-# # ======================
-
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     symbolic_factor_serial
-#     NOEXEPREFIX
-#     SOURCES example_symbolic_factor_serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Kokkos_ENABLE_Pthread)
-#   TRIBITS_ADD_EXECUTABLE(
-#     symbolic_factor_pthread
-#     NOEXEPREFIX
-#     SOURCES example_symbolic_factor_pthread.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# ENDIF()
-
-# # Sparse Chol
-# # ============
-
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_unblocked_serial
-#     NOEXEPREFIX
-#     SOURCES example_chol_unblocked_serial.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_by_blocks_graphviz
-#     NOEXEPREFIX
-#     SOURCES example_chol_by_blocks_graphviz.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_by_blocks_serial
-#     NOEXEPREFIX
-#     SOURCES example_chol_by_blocks_serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Kokkos_ENABLE_Pthread)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_unblocked_pthread
-#     NOEXEPREFIX
-#     SOURCES example_chol_unblocked_pthread.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_by_blocks_pthread
-#     NOEXEPREFIX
-#     SOURCES example_chol_by_blocks_pthread.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# # Triangular solve
-# # ================
-
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_unblocked_serial
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_unblocked_serial.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_by_blocks_graphviz
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_by_blocks_graphviz.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_by_blocks_serial
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_by_blocks_serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Kokkos_ENABLE_Pthread)
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_unblocked_pthread
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_unblocked_pthread.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_by_blocks_pthread
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_by_blocks_pthread.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# # Benchmark
-# # ==========
-
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     stat_by_blocks_serial
-#     NOEXEPREFIX
-#     SOURCES example_stat_by_blocks_serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Kokkos_ENABLE_Pthread)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_performance_pthread
-#     NOEXEPREFIX
-#     SOURCES example_chol_performance_pthread.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_performance_single_pthread
-#     NOEXEPREFIX
-#     SOURCES example_chol_performance_single_pthread.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_performance_pthread
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_performance_pthread.cpp
-#     COMM serial mpi
-#   )
-
-#   # TRIBITS_ADD_EXECUTABLE(
-#   #   kokkos_task_data_pthread
-#   #   NOEXEPREFIX
-#   #   SOURCES example_kokkos_task_data_pthread.cpp
-#   #   COMM serial mpi
-#   # )
-
-#   # TRIBITS_ADD_EXECUTABLE(
-#   #   kokkos_data_data_pthread
-#   #   NOEXEPREFIX
-#   #   SOURCES example_kokkos_data_data_pthread.cpp
-#   #   COMM serial mpi
-#   # )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     kokkos_team_barrier_pthread
-#     NOEXEPREFIX
-#     SOURCES example_kokkos_team_barrier_pthread.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(Kokkos_ENABLE_QTHREAD)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_performance_qthread
-#     NOEXEPREFIX
-#     SOURCES example_chol_performance_qthread.cpp
-#     COMM serial mpi
-#   )
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     tri_solve_performance_qthread
-#     NOEXEPREFIX
-#     SOURCES example_tri_solve_performance_qthread.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# IF(TPL_ENABLE_HYPRE)
-#   TRIBITS_ADD_EXECUTABLE(
-#     hypre_euclid_performance
-#     NOEXEPREFIX
-#     SOURCES example_hypre_euclid_performance.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-# # Pardiso
-# # =======
 # IF(Kokkos_ENABLE_OpenMP)
-# IF(TPL_ENABLE_MKL)
 #   TRIBITS_ADD_EXECUTABLE(
-#     pardiso_chol_performance_openmp
+#     Tacho_ExampleNPT_OpenMP
 #     NOEXEPREFIX
-#     SOURCES example_pardiso_chol_performance_openmp.cpp
+#     SOURCES Tacho_ExampleNPT_OpenMP.cpp
 #     COMM serial mpi
 #   )
-# ENDIF()
 # ENDIF()
 
-# # Complete Cholesky
-# # =================
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     chol_direct_plain_serial
-#     NOEXEPREFIX
-#     SOURCES example_chol_direct_plain_serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
+
+# # Dense Matrix Objects
+# # ====================
 
 # IF(Kokkos_ENABLE_Pthread)
 #   TRIBITS_ADD_EXECUTABLE(
-#     chol_direct_plain_pthread
+#     Tacho_ExampleDenseMatrixBase_Pthreads
 #     NOEXEPREFIX
-#     SOURCES example_chol_direct_plain_pthread.cpp
+#     SOURCES Tacho_ExampleDenseMatrixBase_Pthreads.cpp
 #     COMM serial mpi
 #   )
-
 #   TRIBITS_ADD_EXECUTABLE(
-#     chol_direct_nested_dense_block_pthread
+#     Tacho_ExampleDenseMatrixView_Pthreads
 #     NOEXEPREFIX
-#     SOURCES example_chol_direct_nested_dense_block_pthread.cpp
+#     SOURCES Tacho_ExampleDenseMatrixView_Pthreads.cpp
 #     COMM serial mpi
 #   )
+# ENDIF()
 
+# IF(Kokkos_ENABLE_Cuda)
 #   TRIBITS_ADD_EXECUTABLE(
-#     chol_direct_nested_dense_by_blocks_pthread
+#     Tacho_ExampleDenseMatrixBase_Cuda
 #     NOEXEPREFIX
-#     SOURCES example_chol_direct_nested_dense_by_blocks_pthread.cpp
+#     SOURCES Tacho_ExampleDenseMatrixBase_Cuda.cpp
 #     COMM serial mpi
 #   )
-
-#   # TRIBITS_ADD_EXECUTABLE(
-#   #   chol_direct_solver_pthread
-#   #   NOEXEPREFIX
-#   #   SOURCES example_chol_direct_solver_pthread.cpp
-#   #   COMM serial mpi
-#   # )
 # ENDIF()
 
 # # Dense Linear Algebra
 # # ====================
-# IF(Kokkos_ENABLE_Pthread)
+
+# IF(Kokkos_ENABLE_Serial)
 #   TRIBITS_ADD_EXECUTABLE(
-#     dense_gemm_by_blocks_pthread
+#     Tacho_ExampleDenseGemmByBlocks_Serial
 #     NOEXEPREFIX
-#     SOURCES example_dense_gemm_by_blocks_pthread.cpp
+#     SOURCES Tacho_ExampleDenseGemmByBlocks_Serial.cpp
 #     COMM serial mpi
 #   )
-
 #   TRIBITS_ADD_EXECUTABLE(
-#     dense_trsm_by_blocks_pthread
+#     Tacho_ExampleDenseHerkByBlocks_Serial
 #     NOEXEPREFIX
-#     SOURCES example_dense_trsm_by_blocks_pthread.cpp
+#     SOURCES Tacho_ExampleDenseHerkByBlocks_Serial.cpp
 #     COMM serial mpi
 #   )
-
 #   TRIBITS_ADD_EXECUTABLE(
-#     dense_chol_by_blocks_pthread
+#     Tacho_ExampleDenseTrsmByBlocks_Serial
 #     NOEXEPREFIX
-#     SOURCES example_dense_chol_by_blocks_pthread.cpp 
+#     SOURCES Tacho_ExampleDenseTrsmByBlocks_Serial.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseCholByBlocks_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseCholByBlocks_Serial.cpp
 #     COMM serial mpi
 #   )
 # ENDIF()
 
 # IF(Kokkos_ENABLE_OpenMP)
-# IF(TPL_ENABLE_MKL)
-#   TRIBITS_ADD_EXECUTABLE(
-#     dense_gemm_mkl_openmp
-#     NOEXEPREFIX
-#     SOURCES example_dense_gemm_mkl_openmp.cpp
-#     COMM serial mpi
-#   )
+#   IF(TPL_ENABLE_MKL)
+#     TRIBITS_ADD_EXECUTABLE(
+#       Tacho_ExampleDenseGemmMKL_OpenMP
+#       NOEXEPREFIX
+#       SOURCES Tacho_ExampleDenseGemmMKL_OpenMP.cpp
+#       COMM serial mpi
+#     )
+#   ENDIF()
 
 #   TRIBITS_ADD_EXECUTABLE(
-#     dense_trsm_mkl_openmp
+#     Tacho_ExampleDenseGemmByBlocks_OpenMP
 #     NOEXEPREFIX
-#     SOURCES example_dense_trsm_mkl_openmp.cpp
+#     SOURCES Tacho_ExampleDenseGemmByBlocks_OpenMP.cpp
 #     COMM serial mpi
 #   )
-
 #   TRIBITS_ADD_EXECUTABLE(
-#     dense_chol_mkl_openmp
+#     Tacho_ExampleDenseHerkByBlocks_OpenMP
 #     NOEXEPREFIX
-#     SOURCES example_dense_chol_mkl_openmp.cpp
+#     SOURCES Tacho_ExampleDenseHerkByBlocks_OpenMP.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseTrsmByBlocks_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseTrsmByBlocks_OpenMP.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseCholByBlocks_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseCholByBlocks_OpenMP.cpp
 #     COMM serial mpi
 #   )
 # ENDIF()
 
-# ENDIF()  # Teuchos
+# IF(Kokkos_ENABLE_Pthread)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseGemmByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseHerkByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseHerkByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseTrsmByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseTrsmByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseCholByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
-# ENDIF()  # Scotch
+# IF(Kokkos_ENABLE_Cuda)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDenseGemmByBlocks_Cuda
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDenseGemmByBlocks_Cuda.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
-# # Temporary
-# # =========
+# # Crs Matrix Objects
+# # ==================
 
-# # TRIBITS_ADD_EXECUTABLE(
-# #  kokkos_task_data
-# #  NOEXEPREFIX
-# #  SOURCES kokkos_task_data.cpp
-# #  COMM serial mpi
-# #  )
+# IF(Kokkos_ENABLE_Pthread)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCrsMatrixBase_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCrsMatrixBase_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCrsMatrixView_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCrsMatrixView_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleMatrixMarket_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleMatrixMarket_Pthreads.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
+# # Graph Tools and Symbolic Factorization
+# # ======================================
+
+# IF(Kokkos_ENABLE_Serial)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleGraphTools_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleGraphTools_Serial.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDirectSymbolicFactorization_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDirectSymbolicFactorization_Serial.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# IF(Kokkos_ENABLE_OpenMP)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleGraphTools_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleGraphTools_OpenMP.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDirectSymbolicFactorization_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDirectSymbolicFactorization_OpenMP.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# IF(Kokkos_ENABLE_Pthread)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleGraphTools_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleGraphTools_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleIncompleteSymbolicFactorization_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleIncompleteSymbolicFactorization_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleDirectSymbolicFactorization_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleDirectSymbolicFactorization_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleHierMatrix_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleHierMatrix_Pthreads.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+
+# # Numeric Factorization
+# # =====================
+
+# IF(Kokkos_ENABLE_Serial)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholSuperNodesByBlocks_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# IF(Kokkos_ENABLE_OpenMP)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholSuperNodesByBlocks_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_OpenMP.cpp
+#     COMM serial mpi
+#   )
+#   IF(TPL_ENABLE_MKL)
+#     TRIBITS_ADD_EXECUTABLE(
+#       Tacho_ExampleCholPardiso_OpenMP
+#       NOEXEPREFIX
+#       SOURCES Tacho_ExampleCholPardiso_OpenMP.cpp
+#       COMM serial mpi
+#     )
+#   ENDIF()
+# ENDIF()
+
+# IF(Kokkos_ENABLE_Pthread)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholUnblocked_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholUnblocked_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholSuperNodesByBlocks_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# # IF(Kokkos_ENABLE_QTHREAD) 
+# #   TRIBITS_ADD_EXECUTABLE(
+# #     Tacho_ExampleCholSuperNodesByBlocks_Qthreads
+# #     NOEXEPREFIX
+# #     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Qthreads.cpp
+# #     COMM serial mpi
+# #   )
+# # ENDIF()
+
+# # IF(Kokkos_ENABLE_OpenMP)
+# # IF(Kokkos_ENABLE_Pthread)
+# #   TRIBITS_ADD_EXECUTABLE(
+# #     Tacho_ExampleCholSuperNodesByBlocks_OpenMP
+# #     NOEXEPREFIX
+# #     SOURCES Tacho_ExampleCholSuperNodesByBlocks_OpenMP.cpp
+# #     COMM serial mpi
+# #   )
+# # ENDIF()
+# # ENDIF()
+
+
+# # Solver Interface
+# # ================
+
+# IF(Kokkos_ENABLE_Serial)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleSolver_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleSolver_Serial.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# IF(Kokkos_ENABLE_OpenMP)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleSolver_OpenMP
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleSolver_OpenMP.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
+
+# IF(Kokkos_ENABLE_Pthread)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleSolver_Pthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleSolver_Pthreads.cpp
+#     COMM serial mpi
+#   )
 # ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File

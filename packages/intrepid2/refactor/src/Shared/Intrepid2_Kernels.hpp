@@ -288,66 +288,110 @@ namespace Intrepid2 {
               dst(i,j) = src(i,j);
         }
       }
+
+      // y = Ax
+      template<typename yViewType,
+               typename AViewType,
+               typename xViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      matvec_trans_product_d2( const yViewType &y,
+                               const AViewType &A,
+                               const xViewType &x ) {
+        y(0) = A(0,0)*x(0) + A(1,0)*x(1);
+        y(1) = A(0,1)*x(0) + A(1,1)*x(1);
+      }
+
+      template<typename yViewType,
+               typename AViewType,
+               typename xViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      matvec_trans_product_d3( const yViewType &y,
+                               const AViewType &A,
+                               const xViewType &x ) {
+        y(0) = A(0,0)*x(0) + A(1,0)*x(1) + A(2,0)*x(2);
+        y(1) = A(0,1)*x(0) + A(1,1)*x(1) + A(2,1)*x(2);
+        y(2) = A(0,2)*x(0) + A(1,2)*x(1) + A(2,2)*x(2);
+      }
+
+      // y = Ax
+      template<typename yViewType,
+               typename AViewType,
+               typename xViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      matvec_product_d2( const yViewType &y,
+                         const AViewType &A,
+                         const xViewType &x ) {
+        y(0) = A(0,0)*x(0) + A(0,1)*x(1);
+        y(1) = A(1,0)*x(0) + A(1,1)*x(1);
+      }
+
+      template<typename yViewType,
+               typename AViewType,
+               typename xViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      matvec_product_d3( const yViewType &y,
+                         const AViewType &A,
+                         const xViewType &x ) {
+        y(0) = A(0,0)*x(0) + A(0,1)*x(1) + A(0,2)*x(2);
+        y(1) = A(1,0)*x(0) + A(1,1)*x(1) + A(1,2)*x(2);
+        y(2) = A(2,0)*x(0) + A(2,1)*x(1) + A(2,2)*x(2);
+      }
+
+      template<typename yViewType,
+               typename AViewType,
+               typename xViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      matvec_product( const yViewType &y,
+                      const AViewType &A,
+                      const xViewType &x ) {
+        switch (y.dimension_0()) {
+        case 2: matvec_product_d2(y, A, x); break;
+        case 3: matvec_product_d3(y, A, x); break;
+        default: {
+          INTREPID2_TEST_FOR_ABORT(true, "matvec only support dimension 2 and 3 (consider to use gemv interface).");
+          break;
+        }
+        }
+      }
+
+      template<typename zViewType,
+               typename xViewType,
+               typename yViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      vector_product_d2( const zViewType &z,
+                         const xViewType &x,
+                         const yViewType &y ) {
+        z(0) = x(0)*y(1) - x(1)*y(0);
+      }
+    
+      template<typename zViewType,
+               typename xViewType,
+               typename yViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      vector_product_d3( const zViewType &z,
+                         const xViewType &x,
+                         const yViewType &y ) {
+        z(0) = x(1)*y(2) - x(2)*y(1);
+        z(1) = x(2)*y(0) - x(0)*y(2);
+        z(2) = x(0)*y(1) - x(1)*y(0);      
+      }
+
+
     };
       
-
-    // y = Ax
-    template<typename yViewType,
-             typename AViewType,
-             typename xViewType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void
-    matvec_trans_product_d2( /**/  yViewType &y,
-                             const AViewType &A,
-                             const xViewType &x ) {
-      y(0) = A(0,0)*x(0) + A(1,0)*x(1);
-      y(1) = A(0,1)*x(0) + A(1,1)*x(1);
-    }
-
-    template<typename yViewType,
-             typename AViewType,
-             typename xViewType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void
-    matvec_trans_product_d3( /**/  yViewType &y,
-                             const AViewType &A,
-                             const xViewType &x ) {
-      y(0) = A(0,0)*x(0) + A(1,0)*x(1) + A(2,0)*x(2);
-      y(1) = A(0,1)*x(0) + A(1,1)*x(1) + A(2,1)*x(2);
-      y(2) = A(0,2)*x(0) + A(1,2)*x(1) + A(2,2)*x(2);
-    }
-
-    // y = Ax
-    template<typename yViewType,
-             typename AViewType,
-             typename xViewType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void
-    matvec_product_d2( /**/  yViewType &y,
-                       const AViewType &A,
-                       const xViewType &x ) {
-      y(0) = A(0,0)*x(0) + A(0,1)*x(1);
-      y(1) = A(1,0)*x(0) + A(1,1)*x(1);
-    }
-
-    template<typename yViewType,
-             typename AViewType,
-             typename xViewType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void
-    matvec_product_d3( /**/  yViewType &y,
-                       const AViewType &A,
-                       const xViewType &x ) {
-      y(0) = A(0,0)*x(0) + A(0,1)*x(1) + A(0,2)*x(2);
-      y(1) = A(1,0)*x(0) + A(1,1)*x(1) + A(1,2)*x(2);
-      y(2) = A(2,0)*x(0) + A(2,1)*x(1) + A(2,2)*x(2);
-    }
 
 
     template<typename xViewType,
              typename yViewType>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename xViewType::value_type
+    static typename xViewType::value_type
     dot( const xViewType x,
          const yViewType y ) {
       typename xViewType::value_type r_val(0);
@@ -366,7 +410,7 @@ namespace Intrepid2 {
     template<typename xViewType,
              typename yViewType>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename xViewType::value_type
+    static typename xViewType::value_type
     dot_d2( const xViewType x,
             const yViewType y ) {
       return ( x(0)*y(0) + x(1)*y(1) );
@@ -375,7 +419,7 @@ namespace Intrepid2 {
     template<typename xViewType,
              typename yViewType>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename xViewType::value_type
+    static typename xViewType::value_type
     dot_d3( const xViewType x,
             const yViewType y ) {
       return ( x(0)*y(0) + x(1)*y(1) + x(2)*y(2) );
@@ -384,7 +428,7 @@ namespace Intrepid2 {
     template<typename AViewType,
              typename alphaScalarType>
     KOKKOS_FORCEINLINE_FUNCTION
-    void
+    static void
     scale_mat( /**/  AViewType &A,
                const alphaScalarType alpha ) {
       const ordinal_type
@@ -399,7 +443,7 @@ namespace Intrepid2 {
     template<typename AViewType,
              typename alphaScalarType>
     KOKKOS_FORCEINLINE_FUNCTION
-    void
+    static void
     inv_scale_mat( /**/  AViewType &A,
                    const alphaScalarType alpha ) {
       const ordinal_type
@@ -415,7 +459,7 @@ namespace Intrepid2 {
              typename alphaScalarType,
              typename BViewType>
     KOKKOS_FORCEINLINE_FUNCTION
-    void
+    static void
     scalar_mult_mat( /**/  AViewType &A,
                      const alphaScalarType alpha,
                      const BViewType &B ) {
@@ -432,7 +476,7 @@ namespace Intrepid2 {
              typename alphaScalarType,
              typename BViewType>
     KOKKOS_FORCEINLINE_FUNCTION
-    void
+    static void
     inv_scalar_mult_mat( /**/  AViewType &A,
                          const alphaScalarType alpha,
                          const BViewType &B ) {

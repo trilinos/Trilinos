@@ -72,11 +72,11 @@ namespace Details {
 
 template<class LocalSparseMatrixType>
 bool
-crsMatrixAllocatePackSpace (std::unique_ptr<std::string>& errStr,
+crsMatrixAllocatePackSpace (const LocalSparseMatrixType& lclMatrix,
+                            std::unique_ptr<std::string>& errStr,
                             Teuchos::Array<char>& exports,
                             size_t& totalNumEntries,
                             const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
-                            const LocalSparseMatrixType& lclMatrix,
                             const size_t sizeOfGlobalOrdinal)
 {
   typedef typename LocalSparseMatrixType::ordinal_type LO;
@@ -136,13 +136,13 @@ crsMatrixAllocatePackSpace (std::unique_ptr<std::string>& errStr,
 
 template<class LocalSparseMatrixType, class LocalMapType>
 bool
-packCrsMatrixRow (char* const numEntOut,
+packCrsMatrixRow (const LocalSparseMatrixType& lclMatrix,
+                  const LocalMapType& lclColMap,
+                  char* const numEntOut,
                   char* const valOut,
                   char* const indOut,
                   const size_t numEnt,
-                  const typename LocalSparseMatrixType::ordinal_type lclRow,
-                  const LocalSparseMatrixType& lclMatrix,
-                  const LocalMapType& lclColMap)
+                  const typename LocalSparseMatrixType::ordinal_type lclRow)
 {
   using Kokkos::subview;
   typedef LocalSparseMatrixType local_matrix_type;
@@ -233,13 +233,13 @@ packCrsMatrixRow (char* const numEntOut,
 ///   processes.
 template<class LocalSparseMatrixType, class LocalMapType>
 bool
-packCrsMatrix (std::unique_ptr<std::string>& errStr,
+packCrsMatrix (const LocalSparseMatrixType& lclMatrix,
+               const LocalMapType lclColMap,
+               std::unique_ptr<std::string>& errStr,
                Teuchos::Array<char>& exports,
                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                size_t& constantNumPackets,
                const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
-               const LocalSparseMatrixType& lclMatrix,
-               const LocalMapType lclColMap,
                const int myRank,
                Distributor& /* dist */)
 {
@@ -274,8 +274,8 @@ packCrsMatrix (std::unique_ptr<std::string>& errStr,
   // compute."
   size_t totalNumEntries = 0;
   const bool allocOK =
-    crsMatrixAllocatePackSpace (errStr, exports, totalNumEntries,
-                                exportLIDs, lclMatrix, sizeof (GO));
+    crsMatrixAllocatePackSpace (lclMatrix, errStr, exports, totalNumEntries,
+                                exportLIDs, sizeof (GO));
   if (! allocOK) {
     const std::string err =
       std::string ("packCrsMatrix: Allocating pack space failed: ") + *errStr;
@@ -343,9 +343,8 @@ packCrsMatrix (std::unique_ptr<std::string>& errStr,
         break;
       }
 
-      packErr = ! packCrsMatrixRow (numEntBeg, valBeg, indBeg,
-                                    numEnt, lclRow, lclMatrix,
-                                    lclColMap);
+      packErr = ! packCrsMatrixRow (lclMatrix, lclColMap,
+                                    numEntBeg, valBeg, indBeg, numEnt, lclRow);
       if (packErr) {
         firstBadIndex = i;
         firstBadOffset = offset;

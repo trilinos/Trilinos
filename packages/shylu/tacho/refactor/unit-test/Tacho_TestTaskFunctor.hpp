@@ -12,60 +12,41 @@
 using namespace Tacho::Experimental;
 
 TEST( TaskFunctor, MemoryPool ) {
-
   typedef Kokkos::TaskScheduler<HostSpaceType> sched_type;
-  typedef TaskFunctor_MemoryPool_Allocate<HostSpaceType> functor_allocate;
-  typedef TaskFunctor_MemoryPool_Deallocate<HostSpaceType> functor_deallocate;
-  typedef TaskFunctor_MemoryPool_TestView<HostSpaceType> functor_testview;
-  typedef TaskFunctor_MemoryPool_TestViewSee<HostSpaceType> functor_testview_see;
-
-  typedef typename functor_allocate::memory_pool_type memory_pool_type;
+  typedef Kokkos::MemoryPool<HostSpaceType> memory_pool_type;
+  
   typedef typename sched_type::memory_space memory_space;
 
-  const size_type task_queue_capacity = 1000*sizeof(double);
-  const ordinal_type
-    min_block_alloc_size = 32,
-    max_block_alloc_size = 512,
-    min_superblock_size = 1024;
+  typedef TaskFunctor_MemoryPool_Allocate<HostSpaceType> functor_allocate;
+  typedef TaskFunctor_MemoryPool_Deallocate<HostSpaceType> functor_deallocate;
+  typedef TaskFunctor_MemoryPool_TestView<HostSpaceType> functor_test_view;
+  typedef TaskFunctor_MemoryPool_TestViewSee<HostSpaceType> functor_test_view_see;
 
-#if defined (__KK__)
-  sched_type sched(memory_space(),
-                   task_queue_capacity,
-                   min_block_alloc_size,
-                   max_block_alloc_size,
-                   min_superblock_size);
-#else
-  sched_type sched(memory_space(),
-                   task_queue_capacity);
-#endif
+  // enum { MemoryCapacity = 4000 }; // Triggers infinite loop in memory pool.
+  enum { MemoryCapacity = 16000 };
+  enum { MinBlockSize   =   64 };
+  enum { MaxBlockSize   = 1024 };
+  enum { SuperBlockSize = 1u << 12 };
+  
+  sched_type sched( memory_space()
+                    , MemoryCapacity
+                    , MinBlockSize
+                    , MaxBlockSize
+                    , SuperBlockSize );
 
-
-  const size_type min_total_alloc_size = 4096*10;
-#if defined (__KK__)
-  memory_pool_type pool(memory_space(),
-                        min_total_alloc_size,
-                        min_block_alloc_size,
-                        max_block_alloc_size,
-                        min_superblock_size);
-#else
-  memory_pool_type pool(memory_space(),
-                        min_total_alloc_size);
-#endif
-
+  memory_pool_type pool(memory_space()
+                    , MemoryCapacity
+                    , MinBlockSize
+                    , MaxBlockSize
+                    , SuperBlockSize );
+  
   const ordinal_type bufsize = 10*10*sizeof(double);
-  auto f_allocate = Kokkos::host_spawn(Kokkos::TaskSingle(sched),
-                                       functor_allocate(pool, bufsize));
- 
-  auto f_view = Kokkos::host_spawn(Kokkos::TaskSingle(sched),// Kokkos::TaskSingle(f_allocate),
-                                   functor_testview(pool, 10, 10, f_allocate));
+  auto f_alloc    = Kokkos::host_spawn(Kokkos::TaskSingle(sched), functor_allocate(pool, bufsize));
+  auto f_view     = Kokkos::host_spawn(Kokkos::TaskSingle(f_alloc), functor_test_view(pool, f_alloc, 10, 10));
+  auto f_view_see = Kokkos::host_spawn(Kokkos::TaskSingle(f_view), functor_test_view_see(pool, f_view));
+  Kokkos::host_spawn( Kokkos::TaskSingle(f_view_see), functor_deallocate(pool, f_alloc, bufsize) );
 
-  auto f_view_see = Kokkos::host_spawn(Kokkos::TaskSingle(sched),//Kokkos::TaskSingle(f_view),
-                                       functor_testview_see(pool, f_view));
-
-  // auto f_deallocate = Kokkos::host_spawn(Kokkos::TaskSingle(sched),//Kokkos::TaskSingle(f_view_see),
-  //                                        functor_deallocate(pool, bufsize, f_allocate));
-
-  Kokkos::wait(sched);
+  Kokkos::wait( sched );  
 }
 
 #endif

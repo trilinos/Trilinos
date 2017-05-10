@@ -2657,11 +2657,20 @@ namespace Tpetra {
     /// sorted" and "is merged" states.
     void setLocallyModified ();
 
-    //! Sort the column indices in all the rows.
-    void sortAllIndices ();
+  private:
+    /// \brief Sort and merge the column indices in all the rows.
+    ///
+    /// \param sorted [in] Whether the indices are already sorted.
+    /// \param merged [in] Whether the indices are already merged.
+    void
+    sortAndMergeAllIndices (const bool sorted, const bool merged);
+
+    // mfh 08 May 2017: I only restore "protected" here for backwards
+    // compatibility.
+  protected:
 
     //! Sort the column indices in the given row.
-    void sortRowIndices (const RowInfo rowinfo);
+    void sortRowIndices (const RowInfo& rowinfo);
 
     /// \brief Sort the column indices and their values in the given row.
     ///
@@ -2690,21 +2699,15 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Merge duplicate row indices in all of the rows.
+    /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
     ///   <tt>isGloballyIndexed() == false</tt>.
-    ///
-    /// \pre The graph has not already been merged: <tt>isMerged()
-    ///   == false</tt>.  That is, this function would normally only
-    ///   be called after calling sortIndices().
-    void mergeAllIndices ();
-
-    /// \brief Merge duplicate row indices in the given row.
-    ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    void mergeRowIndices (RowInfo rowinfo);
+    ///
+    /// \return The number of duplicate column indices eliminated from the row.
+    size_t mergeRowIndices (const RowInfo& rowInfo);
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
@@ -2861,28 +2864,28 @@ namespace Tpetra {
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+    getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+    getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
     ///   of row rowinfo.localRow (only works if the matrix is
     ///   globally indexed).
     ///
-    /// \param rowinfo [in] Result of calling getRowInfo with the
+    /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<const GlobalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
-    getGlobalKokkosRowView (const RowInfo& rowinfo) const;
+    getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
 
@@ -2890,13 +2893,13 @@ namespace Tpetra {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const GlobalOrdinal>
-    getGlobalView (const RowInfo rowinfo) const;
+    getGlobalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<GlobalOrdinal>
-    getGlobalViewNonConst (const RowInfo rowinfo);
+    getGlobalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the global column indices of a locally
     ///   owned row, using the result of getRowInfoFromGlobalRowIndex.

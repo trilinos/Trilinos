@@ -43,15 +43,15 @@ typedef struct
 	nzoff,		/* nz in off-diagonal blocks */
 	nblocks,	/* number of blocks */
 	maxblock,	/* size of largest block */
-	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
-	do_btf ;	/* whether or not BTF preordering was requested */
+	ordering,	/* ordering used (AMD, TRILINOS_COLAMD, or GIVEN) */
+	do_btf ;	/* whether or not TRILINOS_BTF preordering was requested */
 
-    /* only computed if BTF preordering requested */
+    /* only computed if TRILINOS_BTF preordering requested */
     int structural_rank ;   /* 0 to n-1 if the matrix is structurally rank
 			* deficient.  -1 if not computed.  n if the matrix has
 			* full structural rank */
 
-} klu_symbolic ;
+} trilinos_klu_symbolic ;
 
 typedef struct		/* 64-bit version (otherwise same as above) */
 {
@@ -60,7 +60,7 @@ typedef struct		/* 64-bit version (otherwise same as above) */
     UF_long n, nz, *P, *Q, *R, nzoff, nblocks, maxblock, ordering, do_btf,
 	structural_rank ;
 
-} klu_l_symbolic ;
+} trilinos_klu_l_symbolic ;
 
 /* -------------------------------------------------------------------------- */
 /* Numeric object - contains the factors computed by klu_factor */
@@ -104,7 +104,7 @@ typedef struct
     void *Offx ;	/* size nzoff, numerical values */
     int nzoff ;
 
-} klu_numeric ;
+} trilinos_klu_numeric ;
 
 typedef struct		/* 64-bit version (otherwise same as above) */
 {
@@ -121,20 +121,20 @@ typedef struct		/* 64-bit version (otherwise same as above) */
     void *Offx ;
     UF_long nzoff ;
 
-} klu_l_numeric ;
+} trilinos_klu_l_numeric ;
 
 /* -------------------------------------------------------------------------- */
 /* KLU control parameters and statistics */
 /* -------------------------------------------------------------------------- */
 
 /* Common->status values */
-#define KLU_OK 0
-#define KLU_SINGULAR (1)	    /* status > 0 is a warning, not an error */
-#define KLU_OUT_OF_MEMORY (-2)
-#define KLU_INVALID (-3)
-#define KLU_TOO_LARGE (-4)	    /* integer overflow has occured */
+#define TRILINOS_KLU_OK 0
+#define TRILINOS_KLU_SINGULAR (1)	    /* status > 0 is a warning, not an error */
+#define TRILINOS_KLU_OUT_OF_MEMORY (-2)
+#define TRILINOS_KLU_INVALID (-3)
+#define TRILINOS_KLU_TOO_LARGE (-4)	    /* integer overflow has occured */
 
-typedef struct klu_common_struct
+typedef struct trilinos_klu_common_struct
 {
 
     /* ---------------------------------------------------------------------- */
@@ -145,10 +145,10 @@ typedef struct klu_common_struct
     double memgrow ;	    /* realloc memory growth size for LU factors */
     double initmem_amd ;    /* init. memory size with AMD: c*nnz(L) + n */
     double initmem ;	    /* init. memory size: c*nnz(A) + n */
-    double maxwork ;	    /* maxwork for BTF, <= 0 if no limit */
+    double maxwork ;	    /* maxwork for TRILINOS_BTF, <= 0 if no limit */
 
-    int btf ;		    /* use BTF pre-ordering, or not */
-    int ordering ;	    /* 0: AMD, 1: COLAMD, 2: user P and Q,
+    int btf ;		    /* use TRILINOS_BTF pre-ordering, or not */
+    int ordering ;	    /* 0: AMD, 1: TRILINOS_COLAMD, 2: user P and Q,
 			     * 3: user function */
     int scale ;		    /* row scaling: -1: none (and no error check),
 			     * 0: none, 1: sum, 2: max */
@@ -160,7 +160,7 @@ typedef struct klu_common_struct
     void *(*calloc_memory) (size_t, size_t) ;	/* pointer to calloc */
 
     /* pointer to user ordering function */
-    int (*user_order) (int, int *, int *, int *, struct klu_common_struct *) ;
+    int (*user_order) (int, int *, int *, int *, struct trilinos_klu_common_struct *) ;
 
     /* pointer to user data, passed unchanged as the last parameter to the
      * user ordering function (optional, the user function need not use this
@@ -180,13 +180,13 @@ typedef struct klu_common_struct
     /* statistics */
     /* ---------------------------------------------------------------------- */
 
-    int status ;	        /* KLU_OK if OK, < 0 if error */
+    int status ;	        /* TRILINOS_KLU_OK if OK, < 0 if error */
     int nrealloc ;		/* # of reallocations of L and U */
 
     int structural_rank ;	/* 0 to n-1 if the matrix is structurally rank
 	* deficient (as determined by maxtrans).  -1 if not computed.  n if the
 	* matrix has full structural rank.  This is computed by klu_analyze
-	* if a BTF preordering is requested. */
+	* if a TRILINOS_BTF preordering is requested. */
 
     int numerical_rank ;	/* First k for which a zero U(k,k) was found,
 	* if the matrix was singular (in the range 0 to n-1).  n if the matrix
@@ -205,14 +205,14 @@ typedef struct klu_common_struct
     double rcond ;	/* crude reciprocal condition est., from klu_rcond */
     double condest ;	/* accurate condition est., from klu_condest */
     double rgrowth ;	/* reciprocal pivot rgrowth, from klu_rgrowth */
-    double work ;	/* actual work done in BTF, in klu_analyze */
+    double work ;	/* actual work done in TRILINOS_BTF, in klu_analyze */
 
     size_t memusage ;	/* current memory usage, in bytes */
     size_t mempeak ;	/* peak memory usage, in bytes */
 
-} klu_common ;
+} trilinos_klu_common ;
 
-typedef struct klu_l_common_struct /* 64-bit version (otherwise same as above)*/
+typedef struct trilinos_klu_l_common_struct /* 64-bit version (otherwise same as above)*/
 {
 
     double tol, memgrow, initmem_amd, initmem, maxwork ;
@@ -222,7 +222,7 @@ typedef struct klu_l_common_struct /* 64-bit version (otherwise same as above)*/
     void (*free_memory) (void *) ;
     void *(*calloc_memory) (size_t, size_t) ;
     UF_long (*user_order) (UF_long, UF_long *, UF_long *, UF_long *,
-	struct klu_l_common_struct *) ;
+	struct trilinos_klu_l_common_struct *) ;
     void *user_data ;
     UF_long halt_if_singular ;
     UF_long status, nrealloc, structural_rank, numerical_rank, singular_col,
@@ -230,7 +230,7 @@ typedef struct klu_l_common_struct /* 64-bit version (otherwise same as above)*/
     double flops, rcond, condest, rgrowth, work ;
     size_t memusage, mempeak ;
 
-} klu_l_common ;
+} trilinos_klu_l_common ;
 
 /* -------------------------------------------------------------------------- */
 /* klu_defaults: sets default control parameters */
@@ -238,40 +238,40 @@ typedef struct klu_l_common_struct /* 64-bit version (otherwise same as above)*/
 
 int trilinos_klu_defaults
 (
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_defaults (klu_l_common *Common) ;
+UF_long trilinos_klu_l_defaults (trilinos_klu_l_common *Common) ;
 
 /* -------------------------------------------------------------------------- */
 /* klu_analyze:  orders and analyzes a matrix */
 /* -------------------------------------------------------------------------- */
 
-/* Order the matrix with BTF (or not), then order each block with AMD, COLAMD,
+/* Order the matrix with TRILINOS_BTF (or not), then order each block with AMD, TRILINOS_COLAMD,
  * a natural ordering, or with a user-provided ordering function */
 
-klu_symbolic *trilinos_klu_analyze
+trilinos_klu_symbolic *trilinos_klu_analyze
 (
     /* inputs, not modified */
     int n,		/* A is n-by-n */
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-klu_l_symbolic *trilinos_klu_l_analyze (UF_long, UF_long *, UF_long *,
-    klu_l_common *Common) ;
+trilinos_klu_l_symbolic *trilinos_klu_l_analyze (UF_long, UF_long *, UF_long *,
+    trilinos_klu_l_common *Common) ;
 
 
 /* -------------------------------------------------------------------------- */
 /* klu_analyze_given: analyzes a matrix using given P and Q */
 /* -------------------------------------------------------------------------- */
 
-/* Order the matrix with BTF (or not), then use natural or given ordering
+/* Order the matrix with TRILINOS_BTF (or not), then use natural or given ordering
  * P and Q on the blocks.  P and Q are interpretted as identity
  * if NULL. */
 
-klu_symbolic *trilinos_klu_analyze_given
+trilinos_klu_symbolic *trilinos_klu_analyze_given
 (
     /* inputs, not modified */
     int n,		/* A is n-by-n */
@@ -279,44 +279,44 @@ klu_symbolic *trilinos_klu_analyze_given
     int Ai [ ],		/* size nz, row indices */
     int P [ ],		/* size n, user's row permutation (may be NULL) */
     int Q [ ],		/* size n, user's column permutation (may be NULL) */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-klu_l_symbolic *trilinos_klu_l_analyze_given (UF_long, UF_long *, UF_long *, UF_long *,
-    UF_long *, klu_l_common *) ;
+trilinos_klu_l_symbolic *trilinos_klu_l_analyze_given (UF_long, UF_long *, UF_long *, UF_long *,
+    UF_long *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
 /* klu_factor:  factors a matrix using the klu_analyze results */
 /* -------------------------------------------------------------------------- */
 
-klu_numeric *trilinos_klu_factor	/* returns KLU_OK if OK, < 0 if error */
+trilinos_klu_numeric *trilinos_klu_factor	/* returns TRILINOS_KLU_OK if OK, < 0 if error */
 (
     /* inputs, not modified */
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
     double Ax [ ],	/* size nz, numerical values */
-    klu_symbolic *Symbolic,
-    klu_common *Common
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_common *Common
 ) ;
 
-klu_numeric *trilinos_klu_z_factor      /* returns KLU_OK if OK, < 0 if error */
+trilinos_klu_numeric *trilinos_klu_z_factor      /* returns TRILINOS_KLU_OK if OK, < 0 if error */
 (
      /* inputs, not modified */
      int Ap [ ],        /* size n+1, column pointers */
      int Ai [ ],        /* size nz, row indices */
      double Ax [ ],	/* size 2*nz, numerical values (real,imag pairs) */
-     klu_symbolic *Symbolic,
-     klu_common *Common
+     trilinos_klu_symbolic *Symbolic,
+     trilinos_klu_common *Common
 ) ;
 
 /* long / real version */
-klu_l_numeric *trilinos_klu_l_factor (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_common *) ;
+trilinos_klu_l_numeric *trilinos_klu_l_factor (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_common *) ;
 
 /* long / complex version */
-klu_l_numeric *trilinos_klu_zl_factor (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_common *) ;
+trilinos_klu_l_numeric *trilinos_klu_zl_factor (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -326,34 +326,34 @@ klu_l_numeric *trilinos_klu_zl_factor (UF_long *, UF_long *, double *, klu_l_sym
 int trilinos_klu_solve
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
     int ldim,		    /* leading dimension of B */
     int nrhs,		    /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
     double B [ ],	    /* size ldim*nrhs */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_solve
 (
      /* inputs, not modified */
-     klu_symbolic *Symbolic,
-     klu_numeric *Numeric,
+     trilinos_klu_symbolic *Symbolic,
+     trilinos_klu_numeric *Numeric,
      int ldim,               /* leading dimension of B */
      int nrhs,               /* number of right-hand-sides */
 
      /* right-hand-side on input, overwritten with solution to Ax=b on output */
      double B [ ],	    /* size 2*ldim*nrhs */
-     klu_common *Common
+     trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_solve (klu_l_symbolic *, klu_l_numeric *, UF_long, UF_long,
-    double *, klu_l_common *) ;
+UF_long trilinos_klu_l_solve (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, UF_long, UF_long,
+    double *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_solve (klu_l_symbolic *, klu_l_numeric *, UF_long, UF_long,
-    double *, klu_l_common *) ;
+UF_long trilinos_klu_zl_solve (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, UF_long, UF_long,
+    double *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -363,36 +363,36 @@ UF_long trilinos_klu_zl_solve (klu_l_symbolic *, klu_l_numeric *, UF_long, UF_lo
 int trilinos_klu_tsolve
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
     int ldim,		    /* leading dimension of B */
     int nrhs,		    /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
     double B [ ],	    /* size ldim*nrhs */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_tsolve
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
     int ldim,		    /* leading dimension of B */
     int nrhs,		    /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
     double B [ ],	    /* size 2*ldim*nrhs */
     int conj_solve,	    /* TRUE: conjugate solve, FALSE: solve A.'x=b */
-    klu_common *Common
+    trilinos_klu_common *Common
      
 ) ;
 
-UF_long trilinos_klu_l_tsolve (klu_l_symbolic *, klu_l_numeric *, UF_long, UF_long,
-    double *, klu_l_common *) ;
+UF_long trilinos_klu_l_tsolve (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, UF_long, UF_long,
+    double *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_tsolve (klu_l_symbolic *, klu_l_numeric *, UF_long, UF_long,
-    double *, UF_long, klu_l_common * ) ;
+UF_long trilinos_klu_zl_tsolve (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, UF_long, UF_long,
+    double *, UF_long, trilinos_klu_l_common * ) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -405,10 +405,10 @@ int trilinos_klu_refactor	    /* return TRUE if successful, FALSE otherwise */
     int Ap [ ],		/* size n+1, column pointers */
     int Ai [ ],		/* size nz, row indices */
     double Ax [ ],	/* size nz, numerical values */
-    klu_symbolic *Symbolic,
+    trilinos_klu_symbolic *Symbolic,
     /* input, and numerical values modified on output */
-    klu_numeric *Numeric,
-    klu_common *Common
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_refactor	    /* return TRUE if successful, FALSE otherwise */
@@ -417,17 +417,17 @@ int trilinos_klu_z_refactor	    /* return TRUE if successful, FALSE otherwise */
      int Ap [ ],	/* size n+1, column pointers */
      int Ai [ ],	/* size nz, row indices */
      double Ax [ ],	/* size 2*nz, numerical values */
-     klu_symbolic *Symbolic,
+     trilinos_klu_symbolic *Symbolic,
      /* input, and numerical values modified on output */
-     klu_numeric *Numeric,
-     klu_common *Common
+     trilinos_klu_numeric *Numeric,
+     trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_refactor (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_l_refactor (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_refactor (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_zl_refactor (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -436,11 +436,11 @@ UF_long trilinos_klu_zl_refactor (UF_long *, UF_long *, double *, klu_l_symbolic
 
 int trilinos_klu_free_symbolic
 (
-    klu_symbolic **Symbolic,
-    klu_common *Common
+    trilinos_klu_symbolic **Symbolic,
+    trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_free_symbolic (klu_l_symbolic **, klu_l_common *) ;
+UF_long trilinos_klu_l_free_symbolic (trilinos_klu_l_symbolic **, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -452,18 +452,18 @@ UF_long trilinos_klu_l_free_symbolic (klu_l_symbolic **, klu_l_common *) ;
 
 int trilinos_klu_free_numeric
 (
-    klu_numeric **Numeric,
-    klu_common *Common
+    trilinos_klu_numeric **Numeric,
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_free_numeric
 (
-     klu_numeric **Numeric,
-     klu_common *Common
+     trilinos_klu_numeric **Numeric,
+     trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_free_numeric (klu_l_numeric **, klu_l_common *) ;
-UF_long trilinos_klu_zl_free_numeric (klu_l_numeric **, klu_l_common *) ;
+UF_long trilinos_klu_l_free_numeric (trilinos_klu_l_numeric **, trilinos_klu_l_common *) ;
+UF_long trilinos_klu_zl_free_numeric (trilinos_klu_l_numeric **, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -475,23 +475,23 @@ UF_long trilinos_klu_zl_free_numeric (klu_l_numeric **, klu_l_common *) ;
 int trilinos_klu_sort
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
+    trilinos_klu_symbolic *Symbolic,
     /* input/output */
-    klu_numeric *Numeric,
-    klu_common *Common
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_sort
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
+    trilinos_klu_symbolic *Symbolic,
     /* input/output */
-    klu_numeric *Numeric,
-    klu_common *Common
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_sort (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
-UF_long trilinos_klu_zl_sort (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_l_sort (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
+UF_long trilinos_klu_zl_sort (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -501,23 +501,23 @@ UF_long trilinos_klu_zl_sort (klu_l_symbolic *, klu_l_numeric *, klu_l_common *)
 int trilinos_klu_flops
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
     /* input/output */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_flops
 (
     /* inputs, not modified */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
     /* input/output */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_flops (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
-UF_long trilinos_klu_zl_flops (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_l_flops (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
+UF_long trilinos_klu_zl_flops (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
 
 
@@ -527,7 +527,7 @@ UF_long trilinos_klu_zl_flops (klu_l_symbolic *, klu_l_numeric *, klu_l_common *
 
 /* Pivot growth is computed after the input matrix is permuted, scaled, and
  * off-diagonal entries pruned.  This is because the LU factorization of each
- * block takes as input the scaled diagonal blocks of the BTF form.  The
+ * block takes as input the scaled diagonal blocks of the TRILINOS_BTF form.  The
  * reciprocal pivot growth in column j of an LU factorization of a matrix C
  * is the largest entry in C divided by the largest entry in U; then the overall
  * reciprocal pivot growth is the smallest such value for all columns j.  Note
@@ -543,9 +543,9 @@ int trilinos_klu_rgrowth
     int Ap [ ],
     int Ai [ ],
     double Ax [ ],
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
-    klu_common *Common		/* Common->rgrowth = reciprocal pivot growth */
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common		/* Common->rgrowth = reciprocal pivot growth */
 ) ;
 
 int trilinos_klu_z_rgrowth
@@ -553,16 +553,16 @@ int trilinos_klu_z_rgrowth
     int Ap [ ],
     int Ai [ ],
     double Ax [ ],
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
-    klu_common *Common		/* Common->rgrowth = reciprocal pivot growth */
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common		/* Common->rgrowth = reciprocal pivot growth */
 ) ;
 
-UF_long trilinos_klu_l_rgrowth (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_l_rgrowth (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_rgrowth (UF_long *, UF_long *, double *, klu_l_symbolic *,
-    klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_zl_rgrowth (UF_long *, UF_long *, double *, trilinos_klu_l_symbolic *,
+    trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -577,25 +577,25 @@ int trilinos_klu_condest
 (
     int Ap [ ],		    /* size n+1, column pointers, not modified */
     double Ax [ ],	    /* size nz = Ap[n], numerical values, not modified*/
-    klu_symbolic *Symbolic, /* symbolic analysis, not modified */
-    klu_numeric *Numeric,   /* numeric factorization, not modified */
-    klu_common *Common	    /* result returned in Common->condest */
+    trilinos_klu_symbolic *Symbolic, /* symbolic analysis, not modified */
+    trilinos_klu_numeric *Numeric,   /* numeric factorization, not modified */
+    trilinos_klu_common *Common	    /* result returned in Common->condest */
 ) ;
 
 int trilinos_klu_z_condest
 (
     int Ap [ ],
     double Ax [ ],	    /* size 2*nz */
-    klu_symbolic *Symbolic,
-    klu_numeric *Numeric,
-    klu_common *Common	    /* result returned in Common->condest */
+    trilinos_klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_common *Common	    /* result returned in Common->condest */
 ) ;
 
-UF_long trilinos_klu_l_condest (UF_long *, double *, klu_l_symbolic *, klu_l_numeric *,
-    klu_l_common *) ;
+UF_long trilinos_klu_l_condest (UF_long *, double *, trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *,
+    trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_condest (UF_long *, double *, klu_l_symbolic *, klu_l_numeric *,
-    klu_l_common *) ;
+UF_long trilinos_klu_zl_condest (UF_long *, double *, trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *,
+    trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -604,21 +604,21 @@ UF_long trilinos_klu_zl_condest (UF_long *, double *, klu_l_symbolic *, klu_l_nu
 
 int trilinos_klu_rcond
 (
-    klu_symbolic *Symbolic,	    /* input, not modified */
-    klu_numeric *Numeric,	    /* input, not modified */
-    klu_common *Common		    /* result in Common->rcond */
+    trilinos_klu_symbolic *Symbolic,	    /* input, not modified */
+    trilinos_klu_numeric *Numeric,	    /* input, not modified */
+    trilinos_klu_common *Common		    /* result in Common->rcond */
 ) ;
 
 int trilinos_klu_z_rcond
 (
-    klu_symbolic *Symbolic,	    /* input, not modified */
-    klu_numeric *Numeric,	    /* input, not modified */
-    klu_common *Common		    /* result in Common->rcond */
+    trilinos_klu_symbolic *Symbolic,	    /* input, not modified */
+    trilinos_klu_numeric *Numeric,	    /* input, not modified */
+    trilinos_klu_common *Common		    /* result in Common->rcond */
 ) ;
 
-UF_long trilinos_klu_l_rcond (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_l_rcond (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_rcond (klu_l_symbolic *, klu_l_numeric *, klu_l_common *) ;
+UF_long trilinos_klu_zl_rcond (trilinos_klu_l_symbolic *, trilinos_klu_l_numeric *, trilinos_klu_l_common *) ;
 
 
 
@@ -638,7 +638,7 @@ int trilinos_klu_scale		/* return TRUE if successful, FALSE otherwise */
     double Rs [ ],
     /* workspace, not defined on input or output */
     int W [ ],		/* size n, can be NULL */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 int trilinos_klu_z_scale		/* return TRUE if successful, FALSE otherwise */
@@ -653,14 +653,14 @@ int trilinos_klu_z_scale		/* return TRUE if successful, FALSE otherwise */
     double Rs [ ],
     /* workspace, not defined on input or output */
     int W [ ],		/* size n, can be NULL */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 UF_long trilinos_klu_l_scale (UF_long, UF_long, UF_long *, UF_long *, double *,
-    double *, UF_long *, klu_l_common *) ;
+    double *, UF_long *, trilinos_klu_l_common *) ;
 
 UF_long trilinos_klu_zl_scale (UF_long, UF_long, UF_long *, UF_long *, double *,
-    double *, UF_long *, klu_l_common *) ;
+    double *, UF_long *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -670,8 +670,8 @@ UF_long trilinos_klu_zl_scale (UF_long, UF_long, UF_long *, UF_long *, double *,
 int trilinos_klu_extract	    /* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs: */
-    klu_numeric *Numeric,
-    klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
 
     /* outputs, either allocated on input, or ignored otherwise */
 
@@ -702,15 +702,15 @@ int trilinos_klu_extract	    /* returns TRUE if successful, FALSE otherwise */
     /* R, block boundaries */
     int *R,	    /* size Symbolic->nblocks+1 (nblocks is at most n) */
 
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 
 int trilinos_klu_z_extract	    /* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs: */
-    klu_numeric *Numeric,
-    klu_symbolic *Symbolic,
+    trilinos_klu_numeric *Numeric,
+    trilinos_klu_symbolic *Symbolic,
 
     /* outputs, all of which must be allocated on input */
 
@@ -744,20 +744,20 @@ int trilinos_klu_z_extract	    /* returns TRUE if successful, FALSE otherwise */
     /* R, block boundaries */
     int *R,	    /* size Symbolic->nblocks+1 (nblocks is at most n) */
 
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-UF_long trilinos_klu_l_extract (klu_l_numeric *, klu_l_symbolic *,
+UF_long trilinos_klu_l_extract (trilinos_klu_l_numeric *, trilinos_klu_l_symbolic *,
     UF_long *, UF_long *, double *,
     UF_long *, UF_long *, double *,
     UF_long *, UF_long *, double *,
-    UF_long *, UF_long *, double *, UF_long *, klu_l_common *) ;
+    UF_long *, UF_long *, double *, UF_long *, trilinos_klu_l_common *) ;
 
-UF_long trilinos_klu_zl_extract (klu_l_numeric *, klu_l_symbolic *,
+UF_long trilinos_klu_zl_extract (trilinos_klu_l_numeric *, trilinos_klu_l_symbolic *,
     UF_long *, UF_long *, double *, double *,
     UF_long *, UF_long *, double *, double *,
     UF_long *, UF_long *, double *, double *,
-    UF_long *, UF_long *, double *, UF_long *, klu_l_common *) ;
+    UF_long *, UF_long *, double *, UF_long *, trilinos_klu_l_common *) ;
 
 
 /* -------------------------------------------------------------------------- */
@@ -770,7 +770,7 @@ void *trilinos_klu_malloc	/* returns pointer to the newly malloc'd block */
     size_t n,		/* number of items */
     size_t size,	/* size of each item */
     /* --------------- */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 void *trilinos_klu_free		/* always returns NULL */
@@ -780,7 +780,7 @@ void *trilinos_klu_free		/* always returns NULL */
     size_t n,		/* number of items */
     size_t size,	/* size of each item */
     /* --------------- */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
 void *trilinos_klu_realloc	/* returns pointer to reallocated block */
@@ -792,12 +792,12 @@ void *trilinos_klu_realloc	/* returns pointer to reallocated block */
     /* ---- in/out --- */
     void *p,		/* block of memory to realloc */
     /* --------------- */
-    klu_common *Common
+    trilinos_klu_common *Common
 ) ;
 
-void *trilinos_klu_l_malloc (size_t, size_t, klu_l_common *) ;
-void *trilinos_klu_l_free (void *, size_t, size_t, klu_l_common *) ;
-void *trilinos_klu_l_realloc (size_t, size_t, size_t, void *, klu_l_common *) ;
+void *trilinos_klu_l_malloc (size_t, size_t, trilinos_klu_l_common *) ;
+void *trilinos_klu_l_free (void *, size_t, size_t, trilinos_klu_l_common *) ;
+void *trilinos_klu_l_realloc (size_t, size_t, size_t, void *, trilinos_klu_l_common *) ;
 
 
 /* ========================================================================== */
@@ -807,23 +807,23 @@ void *trilinos_klu_l_realloc (size_t, size_t, size_t, void *, klu_l_common *) ;
 /* All versions of KLU include these definitions.
  * As an example, to test if the version you are using is 1.2 or later:
  *
- *	if (KLU_VERSION >= KLU_VERSION_CODE (1,2)) ...
+ *	if (TRILINOS_KLU_VERSION >= TRILINOS_KLU_VERSION_CODE (1,2)) ...
  *
  * This also works during compile-time:
  *
- *	#if (KLU >= KLU_VERSION_CODE (1,2))
+ *	#if (KLU >= TRILINOS_KLU_VERSION_CODE (1,2))
  *	    printf ("This is version 1.2 or later\n") ;
  *	#else
  *	    printf ("This is an early version\n") ;
  *	#endif
  */
 
-#define KLU_DATE "May 31, 2007"
-#define KLU_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
-#define KLU_MAIN_VERSION 1
-#define KLU_SUB_VERSION 0
-#define KLU_SUBSUB_VERSION 0
-#define KLU_VERSION KLU_VERSION_CODE(KLU_MAIN_VERSION,KLU_SUB_VERSION)
+#define TRILINOS_KLU_DATE "May 31, 2007"
+#define TRILINOS_KLU_VERSION_CODE(main,sub) ((main) * 1000 + (sub))
+#define TRILINOS_KLU_MAIN_VERSION 1
+#define TRILINOS_KLU_SUB_VERSION 0
+#define TRILINOS_KLU_SUBSUB_VERSION 0
+#define TRILINOS_KLU_VERSION TRILINOS_KLU_VERSION_CODE(TRILINOS_KLU_MAIN_VERSION,TRILINOS_KLU_SUB_VERSION)
 
 #ifdef __cplusplus
 }

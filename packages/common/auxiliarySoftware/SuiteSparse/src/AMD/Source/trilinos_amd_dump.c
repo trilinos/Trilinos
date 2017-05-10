@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_dump ============================================================ */
+/* === TRILINOS_AMD_dump ============================================================ */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -19,42 +19,42 @@
 #ifndef NDEBUG
 
 /* This global variable is present only when debugging */
-GLOBAL Int AMD_debug = -999 ;		/* default is no debug printing */
+GLOBAL Int TRILINOS_AMD_debug = -999 ;		/* default is no debug printing */
 
 /* ========================================================================= */
-/* === AMD_debug_init ====================================================== */
+/* === TRILINOS_AMD_debug_init ====================================================== */
 /* ========================================================================= */
 
 /* Sets the debug print level, by reading the file debug.amd (if it exists) */
 
-GLOBAL void AMD_debug_init ( char *s )
+GLOBAL void TRILINOS_AMD_debug_init ( char *s )
 {
     FILE *f ;
     f = fopen ("debug.amd", "r") ;
     if (f == (FILE *) NULL)
     {
-	AMD_debug = -999 ;
+	TRILINOS_AMD_debug = -999 ;
     }
     else
     {
-	fscanf (f, ID, &AMD_debug) ;
+	fscanf (f, ID, &TRILINOS_AMD_debug) ;
 	fclose (f) ;
     }
-    if (AMD_debug >= 0)
+    if (TRILINOS_AMD_debug >= 0)
     {
-	printf ("%s: AMD_debug_init, D= "ID"\n", s, AMD_debug) ;
+	printf ("%s: TRILINOS_AMD_debug_init, D= "ID"\n", s, TRILINOS_AMD_debug) ;
     }
 }
 
 /* ========================================================================= */
-/* === AMD_dump ============================================================ */
+/* === TRILINOS_AMD_dump ============================================================ */
 /* ========================================================================= */
 
 /* Dump AMD's data structure, except for the hash buckets.  This routine
  * cannot be called when the hash buckets are non-empty.
  */
 
-GLOBAL void AMD_dump (
+GLOBAL void TRILINOS_AMD_dump (
     Int n,	    /* A is n-by-n */
     Int Pe [ ],	    /* pe [0..n-1]: index in iw of start of row i */
     Int Iw [ ],	    /* workspace of size iwlen, iwlen [0..pfree-1]
@@ -74,9 +74,9 @@ GLOBAL void AMD_dump (
 {
     Int i, pe, elen, nv, len, e, p, k, j, deg, w, cnt, ilast ;
 
-    if (AMD_debug < 0) return ;
+    if (TRILINOS_AMD_debug < 0) return ;
     ASSERT (pfree <= iwlen) ;
-    AMD_DEBUG3 (("\nAMD dump, pfree: "ID"\n", pfree)) ;
+    TRILINOS_AMD_DEBUG3 (("\nAMD dump, pfree: "ID"\n", pfree)) ;
     for (i = 0 ; i < n ; i++)
     {
 	pe = Pe [i] ;
@@ -89,38 +89,38 @@ GLOBAL void AMD_dump (
 	{
 	    if (nv == 0)
 	    {
-		AMD_DEBUG3 (("\nI "ID": nonprincipal:    ", i)) ;
+		TRILINOS_AMD_DEBUG3 (("\nI "ID": nonprincipal:    ", i)) ;
 		ASSERT (elen == EMPTY) ;
 		if (pe == EMPTY)
 		{
-		    AMD_DEBUG3 ((" dense node\n")) ;
+		    TRILINOS_AMD_DEBUG3 ((" dense node\n")) ;
 		    ASSERT (w == 1) ;
 		}
 		else
 		{
 		    ASSERT (pe < EMPTY) ;
-		    AMD_DEBUG3 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
+		    TRILINOS_AMD_DEBUG3 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
 		}
 	    }
 	    else
 	    {
-		AMD_DEBUG3 (("\nI "ID": active principal supervariable:\n",i));
-		AMD_DEBUG3 (("   nv(i): "ID"  Flag: %d\n", nv, (nv < 0))) ;
+		TRILINOS_AMD_DEBUG3 (("\nI "ID": active principal supervariable:\n",i));
+		TRILINOS_AMD_DEBUG3 (("   nv(i): "ID"  Flag: %d\n", nv, (nv < 0))) ;
 		ASSERT (elen >= 0) ;
 		ASSERT (nv > 0 && pe >= 0) ;
 		p = pe ;
-		AMD_DEBUG3 (("   e/s: ")) ;
-		if (elen == 0) AMD_DEBUG3 ((" : ")) ;
+		TRILINOS_AMD_DEBUG3 (("   e/s: ")) ;
+		if (elen == 0) TRILINOS_AMD_DEBUG3 ((" : ")) ;
 		ASSERT (pe + len <= pfree) ;
 		for (k = 0 ; k < len ; k++)
 		{
 		    j = Iw [p] ;
-		    AMD_DEBUG3 (("  "ID"", j)) ;
+		    TRILINOS_AMD_DEBUG3 (("  "ID"", j)) ;
 		    ASSERT (j >= 0 && j < n) ;
-		    if (k == elen-1) AMD_DEBUG3 ((" : ")) ;
+		    if (k == elen-1) TRILINOS_AMD_DEBUG3 ((" : ")) ;
 		    p++ ;
 		}
-		AMD_DEBUG3 (("\n")) ;
+		TRILINOS_AMD_DEBUG3 (("\n")) ;
 	    }
 	}
 	else
@@ -128,31 +128,31 @@ GLOBAL void AMD_dump (
 	    e = i ;
 	    if (w == 0)
 	    {
-		AMD_DEBUG3 (("\nE "ID": absorbed element: w "ID"\n", e, w)) ;
+		TRILINOS_AMD_DEBUG3 (("\nE "ID": absorbed element: w "ID"\n", e, w)) ;
 		ASSERT (nv > 0 && pe < 0) ;
-		AMD_DEBUG3 ((" e "ID" -> parent "ID"\n", e, FLIP (Pe [e]))) ;
+		TRILINOS_AMD_DEBUG3 ((" e "ID" -> parent "ID"\n", e, FLIP (Pe [e]))) ;
 	    }
 	    else
 	    {
-		AMD_DEBUG3 (("\nE "ID": unabsorbed element: w "ID"\n", e, w)) ;
+		TRILINOS_AMD_DEBUG3 (("\nE "ID": unabsorbed element: w "ID"\n", e, w)) ;
 		ASSERT (nv > 0 && pe >= 0) ;
 		p = pe ;
-		AMD_DEBUG3 ((" : ")) ;
+		TRILINOS_AMD_DEBUG3 ((" : ")) ;
 		ASSERT (pe + len <= pfree) ;
 		for (k = 0 ; k < len ; k++)
 		{
 		    j = Iw [p] ;
-		    AMD_DEBUG3 (("  "ID"", j)) ;
+		    TRILINOS_AMD_DEBUG3 (("  "ID"", j)) ;
 		    ASSERT (j >= 0 && j < n) ;
 		    p++ ;
 		}
-		AMD_DEBUG3 (("\n")) ;
+		TRILINOS_AMD_DEBUG3 (("\n")) ;
 	    }
 	}
     }
 
     /* this routine cannot be called when the hash buckets are non-empty */
-    AMD_DEBUG3 (("\nDegree lists:\n")) ;
+    TRILINOS_AMD_DEBUG3 (("\nDegree lists:\n")) ;
     if (nel >= 0)
     {
 	cnt = 0 ;
@@ -160,17 +160,17 @@ GLOBAL void AMD_dump (
 	{
 	    if (Head [deg] == EMPTY) continue ;
 	    ilast = EMPTY ;
-	    AMD_DEBUG3 ((ID": \n", deg)) ;
+	    TRILINOS_AMD_DEBUG3 ((ID": \n", deg)) ;
 	    for (i = Head [deg] ; i != EMPTY ; i = Next [i])
 	    {
-		AMD_DEBUG3 (("   "ID" : next "ID" last "ID" deg "ID"\n",
+		TRILINOS_AMD_DEBUG3 (("   "ID" : next "ID" last "ID" deg "ID"\n",
 		    i, Next [i], Last [i], Degree [i])) ;
 		ASSERT (i >= 0 && i < n && ilast == Last [i] &&
 		    deg == Degree [i]) ;
 		cnt += Nv [i] ;
 		ilast = i ;
 	    }
-	    AMD_DEBUG3 (("\n")) ;
+	    TRILINOS_AMD_DEBUG3 (("\n")) ;
 	}
 	ASSERT (cnt == n - nel) ;
     }

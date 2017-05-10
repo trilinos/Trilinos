@@ -1817,7 +1817,7 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
     {
 
 	/* ------------------------------------------------------------------ */
-	/* apply camd, csymamd, or ccolamd using the Cmember constraints */
+	/* apply camd, csymamd, or trilinos_ccolamd using the Cmember constraints */
 	/* ------------------------------------------------------------------ */
 
 	if (A->stype != 0)
@@ -1857,10 +1857,10 @@ UF_long CHOLMOD(nested_dissection) /* returns # of components, or -1 if error */
 	{
 	    /* ordering A*A' or A(:,f)*A(:,f)' */
 	    /* workspace: Iwork (nrow if no fset; MAX(nrow,ncol) if fset) */
-	    if (!CHOLMOD(ccolamd) (A, fset, fsize, Cmember, Perm, Common))
+	    if (!CHOLMOD(trilinos_ccolamd) (A, fset, fsize, Cmember, Perm, Common))
 	    {
-		/* ccolamd failed */
-		PRINT2 (("ccolamd failed\n")) ;
+		/* trilinos_ccolamd failed */
+		PRINT2 (("trilinos_ccolamd failed\n")) ;
 		return (EMPTY) ;
 	    }
 	}

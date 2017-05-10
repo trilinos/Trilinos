@@ -58,8 +58,8 @@
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
 #include "Shards_CellTopology.hpp"
-#include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Intrepid2_CellTools.hpp"
+//#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_CellTools_Serial.hpp"
 #include "Teuchos_Assert.hpp"
 
 namespace panzer_stk {
@@ -120,6 +120,12 @@ namespace panzer_stk {
     std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
     std::vector<stk::mesh::Entity>::const_iterator parentElement = parentElements.begin();
+
+    // KK: invoke serial interface; cubDegree is 1 and integration point is one 
+    //     for debugging statement, use max dimension
+    // this lookup table setup is necessary before any impl::celltools is called
+    Intrepid2::Impl::CellTools::setSubcellParametrization();
+    Kokkos::DynRankView<double,Kokkos::HostSpace> normal_at_point("normal",3); // parentTopology->getDimension());
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
       std::vector<stk::mesh::Entity> elementEntities;
@@ -135,13 +141,19 @@ namespace panzer_stk {
       iv.setupArrays(ir);
       iv.evaluateValues(vertices);
       
-      Kokkos::DynRankView<double,PHX::Device> normal("normal",1,ir->num_points,parentTopology->getDimension());
-      Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normal, iv.jac.get_view(), *sideID, *(ir->topology));
+      // KK: use serial interface; jac_at_point (D,D) from (C,P,D,D)
+      {
+        auto jac_at_point = Kokkos::subview(iv.jac.get_view(), 0, 0, Kokkos::ALL(), Kokkos::ALL());
+        Intrepid2::Impl::
+          CellTools::Serial::getPhysicalSideNormal(normal_at_point, jac_at_point, *sideID, *(ir->topology));
+      }
+      // Kokkos::DynRankView<double,PHX::Device> normal("normal",1,ir->num_points,parentTopology->getDimension());
+      // Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normal, iv.jac.get_view(), *sideID, *(ir->topology));
 
       if (pout != NULL) {
       *pout << "element normals: "
 	    << "gid(" << bulkData->identifier(*parentElement) << ")"
-	    << ", normal(" << normal(0,0,0) << "," << normal(0,0,1) << "," << normal(0,0,2) << ")"
+	    << ", normal(" << normal_at_point(0) << "," << normal_at_point(1) << "," << normal_at_point(2) << ")"
 	    << std::endl;
       }
 
@@ -151,7 +163,7 @@ namespace panzer_stk {
       for (size_t n=0; n<numNodes; ++n) {
         stk::mesh::Entity node = nodeRelations[n];
 	for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
-	  nodeNormals[bulkData->identifier(node)].push_back(normal(0,0,dim));
+	  nodeNormals[bulkData->identifier(node)].push_back(normal_at_point(dim));
 	}
       }
 

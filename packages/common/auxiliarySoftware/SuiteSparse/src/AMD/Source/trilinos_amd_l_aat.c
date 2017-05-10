@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === AMD_aat ============================================================= */
+/* === TRILINOS_AMD_aat ============================================================= */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -9,10 +9,10 @@
 /* web: http://www.cise.ufl.edu/research/sparse/amd                          */
 /* ------------------------------------------------------------------------- */
 
-/* AMD_aat:  compute the symmetry of the pattern of A, and count the number of
+/* TRILINOS_AMD_aat:  compute the symmetry of the pattern of A, and count the number of
  * nonzeros each column of A+A' (excluding the diagonal).  Assumes the input
  * matrix has no errors, with sorted columns and no duplicates
- * (AMD_valid (n, n, Ap, Ai) must be AMD_OK, but this condition is not
+ * (TRILINOS_AMD_valid (n, n, Ap, Ai) must be TRILINOS_AMD_OK, but this condition is not
  * checked).
  */
 
@@ -21,7 +21,7 @@
 
 #include "trilinos_amd_internal.h"
 
-GLOBAL size_t AMD_aat	/* returns nz in A+A' */
+GLOBAL size_t TRILINOS_AMD_aat	/* returns nz in A+A' */
 (
     Int n,
     const Int Ap [ ],
@@ -36,19 +36,19 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
     size_t nzaat ;
 
 #ifndef NDEBUG
-    AMD_debug_init ("AMD AAT") ;
+    TRILINOS_AMD_debug_init ("AMD AAT") ;
     for (k = 0 ; k < n ; k++) Tp [k] = EMPTY ;
-    ASSERT (AMD_valid (n, n, Ap, Ai) == AMD_OK) ;
+    ASSERT (TRILINOS_AMD_valid (n, n, Ap, Ai) == TRILINOS_AMD_OK) ;
 #endif
 
     if (Info != (double *) NULL)
     {
 	/* clear the Info array, if it exists */
-	for (i = 0 ; i < AMD_INFO ; i++)
+	for (i = 0 ; i < TRILINOS_AMD_INFO ; i++)
 	{
 	    Info [i] = EMPTY ;
 	}
-	Info [AMD_STATUS] = AMD_OK ;
+	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;
     }
 
     for (k = 0 ; k < n ; k++)
@@ -64,7 +64,7 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
     {
 	p1 = Ap [k] ;
 	p2 = Ap [k+1] ;
-	AMD_DEBUG2 (("\nAAT Column: "ID" p1: "ID" p2: "ID"\n", k, p1, p2)) ;
+	TRILINOS_AMD_DEBUG2 (("\nAAT Column: "ID" p1: "ID" p2: "ID"\n", k, p1, p2)) ;
 
 	/* construct A+A' */
 	for (p = p1 ; p < p2 ; )
@@ -77,7 +77,7 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
 		 * add both A (j,k) and A (k,j) to the matrix A+A' */
 		Len [j]++ ;
 		Len [k]++ ;
-		AMD_DEBUG3 (("    upper ("ID","ID") ("ID","ID")\n", j,k, k,j));
+		TRILINOS_AMD_DEBUG3 (("    upper ("ID","ID") ("ID","ID")\n", j,k, k,j));
 		p++ ;
 	    }
 	    else if (j == k)
@@ -106,7 +106,7 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
 		     * add both A (i,j) and A (j,i) to the matrix A+A' */
 		    Len [i]++ ;
 		    Len [j]++ ;
-		    AMD_DEBUG3 (("    lower ("ID","ID") ("ID","ID")\n",
+		    TRILINOS_AMD_DEBUG3 (("    lower ("ID","ID") ("ID","ID")\n",
 			i,j, j,i)) ;
 		    pj++ ;
 		}
@@ -139,7 +139,7 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
 	     * add both A (i,j) and A (j,i) to the matrix A+A' */
 	    Len [i]++ ;
 	    Len [j]++ ;
-	    AMD_DEBUG3 (("    lower cleanup ("ID","ID") ("ID","ID")\n",
+	    TRILINOS_AMD_DEBUG3 (("    lower cleanup ("ID","ID") ("ID","ID")\n",
 		i,j, j,i)) ;
 	}
     }
@@ -169,19 +169,19 @@ GLOBAL size_t AMD_aat	/* returns nz in A+A' */
 	nzaat += Len [k] ;
     }
 
-    AMD_DEBUG1 (("AMD nz in A+A', excluding diagonal (nzaat) = %g\n",
+    TRILINOS_AMD_DEBUG1 (("AMD nz in A+A', excluding diagonal (nzaat) = %g\n",
 	(double) nzaat)) ;
-    AMD_DEBUG1 (("   nzboth: "ID" nz: "ID" nzdiag: "ID" symmetry: %g\n",
+    TRILINOS_AMD_DEBUG1 (("   nzboth: "ID" nz: "ID" nzdiag: "ID" symmetry: %g\n",
 		nzboth, nz, nzdiag, sym)) ;
 
     if (Info != (double *) NULL)
     {
-	Info [AMD_STATUS] = AMD_OK ;
-	Info [AMD_N] = n ;
-	Info [AMD_NZ] = nz ;
-	Info [AMD_SYMMETRY] = sym ;	    /* symmetry of pattern of A */
-	Info [AMD_NZDIAG] = nzdiag ;	    /* nonzeros on diagonal of A */
-	Info [AMD_NZ_A_PLUS_AT] = nzaat ;   /* nonzeros in A+A' */
+	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;
+	Info [TRILINOS_AMD_N] = n ;
+	Info [TRILINOS_AMD_NZ] = nz ;
+	Info [TRILINOS_AMD_SYMMETRY] = sym ;	    /* symmetry of pattern of A */
+	Info [TRILINOS_AMD_NZDIAG] = nzdiag ;	    /* nonzeros on diagonal of A */
+	Info [TRILINOS_AMD_NZ_A_PLUS_AT] = nzaat ;   /* nonzeros in A+A' */
     }
 
     return (nzaat) ;

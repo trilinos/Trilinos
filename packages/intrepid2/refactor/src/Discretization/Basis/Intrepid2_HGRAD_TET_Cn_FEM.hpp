@@ -137,7 +137,9 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
-          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*(Parameters::MaxOrder+2)*(Parameters::MaxOrder+3)/6*numPtsEval;
+          constexpr ordinal_type spaceDim = 3;
+          constexpr ordinal_type bufSize =
+              Intrepid2::getDkCardinality<opType, spaceDim>()*Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;
           outputValueType buf[bufSize];
 
           Kokkos::DynRankView<outputValueType,
