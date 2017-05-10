@@ -3912,6 +3912,19 @@ namespace Tpetra {
     /// fillComplete().
     void sortEntries();
 
+    /// \brief Merge duplicate row indices in the given row, along
+    ///   with their corresponding values.
+    ///
+    /// This method is only called by mergeRedundantEntries(), and
+    /// only when the matrix owns the graph, not when the matrix was
+    /// constructed with a const graph.
+    ///
+    /// \pre The graph is not already storage optimized:
+    ///   <tt>isStorageOptimized() == false</tt>
+    size_t
+    mergeRowIndicesAndValues (crs_graph_type& graph,
+                              const RowInfo& rowInfo);
+
     /// \brief Merge entries in each row with the same column indices.
     ///
     /// This only does anything if the graph isn't already merged

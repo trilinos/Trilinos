@@ -2672,33 +2672,6 @@ namespace Tpetra {
     //! Sort the column indices in the given row.
     void sortRowIndices (const RowInfo& rowinfo);
 
-    /// \brief Sort the column indices and their values in the given row.
-    ///
-    /// \tparam Scalar The type of the values.  When calling this
-    ///   method from CrsMatrix, this should be the same as the
-    ///   <tt>Scalar</tt> template parameter of CrsMatrix.
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the row.
-    ///
-    /// \param values [in/out] On input: values for the given row.  If
-    ///   indices is an array of the column indices in the row, then
-    ///   values and indices should have the same number of entries,
-    ///   and indices[k] should be the column index corresponding to
-    ///   values[k].  On output: the same values, but sorted in the
-    ///   same order as the (now sorted) column indices in the row.
-    template <class Scalar>
-    void
-    sortRowIndicesAndValues (const RowInfo rowinfo,
-                             const Teuchos::ArrayView<Scalar>& values)
-    {
-      if (rowinfo.numEntries > 0) {
-        Teuchos::ArrayView<LocalOrdinal> inds_view =
-          this->getLocalViewNonConst (rowinfo);
-        sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
-               values.begin ());
-      }
-    }
-
     /// \brief Merge duplicate column indices in the given row.
     ///
     /// \pre The graph is locally indexed:
@@ -2708,75 +2681,6 @@ namespace Tpetra {
     ///
     /// \return The number of duplicate column indices eliminated from the row.
     size_t mergeRowIndices (const RowInfo& rowInfo);
-
-    /// \brief Merge duplicate row indices in the given row, along
-    ///   with their corresponding values.
-    ///
-    /// This method is only called by CrsMatrix, for a CrsMatrix whose
-    /// graph is this CrsGraph instance.  It is only called when the
-    /// matrix owns the graph, not when the matrix was constructed
-    /// with a const graph.
-    ///
-    /// \pre The graph is not already storage optimized:
-    ///   <tt>isStorageOptimized() == false</tt>
-    template<class Scalar>
-    void
-    mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues)
-    {
-      using Teuchos::ArrayView;
-      const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized(), std::logic_error, "It is invalid to call this "
-         "method if the graph's storage has already been optimized.  Please "
-         "report this bug to the Tpetra developers.");
-
-      typedef typename ArrayView<Scalar>::iterator Iter;
-      Iter rowValueIter = rowValues.begin ();
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
-      typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
-
-      // beg,end define a half-exclusive interval over which to iterate.
-      beg = inds_view.begin();
-      end = inds_view.begin() + rowinfo.numEntries;
-      newend = beg;
-      if (beg != end) {
-        typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
-        Iter vcur = rowValueIter + 1;
-        Iter vend = rowValueIter;
-        cur = beg+1;
-        while (cur != end) {
-          if (*cur != *newend) {
-            // new entry; save it
-            ++newend;
-            ++vend;
-            (*newend) = (*cur);
-            (*vend) = (*vcur);
-          }
-          else {
-            // old entry; merge it
-            //(*vend) = f (*vend, *vcur);
-            (*vend) += *vcur;
-          }
-          ++cur;
-          ++vcur;
-        }
-        ++newend; // one past the last entry, per typical [beg,end) semantics
-      }
-      const size_t mergedEntries = newend - beg;
-#ifdef HAVE_TPETRA_DEBUG
-      // merge should not have eliminated any entries; if so, the
-      // assignment below will destroy the packed structure
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (isStorageOptimized() && mergedEntries != rowinfo.numEntries,
-         std::logic_error,
-         "Merge was incorrect; it eliminated entries from the graph.  "
-         << "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
-      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
-      nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
-    }
 
     //@}
 
