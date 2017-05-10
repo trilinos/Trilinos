@@ -4501,10 +4501,11 @@ namespace Tpetra {
       // indices (including setAllIndices and
       // expertStaticFillComplete).  Before fillComplete, its count
       // may include duplicate column indices in the same row.
-      // However, mergeRowIndices and mergeRowIndicesAndValues both
-      // subtract off merged indices in each row from the total count.
-      // Thus, nodeNumEntries_ _should_ be accurate at this point,
-      // meaning that we don't have to re-count it here.
+      // However, mergeRowIndices and
+      // CrsMatrix::mergeRowIndicesAndValues both subtract off merged
+      // indices in each row from the total count.  Thus,
+      // nodeNumEntries_ _should_ be accurate at this point, meaning
+      // that we don't have to re-count it here.
 
       // Reset local properties
       upperTriangular_ = true;
