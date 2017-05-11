@@ -107,7 +107,7 @@ int main (int argc, char *argv[]) {
         Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, m),
                              [&](const ordinal_type i) {
                                value_type tmp = 0;
-                               for (ordinal_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
+                               for (size_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
                                  tmp += A.Value(j)*XX(A.Col(j), rhs);
                                BB(i, rhs) = tmp;
                              } );
@@ -140,10 +140,10 @@ int main (int argc, char *argv[]) {
         S.NumSuperNodes(), S.SuperNodes(),
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-        S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+        S.SuperNodesTreeParent(), S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
 
     if (nthreads > 1) {
-      N.factorizeCholesky_Parallel();
+      //N.factorizeCholesky_Parallel();
     } else {
       N.factorizeCholesky_Serial();
     }

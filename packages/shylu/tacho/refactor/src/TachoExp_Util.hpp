@@ -223,7 +223,11 @@ namespace Tacho {
 
     struct Algo {
       struct External { enum : int { tag = 1001 }; };
-      struct SuperNodes { enum : int { tag = 1002 }; };
+      struct Internal { enum : int { tag = 1002 }; };
+
+      struct Workflow {
+        struct Serial { enum : int { tag = 2001 }; };
+      };
     };
 
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>

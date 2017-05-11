@@ -13,20 +13,21 @@ namespace Tacho {
 
     template<typename ArgUplo, 
              typename ArgAlgo>
-    struct Chol {
-      template<typename PolicyType,
-               typename MemberType,
-               typename ViewTypeA>
-      KOKKOS_INLINE_FUNCTION
-      static int invoke(const PolicyType &policy,
-                        const MemberType &member,
-                        const ViewTypeA &A) {
-        printf(">> Template Args - Uplo %d, Algo %d\n", 
-               ArgUplo::tag, ArgAlgo::tag);
-        TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
-        return -1;
-      }
-    };
+    struct Chol;
+    //{
+      // template<typename PolicyType,
+      //          typename MemberType,
+      //          typename ViewTypeA>
+      // KOKKOS_INLINE_FUNCTION
+      // static int invoke(const PolicyType &policy,
+      //                   const MemberType &member,
+      //                   const ViewTypeA &A) {
+      //   printf(">> Template Args - Uplo %d, Algo %d\n", 
+      //          ArgUplo::tag, ArgAlgo::tag);
+      //   TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      //   return -1;
+      // }
+    //};
   }
 }
 

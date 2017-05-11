@@ -184,52 +184,57 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
         if (get_team_rank(member) == 0) {
-          //TACHO_TEST_FOR_ABORT(_state > 2, "deadlock : state is bigger than 1");
-          bool is_execute = (_state == 2);
+          bool is_execute = (_state == 1);
           switch (_state) {
           case 0: {
+            ///
+            /// state 0:
+            ///   have children   : invoke children tasks recursively
+            ///   leaf (no child) : compute factorization
+            ///
             const ordinal_type 
               ibeg = _info.stree_ptr(_sid), 
               iend = _info.stree_ptr(_sid+1),
               isize = iend - ibeg;
 
             if (isize > 0) {
-              const size_type alloc_size = isize*sizeof(future_type);
+              // consider to use memory pool if # of children is greater than max dependence size
+              const size_type alloc_size = (isize > MaxDependenceSize ? isize*sizeof(future_type) : 0);
               future_type depbuf[MaxDependenceSize], *dep = &depbuf[0];
-              if (isize > MaxDependenceSize) { 
+              if (alloc_size) {
                 dep = (future_type*)_pool.allocate(alloc_size);
                 TACHO_TEST_FOR_ABORT(dep == NULL, "pool allocation fails");
               }
               
+              // spawn child tasks
               for (ordinal_type i=0;i<isize;++i) {
+                // the first child has a higher priority
                 const ordinal_type child = _info.stree_children(i+ibeg);
-                future_type f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, i ? Kokkos::TaskPriority::Low : Kokkos::TaskPriority::High),
-                                                   TaskFunctor_CholeskySuperNodes(_sched, _pool, _info, 
-                                                                                  child, _sid));
+                future_type f = Kokkos::task_spawn
+                  (Kokkos::TaskSingle(_sched, i ? Kokkos::TaskPriority::Regular : Kokkos::TaskPriority::High),
+                   TaskFunctor_CholeskySuperNodes(_sched, _pool, _info, child, _sid));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
+
+              // respawn with updating state
               ++_state;
               Kokkos::respawn(this, Kokkos::when_all(dep, isize), Kokkos::TaskPriority::High);
               
-              if (isize > MaxDependenceSize) _pool.deallocate((void*)dep, alloc_size);
+              // if memory pool is used, deallocate the memory
+              if (alloc_size) {
+                _pool.deallocate((void*)dep, alloc_size);
+              }
             } else {
               is_execute = true;
             }
             break;
           } 
-          case 1: {
-            ++_state;
-            is_execute = true;
-            //Kokkos::respawn(this, _info.supernodes_future(_sid), Kokkos::TaskPriority::High);            
+          default: {
             break;
           }
-          default: 
-            break;
           }
           
-          // task can execute its body when 1) sid is leaf, 2) respawned after dependences are satisfied.
-          // this one only executed by team_rank_0(). is_execute should be shared for all team members
           if (is_execute) {
             factorize(member);
           }          

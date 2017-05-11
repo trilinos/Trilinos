@@ -385,6 +385,7 @@ namespace Tacho {
       static void
       computeSuperNodesAssemblyTree(const ordinal_type_array &parent,
                                     const ordinal_type_array &supernodes,
+                                    /* */ ordinal_type_array &stree_parent,
                                     /* */ size_type_array &stree_ptr,
                                     /* */ ordinal_type_array &stree_children,
                                     /* */ ordinal_type_array &stree_roots,
@@ -392,21 +393,21 @@ namespace Tacho {
         const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
         const ordinal_type m = supernodes(numSuperNodes);
 
-        auto sparent = Kokkos::subview(work, range_type(0*m, 1*m));        
-        auto flag    = Kokkos::subview(work, range_type(1*m, 2*m));        
+        stree_parent = ordinal_type_array("stree_parent", m);
+        auto flag    = Kokkos::subview(work, range_type(0*m, 1*m));        
 
         // color flag with supernodes (for the ease to detect supernode id from dofs)
         for (ordinal_type i=0;i<numSuperNodes;++i) 
           for (ordinal_type j=supernodes(i);j<supernodes(i+1);++j) 
             flag(j) = i;
 
-        // coarse parent into sparent
+        // coarse parent into stree_parent
         for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-          sparent(sid) = -1;
+          stree_parent(sid) = -1;
           for (ordinal_type i=supernodes(sid);i<supernodes(sid+1);++i) {
             if (parent(i) >= 0) {
               const ordinal_type sidpar = flag(parent(i));
-              if (sidpar != sid) sparent(sid) = sidpar;
+              if (sidpar != sid) stree_parent(sid) = sidpar;
             }
           }
         }
@@ -421,11 +422,11 @@ namespace Tacho {
           clear_array(m, flag);
           ordinal_type cnt = 0;
           for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-            const ordinal_type sidpar = sparent(sid); 
+            const ordinal_type sidpar = stree_parent(sid); 
             if (sidpar == -1) 
               ++cnt;
             else
-              ++flag(sparent(sid));
+              ++flag(stree_parent(sid));
           }
           stree_roots = ordinal_type_array("stree_roots", cnt);
         }
@@ -442,7 +443,7 @@ namespace Tacho {
           ordinal_type cnt = 0;
           stree_children = ordinal_type_array("stree_children", stree_ptr(numSuperNodes));
           for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-            const ordinal_type sidpar = sparent(sid);                       
+            const ordinal_type sidpar = stree_parent(sid);                       
             if (sidpar == -1) 
               stree_roots(cnt++) = sid;
             else
@@ -474,6 +475,9 @@ namespace Tacho {
       // supernode elimination tree (parent - children)
       size_type_array _stree_ptr;
       ordinal_type_array _stree_children, _stree_roots;
+
+      // supernode elimination tree (child - parent)
+      ordinal_type_array _stree_parent;
       
     public:
       SymbolicTools() = default;
@@ -529,6 +533,9 @@ namespace Tacho {
 
       inline 
       ordinal_type_array blkSuperPanelColIdx() const { return _blk_super_panel_colidx; }
+
+      inline 
+      ordinal_type_array SuperNodesTreeParent() const { return _stree_parent; }
       
       inline 
       size_type_array SuperNodesTreePtr() const { return _stree_ptr; }
@@ -581,6 +588,7 @@ namespace Tacho {
         // supernode assembly tree
         computeSuperNodesAssemblyTree(parent,                                                 
                                       _supernodes,                                             
+                                      _stree_parent,
                                       _stree_ptr,                                                 
                                       _stree_children,
                                       _stree_roots,
