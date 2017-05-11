@@ -208,6 +208,14 @@ namespace MueLu {
           H.AddLevel(newLevel);
         }
       }
+      ExportDataSetKeepFlags(H, matricesToPrint_,"A");
+      ExportDataSetKeepFlags(H, prolongatorsToPrint_, "P");
+      ExportDataSetKeepFlags(H, restrictorsToPrint_,  "R");
+      ExportDataSetKeepFlags(H, nullspaceToPrint_,  "Nullspace");
+      ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");
+#ifdef HAVE_MUELU_INTREPID2
+      ExportDataSetKeepFlags(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map");
+#endif    
 
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
@@ -305,17 +313,27 @@ namespace MueLu {
     std::map<int, std::vector<keep_pair> > keep_;
 
   private:
+    // Set the keep flags for Export Data
+    void ExportDataSetKeepFlags(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
+      for (int i = 0; i < data.size(); ++i) {
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+	  L->AddKeepFlag(name, &*levelManagers_[data[i]]->GetFactory(name));
+	}	
+      }
+    }
+
 
     template<class T>
-    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, bool isFieldContainer=false) const {
+    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {
         std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
 
-          if (L->IsAvailable(name)) {
-            RCP<T> M = L->template Get< RCP<T> >(name);
+          if (L->IsAvailable(name,&*levelManagers_[i]->GetFactory(name))) {
+            RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[i]->GetFactory(name));
             if (!M.is_null()) {
 	      Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);              		
 	    }
@@ -326,7 +344,7 @@ namespace MueLu {
 
 
     template<class T>
-    void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname, bool isFieldContainer=false) const {
+    void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname) const {
       for (int i = 0; i < data.size(); ++i) {
         const std::string fileName = ofname + "_" + Teuchos::toString(data[i]) + ".m";
 
