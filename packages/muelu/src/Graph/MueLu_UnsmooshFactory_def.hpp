@@ -71,29 +71,29 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     //const ParameterList& pL = GetParameterList();
-    Input(currentLevel, "A");
-    Input(currentLevel, "P");
-    Input(currentLevel, "DofStatus");
-    //Input(currentLevel, "Coordinates");
-
+    Input(fineLevel, "A");
+    Input(coarseLevel, "P");
+    Input(fineLevel, "DofStatus");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
-    FactoryMonitor m(*this, "Build", currentLevel);
+  void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+    FactoryMonitor m(*this, "Build", coarseLevel);
     typedef Teuchos::ScalarTraits<SC> STS;
 
     const ParameterList  & pL = GetParameterList();
 
-    RCP<Matrix> unamalgA = Get< RCP<Matrix> >(currentLevel, "A");
-    RCP<Matrix> amalgP   = Get< RCP<Matrix> >(currentLevel, "P");
+    RCP<Matrix> unamalgA = Get< RCP<Matrix> >(fineLevel,   "A");
+    RCP<Matrix> amalgP   = Get< RCP<Matrix> >(coarseLevel, "P");
 
     //Teuchos::RCP< const Teuchos::Comm< int > > comm = amalgP->getRowMap()->getComm();
     //Xpetra::UnderlyingLib lib = amalgP->getRowMap()->lib();
 
-    Teuchos::Array<char> dofStatus = Get<Teuchos::Array<char> >(currentLevel, "DofStatus");
+    Teuchos::Array<char> dofStatus = Get<Teuchos::Array<char> >(fineLevel, "DofStatus");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(amalgP->getDomainMap()->isSameAs(*amalgP->getColMap()) == false, MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: only support for non-overlapping aggregates. (column map of Ptent must be the same as domain map of Ptent)");
 
     /*for (size_t i = 0; i < dofStatus.size(); i++) {
       std::cout << i << " " << dofStatus[i] << std::endl;
@@ -201,7 +201,8 @@ namespace MueLu {
 
     // TODO think about maximum number of entries per row
     // Does this work for more than on nullspace vectors?
-    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(), 1);
+    // We assume non-overlapping aggreagtes, i.e., colmap = domainmap
+    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseDomainMap, 1);
 
     for (size_t i = 0; i < newPRowPtr.size() - 1; i++) {
       unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
@@ -211,7 +212,7 @@ namespace MueLu {
 
     Teuchos::RCP<Matrix> unamalgP = Teuchos::rcp(new CrsMatrixWrap(unamalgPCrs));
 
-    Set(currentLevel,"P",unamalgP);
+    Set(coarseLevel,"P",unamalgP);
   }
 
 

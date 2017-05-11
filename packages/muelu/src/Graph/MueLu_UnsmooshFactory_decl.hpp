@@ -48,7 +48,7 @@
 #define PACKAGES_MUELU_SRC_GRAPH_MUELU_UNSMOOSHFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_PFactory.hpp"
 #include "MueLu_UnsmooshFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 
@@ -83,7 +83,7 @@ namespace MueLu {
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class UnsmooshFactory : public SingleLevelFactoryBase {
+  class UnsmooshFactory : public PFactory {
 #undef MUELU_UNSMOOSHFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -105,11 +105,12 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
-    void Build(Level &currentLevel) const; // Build
+    void Build (Level &fineLevel, Level &coarseLevel) const; // Build
+    void BuildP(Level &fineLevel, Level &coarseLevel) const {}; // TAW no real need for an extra BuildP routine. Just use Build
 
   private:
 
