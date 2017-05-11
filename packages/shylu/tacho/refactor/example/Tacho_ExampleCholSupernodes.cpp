@@ -107,7 +107,7 @@ int main (int argc, char *argv[]) {
         Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, m),
                              [&](const ordinal_type i) {
                                value_type tmp = 0;
-                               for (ordinal_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
+                               for (size_type j=A.RowPtrBegin(i);j<A.RowPtrEnd(i);++j)
                                  tmp += A.Value(j)*XX(A.Col(j), rhs);
                                BB(i, rhs) = tmp;
                              } );
@@ -137,23 +137,18 @@ int main (int argc, char *argv[]) {
     NumericTools<value_type,Kokkos::DefaultHostExecutionSpace> 
       N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
         T.PermVector(), T.InvPermVector(),
-        S.NumSuperNodes(), S.SuperNodes(),
+        S.NumSupernodes(), S.Supernodes(),
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-        S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+        S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
     if (nthreads > 1) {
       N.factorizeCholesky_Parallel();
     } else {
-      N.factorizeCholesky_Serial();
+      N.factorizeCholesky_Parallel();
     }
     t = timer.seconds();    
     std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
-    // {
-    //   auto U = N.Factors<Uplo::Upper>();
-    //   std::ofstream file("U_par.mtx");
-    //   MatrixMarket<value_type>::write(file, U);    
-    // }
   }
   Kokkos::finalize();
 

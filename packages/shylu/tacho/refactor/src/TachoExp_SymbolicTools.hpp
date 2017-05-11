@@ -161,7 +161,7 @@ namespace Tacho {
       // SIAM J. Matrix Anal. Appl., Vol. 14, No. 1, pp. 242-252.
       inline
       static void
-      computeSuperNodes(const ordinal_type m, 
+      computeSupernodes(const ordinal_type m, 
                         const size_type_array &ap,
                         const ordinal_type_array &aj,
                         const ordinal_type_array &perm,
@@ -218,7 +218,7 @@ namespace Tacho {
       /// Based on the symbolic factors, allocate pannels
       inline
       static void
-      allocateSuperNodes(const ordinal_type m,
+      allocateSupernodes(const ordinal_type m,
                          const size_type_array &ap,
                          const ordinal_type_array &aj,
                          const ordinal_type_array &supernodes,
@@ -228,7 +228,7 @@ namespace Tacho {
                          /* */ size_type_array &sid_super_panel_ptr,
                          /* */ ordinal_type_array &sid_super_panel_colidx,
                          /* */ ordinal_type_array &blk_super_panel_colidx) {
-        const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
+        const ordinal_type numSupernodes = supernodes.dimension_0() - 1;
           
         // for each supernode
         auto clear_flag = [](const ordinal_type cnt,
@@ -305,7 +305,7 @@ namespace Tacho {
         ///
         /// super color in rows
         ///
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+        for (ordinal_type sid=0;sid<numSupernodes;++sid) {
           const ordinal_type sbeg = supernodes(sid), send = supernodes(sid+1);
           for (ordinal_type i=sbeg;i<send;++i) 
             rid(i) = sid;
@@ -318,10 +318,10 @@ namespace Tacho {
         const ordinal_type_array null_ordinal_type_array("null_ordinal_type_array");
 
         /// count the # of associated columns to all supernodes
-        gid_super_panel_ptr = size_type_array("gid_super_panel_ptr", numSuperNodes+1);
-        sid_super_panel_ptr= size_type_array("sid_super_panel_ptr", numSuperNodes+1);
+        gid_super_panel_ptr = size_type_array("gid_super_panel_ptr", numSupernodes+1);
+        sid_super_panel_ptr= size_type_array("sid_super_panel_ptr", numSupernodes+1);
 
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+        for (ordinal_type sid=0;sid<numSupernodes;++sid) {
           const ordinal_type sbeg = supernodes(sid), send = supernodes(sid+1);
 
           const ordinal_type ndofs = colmap_per_supernode(ap, aj, sbeg, send, cid, flag);
@@ -336,12 +336,12 @@ namespace Tacho {
           clear_array(ndofs, cid);
           clear_array(nsids, tmp);
         }
-        gid_super_panel_colidx = ordinal_type_array("gid_super_panel_colidx", gid_super_panel_ptr(numSuperNodes));
-        sid_super_panel_colidx = ordinal_type_array("sid_super_panel_colidx", sid_super_panel_ptr(numSuperNodes));
-        blk_super_panel_colidx = ordinal_type_array("blk_super_panel_colidx", sid_super_panel_ptr(numSuperNodes));
+        gid_super_panel_colidx = ordinal_type_array("gid_super_panel_colidx", gid_super_panel_ptr(numSupernodes));
+        sid_super_panel_colidx = ordinal_type_array("sid_super_panel_colidx", sid_super_panel_ptr(numSupernodes));
+        blk_super_panel_colidx = ordinal_type_array("blk_super_panel_colidx", sid_super_panel_ptr(numSupernodes));
         
         /// sort and column indices per supernode
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
+        for (ordinal_type sid=0;sid<numSupernodes;++sid) {
           const ordinal_type sbeg = supernodes(sid), send = supernodes(sid+1);
 
           // *** sort and construct gid map to sparse matrix
@@ -383,30 +383,31 @@ namespace Tacho {
       /// construct tree explicitly
       inline
       static void
-      computeSuperNodesAssemblyTree(const ordinal_type_array &parent,
+      computeSupernodesAssemblyTree(const ordinal_type_array &parent,
                                     const ordinal_type_array &supernodes,
+                                    /* */ ordinal_type_array &stree_parent,
                                     /* */ size_type_array &stree_ptr,
                                     /* */ ordinal_type_array &stree_children,
                                     /* */ ordinal_type_array &stree_roots,
                                     const ordinal_type_array &work) {
-        const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
-        const ordinal_type m = supernodes(numSuperNodes);
+        const ordinal_type numSupernodes = supernodes.dimension_0() - 1;
+        const ordinal_type m = supernodes(numSupernodes);
 
-        auto sparent = Kokkos::subview(work, range_type(0*m, 1*m));        
-        auto flag    = Kokkos::subview(work, range_type(1*m, 2*m));        
+        stree_parent = ordinal_type_array("stree_parent", m);
+        auto flag    = Kokkos::subview(work, range_type(0*m, 1*m));        
 
         // color flag with supernodes (for the ease to detect supernode id from dofs)
-        for (ordinal_type i=0;i<numSuperNodes;++i) 
+        for (ordinal_type i=0;i<numSupernodes;++i) 
           for (ordinal_type j=supernodes(i);j<supernodes(i+1);++j) 
             flag(j) = i;
 
-        // coarse parent into sparent
-        for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-          sparent(sid) = -1;
+        // coarse parent into stree_parent
+        for (ordinal_type sid=0;sid<numSupernodes;++sid) {
+          stree_parent(sid) = -1;
           for (ordinal_type i=supernodes(sid);i<supernodes(sid+1);++i) {
             if (parent(i) >= 0) {
               const ordinal_type sidpar = flag(parent(i));
-              if (sidpar != sid) sparent(sid) = sidpar;
+              if (sidpar != sid) stree_parent(sid) = sidpar;
             }
           }
         }
@@ -420,29 +421,29 @@ namespace Tacho {
         {
           clear_array(m, flag);
           ordinal_type cnt = 0;
-          for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-            const ordinal_type sidpar = sparent(sid); 
+          for (ordinal_type sid=0;sid<numSupernodes;++sid) {
+            const ordinal_type sidpar = stree_parent(sid); 
             if (sidpar == -1) 
               ++cnt;
             else
-              ++flag(sparent(sid));
+              ++flag(stree_parent(sid));
           }
           stree_roots = ordinal_type_array("stree_roots", cnt);
         }
 
         // prefix scan
         {
-          stree_ptr = size_type_array("stree_ptr", numSuperNodes + 1);
-          for (ordinal_type sid=0;sid<numSuperNodes;++sid)
+          stree_ptr = size_type_array("stree_ptr", numSupernodes + 1);
+          for (ordinal_type sid=0;sid<numSupernodes;++sid)
             stree_ptr(sid+1) = stree_ptr(sid) + flag(sid); 
         }
 
         {
-          clear_array(numSuperNodes, flag);
+          clear_array(numSupernodes, flag);
           ordinal_type cnt = 0;
-          stree_children = ordinal_type_array("stree_children", stree_ptr(numSuperNodes));
-          for (ordinal_type sid=0;sid<numSuperNodes;++sid) {
-            const ordinal_type sidpar = sparent(sid);                       
+          stree_children = ordinal_type_array("stree_children", stree_ptr(numSupernodes));
+          for (ordinal_type sid=0;sid<numSupernodes;++sid) {
+            const ordinal_type sidpar = stree_parent(sid);                       
             if (sidpar == -1) 
               stree_roots(cnt++) = sid;
             else
@@ -474,6 +475,9 @@ namespace Tacho {
       // supernode elimination tree (parent - children)
       size_type_array _stree_ptr;
       ordinal_type_array _stree_children, _stree_roots;
+
+      // supernode elimination tree (child - parent)
+      ordinal_type_array _stree_parent;
       
     public:
       SymbolicTools() = default;
@@ -510,10 +514,10 @@ namespace Tacho {
       }
 
       inline
-      ordinal_type NumSuperNodes() const { return _supernodes.dimension_0() - 1; }
+      ordinal_type NumSupernodes() const { return _supernodes.dimension_0() - 1; }
       
       inline
-      ordinal_type_array SuperNodes() const { return _supernodes; }
+      ordinal_type_array Supernodes() const { return _supernodes; }
       
       inline 
       size_type_array gidSuperPanelPtr() const { return _gid_super_panel_ptr; }
@@ -529,15 +533,18 @@ namespace Tacho {
 
       inline 
       ordinal_type_array blkSuperPanelColIdx() const { return _blk_super_panel_colidx; }
-      
-      inline 
-      size_type_array SuperNodesTreePtr() const { return _stree_ptr; }
 
       inline 
-      ordinal_type_array SuperNodesTreeChildren() const { return _stree_children; }
+      ordinal_type_array SupernodesTreeParent() const { return _stree_parent; }
       
       inline 
-      ordinal_type_array SuperNodesTreeRoots() const { return _stree_roots; }
+      size_type_array SupernodesTreePtr() const { return _stree_ptr; }
+
+      inline 
+      ordinal_type_array SupernodesTreeChildren() const { return _stree_children; }
+      
+      inline 
+      ordinal_type_array SupernodesTreeRoots() const { return _stree_roots; }
       
       inline
       void
@@ -563,7 +570,7 @@ namespace Tacho {
         }
 
         // compute super node structure
-        computeSuperNodes(_m, _ap, _aj, _perm, _peri, parent, _supernodes, work);
+        computeSupernodes(_m, _ap, _aj, _perm, _peri, parent, _supernodes, work);
 
         // compute fill pattern
         size_type_array ap;
@@ -571,7 +578,7 @@ namespace Tacho {
         computeFillPatternUpper(_m, _ap, _aj, _perm, _peri, ap, aj, work);          
 
         // allocate supernodes
-        allocateSuperNodes(_m, ap, aj, _supernodes, work, 
+        allocateSupernodes(_m, ap, aj, _supernodes, work, 
                            _gid_super_panel_ptr,
                            _gid_super_panel_colidx,
                            _sid_super_panel_ptr,
@@ -579,8 +586,9 @@ namespace Tacho {
                            _blk_super_panel_colidx);
 
         // supernode assembly tree
-        computeSuperNodesAssemblyTree(parent,                                                 
+        computeSupernodesAssemblyTree(parent,                                                 
                                       _supernodes,                                             
+                                      _stree_parent,
                                       _stree_ptr,                                                 
                                       _stree_children,
                                       _stree_roots,

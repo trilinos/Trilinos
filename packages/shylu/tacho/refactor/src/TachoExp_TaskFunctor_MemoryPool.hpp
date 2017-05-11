@@ -45,7 +45,6 @@ namespace Tacho {
             r_val = (void*)_pool.allocate(_bufsize);
           else
             r_val = NULL;
-          printf("+ %lu\n", r_val);
         }
       }
     };
@@ -85,9 +84,8 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member) {
         if (get_team_rank(member) == 0) {
-          printf("- %lu\n", _ptr.get());
-          if (_bufsize)
-            _pool.deallocate((void*)_ptr.get(), _bufsize);
+          // if (_bufsize)
+          //   _pool.deallocate((void*)_ptr.get(), _bufsize);
         }
       }
     };
