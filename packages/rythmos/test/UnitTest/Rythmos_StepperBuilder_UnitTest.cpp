@@ -47,10 +47,11 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   // the #if condition accordingly and now the test passes for me.
 
   // Test that StepperBuilder validates its parameter list
-#if !( (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ == 8) )
-  // For some reason, GCC 4.8.x has a problem with catching exeptions when you
-  // set an RCP to null.  For for GCC 4.8 we will skip all of these tests
-  // below.
+#if !( (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ == 8) || (__GNUC__ == 4 && __GNUC_MINOR__ == 9) )
+  // For some reason, several newer GCC compilers have a problem with catching
+  // exeptions when you set an RCP to null.  This is likely due to the problem
+  // with destructors throwing exceptions (see Trilinos GitHub #831 and
+  // #1303).
   pl->set("Hello","World"); // This changes the parameter list inside the builder.
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
 #ifdef TEUCHOS_DEBUG
