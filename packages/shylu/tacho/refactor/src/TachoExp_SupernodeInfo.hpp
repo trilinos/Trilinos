@@ -3,7 +3,7 @@
 
 #include "TachoExp_Util.hpp"
 
-/// \file TachoExp_SuperNodeInfo.hpp
+/// \file TachoExp_SupernodeInfo.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace Tacho {
@@ -11,7 +11,7 @@ namespace Tacho {
   namespace Experimental {
 
     template<typename ValueType, typename ExecSpace>
-    struct SuperNodeInfo {
+    struct SupernodeInfo {
       typedef ValueType value_type;
       typedef ExecSpace exec_space;
 
@@ -50,10 +50,10 @@ namespace Tacho {
       UnmanagedViewType<value_type_array> super_panel_buf;
 
       KOKKOS_INLINE_FUNCTION
-      SuperNodeInfo() = default;
+      SupernodeInfo() = default;
 
       KOKKOS_INLINE_FUNCTION
-      SuperNodeInfo(const SuperNodeInfo &b) = default;
+      SupernodeInfo(const SupernodeInfo &b) = default;
 
       KOKKOS_INLINE_FUNCTION
       void

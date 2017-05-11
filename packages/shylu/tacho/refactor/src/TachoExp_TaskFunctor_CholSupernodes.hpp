@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_TASKFUNCTOR_CHOLESKY_SUPERNODES_HPP__
 #define __TACHOEXP_TASKFUNCTOR_CHOLESKY_SUPERNODES_HPP__
 
-/// \file TachoExp_TaskFunctor_FactorizeSuperNodes.hpp
+/// \file TachoExp_TaskFunctor_FactorizeSupernodes.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
@@ -11,7 +11,7 @@ namespace Tacho {
   namespace Experimental {
 
     template<typename MatValueType, typename ExecSpace>
-    struct TaskFunctor_CholeskySuperNodes {
+    struct TaskFunctor_CholeskySupernodes {
       typedef ExecSpace exec_space;
 
       // task scheduler/future
@@ -27,7 +27,7 @@ namespace Tacho {
       typedef MatValueType mat_value_type; // matrix value type
 
       // supernodes
-      typedef SuperNodeInfo<mat_value_type,exec_space> supernode_info_type;
+      typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
     private:
@@ -166,10 +166,10 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_CholeskySuperNodes() = delete;
+      TaskFunctor_CholeskySupernodes() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_CholeskySuperNodes(const sched_type &sched,
+      TaskFunctor_CholeskySupernodes(const sched_type &sched,
                                      const memory_pool_type &pool,
                                      const supernode_info_type &info,
                                      const ordinal_type sid,
@@ -212,7 +212,7 @@ namespace Tacho {
                 const ordinal_type child = _info.stree_children(i+ibeg);
                 future_type f = Kokkos::task_spawn
                   (Kokkos::TaskSingle(_sched, i ? Kokkos::TaskPriority::Regular : Kokkos::TaskPriority::High),
-                   TaskFunctor_CholeskySuperNodes(_sched, _pool, _info, child, _sid));
+                   TaskFunctor_CholeskySupernodes(_sched, _pool, _info, child, _sid));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }

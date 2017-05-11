@@ -10,9 +10,9 @@ SET(LIBRARIES shyluchol)
 
 IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSuperNodes
+    Tacho_ExampleCholSupernodes
     NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSuperNodes.cpp
+    SOURCES Tacho_ExampleCholSupernodes.cpp
     COMM serial mpi
   )
   IF(TPL_ENABLE_MKL)

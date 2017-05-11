@@ -137,10 +137,10 @@ int main (int argc, char *argv[]) {
     NumericTools<value_type,Kokkos::DefaultHostExecutionSpace> 
       N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
         T.PermVector(), T.InvPermVector(),
-        S.NumSuperNodes(), S.SuperNodes(),
+        S.NumSupernodes(), S.Supernodes(),
         S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
         S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
-        S.SuperNodesTreeParent(), S.SuperNodesTreePtr(), S.SuperNodesTreeChildren(), S.SuperNodesTreeRoots());
+        S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
     if (nthreads > 1) {
       //N.factorizeCholesky_Parallel();

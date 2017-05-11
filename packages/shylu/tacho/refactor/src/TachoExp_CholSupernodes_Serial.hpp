@@ -1,7 +1,7 @@
 #ifndef __TACHOEXP_CHOL_SUPERNODES_SERIAL_HPP__
 #define __TACHOEXP_CHOL_SUPERNODES_SERIAL_HPP__
 
-/// \file TachoExp_CholSuperNodes.hpp
+/// \file TachoExp_CholSupernodes.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
@@ -11,23 +11,23 @@ namespace Tacho {
   namespace Experimental {
 
     template<>
-    struct CholSuperNodes<Algo::Workflow::Serial> {
+    struct CholSupernodes<Algo::Workflow::Serial> {
       template<typename SchedulerType,
                typename MemoryPoolType,
                typename MemberType,
-               typename SuperNodeInfoType,
+               typename SupernodeInfoType,
                typename MatrixViewType>
       KOKKOS_INLINE_FUNCTION
       static int 
       update(const SchedulerType &sched,
              const MemoryPoolType &pool, 
              const MemberType &member,
-             const SuperNodeInfoType &info,
+             const SupernodeInfoType &info,
              const MatrixViewType &ABR,
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {
-        typedef SuperNodeInfoType supernode_info_type;
+        typedef SupernodeInfoType supernode_info_type;
         
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
         typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
@@ -120,18 +120,18 @@ namespace Tacho {
       template<typename SchedulerType,
                typename MemoryPoolType,
                typename MemberType,
-               typename SuperNodeInfoType>
+               typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int 
       factorize(const SchedulerType &sched,
                 const MemoryPoolType &pool, 
                 const MemberType &member,
-                const SuperNodeInfoType &info,
+                const SupernodeInfoType &info,
                 const ordinal_type sid,
                 const ordinal_type sidpar,
                 const size_type bufsize,
                 /* */ void *buf) {
-        typedef SuperNodeInfoType supernode_info_type;
+        typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
