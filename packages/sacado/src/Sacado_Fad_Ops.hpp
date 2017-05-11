@@ -1288,35 +1288,42 @@ namespace Sacado {
 
 #ifdef  HAVE_SACADO_CXX11
 
+namespace Sacado {
+  namespace Fad {
+    template <typename T1, typename T2 = T1>
+    struct ConditionalReturnType {
+      typedef decltype( std::declval<T1>() == std::declval<T2>() ) type;
+    };
+  }
+}
+
 #define FAD_RELOP_MACRO(OP)                                             \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
     template <typename ExprT1, typename ExprT2>                         \
     KOKKOS_INLINE_FUNCTION                                              \
-    auto                                                                \
+    typename ConditionalReturnType<typename Expr<ExprT1>::value_type,   \
+                                   typename Expr<ExprT2>::value_type>::type \
     operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2) ->                          \
-      decltype( expr1.val() OP expr2.val() )                            \
+                 const Expr<ExprT2>& expr2)                             \
     {                                                                   \
       return expr1.val() OP expr2.val();                                \
     }                                                                   \
                                                                         \
     template <typename ExprT2>                                          \
     KOKKOS_INLINE_FUNCTION                                              \
-    auto                                                                \
+    typename ConditionalReturnType<typename Expr<ExprT2>::value_type>::type \
     operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2) ->                          \
-      decltype( a OP expr2.val() )                                      \
+                 const Expr<ExprT2>& expr2)                             \
     {                                                                   \
       return a OP expr2.val();                                          \
     }                                                                   \
                                                                         \
     template <typename ExprT1>                                          \
     KOKKOS_INLINE_FUNCTION                                              \
-    auto                                                                \
+    typename ConditionalReturnType<typename Expr<ExprT1>::value_type>::type \
     operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b) ->         \
-      decltype( expr1.val() OP b )                                      \
+                 const typename Expr<ExprT1>::value_type& b)            \
     {                                                                   \
       return expr1.val() OP b;                                          \
     }                                                                   \
