@@ -71,7 +71,6 @@ namespace MueLu {
 
     // extract amalgamation information from matrix A
     LO blockdim = 1;                          // block dim for fixed size blocks
-    GO offset    = 0;
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = blockdim; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
@@ -84,7 +83,6 @@ namespace MueLu {
       RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
       TEUCHOS_TEST_FOR_EXCEPTION(strMap == Teuchos::null,Exceptions::BadCast,"MueLu::RepartitionInterface::Build: cast to strided row map failed.");
       blockdim = strMap->getFixedBlockSize();
-      offset   = strMap->getOffset();
       blockid  = strMap->getStridedBlockId();
       if (blockid > -1) {
         std::vector<size_t> stridingInfo = strMap->getStridingData();

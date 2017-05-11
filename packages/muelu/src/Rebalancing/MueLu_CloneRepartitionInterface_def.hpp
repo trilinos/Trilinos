@@ -85,9 +85,7 @@ namespace MueLu {
     Teuchos::RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
 
     // number of Partitions only used for a shortcut.
-    GO numPartitions = 0;
     if (currentLevel.IsAvailable("number of partitions")) {
-      numPartitions = currentLevel.Get<GO>("number of partitions");
       GetOStream(Warnings0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
 
     }
