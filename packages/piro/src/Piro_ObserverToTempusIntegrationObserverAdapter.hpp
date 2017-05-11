@@ -62,7 +62,8 @@ public:
   ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver);
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
+    const bool supports_x_dotdot = false);
 
   // Overridden from Tempus::IntegratorObserver
 
@@ -101,6 +102,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   bool hasSensitivities_;
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
+  bool supports_x_dotdot_; 
 };
 
 } // namespace Piro
