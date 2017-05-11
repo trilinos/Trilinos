@@ -49,10 +49,10 @@ namespace Tacho {
         if (diff >= 0) {
           map = ordinal_type_array((ordinal_type*)buf, src_col_size);
         } else {
-          TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
-          // ordinal_type *mapbuf = (ordinal_type*)pool.allocate(mapsize);
-          // TACHO_TEST_FOR_ABORT(mapbuf == NULL, "pool allocation fails");
-          // map = ordinal_type_array(mapbuf, src_col_size);
+          //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
+          ordinal_type *mapbuf = (ordinal_type*)pool.allocate(mapsize);
+          TACHO_TEST_FOR_ABORT(mapbuf == NULL, "pool allocation fails");
+          map = ordinal_type_array(mapbuf, src_col_size);
         }
         const ordinal_type smapoff = info.gid_super_panel_ptr(sid);
         auto src_map = Kokkos::subview(info.gid_super_panel_colidx,
@@ -111,7 +111,7 @@ namespace Tacho {
         if (diff >= 0) {
           // do nothing
         } else {
-          //pool.deallocate((void*)map.data(), mapsize);
+          pool.deallocate((void*)map.data(), mapsize);
         }
 
         return 0;
@@ -174,10 +174,10 @@ namespace Tacho {
               if (diff > 0) {
                 ABR = value_type_matrix((value_type*)buf, n, n);
               } else {
-                TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
-                //value_type *abrbuf = (value_type*)pool.allocate(abrsize);
-                //TACHO_TEST_FOR_ABORT(abrbuf == NULL, "pool allocation fails");
-                //ABR = value_type_matrix(abrbuf, n, n);                
+                //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
+                value_type *abrbuf = (value_type*)pool.allocate(abrsize);
+                TACHO_TEST_FOR_ABORT(abrbuf == NULL, "pool allocation fails");
+                ABR = value_type_matrix(abrbuf, n, n);                
               }
               
               Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
@@ -189,7 +189,7 @@ namespace Tacho {
               if (diff > 0) {
                 // do nothing
               } else {
-                //pool.deallocate((void*)ABR.data(), abrsize);
+                pool.deallocate((void*)ABR.data(), abrsize);
               }
             }
           }

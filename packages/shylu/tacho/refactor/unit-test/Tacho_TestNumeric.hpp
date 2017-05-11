@@ -116,7 +116,7 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
                                             S.sidSuperPanelPtr(), S.sidSuperPanelColIdx(), S.blkSuperPanelColIdx(),
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
-  //N.factorizeCholesky_Parallel();
+  N.factorizeCholesky_Parallel();
 }
 
 #endif
