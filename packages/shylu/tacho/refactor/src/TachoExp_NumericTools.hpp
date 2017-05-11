@@ -100,13 +100,26 @@ namespace Tacho {
           recursiveSerialChol(sched, pool, 
                               info, info.stree_children(i), sid,
                               bufsize, buf);
-        
-        const ordinal_type member = 0;
-        CholSupernodes<Algo::Workflow::Serial>
-          ::factorize(sched, pool, 
-                      member,
-                      info, sid, sidpar,
-                      bufsize, buf);
+
+        {
+          const ordinal_type member = 0;
+          UnmanagedViewType<typename supernode_into_type_host::value_type_matrix> ABR;
+          CholSupernodes<Algo::Workflow::Serial>
+            ::factorize(sched, pool, 
+                        member,
+                        info, sid, sidpar,
+                        ABR,
+                        bufsize, buf);
+          
+          TACHO_TEST_FOR_ABORT(ABR.span() && ABR.data() != buf, 
+                               "memory pool is used in serial factorization");
+
+          CholSupernodes<Algo::Workflow::Serial>          
+            ::update(sched, pool, 
+                     member,
+                     info, ABR, sid, 
+                     bufsize, buf);
+        }
       }
       
     public:
@@ -221,83 +234,83 @@ namespace Tacho {
       inline
       void
       factorizeCholesky_Parallel() {
-        /// supernode info
-        supernode_into_type_host info;
-        {
-          /// symbolic input
-          info.supernodes             = _supernodes;
-          info.gid_super_panel_ptr    = _gid_super_panel_ptr;
-          info.gid_super_panel_colidx = _gid_super_panel_colidx;
+        // /// supernode info
+        // supernode_into_type_host info;
+        // {
+        //   /// symbolic input
+        //   info.supernodes             = _supernodes;
+        //   info.gid_super_panel_ptr    = _gid_super_panel_ptr;
+        //   info.gid_super_panel_colidx = _gid_super_panel_colidx;
           
-          info.sid_super_panel_ptr    = _sid_super_panel_ptr;
-          info.sid_super_panel_colidx = _sid_super_panel_colidx;
-          info.blk_super_panel_colidx = _blk_super_panel_colidx;
+        //   info.sid_super_panel_ptr    = _sid_super_panel_ptr;
+        //   info.sid_super_panel_colidx = _sid_super_panel_colidx;
+        //   info.blk_super_panel_colidx = _blk_super_panel_colidx;
           
-          info.stree_ptr              = _stree_ptr;
-          info.stree_children         = _stree_children;
-        }
+        //   info.stree_ptr              = _stree_ptr;
+        //   info.stree_children         = _stree_children;
+        // }
         
-        {
-          /// factor allocation and copy the matrix
-          ordinal_type_array_host iwork("work", _m+1);
+        // {
+        //   /// factor allocation and copy the matrix
+        //   ordinal_type_array_host iwork("work", _m+1);
 
-          info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
+        //   info.allocateSuperPanels(_super_panel_ptr, _super_panel_buf, iwork);
           
-          info.super_panel_ptr = _super_panel_ptr;
-          info.super_panel_buf = _super_panel_buf;
+        //   info.super_panel_ptr = _super_panel_ptr;
+        //   info.super_panel_buf = _super_panel_buf;
 
-          info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
-        }
+        //   info.copySparseToSuperPanels(_ap, _aj, _ax, _perm, _peri, iwork);
+        // }
 
-        {
-          typedef typename sched_type_host::memory_space memory_space;
+        // {
+        //   typedef typename sched_type_host::memory_space memory_space;
 
-          sched_type_host sched;
-          {
-            const size_type max_functor_size = ( sizeof(supernode_into_type_host) + 
-                                                 sizeof(sched_type_host) + 
-                                                 sizeof(memory_pool_type_host) + 128 );
-            const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-            const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size*1000,
-                                                      2048*400);
+        //   sched_type_host sched;
+        //   {
+        //     const size_type max_functor_size = ( sizeof(supernode_into_type_host) + 
+        //                                          sizeof(sched_type_host) + 
+        //                                          sizeof(memory_pool_type_host) + 128 );
+        //     const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
+        //     const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size*1000,
+        //                                               2048*400);
             
-            const ordinal_type 
-              min_block_size  = max_functor_size*8,
-              max_block_size  = max_functor_size*8,
-              superblock_size = max_block_size*16;
+        //     const ordinal_type 
+        //       min_block_size  = max_functor_size*8,
+        //       max_block_size  = max_functor_size*8,
+        //       superblock_size = max_block_size*16;
             
-            sched = sched_type_host(memory_space(),
-                                    task_queue_capacity,
-                                    min_block_size,
-                                    max_block_size,
-                                    superblock_size);
-          }
+        //     sched = sched_type_host(memory_space(),
+        //                             task_queue_capacity,
+        //                             min_block_size,
+        //                             max_block_size,
+        //                             superblock_size);
+        //   }
 
-          memory_pool_type_host pool;
-          {
-            const size_type worksize = info.computeWorkspaceSerialChol() + _m + 1;
-            const size_type pool_memory_capacity = max(worksize*sizeof(value_type)*8, 4096);
+        //   memory_pool_type_host pool;
+        //   {
+        //     const size_type worksize = info.computeWorkspaceSerialChol() + _m + 1;
+        //     const size_type pool_memory_capacity = max(worksize*sizeof(value_type)*8, 4096);
 
-            ordinal_type alpha = 10000;
-            const size_type
-              min_block_size  = 64*alpha,
-              max_block_size  = 1024*alpha,
-              superblock_size = 4096*alpha;
+        //     ordinal_type alpha = 10000;
+        //     const size_type
+        //       min_block_size  = 64*alpha,
+        //       max_block_size  = 1024*alpha,
+        //       superblock_size = 4096*alpha;
             
-            pool = memory_pool_type_host(memory_space(), 
-                                         pool_memory_capacity,
-                                         min_block_size,
-                                         max_block_size,
-                                         superblock_size);
-          }
+        //     pool = memory_pool_type_host(memory_space(), 
+        //                                  pool_memory_capacity,
+        //                                  min_block_size,
+        //                                  max_block_size,
+        //                                  superblock_size);
+        //   }
       
-          typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i)
-            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                               chol_supernode_functor_type(sched, pool, info, _stree_roots(i), -1));
-          Kokkos::wait(sched);          
-        }
+        //   typedef TaskFunctor_CholSupernodes<value_type,host_exec_space> chol_supernode_functor_type;
+        //   const ordinal_type nroots = _stree_roots.dimension_0();
+        //   for (ordinal_type i=0;i<nroots;++i)
+        //     Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+        //                        chol_supernode_functor_type(sched, pool, info, _stree_roots(i), -1));
+        //   Kokkos::wait(sched);          
+        // }
       }
 
       

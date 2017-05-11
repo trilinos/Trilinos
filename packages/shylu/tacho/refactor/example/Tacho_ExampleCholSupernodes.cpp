@@ -143,7 +143,7 @@ int main (int argc, char *argv[]) {
         S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
 
     if (nthreads > 1) {
-      //N.factorizeCholesky_Parallel();
+      N.factorizeCholesky_Parallel();
     } else {
       N.factorizeCholesky_Serial();
     }

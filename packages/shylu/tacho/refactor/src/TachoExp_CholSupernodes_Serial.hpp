@@ -15,6 +15,65 @@ namespace Tacho {
       template<typename SchedulerType,
                typename MemoryPoolType,
                typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int 
+      factorize(const SchedulerType &sched,
+                const MemoryPoolType &pool, 
+                const MemberType &member,
+                const SupernodeInfoType &info,
+                const ordinal_type sid,
+                const ordinal_type sidpar,
+                /* */ UnmanagedViewType<typename SupernodeInfoType::value_type_matrix> &ABR,
+                const size_type bufsize,
+                /* */ void *buf) {
+        typedef SupernodeInfoType supernode_info_type;
+
+        typedef typename supernode_info_type::value_type value_type;
+        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+        // get supernode panel pointer
+        value_type *ptr = info.getSuperPanelPtr(sid);
+        
+        // characterize the panel size
+        ordinal_type pm, pn;
+        info.getSuperPanelSize(sid, pm, pn);
+
+        // panel is divided into diagonal and interface block (i.e., ATL and ATR)
+        const ordinal_type m = pm, n = pn - pm;
+
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;          
+          Chol<Uplo::Upper,Algo::External>
+            ::invoke(sched, /* pool, */ member, ATL);
+          
+          if (n > 0) {
+            UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, /* pool, */ member, Diag::NonUnit(), 1.0, ATL, ATR);
+            
+            const size_type abrsize = n*n*sizeof(value_type);
+            const ordinal_type diff = bufsize - abrsize;
+            if (diff > 0) {
+              ABR = value_type_matrix((value_type*)buf, n, n);
+            } else {
+              //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
+              value_type *abrbuf = (value_type*)pool.allocate(abrsize);
+              TACHO_TEST_FOR_ABORT(abrbuf == NULL, "pool allocation fails");
+              ABR = value_type_matrix(abrbuf, n, n);                
+            }
+            
+            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, /* pool, */ member, -1.0, ATR, 0.0, ABR);
+          }
+        }
+        return 0;
+      }
+
+      template<typename SchedulerType,
+               typename MemoryPoolType,
+               typename MemberType,
                typename SupernodeInfoType,
                typename MatrixViewType>
       KOKKOS_INLINE_FUNCTION
@@ -113,89 +172,9 @@ namespace Tacho {
         } else {
           pool.deallocate((void*)map.data(), mapsize);
         }
-
         return 0;
       }
 
-      template<typename SchedulerType,
-               typename MemoryPoolType,
-               typename MemberType,
-               typename SupernodeInfoType>
-      KOKKOS_INLINE_FUNCTION
-      static int 
-      factorize(const SchedulerType &sched,
-                const MemoryPoolType &pool, 
-                const MemberType &member,
-                const SupernodeInfoType &info,
-                const ordinal_type sid,
-                const ordinal_type sidpar,
-                const size_type bufsize,
-                /* */ void *buf) {
-        typedef SupernodeInfoType supernode_info_type;
-
-        typedef typename supernode_info_type::value_type value_type;
-        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-        // get supernode panel pointer
-        value_type *ptr = info.getSuperPanelPtr(sid);
-        
-        // characterize the panel size
-        ordinal_type pm, pn;
-        info.getSuperPanelSize(sid, pm, pn);
-
-        // panel is divided into diagonal and interface block (i.e., ATL and ATR)
-        const ordinal_type m = pm, n = pn - pm;
-
-        // m and n are available, then factorize the supernode block
-        if (m > 0) {
-          UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;          
-          Chol<Uplo::Upper,Algo::External>
-            ::invoke(sched, /* pool, */ member, ATL);
-          
-          if (n > 0) {
-            UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
-            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-              ::invoke(sched, /* pool, */ member, Diag::NonUnit(), 1.0, ATL, ATR);
-            
-            const ordinal_type update_supernode_beg = info.sid_super_panel_ptr(sid);
-            const ordinal_type update_supernode_end = info.sid_super_panel_ptr(sid+1);
-            
-            // diag, parent, (+1 because there is empty one; range is constructed for block which needs end point)
-            const bool is_direct_update = ((update_supernode_end - update_supernode_beg) == 3 &&
-                                           info.sid_super_panel_colidx(update_supernode_beg) == sidpar);
-            UnmanagedViewType<value_type_matrix> ABR;
-            if (is_direct_update) {
-              ABR = value_type_matrix(info.getSuperPanelPtr(update_supernode_beg), n, n);
-              Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-                ::invoke(sched, /* pool, */ member, -1.0, ATR, 1.0, ABR);
-            } else {
-              const size_type abrsize = n*n*sizeof(value_type);
-              const ordinal_type diff = bufsize - abrsize;
-              if (diff > 0) {
-                ABR = value_type_matrix((value_type*)buf, n, n);
-              } else {
-                //TACHO_TEST_FOR_ABORT(true, "bufsize is smaller than requested");
-                value_type *abrbuf = (value_type*)pool.allocate(abrsize);
-                TACHO_TEST_FOR_ABORT(abrbuf == NULL, "pool allocation fails");
-                ABR = value_type_matrix(abrbuf, n, n);                
-              }
-              
-              Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-                ::invoke(sched, /* pool, */ member, -1.0, ATR, 0.0, ABR);
-
-              update(sched, pool, member, info, ABR, sid, 
-                     max(diff, 0), (diff > 0 ? (void*)((value_type*)buf + n*n) : NULL));
-              
-              if (diff > 0) {
-                // do nothing
-              } else {
-                pool.deallocate((void*)ABR.data(), abrsize);
-              }
-            }
-          }
-        }
-        return 0;
-      }
     };
   }
 }
