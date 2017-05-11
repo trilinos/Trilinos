@@ -56,7 +56,7 @@
 
 */
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 
 // All the below may or may not use HWLOC
 #if defined( KOKKOS_HAVE_HWLOC )

@@ -629,7 +629,6 @@ template< class T > RCP< T > rcp(T* p, bool owns_mem = true);
 template< class T > RCP< T > rcpFromRef(T& r);
 template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
-%include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
 %ignore KokkosClassic::ESweepDirection;
 %include "Kokkos_ConfigDefs.hpp"
