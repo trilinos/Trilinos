@@ -50,10 +50,12 @@ template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver)
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
+    const bool supports_x_dotdot)
     : Tempus::IntegratorObserverBasic<Scalar>(solutionHistory, timeStepControl),
     solutionHistory_(solutionHistory),
     timeStepControl_(timeStepControl),
+    supports_x_dotdot_(supports_x_dotdot), 
     out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
     wrappedObserver_(wrappedObserver)
 {
@@ -141,11 +143,11 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dotdot = solutionHistory_->getCurrentState()->getXDotDot();
   if (Teuchos::nonnull(solution_dot))
   {
-    if (solution_dotdot == Teuchos::null) {
-      wrappedObserver_->observeSolution(*solution, *solution_dot, time);
+    if (supports_x_dotdot_) {
+      wrappedObserver_->observeSolution(*solution, *solution_dot, *solution_dotdot, time);
     }
    else {
-      wrappedObserver_->observeSolution(*solution, *solution_dot, *solution_dotdot, time);
+      wrappedObserver_->observeSolution(*solution, *solution_dot, time);
    }
   }
   else {
