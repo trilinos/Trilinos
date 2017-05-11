@@ -403,9 +403,7 @@ public:
     // -----------------------------------------------------------------------------------------
     double R_total = _Rt;
     if (_proc_rank == 0) {
-      std::cout << "R_total" << std::endl;
-      std::cout << "=======" << std::endl;
-      std::cout << R_total << std::endl;
+      std::cout << "R_total = " << R_total << std::endl;
     }
 
     // ---------------------
