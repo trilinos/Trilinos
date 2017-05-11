@@ -217,10 +217,12 @@ namespace MueLu {
     std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
     std::vector<size_t> nonZeroList(nLocalPlusGhostDofs);  // ???
 
-
     // also used in DetectDirichletExt
-    Teuchos::RCP<Vector> diagVec = VectorFactory::Build(A->getRowMap());
-    A->getLocalDiagCopy(*diagVec);
+    Teuchos::RCP<Vector> diagVecUnique = VectorFactory::Build(A->getRowMap());
+    Teuchos::RCP<Vector> diagVec       = VectorFactory::Build(A->getColMap());
+    A->getLocalDiagCopy(*diagVecUnique);
+    Teuchos::RCP<Import> dofImporter = ImportFactory::Build(diagVecUnique->getMap(), diagVec->getMap());
+    diagVec->doImport(*diagVecUnique, *dofImporter, Xpetra::INSERT);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
     LocalOrdinal oldBlockRow = 0;
