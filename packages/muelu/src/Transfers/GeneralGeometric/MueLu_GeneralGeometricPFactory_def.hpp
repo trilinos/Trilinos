@@ -144,9 +144,7 @@ namespace MueLu {
     // collect general input data
     LO blkSize                 = A->GetFixedBlockSize();
     RCP<const Map> rowMap      = A->getRowMap();
-    LO ndofs                   = rowMap->getNodeNumElements();  // Numbers of degrees of freedom
     LO numDimensions           = 0;                             // Number of spatial dimensions
-    GO gNumFinePoints;                                          // Global number of fine points
     Array<GO> gFineNodesPerDir(3);                              // Global number of fine points per direction
     Array<GO> gCoarseNodesPerDir(3);                            // Global number of coarse points per direction
     LO lNumFinePoints;                                          // Local number of fine points
@@ -157,7 +155,6 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError, "Coordinates cannot be accessed from fine level!");
     numDimensions  = fineCoords->getNumVectors();
-    gNumFinePoints = fineCoords->getGlobalLength();
     lNumFinePoints = fineCoords->getLocalLength();
 
     // Get the number of points in each direction
@@ -615,23 +612,12 @@ namespace MueLu {
 
     using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
     using STS  = Teuchos::ScalarTraits<SC>;
-    const SC     zero      = STS::zero();
-    const SC     one       = STS::one();
-    const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     LO lNumFineNodes    = lFineNodesPerDir[0]*lFineNodesPerDir[1]*lFineNodesPerDir[2];
     LO lNumCoarseNodes  = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[2];
     GO gNumCoarseNodes  = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[2];
     LO lNumGhostNodes   = ghostsGIDs.size();
     GO numGloCols       = dofsPerNode*gNumCoarseNodes;
-    LO maxEntriesPerRow = 0;
-    if(ndm == 1) {
-      maxEntriesPerRow = 2;
-    } else if(ndm == 2) {
-      maxEntriesPerRow = 4;
-    } else if(ndm == 3) {
-      maxEntriesPerRow = 8;
-    }
 
     // Build the required column map for the prolongator operator.
     // This requies to find the GIDs of the coarse nodes on the coarse mesh,
@@ -833,8 +819,8 @@ namespace MueLu {
     ArrayView<LO>     ja  = jaP();
     ArrayView<SC>     val = valP();
 
-    LO nMaxStencil = 0; LO nStencil = 0; LO tStencil = 0;
-    LO count=0; LO firstCoarseNodeIndex;
+    LO nStencil = 0; LO tStencil = 0;
+    LO firstCoarseNodeIndex;
     LO indices[4][3];
     ia[0] = 0;
 
@@ -860,7 +846,6 @@ namespace MueLu {
       lGhostCoords[0] = ghostCoords->getDataNonConst(0);
       lGhostCoords[1] = ghostZeros->getDataNonConst(0);
       lGhostCoords[2] = ghostZeros->getDataNonConst(0);
-      nMaxStencil = 2;
 
       xCoarseNodes = coarseCoords->getDataNonConst(0);
     } else if(ndm==2) {
@@ -870,7 +855,6 @@ namespace MueLu {
       lGhostCoords[0] = ghostCoords->getDataNonConst(0);
       lGhostCoords[1] = ghostCoords->getDataNonConst(1);
       lGhostCoords[2] = ghostZeros->getDataNonConst(0);
-      nMaxStencil = 4;
 
       xCoarseNodes= coarseCoords->getDataNonConst(0);
       yCoarseNodes= coarseCoords->getDataNonConst(1);
@@ -881,7 +865,6 @@ namespace MueLu {
       lGhostCoords[0] = ghostCoords->getDataNonConst(0);
       lGhostCoords[1] = ghostCoords->getDataNonConst(1);
       lGhostCoords[2] = ghostCoords->getDataNonConst(2);
-      nMaxStencil = 8;
 
       xCoarseNodes = coarseCoords->getDataNonConst(0);
       yCoarseNodes = coarseCoords->getDataNonConst(1);
@@ -1129,8 +1112,6 @@ namespace MueLu {
       if( ((currentNodeIndices[0] % coarseRate[0] == 0) || currentNodeIndices[0] == gFineNodesPerDir[0] - 1)
           && ((currentNodeIndices[1] % coarseRate[1] == 0) || currentNodeIndices[1] == gFineNodesPerDir[1] - 1)
           && ((currentNodeIndices[2] % coarseRate[2] == 0) || currentNodeIndices[2] == gFineNodesPerDir[2] - 1) ) {
-        // Fine node is on a coarse node, the local_node variable
-        // tracks on which coarse node the fine node is located.
         if(ndm==1) {
           xCoarseNodes[currentCoarseNode] = lFineCoords[0][i];
         } else if(ndm==2) {
@@ -1143,7 +1124,6 @@ namespace MueLu {
         }
         ++currentCoarseNode;
 
-        LO local_node=0;
         if(currentNodeIndices[0] == gFineNodesPerDir[0] - 1) {
           nzIndStencil[0] += 1;
         }
