@@ -72,6 +72,7 @@ namespace Galeri {
   }
 }
 
+#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 
 namespace MueLuTests {
@@ -226,37 +227,91 @@ namespace MueLuTests {
     //lapA2->describe(out, Teuchos::VERB_EXTREME);
   } // VarLaplConstructor2
 
-  // helper class for testing functionality of FineLevelInputDataFactory
-  /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FineLevelInputDataFactoryTester {
-#   include "MueLu_UseShortNames.hpp"
-  public:
-    void test_testfunc(const FineLevelInputDataFactory& fac) {
-      std::cout << "FineLevelInputDataFactoryTester" << std::endl;
-      fac.test();
-    }
-  };*/
-
-  // unit test just for demonstration purposes
-  /*TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FineLevelInputDataFactory, TestFunc, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(VariableDofLaplacianFactory, VarLaplPtent, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    if (!TYPE_EQUAL(GO, int)) { out << "Skipping test for GO != int"        << std::endl; return; }
     out << "version: " << MueLu::Version() << std::endl;
 
-    FineLevelInputDataFactory fac;
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    FineLevelInputDataFactoryTester<Scalar,LocalOrdinal,GlobalOrdinal,Node> tester;
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    tester.test_testfunc(fac);
+    // TAW 04/21: test is crashing on 4 procs with Epetra due to an unknown reason in the Epetra_BlockMap constructor (MPI communication)
+    if ( comm->getSize() > 2 && lib == Xpetra::UseEpetra) { out << "Skipping test for more than 2 procs when using Epetra"        << std::endl; return; }
 
-    //TEST_EQUALITY(AA.get(), A.get());
-  } // TestFunc*/
+    GlobalOrdinal nx = 6, ny = 6;
+
+    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
+
+    //build coordinates before expanding map (nodal coordinates, not dof-based)
+    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", nodeMap, galeriList);
+    RCP<const Map> dofMap = MapFactory::Build(nodeMap, 2); //expand map for 2 DOFs per node
+
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("keepBCs",             false);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", dofMap, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    //->describe(out, Teuchos::VERB_EXTREME);
+
+    TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
+
+    Teuchos::ArrayRCP<const bool> dofPresent(A->getRowMap()->getNodeNumElements(),true);
+
+    // build hierarchy
+    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+
+    // generate laplacian matrix using level l
+    Level l;
+    l.Set("A", A);
+    l.Set("Coordinates",coordinates);
+    l.Set<Teuchos::ArrayRCP<const bool> >("DofPresent", dofPresent);
+
+    VariableDofLaplacianFactory lapFact;
+    lapFact.SetParameter("maxDofPerNode", Teuchos::ParameterEntry(2));
+    l.Request("A",&lapFact);
+
+    RCP<Matrix> lapA = l.Get<RCP<Matrix> >("A",&lapFact);
+    lapA->describe(out, Teuchos::VERB_EXTREME);
+
+    // create a new two-level hierarchy and set lapA as input "A"
+    // This way we avoid dealing with factory managers
+    Level fineLevel, coarseLevel;
+    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+
+    fineLevel.Set("A", lapA);
+
+    TentativePFactory PFact;
+
+    coarseLevel.Request("P", &PFact);
+    RCP<Matrix> pMat = coarseLevel.Get<RCP<Matrix> >("P", &PFact);
+
+    TEST_EQUALITY(pMat->getRowMap()->isSameAs(*(lapA->getRowMap())),true);
+    TEST_EQUALITY(pMat->getNodeNumEntries(), pMat->getRowMap()->getNodeNumElements());
+  } // VarLaplPtent
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(VariableDofLaplacianFactory, VarLaplConstructor, SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(VariableDofLaplacianFactory, VarLaplConstructor2, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(VariableDofLaplacianFactory, VarLaplPtent, SC, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 }
