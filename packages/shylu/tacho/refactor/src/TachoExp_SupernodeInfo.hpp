@@ -22,6 +22,9 @@ namespace Tacho {
       typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> value_type_matrix;
       typedef Kokkos::View<UnmanagedViewType<value_type_matrix>*,exec_space> value_type_matrix_array;
 
+      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::View<future_type*,exec_space> future_type_array;
+      
       ///
       /// Phase 1: symbolic
       ///
@@ -50,7 +53,9 @@ namespace Tacho {
       ///
       /// Phase 3: abr (schur complements)
       ///
-      UnmanagedViewType<value_type_matrix_array> super_panel_abr;
+      UnmanagedViewType<value_type_matrix_array> supernodes_abr;
+      UnmanagedViewType<future_type_array> supernodes_future;
+      
       
       KOKKOS_INLINE_FUNCTION
       SupernodeInfo() = default;

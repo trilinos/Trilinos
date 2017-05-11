@@ -145,15 +145,10 @@ int main (int argc, char *argv[]) {
     if (nthreads > 1) {
       N.factorizeCholesky_Parallel();
     } else {
-      N.factorizeCholesky_Serial();
+      N.factorizeCholesky_Parallel();
     }
     t = timer.seconds();    
     std::cout << "CholSerial:: factorize matrix::time = " << t << std::endl;
-    // {
-    //   auto U = N.Factors<Uplo::Upper>();
-    //   std::ofstream file("U_par.mtx");
-    //   MatrixMarket<value_type>::write(file, U);    
-    // }
   }
   Kokkos::finalize();
 

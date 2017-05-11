@@ -75,7 +75,8 @@ namespace Tacho {
                typename MemoryPoolType,
                typename MemberType,
                typename SupernodeInfoType,
-               typename MatrixViewType>
+               typename MatrixViewType,
+               typename PairType>
       KOKKOS_INLINE_FUNCTION
       static int 
       update(const SchedulerType &sched,
@@ -83,6 +84,7 @@ namespace Tacho {
              const MemberType &member,
              const SupernodeInfoType &info,
              const MatrixViewType &ABR,
+             /* */ PairType srows,
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {
@@ -96,6 +98,13 @@ namespace Tacho {
         const size_type
           sbeg = info.sid_super_panel_ptr(sid)+1,
           send = info.sid_super_panel_ptr(sid+1)-1;
+
+        if (srows.first == srows.second) {
+          srows.first = sbeg; 
+          srows.second = send;
+        }
+        TACHO_TEST_FOR_ABORT(srows.first < sbeg || srows.second > send,
+                             "source rows are not properly setup");
         
         const ordinal_type
           src_col_beg = info.blk_super_panel_colidx(sbeg),
@@ -120,7 +129,8 @@ namespace Tacho {
         // walk through source rows
         UnmanagedViewType<value_type_matrix> A;
         const ordinal_type src_row_offset = info.blk_super_panel_colidx(sbeg);
-        for (size_type i=sbeg;i<send;++i) {
+        //for (size_type i=sbeg;i<send;++i) {
+        for (size_type i=srows.first;i<srows.second;++i) {
           /// ** soruce rows
           const ordinal_type
             src_row_beg = info.blk_super_panel_colidx(i),
