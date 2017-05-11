@@ -248,14 +248,14 @@ FAD_UNARYOP_MACRO(abs,
                   AbsOp,
                   using std::abs;,
                   abs(expr.val()),
-                  if_then( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
-                  if_then( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
+                  if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
+                  if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
                   using std::fabs;,
                   fabs(expr.val()),
-                  if_then( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
-                  if_then( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
+                  if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
+                  if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 #ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
@@ -640,38 +640,38 @@ FAD_BINARYOP_MACRO(pow,
                    PowerOp,
                    using std::pow; using std::log;,
                    pow(expr1.val(), expr2.val()),
-                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
-                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
+                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
+                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
                    pow(c.val(), expr2.val()),
                    pow(expr1.val(), c.val()),
-                   if_then( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
-                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val())) ),
-                   if_then( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
-                   if_then( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()))) )
+                   if_then_else( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
+                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val())) ),
+                   if_then_else( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
+                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    ;,
-                   if_then( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
-                   if_then( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
-                   if_then( expr1.val() >= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
-                   if_then( c.val() >= expr2.val(), value_type(c.val()),  expr2.val() ),
-                   if_then( expr1.val() >= c.val(), expr1.val(), value_type(c.val()) ),
-                   if_then( c.val() >= expr2.val(), value_type(0.0),  expr2.dx(i) ),
-                   if_then( expr1.val() >= c.val(), expr1.dx(i), value_type(0.0) ),
-                   if_then( c.val() >= expr2.val(), value_type(0.0), expr2.fastAccessDx(i) ),
-                   if_then( expr1.val() >= c.val(), expr1.fastAccessDx(i), value_type(0.0) ) )
+                   if_then_else( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
+                   if_then_else( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then_else( expr1.val() >= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
+                   if_then_else( c.val() >= expr2.val(), value_type(c.val()),  expr2.val() ),
+                   if_then_else( expr1.val() >= c.val(), expr1.val(), value_type(c.val()) ),
+                   if_then_else( c.val() >= expr2.val(), value_type(0.0),  expr2.dx(i) ),
+                   if_then_else( expr1.val() >= c.val(), expr1.dx(i), value_type(0.0) ),
+                   if_then_else( c.val() >= expr2.val(), value_type(0.0), expr2.fastAccessDx(i) ),
+                   if_then_else( expr1.val() >= c.val(), expr1.fastAccessDx(i), value_type(0.0) ) )
 FAD_BINARYOP_MACRO(min,
                    MinOp,
                    ;,
-                   if_then( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
-                   if_then( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
-                   if_then( expr1.val() <= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
-                   if_then( c.val() <= expr2.val(), value_type(c.val()), expr2.val() ),
-                   if_then( expr1.val() <= c.val(), expr1.val(), value_type(c.val()) ),
-                   if_then( c.val() <= expr2.val(), value_type(0), expr2.dx(i) ),
-                   if_then( expr1.val() <= c.val(), expr1.dx(i), value_type(0) ),
-                   if_then( c.val() <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
-                   if_then( expr1.val() <= c.val(), expr1.fastAccessDx(i), value_type(0) ) )
+                   if_then_else( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
+                   if_then_else( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then_else( expr1.val() <= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
+                   if_then_else( c.val() <= expr2.val(), value_type(c.val()), expr2.val() ),
+                   if_then_else( expr1.val() <= c.val(), expr1.val(), value_type(c.val()) ),
+                   if_then_else( c.val() <= expr2.val(), value_type(0), expr2.dx(i) ),
+                   if_then_else( expr1.val() <= c.val(), expr1.dx(i), value_type(0) ),
+                   if_then_else( c.val() <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
+                   if_then_else( expr1.val() <= c.val(), expr1.fastAccessDx(i), value_type(0) ) )
 
 
 #undef FAD_BINARYOP_MACRO
@@ -970,7 +970,360 @@ namespace Sacado {
   }
 }
 
+//--------------------------if_then_else operator -----------------------
+// Can't use the above macros because it is a ternary operator (sort of).
+// Also, relies on C++11
+
+#ifdef  HAVE_SACADO_CXX11
+
+namespace Sacado {
+  namespace Fad {
+
+    template <typename CondT, typename ExprT1, typename ExprT2>
+    class IfThenElseOp {};
+
+    template <typename CondT, typename ExprT1, typename ExprT2>
+    struct ExprSpec< IfThenElseOp< CondT, ExprT1, ExprT2 > > {
+      typedef typename ExprSpec<ExprT1>::type type;
+    };
+
+    template <typename CondT, typename ExprT1, typename ExprT2>
+    class Expr< IfThenElseOp< CondT, ExprT1, ExprT2 >,ExprSpecDefault > {
+
+    public:
+
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
+      KOKKOS_INLINE_FUNCTION
+      Expr(const CondT& cond_, const ExprT1& expr1_, const ExprT2& expr2_) :
+        cond(cond_), expr1(expr1_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        int sz1 = expr1.size(), sz2 = expr2.size();
+        return sz1 > sz2 ? sz1 : sz2;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess() && expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool isPassive() const {
+        return expr1.isPassive() && expr2.isPassive();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const {
+        return expr1.updateValue() && expr2.updateValue();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type val() const {
+        return if_then_else( cond, expr1.val(), expr2.val() );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type dx(int i) const {
+        return if_then_else( cond, expr1.dx(i), expr2.dx(i) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type fastAccessDx(int i) const {
+        return if_then_else( cond, expr1.fastAccessDx(i), expr2.fastAccessDx(i) );
+      }
+
+    protected:
+
+      const CondT&  cond;
+      const ExprT1& expr1;
+      const ExprT2& expr2;
+
+    };
+
+    template <typename CondT, typename ExprT1, typename T2>
+    struct ExprSpec< IfThenElseOp< CondT, ExprT1, ConstExpr<T2> > > {
+      typedef typename ExprSpec<ExprT1>::type type;
+    };
+
+    template <typename CondT, typename ExprT1, typename T2>
+    class Expr< IfThenElseOp< CondT, ExprT1, ConstExpr<T2> >,ExprSpecDefault > {
+
+    public:
+
+      typedef ConstExpr<T2> ConstT;
+      typedef ConstExpr<T2> ExprT2;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
+      KOKKOS_INLINE_FUNCTION
+      Expr(const CondT& cond_, const ExprT1& expr1_, const ConstT& c_) :
+        cond(cond_), expr1(expr1_), c(c_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr1.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool isPassive() const {
+        return expr1.isPassive();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return expr1.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type val() const {
+        return if_then_else( cond, expr1.val(), c.val() );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type dx(int i) const {
+        return if_then_else( cond, expr1.dx(i), value_type(0.0) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type fastAccessDx(int i) const {
+        return if_then_else( cond, expr1.fastAccessDx(i), value_type(0.0) );
+      }
+
+    protected:
+
+      const CondT&  cond;
+      const ExprT1& expr1;
+      ConstT c;
+    };
+
+    template <typename CondT, typename T1, typename ExprT2>
+    struct ExprSpec< IfThenElseOp< CondT, ConstExpr<T1>, ExprT2 > > {
+      typedef typename ExprSpec<ExprT2>::type type;
+    };
+
+    template <typename CondT, typename T1, typename ExprT2>
+    class Expr< IfThenElseOp< CondT, ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {
+
+    public:
+
+      typedef ConstExpr<T1> ConstT;
+      typedef ConstExpr<T1> ExprT1;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
+      KOKKOS_INLINE_FUNCTION
+      Expr(const CondT& cond_, const ConstT& c_, const ExprT2& expr2_) :
+        cond(cond_), c(c_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr2.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool isPassive() const {
+        return expr2.isPassive();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool updateValue() const { return expr2.updateValue(); }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type val() const {
+        return if_then_else( cond, c.val(), expr2.val() );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type dx(int i) const {
+        return if_then_else( cond, value_type(0.0), expr2.dx(i) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const value_type fastAccessDx(int i) const {
+        return if_then_else( cond, value_type(0.0), expr2.fastAccessDx(i) );
+      }
+
+    protected:
+
+      const CondT&  cond;
+      ConstT c;
+      const ExprT2& expr2;
+    };
+
+    template <typename CondT, typename T1, typename T2>
+    KOKKOS_INLINE_FUNCTION
+    typename mpl::enable_if_c< IsFadExpr<T1>::value && IsFadExpr<T2>::value &&
+                               ExprLevel<T1>::value == ExprLevel<T2>::value,
+                               Expr< IfThenElseOp< CondT, T1, T2 > >
+                             >::type
+    if_then_else (const CondT& cond, const T1& expr1, const T2& expr2)
+    {
+      typedef IfThenElseOp< CondT, T1, T2 > expr_t;
+
+      return Expr<expr_t>(cond, expr1, expr2);
+    }
+
+    template <typename CondT, typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< IfThenElseOp< CondT, Expr<T>, Expr<T> > >
+    if_then_else (const CondT& cond, const Expr<T>& expr1, const Expr<T>& expr2)
+    {
+      typedef IfThenElseOp< CondT, Expr<T>, Expr<T> > expr_t;
+
+      return Expr<expr_t>(cond, expr1, expr2);
+    }
+
+    template <typename CondT, typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< IfThenElseOp< CondT, ConstExpr<typename Expr<T>::value_type>,
+                        Expr<T> > >
+    if_then_else (const CondT& cond, const typename Expr<T>::value_type& c,
+                  const Expr<T>& expr)
+    {
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
+      typedef IfThenElseOp< CondT, ConstT, Expr<T> > expr_t;
+
+      return Expr<expr_t>(cond, ConstT(c), expr);
+    }
+
+    template <typename CondT, typename T>
+    KOKKOS_INLINE_FUNCTION
+    Expr< IfThenElseOp< CondT, Expr<T>,
+                        ConstExpr<typename Expr<T>::value_type> > >
+    if_then_else (const CondT& cond, const Expr<T>& expr,
+                  const typename Expr<T>::value_type& c)
+    {
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
+      typedef IfThenElseOp< CondT, Expr<T>, ConstT > expr_t;
+
+      return Expr<expr_t>(cond, expr, ConstT(c));
+    }
+
+    template <typename CondT, typename T>
+    KOKKOS_INLINE_FUNCTION
+    typename mpl::disable_if<
+      mpl::is_same< typename Expr<T>::value_type,
+                    typename Expr<T>::scalar_type>,
+      Expr< IfThenElseOp< CondT, ConstExpr<typename Expr<T>::scalar_type>,
+                          Expr<T> > >
+      >::type
+    if_then_else (const CondT& cond, const typename Expr<T>::scalar_type& c,
+                  const Expr<T>& expr)
+    {
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
+      typedef IfThenElseOp< CondT, ConstT, Expr<T> > expr_t;
+
+      return Expr<expr_t>(cond, ConstT(c), expr);
+    }
+
+    template <typename CondT, typename T>
+    KOKKOS_INLINE_FUNCTION
+    typename mpl::disable_if<
+      mpl::is_same< typename Expr<T>::value_type,
+                    typename Expr<T>::scalar_type>,
+      Expr< IfThenElseOp< CondT, Expr<T>,
+                          ConstExpr<typename Expr<T>::scalar_type> > >
+      >::type
+    if_then_else (const CondT& cond, const Expr<T>& expr,
+                  const typename Expr<T>::scalar_type& c)
+    {
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
+      typedef IfThenElseOp< CondT, Expr<T>, ConstT > expr_t;
+
+      return Expr<expr_t>(cond, expr, ConstT(c));
+    }
+  }
+}
+
+#endif
+
 //-------------------------- Relational Operators -----------------------
+
+#ifdef  HAVE_SACADO_CXX11
+
+#define FAD_RELOP_MACRO(OP)                                             \
+namespace Sacado {                                                      \
+  namespace Fad {                                                       \
+    template <typename ExprT1, typename ExprT2>                         \
+    KOKKOS_INLINE_FUNCTION                                              \
+    auto                                                                \
+    operator OP (const Expr<ExprT1>& expr1,                             \
+                 const Expr<ExprT2>& expr2) ->                          \
+      decltype( expr1.val() OP expr2.val() )                            \
+    {                                                                   \
+      return expr1.val() OP expr2.val();                                \
+    }                                                                   \
+                                                                        \
+    template <typename ExprT2>                                          \
+    KOKKOS_INLINE_FUNCTION                                              \
+    auto                                                                \
+    operator OP (const typename Expr<ExprT2>::value_type& a,            \
+                 const Expr<ExprT2>& expr2) ->                          \
+      decltype( a OP expr2.val() )                                      \
+    {                                                                   \
+      return a OP expr2.val();                                          \
+    }                                                                   \
+                                                                        \
+    template <typename ExprT1>                                          \
+    KOKKOS_INLINE_FUNCTION                                              \
+    auto                                                                \
+    operator OP (const Expr<ExprT1>& expr1,                             \
+                 const typename Expr<ExprT1>::value_type& b) ->         \
+      decltype( expr1.val() OP b )                                      \
+    {                                                                   \
+      return expr1.val() OP b;                                          \
+    }                                                                   \
+  }                                                                     \
+}
+
+#else
 
 #define FAD_RELOP_MACRO(OP)                                             \
 namespace Sacado {                                                      \
@@ -1003,6 +1356,8 @@ namespace Sacado {                                                      \
     }                                                                   \
   }                                                                     \
 }
+
+#endif
 
 FAD_RELOP_MACRO(==)
 FAD_RELOP_MACRO(!=)

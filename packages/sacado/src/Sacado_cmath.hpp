@@ -60,7 +60,7 @@ namespace Sacado {
   // the ternary operator would be used.  It can also be used by client code.
   template <typename Cond, typename T>
   KOKKOS_INLINE_FUNCTION
-  T if_then(const Cond cond, const T& a, const T& b) {
+  T if_then_else(const Cond cond, const T& a, const T& b) {
     return cond ? a : b;
   }
 
