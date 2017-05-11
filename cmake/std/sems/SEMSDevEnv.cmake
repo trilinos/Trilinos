@@ -97,6 +97,14 @@ ENDFUNCTION()
 
 # Assume LAPACK is found in default path!
 
+# yaml-cpp
+SEMS_SELECT_TPL_ROOT_DIR(YAML_CPP YAML_CPP_ROOT)
+#PRINT_VAR(YAML_CPP_ROOT)
+SET(yaml-cpp_INCLUDE_DIRS "${YAML_CPP_ROOT}/include"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+SET(yaml-cpp_LIBRARY_DIRS "${YAML_CPP_ROOT}/lib"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+
 # Boost
 SEMS_SELECT_TPL_ROOT_DIR(BOOST Boost_ROOT)
 #PRINT_VAR(Boost_ROOT)
