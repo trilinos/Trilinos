@@ -60,7 +60,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("P",                  Teuchos::null, "Generating factory of the prolongator P");
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory for unamalgamated matrix. Row map of (unamalgamted) output prolongation operator should match row map of this A.");
+    validParamList->set< RCP<const FactoryBase> >("P",                  Teuchos::null, "Generating factory of the (amalgamated) prolongator P");
     validParamList->set< RCP<const FactoryBase> >("DofStatus",          Teuchos::null, "Generating factory for dofStatus array (usually the VariableDofLaplacdianFactory)");
 
     validParamList->set< int  >                  ("maxDofPerNode", 1,     "Maximum number of DOFs per node");
@@ -72,6 +73,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     //const ParameterList& pL = GetParameterList();
+    Input(currentLevel, "A");
     Input(currentLevel, "P");
     Input(currentLevel, "DofStatus");
     //Input(currentLevel, "Coordinates");
@@ -85,7 +87,8 @@ namespace MueLu {
 
     const ParameterList  & pL = GetParameterList();
 
-    RCP<Matrix> amalgP = Get< RCP<Matrix> >(currentLevel, "P");
+    RCP<Matrix> unamalgA = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> amalgP   = Get< RCP<Matrix> >(currentLevel, "P");
 
     //Teuchos::RCP< const Teuchos::Comm< int > > comm = amalgP->getRowMap()->getComm();
     //Xpetra::UnderlyingLib lib = amalgP->getRowMap()->lib();
@@ -176,11 +179,39 @@ namespace MueLu {
       newPRowPtr[rowCount] = cnt; // close row CSR array
     } // fineIsPadded == false
 
-    // TODO assemble new P
+    // generate coarse domain map
 
+    // So far no support for gid offset or strided maps. This information
+    // could be gathered easily from the unamalgamated fine level operator A.
+    std::vector<size_t> stridingInfo(1,maxDofPerNode);
 
+    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getGlobalNumElements() * maxDofPerNode;
+    GlobalOrdinal indexBase   = amalgP->getDomainMap()->getIndexBase();
 
-    Set(currentLevel,"P",amalgP);
+    RCP<const Map> coarseDomainMap = StridedMapFactory::Build(amalgP->getDomainMap()->lib(),
+        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+        nCoarseDofs,
+        indexBase,
+        stridingInfo,
+        amalgP->getDomainMap()->getComm(),
+        -1 /* stridedBlockId */,
+        0  /*domainGidOffset */);
+
+    // Assemble unamalgamated P
+
+    // TODO think about maximum number of entries per row
+    // Does this work for more than on nullspace vectors?
+    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(), 1);
+
+    for (size_t i = 0; i < newPRowPtr.size() - 1; i++) {
+      unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
+          newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));
+    }
+    unamalgPCrs->fillComplete(coarseDomainMap,unamalgA->getRowMap());
+
+    Teuchos::RCP<Matrix> unamalgP = Teuchos::rcp(new CrsMatrixWrap(unamalgPCrs));
+
+    Set(currentLevel,"P",unamalgP);
   }
 
 
